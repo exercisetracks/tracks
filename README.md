@@ -102,11 +102,13 @@ docker run -d --name tracks --restart unless-stopped \
   -p 4080:80 \
   -v tracks-data:/data \
   -v tracks-maps:/map-data \
-  exercisetracks/tracks:1
+  exercisetracks/tracks:latest
 ```
 
 Or with Docker Compose: save [`compose.yaml`](deploy/compose.yaml) in a
-folder of its own, then run `docker compose up -d` there.
+folder of its own, then run `docker compose up -d` there. To change any
+setting, also save [`.env.example`](deploy/.env.example) beside it as `.env`
+and edit that; it lists every setting with its default.
 
 Open **http://localhost:4080** (or `http://<server-ip>:4080`) and create
 your admin account. There's nothing to configure first. On its first start,
@@ -125,8 +127,8 @@ Tracks generates its own secrets and database, and keeps them in the
   - Detailed regions add more as you download them.
 
 To keep maps on a bigger disk, use a folder instead of the volume, e.g.
-`-v /mnt/storage/tracks-maps:/map-data`. To skip the map downloads
-entirely, add `-e PMTILES_SOURCE_URL= -e DEM_SOURCE_URL=`.
+`-v /mnt/storage/tracks-maps:/map-data` (`TRACKS_MAPS` in `.env`). To skip
+the downloads, set `MAP_DOWNLOADS=false` and `TERRAIN_DOWNLOADS=false`.
 
 ### Putting it behind HTTPS
 
@@ -160,7 +162,7 @@ server {
 }
 ```
 
-With your own proxy in front, add `-e TRUSTED_PROXY_HOPS=2`. That lets
+With your own proxy in front, set `BEHIND_PROXY=true`. That lets
 login rate limiting see real client addresses rather than your proxy's.
 
 ---
@@ -234,7 +236,7 @@ same command you started it with. Your data lives in the volumes, not in
 the container.
 
 ```bash
-docker pull exercisetracks/tracks:1
+docker pull exercisetracks/tracks:latest
 docker rm -f tracks
 docker run -d --name tracks …   # as above
 ```
@@ -243,8 +245,9 @@ Database upgrades run automatically when the new version starts. **Take a
 backup first** (below). Downgrading is not supported, and Tracks will refuse
 to start an older version on a database a newer one has upgraded.
 
-The `:1` tag follows every 1.x release but never 2.0, which may need you to
-read its release notes first. You can pin an exact release instead
+`:latest` follows every release, including a 2.0, which may need you to read
+its release notes first. To stay on 1.x, use the `:1` tag instead, or pin an
+exact release
 (`exercisetracks/tracks:1.1.0`) to update only when you change it. Tools like
 [Watchtower](https://containrrr.dev/watchtower/) or
 [Diun](https://crazymax.dev/diun/) can update or notify for you.
@@ -285,15 +288,20 @@ somewhere safe.
 
 ## Configuration
 
-Nothing needs setting. These are optional, passed as `-e NAME=value` (or under
-`environment:` in `compose.yaml`):
+Nothing needs setting. With Docker Compose, settings go in `.env`
+([`.env.example`](deploy/.env.example) lists them): the port
+(`TRACKS_PORT`), where data and maps are kept
+(`TRACKS_DATA`, `TRACKS_MAPS`) and the ones below. With `docker run`, pass
+them as `-e NAME=value`.
 
 | Variable | Description |
 |---|---|
 | `HOST_UID` / `HOST_GID` | Owner of the files Tracks writes, if you bind-mount folders (default `1000`). |
-| `PMTILES_SOURCE_URL` | Protomaps build that basemap regions are cut from. Empty turns basemap downloads off. |
-| `DEM_SOURCE_URL` | Terrain-RGB tileset for hillshade, 3D terrain and contours. Empty turns terrain downloads off. |
-| `TRUSTED_PROXY_HOPS` | Proxies in front of the backend: `1` is Tracks' own web server (default); `2` with your reverse proxy in front. |
+| `MAP_DOWNLOADS` | `false` turns the basemap download off (default `true`). |
+| `TERRAIN_DOWNLOADS` | `false` turns terrain downloads, for hillshade, 3D terrain and contours, off (default `true`). |
+| `BEHIND_PROXY` | `true` when your own reverse proxy sits in front of Tracks (default `false`). |
+| `PMTILES_SOURCE_URL` / `DEM_SOURCE_URL` | Where the basemap and terrain are downloaded from, to use a mirror. |
+| `TRUSTED_PROXY_HOPS` | For more than one proxy in front: how many, counting Tracks' own web server. Overrides `BEHIND_PROXY`. |
 | `UVICORN_WORKERS` / `CELERY_CONCURRENCY` | API worker processes and background task workers (default `2` each). Raise on bigger hardware. |
 | `BROUTER_HEAP` | Memory for the routing engine (default `256M`). |
 | `TRACKS_USB_SYNC=off` | Don't start the USB bridge even when `/dev/bus/usb` is passed in. |

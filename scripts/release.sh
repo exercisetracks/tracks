@@ -103,7 +103,7 @@ cat > "$notes" <<NOTES
 **Server** — new install:
 \`\`\`sh
 docker run -d --name tracks --restart unless-stopped -p 4080:80 \\
-  -v tracks-data:/data -v tracks-maps:/map-data exercisetracks/tracks:${major}
+  -v tracks-data:/data -v tracks-maps:/map-data exercisetracks/tracks:latest
 \`\`\`
 or save \`compose.yaml\` (below) and run \`docker compose up -d\`.
 

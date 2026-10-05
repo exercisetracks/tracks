@@ -89,7 +89,6 @@ ENV TRACKS_FRONTEND=static \
     BROUTER_URL=http://127.0.0.1:17777 \
     FIT_FILES_DIR=/data/fit-files \
     MAP_DATA_DIR=/map-data \
-    TRUSTED_PROXY_HOPS=1 \
     XDG_DATA_HOME=/data \
     XDG_CONFIG_HOME=/data/caddy-config
 

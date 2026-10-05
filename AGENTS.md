@@ -167,9 +167,9 @@ that cannot be taken back — read all of this before running it.
 
 | Channel | What is published | Who receives it |
 |---|---|---|
-| Docker Hub [`exercisetracks/tracks`](https://hub.docker.com/r/exercisetracks/tracks) | The all-in-one image ([deploy/Dockerfile](deploy/Dockerfile)), tagged `X.Y.Z`, `X.Y`, `X`, `latest` | Every install. `:1` is what the README's `docker run` and `compose.yaml` use, so a 1.x release reaches all of them on their next pull. |
+| Docker Hub [`exercisetracks/tracks`](https://hub.docker.com/r/exercisetracks/tracks) | The all-in-one image ([deploy/Dockerfile](deploy/Dockerfile)), tagged `X.Y.Z`, `X.Y`, `X`, `latest` | Every install. `:latest` is what the README's `docker run` and `compose.yaml` use, so **every** release — a 2.0 included — reaches all of them on their next pull. |
 | GitHub release `vX.Y.Z` on [exercisetracks/tracks](https://github.com/exercisetracks/tracks/releases) | Signed APK, its SHA-256, `compose.yaml`, release notes | Android users, directly or through Obtainium, which watches these releases. |
-| `deploy/compose.yaml` on `main` | The README links the **raw file on main** | Every *new* install, immediately on push — it is not versioned. An edit to it ships the moment it is pushed, release or not. |
+| `deploy/compose.yaml` and `deploy/.env.example` on `main` | The README links the **raw files on main** | Every *new* install, immediately on push — it is not versioned. An edit to it ships the moment it is pushed, release or not. |
 
 **Not yet set up — do not create accounts, submit, or publish to these
 without the maintainer:** Google Play, F-Droid, IzzyOnDroid, the Connect IQ
@@ -198,8 +198,9 @@ Images are built with Docker's legacy builder, for amd64 only (there is no
 
 1. **Pick the version.** Patch for fixes, minor for features, major for
    anything that breaks an unattended upgrade — a migration that cannot run on
-   its own, a removed setting, a changed volume layout. Installs follow the
-   major version, so a 2.0 is the only way to ship such a change safely.
+   its own, a removed setting, a changed volume layout. Default installs
+   follow `:latest`, so a 2.0 still reaches them on their next pull: it has to
+   carry its own upgrade path, and only installs pinned to `:1` are spared it.
 2. **Run every suite you touched, and see it pass** (see Testing above).
    A release is not the place to discover a red one.
 3. **Schema changes have migrations.** A server model change needs an Alembic
@@ -227,7 +228,7 @@ Images are built with Docker's legacy builder, for amd64 only (there is no
    - A fresh install works, pulled from Docker Hub rather than a local image:
      remove the local `:X` tag, then start it under **its own container name,
      port and volume names** with map downloads off
-     (`-e PMTILES_SOURCE_URL= -e DEM_SOURCE_URL=`), create an admin through
+     (`-e MAP_DOWNLOADS=false -e TERRAIN_DOWNLOADS=false`), create an admin through
      `/api/auth/setup`, and check `/api/capabilities` reports the new version.
 
 ### When something goes wrong
