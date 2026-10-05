@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# SPDX-FileCopyrightText: 2026 Hawk Fugagli
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# Everything an install needs to come back, as one .tar.gz on stdout:
+#
+#   docker exec tracks tracks-backup > tracks-$(date +%F).tar.gz
+#
+# It holds the database, the encrypted FIT files, and secrets.env. The secrets
+# are in it on purpose — the database cannot be fully read back without its
+# ENCRYPTION_KEY — so the file is as sensitive as the install itself. Map data
+# is left out: it is large and downloads again.
+#
+# Safe on a running install: pg_dump takes a consistent snapshot without
+# stopping anything.
+set -euo pipefail
+# shellcheck source=/usr/local/lib/tracks/env.sh
+. /usr/local/lib/tracks/env.sh
+
+if [ -t 1 ]; then
+    echo "tracks-backup writes the backup to its output. Redirect it to a file:" >&2
+    echo "  docker exec tracks tracks-backup > tracks-\$(date +%F).tar.gz" >&2
+    exit 1
+fi
+
+work="$(mktemp -d)"
+trap 'rm -rf "$work"' EXIT
+chmod 700 "$work"
+
+"$PGBIN/pg_dump" -h /run/postgresql -U tracks -d tracks --no-owner > "$work/tracks.sql"
+cp /data/secrets.env "$work/secrets.env"
+( cd /app && python3 -c "from app.version import SERVER_VERSION; print(SERVER_VERSION)" ) > "$work/VERSION"
+
+tar -C "$work" -czf - VERSION tracks.sql secrets.env -C /data fit-files
+echo "[tracks-backup] done: $(du -sh "$work/tracks.sql" | cut -f1) of database, $(du -sh /data/fit-files | cut -f1) of FIT files" >&2

@@ -1,0 +1,157 @@
+Tracks
+Copyright (c) 2026 Hawk Fugagli
+
+This product is licensed under the GNU Affero General Public License v3.0 or
+later. See LICENSE.md for the full text.
+
+================================================================================
+Gadgetbridge
+================================================================================
+
+The Tracks mobile app (mobile/) incorporates source code from Gadgetbridge,
+which provides the reverse-engineered Bluetooth protocols used to communicate
+with fitness watches.
+
+    Gadgetbridge
+    Copyright (C) 2015-2026 Andreas Shimokawa, Carsten Pfeiffer, Daniele
+    Gobbetti, José Rebelo, and the Gadgetbridge contributors
+    https://codeberg.org/Freeyourgadget/Gadgetbridge
+
+    Licensed under the GNU Affero General Public License v3.0 or later.
+
+Vendored from Gadgetbridge 0.93.0 (versionCode 252), under
+mobile/device-garmin/src/main/ and mobile/fit-codegen/src/main/. The exact file
+list, and — more usefully — what is deliberately left behind and why, is in
+mobile/vendor/gadgetbridge.manifest. Refresh with
+mobile/vendor/pull-gadgetbridge.sh.
+
+mobile/fit-codegen/ holds Gadgetbridge's FIT message code generator. It is a
+build tool rather than app code and never reaches the APK — only the Java it
+emits does. It is not optional: upstream checks in only four FIT message
+classes and generates the other ~190 from Garmin's profile JSON at build time.
+
+The vendored sources keep their original package names, so that taking
+upstream's later fixes stays a file copy. Three files carry deliberate edits,
+each recorded as a patch in mobile/vendor/patches/ and re-applied on every
+refresh — the pull fails loudly if one no longer applies:
+
+  0001  CommunicatorV2: removes Gadgetbridge's own activity-sample store.
+        Tracks' samples reach its server inside the uploaded FIT files, so a
+        second store would be a second source of truth.
+  0002  GBTarFile: uses java.util.Arrays instead of a shaded Bouncy Castle
+        copy, for a single array copy.
+  0003  MlrCommunicator: rewrites one private record as a plain final class.
+        Not a preference — desugaring a record for minSdk 26 requires a D8
+        global synthetic, and AGP's library dexing transform cannot emit one,
+        so the build fails outright.
+
+Most vendored files carry no copyright header of their own; their licensing is
+declared in bulk in REUSE.toml rather than by editing them.
+
+mobile/device-garmin/src/main/res/values/gadgetbridge_*.xml are generated at
+vendoring time from upstream's strings.xml by vendor/generate-gb-resources.py.
+The ~190 drawable entries there are aliases to one placeholder icon of our own:
+Gadgetbridge's artwork is under a separate licence (see below) and is not
+vendored, and Tracks draws its own sport icons.
+
+Gadgetbridge's user interface, its greenDAO database, and its FIT importer are
+NOT vendored: Tracks sends raw FIT bytes to its own server and lets the server
+parse them, so a second parser and a second store would be two more things to
+keep in step.
+
+Gadgetbridge's own artwork (see LICENSE.artwork in the upstream repository) is
+NOT covered by the AGPL and is not vendored here.
+
+================================================================================
+BRouter
+================================================================================
+
+The Tracks mobile app also incorporates BRouter's routing engine, so that a
+phone can plan a trail route with no network at all.
+
+    BRouter
+    Copyright (c) 2014-2026 BRouter contributors
+    https://github.com/abrensch/brouter
+
+    Licensed under the MIT License.
+
+Vendored from BRouter v1.7.9 under mobile/routing-brouter/src/main/java/btools/,
+with the file list and the reasons for the carve-outs in
+mobile/vendor/brouter.manifest. Refresh with mobile/vendor/pull-brouter.sh. As
+with Gadgetbridge, the sources keep their original package names and carry no
+per-file headers; their licensing is declared in bulk in REUSE.toml.
+
+The server runs the same project as a separate service (the `brouter`
+container) for the browser and for phones with signal. Both ends therefore
+weigh trails identically and return the same GeoJSON, which is the point.
+
+BRouter's HTTP server, its own Android app, and its rd5 map-creator are NOT
+vendored. The .brf profiles and lookups.dat are data rather than code and are
+not vendored either: they must match the rd5 segments, so the phone fetches
+them from its Tracks server.
+
+================================================================================
+react-muscle-highlighter
+================================================================================
+
+Both clients draw the anatomical muscle diagram with artwork from
+react-muscle-highlighter.
+
+    react-muscle-highlighter 1.2.0
+    Copyright (c) 2024 My Muscle Contributors
+    https://github.com/soroojshehryar/react-muscle-highlighter
+
+    Licensed under the MIT License.
+
+The web app uses the React component as published. The mobile app cannot — it
+is a React component and Compose is not React — but its artwork is not React
+at all: the bodies are plain SVG path strings in dist/esm/assets/body*.js,
+which Compose parses natively. So mobile/core/.../spec/BodyArtData.kt is those
+path strings transcribed into Kotlin by frontend/scripts/build-body-art.mjs.
+Same paths, same part slugs, same licence — one drawing rendered two ways,
+rather than a second body model that agrees with the first for now.
+
+That generated file carries both copyrights and both licences, because it
+contains both: the artwork is MIT and belongs to its authors, the Kotlin
+around it is ours.
+
+Only the four body assets are taken. The React component, its SVG wrappers,
+and its hover and press behaviour are not — the phone draws and hit-tests the
+paths itself.
+
+================================================================================
+Third-party dependencies
+================================================================================
+
+Tracks depends on, but does not vendor, a number of separately licensed
+projects. Their licenses apply to those components:
+
+  go-pmtiles / PMTiles     BSD-3-Clause
+  Protomaps basemap        BSD-3-Clause / ODbL (OpenStreetMap data)
+  MapLibre GL JS           BSD-3-Clause
+  MapLibre Native          BSD-2-Clause
+  tippecanoe               BSD-2-Clause
+  Bouncy Castle            MIT-style (bouncycastle.org licence)
+  Caddy                    Apache-2.0
+  PostgreSQL               PostgreSQL License
+  Redis                    BSD-3-Clause / RSALv2
+  FastAPI, SQLAlchemy,     MIT / BSD / Apache-2.0
+    Celery, React, Vite,
+    Tailwind, Recharts
+
+Map data is © OpenStreetMap contributors, available under the Open Database
+License (ODbL). Elevation data derives from public-domain and openly licensed
+national DEM sources.
+
+The Android app composes libsodium's sealed box from Bouncy Castle primitives
+(mobile/core/src/jvmSharedMain/.../BouncyCastleIngestCrypto.kt) rather than
+binding libsodium itself. The wire format is fixed by the server's PyNaCl, and
+every Android binding of libsodium ships a prebuilt .so — which F-Droid does not
+accept. The implementation is checked against a ciphertext produced by PyNaCl,
+in both directions.
+
+Note: the backend currently depends on garmin-fit-sdk, which Garmin
+distributes under the Flexible and Interoperable Data Transfer (FIT) Protocol
+License rather than an OSI-approved free software license. It is a runtime
+dependency of the server only; it is not vendored, and it is not a dependency
+of the mobile app.

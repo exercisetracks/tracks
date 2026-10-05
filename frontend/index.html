@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tracks</title>
+
+    <!-- Preconnect to our own backend through the Caddy proxy — saves ~50ms
+         TCP + TLS on the first API call. -->
+    <link rel="preconnect" href="/api" />
+
+    <script>
+      (function() {
+        var scheme = localStorage.getItem('tracks-color-scheme') || 'system';
+        var accent = localStorage.getItem('tracks-accent') || 'emerald';
+        var isDark = scheme === 'dark' || (scheme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.classList.toggle('dark', isDark);
+        document.documentElement.setAttribute('data-accent', accent);
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

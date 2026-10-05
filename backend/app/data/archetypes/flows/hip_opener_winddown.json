@@ -1,0 +1,9 @@
+{
+  "key": "hip_opener_winddown",
+  "name": "Hip Opener Wind-Down",
+  "tagline": "Release the hips and settle the nervous system.",
+  "contexts": ["post_workout", "weekly_mobility"],
+  "sports": null,
+  "themes": ["hips", "posterior"],
+  "closer_muscles": ["glutes", "hip_flexors"]
+}

@@ -1,0 +1,198 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Inter, self-hosted: the same face the phone bundles (spec/design.yaml).
+   Served from this origin, so no third-party font request and the CSP's
+   font-src 'self' holds. One variable file covers every weight. */
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("./assets/fonts/InterVariable.woff2") format("woff2");
+}
+
+.recharts-wrapper,
+.recharts-wrapper *,
+.recharts-surface {
+  outline: none !important;
+}
+.recharts-wrapper:focus-visible,
+.recharts-wrapper *:focus-visible,
+.recharts-surface:focus-visible {
+  outline: none !important;
+}
+
+@keyframes chartReveal {
+  from { clip-path: inset(0 100% 0 0); }
+  to   { clip-path: inset(0 0 0 0); }
+}
+
+:root {
+  --ring-track: #e2e8f0;
+  --chart-grid: #e2e8f0;
+  --chart-text: #64748b;
+  --accent-50: 236 253 245;
+  --accent-100: 209 250 229;
+  --accent-200: 167 243 208;
+  --accent-300: 110 231 183;
+  --accent-400: 52 211 153;
+  --accent-500: 16 185 129;
+  --accent-600: 5 150 105;
+  --accent-700: 4 120 87;
+  --accent-800: 6 95 70;
+  --accent-900: 6 78 59;
+  --accent-950: 2 44 34;
+}
+
+.dark {
+  --ring-track: #1e293b;
+  --chart-grid: #1e293b;
+  --chart-text: #94a3b8;
+  --accent-50: 2 44 34;
+  --accent-100: 6 78 59;
+  --accent-200: 6 95 70;
+  --accent-300: 52 211 153;
+  --accent-400: 110 231 183;
+  --accent-500: 16 185 129;
+  --accent-600: 52 211 153;
+  --accent-700: 110 231 183;
+  --accent-800: 4 120 87;
+  --accent-900: 6 78 59;
+  --accent-950: 2 44 34;
+}
+
+/* Intensity slider thumb — uses CSS variable set inline per-slider */
+input[type="range"].appearance-none::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--thumb-color, #10b981);
+  border: 2px solid white;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+  cursor: pointer;
+}
+input[type="range"].appearance-none::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--thumb-color, #10b981);
+  border: 2px solid white;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+  cursor: pointer;
+}
+
+/* ── MapLibre Geocoder width + dark mode overrides ──────────────────────── */
+.maplibregl-ctrl-geocoder {
+  min-width: 600px;
+}
+/* Keep the search box AND its live-results dropdown above the click-info popup
+   (PointInfoPanel is z-10 and sits just below the search bar). The map container
+   forms no stacking context, so this z-index competes with the React overlays. */
+.maplibregl-ctrl-top-left {
+  z-index: 30;
+}
+.maplibregl-ctrl-geocoder .suggestions {
+  z-index: 31;
+}
+.dark .maplibregl-ctrl-geocoder {
+  background-color: #1e293b;
+  box-shadow: 0 0 10px 2px rgba(0, 0, 0, 0.3);
+}
+.dark .maplibregl-ctrl-geocoder--input {
+  color: #e2e8f0;
+}
+.dark .maplibregl-ctrl-geocoder--input:focus {
+  color: #e2e8f0;
+}
+.dark .maplibregl-ctrl-geocoder .suggestions {
+  background-color: #1e293b;
+}
+.dark .maplibregl-ctrl-geocoder .suggestions > li > a {
+  color: #cbd5e1;
+}
+.dark .maplibregl-ctrl-geocoder .suggestions > .active > a,
+.dark .maplibregl-ctrl-geocoder .suggestions > li > a:hover {
+  color: #f1f5f9;
+  background-color: #334155;
+}
+.dark .maplibregl-ctrl-geocoder--button {
+  background-color: #1e293b;
+}
+.dark .maplibregl-ctrl-geocoder--icon {
+  fill: #94a3b8;
+}
+.dark .maplibregl-ctrl-geocoder--icon-loading path {
+  fill: #94a3b8;
+}
+.dark .maplibregl-ctrl-geocoder--suggestion-match {
+  color: #f1f5f9;
+}
+
+/* ── MapLibre zoom + attribution controls — dark mode ───────────────────────
+   MapLibre ships these as hard-coded white chips with dark glyphs. Only the
+   geocoder above was ever restyled, so on the dark theme the zoom buttons and
+   the compact attribution "ⓘ" sat on a near-black map as glaring white boxes.
+   Match the app's slate surfaces (same #1e293b / #334155 the geocoder uses).
+   The zoom glyphs are background-image SVGs rather than fonts or fills, so
+   they're inverted; the attribution glyph gets an explicitly light-coloured
+   replacement SVG instead, since inverting it would flip its background too. */
+.dark .maplibregl-ctrl-group {
+  background-color: #1e293b;
+  box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.2);
+}
+.dark .maplibregl-ctrl-group button + button {
+  border-top-color: rgba(148, 163, 184, 0.2);
+}
+.dark .maplibregl-ctrl-group button:not(:disabled):hover {
+  background-color: #334155;
+}
+.dark .maplibregl-ctrl-group button .maplibregl-ctrl-icon {
+  filter: invert(1) brightness(0.85);
+}
+.dark .maplibregl-ctrl-attrib {
+  background-color: rgba(30, 41, 59, 0.85);
+  color: #cbd5e1;
+}
+.dark .maplibregl-ctrl-attrib a {
+  color: #cbd5e1;
+}
+.dark .maplibregl-ctrl-attrib-button {
+  background-color: #1e293b;
+  background-image: url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path fill="%23cbd5e1" d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 12H9V9h2v5zm0-7H9V5h2v2z"/></svg>');
+}
+
+/* Custom color picker hue slider — round white thumb over the rainbow track */
+.hue-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  background: #ffffff;
+  border: 2px solid rgba(0, 0, 0, 0.35);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+}
+.hue-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  background: #ffffff;
+  border: 2px solid rgba(0, 0, 0, 0.35);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+}
+
+/* Clicked-point marker for the map point-info panel */
+.point-info-marker {
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  background: var(--accent-500, #2563eb);
+  border: 3px solid #ffffff;
+  box-shadow: 0 0 0 1.5px rgba(0, 0, 0, 0.35), 0 1px 4px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+}

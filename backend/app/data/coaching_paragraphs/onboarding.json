@@ -1,0 +1,12 @@
+{
+  "onboarding.no_history": {
+    "full": [
+      "There's not much history to work from yet, so treat this as a starting point rather than a tailored call. Pick one easy thing today, a {duration}-min walk, jog, or ride, and log it. Fitness is built far more by showing up consistently than by any single session, and a few logged workouts in, these recommendations start adapting to you.",
+      "Not enough logged yet for a personalized plan, so keep the first step simple: about {duration} min of easy movement you enjoy, then log it. Once there are a handful of sessions to read, this card will start matching your fatigue, your history, and where strength and mobility fit for you."
+    ],
+    "compact": [
+      "Start simple: about {duration} min of easy movement, then log it. A few sessions in, these recommendations tailor to you.",
+      "Pick one easy thing, {duration} min, and log it. Consistency now; personalized guidance follows once there's history."
+    ]
+  }
+}

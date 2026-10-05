@@ -1,0 +1,17 @@
+{
+  "key": "pull_day_classic",
+  "name": "Pull Day",
+  "tagline": "Back and biceps — build the pull.",
+  "intent": "A classic pulling session hitting the lats, mid-back and biceps across vertical and horizontal angles for a strong, healthy back.",
+  "splits": ["ppl_pull"],
+  "sports": null,
+  "tier_range": [4, 5],
+  "phases": ["any"],
+  "main": [
+    { "slot": "v_pull", "scheme": { "sets": 4, "reps": 6, "rest_seconds": 150 } },
+    { "slot": "h_pull", "scheme": { "sets": 4, "reps": 8 } }
+  ],
+  "supersets": [["biceps_acc", "rear_delt_acc"]],
+  "finisher": null,
+  "cooldown_theme": "posterior"
+}

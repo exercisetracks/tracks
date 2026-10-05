@@ -1,0 +1,28 @@
+diff --git a/src/mbgl/renderer/render_orchestrator.cpp b/src/mbgl/renderer/render_orchestrator.cpp
+index f543bf3..50ace71 100644
+--- a/src/mbgl/renderer/render_orchestrator.cpp
++++ b/src/mbgl/renderer/render_orchestrator.cpp
+@@ -226,6 +226,23 @@ std::unique_ptr<RenderTree> RenderOrchestrator::createRenderTree(
+     // (re)create or drop the RenderTerrain to match the style.
+     if (updateParameters->terrain) {
+         if (!renderTerrain || renderTerrain->getImpl() != *updateParameters->terrain) {
++            // Unregister the outgoing mesh before replacing it, for exactly the
++            // reason spelled out on the drop path below. Assigning over the
++            // unique_ptr destroys the old RenderTerrain but leaves its mesh
++            // layer group registered with the orchestrator, which goes on
++            // drawing it: a second terrain surface at the *previous* DEM's
++            // elevation, so the entire map — shading, roads, labels — renders
++            // twice, offset vertically by the difference between the two.
++            //
++            // The drop path is guarded and this one was not, so it only appears
++            // when terrain is swapped rather than turned off: changing the
++            // terrain source, which a style does whenever it moves between DEM
++            // archives of different resolution.
++            if (renderTerrain) {
++                UniqueChangeRequestVec terrainChanges;
++                renderTerrain->deactivate(terrainChanges);
++                addChanges(terrainChanges);
++            }
+             renderTerrain = std::make_unique<RenderTerrain>(*updateParameters->terrain);
+         }
+     } else if (renderTerrain) {

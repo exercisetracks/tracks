@@ -1,0 +1,50 @@
+# SPDX-FileCopyrightText: 2026 Hawk Fugagli
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# Tracks. Save this file in a folder of its own, then:
+#
+#   docker compose up -d                          # start
+#   docker compose pull && docker compose up -d   # update
+#
+# Then open http://localhost:4080 and create your admin account — before
+# exposing the port, since until an admin exists anyone who reaches it can
+# claim it. Everything else is in the README.
+
+services:
+  tracks:
+    # "1" follows every 1.x release, so an update is a pull away but a 2.0 —
+    # which may need you to read its release notes first — never arrives on
+    # its own. Pin an exact version (exercisetracks/tracks:1.1.0) to update
+    # only when you change this line.
+    image: exercisetracks/tracks:1
+    container_name: tracks
+    restart: unless-stopped
+    # Room for every service to stop cleanly on slow hardware; Docker's 10 s
+    # default is usually enough, but it is the database at the end of it.
+    stop_grace_period: 1m
+    ports:
+      - "4080:80"
+    volumes:
+      # Database, generated secrets and the original watch files. Back it up
+      # (`docker exec tracks tracks-backup > tracks.tar.gz`).
+      - tracks-data:/data
+      # Offline maps and routing tiles. Grows by many GB as regions are
+      # downloaded; point it at a big disk, e.g. /mnt/storage/tracks-maps:/map-data
+      - tracks-maps:/map-data
+    # Everything is optional. See the README's Configuration section.
+    # environment:
+    #   HOST_UID: "1000"            # owner of files written to bind-mounted folders
+    #   HOST_GID: "1000"
+    #   PMTILES_SOURCE_URL: ""      # empty turns the ~16 GB global basemap download off
+    #   DEM_SOURCE_URL: ""          # empty turns hillshade/terrain downloads off
+    #   TRUSTED_PROXY_HOPS: "2"     # when your own reverse proxy sits in front
+
+    # A Garmin watch plugged into this machine's USB: uncomment the rule below
+    # and add `- /dev/bus/usb:/dev/bus/usb` to the volumes above. Access is the
+    # USB bus's device nodes only, not a privileged container.
+    # device_cgroup_rules:
+    #   - "c 189:* rwm"
+
+volumes:
+  tracks-data:
+  tracks-maps:

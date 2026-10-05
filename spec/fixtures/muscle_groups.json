@@ -1,0 +1,459 @@
+{
+  "_comment": "GENERATED from the original frontend/src/utils/muscleGroups.js (before it became a thin wrapper over spec/muscleGroups.js + spec/muscleActivation.js) via spec/make_muscle_fixtures.py, run under Node. Shared oracle for the Python (app/calculators/muscle_activation.py), JavaScript (spec/muscleActivation.js), and Kotlin (spec/MuscleGroups.kt) evaluators — see spec/codegen.py and spec/muscle_groups.yaml.",
+  "activation_cases": [
+    {
+      "name": "empty",
+      "sets": [],
+      "expected": {
+        "activation": {},
+        "totals": {},
+        "category_counts": {}
+      }
+    },
+    {
+      "name": "single_squat",
+      "sets": [
+        {
+          "set_type": "active",
+          "exercise_category": "squat",
+          "repetitions": 5
+        }
+      ],
+      "expected": {
+        "activation": {
+          "quads": 1,
+          "glutes": 1,
+          "hamstrings": 0.4,
+          "lower_back": 0.4,
+          "calves_front": 0.4,
+          "calves_back": 0.4,
+          "adductors": 0.4
+        },
+        "totals": {
+          "quads": 5,
+          "glutes": 5,
+          "hamstrings": 2,
+          "lower_back": 2,
+          "calves_front": 2,
+          "calves_back": 2,
+          "adductors": 2
+        },
+        "category_counts": {
+          "squat": 1
+        }
+      }
+    },
+    {
+      "name": "mixed_exercises",
+      "sets": [
+        {
+          "set_type": "active",
+          "exercise_category": "squat",
+          "repetitions": 5
+        },
+        {
+          "set_type": "active",
+          "exercise_category": "bench_press",
+          "repetitions": 8
+        },
+        {
+          "set_type": "active",
+          "exercise_category": "curl",
+          "repetitions": 12
+        }
+      ],
+      "expected": {
+        "activation": {
+          "quads": 0.4166666666666667,
+          "glutes": 0.4166666666666667,
+          "hamstrings": 0.16666666666666666,
+          "lower_back": 0.16666666666666666,
+          "calves_front": 0.16666666666666666,
+          "calves_back": 0.16666666666666666,
+          "adductors": 0.16666666666666666,
+          "chest": 0.6666666666666666,
+          "front_delts": 0.26666666666666666,
+          "triceps": 0.26666666666666666,
+          "biceps": 1,
+          "forearms": 0.4000000000000001
+        },
+        "totals": {
+          "quads": 5,
+          "glutes": 5,
+          "hamstrings": 2,
+          "lower_back": 2,
+          "calves_front": 2,
+          "calves_back": 2,
+          "adductors": 2,
+          "chest": 8,
+          "front_delts": 3.2,
+          "triceps": 3.2,
+          "biceps": 12,
+          "forearms": 4.800000000000001
+        },
+        "category_counts": {
+          "squat": 1,
+          "bench_press": 1,
+          "curl": 1
+        }
+      }
+    },
+    {
+      "name": "non_active_filtered",
+      "sets": [
+        {
+          "set_type": "active",
+          "exercise_category": "squat",
+          "repetitions": 5
+        },
+        {
+          "set_type": "rest",
+          "exercise_category": "squat",
+          "repetitions": 5
+        },
+        {
+          "set_type": "warmup",
+          "exercise_category": "squat",
+          "repetitions": 5
+        }
+      ],
+      "expected": {
+        "activation": {
+          "quads": 1,
+          "glutes": 1,
+          "hamstrings": 0.4,
+          "lower_back": 0.4,
+          "calves_front": 0.4,
+          "calves_back": 0.4,
+          "adductors": 0.4
+        },
+        "totals": {
+          "quads": 5,
+          "glutes": 5,
+          "hamstrings": 2,
+          "lower_back": 2,
+          "calves_front": 2,
+          "calves_back": 2,
+          "adductors": 2
+        },
+        "category_counts": {
+          "squat": 1
+        }
+      }
+    },
+    {
+      "name": "unknown_category_ignored",
+      "sets": [
+        {
+          "set_type": "active",
+          "exercise_category": "65534",
+          "repetitions": 5
+        },
+        {
+          "set_type": "active",
+          "exercise_category": "unknown",
+          "repetitions": 5
+        },
+        {
+          "set_type": "active",
+          "exercise_category": "",
+          "repetitions": 5
+        },
+        {
+          "set_type": "active",
+          "exercise_category": "not_a_real_category",
+          "repetitions": 5
+        }
+      ],
+      "expected": {
+        "activation": {},
+        "totals": {},
+        "category_counts": {}
+      }
+    },
+    {
+      "name": "case_insensitive_category",
+      "sets": [
+        {
+          "set_type": "active",
+          "exercise_category": "SQUAT",
+          "repetitions": 5
+        }
+      ],
+      "expected": {
+        "activation": {
+          "quads": 1,
+          "glutes": 1,
+          "hamstrings": 0.4,
+          "lower_back": 0.4,
+          "calves_front": 0.4,
+          "calves_back": 0.4,
+          "adductors": 0.4
+        },
+        "totals": {
+          "quads": 5,
+          "glutes": 5,
+          "hamstrings": 2,
+          "lower_back": 2,
+          "calves_front": 2,
+          "calves_back": 2,
+          "adductors": 2
+        },
+        "category_counts": {
+          "squat": 1
+        }
+      }
+    },
+    {
+      "name": "high_rep_clamped_to_40",
+      "sets": [
+        {
+          "set_type": "active",
+          "exercise_category": "curl",
+          "repetitions": 100
+        }
+      ],
+      "expected": {
+        "activation": {
+          "biceps": 1,
+          "forearms": 0.4
+        },
+        "totals": {
+          "biceps": 40,
+          "forearms": 16
+        },
+        "category_counts": {
+          "curl": 1
+        }
+      }
+    },
+    {
+      "name": "zero_reps_falls_back_to_10",
+      "sets": [
+        {
+          "set_type": "active",
+          "exercise_category": "curl",
+          "repetitions": 0
+        }
+      ],
+      "expected": {
+        "activation": {
+          "biceps": 1,
+          "forearms": 0.4
+        },
+        "totals": {
+          "biceps": 10,
+          "forearms": 4
+        },
+        "category_counts": {
+          "curl": 1
+        }
+      }
+    },
+    {
+      "name": "missing_reps_falls_back_to_10",
+      "sets": [
+        {
+          "set_type": "active",
+          "exercise_category": "curl"
+        }
+      ],
+      "expected": {
+        "activation": {
+          "biceps": 1,
+          "forearms": 0.4
+        },
+        "totals": {
+          "biceps": 10,
+          "forearms": 4
+        },
+        "category_counts": {
+          "curl": 1
+        }
+      }
+    },
+    {
+      "name": "negative_reps_clamped_to_1",
+      "sets": [
+        {
+          "set_type": "active",
+          "exercise_category": "curl",
+          "repetitions": -5
+        }
+      ],
+      "expected": {
+        "activation": {
+          "biceps": 1,
+          "forearms": 0.4
+        },
+        "totals": {
+          "biceps": 1,
+          "forearms": 0.4
+        },
+        "category_counts": {
+          "curl": 1
+        }
+      }
+    },
+    {
+      "name": "repeated_category_accumulates_and_counts",
+      "sets": [
+        {
+          "set_type": "active",
+          "exercise_category": "squat",
+          "repetitions": 5
+        },
+        {
+          "set_type": "active",
+          "exercise_category": "squat",
+          "repetitions": 5
+        },
+        {
+          "set_type": "active",
+          "exercise_category": "squat",
+          "repetitions": 5
+        }
+      ],
+      "expected": {
+        "activation": {
+          "quads": 1,
+          "glutes": 1,
+          "hamstrings": 0.4,
+          "lower_back": 0.4,
+          "calves_front": 0.4,
+          "calves_back": 0.4,
+          "adductors": 0.4
+        },
+        "totals": {
+          "quads": 15,
+          "glutes": 15,
+          "hamstrings": 6,
+          "lower_back": 6,
+          "calves_front": 6,
+          "calves_back": 6,
+          "adductors": 6
+        },
+        "category_counts": {
+          "squat": 3
+        }
+      }
+    },
+    {
+      "name": "total_body_wide_secondary_spread",
+      "sets": [
+        {
+          "set_type": "active",
+          "exercise_category": "total_body",
+          "repetitions": 10
+        }
+      ],
+      "expected": {
+        "activation": {
+          "chest": 1,
+          "lats": 1,
+          "quads": 1,
+          "glutes": 1,
+          "abs": 0.4,
+          "shoulders": 0.4,
+          "biceps": 0.4,
+          "triceps": 0.4,
+          "hamstrings": 0.4
+        },
+        "totals": {
+          "chest": 10,
+          "lats": 10,
+          "quads": 10,
+          "glutes": 10,
+          "abs": 4,
+          "shoulders": 4,
+          "biceps": 4,
+          "triceps": 4,
+          "hamstrings": 4
+        },
+        "category_counts": {
+          "total_body": 1
+        }
+      }
+    }
+  ],
+  "category_label_cases": [
+    {
+      "key": "bench_press",
+      "expected": "Bench Press"
+    },
+    {
+      "key": "squat",
+      "expected": "Squat"
+    },
+    {
+      "key": "deadlift",
+      "expected": "Deadlift"
+    },
+    {
+      "key": "total_body",
+      "expected": "Total Body"
+    },
+    {
+      "key": "triceps_extension",
+      "expected": "Triceps Extension"
+    },
+    {
+      "key": "hip_hinge",
+      "expected": "Hip Hinge"
+    },
+    {
+      "key": "push",
+      "expected": "Push"
+    },
+    {
+      "key": "pull",
+      "expected": "Pull"
+    },
+    {
+      "key": "some_custom_category",
+      "expected": "Some Custom Category"
+    },
+    {
+      "key": null,
+      "expected": "Unknown"
+    },
+    {
+      "key": "",
+      "expected": "Unknown"
+    }
+  ],
+  "muscle_label_cases": [
+    {
+      "key": "chest",
+      "expected": "Chest"
+    },
+    {
+      "key": "front_delts",
+      "expected": "Front Deltoids"
+    },
+    {
+      "key": "calves_back",
+      "expected": "Calves"
+    },
+    {
+      "key": "adductors",
+      "expected": "Adductors"
+    },
+    {
+      "key": "upper_back",
+      "expected": "Upper Back"
+    },
+    {
+      "key": "shoulders",
+      "expected": "Shoulders"
+    },
+    {
+      "key": "hip_external_rotators",
+      "expected": "Hip External Rotators"
+    },
+    {
+      "key": "totally_unknown_key",
+      "expected": "totally_unknown_key"
+    }
+  ]
+}

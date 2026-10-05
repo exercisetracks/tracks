@@ -1,0 +1,50 @@
+# Race-day fueling thresholds — carb targets by duration, and heat/humidity
+# bands for drink concentration, sip interval, and salt.
+#
+# Single source of truth — `spec/codegen.py` generates the Python, JavaScript,
+# and Kotlin tables. Edit here, run the codegen; the generated files are
+# overwritten.
+#
+# ── Where this came from ─────────────────────────────────────────────────────
+# Transcribed from frontend/src/utils/fuelingUtils.js, a frontend-only race-day
+# fueling calculator with no backend equivalent. The web app's algorithm
+# (computeFuelingParams, computeSipMl, computePerLapDrinks) stays hand-written
+# JavaScript, now reading these thresholds instead of embedding them as
+# literals. The mobile port (mobile/core spec/Fueling.kt) is the reason this
+# spec exists: the race-day screen has to compute the same numbers with no
+# network, so the port needs the same source thresholds the web app uses,
+# not a second transcription of fuelingUtils.js by hand.
+#
+# ── Carb target by duration ──────────────────────────────────────────────────
+# `default_carbs_per_hour(durationHours)` steps up through these breakpoints in
+# order (first one whose `max_hours` isn't exceeded wins); anything past the
+# last breakpoint gets `default_carbs_per_hour`.
+carb_breakpoints:
+  - {max_hours: 1, carbs_per_hour: 30}
+  - {max_hours: 2, carbs_per_hour: 60}
+  - {max_hours: 4, carbs_per_hour: 80}
+default_carbs_per_hour: 90
+
+# ── Heat/humidity classification ─────────────────────────────────────────────
+# isHot: temp >= heat_threshold_c. isVeryHot: temp >= very_hot_threshold_c
+# (implies isHot in practice since very_hot > heat, but the two checks are
+# independent in the algorithm). isHumid: humidity >= humidity_threshold_pct
+# AND temp (or humidity_min_temp_c when temp is unknown) >= humidity_min_temp_c
+# — a humid but genuinely cold day doesn't count. heatAdjusted = isHot OR
+# isHumid, and it's what selects the band below.
+heat_threshold_c: 25
+very_hot_threshold_c: 32
+humidity_threshold_pct: 70
+humidity_min_temp_c: 20
+
+# ── Concentration / sip-interval / salt bands ────────────────────────────────
+# Selected by heat level: very_hot when isVeryHot, hot when heatAdjusted (hot
+# or humid) but not very hot, normal otherwise. `sip_interval_min` doubles as
+# the algorithm's "first sip" delay — the original JS computes firstSipMin
+# separately but with the exact same value as sipIntervalMin in every branch,
+# so one field covers both rather than carrying two numbers that must always
+# agree by construction.
+bands:
+  normal:   {concentration_pct: 12, sip_interval_min: 15, salt_index: 0}
+  hot:      {concentration_pct: 8,  sip_interval_min: 12, salt_index: 1}
+  very_hot: {concentration_pct: 6,  sip_interval_min: 10, salt_index: 2}

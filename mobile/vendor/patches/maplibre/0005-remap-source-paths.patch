@@ -1,0 +1,21 @@
+diff --git a/platform/android/MapLibreAndroid/build.gradle.kts b/platform/android/MapLibreAndroid/build.gradle.kts
+index 95621aa..e38094a 100644
+--- a/platform/android/MapLibreAndroid/build.gradle.kts
++++ b/platform/android/MapLibreAndroid/build.gradle.kts
+@@ -69,6 +69,16 @@ android {
+             "\"MapLibre Android/${project.extra["versionName"]}\""
+         )
+         consumerProguardFiles("proguard-rules.pro")
++        // Tracks: remap the checkout's absolute path. Assertions and log lines
++        // embed __FILE__, so without this the .so carries the path of whoever
++        // built it (home directory and all) into every APK that bundles it.
++        externalNativeBuild {
++            cmake {
++                val checkout = rootProject.projectDir.parentFile.parentFile.absolutePath
++                cFlags("-ffile-prefix-map=$checkout=.")
++                cppFlags("-ffile-prefix-map=$checkout=.")
++            }
++        }
+     }
+ 
+     flavorDimensions += "renderer"

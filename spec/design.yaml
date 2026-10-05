@@ -1,0 +1,138 @@
+# SPDX-FileCopyrightText: 2026 Hawk Fugagli
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# The fixed layer of Tracks' look: shape, space, type and the handful of
+# components both apps draw. One file, generated into the web's Tailwind theme
+# and the phone's Compose `Tokens`, because the two apps had drifted — the web
+# settled on a few Tailwind radii while the phone accumulated nine hand-typed
+# ones, and neither shared a font.
+#
+# What is NOT here: colour. Light/dark and the accent are the user's choice,
+# stored in their synced settings (theme_mode, accent_color), and meaning-
+# bearing colours (zones, form bands) live in zones.yaml. This file is the part
+# nobody chooses.
+#
+# The baseline is the web as it was: its values are Tailwind's defaults, so
+# generating them changes nothing in the browser and everything on the phone.
+# Units are CSS pixels, which Compose reads as dp (and sp for text) — the same
+# physical size at the same density.
+#
+# Regenerate with `python3 spec/codegen.py`.
+
+font:
+  family: Inter
+  # What the browser falls back to before the webfont arrives, and if it never
+  # does. The phone bundles the font and needs no fallback.
+  fallback: [ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif]
+
+# Corner radii. Names follow Tailwind so a class and a token read the same.
+radius:
+  none: 0
+  sm: 2
+  DEFAULT: 4
+  md: 6
+  lg: 8
+  xl: 12
+  2xl: 16
+  full: 9999
+
+# The spacing scale, in Tailwind's quarter-rem steps (key × 4px).
+spacing:
+  "0": 0
+  "0.5": 2
+  "1": 4
+  "1.5": 6
+  "2": 8
+  "2.5": 10
+  "3": 12
+  "3.5": 14
+  "4": 16
+  "5": 20
+  "6": 24
+  "8": 32
+  "10": 40
+  "12": 48
+  "16": 64
+
+# Type scale: [size, line height], as Tailwind's fontSize.
+type:
+  "2xs": [10, 14]   # the web's text-[10px] badges, named so the phone can use them
+  xs: [12, 16]
+  sm: [14, 20]
+  base: [16, 24]
+  lg: [18, 28]
+  xl: [20, 28]
+  2xl: [24, 32]
+  3xl: [30, 36]
+  4xl: [36, 40]
+
+weight:
+  normal: 400
+  medium: 500
+  semibold: 600
+  bold: 700
+
+# Letter spacing, em.
+tracking:
+  tight: -0.025
+  normal: 0
+  wide: 0.025
+  wider: 0.05
+
+# Shadow depth, dp — the phone's tonal elevation. The web uses borders, not
+# shadows, for cards; `card` is 0 so the phone does the same.
+elevation:
+  card: 0
+  raised: 1
+  overlay: 3
+
+# Components, as each app draws them. Values name entries above.
+components:
+  card:
+    radius: xl
+    padding: "3.5"
+    border: 1          # hairline, in the neutral outline colour
+  section_header:      # "TRAINING PLAN", "OVERVIEW"
+    type: xs
+    weight: semibold
+    tracking: wider
+    uppercase: true
+  stat_value:          # a large figure — distance, pace, readiness
+    type: 2xl
+    weight: bold
+    tabular: true
+  stat_label:
+    type: xs
+    weight: medium
+    tracking: wide
+    uppercase: true
+  chip:                # tags on a row: muscles, sport
+    type: xs
+    radius: DEFAULT
+    padding_x: "1.5"
+    padding_y: "0.5"
+  pill:                # status badges: "Active", "21 days"
+    type: 2xs
+    weight: semibold
+    radius: full
+    padding_x: "1.5"
+    padding_y: "0.5"
+  # "Tonal pills" (chosen 2026-09-27): one shape for every button, so colour is
+  # the only thing that says how much an action matters. The old mix of bare
+  # accent text, outlined boxes and filled bubbles read as three unrelated
+  # controls. Variants: primary = filled accent, the one action a screen or
+  # dialog exists for; tonal = accent at tonal_alpha, other actions; neutral =
+  # the text colour at neutral_alpha, dismiss/cancel/skip; danger = the error
+  # colour at tonal_alpha, destructive. No bare text links.
+  button:
+    type: sm
+    weight: medium
+    radius: full
+    height: "10"       # 40
+    height_sm: "8"     # 32, for rows that are dense by necessity
+    padding_x: "4"
+    padding_x_sm: "3"
+    padding_y: "0"     # the height sets the size; padding would only fight it
+    tonal_alpha: 0.12
+    neutral_alpha: 0.08
+    variants: [primary, tonal, neutral, danger]

@@ -1,0 +1,99 @@
+# Training zone models and TSB form bands.
+#
+# Single source of truth — `spec/codegen.py` generates the Python, JavaScript,
+# and Kotlin tables. Edit here, run the codegen; the generated files are
+# overwritten.
+#
+# ── There are TWO heart-rate models here, on purpose ─────────────────────────
+# `friel_lthr_run` / `friel_lthr_bike` are percentages of LTHR (lactate
+# threshold HR). That is the training-science model: it drives hrTSS, training
+# load, and anything that has to be comparable between athletes and across
+# time. It needs a known LTHR to mean anything.
+#
+# `display_maxhr` is percentages of max HR, five zones, and is what the
+# activity-detail HR histogram has always shown. It is a *display* model: it
+# needs only max HR, which every user has, and it answers "how hard was this
+# ride" at a glance rather than feeding a calculation.
+#
+# They disagree — Friel zone 2 starts at 85% of LTHR, display zone 2 starts at
+# 70% of max HR — and that is not a bug to reconcile blindly. Collapsing them
+# into one model would change what the web app has always drawn, which is a
+# product decision, not a refactor. They are both here, both named, and both
+# shared across languages so at least all three clients disagree identically.
+#
+# ── Boundary semantics ───────────────────────────────────────────────────────
+# `min_pct` is inclusive, `max_pct` is exclusive, and a null `max_pct` means
+# unbounded. Zones are listed low to high and must tile without gaps: each
+# zone's min_pct equals the previous zone's max_pct. The generated tests check
+# this, because a gap silently drops samples out of every zone total.
+
+hr_models:
+  friel_lthr_run:
+    basis: lthr
+    source: Friel, "The Triathlete's Training Bible" 4th ed.
+    why: Running. The reference model for hrTSS and training load.
+    zones:
+      - {number: 1, name: "Zone 1",  description: "Recovery",       min_pct: 0.00, max_pct: 0.85}
+      - {number: 2, name: "Zone 2",  description: "Aerobic",        min_pct: 0.85, max_pct: 0.90}
+      - {number: 3, name: "Zone 3",  description: "Tempo",          min_pct: 0.90, max_pct: 0.95}
+      - {number: 4, name: "Zone 4",  description: "Sub-Threshold",  min_pct: 0.95, max_pct: 1.00}
+      - {number: 5, name: "Zone 5a", description: "Threshold",      min_pct: 1.00, max_pct: 1.03}
+      - {number: 6, name: "Zone 5b", description: "VO2max",         min_pct: 1.03, max_pct: 1.06}
+      - {number: 7, name: "Zone 5c", description: "Anaerobic",      min_pct: 1.06, max_pct: null}
+
+  friel_lthr_bike:
+    basis: lthr
+    source: Friel, "The Triathlete's Training Bible" 4th ed.
+    why: >
+      Cycling. Only the zone 1/2 boundary differs from running — cycling LTHR
+      sits ~5-7 bpm lower relative to max HR, so the aerobic floor drops to 81%.
+    zones:
+      - {number: 1, name: "Zone 1",  description: "Recovery",       min_pct: 0.00, max_pct: 0.81}
+      - {number: 2, name: "Zone 2",  description: "Aerobic",        min_pct: 0.81, max_pct: 0.90}
+      - {number: 3, name: "Zone 3",  description: "Tempo",          min_pct: 0.90, max_pct: 0.94}
+      - {number: 4, name: "Zone 4",  description: "Sub-Threshold",  min_pct: 0.94, max_pct: 1.00}
+      - {number: 5, name: "Zone 5a", description: "Threshold",      min_pct: 1.00, max_pct: 1.03}
+      - {number: 6, name: "Zone 5b", description: "VO2max",         min_pct: 1.03, max_pct: 1.06}
+      - {number: 7, name: "Zone 5c", description: "Anaerobic",      min_pct: 1.06, max_pct: null}
+
+  display_maxhr:
+    basis: max_hr
+    source: Conventional five-zone %HRmax split.
+    why: >
+      The activity-detail histogram. Needs only max HR, so it works for every
+      activity whether or not LTHR is known. Not comparable to the Friel zones
+      and not used for training load.
+    zones:
+      - {number: 1, name: "Z1", description: "Recovery",  min_pct: 0.00, max_pct: 0.60, color: "#22c55e"}
+      - {number: 2, name: "Z2", description: "Aerobic",   min_pct: 0.60, max_pct: 0.70, color: "#84cc16"}
+      - {number: 3, name: "Z3", description: "Tempo",     min_pct: 0.70, max_pct: 0.80, color: "#eab308"}
+      - {number: 4, name: "Z4", description: "Threshold", min_pct: 0.80, max_pct: 0.90, color: "#f97316"}
+      - {number: 5, name: "Z5", description: "VO₂ Max",   min_pct: 0.90, max_pct: null, color: "#ef4444"}
+
+power_models:
+  coggan_ftp:
+    basis: ftp
+    source: Allen & Coggan, "Training and Racing with a Power Meter" 2nd ed.
+    zones:
+      - {number: 1, name: "Zone 1", description: "Active Recovery", min_pct: 0.00, max_pct: 0.55}
+      - {number: 2, name: "Zone 2", description: "Endurance",       min_pct: 0.55, max_pct: 0.75}
+      - {number: 3, name: "Zone 3", description: "Tempo",           min_pct: 0.75, max_pct: 0.90}
+      - {number: 4, name: "Zone 4", description: "Threshold",       min_pct: 0.90, max_pct: 1.05}
+      - {number: 5, name: "Zone 5", description: "VO2max",          min_pct: 1.05, max_pct: 1.20}
+      - {number: 6, name: "Zone 6", description: "Anaerobic",       min_pct: 1.20, max_pct: 1.50}
+      - {number: 7, name: "Zone 7", description: "Neuromuscular",   min_pct: 1.50, max_pct: null}
+
+# TSB (training stress balance) form bands, in absolute TSB points rather than
+# percentages. Listed high to low, matching how the fitness chart stacks them.
+# `min` is exclusive and `max` inclusive here — the opposite of the zone tables
+# above — because the classification reads "TSB > 25 is Transition".
+tsb_bands:
+  source: Common CTL/ATL/TSB practice; thresholds tuned for this app.
+  bands:
+    - {key: transition, label: "Transition", min: 25,   max: null, color: "#f59e0b", bg: "#f59e0b14", desc: "> 25"}
+    - {key: fresh,      label: "Fresh",      min: 5,    max: 25,   color: "#60a5fa", bg: "#60a5fa14", desc: "5–25"}
+    - {key: grey,       label: "Grey Zone",  min: -5,   max: 5,    color: "#94a3b8", bg: "#94a3b812", desc: "-5–5"}
+    - {key: optimal,    label: "Optimal",    min: -30,  max: -5,   color: "#4ade80", bg: "#4ade8014", desc: "-30–-5"}
+    - {key: high_risk,  label: "High Risk",  min: null, max: -30,  color: "#ef4444", bg: "#ef444414", desc: "< -30"}
+  # The band an unknown/missing TSB falls back to.
+  unknown: grey

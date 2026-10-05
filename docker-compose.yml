@@ -1,0 +1,240 @@
+# ── Tracks stack ──────────────────────────────────────────────────────────────
+# Single compose file. Defaults to DEVELOPER mode (live source bind-mounts, Vite
+# HMR). The only port reachable from the LAN/internet is the Caddy entry point
+# (${TRACKS_PORT}); every internal service's debug port is bound to 127.0.0.1.
+#
+# ── To harden for PRODUCTION ─────────────────────────────────────────────────
+#   1. backend:   remove the "- ./backend:/app" bind-mount (use the baked image)
+#   2. frontend:  swap `command` to the "preview" line below (built bundle, no HMR)
+#                 and remove the source bind-mounts under it
+#   3. Optionally delete the `ports:` blocks marked "debug only" (Caddy reaches
+#      every service over the internal network regardless).
+# Each spot is tagged `# DEV` below.
+services:
+
+  db:
+    container_name: db
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      # Scoped credentials only — the DB container has no business seeing the
+      # rest of .env (JWT_SECRET, ENCRYPTION_KEY, …).
+      POSTGRES_USER: ${POSTGRES_USER:-tracks}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env (run ./setup.sh)}
+      POSTGRES_DB: ${POSTGRES_DB:-tracks}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432"   # DEV: host access for psql/tooling (loopback only)
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-tracks}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Session-scoped decryption-key cache (see backend/app/services/crypto_context.py).
+  # Deliberately non-persistent — key material surviving a restart to disk
+  # unencrypted defeats the point; forcing re-login after a restart is the
+  # accepted failure mode. `noeviction` so key material is never dropped for
+  # unrelated memory pressure — it should only ever leave via TTL/explicit
+  # delete. Loopback-only; nothing outside the Docker network can reach it.
+  redis:
+    container_name: redis
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory-policy", "noeviction"]
+    ports:
+      - "127.0.0.1:6379:6379"   # DEV: host access for redis-cli (loopback only)
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    container_name: backend
+    build: ./backend
+    restart: unless-stopped
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app          # DEV: live source — drop for production
+      - ./spec:/spec:ro         # shared golden fixtures for the test suite
+      - ${HOST_FIT_DIR:-./fit-files}:/fit-files
+      - ${HOST_MAPDATA_DIR:-./map-data}:/map-data
+    ports:
+      - "127.0.0.1:8000:8000"   # DEV: direct API access (loopback only)
+    environment:
+      - HOST_UID=${HOST_UID:-1000}
+      - HOST_GID=${HOST_GID:-1000}
+      # Caddy is the single entry point, so exactly one proxy appends to
+      # X-Forwarded-For. Without this the login rate limiter sees Caddy's
+      # address on every request and degrades to one global counter.
+      - TRUSTED_PROXY_HOPS=${TRUSTED_PROXY_HOPS:-1}
+    # Worker count × SQLAlchemy pool (see database.py) must stay under
+    # Postgres max_connections (default 100). 4 workers is plenty for a
+    # single-user instance; raise via UVICORN_WORKERS in .env on big hardware.
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "${UVICORN_WORKERS:-4}"]
+
+  # ── Celery worker ────────────────────────────────────────────────────────────
+  # Same image/build as backend (see app/tasks/), running the Celery worker
+  # instead of uvicorn. Currently drives one task: draining a user's sealed,
+  # not-yet-processed FIT imports after login (see app.tasks.imports and
+  # app.api.auth._create_authenticated_token) — moved off a bare background
+  # thread in the API process so a queued job survives that process
+  # restarting and isn't silently duplicated/dropped across backend replicas.
+  # Mounts /fit-files (not /map-data — this worker never touches map data)
+  # for app.services.object_storage's local blob store, and runs the same
+  # root-then-drop-to-HOST_UID entrypoint.sh as backend for the same reason
+  # (the bind mount needs to be writable from the host too).
+  worker:
+    container_name: worker
+    build: ./backend
+    restart: unless-stopped
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app          # DEV: live source — drop for production
+      - ./spec:/spec:ro         # shared golden fixtures for the test suite
+      - ${HOST_FIT_DIR:-./fit-files}:/fit-files
+    environment:
+      - HOST_UID=${HOST_UID:-1000}
+      - HOST_GID=${HOST_GID:-1000}
+    command: ["celery", "-A", "app.tasks.celery_app", "worker", "--loglevel=info", "--concurrency=${CELERY_CONCURRENCY:-2}"]
+
+  # ── Map tile server ────────────────────────────────────────────────────────
+  # go-pmtiles serve — fetches tiles from PMTiles archives via byte-range reads.
+  # Caddy routes /api/tiles/* directly here (no Python middleman). The image
+  # wraps the upstream binary in reload-wrapper.sh, which restarts the serve
+  # process when region_merger.py writes /map-data/.reload-trigger (clears the
+  # tile cache and re-opens the atomically-replaced archives). Serve args live
+  # in the image CMD.
+  go-pmtiles:
+    container_name: go-pmtiles
+    build: ./go-pmtiles
+    restart: unless-stopped
+    depends_on:
+      - backend
+    volumes:
+      - ${HOST_MAPDATA_DIR:-./map-data}:/map-data
+    ports:
+      - "127.0.0.1:8077:8080"   # DEV: local tile debugging (curl ignores CORS)
+    # No --cors=*: tiles are only ever fetched same-origin via Caddy (/api/tiles/*).
+
+  # ── BRouter trail-snapping routing engine ──────────────────────────────────
+  # Standalone Java JAR that serves trail-aware route snapping via HTTP.
+  # Reads rd5 segment files from /map-data/brouter/segments4/.
+  brouter:
+    container_name: brouter
+    build: ./brouter
+    restart: unless-stopped
+    volumes:
+      - ${HOST_MAPDATA_DIR:-./map-data}:/map-data
+    ports:
+      - "127.0.0.1:17777:17777"   # DEV: backend reaches it internally as brouter:17777
+
+  frontend:
+    container_name: frontend
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    # DEV: Vite HMR dev server with source mounted live. Use http://localhost:3000
+    # directly for HMR (the websocket needs a direct connection, not via Caddy).
+    # The /api proxy in vite.config.js forwards API calls to backend:8000.
+    # PRODUCTION: replace the command with the built-bundle preview server and
+    # delete the two source bind-mounts below:
+    #   command: ["npm", "run", "preview", "--", "--host", "0.0.0.0", "--port", "3000"]
+    command: ["npm", "run", "dev"]
+    volumes:
+      - ./frontend:/app         # DEV: live source — drop for production
+      - ./spec:/spec:ro         # shared golden fixtures for the test suite
+      # Preserve the image's node_modules — prevents the host bind-mount from
+      # shadowing the container-built packages (different OS/arch).
+      - /app/node_modules       # DEV
+    ports:
+      - "127.0.0.1:3000:3000"   # DEV: direct HMR access (loopback only)
+    environment:
+      - VITE_API_URL=/api
+
+  # ── Single entry point ──────────────────────────────────────────────────────
+  # The ONE container a homelab operator points their internet-facing reverse
+  # proxy at. Routes /api/* to the backend and everything else to the frontend,
+  # so the whole app lives on a single origin. Plain HTTP — the operator's proxy
+  # terminates TLS. See caddy/Caddyfile.
+  caddy:
+    container_name: tracks-caddy
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - backend
+      - frontend
+    ports:
+      - "${TRACKS_PORT:-4080}:80"   # the only port exposed beyond loopback
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+  # Only runs with the "garmin" profile — operators without a Garmin device
+  # never start a USB-capable container at all:
+  #   COMPOSE_PROFILES=garmin in .env  (or: docker compose --profile garmin up)
+  garmin-sync:
+    container_name: garmin-sync
+    build: ./garmin-sync
+    restart: unless-stopped
+    profiles: ["garmin"]
+    depends_on:
+      - backend
+    # USB access narrowed from privileged+/dev to just the USB bus device nodes
+    # (char major 189). Regular file permissions still apply — the sync
+    # process itself runs as HOST_UID (entrypoint.sh drops root after
+    # chowning /data), relying on the host's udev uaccess ACLs for the USB
+    # device nodes.
+    #
+    # Deliberately does NOT mount the backend's fit-files volume — this
+    # container never touches shared disk at all now. Each downloaded FIT
+    # file is sealed against the target account's public key and deleted
+    # locally the moment it's handed to the backend (see garmin-sync/sync.py's
+    # module docstring). HOST_GARMIN_SYNC_DIR below is this container's own
+    # private, non-sensitive bookkeeping (which filenames it's already
+    # synced, the AGPS ephemeris cache) — never shared with the backend. A
+    # bind mount, like the other HOST_*_DIR paths — but unlike those, a
+    # missing source directory here needs to be *created*, not just mounted:
+    # Docker auto-creates a missing bind-mount source as root:root at first
+    # `up`, which entrypoint.sh (running as root, see garmin-sync/Dockerfile)
+    # fixes by chowning it to HOST_UID/HOST_GID before dropping privileges.
+    # No `user:` override here — that would skip entrypoint's root-only setup
+    # and reintroduce the unwritable-/data bug on every fresh install.
+    volumes:
+      - /dev/bus/usb:/dev/bus/usb
+      - ${HOST_GARMIN_SYNC_DIR:-./garmin-sync-data}:/data
+    device_cgroup_rules:
+      - "c 189:* rwm"
+    environment:
+      # Generated once by setup.sh (GARMIN_SYNC_BOOTSTRAP_TOKEN in .env) and
+      # shared with the backend, which pre-authorizes it for the admin
+      # account during onboarding — no manual pairing step, since this
+      # container only ever runs on this same host. See app.config's
+      # garmin_sync_bootstrap_token and garmin-sync/sync.py's TRACKS_SYNC_TOKEN
+      # comment for why this is a personal (single-account) agent only.
+      TRACKS_SYNC_TOKEN: ${GARMIN_SYNC_BOOTSTRAP_TOKEN:-}
+      GARMIN_SYNC_DEST: /data
+      TRACKS_API_URL: http://backend:8000
+      GARMIN_AGPS_CACHE_DIR: /data/.agps-cache
+      GARMIN_SYNC_FOLDER_PATH: "GARMIN/Activity,GARMIN/Sleep,GARMIN/HRVStatus,GARMIN/Monitor"
+      HOST_UID: ${HOST_UID:-1000}
+      HOST_GID: ${HOST_GID:-1000}
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:

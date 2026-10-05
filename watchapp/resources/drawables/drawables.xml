@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<!-- SPDX-FileCopyrightText: 2026 Hawk Fugagli -->
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<!--
+  The control-menu icons are this app's own, because they have to be: a
+  CustomButton draws whatever getImage returns, and returning null draws
+  nothing at all rather than falling back to the system's artwork. Generated
+  in two colours each: the player draws a row dark-on-light normally and
+  light-on-dark when it is selected, and it does not tint, so one colour
+  would be invisible half the time. See the generator beside the app.
+-->
+<drawables>
+    <bitmap id="LauncherIcon" filename="launcher_icon.png"/>
+    <bitmap id="IconShuffleOn" filename="icon_shuffle_on.png"/>
+    <bitmap id="IconShuffleOff" filename="icon_shuffle_off.png"/>
+    <bitmap id="IconRepeat" filename="icon_repeat.png"/>
+    <bitmap id="IconRepeatOff" filename="icon_repeat_off.png"/>
+    <bitmap id="IconRepeatOne" filename="icon_repeat_one.png"/>
+    <bitmap id="IconLibrary" filename="icon_library.png"/>
+    <bitmap id="IconShuffleOnHi" filename="icon_shuffle_on_hi.png"/>
+    <bitmap id="IconShuffleOffHi" filename="icon_shuffle_off_hi.png"/>
+    <bitmap id="IconRepeatHi" filename="icon_repeat_hi.png"/>
+    <bitmap id="IconRepeatOffHi" filename="icon_repeat_off_hi.png"/>
+    <bitmap id="IconRepeatOneHi" filename="icon_repeat_one_hi.png"/>
+    <bitmap id="IconLibraryHi" filename="icon_library_hi.png"/>
+</drawables>

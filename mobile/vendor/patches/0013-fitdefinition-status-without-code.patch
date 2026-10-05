@@ -1,0 +1,35 @@
+diff --git a/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/messages/status/FitDefinitionStatusMessage.java b/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/messages/status/FitDefinitionStatusMessage.java
+index 413143e..f3dfdd5 100644
+--- a/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/messages/status/FitDefinitionStatusMessage.java
++++ b/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/messages/status/FitDefinitionStatusMessage.java
+@@ -19,6 +19,12 @@ public class FitDefinitionStatusMessage extends GFDIStatusMessage {
+ 
+     public static FitDefinitionStatusMessage parseIncoming(MessageReader reader, GarminMessage garminMessage) {
+         final Status status = Status.fromCode(reader.readByte());
++        // A watch that rejects the definition outright answers with the status alone and no
++        // definition status code (a fenix 6X sends LENGTH_ERROR this way). Not applied, then.
++        if (reader.remaining() == 0) {
++            LOG.warn("FIT DEFINITION RETURNED {} with no definition status code", status);
++            return new FitDefinitionStatusMessage(garminMessage, status, null, false);
++        }
+         final int fitDefinitionStatusCodeByte = reader.readByte();
+         final FitDefinitionStatusCode fitDefinitionStatusCode = FitDefinitionStatusCode.fromCode(fitDefinitionStatusCodeByte);
+         if (fitDefinitionStatusCode == null) {
+@@ -35,12 +41,17 @@ public class FitDefinitionStatusMessage extends GFDIStatusMessage {
+         return new FitDefinitionStatusMessage(garminMessage, status, fitDefinitionStatusCode, false);
+     }
+ 
++    /** Null when the watch sent no definition status code: the definition was not applied. */
++    @Nullable
+     public FitDefinitionStatusCode getFitDefinitionStatusCode() {
+         return fitDefinitionStatusCode;
+     }
+ 
+     @Override
+     protected boolean generateOutgoing() {
++        if (!sendOutgoing) {
++            return false; // a status the watch sent: nothing to write, and it may have no code
++        }
+         final MessageWriter writer = new MessageWriter(response);
+         writer.writeShort(0); // packet size will be filled below
+         writer.writeShort(GarminMessage.RESPONSE.getId());

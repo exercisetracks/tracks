@@ -1,0 +1,9 @@
+{
+  "key": "climbers_release",
+  "name": "Climber's Release",
+  "tagline": "Unload the forearms, lats and shoulders after gripping hard.",
+  "contexts": ["post_workout", "weekly_mobility"],
+  "sports": ["climbing"],
+  "themes": ["shoulders", "posterior"],
+  "closer_muscles": ["lats", "forearms"]
+}

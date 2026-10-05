@@ -1,0 +1,84 @@
+# Strength-training equipment vocabulary and experience-level tables.
+#
+# Single source of truth — `spec/codegen.py` generates the Python, JavaScript,
+# and Kotlin tables. Edit here, run the codegen; the generated files are
+# overwritten.
+#
+# ── Equipment ─────────────────────────────────────────────────────────────────
+# The backend is authoritative on the bare vocabulary
+# (backend/app/api/strength/schemas.py's old VALID_EQUIPMENT); the frontend's
+# richer EQUIPMENT_OPTIONS (label/description per value) was a manually
+# maintained superset that the file's own header admitted could drift. Both
+# now come from this one list — `equipment` here IS the full set, so backend
+# validation and frontend display are provably the same set.
+equipment:
+  - {value: bodyweight, label: Bodyweight,     description: "No equipment needed"}
+  - {value: dumbbell,   label: Dumbbells,      description: "Fixed or adjustable"}
+  - {value: barbell,    label: Barbell,        description: "Olympic bar + plates"}
+  - {value: cable,      label: "Cable machine", description: "Pulley / functional trainer"}
+  - {value: machine,    label: Machines,       description: "Leg press, lat pulldown, etc."}
+  - {value: kettlebell, label: Kettlebells,    description: "One or more kettlebells"}
+  - {value: band,       label: Bands,          description: "Resistance or pull-up bands"}
+  - {value: pullup_bar, label: "Pull-up bar",  description: "Doorway, wall or rig bar you can hang from"}
+
+# ── Experience levels ────────────────────────────────────────────────────────
+# backend/app/calculators/strength_plan/leveling.py is authoritative — it has
+# more than the frontend ever mirrored. experienceLevels.js only carried
+# default_tier; max_difficulty, stage_floor, and starting_weight_factor lived
+# in Python alone. All four are the same one-time "how familiar are you with
+# strength training?" answer driving four small, deterministic lookups, so
+# they belong in one table together with the UI copy (label/blurb) that used
+# to live only in the JS file.
+#
+# `default_tier` has two entries per level because the generator picks
+# differently depending on whether the goal is endurance-primary or
+# strength-primary — see the `why` below. Note that only brand_new gets a
+# reduced endurance tier (1); returning/regular/advanced all use the same
+# endurance tier (2), because endurance-primary goals keep strength
+# supplementary regardless of lifting pedigree beyond "still learning the
+# movements". strength-primary tiers scale with experience (2-5).
+#
+# `unknown_fallback_tier` is what a caller gets when `experience` isn't one of
+# the four levels below (including None/never-asked) — always 3, regardless of
+# goal type. It is intentionally NOT part of any level's row: it is what the
+# hand-written experience_default_tier returns when the lookup itself misses,
+# so it stays a scalar next to the table rather than a fifth fake row.
+#
+# `max_difficulty: null` means no extra cap (regular and advanced lifters get
+# no ceiling beyond whatever the tier itself implies). `stage_floor` floors the
+# cumulative-session count used to pick a periodization stage; real training
+# history above the floor always wins (see leveling.py's own docstring).
+experience_default_fallback_tier: 3
+
+experience_levels:
+  - value: brand_new
+    label: "Brand new"
+    blurb: "New to lifting — teach me the basics with lighter, simpler movements."
+    default_tier: {endurance: 1, strength: 2}
+    max_difficulty: 2
+    stage_floor: 0
+    starting_weight_factor: 0.8
+
+  - value: returning
+    label: Returning
+    blurb: "Trained before but it's been a while — ease me back in."
+    default_tier: {endurance: 2, strength: 3}
+    max_difficulty: 3
+    stage_floor: 0
+    starting_weight_factor: 1.0
+
+  - value: regular
+    label: "Train regularly"
+    blurb: "I lift consistently and know the main movements."
+    default_tier: {endurance: 2, strength: 4}
+    max_difficulty: null
+    stage_floor: 20
+    starting_weight_factor: 1.0
+
+  - value: advanced
+    label: Advanced
+    blurb: "Experienced lifter — bring the barbell and heavier programming."
+    default_tier: {endurance: 2, strength: 5}
+    max_difficulty: null
+    stage_floor: 100
+    starting_weight_factor: 1.0

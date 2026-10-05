@@ -1,0 +1,22 @@
+-- SPDX-FileCopyrightText: 2026 Hawk Fugagli
+-- SPDX-License-Identifier: AGPL-3.0-or-later
+--
+-- The phone's database is two files' worth of schema:
+--
+--   Replica.sq — what a person said: every synced row, merged by field
+--                (spec/sync.yaml). The only copy of an unpushed edit.
+--   Local.sq   — what this phone derived from its FIT files. Rebuilt from
+--                the files, never synced.
+--
+-- This file used to hold the server mirror (activity/daily_metric tables fed
+-- by /sync/delta), the cached_document store and the outbox. All three went
+-- with the move to a phone that works without a server; see
+-- docs/offline-first.md. It stays as the database's named entry point.
+--
+-- No migrations: a schema change drops everything and resyncs (see
+-- TracksSchema), which is acceptable only while nobody but the developer
+-- depends on this app.
+
+-- SQLDelight needs at least one statement per file.
+schemaNote:
+SELECT 1;

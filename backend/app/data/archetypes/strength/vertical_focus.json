@@ -1,0 +1,17 @@
+{
+  "key": "vertical_focus",
+  "name": "Overhead & Vertical",
+  "tagline": "Press overhead, pull down — vertical strength.",
+  "intent": "An upper session emphasising vertical pressing and pulling for overhead strength and lat development — great for climbers, swimmers and anyone chasing pull-ups.",
+  "splits": ["upper_a", "upper_b"],
+  "sports": null,
+  "tier_range": [3, 5],
+  "phases": ["any"],
+  "main": [
+    { "slot": "v_push", "scheme": { "sets": 4, "reps": 6, "rest_seconds": 150 } },
+    { "slot": "v_pull", "scheme": { "sets": 4, "reps": 6 } }
+  ],
+  "supersets": [["biceps_acc", "triceps_acc"]],
+  "finisher": null,
+  "cooldown_theme": "shoulders"
+}

@@ -1,0 +1,213 @@
+{
+  "_comment": "GENERATED from the original backend/app/calculators/strength_plan/leveling.py (before its four table functions read from the generated spec) via spec/make_strength_fixtures.py, run under the backend container's Python. Backend is authoritative for experience levels; the equipment list is transcribed from frontend/src/lib/equipment.js (the superset) cross-checked against backend's old VALID_EQUIPMENT. Shared oracle for the Python, JavaScript (spec/experience.js), and Kotlin (spec/Strength.kt) evaluators \u2014 see spec/codegen.py and spec/strength.yaml.",
+  "equipment": [
+    {
+      "value": "bodyweight",
+      "label": "Bodyweight",
+      "description": "No equipment needed"
+    },
+    {
+      "value": "dumbbell",
+      "label": "Dumbbells",
+      "description": "Fixed or adjustable"
+    },
+    {
+      "value": "barbell",
+      "label": "Barbell",
+      "description": "Olympic bar + plates"
+    },
+    {
+      "value": "cable",
+      "label": "Cable machine",
+      "description": "Pulley / functional trainer"
+    },
+    {
+      "value": "machine",
+      "label": "Machines",
+      "description": "Leg press, lat pulldown, etc."
+    },
+    {
+      "value": "kettlebell",
+      "label": "Kettlebells",
+      "description": "One or more kettlebells"
+    },
+    {
+      "value": "band",
+      "label": "Bands",
+      "description": "Resistance or pull-up bands"
+    },
+    {
+      "value": "pullup_bar",
+      "label": "Pull-up bar",
+      "description": "Doorway, wall or rig bar you can hang from"
+    }
+  ],
+  "experience_levels": [
+    "brand_new",
+    "returning",
+    "regular",
+    "advanced"
+  ],
+  "default_tier_cases": [
+    {
+      "experience": "brand_new",
+      "endurance_goal": true,
+      "expected": 1
+    },
+    {
+      "experience": "brand_new",
+      "endurance_goal": false,
+      "expected": 2
+    },
+    {
+      "experience": "returning",
+      "endurance_goal": true,
+      "expected": 2
+    },
+    {
+      "experience": "returning",
+      "endurance_goal": false,
+      "expected": 3
+    },
+    {
+      "experience": "regular",
+      "endurance_goal": true,
+      "expected": 2
+    },
+    {
+      "experience": "regular",
+      "endurance_goal": false,
+      "expected": 4
+    },
+    {
+      "experience": "advanced",
+      "endurance_goal": true,
+      "expected": 2
+    },
+    {
+      "experience": "advanced",
+      "endurance_goal": false,
+      "expected": 5
+    },
+    {
+      "experience": null,
+      "endurance_goal": true,
+      "expected": 3
+    },
+    {
+      "experience": null,
+      "endurance_goal": false,
+      "expected": 3
+    },
+    {
+      "experience": "bogus_value",
+      "endurance_goal": true,
+      "expected": 3
+    },
+    {
+      "experience": "bogus_value",
+      "endurance_goal": false,
+      "expected": 3
+    },
+    {
+      "experience": "",
+      "endurance_goal": true,
+      "expected": 3
+    },
+    {
+      "experience": "",
+      "endurance_goal": false,
+      "expected": 3
+    }
+  ],
+  "max_difficulty_cases": [
+    {
+      "experience": "brand_new",
+      "expected": 2
+    },
+    {
+      "experience": "returning",
+      "expected": 3
+    },
+    {
+      "experience": "regular",
+      "expected": null
+    },
+    {
+      "experience": "advanced",
+      "expected": null
+    },
+    {
+      "experience": null,
+      "expected": null
+    },
+    {
+      "experience": "bogus_value",
+      "expected": null
+    },
+    {
+      "experience": "",
+      "expected": null
+    }
+  ],
+  "stage_floor_cases": [
+    {
+      "experience": "brand_new",
+      "expected": 0
+    },
+    {
+      "experience": "returning",
+      "expected": 0
+    },
+    {
+      "experience": "regular",
+      "expected": 20
+    },
+    {
+      "experience": "advanced",
+      "expected": 100
+    },
+    {
+      "experience": null,
+      "expected": 0
+    },
+    {
+      "experience": "bogus_value",
+      "expected": 0
+    },
+    {
+      "experience": "",
+      "expected": 0
+    }
+  ],
+  "starting_weight_factor_cases": [
+    {
+      "experience": "brand_new",
+      "expected": 0.8
+    },
+    {
+      "experience": "returning",
+      "expected": 1.0
+    },
+    {
+      "experience": "regular",
+      "expected": 1.0
+    },
+    {
+      "experience": "advanced",
+      "expected": 1.0
+    },
+    {
+      "experience": null,
+      "expected": 1.0
+    },
+    {
+      "experience": "bogus_value",
+      "expected": 1.0
+    },
+    {
+      "experience": "",
+      "expected": 1.0
+    }
+  ]
+}

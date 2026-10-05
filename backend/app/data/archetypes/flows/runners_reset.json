@@ -1,0 +1,9 @@
+{
+  "key": "runners_reset",
+  "name": "Runner's Reset",
+  "tagline": "Unwind the hips, calves and hamstrings after the miles.",
+  "contexts": ["post_workout", "weekly_mobility"],
+  "sports": ["running", "hiking"],
+  "themes": ["posterior", "hips"],
+  "closer_muscles": ["lower_back", "glutes"]
+}

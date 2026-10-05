@@ -1,0 +1,57 @@
+# Environment
+.env
+*.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+.pytest_cache/
+
+# Node
+node_modules/
+dist/
+build/
+.npm/
+
+# IDE
+.vscode/settings.json
+.idea/
+.claude
+
+# Database
+*.sql.bak
+pgdata/
+
+# FIT files (don't commit personal health data)
+fit-files/
+
+# garmin-sync's own local bookkeeping (synced-filenames state, AGPS cache)
+garmin-sync-data/
+
+# OS
+# map-data/ is a runtime bind-mount (multi-GB tiles). Sprites live in
+# backend/sprite_defaults/ and are seeded into /map-data/sprite/ by entrypoint.sh.
+map-data/**
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Distribution build artifacts (produced by the beta packaging tooling)
+/tracks-*.zip
+
+# Android release signing — the key and its passwords never enter the repo.
+keystore.properties
+*.jks
+*.keystore
+
+# Digests of the server's parse of real (personal) FIT files — see
+# spec/make_fit_parse_fixtures.py. Never commit.
+spec/fixtures/personal/
+
+# Other tools' local config (may hold API keys)
+.continue/

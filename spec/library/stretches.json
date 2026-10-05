@@ -1,0 +1,5453 @@
+[
+ {
+  "breath_cue": null,
+  "cautions": "If hips are far from the floor, sit on a block or folded blanket. This stretch should be in the hip capsule, not the knee.",
+  "cues": [],
+  "description": "Deep hip rotation stretch — one leg externally rotated in front, the other internally rotated behind. The gold standard for hip mobility.",
+  "difficulty": 2,
+  "duration_per_side_sec": 60,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "warm_up",
+  "garmin_subtype": 34,
+  "has_animation": true,
+  "instructions": "1. Sit on the mat. Right leg bent at 90° in front (external rotation).\n2. Left leg bent at 90° behind you (internal rotation).\n3. Square hips to the front. Sit tall or lean forward.\n4. Hold 45–60 s. Switch sides.",
+  "is_compound": true,
+  "movement_pattern": "static_stretch",
+  "name": "90/90 Hip Stretch",
+  "position": null,
+  "primary_muscles": [
+   "glutes",
+   "hip_adductors",
+   "hip_flexors"
+  ],
+  "secondary_muscles": [
+   "lower_back"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "cycling": 3,
+   "generic": 3,
+   "hiking": 3,
+   "running": 3
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Listen to your body. Do not force range of motion.",
+  "cues": [],
+  "description": "Neutral tabletop position. Foundational pose for warm-ups and transitions.",
+  "difficulty": 1,
+  "duration_per_side_sec": 60,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 0,
+  "has_animation": true,
+  "instructions": "1. Enter the pose mindfully.\n2. Hold with steady breath.\n3. Release slowly.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "All Fours Pose",
+  "position": null,
+  "primary_muscles": [
+   "core",
+   "shoulders"
+  ],
+  "secondary_muscles": [
+   "wrists",
+   "back"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "generic": 3,
+   "paddling": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Perform this seated to isolate ankle movement. If you feel pain in the front of the ankle (impingement), reduce the range of motion.",
+  "cues": [],
+  "description": "Dynamic ankle mobility drill — trace the alphabet with your big toe to mobilize the ankle joint in all planes.",
+  "difficulty": 1,
+  "duration_per_side_sec": 30,
+  "each_side": true,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": "warm_up",
+  "garmin_subtype": 37,
+  "has_animation": true,
+  "instructions": "1. Sit in a chair. Extend right leg.\n2. Pretend your big toe is a pen. Trace the entire alphabet from A to Z in the air.\n3. Keep the movement coming from the ankle, not the knee.\n4. Repeat with the left foot.",
+  "is_compound": true,
+  "movement_pattern": "dynamic_stretch",
+  "name": "Ankle Alphabet Drill",
+  "position": null,
+  "primary_muscles": [
+   "calves",
+   "feet"
+  ],
+  "secondary_muscles": [
+   "quads"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "generic": 2,
+   "hiking": 3,
+   "running": 3
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Listen to your body. Do not force range of motion.",
+  "cues": [],
+  "description": "Seated hip opener. Stack one shin atop the other.",
+  "difficulty": 2,
+  "duration_per_side_sec": 60,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 1,
+  "has_animation": true,
+  "instructions": "1. Enter the pose mindfully.\n2. Hold with steady breath.\n3. Release slowly.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Ankle to Knee Pose",
+  "position": null,
+  "primary_muscles": [
+   "hip_external_rotators",
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "lower_back"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "generic": 3,
+   "paddling": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Listen to your body. Do not force range of motion.",
+  "cues": [],
+  "description": "Gentle prone back-bend. Press chest up off mat, keep elbows bent.",
+  "difficulty": 1,
+  "duration_per_side_sec": 60,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 2,
+  "has_animation": true,
+  "instructions": "1. Enter the pose mindfully.\n2. Hold with steady breath.\n3. Release slowly.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Baby Cobra Pose",
+  "position": null,
+  "primary_muscles": [
+   "spinal_erectors",
+   "chest"
+  ],
+  "secondary_muscles": [
+   "shoulders",
+   "abs",
+   "front_delts"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "generic": 3,
+   "paddling": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Sit on a folded blanket if knees are higher than hips. Press knees down gently — never force. The stretch should be in the inner thighs, not the knees.",
+  "cues": [],
+  "description": "Seated butterfly — the classic inner thigh and groin opener. Forward fold deepens the hip stretch.",
+  "difficulty": 1,
+  "duration_per_side_sec": 90,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 4,
+  "has_animation": true,
+  "instructions": "1. Sit on the mat. Bring soles of feet together.\n2. Hold feet with both hands. Sit tall.\n3. Let knees fall outward. Gently press knees toward the floor with elbows.\n4. Optionally hinge forward from the hips. Hold 60–90 s.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Bound Angle Pose (Baddha Konasana)",
+  "position": null,
+  "primary_muscles": [
+   "hip_adductors",
+   "hip_flexors",
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "lower_back"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "cycling": 2,
+   "generic": 2,
+   "running": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Listen to your body. Do not force range of motion.",
+  "cues": [],
+  "description": "Lying face-down, grab ankles and lift chest + legs. Deep back-bend.",
+  "difficulty": 3,
+  "duration_per_side_sec": 60,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 6,
+  "has_animation": true,
+  "instructions": "1. Enter the pose mindfully.\n2. Hold with steady breath.\n3. Release slowly.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Bow Pose",
+  "position": null,
+  "primary_muscles": [
+   "spinal_erectors",
+   "chest"
+  ],
+  "secondary_muscles": [
+   "quads",
+   "hip_flexors"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "generic": 3,
+   "paddling": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Listen to your body. Do not force range of motion.",
+  "cues": [],
+  "description": "Supine glute bridge with hands by sides. Press hips up.",
+  "difficulty": 1,
+  "duration_per_side_sec": 60,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 8,
+  "has_animation": true,
+  "instructions": "1. Enter the pose mindfully.\n2. Hold with steady breath.\n3. Release slowly.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Bridge Pose",
+  "position": null,
+  "primary_muscles": [
+   "glutes",
+   "hamstrings"
+  ],
+  "secondary_muscles": [
+   "spinal_erectors",
+   "chest"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "generic": 3,
+   "paddling": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Keep knees tracking over ankles. Do not turn the head once lifted — keep neck neutral.",
+  "cues": [],
+  "description": "Hip bridge — opens the chest and hip flexors while strengthening glutes. Counter-pose to sitting.",
+  "difficulty": 2,
+  "duration_per_side_sec": 45,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 8,
+  "has_animation": true,
+  "instructions": "1. Lie on your back. Bend knees, feet hip-width apart.\n2. Press into feet. Lift hips toward the ceiling.\n3. Interlace fingers under your back. Roll shoulders under.\n4. Hold 30–45 s. Lower slowly, vertebra by vertebra.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Bridge Pose (Setu Bandhasana)",
+  "position": null,
+  "primary_muscles": [
+   "chest",
+   "hip_flexors",
+   "core"
+  ],
+  "secondary_muscles": [
+   "lower_back",
+   "shoulders"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "cycling": 3,
+   "generic": 2,
+   "running": 2
+  }
+ },
+ {
+  "breath_cue": "Exhale as the knees ease down",
+  "cautions": "Never push knees down forcefully. Let gravity and gentle pressure do the work. Stop if you feel knee pain — this should stretch the inner thigh, not the knee.",
+  "cues": [
+   "Soles of the feet together",
+   "Sit tall, then hinge forward"
+  ],
+  "description": "Seated groin stretch — opens the adductors and inner thighs. Classic flexibility pose.",
+  "difficulty": 1,
+  "duration_per_side_sec": 90,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 4,
+  "has_animation": true,
+  "instructions": "1. Sit on the mat. Bring soles of feet together. Let knees fall outward.\n2. Hold feet or ankles. Sit tall.\n3. Gently press knees toward the mat using elbows.\n4. For a deeper stretch, hinge forward from the hips keeping back straight.\n5. Hold 60–90 s.",
+  "is_compound": true,
+  "movement_pattern": "static_stretch",
+  "name": "Butterfly Stretch",
+  "position": "seated",
+  "primary_muscles": [
+   "hip_adductors",
+   "hip_flexors",
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "lower_back"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "cycling": 2,
+   "generic": 3,
+   "hiking": 2,
+   "running": 2
+  }
+ },
+ {
+  "breath_cue": "Inhale to arch, exhale to round",
+  "cautions": "Move slowly — this is about spinal articulation, not speed. Avoid if you have acute disc herniation.",
+  "cues": [
+   "Move with your breath",
+   "Mobilise one vertebra at a time"
+  ],
+  "description": "Dynamic spinal flexion and extension (cat-cow). Mobilises the entire vertebral column. Best warm-up stretch.",
+  "difficulty": 1,
+  "duration_per_side_sec": 60,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Start on all fours. Wrists under shoulders, knees under hips.\n2. INHALE: Arch spine, drop belly, lift head and tailbone (cow).\n3. EXHALE: Round spine, tuck chin, press floor away (cat).\n4. Flow slowly through 8–10 cycles. Coordinate each movement with breath.",
+  "is_compound": true,
+  "movement_pattern": "dynamic_stretch",
+  "name": "Cat-Cow Flow",
+  "position": "kneeling",
+  "primary_muscles": [
+   "lower_back",
+   "upper_back",
+   "core"
+  ],
+  "secondary_muscles": [
+   "neck",
+   "glutes"
+  ],
+  "sets": 3,
+  "sport_relevance": {
+   "cycling": 3,
+   "generic": 3,
+   "hiking": 3,
+   "mtb": 3,
+   "running": 3,
+   "swimming": 3
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Listen to your body. Do not force range of motion.",
+  "cues": [],
+  "description": "Tabletop spine flexion. Press mid-back to ceiling.",
+  "difficulty": 1,
+  "duration_per_side_sec": 60,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 9,
+  "has_animation": true,
+  "instructions": "1. Enter the pose mindfully.\n2. Hold with steady breath.\n3. Release slowly.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Cat Pose",
+  "position": null,
+  "primary_muscles": [
+   "spinal_erectors",
+   "abs"
+  ],
+  "secondary_muscles": [
+   "shoulders"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "generic": 3,
+   "paddling": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Listen to your body. Do not force range of motion.",
+  "cues": [],
+  "description": "Squat with arms overhead. Builds lower-body endurance.",
+  "difficulty": 2,
+  "duration_per_side_sec": 60,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 10,
+  "has_animation": true,
+  "instructions": "1. Enter the pose mindfully.\n2. Hold with steady breath.\n3. Release slowly.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Chair Pose",
+  "position": null,
+  "primary_muscles": [
+   "quads",
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "core",
+   "shoulders"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "generic": 3,
+   "paddling": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Keep knees tracking over ankles. Do not let knees go past toes. If shoulders are tight, keep hands at heart centre.",
+  "cues": [],
+  "description": "Standing squat pose — strengthens the quads and glutes while stretching the shoulders and upper back.",
+  "difficulty": 2,
+  "duration_per_side_sec": 30,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 10,
+  "has_animation": true,
+  "instructions": "1. Stand with feet together or hip-width apart.\n2. Bend knees. Sit back as if into a chair. Weight in heels.\n3. Raise arms overhead, biceps beside ears.\n4. Hold 20–30 s. Inhale to stand.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Chair Pose (Utkatasana)",
+  "position": null,
+  "primary_muscles": [
+   "quads",
+   "glutes",
+   "calves",
+   "upper_back",
+   "shoulders"
+  ],
+  "secondary_muscles": [
+   "core"
+  ],
+  "sets": 3,
+  "sport_relevance": {
+   "cycling": 2,
+   "generic": 2,
+   "hiking": 2,
+   "running": 2
+  }
+ },
+ {
+  "breath_cue": "Inhale and lift through the chest",
+  "cautions": "Do not hyperextend the lumbar spine. Keep core engaged.",
+  "cues": [
+   "Clasp your hands behind you",
+   "Draw the shoulder blades together"
+  ],
+  "description": "Standing chest opener — interlace hands behind back to expand the pectoral and anterior capsule.",
+  "difficulty": 1,
+  "duration_per_side_sec": 45,
+  "each_side": false,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": "warm_up",
+  "garmin_subtype": 63,
+  "has_animation": true,
+  "instructions": "1. Stand tall. Interlace fingers behind your back.\n2. Straighten arms and lift hands away from your body.\n3. Draw shoulder blades together. Lift chest toward ceiling.\n4. Hold 30–45 s.",
+  "is_compound": true,
+  "movement_pattern": "dynamic_stretch",
+  "name": "Chest Expansion Stretch",
+  "position": "standing",
+  "primary_muscles": [
+   "chest",
+   "shoulders"
+  ],
+  "secondary_muscles": [
+   "core",
+   "front_delts"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 3,
+   "generic": 3
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "If knees are uncomfortable, place a folded blanket between calves and hamstrings. Avoid if pregnant (3rd trimester).",
+  "cues": [],
+  "description": "Restorative yoga pose that gently stretches the entire back, hips, and shoulders. The ultimate recovery pose.",
+  "difficulty": 1,
+  "duration_per_side_sec": 90,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 11,
+  "has_animation": true,
+  "instructions": "1. Kneel on the mat. Bring big toes together, knees wide or together.\n2. Sit back toward heels. Walk hands forward.\n3. Rest forehead on the mat. Arms extended or alongside body.\n4. Breathe deeply into the back. Hold 60–90 s.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Child's Pose",
+  "position": null,
+  "primary_muscles": [
+   "lower_back",
+   "upper_back",
+   "lats",
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "neck"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 3,
+   "cycling": 3,
+   "generic": 3,
+   "hiking": 3,
+   "mtb": 3,
+   "running": 3,
+   "swimming": 3
+  }
+ },
+ {
+  "breath_cue": "Inhale as you rise",
+  "cautions": "Keep elbows slightly bent. If you feel lower back compression, reduce the lift height.",
+  "cues": [
+   "Elbows soft, shoulders down",
+   "Lift with the back, not the arms"
+  ],
+  "description": "Gentle backbend stretching the abdominal wall and hip flexors.",
+  "difficulty": 1,
+  "duration_per_side_sec": 30,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Lie face-down. Place hands under shoulders, elbows tucked.\n2. Press into hands. Lift chest, keeping pelvis on the mat.\n3. Draw shoulders back and down. Look slightly forward.\n4. Hold 20–30 s. Lower with control.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Cobra Pose",
+  "position": "prone",
+  "primary_muscles": [
+   "core",
+   "chest",
+   "shoulders"
+  ],
+  "secondary_muscles": [
+   "lower_back",
+   "hip_flexors",
+   "front_delts"
+  ],
+  "sets": 3,
+  "sport_relevance": {
+   "climbing": 2,
+   "generic": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Listen to your body. Do not force range of motion.",
+  "cues": [],
+  "description": "Final relaxation. Lie flat, palms up, eyes closed.",
+  "difficulty": 1,
+  "duration_per_side_sec": 60,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 12,
+  "has_animation": true,
+  "instructions": "1. Enter the pose mindfully.\n2. Hold with steady breath.\n3. Release slowly.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Corpse Pose",
+  "position": null,
+  "primary_muscles": [
+   "full_body"
+  ],
+  "secondary_muscles": [],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "generic": 3,
+   "paddling": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Place a bolster under the knees if lower back discomfort. Cover yourself with a blanket — body temperature drops during relaxation.",
+  "cues": [],
+  "description": "Final relaxation pose. Allows the nervous system to integrate the benefits of the stretching session. Essential after any flow.",
+  "difficulty": 1,
+  "duration_per_side_sec": 300,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 12,
+  "has_animation": true,
+  "instructions": "1. Lie flat on your back. Arms alongside body, palms facing up.\n2. Let feet fall outward naturally. Close your eyes.\n3. Systematically relax each body part from toes to crown.\n4. Breathe naturally. Stay 3–5 min. Roll to one side before sitting up.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Corpse Pose (Savasana)",
+  "position": null,
+  "primary_muscles": [
+   "lower_back",
+   "neck",
+   "upper_back"
+  ],
+  "secondary_muscles": [
+   "glutes"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 3,
+   "cycling": 3,
+   "generic": 3,
+   "hiking": 3,
+   "mtb": 3,
+   "paddling": 3,
+   "running": 3,
+   "swimming": 3
+  }
+ },
+ {
+  "breath_cue": "Exhale and ease the hips down",
+  "cautions": "Pad the kneeling knee. This is an intense stretch — ease into it gradually.",
+  "cues": [
+   "Back shin up the wall",
+   "Keep the tailbone tucked"
+  ],
+  "description": "Deep quad and hip flexor stretch using a wall or couch. The most effective quad stretch.",
+  "difficulty": 2,
+  "duration_per_side_sec": 60,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "wall"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Kneel facing away from a wall or couch. Place right shin vertically against the surface, foot pointing up.\n2. Step left foot forward into a lunge position.\n3. Keep torso upright. Squeeze glutes and gently press hips forward.\n4. Hold 45–60 s. Switch sides.",
+  "is_compound": true,
+  "movement_pattern": "static_stretch",
+  "name": "Couch Stretch",
+  "position": "kneeling",
+  "primary_muscles": [
+   "quads",
+   "hip_flexors"
+  ],
+  "secondary_muscles": [
+   "core"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "cycling": 3,
+   "generic": 2,
+   "hiking": 2,
+   "running": 3
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "If knees don't stack, cross ankles instead and sit on a block. Use a strap between hands until shoulder mobility improves.",
+  "cues": [],
+  "description": "Seated pose with stacked knees and bound arms — stretches the glutes, shoulders, and triceps simultaneously.",
+  "difficulty": 2,
+  "duration_per_side_sec": 60,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 13,
+  "has_animation": true,
+  "instructions": "1. Sit tall. Stack right knee on top of left knee in the midline.\n2. Reach right arm up, bend elbow. Reach left arm behind the back, bend elbow.\n3. Clasp fingers behind the back. If they don't meet, use a strap.\n4. Hold 45–60 s. Switch sides (left knee on top, left arm up).",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Cow Face Pose (Gomukhasana)",
+  "position": null,
+  "primary_muscles": [
+   "glutes",
+   "hip_adductors",
+   "upper_back",
+   "triceps",
+   "shoulders"
+  ],
+  "secondary_muscles": [
+   "chest"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "cycling": 2,
+   "generic": 2,
+   "running": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Listen to your body. Do not force range of motion.",
+  "cues": [],
+  "description": "Tabletop spine extension. Drop belly, lift chest + tail.",
+  "difficulty": 1,
+  "duration_per_side_sec": 60,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 14,
+  "has_animation": true,
+  "instructions": "1. Enter the pose mindfully.\n2. Hold with steady breath.\n3. Release slowly.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Cow Pose",
+  "position": null,
+  "primary_muscles": [
+   "spinal_erectors",
+   "chest"
+  ],
+  "secondary_muscles": [
+   "shoulders",
+   "abs"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "generic": 3,
+   "paddling": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": "Exhale and draw the arm across",
+  "cautions": "Pull gently — this is a passive stretch. Stop if you feel pinching in the shoulder joint.",
+  "cues": [
+   "Pull from above the elbow",
+   "Relax the shoulder down"
+  ],
+  "description": "Classic posterior shoulder and rear deltoid stretch. Essential for overhead athletes.",
+  "difficulty": 1,
+  "duration_per_side_sec": 45,
+  "each_side": true,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": "warm_up",
+  "garmin_subtype": 63,
+  "has_animation": true,
+  "instructions": "1. Stand or sit tall.\n2. Bring right arm across chest at shoulder height.\n3. Hook left forearm over right elbow and gently pull.\n4. Keep shoulders down — do not shrug.\n5. Hold 30–45 s. Switch sides.",
+  "is_compound": true,
+  "movement_pattern": "static_stretch",
+  "name": "Cross-Body Shoulder Stretch",
+  "position": "standing",
+  "primary_muscles": [
+   "shoulders"
+  ],
+  "secondary_muscles": [
+   "upper_back"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "climbing": 3,
+   "cycling": 2,
+   "generic": 3,
+   "paddling": 3,
+   "running": 2,
+   "swimming": 3
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Listen to your body. Do not force range of motion.",
+  "cues": [],
+  "description": "Warrior I with forward fold. Stretches hamstrings + back.",
+  "difficulty": 2,
+  "duration_per_side_sec": 60,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 15,
+  "has_animation": true,
+  "instructions": "1. Enter the pose mindfully.\n2. Hold with steady breath.\n3. Release slowly.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Devotional Warrior Pose",
+  "position": null,
+  "primary_muscles": [
+   "quads",
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "hamstrings",
+   "spinal_erectors"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "generic": 3,
+   "paddling": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "If you feel lightheaded, shorten the exhale. The exhale should always be longer than the inhale — this activates the parasympathetic nervous system.",
+  "cues": [],
+  "description": "Diaphragmatic breathing — the foundation of core stability and nervous system recovery. Actively lowers cortisol.",
+  "difficulty": 1,
+  "duration_per_side_sec": 120,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "warm_up",
+  "garmin_subtype": 52,
+  "has_animation": true,
+  "instructions": "1. Lie on your back with knees bent, feet flat. One hand on chest, one on belly.\n2. Inhale slowly through the nose for 4 counts. Feel the belly rise (chest stays still).\n3. Exhale slowly through the mouth for 6 counts. Feel the belly fall.\n4. Repeat for 2–3 min. Aim for a 4:6 inhale-to-exhale ratio.",
+  "is_compound": true,
+  "movement_pattern": "pnf_stretch",
+  "name": "Diaphragmatic Breathing (Belly Breath)",
+  "position": null,
+  "primary_muscles": [
+   "core"
+  ],
+  "secondary_muscles": [
+   "lower_back"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 3,
+   "cycling": 3,
+   "generic": 3,
+   "hiking": 3,
+   "mtb": 3,
+   "paddling": 3,
+   "running": 3,
+   "swimming": 3
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Keep shoulders away from ears. If hamstrings are tight, keep a soft bend in the knees.",
+  "cues": [],
+  "description": "Downward dog on forearms — deepens the shoulder and hamstring stretch. Excellent prep for forearm stands.",
+  "difficulty": 2,
+  "duration_per_side_sec": 45,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 17,
+  "has_animation": true,
+  "instructions": "1. Start on all fours. Lower onto forearms, elbows shoulder-width apart.\n2. Tuck toes. Lift hips toward the ceiling. Straighten legs.\n3. Press forearms firmly into the mat. Let head hang between arms.\n4. Hold 30–45 s. Pedal feet to deepen the calf stretch.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Dolphin Pose",
+  "position": null,
+  "primary_muscles": [
+   "hamstrings",
+   "calves",
+   "upper_back",
+   "lats"
+  ],
+  "secondary_muscles": [
+   "shoulders",
+   "forearms"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "climbing": 2,
+   "generic": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": "Breathe into your chest as it opens",
+  "cautions": "Do not arch the lower back. Keep the stretch gentle — pec tendons are sensitive.",
+  "cues": [
+   "Forearms on the frame",
+   "Step through until you feel the stretch"
+  ],
+  "description": "Opens the pectorals and anterior shoulders. Critical after desk work or cycling.",
+  "difficulty": 1,
+  "duration_per_side_sec": 45,
+  "each_side": false,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": "warm_up",
+  "garmin_subtype": 70,
+  "has_animation": true,
+  "instructions": "1. Stand in a doorway. Place forearms on the doorframe at shoulder height.\n2. Gently lean forward until a stretch is felt across the chest.\n3. Keep shoulders down and back. Hold 30–45 s.",
+  "is_compound": true,
+  "movement_pattern": "static_stretch",
+  "name": "Doorway Chest Stretch",
+  "position": "standing",
+  "primary_muscles": [
+   "chest",
+   "shoulders"
+  ],
+  "secondary_muscles": [
+   "biceps",
+   "front_delts"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "climbing": 3,
+   "cycling": 2,
+   "generic": 3,
+   "swimming": 3
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Listen to your body. Do not force range of motion.",
+  "cues": [],
+  "description": "Downward dog with knee drawing toward nose. Core + balance.",
+  "difficulty": 2,
+  "duration_per_side_sec": 60,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 18,
+  "has_animation": true,
+  "instructions": "1. Enter the pose mindfully.\n2. Hold with steady breath.\n3. Release slowly.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Down Dog Knee to Nose Pose",
+  "position": null,
+  "primary_muscles": [
+   "core",
+   "shoulders"
+  ],
+  "secondary_muscles": [
+   "hip_flexors"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "generic": 3,
+   "paddling": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Listen to your body. Do not force range of motion.",
+  "cues": [],
+  "description": "Three-legged dog. Lifted leg lengthens posterior chain.",
+  "difficulty": 2,
+  "duration_per_side_sec": 60,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 19,
+  "has_animation": true,
+  "instructions": "1. Enter the pose mindfully.\n2. Hold with steady breath.\n3. Release slowly.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Down Dog Split Pose",
+  "position": null,
+  "primary_muscles": [
+   "hamstrings",
+   "shoulders"
+  ],
+  "secondary_muscles": [
+   "glutes"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "generic": 3,
+   "paddling": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": "Breathe as you alternate the heels",
+  "cautions": "Keep hands firmly planted. Move smoothly, not abruptly.",
+  "cues": [
+   "Pedal one heel down at a time",
+   "Keep your spine long"
+  ],
+  "description": "Dynamic calf stretch — alternate bending each knee in downward dog to target both calves.",
+  "difficulty": 1,
+  "duration_per_side_sec": 30,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. From downward dog.\n2. Bend right knee deeply, pressing left heel toward the mat.\n3. Hold 3–5 seconds. Switch sides.\n4. Repeat 8–10 times per side.",
+  "is_compound": true,
+  "movement_pattern": "dynamic_stretch",
+  "name": "Downward Dog Pedal",
+  "position": "kneeling",
+  "primary_muscles": [
+   "calves",
+   "hamstrings"
+  ],
+  "secondary_muscles": [
+   "glutes"
+  ],
+  "sets": 3,
+  "sport_relevance": {
+   "generic": 2,
+   "hiking": 3,
+   "running": 3
+  }
+ },
+ {
+  "breath_cue": "Breathe deep and pedal it out",
+  "cautions": "Keep a slight bend in knees if hamstrings are tight. Do not lock elbows. Spread fingers wide, press through the knuckle pads.",
+  "cues": [
+   "Press the floor away",
+   "Send your hips up and back"
+  ],
+  "description": "The foundational yoga pose — stretches the entire posterior chain. Hamstrings, calves, shoulders, and spine.",
+  "difficulty": 1,
+  "duration_per_side_sec": 60,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 21,
+  "has_animation": true,
+  "instructions": "1. Start on all fours. Tuck toes, lift hips toward the ceiling.\n2. Press hands firmly into the mat. Straighten arms.\n3. Pedal feet — bend one knee, then the other — to warm up the calves.\n4. Hold 45–60 s. Aim to bring heels toward the mat.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Downward Facing Dog",
+  "position": "kneeling",
+  "primary_muscles": [
+   "hamstrings",
+   "calves",
+   "upper_back",
+   "lats",
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "lower_back",
+   "forearms"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "climbing": 3,
+   "cycling": 3,
+   "generic": 3,
+   "hiking": 3,
+   "mtb": 3,
+   "running": 3,
+   "swimming": 3
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "If hooking the foot is too challenging, rest toes on the floor. If palms don't meet, press backs of hands together.",
+  "cues": [],
+  "description": "Standing balance with wrapped arms and legs — stretches the shoulders, upper back, and glutes.",
+  "difficulty": 3,
+  "duration_per_side_sec": 45,
+  "each_side": true,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 22,
+  "has_animation": true,
+  "instructions": "1. Stand tall. Cross left thigh over right thigh. Hook left foot behind right calf.\n2. Cross left arm under right arm at the elbows. Bend elbows. Press palms together or backs of hands.\n3. Sink deeper into the standing leg. Hold 30–45 s. Switch sides.",
+  "is_compound": true,
+  "movement_pattern": "balance_pose",
+  "name": "Eagle Pose (Garudasana)",
+  "position": null,
+  "primary_muscles": [
+   "glutes",
+   "upper_back",
+   "shoulders",
+   "calves"
+  ],
+  "secondary_muscles": [
+   "hip_adductors",
+   "forearms"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "generic": 2,
+   "running": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Listen to your body. Do not force range of motion.",
+  "cues": [],
+  "description": "Lying prone, arm extended, gentle roll. Opens chest + front delts.",
+  "difficulty": 2,
+  "duration_per_side_sec": 60,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "move",
+  "garmin_subtype": 8,
+  "has_animation": true,
+  "instructions": "1. Enter the pose mindfully.\n2. Hold with steady breath.\n3. Release slowly.",
+  "is_compound": true,
+  "movement_pattern": "dynamic_stretch",
+  "name": "Eight-Point Shoulder Opener",
+  "position": null,
+  "primary_muscles": [
+   "chest",
+   "shoulders"
+  ],
+  "secondary_muscles": [
+   "upper_back"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "generic": 3,
+   "paddling": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Listen to your body. Do not force range of motion.",
+  "cues": [],
+  "description": "Warrior II with side bend. Lengthens entire flank.",
+  "difficulty": 2,
+  "duration_per_side_sec": 60,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 25,
+  "has_animation": true,
+  "instructions": "1. Enter the pose mindfully.\n2. Hold with steady breath.\n3. Release slowly.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Extended Side Angle Pose",
+  "position": null,
+  "primary_muscles": [
+   "obliques",
+   "quads"
+  ],
+  "secondary_muscles": [
+   "lats",
+   "glutes"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "generic": 3,
+   "paddling": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Keep the front knee aligned with the ankle. Do not rest the hand directly on the knee joint.",
+  "cues": [],
+  "description": "Deep lunge with side stretch — opens the groin, side body, and shoulder.",
+  "difficulty": 2,
+  "duration_per_side_sec": 45,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 25,
+  "has_animation": true,
+  "instructions": "1. From Warrior II with right foot forward, bend right knee to 90°.\n2. Place right forearm on right thigh.\n3. Extend left arm overhead, palm facing down. Reach over the left ear.\n4. Hold 30–45 s. Switch sides.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Extended Side Angle (Utthita Parsvakonasana)",
+  "position": null,
+  "primary_muscles": [
+   "hip_adductors",
+   "hip_flexors",
+   "obliques",
+   "lats"
+  ],
+  "secondary_muscles": [
+   "quads",
+   "shoulders"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "generic": 2,
+   "running": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Gently stretch each finger individually — the ring and pinky fingers are often the tightest. Never force fingers into hyperextension.",
+  "cues": [],
+  "description": "Opens the small muscles of the hands — essential for climbers and anyone doing repetitive grip work.",
+  "difficulty": 1,
+  "duration_per_side_sec": 30,
+  "each_side": true,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": "warm_up",
+  "garmin_subtype": 41,
+  "has_animation": true,
+  "instructions": "1. Extend right arm forward, palm facing down.\n2. With left hand, gently pull each finger back toward the wrist, one at a time.\n3. Hold each finger for 10–15 s.\n4. Then pull all fingers back together for 20 s. Switch hands.",
+  "is_compound": true,
+  "movement_pattern": "static_stretch",
+  "name": "Finger and Hand Extensor Stretch",
+  "position": null,
+  "primary_muscles": [
+   "hands",
+   "forearms"
+  ],
+  "secondary_muscles": [
+   "biceps"
+  ],
+  "sets": 3,
+  "sport_relevance": {
+   "climbing": 3,
+   "cycling": 2,
+   "generic": 2,
+   "paddling": 3
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Listen to your body. Do not force range of motion.",
+  "cues": [],
+  "description": "Supine back-bend with chest lifted. Opens chest + throat.",
+  "difficulty": 2,
+  "duration_per_side_sec": 60,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 26,
+  "has_animation": true,
+  "instructions": "1. Enter the pose mindfully.\n2. Hold with steady breath.\n3. Release slowly.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Fish Pose",
+  "position": null,
+  "primary_muscles": [
+   "chest",
+   "spinal_erectors"
+  ],
+  "secondary_muscles": [
+   "shoulders",
+   "neck"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "generic": 3,
+   "paddling": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Keep most weight supported by elbows, not the head/neck. Avoid this if you have neck issues.",
+  "cues": [],
+  "description": "Supine backbend that opens the chest, throat, and hip flexors. Excellent counterpose to forward folds.",
+  "difficulty": 2,
+  "duration_per_side_sec": 30,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 26,
+  "has_animation": true,
+  "instructions": "1. Lie on your back. Slide hands palms-down under your glutes.\n2. Press into elbows. Lift chest toward the ceiling.\n3. Gently rest the crown of the head on the mat. Keep weight in the elbows.\n4. Hold 20–30 s. Lower with control.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Fish Pose (Matsyasana)",
+  "position": null,
+  "primary_muscles": [
+   "chest",
+   "shoulders",
+   "hip_flexors",
+   "core"
+  ],
+  "secondary_muscles": [
+   "neck",
+   "upper_back"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 3,
+   "generic": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Rotate the leg inward and outward to target different parts of the calf. Do not roll directly over the Achilles tendon.",
+  "cues": [],
+  "description": "Foam roll the calves — releases trigger points in the gastrocnemius and soleus.",
+  "difficulty": 1,
+  "duration_per_side_sec": 120,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "foam_roller",
+   "mat"
+  ],
+  "garmin_category": "warm_up",
+  "garmin_subtype": 37,
+  "has_animation": true,
+  "instructions": "1. Sit on the mat. Place a foam roller under your right calf.\n2. Cross left ankle over right ankle for more pressure.\n3. Lift hips. Slowly roll from ankle to just below the knee.\n4. When you find a tender spot, pause for 15–20 s. Roll for 60 s per leg.",
+  "is_compound": true,
+  "movement_pattern": "myofascial_release",
+  "name": "Foam Roller — Calves",
+  "position": null,
+  "primary_muscles": [
+   "calves"
+  ],
+  "secondary_muscles": [
+   "hamstrings"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "generic": 2,
+   "hiking": 3,
+   "running": 3
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Avoid rolling the lower back (lumbar spine). Keep your core engaged to protect the spine. Only roll the thoracic region (ribcage area).",
+  "cues": [],
+  "description": "Foam roll the thoracic spine — reverses thoracic kyphosis from prolonged sitting and cycling.",
+  "difficulty": 1,
+  "duration_per_side_sec": 120,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "foam_roller",
+   "mat"
+  ],
+  "garmin_category": "warm_up",
+  "garmin_subtype": 56,
+  "has_animation": true,
+  "instructions": "1. Lie on a foam roller placed horizontally under your upper back.\n2. Support head with interlaced hands. Hips on the floor.\n3. Gently roll up and down from mid-back to shoulders.\n4. Spend 60–90 s. Pause on tender spots for 15–20 s.",
+  "is_compound": true,
+  "movement_pattern": "myofascial_release",
+  "name": "Foam Roller — Thoracic Spine",
+  "position": null,
+  "primary_muscles": [
+   "upper_back"
+  ],
+  "secondary_muscles": [
+   "lower_back",
+   "neck"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "cycling": 3,
+   "generic": 3,
+   "mtb": 3,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Keep the spine neutral — hinge from hips, not lower back. Foot must stay flexed to protect the knee.",
+  "cues": [],
+  "description": "Seated glute stretch — cross one ankle over the opposite knee and lean forward.",
+  "difficulty": 1,
+  "duration_per_side_sec": 45,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "warm_up",
+  "garmin_subtype": 42,
+  "has_animation": true,
+  "instructions": "1. Sit on a chair or the floor.\n2. Cross right ankle over left knee.\n3. Keep right foot flexed. Place hands on right shin.\n4. Hinge forward from the hips until you feel a stretch in the right glute.\n5. Hold 30–45 s. Switch sides.",
+  "is_compound": true,
+  "movement_pattern": "static_stretch",
+  "name": "Forward Glute Stretch",
+  "position": null,
+  "primary_muscles": [
+   "glutes",
+   "hamstrings"
+  ],
+  "secondary_muscles": [
+   "lower_back"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "cycling": 2,
+   "generic": 2,
+   "running": 3
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Listen to your body. Do not force range of motion.",
+  "cues": [],
+  "description": "Low push-up hold. Elbows close to ribs.",
+  "difficulty": 3,
+  "duration_per_side_sec": 60,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 27,
+  "has_animation": true,
+  "instructions": "1. Enter the pose mindfully.\n2. Hold with steady breath.\n3. Release slowly.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Four-Limbed Staff Pose",
+  "position": null,
+  "primary_muscles": [
+   "chest",
+   "triceps"
+  ],
+  "secondary_muscles": [
+   "core",
+   "shoulders"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "generic": 3,
+   "paddling": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "If heels lift, place a rolled mat or blanket under them. Hold onto a doorframe or chair for balance if needed.",
+  "cues": [],
+  "description": "Deep squat — opens the hips, groin, and lower back. The natural resting position in many cultures.",
+  "difficulty": 2,
+  "duration_per_side_sec": 60,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 63,
+  "has_animation": true,
+  "instructions": "1. Stand with feet slightly wider than hip-width.\n2. Squat down as low as possible. Heels on the floor or on a folded blanket.\n3. Press elbows against inner knees. Hands in prayer at heart.\n4. Hold 45–60 s. Breathe deeply.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Garland Pose (Malasana / Yogi Squat)",
+  "position": null,
+  "primary_muscles": [
+   "hip_adductors",
+   "hip_flexors",
+   "calves",
+   "lower_back"
+  ],
+  "secondary_muscles": [
+   "glutes",
+   "feet"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "generic": 2,
+   "hiking": 2,
+   "running": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Keep knees bent — the priority is the wrist stretch, not hamstring depth. Release immediately if you feel wrist pain.",
+  "cues": [],
+  "description": "Standing forward fold with hands under feet — deeply stretches the wrists and forearms while stretching hamstrings.",
+  "difficulty": 2,
+  "duration_per_side_sec": 30,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Stand in forward fold. Bend knees generously.\n2. Slide hands under feet, palms facing up, toes touching wrists.\n3. Gently straighten legs as much as comfortable.\n4. Hold 20–30 s. Release hands and roll up slowly.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Gorilla Pose (Padahastasana Variation)",
+  "position": null,
+  "primary_muscles": [
+   "forearms",
+   "hands",
+   "hamstrings",
+   "calves"
+  ],
+  "secondary_muscles": [
+   "lower_back"
+  ],
+  "sets": 3,
+  "sport_relevance": {
+   "climbing": 3,
+   "generic": 2,
+   "paddling": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Listen to your body. Do not force range of motion.",
+  "cues": [],
+  "description": "Chair pose with one foot in figure-four. Balance + hip opener.",
+  "difficulty": 3,
+  "duration_per_side_sec": 60,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 30,
+  "has_animation": true,
+  "instructions": "1. Enter the pose mindfully.\n2. Hold with steady breath.\n3. Release slowly.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Half Chair Half Ankle to Knee",
+  "position": null,
+  "primary_muscles": [
+   "quads",
+   "hip_external_rotators"
+  ],
+  "secondary_muscles": [
+   "glutes",
+   "core"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "generic": 3,
+   "paddling": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Use a block under the supporting hand. Keep the standing leg slightly bent. Gaze at a fixed point or upward.",
+  "cues": [],
+  "description": "Standing balance pose — opens the hamstrings and hips while challenging single-leg stability.",
+  "difficulty": 3,
+  "duration_per_side_sec": 30,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 31,
+  "has_animation": true,
+  "instructions": "1. From Warrior II on the right side, shift weight to the right foot.\n2. Place right hand on a block or the floor about 30 cm in front of the right foot.\n3. Lift left leg parallel to the floor. Open hips. Extend left arm toward the ceiling.\n4. Hold 20–30 s. Switch sides.",
+  "is_compound": true,
+  "movement_pattern": "balance_pose",
+  "name": "Half Moon Pose (Ardha Chandrasana)",
+  "position": null,
+  "primary_muscles": [
+   "hamstrings",
+   "hip_flexors",
+   "glutes",
+   "hip_adductors"
+  ],
+  "secondary_muscles": [
+   "obliques",
+   "lats"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "generic": 2,
+   "hiking": 2,
+   "running": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Keep the front foot flexed to protect the hamstring insertion. A slight knee bend is fine if hamstrings are very tight.",
+  "cues": [],
+  "description": "Yoga half-splits pose — deep hamstring isolation in a kneeling lunge position. Prepares the body for front splits.",
+  "difficulty": 2,
+  "duration_per_side_sec": 60,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "warm_up",
+  "garmin_subtype": 43,
+  "has_animation": true,
+  "instructions": "1. From a low lunge with right foot forward, shift hips back.\n2. Straighten right leg. Flex right foot, toes pointing up.\n3. Walk hands back. Hinge forward over the straight leg.\n4. Hold 45–60 s. Switch sides.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Half Splits (Ardha Hanumanasana)",
+  "position": null,
+  "primary_muscles": [
+   "hamstrings",
+   "calves",
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "lower_back",
+   "hip_flexors"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "generic": 2,
+   "hiking": 2,
+   "running": 3
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Listen to your body. Do not force range of motion.",
+  "cues": [],
+  "description": "Supine, strap around foot, leg vertical. Classic hamstring stretch.",
+  "difficulty": 1,
+  "duration_per_side_sec": 60,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "move",
+  "garmin_subtype": 16,
+  "has_animation": true,
+  "instructions": "1. Enter the pose mindfully.\n2. Hold with steady breath.\n3. Release slowly.",
+  "is_compound": true,
+  "movement_pattern": "dynamic_stretch",
+  "name": "Hamstring Stretch (Yoga)",
+  "position": null,
+  "primary_muscles": [
+   "hamstrings"
+  ],
+  "secondary_muscles": [
+   "calves"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "generic": 3,
+   "paddling": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Listen to your body. Do not force range of motion.",
+  "cues": [],
+  "description": "Seated forward fold over one leg. Hamstring + back release.",
+  "difficulty": 1,
+  "duration_per_side_sec": 60,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 32,
+  "has_animation": true,
+  "instructions": "1. Enter the pose mindfully.\n2. Hold with steady breath.\n3. Release slowly.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Head to Knee Pose",
+  "position": null,
+  "primary_muscles": [
+   "hamstrings"
+  ],
+  "secondary_muscles": [
+   "spinal_erectors",
+   "calves"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "generic": 3,
+   "paddling": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "If you cannot reach the foot, use a strap around the ball of the foot. Keep the extended-leg foot flexed.",
+  "cues": [],
+  "description": "Seated single-leg forward fold — deep hamstring and lower back stretch on one leg at a time.",
+  "difficulty": 2,
+  "duration_per_side_sec": 60,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 32,
+  "has_animation": true,
+  "instructions": "1. Sit on the mat. Extend right leg straight. Bend left knee, sole of left foot against the right inner thigh.\n2. Inhale, lengthen spine. Exhale, hinge forward over the right leg.\n3. Hold right foot, ankle, or shin — wherever you can reach with a straight back.\n4. Hold 45–60 s. Switch sides.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Head to Knee Pose (Janu Sirsasana)",
+  "position": null,
+  "primary_muscles": [
+   "hamstrings",
+   "calves",
+   "lower_back",
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "hip_adductors"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "cycling": 2,
+   "generic": 2,
+   "hiking": 3,
+   "running": 3
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Never force this pose. If you feel knee pain, elevate with blocks or skip this pose entirely. Ankle flexibility is required.",
+  "cues": [],
+  "description": "Kneeling pose that deeply stretches the quadriceps and anterior shins. Excellent after running or cycling.",
+  "difficulty": 2,
+  "duration_per_side_sec": 90,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 34,
+  "has_animation": true,
+  "instructions": "1. Kneel on the mat. Bring knees together, feet slightly wider than hips.\n2. Sit back between your feet. If your glutes don't reach the floor, sit on a block.\n3. Keep spine tall. Rest hands on thighs.\n4. Hold 60–90 s. To release, lean forward onto hands and extend legs.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Hero Pose (Virasana)",
+  "position": null,
+  "primary_muscles": [
+   "quads",
+   "calves",
+   "feet"
+  ],
+  "secondary_muscles": [
+   "hip_flexors"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "cycling": 2,
+   "generic": 2,
+   "running": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Listen to your body. Do not force range of motion.",
+  "cues": [],
+  "description": "Lunge with back leg straight, arms overhead.",
+  "difficulty": 2,
+  "duration_per_side_sec": 60,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 35,
+  "has_animation": true,
+  "instructions": "1. Enter the pose mindfully.\n2. Hold with steady breath.\n3. Release slowly.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "High Lunge Pose",
+  "position": null,
+  "primary_muscles": [
+   "quads",
+   "hip_flexors"
+  ],
+  "secondary_muscles": [
+   "glutes",
+   "core"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "generic": 3,
+   "paddling": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Listen to your body. Do not force range of motion.",
+  "cues": [],
+  "description": "Dynamic hip mobility drill.",
+  "difficulty": 1,
+  "duration_per_side_sec": 60,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "move",
+  "garmin_subtype": 17,
+  "has_animation": true,
+  "instructions": "1. Enter the pose mindfully.\n2. Hold with steady breath.\n3. Release slowly.",
+  "is_compound": true,
+  "movement_pattern": "dynamic_stretch",
+  "name": "Hip Stretch",
+  "position": null,
+  "primary_muscles": [
+   "hip_flexors",
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "quads"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "generic": 3,
+   "paddling": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Keep movements very slow and gentle. Stop immediately if you feel clicking or locking of the jaw joint.",
+  "cues": [],
+  "description": "Gentle jaw and temporomandibular joint release. Reduces tension from clenching — common during intense exercise.",
+  "difficulty": 1,
+  "duration_per_side_sec": 60,
+  "each_side": false,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": "warm_up",
+  "garmin_subtype": 55,
+  "has_animation": true,
+  "instructions": "1. Sit comfortably. Place fingertips on the jaw muscles just in front of the ears.\n2. Open mouth slowly. Feel the jaw joint move. Close slowly.\n3. With mouth slightly open, gently move jaw side to side.\n4. Massage the jaw muscles in small circles for 30 s. Repeat 2–3 times.",
+  "is_compound": true,
+  "movement_pattern": "myofascial_release",
+  "name": "Jaw and TMJ Release",
+  "position": null,
+  "primary_muscles": [
+   "neck"
+  ],
+  "secondary_muscles": [
+   "upper_back"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "generic": 2,
+   "running": 2
+  }
+ },
+ {
+  "breath_cue": "Exhale as you shift your hips forward",
+  "cautions": "Keep the front knee aligned with the ankle — do not let it drift past the toes. Place padding under the kneeling knee if needed.",
+  "cues": [
+   "Tuck your tailbone under",
+   "Squeeze the back glute"
+  ],
+  "description": "The definitive hip flexor stretch. Critical for runners, cyclists, and desk workers.",
+  "difficulty": 1,
+  "duration_per_side_sec": 60,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 41,
+  "has_animation": true,
+  "instructions": "1. Kneel on the right knee. Left foot forward, knee at 90 degrees.\n2. Place hands on left thigh for stability.\n3. Squeeze right glute. Tilt pelvis posteriorly (tuck tailbone under).\n4. Gently press hips forward until you feel a stretch in the front of the right hip.\n5. Hold 45–60 s. Switch sides. Raise arm overhead on the kneeling side for a deeper stretch.",
+  "is_compound": true,
+  "movement_pattern": "static_stretch",
+  "name": "Kneeling Hip Flexor Stretch",
+  "position": "kneeling",
+  "primary_muscles": [
+   "hip_flexors",
+   "quads"
+  ],
+  "secondary_muscles": [
+   "core"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "cycling": 3,
+   "generic": 3,
+   "hiking": 3,
+   "running": 3
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Listen to your body. Do not force range of motion.",
+  "cues": [],
+  "description": "Lowering transition during sun salutation.",
+  "difficulty": 2,
+  "duration_per_side_sec": 60,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 36,
+  "has_animation": true,
+  "instructions": "1. Enter the pose mindfully.\n2. Hold with steady breath.\n3. Release slowly.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Knees Chest Chin Pose",
+  "position": null,
+  "primary_muscles": [
+   "chest",
+   "triceps"
+  ],
+  "secondary_muscles": [
+   "spinal_erectors"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "generic": 3,
+   "paddling": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": "Exhale as you hug the knees in",
+  "cautions": "Avoid if you have acute disc issues. Keep the stretch gentle — do not force.",
+  "cues": [
+   "Draw both knees to your chest",
+   "Let your low back release"
+  ],
+  "description": "Supine knees-to-chest stretch releasing the lumbar spine and sacral muscles.",
+  "difficulty": 1,
+  "duration_per_side_sec": 60,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Lie on your back. Bend both knees, feet flat.\n2. Draw both knees toward your chest. Wrap arms around shins.\n3. Gently pull knees closer. Keep head and shoulders relaxed on the mat.\n4. Hold 45–60 s. Rock gently side to side if it feels good.",
+  "is_compound": true,
+  "movement_pattern": "static_stretch",
+  "name": "Knees to Chest",
+  "position": "supine",
+  "primary_muscles": [
+   "lower_back",
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "hamstrings"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "cycling": 3,
+   "generic": 3,
+   "hiking": 3,
+   "running": 3
+  }
+ },
+ {
+  "breath_cue": "Exhale and sink your chest down",
+  "cautions": "Keep the stretching arm straight. Breathe into the stretch.",
+  "cues": [
+   "Hands high on the wall",
+   "Bow forward from the hips"
+  ],
+  "description": "Wall-assisted latissimus dorsi stretch. Opens the sides of the torso.",
+  "difficulty": 1,
+  "duration_per_side_sec": 45,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "wall"
+  ],
+  "garmin_category": "warm_up",
+  "garmin_subtype": 46,
+  "has_animation": true,
+  "instructions": "1. Stand arm's length from a wall. Place right hand on the wall at shoulder height.\n2. Keeping hips square, lean left hip out while keeping right hand fixed.\n3. You should feel the stretch along the right side of the torso and armpit.\n4. Hold 30–45 s. Switch sides.",
+  "is_compound": true,
+  "movement_pattern": "static_stretch",
+  "name": "Lat Stretch on Wall",
+  "position": "standing",
+  "primary_muscles": [
+   "lats",
+   "upper_back"
+  ],
+  "secondary_muscles": [
+   "triceps",
+   "obliques"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "climbing": 3,
+   "generic": 2,
+   "paddling": 3,
+   "swimming": 3
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "This is a restorative, not active, pose. Place a folded blanket under the sacrum for extra comfort. Avoid if you have glaucoma or uncontrolled high blood pressure.",
+  "cues": [],
+  "description": "Restorative inversion — legs resting vertically against a wall. Drains lymphatic fluid, reduces swelling, and gently stretches the hamstrings.",
+  "difficulty": 1,
+  "duration_per_side_sec": 180,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "wall",
+   "mat"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Sit sideways against a wall with right hip touching the wall.\n2. Lie back and swing legs up the wall.\n3. Scoot closer until the backs of the legs rest comfortably against the wall.\n4. Arms out to the sides. Breathe deeply. Hold 2–5 min.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Legs Up the Wall (Viparita Karani)",
+  "position": null,
+  "primary_muscles": [
+   "hamstrings",
+   "lower_back",
+   "calves"
+  ],
+  "secondary_muscles": [
+   "glutes",
+   "neck"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "cycling": 3,
+   "generic": 3,
+   "hiking": 3,
+   "running": 3
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Keep the movement gentle. Do not force the head down with the hand — let gravity do the work.",
+  "cues": [],
+  "description": "Isolates the levator scapulae — the muscle that runs from the shoulder blade to the side of the neck. Releases \"computer neck.\"",
+  "difficulty": 1,
+  "duration_per_side_sec": 30,
+  "each_side": true,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": "warm_up",
+  "garmin_subtype": 47,
+  "has_animation": true,
+  "instructions": "1. Sit tall. Turn head 45° to the right.\n2. Look down toward your right armpit.\n3. Gently place right hand on the back of the head (do NOT pull). Let gravity assist.\n4. Hold 30 s. Switch sides.",
+  "is_compound": true,
+  "movement_pattern": "static_stretch",
+  "name": "Levator Scapulae Stretch",
+  "position": null,
+  "primary_muscles": [
+   "neck",
+   "upper_back"
+  ],
+  "secondary_muscles": [],
+  "sets": 2,
+  "sport_relevance": {
+   "cycling": 3,
+   "generic": 2,
+   "running": 1,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Listen to your body. Do not force range of motion.",
+  "cues": [],
+  "description": "Prone back-bend. Lift chest + legs, arms reach back.",
+  "difficulty": 2,
+  "duration_per_side_sec": 60,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 38,
+  "has_animation": true,
+  "instructions": "1. Enter the pose mindfully.\n2. Hold with steady breath.\n3. Release slowly.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Locust Pose",
+  "position": null,
+  "primary_muscles": [
+   "spinal_erectors",
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "hamstrings",
+   "shoulders"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "generic": 3,
+   "paddling": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Keep the neck long — do not crane upward. Engage glutes and back muscles rather than jerking up.",
+  "cues": [],
+  "description": "Prone back strengthener and chest opener. Lifts the legs and chest off the floor.",
+  "difficulty": 2,
+  "duration_per_side_sec": 20,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 38,
+  "has_animation": true,
+  "instructions": "1. Lie face-down. Arms alongside body, palms facing up.\n2. Inhale. Lift chest, arms, and legs off the mat simultaneously.\n3. Gaze slightly forward or down. Hold 15–20 s.\n4. Exhale and lower. Repeat 3 times.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Locust Pose (Salabhasana)",
+  "position": null,
+  "primary_muscles": [
+   "lower_back",
+   "glutes",
+   "hamstrings",
+   "upper_back"
+  ],
+  "secondary_muscles": [
+   "chest"
+  ],
+  "sets": 3,
+  "sport_relevance": {
+   "generic": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": "Exhale as you sink into the lunge",
+  "cautions": "Pad the back knee. Keep the front knee tracking over the second toe.",
+  "cues": [
+   "Front knee over the ankle",
+   "Sink the hips down and forward"
+  ],
+  "description": "Deep lunge that opens the hip flexors and groin. More dynamic than kneeling hip flexor stretch.",
+  "difficulty": 2,
+  "duration_per_side_sec": 45,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 39,
+  "has_animation": true,
+  "instructions": "1. From downward dog, step right foot forward between hands.\n2. Lower left knee to the mat. Untuck toes.\n3. Walk right foot slightly forward. Keep knee aligned over ankle.\n4. Sink hips forward and down. Hold 30–45 s.\n5. Optionally lift arms overhead for a deeper stretch.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Low Lunge",
+  "position": "kneeling",
+  "primary_muscles": [
+   "hip_flexors",
+   "quads",
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "hamstrings"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "cycling": 3,
+   "generic": 3,
+   "hiking": 3,
+   "running": 3
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Listen to your body. Do not force range of motion.",
+  "cues": [],
+  "description": "Low lunge with thoracic rotation.",
+  "difficulty": 2,
+  "duration_per_side_sec": 60,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 40,
+  "has_animation": true,
+  "instructions": "1. Enter the pose mindfully.\n2. Hold with steady breath.\n3. Release slowly.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Low Lunge Twist Pose",
+  "position": null,
+  "primary_muscles": [
+   "obliques",
+   "hip_flexors"
+  ],
+  "secondary_muscles": [
+   "spinal_erectors"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "generic": 3,
+   "paddling": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Listen to your body. Do not force range of motion.",
+  "cues": [],
+  "description": "Half-kneeling lunge. Gentle hip flexor stretch.",
+  "difficulty": 1,
+  "duration_per_side_sec": 60,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 41,
+  "has_animation": true,
+  "instructions": "1. Enter the pose mindfully.\n2. Hold with steady breath.\n3. Release slowly.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Low Lunge with Knee Down",
+  "position": null,
+  "primary_muscles": [
+   "hip_flexors",
+   "quads"
+  ],
+  "secondary_muscles": [
+   "glutes"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "generic": 3,
+   "paddling": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": "Exhale as you rotate open",
+  "cautions": "Keep the front knee aligned over the ankle. The twist comes from the thoracic spine, not the lower back.",
+  "cues": [
+   "Sink into a low lunge",
+   "Rotate toward the front leg"
+  ],
+  "description": "Deep lunge combined with thoracic rotation — opens the hip flexor while mobilizing the thoracic spine.",
+  "difficulty": 2,
+  "duration_per_side_sec": 45,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "warm_up",
+  "garmin_subtype": 48,
+  "has_animation": true,
+  "instructions": "1. Step right foot forward into a deep lunge. Left knee on the mat.\n2. Place left hand on the mat inside the right foot.\n3. Twist torso to the right. Extend right arm toward the ceiling.\n4. Hold 30 s. Switch sides.",
+  "is_compound": true,
+  "movement_pattern": "dynamic_stretch",
+  "name": "Lunge with Spinal Twist",
+  "position": "kneeling",
+  "primary_muscles": [
+   "hip_flexors",
+   "obliques",
+   "upper_back"
+  ],
+  "secondary_muscles": [
+   "quads",
+   "glutes"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "cycling": 3,
+   "generic": 3,
+   "hiking": 3,
+   "running": 3
+  }
+ },
+ {
+  "breath_cue": "Exhale as you draw the leg up",
+  "cautions": "Keep both hips on the mat. Do not pull so hard that the opposite hip lifts. The stretch should be in the belly of the hamstring, not behind the knee.",
+  "cues": [
+   "Strap around the arch of the foot",
+   "Keep the opposite leg down"
+  ],
+  "description": "Supine hamstring stretch using a strap — isolates the hamstrings without straining the lower back.",
+  "difficulty": 1,
+  "duration_per_side_sec": 60,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat",
+   "strap"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 49,
+  "has_animation": true,
+  "instructions": "1. Lie on your back. Loop a strap around the ball of the right foot.\n2. Extend right leg toward the ceiling. Keep left leg flat on the mat.\n3. Gently pull the strap to bring the leg closer. Keep the knee straight but not locked.\n4. Hold 45–60 s. Switch legs.",
+  "is_compound": true,
+  "movement_pattern": "static_stretch",
+  "name": "Lying Hamstring Stretch with Strap",
+  "position": "supine",
+  "primary_muscles": [
+   "hamstrings",
+   "calves"
+  ],
+  "secondary_muscles": [
+   "lower_back"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "cycling": 2,
+   "generic": 3,
+   "hiking": 3,
+   "running": 3
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "If your knees don't reach the floor, place pillows or blocks under them. Never force.",
+  "cues": [],
+  "description": "Supine hip abduction — gently opens the outer hip and groin.",
+  "difficulty": 1,
+  "duration_per_side_sec": 45,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "warm_up",
+  "garmin_subtype": 50,
+  "has_animation": true,
+  "instructions": "1. Lie on your back. Bend both knees.\n2. Let both knees fall outward (soles of feet together).\n3. Gently press knees toward the mat using inner thigh muscles.\n4. Hold 30–45 s.",
+  "is_compound": true,
+  "movement_pattern": "static_stretch",
+  "name": "Lying Hip Abduction Stretch",
+  "position": null,
+  "primary_muscles": [
+   "hip_adductors",
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "hip_flexors"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "generic": 2,
+   "hiking": 2,
+   "running": 2
+  }
+ },
+ {
+  "breath_cue": "Exhale as the leg crosses over",
+  "cautions": "The IT band itself has minimal stretch capacity. This primarily targets the TFL and glute attachments. Stop if you feel knee pain.",
+  "cues": [
+   "Strap the raised leg across your body",
+   "Keep both shoulders down"
+  ],
+  "description": "Supine IT band stretch using a strap — more targeted than the standing version.",
+  "difficulty": 2,
+  "duration_per_side_sec": 60,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat",
+   "strap"
+  ],
+  "garmin_category": "warm_up",
+  "garmin_subtype": 51,
+  "has_animation": true,
+  "instructions": "1. Lie on your back. Loop a strap around the ball of the right foot.\n2. Extend right leg upward. Keep left leg flat.\n3. Gently pull the strap so the leg moves across your body to the left.\n4. Keep right hip on the mat. Hold 45–60 s. Switch sides.",
+  "is_compound": true,
+  "movement_pattern": "static_stretch",
+  "name": "Lying IT Band Stretch with Strap",
+  "position": "supine",
+  "primary_muscles": [
+   "glutes",
+   "quads"
+  ],
+  "secondary_muscles": [
+   "hamstrings"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "cycling": 3,
+   "hiking": 3,
+   "running": 3
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Keep the opposite leg flat on the mat or bent with foot on the floor. Move slowly within a pain-free range.",
+  "cues": [],
+  "description": "Supine hip opener — gently rocks the hip joint through its range of motion.",
+  "difficulty": 1,
+  "duration_per_side_sec": 45,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Lie on your back. Bend right knee, draw it toward chest.\n2. Hold the outside of the right knee and ankle with your hands (cradle the leg).\n3. Gently rock the leg side to side and circle the hip 5–6 times.\n4. Hold the stretch for 30 s. Switch sides.",
+  "is_compound": true,
+  "movement_pattern": "static_stretch",
+  "name": "Lying Leg Cradle Stretch",
+  "position": null,
+  "primary_muscles": [
+   "glutes",
+   "hamstrings",
+   "hip_adductors"
+  ],
+  "secondary_muscles": [
+   "lower_back"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "generic": 2,
+   "running": 3
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Breathe deeply into the side being stretched. Keep hips stacked.",
+  "cues": [],
+  "description": "Gentle supine oblique release — particularly good after rotational sports.",
+  "difficulty": 1,
+  "duration_per_side_sec": 30,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "warm_up",
+  "garmin_subtype": 56,
+  "has_animation": true,
+  "instructions": "1. Lie on your right side. Right arm extended, head resting on the arm.\n2. Bend left knee and place left foot flat on the mat in front of the right leg.\n3. Gently reach left arm overhead, opening the left side of the torso.\n4. Hold 30 s. Switch sides.",
+  "is_compound": true,
+  "movement_pattern": "static_stretch",
+  "name": "Lying Oblique Stretch",
+  "position": null,
+  "primary_muscles": [
+   "obliques",
+   "lats",
+   "lower_back"
+  ],
+  "secondary_muscles": [
+   "chest"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "generic": 2,
+   "paddling": 3,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": "Exhale as you draw the leg in",
+  "cautions": "Keep head and shoulders relaxed on the mat. Stop if you feel sharp pain down the leg (sciatic nerve).",
+  "cues": [
+   "Cross the ankle over the knee",
+   "Pull the thigh toward your chest"
+  ],
+  "description": "Supine piriformis and deep glute stretch. Targets the deep hip rotators that often cause sciatica-like symptoms.",
+  "difficulty": 1,
+  "duration_per_side_sec": 60,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Lie on your back. Bend both knees, feet flat.\n2. Cross right ankle over left knee (figure-four position).\n3. Thread hands behind left thigh. Gently pull left leg toward chest.\n4. You should feel the stretch deep in the right glute.\n5. Hold 45–60 s. Switch sides.",
+  "is_compound": true,
+  "movement_pattern": "static_stretch",
+  "name": "Lying Piriformis Stretch",
+  "position": "supine",
+  "primary_muscles": [
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "lower_back",
+   "hamstrings"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "generic": 3,
+   "hiking": 3,
+   "running": 3
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Listen to your body. Do not force range of motion.",
+  "cues": [],
+  "description": "Standing tall, feet hip-width, arms by sides. Foundation pose.",
+  "difficulty": 1,
+  "duration_per_side_sec": 60,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 43,
+  "has_animation": true,
+  "instructions": "1. Enter the pose mindfully.\n2. Hold with steady breath.\n3. Release slowly.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Mountain Pose",
+  "position": null,
+  "primary_muscles": [
+   "full_body"
+  ],
+  "secondary_muscles": [],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "generic": 3,
+   "paddling": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": "Breathe slowly and let the weight of your head do the work",
+  "cautions": "Do not force head down with hands. Stop if you feel sharp pain or dizziness.",
+  "cues": [
+   "Chin gently toward your chest",
+   "No forcing — let it lengthen"
+  ],
+  "description": "Gentle chin-to-chest stretch releasing cervical spine tension.",
+  "difficulty": 1,
+  "duration_per_side_sec": 30,
+  "each_side": false,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": "warm_up",
+  "garmin_subtype": 55,
+  "has_animation": true,
+  "instructions": "1. Sit or stand tall with shoulders relaxed.\n2. Slowly lower chin toward chest until a gentle stretch is felt along the back of the neck.\n3. Hold without bouncing. Let gravity do the work.\n4. Return slowly to neutral.",
+  "is_compound": true,
+  "movement_pattern": "static_stretch",
+  "name": "Neck Flexion Stretch",
+  "position": "standing",
+  "primary_muscles": [
+   "neck"
+  ],
+  "secondary_muscles": [
+   "upper_back"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "cycling": 2,
+   "generic": 3,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": "Exhale as you ease your ear toward your shoulder",
+  "cautions": "Do not pull head with hand. Keep movement slow. Avoid if you have cervical disc issues.",
+  "cues": [
+   "Keep the opposite shoulder down",
+   "Stay gentle through the neck"
+  ],
+  "description": "Ear-to-shoulder stretch releasing the upper trapezius and scalenes.",
+  "difficulty": 1,
+  "duration_per_side_sec": 30,
+  "each_side": true,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": "warm_up",
+  "garmin_subtype": 55,
+  "has_animation": true,
+  "instructions": "1. Sit tall. Relax shoulders away from ears.\n2. Gently tilt head toward left shoulder.\n3. Keep both shoulders level — do not lift.\n4. Hold 30 seconds. Return to centre. Repeat right.",
+  "is_compound": true,
+  "movement_pattern": "static_stretch",
+  "name": "Neck Lateral Flexion Stretch",
+  "position": "standing",
+  "primary_muscles": [
+   "neck"
+  ],
+  "secondary_muscles": [
+   "upper_back"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "cycling": 2,
+   "generic": 3,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Listen to your body. Do not force range of motion.",
+  "cues": [],
+  "description": "Front shin parallel to mat. Deep hip opener.",
+  "difficulty": 2,
+  "duration_per_side_sec": 60,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 45,
+  "has_animation": true,
+  "instructions": "1. Enter the pose mindfully.\n2. Hold with steady breath.\n3. Release slowly.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "One-Legged Pigeon Pose",
+  "position": null,
+  "primary_muscles": [
+   "hip_external_rotators",
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "hip_flexors",
+   "lower_back"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "generic": 3,
+   "paddling": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Keep arms straight but not locked. If you cannot complete the movement, widen your grip on the strap.",
+  "cues": [],
+  "description": "Shoulder dislocates with a strap — increases shoulder mobility through internal and external rotation.",
+  "difficulty": 2,
+  "duration_per_side_sec": 30,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "strap"
+  ],
+  "garmin_category": "warm_up",
+  "garmin_subtype": 57,
+  "has_animation": true,
+  "instructions": "1. Hold a strap or resistance band with a wide grip in front of you.\n2. Keeping arms straight, slowly raise the strap overhead and behind you.\n3. Return to the front. Narrow your grip as mobility improves.\n4. Repeat 8–10 times.",
+  "is_compound": true,
+  "movement_pattern": "dynamic_stretch",
+  "name": "Over-and-Back Shoulder Stretch",
+  "position": null,
+  "primary_muscles": [
+   "shoulders",
+   "chest",
+   "biceps"
+  ],
+  "secondary_muscles": [
+   "upper_back"
+  ],
+  "sets": 3,
+  "sport_relevance": {
+   "climbing": 3,
+   "generic": 2,
+   "swimming": 3
+  }
+ },
+ {
+  "breath_cue": "Exhale as you reach down the spine",
+  "cautions": "Avoid this if you have shoulder impingement. Keep neck relaxed.",
+  "cues": [
+   "Elbow points to the ceiling",
+   "Gently guide with the other hand"
+  ],
+  "description": "Reaches overhead to stretch the triceps and lateral shoulder. Good after upper-body work.",
+  "difficulty": 2,
+  "duration_per_side_sec": 45,
+  "each_side": true,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": "warm_up",
+  "garmin_subtype": 63,
+  "has_animation": true,
+  "instructions": "1. Raise right arm overhead. Bend elbow, reaching hand down between shoulder blades.\n2. With left hand, gently pull right elbow toward centre.\n3. Keep chest open. Hold 30–45 s. Switch sides.",
+  "is_compound": true,
+  "movement_pattern": "static_stretch",
+  "name": "Overhead Triceps and Shoulder Stretch",
+  "position": "standing",
+  "primary_muscles": [
+   "shoulders",
+   "triceps"
+  ],
+  "secondary_muscles": [
+   "lats"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "climbing": 3,
+   "generic": 3,
+   "paddling": 3,
+   "running": 1,
+   "swimming": 3
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Listen to your body. Do not force range of motion.",
+  "cues": [],
+  "description": "Warrior II with back-bend. Front arm reaches up + back.",
+  "difficulty": 2,
+  "duration_per_side_sec": 60,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 46,
+  "has_animation": true,
+  "instructions": "1. Enter the pose mindfully.\n2. Hold with steady breath.\n3. Release slowly.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Peaceful Warrior Pose",
+  "position": null,
+  "primary_muscles": [
+   "obliques",
+   "quads"
+  ],
+  "secondary_muscles": [
+   "lats",
+   "shoulders"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "generic": 3,
+   "paddling": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": "Breathe into the hip and soften",
+  "cautions": "If hip is far from the floor, place a block or folded blanket under the right glute. Stop if you feel knee pain — adjust shin angle.",
+  "cues": [
+   "Square your hips forward",
+   "Walk your hands out to deepen"
+  ],
+  "description": "Deep hip opener targeting the glutes and external rotators. The most requested stretch for runners.",
+  "difficulty": 2,
+  "duration_per_side_sec": 90,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 45,
+  "has_animation": true,
+  "instructions": "1. From downward dog, bring right knee forward behind right wrist.\n2. Place right ankle near left wrist (shin as parallel to front of mat as comfortable).\n3. Extend left leg straight back. Square hips to the front.\n4. Walk hands forward. Fold over the front shin.\n5. Hold 60–90 s. Switch sides.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Pigeon Pose",
+  "position": "kneeling",
+  "primary_muscles": [
+   "glutes",
+   "hip_flexors"
+  ],
+  "secondary_muscles": [
+   "lower_back",
+   "hamstrings"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "cycling": 3,
+   "generic": 3,
+   "hiking": 3,
+   "running": 3
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Listen to your body. Do not force range of motion.",
+  "cues": [],
+  "description": "Inverted with feet behind head. Advanced shoulder + back stretch.",
+  "difficulty": 3,
+  "duration_per_side_sec": 60,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 48,
+  "has_animation": true,
+  "instructions": "1. Enter the pose mindfully.\n2. Hold with steady breath.\n3. Release slowly.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Plow Pose",
+  "position": null,
+  "primary_muscles": [
+   "upper_back",
+   "hamstrings"
+  ],
+  "secondary_muscles": [
+   "spinal_erectors",
+   "shoulders"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "generic": 3,
+   "paddling": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Keep shoulders down — do not let them creep up toward the ears during the contraction.",
+  "cues": [],
+  "description": "PNF chest and anterior shoulder — rapidly improves overhead mobility and reduces rounded-shoulder posture.",
+  "difficulty": 2,
+  "duration_per_side_sec": 90,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "wall"
+  ],
+  "garmin_category": "warm_up",
+  "garmin_subtype": 58,
+  "has_animation": true,
+  "instructions": "1. Stand in a doorway with right forearm on the doorframe at shoulder height.\n2. Step forward until you feel a stretch across the right chest. Hold 30 s.\n3. Press the forearm gently into the doorframe (~20% effort) for 10 s.\n4. Relax, exhale, and step slightly further forward. Hold the new position 30 s.\n5. Repeat 2–3 times. Switch sides.",
+  "is_compound": true,
+  "movement_pattern": "pnf_stretch",
+  "name": "PNF Chest Stretch",
+  "position": null,
+  "primary_muscles": [
+   "chest",
+   "shoulders"
+  ],
+  "secondary_muscles": [
+   "biceps"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 3,
+   "cycling": 3,
+   "generic": 2,
+   "swimming": 3
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Contract gently — only 20% of maximum effort. Never bounce. PNF is very effective but can cause soreness if overdone.",
+  "cues": [],
+  "description": "Proprioceptive Neuromuscular Facilitation — the most effective method for rapidly increasing hamstring flexibility.",
+  "difficulty": 2,
+  "duration_per_side_sec": 90,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat",
+   "strap"
+  ],
+  "garmin_category": "warm_up",
+  "garmin_subtype": 44,
+  "has_animation": true,
+  "instructions": "1. Lie on your back. Loop a strap around the right foot.\n2. Extend right leg upward until you feel a stretch. Hold 30 s (passive stretch).\n3. Press right leg against the strap at ~20% effort for 10 s (isometric contraction).\n4. Relax. Exhale and gently pull the leg closer. Hold the new position for 30 s.\n5. Repeat the contract-relax cycle 2–3 times. Switch legs.",
+  "is_compound": true,
+  "movement_pattern": "pnf_stretch",
+  "name": "PNF Hamstring Stretch",
+  "position": null,
+  "primary_muscles": [
+   "hamstrings",
+   "calves"
+  ],
+  "secondary_muscles": [
+   "lower_back"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "cycling": 2,
+   "generic": 2,
+   "hiking": 3,
+   "running": 3
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Listen to your body. Do not force range of motion.",
+  "cues": [],
+  "description": "Hands at heart-centre. Centering move; also opens chest gently.",
+  "difficulty": 1,
+  "duration_per_side_sec": 60,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "move",
+  "garmin_subtype": 35,
+  "has_animation": true,
+  "instructions": "1. Enter the pose mindfully.\n2. Hold with steady breath.\n3. Release slowly.",
+  "is_compound": true,
+  "movement_pattern": "dynamic_stretch",
+  "name": "Prayer Mudra",
+  "position": null,
+  "primary_muscles": [
+   "chest",
+   "shoulders"
+  ],
+  "secondary_muscles": [],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "generic": 3,
+   "paddling": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": "Exhale as you lower the hands",
+  "cautions": "Stop if you feel numbness or tingling in the fingers.",
+  "cues": [],
+  "description": "Prayer-position wrist and forearm stretch — decompresses carpal tunnel.",
+  "difficulty": 1,
+  "duration_per_side_sec": 30,
+  "each_side": false,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Press palms together at chest height in prayer position.\n2. Slowly lower hands toward waist, keeping palms pressed.\n3. When you feel a stretch in the wrists, hold 30 s.\n4. Return to centre. Repeat.",
+  "is_compound": true,
+  "movement_pattern": "static_stretch",
+  "name": "Prayer Stretch for Wrists",
+  "position": "standing",
+  "primary_muscles": [
+   "forearms",
+   "hands"
+  ],
+  "secondary_muscles": [
+   "chest"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "climbing": 3,
+   "generic": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Listen to your body. Do not force range of motion.",
+  "cues": [],
+  "description": "Triangle with reverse-side hand reach. Deep rotation.",
+  "difficulty": 3,
+  "duration_per_side_sec": 60,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 52,
+  "has_animation": true,
+  "instructions": "1. Enter the pose mindfully.\n2. Hold with steady breath.\n3. Release slowly.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Revolved Triangle Pose",
+  "position": null,
+  "primary_muscles": [
+   "obliques",
+   "hamstrings"
+  ],
+  "secondary_muscles": [
+   "spinal_erectors"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "generic": 3,
+   "paddling": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Listen to your body. Do not force range of motion.",
+  "cues": [],
+  "description": "Low lunge with both hands inside front foot. Sprinter's start.",
+  "difficulty": 1,
+  "duration_per_side_sec": 60,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 53,
+  "has_animation": true,
+  "instructions": "1. Enter the pose mindfully.\n2. Hold with steady breath.\n3. Release slowly.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Runner's Lunge Pose",
+  "position": null,
+  "primary_muscles": [
+   "hip_flexors",
+   "hamstrings"
+  ],
+  "secondary_muscles": [
+   "calves"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "generic": 3,
+   "paddling": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": "Exhale as the foot reaches across",
+  "cautions": "Keep shoulders grounded. Stop if you feel lower back pain — reduce the twist angle.",
+  "cues": [],
+  "description": "Lying on stomach, cross one leg over the body — opens the lower back, chest, and hip simultaneously.",
+  "difficulty": 2,
+  "duration_per_side_sec": 30,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "warm_up",
+  "garmin_subtype": 62,
+  "has_animation": true,
+  "instructions": "1. Lie face-down on the mat. Arms extended out to the sides in a T.\n2. Bend right knee. Twist hips to bring right foot toward left hand.\n3. Keep shoulders flat. Hold 20–30 s. Switch sides.",
+  "is_compound": true,
+  "movement_pattern": "dynamic_stretch",
+  "name": "Scorpion Stretch",
+  "position": "prone",
+  "primary_muscles": [
+   "lower_back",
+   "chest",
+   "shoulders",
+   "hip_flexors"
+  ],
+  "secondary_muscles": [
+   "glutes"
+  ],
+  "sets": 3,
+  "sport_relevance": {
+   "generic": 2,
+   "running": 2
+  }
+ },
+ {
+  "breath_cue": "Exhale as you fold forward",
+  "cautions": "Keep the crossed foot flexed — this protects the knee joint. Hinge from hips, not lower back.",
+  "cues": [
+   "Cross ankle over the opposite knee",
+   "Hinge from the hips"
+  ],
+  "description": "Chair or seated figure-four stretch — a gentler version of pigeon pose.",
+  "difficulty": 1,
+  "duration_per_side_sec": 60,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Sit on a chair or on the floor. Cross right ankle over left knee.\n2. Keep right foot flexed (to protect the knee).\n3. Gently press right knee toward the floor.\n4. For a deeper stretch, hinge forward from the hips.\n5. Hold 45–60 s. Switch sides.",
+  "is_compound": true,
+  "movement_pattern": "static_stretch",
+  "name": "Seated Figure-Four Stretch",
+  "position": "seated",
+  "primary_muscles": [
+   "glutes",
+   "hamstrings"
+  ],
+  "secondary_muscles": [
+   "lower_back"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "cycling": 3,
+   "generic": 3,
+   "hiking": 3,
+   "running": 3
+  }
+ },
+ {
+  "breath_cue": "Exhale as you hinge forward",
+  "cautions": "Hinge from hips, NOT from the lower back. A rounded back defeats the purpose. Bend knees slightly if hamstrings are very tight.",
+  "cues": [
+   "Lead with your chest",
+   "Soft knees are fine"
+  ],
+  "description": "Seated hamstring and lower back stretch. Use a strap around the feet if you cannot reach them.",
+  "difficulty": 2,
+  "duration_per_side_sec": 90,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "mat",
+   "strap"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 56,
+  "has_animation": true,
+  "instructions": "1. Sit on the mat with legs extended straight in front.\n2. Flex feet. Inhale, lengthen spine.\n3. Exhale, hinge forward from the hips. Keep back straight.\n4. Reach toward shins, ankles, or feet — wherever you can reach with a flat back.\n5. Hold 60–90 s. Breathe deeply.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Seated Forward Fold",
+  "position": "seated",
+  "primary_muscles": [
+   "hamstrings",
+   "calves",
+   "lower_back"
+  ],
+  "secondary_muscles": [
+   "glutes"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "cycling": 3,
+   "generic": 3,
+   "hiking": 3,
+   "running": 3
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Listen to your body. Do not force range of motion.",
+  "cues": [],
+  "description": "Seated, legs straight, hinge over legs.",
+  "difficulty": 1,
+  "duration_per_side_sec": 60,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 56,
+  "has_animation": true,
+  "instructions": "1. Enter the pose mindfully.\n2. Hold with steady breath.\n3. Release slowly.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Seated Long-Leg Forward Bend",
+  "position": null,
+  "primary_muscles": [
+   "hamstrings",
+   "spinal_erectors"
+  ],
+  "secondary_muscles": [
+   "calves"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "generic": 3,
+   "paddling": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": "Exhale as you draw the knee across",
+  "cautions": "If you feel sharp sciatic pain, reduce the forward fold angle. Never push through nerve pain.",
+  "cues": [],
+  "description": "Cross-legged forward fold targeting the piriformis — the deep glute muscle that can irritate the sciatic nerve.",
+  "difficulty": 1,
+  "duration_per_side_sec": 60,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "warm_up",
+  "garmin_subtype": 60,
+  "has_animation": true,
+  "instructions": "1. Sit cross-legged on the mat.\n2. Place right ankle over left thigh.\n3. Keeping back straight, hinge forward from the hips.\n4. Walk hands forward. Hold 45–60 s. Switch which leg is on top.",
+  "is_compound": true,
+  "movement_pattern": "static_stretch",
+  "name": "Seated Piriformis Stretch",
+  "position": "seated",
+  "primary_muscles": [
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "hamstrings",
+   "lower_back"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "generic": 2,
+   "hiking": 3,
+   "running": 3
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Keep hips grounded and facing forward. Do not twist — this is a pure side bend.",
+  "cues": [],
+  "description": "Deep lateral flexion stretch opening the abdominal wall and intercostal muscles.",
+  "difficulty": 2,
+  "duration_per_side_sec": 30,
+  "each_side": true,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": "warm_up",
+  "garmin_subtype": 35,
+  "has_animation": true,
+  "instructions": "1. Sit in a chair or on the floor in a cross-legged position.\n2. Place right hand on the right side of the chair/floor.\n3. Raise left arm overhead and lean torso to the right.\n4. Hold 30 s. Switch sides.",
+  "is_compound": true,
+  "movement_pattern": "static_stretch",
+  "name": "Seated Side Bend Over Swiss Ball (or Chair)",
+  "position": null,
+  "primary_muscles": [
+   "core",
+   "obliques",
+   "lats"
+  ],
+  "secondary_muscles": [
+   "lower_back"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "generic": 2,
+   "paddling": 3,
+   "running": 1,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": "Exhale as you reach down your back",
+  "cautions": "Keep neck relaxed. Do not force the elbow beyond a comfortable range.",
+  "cues": [],
+  "description": "Classic overhead triceps stretch for the long head of the triceps.",
+  "difficulty": 1,
+  "duration_per_side_sec": 45,
+  "each_side": true,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": "warm_up",
+  "garmin_subtype": 69,
+  "has_animation": true,
+  "instructions": "1. Sit or stand tall. Raise right arm overhead.\n2. Bend elbow so hand reaches between shoulder blades.\n3. Use left hand to gently pull the right elbow back and toward centre.\n4. Hold 30–45 s. Switch sides.",
+  "is_compound": true,
+  "movement_pattern": "static_stretch",
+  "name": "Seated Triceps Stretch",
+  "position": "seated",
+  "primary_muscles": [
+   "triceps",
+   "shoulders"
+  ],
+  "secondary_muscles": [
+   "lats"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "climbing": 3,
+   "generic": 2,
+   "paddling": 3,
+   "swimming": 3
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Listen to your body. Do not force range of motion.",
+  "cues": [],
+  "description": "Seated, legs wide, fold forward. Inner thigh + hamstring.",
+  "difficulty": 2,
+  "duration_per_side_sec": 60,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 57,
+  "has_animation": true,
+  "instructions": "1. Enter the pose mindfully.\n2. Hold with steady breath.\n3. Release slowly.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Seated Wide-Leg Forward Bend",
+  "position": null,
+  "primary_muscles": [
+   "hamstrings",
+   "groin"
+  ],
+  "secondary_muscles": [
+   "spinal_erectors"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "generic": 3,
+   "paddling": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Sit on a block if your pelvis tilts backward. Never round the lower back — the forward fold comes from the hips.",
+  "cues": [],
+  "description": "Wide-leg seated forward fold — stretches the adductors, hamstrings, and lower back simultaneously.",
+  "difficulty": 2,
+  "duration_per_side_sec": 90,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 57,
+  "has_animation": true,
+  "instructions": "1. Sit on the mat. Extend legs as wide as comfortable.\n2. Flex feet. Press thighs down. Sit tall.\n3. Walk hands forward between legs. Keep spine straight.\n4. Hold 60–90 s. Walk hands to each leg individually for a deeper unilateral stretch.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Seated Wide Leg Forward Fold (Upavistha Konasana)",
+  "position": null,
+  "primary_muscles": [
+   "hip_adductors",
+   "hamstrings",
+   "lower_back"
+  ],
+  "secondary_muscles": [
+   "calves",
+   "glutes"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "generic": 2,
+   "hiking": 2,
+   "running": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Listen to your body. Do not force range of motion.",
+  "cues": [],
+  "description": "Inverted, legs vertical, supporting hips. Advanced inversion.",
+  "difficulty": 3,
+  "duration_per_side_sec": 60,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 58,
+  "has_animation": true,
+  "instructions": "1. Enter the pose mindfully.\n2. Hold with steady breath.\n3. Release slowly.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Shoulder Stand Pose",
+  "position": null,
+  "primary_muscles": [
+   "shoulders",
+   "upper_back"
+  ],
+  "secondary_muscles": [
+   "abs"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "generic": 3,
+   "paddling": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": "Exhale as you shift into the bent leg",
+  "cautions": "Keep the straight-leg foot flat on the floor. Do not let the bent knee go past the toes.",
+  "cues": [
+   "Shift your weight to one side",
+   "Keep the straight leg's foot flat"
+  ],
+  "description": "Dynamic side-to-side lunge — stretches the adductors with gentle movement.",
+  "difficulty": 1,
+  "duration_per_side_sec": 45,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "warm_up",
+  "garmin_subtype": 65,
+  "has_animation": true,
+  "instructions": "1. Stand with feet wide apart. Toes pointing forward.\n2. Shift weight to the right. Bend right knee, keep left leg straight.\n3. Lower hips until you feel a stretch in the left inner thigh.\n4. Hold 30 s. Shift to the left and repeat. Flow 8–10 times.",
+  "is_compound": true,
+  "movement_pattern": "dynamic_stretch",
+  "name": "Side Lunge Stretch",
+  "position": "standing",
+  "primary_muscles": [
+   "hip_adductors",
+   "hamstrings",
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "quads"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "generic": 2,
+   "hiking": 2,
+   "running": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "If this is too intense, drop the bottom knee to the mat for support. Keep the supporting wrist directly under the shoulder.",
+  "cues": [],
+  "description": "Lateral plank — strengthens obliques, glutes, and shoulder stabilizers while stretching the side body.",
+  "difficulty": 2,
+  "duration_per_side_sec": 30,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 60,
+  "has_animation": false,
+  "instructions": "1. From plank, shift weight onto the right hand. Roll to the outer edge of the right foot.\n2. Stack left foot on top of the right. Extend left arm to the ceiling.\n3. Lift hips. Keep body in a straight line.\n4. Hold 20–30 s. Switch sides.",
+  "is_compound": true,
+  "movement_pattern": "balance_pose",
+  "name": "Side Plank (Vasisthasana)",
+  "position": null,
+  "primary_muscles": [
+   "obliques",
+   "glutes",
+   "shoulders"
+  ],
+  "secondary_muscles": [
+   "forearms",
+   "hip_adductors"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "climbing": 2,
+   "generic": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": "Exhale as you bend the back knee",
+  "cautions": "The key difference from the gastrocnemius stretch: keep the back knee BENT. This shifts the stretch to the soleus.",
+  "cues": [
+   "Bend the back knee toward the wall",
+   "Keep the heel down"
+  ],
+  "description": "Bent-knee wall stretch targeting the soleus — the deep calf muscle critical for running endurance.",
+  "difficulty": 1,
+  "duration_per_side_sec": 45,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "wall"
+  ],
+  "garmin_category": "warm_up",
+  "garmin_subtype": 37,
+  "has_animation": true,
+  "instructions": "1. Stand facing a wall. Hands on wall.\n2. Step right foot back. Bend BOTH knees.\n3. Keep right heel firmly on the ground.\n4. Lean forward until you feel the stretch deep in the right calf.\n5. Hold 30–45 s. Switch sides.",
+  "is_compound": true,
+  "movement_pattern": "static_stretch",
+  "name": "Soleus Wall Stretch",
+  "position": "standing",
+  "primary_muscles": [
+   "calves"
+  ],
+  "secondary_muscles": [
+   "hamstrings"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "generic": 2,
+   "hiking": 3,
+   "running": 3
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "If you feel lower back compression, separate feet wider. Keep the glutes relaxed — do not squeeze.",
+  "cues": [],
+  "description": "Gentle backbend on forearms — a milder alternative to cobra. Excellent for lower back rehabilitation.",
+  "difficulty": 1,
+  "duration_per_side_sec": 60,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 61,
+  "has_animation": true,
+  "instructions": "1. Lie face-down. Prop yourself up on forearms, elbows under shoulders.\n2. Press forearms into the mat. Lift chest. Keep pelvis grounded.\n3. Draw shoulders down. Gaze forward.\n4. Hold 45–60 s. Breathe into the abdomen.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Sphinx Pose",
+  "position": null,
+  "primary_muscles": [
+   "core",
+   "chest",
+   "shoulders",
+   "lower_back"
+  ],
+  "secondary_muscles": [
+   "glutes"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "cycling": 2,
+   "generic": 2,
+   "running": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Listen to your body. Do not force range of motion.",
+  "cues": [],
+  "description": "Seated or supine spinal rotation.",
+  "difficulty": 1,
+  "duration_per_side_sec": 60,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "move",
+  "garmin_subtype": 47,
+  "has_animation": true,
+  "instructions": "1. Enter the pose mindfully.\n2. Hold with steady breath.\n3. Release slowly.",
+  "is_compound": true,
+  "movement_pattern": "dynamic_stretch",
+  "name": "Spinal Twist Stretch",
+  "position": null,
+  "primary_muscles": [
+   "obliques",
+   "spinal_erectors"
+  ],
+  "secondary_muscles": [],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "generic": 3,
+   "paddling": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Listen to your body. Do not force range of motion.",
+  "cues": [],
+  "description": "Deep squat with elbows pressing knees out. Hip opener.",
+  "difficulty": 2,
+  "duration_per_side_sec": 60,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 63,
+  "has_animation": true,
+  "instructions": "1. Enter the pose mindfully.\n2. Hold with steady breath.\n3. Release slowly.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Squat Palm Press Pose",
+  "position": null,
+  "primary_muscles": [
+   "hip_external_rotators",
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "shoulders",
+   "groin"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "generic": 3,
+   "paddling": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Listen to your body. Do not force range of motion.",
+  "cues": [],
+  "description": "Mountain pose with arms overhead. Lengthens entire body.",
+  "difficulty": 1,
+  "duration_per_side_sec": 60,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 65,
+  "has_animation": true,
+  "instructions": "1. Enter the pose mindfully.\n2. Hold with steady breath.\n3. Release slowly.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Standing Arms Up Pose",
+  "position": null,
+  "primary_muscles": [
+   "shoulders",
+   "lats"
+  ],
+  "secondary_muscles": [
+   "spinal_erectors"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "generic": 3,
+   "paddling": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": "Exhale and rotate the arms open",
+  "cautions": "Keep elbow straight but not hyperextended. Stop if you feel elbow pain.",
+  "cues": [
+   "Clasp hands behind, palms down",
+   "Straighten the elbows gently"
+  ],
+  "description": "Straight-arm biceps stretch against a wall or surface.",
+  "difficulty": 1,
+  "duration_per_side_sec": 30,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "wall"
+  ],
+  "garmin_category": "warm_up",
+  "garmin_subtype": 63,
+  "has_animation": true,
+  "instructions": "1. Stand facing away from a wall at arm's length.\n2. Extend right arm straight behind you, palm down, thumb pointing up.\n3. Rest hand on the wall. Slowly rotate body away from the arm.\n4. Hold 30 s. Switch sides.",
+  "is_compound": true,
+  "movement_pattern": "static_stretch",
+  "name": "Standing Biceps Stretch",
+  "position": "standing",
+  "primary_muscles": [
+   "biceps",
+   "shoulders"
+  ],
+  "secondary_muscles": [
+   "forearms"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "climbing": 3,
+   "generic": 2,
+   "paddling": 3
+  }
+ },
+ {
+  "breath_cue": "Breathe and sink the heel down",
+  "cautions": "Keep the back heel down — if it lifts, you lose the stretch. Avoid this if you have Achilles tendinopathy.",
+  "cues": [
+   "Back leg straight, heel planted",
+   "Lean into the wall"
+  ],
+  "description": "Wall-assisted calf stretch — targets the gastrocnemius.",
+  "difficulty": 1,
+  "duration_per_side_sec": 45,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "wall"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Stand facing a wall. Place hands on the wall at shoulder height.\n2. Step right foot back. Keep right heel firmly on the ground.\n3. Lean forward. Keep the back leg straight.\n4. Hold 30–45 s. Bend the back knee slightly for a deeper soleus stretch.\n5. Switch sides.",
+  "is_compound": true,
+  "movement_pattern": "static_stretch",
+  "name": "Standing Calf Stretch",
+  "position": "standing",
+  "primary_muscles": [
+   "calves"
+  ],
+  "secondary_muscles": [
+   "hamstrings"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "cycling": 2,
+   "generic": 3,
+   "hiking": 3,
+   "running": 3
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Modify by dropping knees during the plank and lowering phase if needed.",
+  "cues": [],
+  "description": "Vinyasa-style flow from forward fold through plank to cobra — mobilizes the entire body.",
+  "difficulty": 2,
+  "duration_per_side_sec": 60,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Stand in forward fold. Hands on the mat.\n2. Walk feet back to a high plank. Hold 5 s.\n3. Lower halfway (chaturanga) or all the way to the mat.\n4. Press up to cobra or upward dog. Hold 5 s.\n5. Push back to downward dog. Walk feet forward to forward fold.\n6. Repeat 3–5 times.",
+  "is_compound": true,
+  "movement_pattern": "dynamic_stretch",
+  "name": "Standing Forward Bend to Plank Flow",
+  "position": null,
+  "primary_muscles": [
+   "hamstrings",
+   "calves",
+   "chest",
+   "core",
+   "shoulders"
+  ],
+  "secondary_muscles": [
+   "glutes",
+   "upper_back"
+  ],
+  "sets": 3,
+  "sport_relevance": {
+   "generic": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": "Exhale and let the head hang heavy",
+  "cautions": "Come up slowly to avoid dizziness. Keep a soft bend in knees to protect the lower back.",
+  "cues": [
+   "Soft knees",
+   "Let your spine decompress"
+  ],
+  "description": "Standing hamstring and posterior chain stretch. Let gravity do the work.",
+  "difficulty": 1,
+  "duration_per_side_sec": 60,
+  "each_side": false,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 67,
+  "has_animation": true,
+  "instructions": "1. Stand with feet hip-width apart.\n2. Inhale, reach arms overhead.\n3. Exhale, hinge forward from the hips. Keep back straight as long as possible.\n4. Let head and arms hang heavy. Bend knees slightly if needed.\n5. Hold 45–60 s. Roll up slowly, vertebra by vertebra.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Standing Forward Fold",
+  "position": "standing",
+  "primary_muscles": [
+   "hamstrings",
+   "calves",
+   "lower_back"
+  ],
+  "secondary_muscles": [
+   "glutes",
+   "neck"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "cycling": 2,
+   "generic": 3,
+   "hiking": 3,
+   "running": 3
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "This is an advanced stretch. Only go to the point of mild discomfort. Use blocks under the hands for support.",
+  "cues": [],
+  "description": "Front split preparation — opens the hip flexors of the back leg and hamstrings of the front leg simultaneously.",
+  "difficulty": 3,
+  "duration_per_side_sec": 45,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "warm_up",
+  "garmin_subtype": 43,
+  "has_animation": true,
+  "instructions": "1. From a low lunge, slide the front foot forward. Straighten the front leg.\n2. Slide the back knee further back. Square hips to the front.\n3. Lower as far as comfortable. Support with hands or blocks.\n4. Hold 30–45 s. Switch legs.",
+  "is_compound": true,
+  "movement_pattern": "static_stretch",
+  "name": "Standing Front Split Prep",
+  "position": null,
+  "primary_muscles": [
+   "quads",
+   "hip_flexors",
+   "hamstrings"
+  ],
+  "secondary_muscles": [
+   "glutes",
+   "calves"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "generic": 2,
+   "running": 2
+  }
+ },
+ {
+  "breath_cue": "Exhale as you press the hip out",
+  "cautions": "The IT band itself has limited stretch capacity — this primarily targets the TFL and glute attachments. Stop if you feel knee pain.",
+  "cues": [
+   "Cross one foot behind the other",
+   "Reach up and over"
+  ],
+  "description": "Crossed-leg standing stretch targeting the IT band and TFL.",
+  "difficulty": 2,
+  "duration_per_side_sec": 45,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "wall"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Stand with feet together. Cross right leg behind left.\n2. Extend right arm overhead and lean to the left.\n3. Push right hip outward to the right.\n4. Hold 30–45 s. Switch sides.",
+  "is_compound": true,
+  "movement_pattern": "static_stretch",
+  "name": "Standing IT Band Stretch",
+  "position": "standing",
+  "primary_muscles": [
+   "glutes",
+   "quads"
+  ],
+  "secondary_muscles": [
+   "calves"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "cycling": 3,
+   "hiking": 3,
+   "running": 3
+  }
+ },
+ {
+  "breath_cue": "Breathe steady and keep tall",
+  "cautions": "Keep knees together (do not let the bent knee drift outward). Stop if you feel knee pain.",
+  "cues": [
+   "Hold something for balance",
+   "Tuck the tailbone, knees together"
+  ],
+  "description": "Classic standing quadriceps stretch. Hold onto a wall or chair for balance.",
+  "difficulty": 1,
+  "duration_per_side_sec": 45,
+  "each_side": true,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": "warm_up",
+  "garmin_subtype": 61,
+  "has_animation": true,
+  "instructions": "1. Stand tall. Hold a wall with your left hand for balance.\n2. Bend right knee, bringing heel toward glutes.\n3. Grasp right ankle with right hand. Keep knees together.\n4. Gently pull heel toward glute. Keep torso upright — do not arch the back.\n5. Hold 30–45 s. Switch sides.",
+  "is_compound": true,
+  "movement_pattern": "static_stretch",
+  "name": "Standing Quad Stretch",
+  "position": "standing",
+  "primary_muscles": [
+   "quads",
+   "hip_flexors"
+  ],
+  "secondary_muscles": [
+   "calves"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "cycling": 3,
+   "generic": 3,
+   "hiking": 3,
+   "running": 3
+  }
+ },
+ {
+  "breath_cue": "Inhale to lengthen, exhale to bend",
+  "cautions": "Do not lean forward or backward. Keep the movement in the frontal plane. Stop if you feel rib pain.",
+  "cues": [
+   "Reach up and over",
+   "Keep both feet grounded"
+  ],
+  "description": "Lateral stretch opening the obliques and intercostals. Improves side-body mobility.",
+  "difficulty": 1,
+  "duration_per_side_sec": 30,
+  "each_side": true,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": "warm_up",
+  "garmin_subtype": 64,
+  "has_animation": true,
+  "instructions": "1. Stand with feet hip-width apart.\n2. Raise right arm overhead. Inhale.\n3. Exhale and bend torso to the left. Keep hips stable and facing forward.\n4. Hold 30 s. Return to centre. Repeat on the other side.",
+  "is_compound": true,
+  "movement_pattern": "static_stretch",
+  "name": "Standing Side Bend",
+  "position": "standing",
+  "primary_muscles": [
+   "obliques",
+   "lats"
+  ],
+  "secondary_muscles": [
+   "hip_flexors"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "generic": 2,
+   "paddling": 3,
+   "running": 1,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Listen to your body. Do not force range of motion.",
+  "cues": [],
+  "description": "Standing side bend. Reach one arm over head.",
+  "difficulty": 1,
+  "duration_per_side_sec": 60,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 68,
+  "has_animation": true,
+  "instructions": "1. Enter the pose mindfully.\n2. Hold with steady breath.\n3. Release slowly.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Standing Side Opener Pose",
+  "position": null,
+  "primary_muscles": [
+   "obliques",
+   "lats"
+  ],
+  "secondary_muscles": [
+   "intercostals"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "generic": 3,
+   "paddling": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Listen to your body. Do not force range of motion.",
+  "cues": [],
+  "description": "Standing fold over one leg. Other foot to ankle/calf.",
+  "difficulty": 2,
+  "duration_per_side_sec": 60,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 69,
+  "has_animation": true,
+  "instructions": "1. Enter the pose mindfully.\n2. Hold with steady breath.\n3. Release slowly.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Standing Single Leg Forward Bend",
+  "position": null,
+  "primary_muscles": [
+   "hamstrings",
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "calves",
+   "spinal_erectors"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "generic": 3,
+   "paddling": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": "Exhale as you fold over the leg",
+  "cautions": "Keep the standing leg slightly bent. Do not lock the knee of the elevated leg.",
+  "cues": [
+   "Heel down, toes up",
+   "Hinge from the hip"
+  ],
+  "description": "Propped-foot hamstring stretch — rest one heel on a step or chair.",
+  "difficulty": 1,
+  "duration_per_side_sec": 45,
+  "each_side": true,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": "warm_up",
+  "garmin_subtype": 33,
+  "has_animation": true,
+  "instructions": "1. Stand facing a low step, bench, or chair.\n2. Place right heel on the surface. Keep right leg straight.\n3. Hinge forward from the hips. Keep back straight.\n4. Hold 30–45 s. Switch legs.",
+  "is_compound": true,
+  "movement_pattern": "static_stretch",
+  "name": "Standing Single Leg Hamstring Stretch",
+  "position": "standing",
+  "primary_muscles": [
+   "hamstrings",
+   "calves"
+  ],
+  "secondary_muscles": [
+   "lower_back"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "generic": 2,
+   "hiking": 3,
+   "running": 3
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Move very slowly — 5–8 seconds down, 5–8 seconds up. This is about articulation, not stretching. Keep knees soft throughout.",
+  "cues": [],
+  "description": "Slow standing roll-down — articulates each vertebra individually. The best morning mobility exercise.",
+  "difficulty": 1,
+  "duration_per_side_sec": 60,
+  "each_side": false,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": "warm_up",
+  "garmin_subtype": 38,
+  "has_animation": true,
+  "instructions": "1. Stand with feet hip-width apart. Soft knees.\n2. Tuck chin to chest. Slowly roll down, vertebra by vertebra.\n3. Let arms hang heavy. Bend knees as needed.\n4. At the bottom, take 3 deep breaths. Slowly roll back up — stacking each vertebra one at a time.\n5. Repeat 3–5 times.",
+  "is_compound": true,
+  "movement_pattern": "dynamic_stretch",
+  "name": "Standing Spinal Roll Down",
+  "position": null,
+  "primary_muscles": [
+   "lower_back",
+   "upper_back",
+   "hamstrings",
+   "neck"
+  ],
+  "secondary_muscles": [
+   "calves"
+  ],
+  "sets": 5,
+  "sport_relevance": {
+   "cycling": 3,
+   "generic": 3,
+   "hiking": 3,
+   "running": 3
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Listen to your body. Do not force range of motion.",
+  "cues": [],
+  "description": "Standing forward fold with one leg lifted high.",
+  "difficulty": 3,
+  "duration_per_side_sec": 60,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 70,
+  "has_animation": true,
+  "instructions": "1. Enter the pose mindfully.\n2. Hold with steady breath.\n3. Release slowly.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Standing Split Pose",
+  "position": null,
+  "primary_muscles": [
+   "hamstrings",
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "core"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "generic": 3,
+   "paddling": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Listen to your body. Do not force range of motion.",
+  "cues": [],
+  "description": "Feet wide, fold forward, head toward floor.",
+  "difficulty": 1,
+  "duration_per_side_sec": 60,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 71,
+  "has_animation": true,
+  "instructions": "1. Enter the pose mindfully.\n2. Hold with steady breath.\n3. Release slowly.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Standing Wide-Leg Forward Bend",
+  "position": null,
+  "primary_muscles": [
+   "hamstrings",
+   "groin"
+  ],
+  "secondary_muscles": [
+   "calves",
+   "spinal_erectors"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "generic": 3,
+   "paddling": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": "Exhale and fold from the hips",
+  "cautions": "Do not lock the knees. If lower back rounds, keep hands on blocks or shins and maintain a flat back.",
+  "cues": [
+   "Feet wide, toes forward",
+   "Let the crown of the head drop"
+  ],
+  "description": "Wide-leg forward fold — stretches the adductors and hamstrings simultaneously.",
+  "difficulty": 2,
+  "duration_per_side_sec": 60,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 71,
+  "has_animation": true,
+  "instructions": "1. Step feet wide apart (~1 m). Turn toes slightly inward.\n2. Inhale, lengthen spine. Exhale, hinge forward from hips.\n3. Place hands on the floor, blocks, or shins.\n4. Let head hang heavy. Hold 45–60 s.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Standing Wide-Leg Forward Fold",
+  "position": "standing",
+  "primary_muscles": [
+   "hip_adductors",
+   "hamstrings",
+   "lower_back",
+   "calves"
+  ],
+  "secondary_muscles": [
+   "glutes"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "generic": 3,
+   "hiking": 2,
+   "running": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Keep hips level during the twist. Most rotation should come from the thoracic spine.",
+  "cues": [],
+  "description": "Wide-leg forward fold with a spinal twist — adds thoracic rotation to the hamstring/adductor stretch.",
+  "difficulty": 2,
+  "duration_per_side_sec": 45,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 72,
+  "has_animation": true,
+  "instructions": "1. Step feet wide apart. Hinge forward, hands on the floor.\n2. Place right hand directly under your face.\n3. Twist torso open to the left. Extend left arm to the ceiling.\n4. Hold 30 s. Return to centre. Switch sides.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Standing Wide-Leg Forward Fold with Twist",
+  "position": null,
+  "primary_muscles": [
+   "hamstrings",
+   "hip_adductors",
+   "obliques",
+   "upper_back",
+   "lower_back"
+  ],
+  "secondary_muscles": [
+   "glutes"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "generic": 2,
+   "running": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Sit on a folded blanket if your pelvis tilts backward. Only go forward as far as you can with a straight spine.",
+  "cues": [],
+  "description": "Seated wide-leg straddle — opens the adductors from a seated forward-fold position.",
+  "difficulty": 2,
+  "duration_per_side_sec": 90,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "warm_up",
+  "garmin_subtype": 68,
+  "has_animation": true,
+  "instructions": "1. Sit on the mat. Extend legs as wide as comfortable.\n2. Flex feet. Sit tall on sitting bones.\n3. Walk hands forward between legs. Keep back straight.\n4. Hold 60–90 s. Breathe deeply.",
+  "is_compound": true,
+  "movement_pattern": "static_stretch",
+  "name": "Straddle Stretch (Pancake)",
+  "position": null,
+  "primary_muscles": [
+   "hip_adductors",
+   "hamstrings",
+   "lower_back"
+  ],
+  "secondary_muscles": [
+   "glutes"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "generic": 2,
+   "hiking": 2,
+   "running": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Modify by dropping knees in plank/chaturanga. Move with the breath — each movement is one inhale or exhale.",
+  "cues": [],
+  "description": "Classic vinyasa sequence: Mountain → Forward Fold → Half Lift → Plank → Chaturanga → Up Dog → Down Dog. Flows through the entire body.",
+  "difficulty": 2,
+  "duration_per_side_sec": 120,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 114,
+  "has_animation": true,
+  "instructions": "1. Mountain pose. Inhale — reach arms up.\n2. Exhale — forward fold.\n3. Inhale — halfway lift (flat back).\n4. Exhale — jump/step to plank. Lower halfway.\n5. Inhale — upward dog or cobra.\n6. Exhale — downward dog. Hold 5 breaths.\n7. Jump/step forward. Repeat 3–5 rounds.",
+  "is_compound": true,
+  "movement_pattern": "dynamic_stretch",
+  "name": "Sun Salutation A (Surya Namaskar A)",
+  "position": null,
+  "primary_muscles": [
+   "hamstrings",
+   "calves",
+   "chest",
+   "core",
+   "shoulders",
+   "hip_flexors",
+   "upper_back",
+   "glutes",
+   "quads"
+  ],
+  "secondary_muscles": [
+   "lats",
+   "triceps"
+  ],
+  "sets": 3,
+  "sport_relevance": {
+   "generic": 3,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": "Exhale as the knees fall to the side",
+  "cautions": "Keep shoulders down. If your knee doesn't reach the floor, place a block or pillow under it.",
+  "cues": [
+   "Shoulders stay on the floor",
+   "Let gravity do the work"
+  ],
+  "description": "Supine spinal twist — releases the entire spine from lower back to thoracic region.",
+  "difficulty": 1,
+  "duration_per_side_sec": 60,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 73,
+  "has_animation": true,
+  "instructions": "1. Lie on your back. Bring right knee toward chest.\n2. Guide right knee across body to the left. Extend right arm to the side.\n3. Keep both shoulders flat on the mat. Turn head to the right.\n4. Hold 45–60 s. Slowly return. Repeat other side.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Supine Spinal Twist",
+  "position": "supine",
+  "primary_muscles": [
+   "lower_back",
+   "obliques",
+   "glutes",
+   "upper_back"
+  ],
+  "secondary_muscles": [
+   "chest",
+   "neck"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "cycling": 3,
+   "generic": 3,
+   "hiking": 3,
+   "mtb": 3,
+   "running": 3,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Listen to your body. Do not force range of motion.",
+  "cues": [],
+  "description": "Lying twist. Knee crosses body, opposite arm extends out.",
+  "difficulty": 1,
+  "duration_per_side_sec": 60,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 73,
+  "has_animation": true,
+  "instructions": "1. Enter the pose mindfully.\n2. Hold with steady breath.\n3. Release slowly.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Supine Spinal Twist Pose",
+  "position": null,
+  "primary_muscles": [
+   "obliques",
+   "spinal_erectors"
+  ],
+  "secondary_muscles": [
+   "glutes",
+   "chest"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "generic": 3,
+   "paddling": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Support the head with a folded blanket if the neck feels strained. To exit, roll to one side and slowly press up.",
+  "cues": [],
+  "description": "Restorative backbend over a bolster or rolled blanket — opens the entire front body passively.",
+  "difficulty": 1,
+  "duration_per_side_sec": 180,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Place a bolster or firmly rolled blanket horizontally on your mat.\n2. Sit in front of it. Lie back so the bolster is under your shoulder blades.\n3. Extend legs straight or bend knees. Arms out to the sides.\n4. Close your eyes. Breathe deeply. Stay 2–3 min.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Supported Fish Pose on Bolster",
+  "position": null,
+  "primary_muscles": [
+   "chest",
+   "shoulders",
+   "hip_flexors",
+   "core",
+   "upper_back"
+  ],
+  "secondary_muscles": [
+   "neck"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 3,
+   "generic": 3,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Move slowly. The goal is stability, not height — keep the low back from arching. Imagine balancing a cup of water on your lower back.",
+  "cues": [],
+  "description": "Bird dog — extends opposite arm and leg from tabletop. Builds core stability and posterior chain endurance.",
+  "difficulty": 1,
+  "duration_per_side_sec": 30,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Start on all fours. Wrists under shoulders, knees under hips.\n2. Extend right arm forward. At the same time, extend left leg straight back.\n3. Keep hips level and spine neutral. Hold 20–30 s.\n4. Return to centre. Switch sides.",
+  "is_compound": true,
+  "movement_pattern": "balance_pose",
+  "name": "Table Top Balance (Bird Dog)",
+  "position": null,
+  "primary_muscles": [
+   "core",
+   "glutes",
+   "hamstrings",
+   "shoulders",
+   "upper_back",
+   "lower_back"
+  ],
+  "secondary_muscles": [
+   "quads"
+  ],
+  "sets": 3,
+  "sport_relevance": {
+   "cycling": 2,
+   "generic": 3,
+   "hiking": 2,
+   "running": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Start with light pressure. Increase gradually. Avoid if you have plantar fasciitis with severe pain — consult a professional.",
+  "cues": [],
+  "description": "Self-myofascial release for the plantar fascia — roll a tennis or lacrosse ball underfoot.",
+  "difficulty": 1,
+  "duration_per_side_sec": 120,
+  "each_side": true,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": "warm_up",
+  "garmin_subtype": 37,
+  "has_animation": true,
+  "instructions": "1. Stand or sit. Place a tennis ball under the arch of your right foot.\n2. Apply gentle pressure. Slowly roll the ball from heel to ball of foot.\n3. When you find a tender spot, hold for 15–20 s.\n4. Continue for 60–90 s per foot.",
+  "is_compound": false,
+  "movement_pattern": "myofascial_release",
+  "name": "Tennis Ball Foot Release",
+  "position": null,
+  "primary_muscles": [
+   "feet",
+   "calves"
+  ],
+  "secondary_muscles": [],
+  "sets": 1,
+  "sport_relevance": {
+   "generic": 3,
+   "hiking": 3,
+   "running": 3
+  }
+ },
+ {
+  "breath_cue": "Exhale as you thread the arm through",
+  "cautions": "Keep hips stacked over knees throughout. Do not force the twist.",
+  "cues": [
+   "Reach long under your body",
+   "Let your upper back rotate"
+  ],
+  "description": "Thread the needle — deeply opens the upper back, rear deltoids, and thoracic spine.",
+  "difficulty": 2,
+  "duration_per_side_sec": 60,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 75,
+  "has_animation": true,
+  "instructions": "1. Start on all fours (tabletop).\n2. Slide right arm under left arm, palm facing up.\n3. Lower right shoulder and temple to the mat.\n4. Keep hips level. Hold 45–60 s. Repeat on other side.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Thread the Needle",
+  "position": "kneeling",
+  "primary_muscles": [
+   "shoulders",
+   "upper_back"
+  ],
+  "secondary_muscles": [
+   "neck"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "climbing": 3,
+   "cycling": 3,
+   "generic": 3,
+   "paddling": 3,
+   "running": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Listen to your body. Do not force range of motion.",
+  "cues": [],
+  "description": "Chin-to-chest engagement. Subtle bandha drill.",
+  "difficulty": 1,
+  "duration_per_side_sec": 60,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "move",
+  "garmin_subtype": 61,
+  "has_animation": true,
+  "instructions": "1. Enter the pose mindfully.\n2. Hold with steady breath.\n3. Release slowly.",
+  "is_compound": true,
+  "movement_pattern": "dynamic_stretch",
+  "name": "Throat Lock",
+  "position": null,
+  "primary_muscles": [
+   "neck"
+  ],
+  "secondary_muscles": [],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "generic": 3,
+   "paddling": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Listen to your body. Do not force range of motion.",
+  "cues": [],
+  "description": "Kneeling, hips on heels. Quad + ankle stretch.",
+  "difficulty": 1,
+  "duration_per_side_sec": 60,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 76,
+  "has_animation": true,
+  "instructions": "1. Enter the pose mindfully.\n2. Hold with steady breath.\n3. Release slowly.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Thunderbolt Pose",
+  "position": null,
+  "primary_muscles": [
+   "quads"
+  ],
+  "secondary_muscles": [],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "generic": 3,
+   "paddling": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": "Breathe slow and steady",
+  "cautions": "Gentle pressure only. Stop if you feel sharp pain in the arch of the foot.",
+  "cues": [
+   "Tuck the toes under",
+   "Ease your weight back gently"
+  ],
+  "description": "Seated toe stretch — releases the plantar fascia and toe flexors. Essential for runners.",
+  "difficulty": 1,
+  "duration_per_side_sec": 30,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "warm_up",
+  "garmin_subtype": 37,
+  "has_animation": true,
+  "instructions": "1. Sit in a chair or on the floor.\n2. Cross right ankle over left knee.\n3. Interlace fingers between right toes. Gently spread toes apart.\n4. Hold 30 s. Then gently pull toes back toward shin for a plantar fascia stretch.\n5. Switch sides.",
+  "is_compound": true,
+  "movement_pattern": "static_stretch",
+  "name": "Toe and Plantar Fascia Stretch",
+  "position": "kneeling",
+  "primary_muscles": [
+   "feet",
+   "calves"
+  ],
+  "secondary_muscles": [
+   "hands"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "generic": 2,
+   "hiking": 3,
+   "running": 3
+  }
+ },
+ {
+  "breath_cue": "Breathe steady and find a focal point",
+  "cautions": "Pick a focal point on the floor or wall to help balance. Never place foot directly on the knee joint.",
+  "cues": [
+   "Foot to the calf or thigh, not the knee",
+   "Grow tall through the crown"
+  ],
+  "description": "Standing balance pose that stretches the standing-leg hip and challenges proprioception.",
+  "difficulty": 1,
+  "duration_per_side_sec": 60,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 78,
+  "has_animation": true,
+  "instructions": "1. Stand tall. Shift weight to the left foot.\n2. Place right foot on the inner left thigh or calf (never on the knee).\n3. Press foot into leg and leg into foot. Bring hands to prayer at chest or overhead.\n4. Hold 30–60 s. Switch sides.",
+  "is_compound": true,
+  "movement_pattern": "balance_pose",
+  "name": "Tree Pose",
+  "position": "standing",
+  "primary_muscles": [
+   "hip_flexors",
+   "hip_adductors",
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "calves",
+   "core"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "generic": 2,
+   "hiking": 2,
+   "running": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Listen to your body. Do not force range of motion.",
+  "cues": [],
+  "description": "Wide stance with side reach. Lengthens entire flank.",
+  "difficulty": 2,
+  "duration_per_side_sec": 60,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 79,
+  "has_animation": true,
+  "instructions": "1. Enter the pose mindfully.\n2. Hold with steady breath.\n3. Release slowly.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Triangle Pose",
+  "position": null,
+  "primary_muscles": [
+   "hamstrings",
+   "obliques"
+  ],
+  "secondary_muscles": [
+   "calves",
+   "lats"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "generic": 3,
+   "paddling": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Keep both legs straight but not locked. The stretch is in the back of the right leg and the left side of the torso.",
+  "cues": [],
+  "description": "Standing lateral bend — stretches the hamstrings, side body, and chest while improving balance.",
+  "difficulty": 2,
+  "duration_per_side_sec": 45,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 79,
+  "has_animation": true,
+  "instructions": "1. Step feet wide apart (~1 m). Turn right foot out 90°, left foot in slightly.\n2. Extend arms parallel to floor.\n3. Reach right hand forward and down to shin, ankle, or a block.\n4. Extend left arm toward the ceiling. Gaze up at the left hand.\n5. Hold 30–45 s. Switch sides.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Triangle Pose (Trikonasana)",
+  "position": null,
+  "primary_muscles": [
+   "hamstrings",
+   "hip_adductors",
+   "obliques",
+   "lats"
+  ],
+  "secondary_muscles": [
+   "glutes",
+   "chest"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "generic": 2,
+   "hiking": 2,
+   "running": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Listen to your body. Do not force range of motion.",
+  "cues": [],
+  "description": "Prone back-bend with arms straight, thighs lifted.",
+  "difficulty": 2,
+  "duration_per_side_sec": 60,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 80,
+  "has_animation": true,
+  "instructions": "1. Enter the pose mindfully.\n2. Hold with steady breath.\n3. Release slowly.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Up Dog Pose",
+  "position": null,
+  "primary_muscles": [
+   "spinal_erectors",
+   "chest"
+  ],
+  "secondary_muscles": [
+   "triceps",
+   "quads"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "generic": 3,
+   "paddling": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": "Inhale as you lift the chest",
+  "cautions": "Keep a micro-bend in elbows. Do not compress the lower back — engage glutes to protect the lumbar spine.",
+  "cues": [
+   "Press the tops of the feet down",
+   "Open across the collarbones"
+  ],
+  "description": "Backbend that opens the chest, shoulders, and abdomen while strengthening the spine.",
+  "difficulty": 2,
+  "duration_per_side_sec": 30,
+  "each_side": false,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 80,
+  "has_animation": true,
+  "instructions": "1. Lie face-down. Place hands beside lower ribs.\n2. Press into hands. Straighten arms, lifting chest and thighs off the mat.\n3. Keep shoulders away from ears. Look slightly up.\n4. Hold 20–30 s. Lower with control.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Upward Facing Dog",
+  "position": "prone",
+  "primary_muscles": [
+   "chest",
+   "core",
+   "shoulders",
+   "upper_back"
+  ],
+  "secondary_muscles": [
+   "lower_back"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "climbing": 2,
+   "generic": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Rotate from the torso, not the shoulder joint. Stop if you feel pinching.",
+  "cues": [],
+  "description": "Standing wall chest opener — one arm at a time for a deeper pectoral and anterior deltoid stretch.",
+  "difficulty": 1,
+  "duration_per_side_sec": 45,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "wall"
+  ],
+  "garmin_category": "warm_up",
+  "garmin_subtype": 70,
+  "has_animation": true,
+  "instructions": "1. Stand beside a wall. Place right palm on the wall at shoulder height.\n2. Slowly rotate your body away from the arm until you feel a stretch across the right chest and shoulder.\n3. Keep arm straight. Hold 30–45 s. Switch sides.",
+  "is_compound": true,
+  "movement_pattern": "static_stretch",
+  "name": "Wall Chest and Shoulder Stretch",
+  "position": null,
+  "primary_muscles": [
+   "chest",
+   "shoulders",
+   "biceps"
+  ],
+  "secondary_muscles": [
+   "upper_back",
+   "front_delts"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "climbing": 3,
+   "cycling": 3,
+   "generic": 2,
+   "swimming": 3
+  }
+ },
+ {
+  "breath_cue": "Breathe into the strong, wide stance",
+  "cautions": "Keep the front knee aligned with the second toe. Do not let it collapse inward. Engage the core to support the lower back.",
+  "cues": [
+   "Front knee over the ankle",
+   "Reach through both arms"
+  ],
+  "description": "Wide-stance standing pose. Opens the hips, strengthens the legs, and challenges endurance.",
+  "difficulty": 2,
+  "duration_per_side_sec": 45,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 84,
+  "has_animation": true,
+  "instructions": "1. Step feet wide apart (~1.2 m). Turn right foot out 90°, left foot in slightly.\n2. Bend right knee to 90°, knee tracking over ankle.\n3. Extend arms parallel to floor, palms down, gaze over right hand.\n4. Hold 30–45 s. Straighten leg, switch sides.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Warrior II",
+  "position": "standing",
+  "primary_muscles": [
+   "hip_flexors",
+   "hip_adductors",
+   "quads",
+   "glutes",
+   "shoulders"
+  ],
+  "secondary_muscles": [
+   "chest",
+   "calves"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "generic": 2,
+   "hiking": 2,
+   "running": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Keep the standing leg slightly bent. Keep hips level — do not let the lifted hip open to the side.",
+  "cues": [],
+  "description": "Airplane balance — strengthens the posterior chain and challenges full-body proprioception.",
+  "difficulty": 3,
+  "duration_per_side_sec": 30,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 83,
+  "has_animation": true,
+  "instructions": "1. From Warrior I with right foot forward, shift weight onto the right foot.\n2. Hinge forward at the hips. Lift left leg behind you.\n3. Extend arms forward or alongside body. Body forms a T shape.\n4. Hold 20–30 s. Switch sides.",
+  "is_compound": true,
+  "movement_pattern": "balance_pose",
+  "name": "Warrior III (Virabhadrasana III)",
+  "position": null,
+  "primary_muscles": [
+   "hamstrings",
+   "glutes",
+   "calves",
+   "upper_back"
+  ],
+  "secondary_muscles": [
+   "core",
+   "hip_flexors"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "generic": 2,
+   "hiking": 2,
+   "running": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Square the hips forward — this is the key difference from Warrior II. Keep the front knee aligned with the second toe.",
+  "cues": [],
+  "description": "Standing warrior pose — stretches the hip flexors of the back leg while opening the chest and shoulders.",
+  "difficulty": 2,
+  "duration_per_side_sec": 45,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 82,
+  "has_animation": true,
+  "instructions": "1. Step left foot back ~1 m. Turn left foot out 45°.\n2. Bend right knee to 90°. Square hips to the front.\n3. Raise both arms overhead, palms facing. Draw shoulders down.\n4. Hold 30–45 s. Switch sides.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Warrior I (Virabhadrasana I)",
+  "position": null,
+  "primary_muscles": [
+   "hip_flexors",
+   "quads",
+   "glutes",
+   "calves",
+   "chest",
+   "shoulders"
+  ],
+  "secondary_muscles": [
+   "core"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "generic": 2,
+   "hiking": 2,
+   "running": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Listen to your body. Do not force range of motion.",
+  "cues": [],
+  "description": "Lunge with hips facing front, arms overhead.",
+  "difficulty": 2,
+  "duration_per_side_sec": 60,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 82,
+  "has_animation": true,
+  "instructions": "1. Enter the pose mindfully.\n2. Hold with steady breath.\n3. Release slowly.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Warrior One Pose",
+  "position": null,
+  "primary_muscles": [
+   "quads",
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "shoulders",
+   "hip_flexors"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "generic": 3,
+   "paddling": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Listen to your body. Do not force range of motion.",
+  "cues": [],
+  "description": "Single-leg balance, back leg + torso parallel to floor.",
+  "difficulty": 3,
+  "duration_per_side_sec": 60,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 83,
+  "has_animation": true,
+  "instructions": "1. Enter the pose mindfully.\n2. Hold with steady breath.\n3. Release slowly.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Warrior Three Pose",
+  "position": null,
+  "primary_muscles": [
+   "glutes",
+   "hamstrings"
+  ],
+  "secondary_muscles": [
+   "core",
+   "spinal_erectors"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "generic": 3,
+   "paddling": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Listen to your body. Do not force range of motion.",
+  "cues": [],
+  "description": "Wide lunge with arms parallel to floor.",
+  "difficulty": 2,
+  "duration_per_side_sec": 60,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 84,
+  "has_animation": true,
+  "instructions": "1. Enter the pose mindfully.\n2. Hold with steady breath.\n3. Release slowly.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Warrior Two Pose",
+  "position": null,
+  "primary_muscles": [
+   "quads",
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "shoulders",
+   "obliques"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "generic": 3,
+   "paddling": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Listen to your body. Do not force range of motion.",
+  "cues": [],
+  "description": "Wide stance, shift weight to one side. Adductor stretch.",
+  "difficulty": 2,
+  "duration_per_side_sec": 60,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "pose",
+  "garmin_subtype": 86,
+  "has_animation": true,
+  "instructions": "1. Enter the pose mindfully.\n2. Hold with steady breath.\n3. Release slowly.",
+  "is_compound": true,
+  "movement_pattern": "yoga_pose",
+  "name": "Wide Side Lunge Pose",
+  "position": null,
+  "primary_muscles": [
+   "groin",
+   "quads"
+  ],
+  "secondary_muscles": [
+   "glutes"
+  ],
+  "sets": 1,
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "generic": 3,
+   "paddling": 2,
+   "running": 2,
+   "swimming": 2
+  }
+ },
+ {
+  "breath_cue": null,
+  "cautions": "Keep hips stable during the rotation. Move with control — this is a stretch, not a ballistic movement.",
+  "cues": [],
+  "description": "The ultimate multi-muscle dynamic stretch. Opens hips, hamstrings, thoracic spine, and shoulders in one flow.",
+  "difficulty": 2,
+  "duration_per_side_sec": 60,
+  "each_side": true,
+  "equipment": [
+   "bodyweight",
+   "mat"
+  ],
+  "garmin_category": "warm_up",
+  "garmin_subtype": 48,
+  "has_animation": true,
+  "instructions": "1. Start in a high plank.\n2. Step right foot outside right hand into a deep lunge.\n3. Lift right hand toward ceiling. Rotate torso open. Follow hand with eyes.\n4. Return hand to floor. Straighten right leg (hamstring stretch).\n5. Bend knee again. Step back to plank. Repeat on the left.",
+  "is_compound": true,
+  "movement_pattern": "dynamic_stretch",
+  "name": "World's Greatest Stretch",
+  "position": null,
+  "primary_muscles": [
+   "hip_flexors",
+   "hamstrings",
+   "glutes",
+   "lower_back",
+   "upper_back",
+   "quads",
+   "obliques"
+  ],
+  "secondary_muscles": [
+   "chest"
+  ],
+  "sets": 2,
+  "sport_relevance": {
+   "cycling": 3,
+   "generic": 3,
+   "hiking": 3,
+   "mtb": 3,
+   "running": 3
+  }
+ },
+ {
+  "breath_cue": "Breathe slow and steady",
+  "cautions": "Gentle pressure only. Never force wrist extension.",
+  "cues": [
+   "Arm straight, palm down",
+   "Gently draw the hand toward you"
+  ],
+  "description": "Stretches the muscles on the back of the forearm — often tight from gripping.",
+  "difficulty": 1,
+  "duration_per_side_sec": 30,
+  "each_side": true,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": "warm_up",
+  "garmin_subtype": 41,
+  "has_animation": true,
+  "instructions": "1. Extend right arm straight in front, palm facing down.\n2. Make a gentle fist. With left hand, bend right wrist downward.\n3. Hold 30 s. Switch sides.",
+  "is_compound": true,
+  "movement_pattern": "static_stretch",
+  "name": "Wrist Extensor Stretch",
+  "position": "standing",
+  "primary_muscles": [
+   "forearms"
+  ],
+  "secondary_muscles": [
+   "hands"
+  ],
+  "sets": 3,
+  "sport_relevance": {
+   "climbing": 3,
+   "cycling": 2,
+   "generic": 2,
+   "paddling": 3
+  }
+ },
+ {
+  "breath_cue": "Breathe slow and steady",
+  "cautions": "Be very gentle — wrist tendons are easily over-stretched. Do not force.",
+  "cues": [
+   "Arm straight, palm up",
+   "Gently draw the fingers back"
+  ],
+  "description": "Forearm flexor stretch — critical for climbers, paddlers, and cyclists.",
+  "difficulty": 1,
+  "duration_per_side_sec": 30,
+  "each_side": true,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": "warm_up",
+  "garmin_subtype": 41,
+  "has_animation": true,
+  "instructions": "1. Extend right arm straight in front, palm facing up.\n2. With left hand, gently bend right wrist downward.\n3. Keep elbow straight. You should feel the stretch along the inner forearm.\n4. Hold 30 s. Switch sides, then repeat with palm facing down for extensors.",
+  "is_compound": true,
+  "movement_pattern": "static_stretch",
+  "name": "Wrist Flexor Stretch",
+  "position": "standing",
+  "primary_muscles": [
+   "forearms"
+  ],
+  "secondary_muscles": [
+   "biceps"
+  ],
+  "sets": 3,
+  "sport_relevance": {
+   "climbing": 3,
+   "generic": 2,
+   "mtb": 3,
+   "paddling": 3
+  }
+ }
+]

@@ -1,0 +1,646 @@
+{
+  "_comment": "GENERATED from the original frontend/src/utils/fuelingUtils.js (before it sourced its thresholds from spec/fueling.js) via spec/make_fueling_fixtures.py, run under Node. There is no backend equivalent \u2014 the frontend is the sole oracle. Shared oracle for the JavaScript (utils/fuelingUtils.js) and Kotlin (spec/Fueling.kt) evaluators \u2014 see spec/codegen.py and spec/fueling.yaml.",
+  "default_carbs_per_hour_cases": [
+    {
+      "duration_hours": 0.1,
+      "expected": 30
+    },
+    {
+      "duration_hours": 0.5,
+      "expected": 30
+    },
+    {
+      "duration_hours": 1,
+      "expected": 30
+    },
+    {
+      "duration_hours": 1.0001,
+      "expected": 60
+    },
+    {
+      "duration_hours": 1.5,
+      "expected": 60
+    },
+    {
+      "duration_hours": 2,
+      "expected": 60
+    },
+    {
+      "duration_hours": 2.0001,
+      "expected": 80
+    },
+    {
+      "duration_hours": 3,
+      "expected": 80
+    },
+    {
+      "duration_hours": 4,
+      "expected": 80
+    },
+    {
+      "duration_hours": 4.0001,
+      "expected": 90
+    },
+    {
+      "duration_hours": 5,
+      "expected": 90
+    },
+    {
+      "duration_hours": 10,
+      "expected": 90
+    }
+  ],
+  "fueling_params_cases": [
+    {
+      "name": "no_weather",
+      "duration_hours": 3,
+      "weather": null,
+      "expected": {
+        "concentrationPct": 12,
+        "concentration": 0.12,
+        "sipIntervalMin": 15,
+        "firstSipMin": 15,
+        "heatAdjusted": false,
+        "isHot": false,
+        "isVeryHot": false,
+        "isHumid": false,
+        "saltIdx": 0
+      }
+    },
+    {
+      "name": "undefined_weather",
+      "duration_hours": 3,
+      "weather": null,
+      "expected": {
+        "concentrationPct": 12,
+        "concentration": 0.12,
+        "sipIntervalMin": 15,
+        "firstSipMin": 15,
+        "heatAdjusted": false,
+        "isHot": false,
+        "isVeryHot": false,
+        "isHumid": false,
+        "saltIdx": 0
+      }
+    },
+    {
+      "name": "mild",
+      "duration_hours": 3,
+      "weather": {
+        "temperature_c": 15,
+        "humidity_pct": 40
+      },
+      "expected": {
+        "concentrationPct": 12,
+        "concentration": 0.12,
+        "sipIntervalMin": 15,
+        "firstSipMin": 15,
+        "heatAdjusted": false,
+        "isHot": false,
+        "isVeryHot": false,
+        "isHumid": false,
+        "saltIdx": 0
+      }
+    },
+    {
+      "name": "exactly_25",
+      "duration_hours": 3,
+      "weather": {
+        "temperature_c": 25,
+        "humidity_pct": 40
+      },
+      "expected": {
+        "concentrationPct": 8,
+        "concentration": 0.08,
+        "sipIntervalMin": 12,
+        "firstSipMin": 12,
+        "heatAdjusted": true,
+        "isHot": true,
+        "isVeryHot": false,
+        "isHumid": false,
+        "saltIdx": 1
+      }
+    },
+    {
+      "name": "just_under_25",
+      "duration_hours": 3,
+      "weather": {
+        "temperature_c": 24.9,
+        "humidity_pct": 40
+      },
+      "expected": {
+        "concentrationPct": 12,
+        "concentration": 0.12,
+        "sipIntervalMin": 15,
+        "firstSipMin": 15,
+        "heatAdjusted": false,
+        "isHot": false,
+        "isVeryHot": false,
+        "isHumid": false,
+        "saltIdx": 0
+      }
+    },
+    {
+      "name": "hot_30",
+      "duration_hours": 3,
+      "weather": {
+        "temperature_c": 30,
+        "humidity_pct": 40
+      },
+      "expected": {
+        "concentrationPct": 8,
+        "concentration": 0.08,
+        "sipIntervalMin": 12,
+        "firstSipMin": 12,
+        "heatAdjusted": true,
+        "isHot": true,
+        "isVeryHot": false,
+        "isHumid": false,
+        "saltIdx": 1
+      }
+    },
+    {
+      "name": "exactly_32_very_hot",
+      "duration_hours": 3,
+      "weather": {
+        "temperature_c": 32,
+        "humidity_pct": 40
+      },
+      "expected": {
+        "concentrationPct": 6,
+        "concentration": 0.06,
+        "sipIntervalMin": 10,
+        "firstSipMin": 10,
+        "heatAdjusted": true,
+        "isHot": true,
+        "isVeryHot": true,
+        "isHumid": false,
+        "saltIdx": 2
+      }
+    },
+    {
+      "name": "just_under_32",
+      "duration_hours": 3,
+      "weather": {
+        "temperature_c": 31.9,
+        "humidity_pct": 40
+      },
+      "expected": {
+        "concentrationPct": 8,
+        "concentration": 0.08,
+        "sipIntervalMin": 12,
+        "firstSipMin": 12,
+        "heatAdjusted": true,
+        "isHot": true,
+        "isVeryHot": false,
+        "isHumid": false,
+        "saltIdx": 1
+      }
+    },
+    {
+      "name": "very_hot_38",
+      "duration_hours": 3,
+      "weather": {
+        "temperature_c": 38,
+        "humidity_pct": 50
+      },
+      "expected": {
+        "concentrationPct": 6,
+        "concentration": 0.06,
+        "sipIntervalMin": 10,
+        "firstSipMin": 10,
+        "heatAdjusted": true,
+        "isHot": true,
+        "isVeryHot": true,
+        "isHumid": false,
+        "saltIdx": 2
+      }
+    },
+    {
+      "name": "humid_only_exactly_70",
+      "duration_hours": 3,
+      "weather": {
+        "temperature_c": 22,
+        "humidity_pct": 70
+      },
+      "expected": {
+        "concentrationPct": 8,
+        "concentration": 0.08,
+        "sipIntervalMin": 12,
+        "firstSipMin": 12,
+        "heatAdjusted": true,
+        "isHot": false,
+        "isVeryHot": false,
+        "isHumid": true,
+        "saltIdx": 1
+      }
+    },
+    {
+      "name": "humid_only_69",
+      "duration_hours": 3,
+      "weather": {
+        "temperature_c": 22,
+        "humidity_pct": 69
+      },
+      "expected": {
+        "concentrationPct": 12,
+        "concentration": 0.12,
+        "sipIntervalMin": 15,
+        "firstSipMin": 15,
+        "heatAdjusted": false,
+        "isHot": false,
+        "isVeryHot": false,
+        "isHumid": false,
+        "saltIdx": 0
+      }
+    },
+    {
+      "name": "humid_but_cold_19",
+      "duration_hours": 3,
+      "weather": {
+        "temperature_c": 19,
+        "humidity_pct": 80
+      },
+      "expected": {
+        "concentrationPct": 12,
+        "concentration": 0.12,
+        "sipIntervalMin": 15,
+        "firstSipMin": 15,
+        "heatAdjusted": false,
+        "isHot": false,
+        "isVeryHot": false,
+        "isHumid": false,
+        "saltIdx": 0
+      }
+    },
+    {
+      "name": "humid_no_temp",
+      "duration_hours": 3,
+      "weather": {
+        "temperature_c": null,
+        "humidity_pct": 80
+      },
+      "expected": {
+        "concentrationPct": 8,
+        "concentration": 0.08,
+        "sipIntervalMin": 12,
+        "firstSipMin": 12,
+        "heatAdjusted": true,
+        "isHot": false,
+        "isVeryHot": false,
+        "isHumid": true,
+        "saltIdx": 1
+      }
+    },
+    {
+      "name": "temp_only_no_humidity",
+      "duration_hours": 3,
+      "weather": {
+        "temperature_c": 28,
+        "humidity_pct": null
+      },
+      "expected": {
+        "concentrationPct": 8,
+        "concentration": 0.08,
+        "sipIntervalMin": 12,
+        "firstSipMin": 12,
+        "heatAdjusted": true,
+        "isHot": true,
+        "isVeryHot": false,
+        "isHumid": false,
+        "saltIdx": 1
+      }
+    },
+    {
+      "name": "hot_and_humid",
+      "duration_hours": 3,
+      "weather": {
+        "temperature_c": 27,
+        "humidity_pct": 85
+      },
+      "expected": {
+        "concentrationPct": 8,
+        "concentration": 0.08,
+        "sipIntervalMin": 12,
+        "firstSipMin": 12,
+        "heatAdjusted": true,
+        "isHot": true,
+        "isVeryHot": false,
+        "isHumid": true,
+        "saltIdx": 1
+      }
+    },
+    {
+      "name": "empty_object",
+      "duration_hours": 3,
+      "weather": {},
+      "expected": {
+        "concentrationPct": 12,
+        "concentration": 0.12,
+        "sipIntervalMin": 15,
+        "firstSipMin": 15,
+        "heatAdjusted": false,
+        "isHot": false,
+        "isVeryHot": false,
+        "isHumid": false,
+        "saltIdx": 0
+      }
+    }
+  ],
+  "sip_ml_cases": [
+    {
+      "carbsPerHour": 60,
+      "concentration": 0.12,
+      "sipIntervalMin": 15,
+      "expected": 130
+    },
+    {
+      "carbsPerHour": 90,
+      "concentration": 0.08,
+      "sipIntervalMin": 12,
+      "expected": 230
+    },
+    {
+      "carbsPerHour": 80,
+      "concentration": 0.06,
+      "sipIntervalMin": 10,
+      "expected": 220
+    },
+    {
+      "carbsPerHour": 30,
+      "concentration": 0.12,
+      "sipIntervalMin": 15,
+      "expected": 60
+    },
+    {
+      "carbsPerHour": 100,
+      "concentration": 0.12,
+      "sipIntervalMin": 15,
+      "expected": 210
+    }
+  ],
+  "per_lap_drinks_cases": [
+    {
+      "name": "5x1km_5min_km",
+      "laps": [
+        {
+          "target_sec_per_km": 300,
+          "distance_m": 1000
+        },
+        {
+          "target_sec_per_km": 300,
+          "distance_m": 1000
+        },
+        {
+          "target_sec_per_km": 300,
+          "distance_m": 1000
+        },
+        {
+          "target_sec_per_km": 300,
+          "distance_m": 1000
+        },
+        {
+          "target_sec_per_km": 300,
+          "distance_m": 1000
+        }
+      ],
+      "sip_interval_min": 15,
+      "first_sip_min": 15,
+      "per_sip_ml": 200,
+      "expected": [
+        null,
+        null,
+        {
+          "sipMl": 200,
+          "atMin": 15
+        },
+        null,
+        null
+      ]
+    },
+    {
+      "name": "with_gap_lap",
+      "laps": [
+        {
+          "target_sec_per_km": 300,
+          "distance_m": 1000
+        },
+        {
+          "target_sec_per_km": null,
+          "distance_m": null
+        },
+        {
+          "target_sec_per_km": 280,
+          "distance_m": 2000
+        }
+      ],
+      "sip_interval_min": 12,
+      "first_sip_min": 12,
+      "per_sip_ml": 150,
+      "expected": [
+        null,
+        null,
+        {
+          "sipMl": 150,
+          "atMin": 12
+        }
+      ]
+    },
+    {
+      "name": "zero_distance_lap",
+      "laps": [
+        {
+          "target_sec_per_km": 300,
+          "distance_m": 0
+        },
+        {
+          "target_sec_per_km": 300,
+          "distance_m": 1000
+        }
+      ],
+      "sip_interval_min": 10,
+      "first_sip_min": 10,
+      "per_sip_ml": 100,
+      "expected": [
+        null,
+        null
+      ]
+    },
+    {
+      "name": "empty_laps",
+      "laps": [],
+      "sip_interval_min": 15,
+      "first_sip_min": 15,
+      "per_sip_ml": 200,
+      "expected": []
+    }
+  ],
+  "get_per_lap_drinks_cases": [
+    {
+      "name": "basic_5k_mild",
+      "laps": [
+        {
+          "target_sec_per_km": 300,
+          "distance_m": 1000
+        },
+        {
+          "target_sec_per_km": 300,
+          "distance_m": 1000
+        },
+        {
+          "target_sec_per_km": 300,
+          "distance_m": 1000
+        },
+        {
+          "target_sec_per_km": 300,
+          "distance_m": 1000
+        },
+        {
+          "target_sec_per_km": 300,
+          "distance_m": 1000
+        }
+      ],
+      "predicted_seconds": 1500,
+      "fueling_plan_carbs": null,
+      "weather": {
+        "temperature_c": 15,
+        "humidity_pct": 40
+      },
+      "expected": [
+        null,
+        null,
+        {
+          "sipMl": 60,
+          "atMin": 15
+        },
+        null,
+        null
+      ]
+    },
+    {
+      "name": "hot_with_explicit_carbs",
+      "laps": [
+        {
+          "target_sec_per_km": 300,
+          "distance_m": 1000
+        },
+        {
+          "target_sec_per_km": 300,
+          "distance_m": 1000
+        },
+        {
+          "target_sec_per_km": 300,
+          "distance_m": 1000
+        },
+        {
+          "target_sec_per_km": 300,
+          "distance_m": 1000
+        },
+        {
+          "target_sec_per_km": 300,
+          "distance_m": 1000
+        }
+      ],
+      "predicted_seconds": 1500,
+      "fueling_plan_carbs": 75,
+      "weather": {
+        "temperature_c": 30,
+        "humidity_pct": 50
+      },
+      "expected": [
+        null,
+        null,
+        {
+          "sipMl": 190,
+          "atMin": 12
+        },
+        null,
+        {
+          "sipMl": 190,
+          "atMin": 24
+        }
+      ]
+    },
+    {
+      "name": "no_laps",
+      "laps": [],
+      "predicted_seconds": 1500,
+      "fueling_plan_carbs": null,
+      "weather": null,
+      "expected": []
+    },
+    {
+      "name": "no_predicted_seconds",
+      "laps": [
+        {
+          "target_sec_per_km": 300,
+          "distance_m": 1000
+        },
+        {
+          "target_sec_per_km": 300,
+          "distance_m": 1000
+        },
+        {
+          "target_sec_per_km": 300,
+          "distance_m": 1000
+        },
+        {
+          "target_sec_per_km": 300,
+          "distance_m": 1000
+        },
+        {
+          "target_sec_per_km": 300,
+          "distance_m": 1000
+        }
+      ],
+      "predicted_seconds": null,
+      "fueling_plan_carbs": null,
+      "weather": null,
+      "expected": []
+    },
+    {
+      "name": "very_hot_long_run",
+      "laps": [
+        {
+          "target_sec_per_km": 300,
+          "distance_m": 1000
+        },
+        {
+          "target_sec_per_km": 300,
+          "distance_m": 1000
+        },
+        {
+          "target_sec_per_km": 300,
+          "distance_m": 1000
+        },
+        {
+          "target_sec_per_km": 300,
+          "distance_m": 1000
+        },
+        {
+          "target_sec_per_km": 300,
+          "distance_m": 1000
+        }
+      ],
+      "predicted_seconds": 14400,
+      "fueling_plan_carbs": null,
+      "weather": {
+        "temperature_c": 35,
+        "humidity_pct": 60
+      },
+      "expected": [
+        null,
+        {
+          "sipMl": 220,
+          "atMin": 10
+        },
+        null,
+        {
+          "sipMl": 220,
+          "atMin": 20
+        },
+        null
+      ]
+    }
+  ]
+}

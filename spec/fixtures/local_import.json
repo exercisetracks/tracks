@@ -1,0 +1,1419 @@
+{
+ "cases": [
+  {
+   "effective_tss": {
+    "hr_only": null,
+    "none": null,
+    "power_and_hr": null
+   },
+   "file": "activity_climb.fit",
+   "parser": "ActivityParser",
+   "sha256": "29b5004dd92b2e2f22cde1b1e2c83c1683271735be0616a49db3319ec585a71f",
+   "type": "activity",
+   "uid": "34344c65-6946-54b8-8e54-acccadf4bc78"
+  },
+  {
+   "effective_tss": {
+    "hr_only": 13.8,
+    "none": 20.8,
+    "power_and_hr": 17.6
+   },
+   "file": "activity_ride.fit",
+   "parser": "ActivityParser",
+   "sha256": "90987e1f10c5528373ef2a7a26b6bd05613b8a8303479d6100d58f06a0a21b77",
+   "type": "activity",
+   "uid": "383f9bb0-ec57-597b-99fc-88e50bbc895f"
+  },
+  {
+   "effective_tss": {
+    "hr_only": null,
+    "none": null,
+    "power_and_hr": null
+   },
+   "file": "activity_run.fit",
+   "parser": "ActivityParser",
+   "sha256": "946cccfaeb484c98be3bc9a36b935d490bc4043b9180ed13e1b6bbf39b9a2a38",
+   "type": "activity",
+   "uid": "8b36db68-6334-5f52-ba77-8b9847512f1e"
+  },
+  {
+   "effective_tss": {
+    "hr_only": 7.0,
+    "none": 12.2,
+    "power_and_hr": 7.0
+   },
+   "file": "activity_strength.fit",
+   "parser": "ActivityParser",
+   "sha256": "80a495509a33038e1db7cac8f0efa0a34b000d2aee1ac35f28ca4e3140c9e15d",
+   "type": "activity",
+   "uid": "e75c6b18-a653-540f-863b-f976610e5890"
+  },
+  {
+   "effective_tss": {
+    "hr_only": null,
+    "none": null,
+    "power_and_hr": null
+   },
+   "file": "activity_unknown_sport.fit",
+   "parser": "ActivityParser",
+   "sha256": "2fb18ff54fc68c7fe0508cfe92b95bbc94851cc42df90d3fd29c6acc493f4201",
+   "type": "activity",
+   "uid": "1f974531-32b1-5a35-8a97-d2ac3ad96b5e"
+  },
+  {
+   "file": "chained.fit",
+   "parser": "DailyHealthParser",
+   "sha256": "59fdae8e62eaf095b43bcc04a48dfec5aef684f8bc6d1fa30a435283377340ea",
+   "type": "daily"
+  },
+  {
+   "error": "TypeError",
+   "file": "edges.fit",
+   "parser": "ActivityParser",
+   "sha256": "7c074af8628ce76c3b8d8a45a0c6fff99991a9f2c827e395c8c5fdb77822abef"
+  },
+  {
+   "file": "empty.fit",
+   "parser": null,
+   "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+   "error": "AssertionError",
+   "file": "hr_before_start.fit",
+   "parser": "ActivityParser",
+   "sha256": "5f3d28253b8e8e45125e916d0efec1ebda1d88f0461a9107a0be21b9b6a7d589"
+  },
+  {
+   "effective_tss": {
+    "hr_only": 0.5,
+    "none": 2.2,
+    "power_and_hr": 0.5
+   },
+   "file": "hr_messages.fit",
+   "parser": "ActivityParser",
+   "sha256": "a831d325b14266f408fe06f3862e68804fcf6f625d317858a3f518a4ccc24929",
+   "type": "activity",
+   "uid": "0d6f7c4d-ec8f-52f1-8c39-915d31178e9e"
+  },
+  {
+   "file": "hrv.fit",
+   "parser": "DailyHealthParser",
+   "sha256": "a71d39de20e2f1a831923ba3f0e8d4abf94fde9d960fd1ea88cacac1b615215d",
+   "type": "daily"
+  },
+  {
+   "error": "FitEOFError",
+   "file": "missing_crc.fit",
+   "parser": "ActivityParser",
+   "sha256": "cd81df26638bc747b1dd5c63e62e32a9570393c6b394fe8a34184f32af194ec8"
+  },
+  {
+   "file": "monitoring.fit",
+   "parser": "DailyHealthParser",
+   "sha256": "b76cceb29b185408aef0b3c9d70ecefa8bd9253e4c680ccf07d034cd4c03d720",
+   "type": "daily"
+  },
+  {
+   "file": "not_fit.fit",
+   "parser": null,
+   "sha256": "11d6ba1451404e78dc9b6caafdac23c6d13fc3b9fc794c73cb7c8f12dde11ad7"
+  },
+  {
+   "file": "sleep.fit",
+   "parser": "SleepParser",
+   "sha256": "e86bc1101306d954763f1cae3d482fc1a3b83aecd01ac4544100e08261d978cd",
+   "type": "daily"
+  },
+  {
+   "file": "sleep_stream_only.fit",
+   "parser": "SleepParser",
+   "sha256": "63d38f2a04d924f8df725ca9769a725937fedc0d5b1b1289e473cf37b1426919",
+   "type": "daily"
+  },
+  {
+   "error": "FitEOFError",
+   "file": "truncated.fit",
+   "parser": "ActivityParser",
+   "sha256": "fa3f27922c2834cdb4a806f4022e8a566a3e4ef1a68953c6e169d6416d9ef1ac"
+  }
+ ],
+ "settings": [
+  {
+   "ftp": null,
+   "name": "none",
+   "threshold_hr": null
+  },
+  {
+   "ftp": null,
+   "name": "hr_only",
+   "threshold_hr": 160.0
+  },
+  {
+   "ftp": 250.0,
+   "name": "power_and_hr",
+   "threshold_hr": 160.0
+  }
+ ],
+ "tss_scaling": [
+  {
+   "discipline": null,
+   "sport": "mountain_biking",
+   "tss": null,
+   "want": null
+  },
+  {
+   "discipline": null,
+   "sport": "mountain_biking",
+   "tss": 0.0,
+   "want": 0.0
+  },
+  {
+   "discipline": null,
+   "sport": "mountain_biking",
+   "tss": 47.35,
+   "want": 52.1
+  },
+  {
+   "discipline": null,
+   "sport": "mountain_biking",
+   "tss": 100.0,
+   "want": 110.0
+  },
+  {
+   "discipline": null,
+   "sport": "mountain_biking",
+   "tss": 12.25,
+   "want": 13.5
+  },
+  {
+   "discipline": "xco",
+   "sport": "mountain_biking",
+   "tss": null,
+   "want": null
+  },
+  {
+   "discipline": "xco",
+   "sport": "mountain_biking",
+   "tss": 0.0,
+   "want": 0.0
+  },
+  {
+   "discipline": "xco",
+   "sport": "mountain_biking",
+   "tss": 47.35,
+   "want": 47.4
+  },
+  {
+   "discipline": "xco",
+   "sport": "mountain_biking",
+   "tss": 100.0,
+   "want": 100.0
+  },
+  {
+   "discipline": "xco",
+   "sport": "mountain_biking",
+   "tss": 12.25,
+   "want": 12.2
+  },
+  {
+   "discipline": "xcm",
+   "sport": "mountain_biking",
+   "tss": null,
+   "want": null
+  },
+  {
+   "discipline": "xcm",
+   "sport": "mountain_biking",
+   "tss": 0.0,
+   "want": 0.0
+  },
+  {
+   "discipline": "xcm",
+   "sport": "mountain_biking",
+   "tss": 47.35,
+   "want": 52.1
+  },
+  {
+   "discipline": "xcm",
+   "sport": "mountain_biking",
+   "tss": 100.0,
+   "want": 110.0
+  },
+  {
+   "discipline": "xcm",
+   "sport": "mountain_biking",
+   "tss": 12.25,
+   "want": 13.5
+  },
+  {
+   "discipline": "enduro",
+   "sport": "mountain_biking",
+   "tss": null,
+   "want": null
+  },
+  {
+   "discipline": "enduro",
+   "sport": "mountain_biking",
+   "tss": 0.0,
+   "want": 0.0
+  },
+  {
+   "discipline": "enduro",
+   "sport": "mountain_biking",
+   "tss": 47.35,
+   "want": 56.8
+  },
+  {
+   "discipline": "enduro",
+   "sport": "mountain_biking",
+   "tss": 100.0,
+   "want": 120.0
+  },
+  {
+   "discipline": "enduro",
+   "sport": "mountain_biking",
+   "tss": 12.25,
+   "want": 14.7
+  },
+  {
+   "discipline": "trail",
+   "sport": "mountain_biking",
+   "tss": null,
+   "want": null
+  },
+  {
+   "discipline": "trail",
+   "sport": "mountain_biking",
+   "tss": 0.0,
+   "want": 0.0
+  },
+  {
+   "discipline": "trail",
+   "sport": "mountain_biking",
+   "tss": 47.35,
+   "want": 52.1
+  },
+  {
+   "discipline": "trail",
+   "sport": "mountain_biking",
+   "tss": 100.0,
+   "want": 110.0
+  },
+  {
+   "discipline": "trail",
+   "sport": "mountain_biking",
+   "tss": 12.25,
+   "want": 13.5
+  },
+  {
+   "discipline": "unknown",
+   "sport": "mountain_biking",
+   "tss": null,
+   "want": null
+  },
+  {
+   "discipline": "unknown",
+   "sport": "mountain_biking",
+   "tss": 0.0,
+   "want": 0.0
+  },
+  {
+   "discipline": "unknown",
+   "sport": "mountain_biking",
+   "tss": 47.35,
+   "want": 52.1
+  },
+  {
+   "discipline": "unknown",
+   "sport": "mountain_biking",
+   "tss": 100.0,
+   "want": 110.0
+  },
+  {
+   "discipline": "unknown",
+   "sport": "mountain_biking",
+   "tss": 12.25,
+   "want": 13.5
+  },
+  {
+   "discipline": null,
+   "sport": "trail_biking",
+   "tss": null,
+   "want": null
+  },
+  {
+   "discipline": null,
+   "sport": "trail_biking",
+   "tss": 0.0,
+   "want": 0.0
+  },
+  {
+   "discipline": null,
+   "sport": "trail_biking",
+   "tss": 47.35,
+   "want": 52.1
+  },
+  {
+   "discipline": null,
+   "sport": "trail_biking",
+   "tss": 100.0,
+   "want": 110.0
+  },
+  {
+   "discipline": null,
+   "sport": "trail_biking",
+   "tss": 12.25,
+   "want": 13.5
+  },
+  {
+   "discipline": "xco",
+   "sport": "trail_biking",
+   "tss": null,
+   "want": null
+  },
+  {
+   "discipline": "xco",
+   "sport": "trail_biking",
+   "tss": 0.0,
+   "want": 0.0
+  },
+  {
+   "discipline": "xco",
+   "sport": "trail_biking",
+   "tss": 47.35,
+   "want": 47.4
+  },
+  {
+   "discipline": "xco",
+   "sport": "trail_biking",
+   "tss": 100.0,
+   "want": 100.0
+  },
+  {
+   "discipline": "xco",
+   "sport": "trail_biking",
+   "tss": 12.25,
+   "want": 12.2
+  },
+  {
+   "discipline": "xcm",
+   "sport": "trail_biking",
+   "tss": null,
+   "want": null
+  },
+  {
+   "discipline": "xcm",
+   "sport": "trail_biking",
+   "tss": 0.0,
+   "want": 0.0
+  },
+  {
+   "discipline": "xcm",
+   "sport": "trail_biking",
+   "tss": 47.35,
+   "want": 52.1
+  },
+  {
+   "discipline": "xcm",
+   "sport": "trail_biking",
+   "tss": 100.0,
+   "want": 110.0
+  },
+  {
+   "discipline": "xcm",
+   "sport": "trail_biking",
+   "tss": 12.25,
+   "want": 13.5
+  },
+  {
+   "discipline": "enduro",
+   "sport": "trail_biking",
+   "tss": null,
+   "want": null
+  },
+  {
+   "discipline": "enduro",
+   "sport": "trail_biking",
+   "tss": 0.0,
+   "want": 0.0
+  },
+  {
+   "discipline": "enduro",
+   "sport": "trail_biking",
+   "tss": 47.35,
+   "want": 56.8
+  },
+  {
+   "discipline": "enduro",
+   "sport": "trail_biking",
+   "tss": 100.0,
+   "want": 120.0
+  },
+  {
+   "discipline": "enduro",
+   "sport": "trail_biking",
+   "tss": 12.25,
+   "want": 14.7
+  },
+  {
+   "discipline": "trail",
+   "sport": "trail_biking",
+   "tss": null,
+   "want": null
+  },
+  {
+   "discipline": "trail",
+   "sport": "trail_biking",
+   "tss": 0.0,
+   "want": 0.0
+  },
+  {
+   "discipline": "trail",
+   "sport": "trail_biking",
+   "tss": 47.35,
+   "want": 52.1
+  },
+  {
+   "discipline": "trail",
+   "sport": "trail_biking",
+   "tss": 100.0,
+   "want": 110.0
+  },
+  {
+   "discipline": "trail",
+   "sport": "trail_biking",
+   "tss": 12.25,
+   "want": 13.5
+  },
+  {
+   "discipline": "unknown",
+   "sport": "trail_biking",
+   "tss": null,
+   "want": null
+  },
+  {
+   "discipline": "unknown",
+   "sport": "trail_biking",
+   "tss": 0.0,
+   "want": 0.0
+  },
+  {
+   "discipline": "unknown",
+   "sport": "trail_biking",
+   "tss": 47.35,
+   "want": 52.1
+  },
+  {
+   "discipline": "unknown",
+   "sport": "trail_biking",
+   "tss": 100.0,
+   "want": 110.0
+  },
+  {
+   "discipline": "unknown",
+   "sport": "trail_biking",
+   "tss": 12.25,
+   "want": 13.5
+  },
+  {
+   "discipline": null,
+   "sport": "indoor_cycling",
+   "tss": null,
+   "want": null
+  },
+  {
+   "discipline": null,
+   "sport": "indoor_cycling",
+   "tss": 0.0,
+   "want": 0.0
+  },
+  {
+   "discipline": null,
+   "sport": "indoor_cycling",
+   "tss": 47.35,
+   "want": 52.1
+  },
+  {
+   "discipline": null,
+   "sport": "indoor_cycling",
+   "tss": 100.0,
+   "want": 110.0
+  },
+  {
+   "discipline": null,
+   "sport": "indoor_cycling",
+   "tss": 12.25,
+   "want": 13.5
+  },
+  {
+   "discipline": "xco",
+   "sport": "indoor_cycling",
+   "tss": null,
+   "want": null
+  },
+  {
+   "discipline": "xco",
+   "sport": "indoor_cycling",
+   "tss": 0.0,
+   "want": 0.0
+  },
+  {
+   "discipline": "xco",
+   "sport": "indoor_cycling",
+   "tss": 47.35,
+   "want": 52.1
+  },
+  {
+   "discipline": "xco",
+   "sport": "indoor_cycling",
+   "tss": 100.0,
+   "want": 110.0
+  },
+  {
+   "discipline": "xco",
+   "sport": "indoor_cycling",
+   "tss": 12.25,
+   "want": 13.5
+  },
+  {
+   "discipline": "xcm",
+   "sport": "indoor_cycling",
+   "tss": null,
+   "want": null
+  },
+  {
+   "discipline": "xcm",
+   "sport": "indoor_cycling",
+   "tss": 0.0,
+   "want": 0.0
+  },
+  {
+   "discipline": "xcm",
+   "sport": "indoor_cycling",
+   "tss": 47.35,
+   "want": 52.1
+  },
+  {
+   "discipline": "xcm",
+   "sport": "indoor_cycling",
+   "tss": 100.0,
+   "want": 110.0
+  },
+  {
+   "discipline": "xcm",
+   "sport": "indoor_cycling",
+   "tss": 12.25,
+   "want": 13.5
+  },
+  {
+   "discipline": "enduro",
+   "sport": "indoor_cycling",
+   "tss": null,
+   "want": null
+  },
+  {
+   "discipline": "enduro",
+   "sport": "indoor_cycling",
+   "tss": 0.0,
+   "want": 0.0
+  },
+  {
+   "discipline": "enduro",
+   "sport": "indoor_cycling",
+   "tss": 47.35,
+   "want": 52.1
+  },
+  {
+   "discipline": "enduro",
+   "sport": "indoor_cycling",
+   "tss": 100.0,
+   "want": 110.0
+  },
+  {
+   "discipline": "enduro",
+   "sport": "indoor_cycling",
+   "tss": 12.25,
+   "want": 13.5
+  },
+  {
+   "discipline": "trail",
+   "sport": "indoor_cycling",
+   "tss": null,
+   "want": null
+  },
+  {
+   "discipline": "trail",
+   "sport": "indoor_cycling",
+   "tss": 0.0,
+   "want": 0.0
+  },
+  {
+   "discipline": "trail",
+   "sport": "indoor_cycling",
+   "tss": 47.35,
+   "want": 52.1
+  },
+  {
+   "discipline": "trail",
+   "sport": "indoor_cycling",
+   "tss": 100.0,
+   "want": 110.0
+  },
+  {
+   "discipline": "trail",
+   "sport": "indoor_cycling",
+   "tss": 12.25,
+   "want": 13.5
+  },
+  {
+   "discipline": "unknown",
+   "sport": "indoor_cycling",
+   "tss": null,
+   "want": null
+  },
+  {
+   "discipline": "unknown",
+   "sport": "indoor_cycling",
+   "tss": 0.0,
+   "want": 0.0
+  },
+  {
+   "discipline": "unknown",
+   "sport": "indoor_cycling",
+   "tss": 47.35,
+   "want": 52.1
+  },
+  {
+   "discipline": "unknown",
+   "sport": "indoor_cycling",
+   "tss": 100.0,
+   "want": 110.0
+  },
+  {
+   "discipline": "unknown",
+   "sport": "indoor_cycling",
+   "tss": 12.25,
+   "want": 13.5
+  },
+  {
+   "discipline": null,
+   "sport": "virtual_cycling",
+   "tss": null,
+   "want": null
+  },
+  {
+   "discipline": null,
+   "sport": "virtual_cycling",
+   "tss": 0.0,
+   "want": 0.0
+  },
+  {
+   "discipline": null,
+   "sport": "virtual_cycling",
+   "tss": 47.35,
+   "want": 52.1
+  },
+  {
+   "discipline": null,
+   "sport": "virtual_cycling",
+   "tss": 100.0,
+   "want": 110.0
+  },
+  {
+   "discipline": null,
+   "sport": "virtual_cycling",
+   "tss": 12.25,
+   "want": 13.5
+  },
+  {
+   "discipline": "xco",
+   "sport": "virtual_cycling",
+   "tss": null,
+   "want": null
+  },
+  {
+   "discipline": "xco",
+   "sport": "virtual_cycling",
+   "tss": 0.0,
+   "want": 0.0
+  },
+  {
+   "discipline": "xco",
+   "sport": "virtual_cycling",
+   "tss": 47.35,
+   "want": 52.1
+  },
+  {
+   "discipline": "xco",
+   "sport": "virtual_cycling",
+   "tss": 100.0,
+   "want": 110.0
+  },
+  {
+   "discipline": "xco",
+   "sport": "virtual_cycling",
+   "tss": 12.25,
+   "want": 13.5
+  },
+  {
+   "discipline": "xcm",
+   "sport": "virtual_cycling",
+   "tss": null,
+   "want": null
+  },
+  {
+   "discipline": "xcm",
+   "sport": "virtual_cycling",
+   "tss": 0.0,
+   "want": 0.0
+  },
+  {
+   "discipline": "xcm",
+   "sport": "virtual_cycling",
+   "tss": 47.35,
+   "want": 52.1
+  },
+  {
+   "discipline": "xcm",
+   "sport": "virtual_cycling",
+   "tss": 100.0,
+   "want": 110.0
+  },
+  {
+   "discipline": "xcm",
+   "sport": "virtual_cycling",
+   "tss": 12.25,
+   "want": 13.5
+  },
+  {
+   "discipline": "enduro",
+   "sport": "virtual_cycling",
+   "tss": null,
+   "want": null
+  },
+  {
+   "discipline": "enduro",
+   "sport": "virtual_cycling",
+   "tss": 0.0,
+   "want": 0.0
+  },
+  {
+   "discipline": "enduro",
+   "sport": "virtual_cycling",
+   "tss": 47.35,
+   "want": 52.1
+  },
+  {
+   "discipline": "enduro",
+   "sport": "virtual_cycling",
+   "tss": 100.0,
+   "want": 110.0
+  },
+  {
+   "discipline": "enduro",
+   "sport": "virtual_cycling",
+   "tss": 12.25,
+   "want": 13.5
+  },
+  {
+   "discipline": "trail",
+   "sport": "virtual_cycling",
+   "tss": null,
+   "want": null
+  },
+  {
+   "discipline": "trail",
+   "sport": "virtual_cycling",
+   "tss": 0.0,
+   "want": 0.0
+  },
+  {
+   "discipline": "trail",
+   "sport": "virtual_cycling",
+   "tss": 47.35,
+   "want": 52.1
+  },
+  {
+   "discipline": "trail",
+   "sport": "virtual_cycling",
+   "tss": 100.0,
+   "want": 110.0
+  },
+  {
+   "discipline": "trail",
+   "sport": "virtual_cycling",
+   "tss": 12.25,
+   "want": 13.5
+  },
+  {
+   "discipline": "unknown",
+   "sport": "virtual_cycling",
+   "tss": null,
+   "want": null
+  },
+  {
+   "discipline": "unknown",
+   "sport": "virtual_cycling",
+   "tss": 0.0,
+   "want": 0.0
+  },
+  {
+   "discipline": "unknown",
+   "sport": "virtual_cycling",
+   "tss": 47.35,
+   "want": 52.1
+  },
+  {
+   "discipline": "unknown",
+   "sport": "virtual_cycling",
+   "tss": 100.0,
+   "want": 110.0
+  },
+  {
+   "discipline": "unknown",
+   "sport": "virtual_cycling",
+   "tss": 12.25,
+   "want": 13.5
+  },
+  {
+   "discipline": null,
+   "sport": "cycling",
+   "tss": null,
+   "want": null
+  },
+  {
+   "discipline": null,
+   "sport": "cycling",
+   "tss": 0.0,
+   "want": 0.0
+  },
+  {
+   "discipline": null,
+   "sport": "cycling",
+   "tss": 47.35,
+   "want": 47.35
+  },
+  {
+   "discipline": null,
+   "sport": "cycling",
+   "tss": 100.0,
+   "want": 100.0
+  },
+  {
+   "discipline": null,
+   "sport": "cycling",
+   "tss": 12.25,
+   "want": 12.25
+  },
+  {
+   "discipline": "xco",
+   "sport": "cycling",
+   "tss": null,
+   "want": null
+  },
+  {
+   "discipline": "xco",
+   "sport": "cycling",
+   "tss": 0.0,
+   "want": 0.0
+  },
+  {
+   "discipline": "xco",
+   "sport": "cycling",
+   "tss": 47.35,
+   "want": 47.35
+  },
+  {
+   "discipline": "xco",
+   "sport": "cycling",
+   "tss": 100.0,
+   "want": 100.0
+  },
+  {
+   "discipline": "xco",
+   "sport": "cycling",
+   "tss": 12.25,
+   "want": 12.25
+  },
+  {
+   "discipline": "xcm",
+   "sport": "cycling",
+   "tss": null,
+   "want": null
+  },
+  {
+   "discipline": "xcm",
+   "sport": "cycling",
+   "tss": 0.0,
+   "want": 0.0
+  },
+  {
+   "discipline": "xcm",
+   "sport": "cycling",
+   "tss": 47.35,
+   "want": 47.35
+  },
+  {
+   "discipline": "xcm",
+   "sport": "cycling",
+   "tss": 100.0,
+   "want": 100.0
+  },
+  {
+   "discipline": "xcm",
+   "sport": "cycling",
+   "tss": 12.25,
+   "want": 12.25
+  },
+  {
+   "discipline": "enduro",
+   "sport": "cycling",
+   "tss": null,
+   "want": null
+  },
+  {
+   "discipline": "enduro",
+   "sport": "cycling",
+   "tss": 0.0,
+   "want": 0.0
+  },
+  {
+   "discipline": "enduro",
+   "sport": "cycling",
+   "tss": 47.35,
+   "want": 47.35
+  },
+  {
+   "discipline": "enduro",
+   "sport": "cycling",
+   "tss": 100.0,
+   "want": 100.0
+  },
+  {
+   "discipline": "enduro",
+   "sport": "cycling",
+   "tss": 12.25,
+   "want": 12.25
+  },
+  {
+   "discipline": "trail",
+   "sport": "cycling",
+   "tss": null,
+   "want": null
+  },
+  {
+   "discipline": "trail",
+   "sport": "cycling",
+   "tss": 0.0,
+   "want": 0.0
+  },
+  {
+   "discipline": "trail",
+   "sport": "cycling",
+   "tss": 47.35,
+   "want": 47.35
+  },
+  {
+   "discipline": "trail",
+   "sport": "cycling",
+   "tss": 100.0,
+   "want": 100.0
+  },
+  {
+   "discipline": "trail",
+   "sport": "cycling",
+   "tss": 12.25,
+   "want": 12.25
+  },
+  {
+   "discipline": "unknown",
+   "sport": "cycling",
+   "tss": null,
+   "want": null
+  },
+  {
+   "discipline": "unknown",
+   "sport": "cycling",
+   "tss": 0.0,
+   "want": 0.0
+  },
+  {
+   "discipline": "unknown",
+   "sport": "cycling",
+   "tss": 47.35,
+   "want": 47.35
+  },
+  {
+   "discipline": "unknown",
+   "sport": "cycling",
+   "tss": 100.0,
+   "want": 100.0
+  },
+  {
+   "discipline": "unknown",
+   "sport": "cycling",
+   "tss": 12.25,
+   "want": 12.25
+  },
+  {
+   "discipline": null,
+   "sport": "running",
+   "tss": null,
+   "want": null
+  },
+  {
+   "discipline": null,
+   "sport": "running",
+   "tss": 0.0,
+   "want": 0.0
+  },
+  {
+   "discipline": null,
+   "sport": "running",
+   "tss": 47.35,
+   "want": 47.35
+  },
+  {
+   "discipline": null,
+   "sport": "running",
+   "tss": 100.0,
+   "want": 100.0
+  },
+  {
+   "discipline": null,
+   "sport": "running",
+   "tss": 12.25,
+   "want": 12.25
+  },
+  {
+   "discipline": "xco",
+   "sport": "running",
+   "tss": null,
+   "want": null
+  },
+  {
+   "discipline": "xco",
+   "sport": "running",
+   "tss": 0.0,
+   "want": 0.0
+  },
+  {
+   "discipline": "xco",
+   "sport": "running",
+   "tss": 47.35,
+   "want": 47.35
+  },
+  {
+   "discipline": "xco",
+   "sport": "running",
+   "tss": 100.0,
+   "want": 100.0
+  },
+  {
+   "discipline": "xco",
+   "sport": "running",
+   "tss": 12.25,
+   "want": 12.25
+  },
+  {
+   "discipline": "xcm",
+   "sport": "running",
+   "tss": null,
+   "want": null
+  },
+  {
+   "discipline": "xcm",
+   "sport": "running",
+   "tss": 0.0,
+   "want": 0.0
+  },
+  {
+   "discipline": "xcm",
+   "sport": "running",
+   "tss": 47.35,
+   "want": 47.35
+  },
+  {
+   "discipline": "xcm",
+   "sport": "running",
+   "tss": 100.0,
+   "want": 100.0
+  },
+  {
+   "discipline": "xcm",
+   "sport": "running",
+   "tss": 12.25,
+   "want": 12.25
+  },
+  {
+   "discipline": "enduro",
+   "sport": "running",
+   "tss": null,
+   "want": null
+  },
+  {
+   "discipline": "enduro",
+   "sport": "running",
+   "tss": 0.0,
+   "want": 0.0
+  },
+  {
+   "discipline": "enduro",
+   "sport": "running",
+   "tss": 47.35,
+   "want": 47.35
+  },
+  {
+   "discipline": "enduro",
+   "sport": "running",
+   "tss": 100.0,
+   "want": 100.0
+  },
+  {
+   "discipline": "enduro",
+   "sport": "running",
+   "tss": 12.25,
+   "want": 12.25
+  },
+  {
+   "discipline": "trail",
+   "sport": "running",
+   "tss": null,
+   "want": null
+  },
+  {
+   "discipline": "trail",
+   "sport": "running",
+   "tss": 0.0,
+   "want": 0.0
+  },
+  {
+   "discipline": "trail",
+   "sport": "running",
+   "tss": 47.35,
+   "want": 47.35
+  },
+  {
+   "discipline": "trail",
+   "sport": "running",
+   "tss": 100.0,
+   "want": 100.0
+  },
+  {
+   "discipline": "trail",
+   "sport": "running",
+   "tss": 12.25,
+   "want": 12.25
+  },
+  {
+   "discipline": "unknown",
+   "sport": "running",
+   "tss": null,
+   "want": null
+  },
+  {
+   "discipline": "unknown",
+   "sport": "running",
+   "tss": 0.0,
+   "want": 0.0
+  },
+  {
+   "discipline": "unknown",
+   "sport": "running",
+   "tss": 47.35,
+   "want": 47.35
+  },
+  {
+   "discipline": "unknown",
+   "sport": "running",
+   "tss": 100.0,
+   "want": 100.0
+  },
+  {
+   "discipline": "unknown",
+   "sport": "running",
+   "tss": 12.25,
+   "want": 12.25
+  },
+  {
+   "discipline": null,
+   "sport": null,
+   "tss": null,
+   "want": null
+  },
+  {
+   "discipline": null,
+   "sport": null,
+   "tss": 0.0,
+   "want": 0.0
+  },
+  {
+   "discipline": null,
+   "sport": null,
+   "tss": 47.35,
+   "want": 47.35
+  },
+  {
+   "discipline": null,
+   "sport": null,
+   "tss": 100.0,
+   "want": 100.0
+  },
+  {
+   "discipline": null,
+   "sport": null,
+   "tss": 12.25,
+   "want": 12.25
+  },
+  {
+   "discipline": "xco",
+   "sport": null,
+   "tss": null,
+   "want": null
+  },
+  {
+   "discipline": "xco",
+   "sport": null,
+   "tss": 0.0,
+   "want": 0.0
+  },
+  {
+   "discipline": "xco",
+   "sport": null,
+   "tss": 47.35,
+   "want": 47.35
+  },
+  {
+   "discipline": "xco",
+   "sport": null,
+   "tss": 100.0,
+   "want": 100.0
+  },
+  {
+   "discipline": "xco",
+   "sport": null,
+   "tss": 12.25,
+   "want": 12.25
+  },
+  {
+   "discipline": "xcm",
+   "sport": null,
+   "tss": null,
+   "want": null
+  },
+  {
+   "discipline": "xcm",
+   "sport": null,
+   "tss": 0.0,
+   "want": 0.0
+  },
+  {
+   "discipline": "xcm",
+   "sport": null,
+   "tss": 47.35,
+   "want": 47.35
+  },
+  {
+   "discipline": "xcm",
+   "sport": null,
+   "tss": 100.0,
+   "want": 100.0
+  },
+  {
+   "discipline": "xcm",
+   "sport": null,
+   "tss": 12.25,
+   "want": 12.25
+  },
+  {
+   "discipline": "enduro",
+   "sport": null,
+   "tss": null,
+   "want": null
+  },
+  {
+   "discipline": "enduro",
+   "sport": null,
+   "tss": 0.0,
+   "want": 0.0
+  },
+  {
+   "discipline": "enduro",
+   "sport": null,
+   "tss": 47.35,
+   "want": 47.35
+  },
+  {
+   "discipline": "enduro",
+   "sport": null,
+   "tss": 100.0,
+   "want": 100.0
+  },
+  {
+   "discipline": "enduro",
+   "sport": null,
+   "tss": 12.25,
+   "want": 12.25
+  },
+  {
+   "discipline": "trail",
+   "sport": null,
+   "tss": null,
+   "want": null
+  },
+  {
+   "discipline": "trail",
+   "sport": null,
+   "tss": 0.0,
+   "want": 0.0
+  },
+  {
+   "discipline": "trail",
+   "sport": null,
+   "tss": 47.35,
+   "want": 47.35
+  },
+  {
+   "discipline": "trail",
+   "sport": null,
+   "tss": 100.0,
+   "want": 100.0
+  },
+  {
+   "discipline": "trail",
+   "sport": null,
+   "tss": 12.25,
+   "want": 12.25
+  },
+  {
+   "discipline": "unknown",
+   "sport": null,
+   "tss": null,
+   "want": null
+  },
+  {
+   "discipline": "unknown",
+   "sport": null,
+   "tss": 0.0,
+   "want": 0.0
+  },
+  {
+   "discipline": "unknown",
+   "sport": null,
+   "tss": 47.35,
+   "want": 47.35
+  },
+  {
+   "discipline": "unknown",
+   "sport": null,
+   "tss": 100.0,
+   "want": 100.0
+  },
+  {
+   "discipline": "unknown",
+   "sport": null,
+   "tss": 12.25,
+   "want": 12.25
+  }
+ ]
+}

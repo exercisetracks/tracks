@@ -1,0 +1,168 @@
+-- SPDX-FileCopyrightText: 2026 Hawk Fugagli
+-- SPDX-License-Identifier: AGPL-3.0-or-later
+--
+-- What this phone derived for itself from FIT files.
+--
+-- Nothing here syncs. Every row is recomputed from a file, identically on every
+-- device (spec/sync.yaml: sources sync, derived data never does), so these
+-- tables are a cache of the parsers' output kept so that opening a screen is a
+-- query rather than a re-parse. Lose them and re-importing the blobs rebuilds
+-- them exactly. The replica's `synced_row` table is the opposite: it holds what
+-- a person said, and is the only copy of an unpushed edit.
+
+-- ── Stable local ids ────────────────────────────────────────────────────────
+--
+-- Screens, navigation arguments and the watch's workout serials all speak in
+-- integers; sync speaks in uids. Rather than thread a String through fifty
+-- screens, every uid gets an integer the first time anything asks, and keeps
+-- it for the life of the install. Persisted, not an in-memory counter, because
+-- a navigation argument survives process death and must still name the same
+-- row when the process comes back.
+
+CREATE TABLE uid_alias (
+    alias INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    uid   TEXT NOT NULL UNIQUE
+);
+
+insertAlias:
+INSERT OR IGNORE INTO uid_alias(uid) VALUES (?);
+
+aliasOf:
+SELECT alias FROM uid_alias WHERE uid = ?;
+
+uidOf:
+SELECT uid FROM uid_alias WHERE alias = ?;
+
+-- Every alias at once, so a list screen resolves its rows in one query
+-- instead of one per row.
+allAliases:
+SELECT alias, uid FROM uid_alias;
+
+-- ── Files ───────────────────────────────────────────────────────────────────
+--
+-- Which blobs have been through the importer, and what each turned out to be.
+-- `activity_uid` is set for an activity file whether or not it won the
+-- lowest-hash contest, so a later, lower-hash copy can find its rival.
+
+CREATE TABLE local_file (
+    sha256       TEXT NOT NULL PRIMARY KEY,
+    kind         TEXT,
+    activity_uid TEXT,
+    uploaded     INTEGER NOT NULL DEFAULT 0
+);
+
+upsertFile:
+INSERT OR REPLACE INTO local_file(sha256, kind, activity_uid, uploaded) VALUES (?, ?, ?, ?);
+
+selectFile:
+SELECT * FROM local_file WHERE sha256 = ?;
+
+selectNotUploaded:
+SELECT sha256 FROM local_file WHERE uploaded = 0;
+
+markUploaded:
+UPDATE local_file SET uploaded = 1 WHERE sha256 = ?;
+
+markAllNotUploaded:
+UPDATE local_file SET uploaded = 0;
+
+deleteAllFiles:
+DELETE FROM local_file;
+
+-- ── Activities ──────────────────────────────────────────────────────────────
+--
+-- Summary columns for the list and the fitness model, which filter and sort;
+-- the parser's full output as JSON for the one screen that shows one activity.
+
+CREATE TABLE local_activity (
+    uid                   TEXT NOT NULL PRIMARY KEY,
+    sha256                TEXT NOT NULL,
+    device_serial         TEXT,
+    started_at            TEXT,
+    sport                 TEXT,
+    sub_sport             TEXT,
+    name                  TEXT,
+    duration_seconds      INTEGER,
+    distance_meters       REAL,
+    avg_heart_rate        INTEGER,
+    max_heart_rate        INTEGER,
+    total_calories        INTEGER,
+    total_ascent          REAL,
+    avg_speed             REAL,
+    training_stress_score REAL,
+    effective_tss         REAL,
+    vo2max_estimate       REAL,
+    avg_power             INTEGER,
+    normalized_power      INTEGER,
+    summary               TEXT NOT NULL,
+    detail                TEXT NOT NULL
+);
+
+CREATE INDEX local_activity_started ON local_activity(started_at DESC);
+
+upsertActivity:
+INSERT OR REPLACE INTO local_activity VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+selectActivity:
+SELECT * FROM local_activity WHERE uid = ?;
+
+-- Only the strength sets of each activity that has any, newest first. The
+-- detail column also holds every GPS point, and parsing all of that in
+-- Kotlin to read one small array made an exercise's history take seconds;
+-- SQLite's own JSON reader skips the rest without building it. The LIKE
+-- runs first and is a plain substring scan: most activities have no sets,
+-- and it rules them out without parsing anything. It relies on the detail
+-- being compact JSON, which is how LocalImporter writes it (toString()).
+strengthSetsByActivity:
+SELECT uid, started_at, sport, json_extract(detail, '$.strength_sets') AS sets
+FROM local_activity
+WHERE started_at >= ?
+  AND detail LIKE '%"strength_sets":[{%'
+  AND json_type(detail, '$.strength_sets') = 'array'
+ORDER BY started_at DESC;
+
+selectActivities:
+SELECT uid, sha256, device_serial, started_at, sport, sub_sport, name, duration_seconds,
+       distance_meters, avg_heart_rate, max_heart_rate, total_calories, total_ascent, avg_speed,
+       training_stress_score, effective_tss, vo2max_estimate, avg_power, normalized_power
+FROM local_activity ORDER BY started_at DESC;
+
+-- Activities whose stored summary predates a parser field. json_type is NULL
+-- for a key that is absent and 'null' for one stored as null, so a summary the
+-- current parser wrote — answered or not — is never picked up again.
+activitiesMissingSummaryKey:
+SELECT uid, sha256, summary FROM local_activity WHERE json_type(summary, '$.' || :key) IS NULL;
+
+updateActivitySummary:
+UPDATE local_activity SET summary = ? WHERE uid = ?;
+
+deleteActivity:
+DELETE FROM local_activity WHERE uid = ?;
+
+deleteAllActivities:
+DELETE FROM local_activity;
+
+-- ── Days ────────────────────────────────────────────────────────────────────
+--
+-- One row per local date, folded together from every file that describes it
+-- by the server's own rules (see LocalImporter.mergeDay). JSON rather than a
+-- column per metric for the reason `cached_document` gave: the screen decodes
+-- the whole day and never queries into it.
+
+CREATE TABLE local_day (
+    date    TEXT NOT NULL PRIMARY KEY,
+    metrics TEXT NOT NULL,
+    extra   TEXT NOT NULL
+);
+
+upsertDay:
+INSERT OR REPLACE INTO local_day(date, metrics, extra) VALUES (?, ?, ?);
+
+selectDay:
+SELECT * FROM local_day WHERE date = ?;
+
+selectDays:
+SELECT * FROM local_day ORDER BY date DESC;
+
+deleteAllDays:
+DELETE FROM local_day;

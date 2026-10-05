@@ -1,0 +1,29 @@
+diff --git a/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/communicator/v2/MlrCommunicator.java b/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/communicator/v2/MlrCommunicator.java
+index d71d8e1..23caa55 100644
+--- a/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/communicator/v2/MlrCommunicator.java
++++ b/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/communicator/v2/MlrCommunicator.java
+@@ -330,6 +330,23 @@ public class MlrCommunicator {
+         void onDataReceived(final byte[] data);
+     }
+ 
+-    private record Fragment(String taskName, int num, byte[] data, int reqNum) {
++    // Tracks: was `private record Fragment(...)`. A record forces D8 to emit a
++    // global synthetic when desugaring for minSdk 26, and AGP dexes library
++    // modules through an artifact transform that has nowhere to put one - so
++    // the build fails outright. Every use of this type is direct field access
++    // from the enclosing class, so a plain final class is behaviourally
++    // identical. See vendor/patches/0003-mlrcommunicator-no-record.patch.
++    private static final class Fragment {
++        private final String taskName;
++        private final int num;
++        private final byte[] data;
++        private final int reqNum;
++
++        Fragment(final String taskName, final int num, final byte[] data, final int reqNum) {
++            this.taskName = taskName;
++            this.num = num;
++            this.data = data;
++            this.reqNum = reqNum;
++        }
+     }
+ }

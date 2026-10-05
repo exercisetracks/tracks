@@ -1,0 +1,39 @@
+diff --git a/include/mbgl/shaders/gl/hillshade.hpp b/include/mbgl/shaders/gl/hillshade.hpp
+index 37e5bdd..4c6d16d 100644
+--- a/include/mbgl/shaders/gl/hillshade.hpp
++++ b/include/mbgl/shaders/gl/hillshade.hpp
+@@ -72,7 +72,12 @@ float get_aspect(vec2 deriv) {
+ // MapLibre's legacy hillshade algorithm (Method 0)
+ void standard_hillshade(vec2 deriv) {
+     float azimuth = u_azimuths.x + PI;
+-    float slope = atan(0.625 * length(deriv));
++    // 0.3125, not 0.625: GL JS is atan(1.25 * length(d)) with d = pixel.rg*2-1,
++    // and this deriv is that same quantity scaled by 4 (pixel.rg*8-4), so
++    // parity needs 1.25/4. The constant was halved rather than quartered when
++    // the derivative range widened, making Native hillshade exactly twice as
++    // steep as the browser for one shared style.
++    float slope = atan(0.3125 * length(deriv));
+     float aspect = get_aspect(deriv);
+ 
+     // Note: This implementation uses u_exaggeration as intensity, though it typically should be derived from u_altitudes.x.
+diff --git a/shaders/hillshade.fragment.glsl b/shaders/hillshade.fragment.glsl
+index 081a274..f3228a2 100644
+--- a/shaders/hillshade.fragment.glsl
++++ b/shaders/hillshade.fragment.glsl
+@@ -34,7 +34,15 @@ float get_aspect(vec2 deriv) {
+ // MapLibre's legacy hillshade algorithm (Method 0)
+ void standard_hillshade(vec2 deriv) {
+     float azimuth = u_azimuths.x + PI;
+-    float slope = atan(0.625 * length(deriv));
++    // 0.3125, not 0.625. GL JS computes this as atan(1.25 * length(d)) where
++    // its `d` is (pixel.rg * 2 - 1); this shader's `deriv` is the same quantity
++    // scaled to (pixel.rg * 8 - 4), i.e. 4x larger. Matching GL JS therefore
++    // needs 1.25 / 4 — the constant here was halved rather than quartered when
++    // the derivative range was widened, which made every hillshade on Native
++    // exactly twice as steep as the same style in the browser. Most visible at
++    // low zoom, where doubling an already-steep slope saturates to solid black
++    // and white and the relief reads as an engraving.
++    float slope = atan(0.3125 * length(deriv));
+     float aspect = get_aspect(deriv);
+ 
+     // Note: This implementation uses u_exaggeration as intensity, though it typically should be derived from u_altitudes.x.

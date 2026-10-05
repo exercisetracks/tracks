@@ -1,0 +1,80 @@
+diff --git a/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/communicator/v2/CommunicatorV2.java b/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/communicator/v2/CommunicatorV2.java
+index a7f0408..c2ca504 100644
+--- a/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/communicator/v2/CommunicatorV2.java
++++ b/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/communicator/v2/CommunicatorV2.java
+@@ -4,10 +4,8 @@ import static nodomain.freeyourgadget.gadgetbridge.service.btle.AbstractBTLEDevi
+ 
+ import android.bluetooth.BluetoothGatt;
+ import android.bluetooth.BluetoothGattCharacteristic;
+-import android.content.Intent;
+ 
+ import androidx.annotation.Nullable;
+-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+ 
+ import org.apache.commons.lang3.ArrayUtils;
+ import org.slf4j.Logger;
+@@ -24,18 +22,6 @@ import java.util.UUID;
+ import java.util.concurrent.ThreadLocalRandom;
+ 
+ import nodomain.freeyourgadget.gadgetbridge.BuildConfig;
+-import nodomain.freeyourgadget.gadgetbridge.GBApplication;
+-import nodomain.freeyourgadget.gadgetbridge.database.DBHandler;
+-import nodomain.freeyourgadget.gadgetbridge.database.DBHelper;
+-import nodomain.freeyourgadget.gadgetbridge.devices.garmin.GarminActivitySampleProvider;
+-import nodomain.freeyourgadget.gadgetbridge.entities.DaoSession;
+-import nodomain.freeyourgadget.gadgetbridge.entities.Device;
+-import nodomain.freeyourgadget.gadgetbridge.entities.GarminActivitySample;
+-import nodomain.freeyourgadget.gadgetbridge.entities.User;
+-import nodomain.freeyourgadget.gadgetbridge.impl.GBDevice;
+-import nodomain.freeyourgadget.gadgetbridge.model.ActivityKind;
+-import nodomain.freeyourgadget.gadgetbridge.model.ActivitySample;
+-import nodomain.freeyourgadget.gadgetbridge.model.DeviceService;
+ import nodomain.freeyourgadget.gadgetbridge.service.SleepAsAndroidSender;
+ import nodomain.freeyourgadget.gadgetbridge.service.btle.BLETypeConversions;
+ import nodomain.freeyourgadget.gadgetbridge.service.btle.TransactionBuilder;
+@@ -636,34 +622,18 @@ public class CommunicatorV2 implements ICommunicator {
+         return toSend.array();
+     }
+ 
++    // PATCHED FOR TRACKS (vendor/patches/0001-communicatorv2-no-sample-store.patch)
++    //
++    // Upstream builds a greenDAO activity sample here and broadcasts it to
++    // Gadgetbridge's live-view UI. Tracks has neither: heart rate and steps
++    // reach the server inside the FIT files we upload, so a second store would
++    // be a second source of truth needing reconciliation, and there is no
++    // activity screen listening for the broadcast.
++    //
++    // Kept as a log rather than deleted outright so the realtime path stays
++    // visible when debugging a connection.
+     private void broadcastRealtimeActivity(final int hr, final int steps) {
+-        final GarminActivitySample sample;
+-        try (final DBHandler dbHandler = GBApplication.acquireDB()) {
+-            final DaoSession session = dbHandler.getDaoSession();
+-
+-            final GBDevice gbDevice = mSupport.getDevice();
+-            final Device device = DBHelper.getDevice(gbDevice, session);
+-            final User user = DBHelper.getUser(session);
+-            final GarminActivitySampleProvider provider = new GarminActivitySampleProvider(gbDevice, session);
+-            sample = provider.createActivitySample();
+-
+-            sample.setDeviceId(device.getId());
+-            sample.setUserId(user.getId());
+-            sample.setTimestamp((int) (System.currentTimeMillis() / 1000));
+-            sample.setHeartRate(hr);
+-            sample.setSteps(steps);
+-            sample.setRawKind(ActivityKind.UNKNOWN.getCode());
+-            sample.setRawIntensity(ActivitySample.NOT_MEASURED);
+-            sample.setRawKind(ActivityKind.UNKNOWN.getCode());
+-        } catch (final Exception e) {
+-            LOG.error("Error creating activity sample", e);
+-            return;
+-        }
+-
+-        final Intent intent = new Intent(DeviceService.ACTION_REALTIME_SAMPLES)
+-                .putExtra(GBDevice.EXTRA_DEVICE, mSupport.getDevice())
+-                .putExtra(DeviceService.EXTRA_REALTIME_SAMPLE, sample);
+-        LocalBroadcastManager.getInstance(mSupport.getContext()).sendBroadcast(intent);
++        LOG.debug("Realtime activity: hr={} steps={} (not persisted; Tracks uploads FIT files)", hr, steps);
+     }
+ 
+     private enum RequestType {

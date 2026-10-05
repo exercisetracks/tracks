@@ -1,0 +1,32 @@
+diff --git a/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/ProtocolBufferHandler.java b/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/ProtocolBufferHandler.java
+index e3b1cb7..502cb0d 100644
+--- a/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/ProtocolBufferHandler.java
++++ b/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/ProtocolBufferHandler.java
+@@ -204,10 +204,8 @@ public class ProtocolBufferHandler implements MessageHandler {
+ 
+                     LOG.info("Got app delete response, status = {}", status);
+ 
+-                    // Refresh app list
+-                    if (status == GdiInstalledAppsService.InstalledAppsService.DeleteAppResponse.Status.OK) {
+-                        deviceSupport.onAppInfoReq();
+-                    }
++                    deviceSupport.onAppDeleteResult(
++                            status == GdiInstalledAppsService.InstalledAppsService.DeleteAppResponse.Status.OK);
+                 }
+             }
+             if (smart.hasFileSyncService()) {
+@@ -335,6 +333,14 @@ public class ProtocolBufferHandler implements MessageHandler {
+ 
+             CalendarManager upcomingEvents = new CalendarManager(deviceSupport.getContext(), deviceSupport.getDevice().getAddress());
+             List<CalendarEvent> mEvents = upcomingEvents.getCalendarEventList();
++            // The window is the *watch's* choice, not ours, and nothing recorded
++            // it — so "only a day or two shows up" could equally have been the
++            // phone's 7-day lookahead, this filter, or the maxEvents cap. Now it
++            // says which.
++            LOG.info("CalendarService request: begin={} end={} maxEvents={} allDay={} — phone has {} event(s)",
++                    calendarServiceRequest.getBegin(), calendarServiceRequest.getEnd(),
++                    calendarServiceRequest.getMaxEvents(), calendarServiceRequest.getIncludeAllDay(),
++                    mEvents.size());
+             List<GdiCalendarService.CalendarService.CalendarEvent> watchEvents = new ArrayList<>();
+ 
+             for (CalendarEvent mEvt : mEvents) {

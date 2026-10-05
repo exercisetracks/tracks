@@ -1,0 +1,9 @@
+{
+  "key": "cyclists_hip_flow",
+  "name": "Cyclist's Hip Flow",
+  "tagline": "Counter the saddle: open hip flexors and extend the spine.",
+  "contexts": ["post_workout", "weekly_mobility"],
+  "sports": ["cycling", "mountain_biking"],
+  "themes": ["hips", "posterior"],
+  "closer_muscles": ["hip_flexors", "lower_back"]
+}

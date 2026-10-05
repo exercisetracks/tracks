@@ -1,0 +1,83 @@
+{
+  "cardio.big_aerobic_base": {
+    "full": [
+      "Go long and easy on the {sport} today, {duration} min at {zone_desc}, conversational throughout; you're fresh (TSB {tsb:+.0f}), so it's cheap volume. Easy pace is where the engine gets built: it drives your slow-twitch fibers to grow more mitochondria, the cell's aerobic power plants, and lays down the capillaries that feed them oxygen. Staying under your first lactate threshold means you can bank hours of this without much recovery cost, which is why most of an endurance week should look exactly like it.",
+      "Bank an easy aerobic {sport} today, {duration} min at {zone_desc}. With your form sitting fresh (TSB {tsb:+.0f}) this is low-cost fitness: sustained easy efforts raise your plasma and stroke volume, so your heart moves more blood per beat, and they teach your muscles to burn fat instead of leaning on limited glycogen. Keep it genuinely conversational; going harder here trades a lot of fatigue for very little extra adaptation.",
+      "Head out for a relaxed {duration}-min {sport} at {zone_desc}. You're fresh (TSB {tsb:+.0f}), and the aerobic base you build at this pace is the foundation every faster session sits on: more mitochondria, denser capillaries, better fat use. It is deliberately unglamorous, and it is the single biggest driver of endurance, so resist the urge to push."
+    ],
+    "compact": [
+      "Easy aerobic {sport}, {duration} min at {zone_desc}. You're fresh, so bank cheap volume; slow work builds the mitochondria and capillaries that carry your fitness.",
+      "Long and easy {sport}, {duration} min at {zone_desc}. Conversational pace grows the aerobic engine at low fatigue cost, which is why most of the week should look like this."
+    ]
+  },
+  "cardio.tempo_productive": {
+    "full": [
+      "Do {duration} min on the {sport} today with the middle block at {zone_desc}, comfortably hard rather than a race. You're in the productive-fatigue range (TSB {tsb:+.0f}) with readiness holding at {readiness}, which is exactly when tempo work pays: sustained efforts near your lactate threshold push that threshold higher, so you can hold a faster pace before fatigue-causing lactate outruns your ability to clear it.",
+      "Run a tempo effort on the {sport}, {duration} min with a solid block at {zone_desc}. Sitting at TSB {tsb:+.0f} you can absorb the load, and threshold-pace work is the most direct lever on the pace you can sustain: it trains your body to shuttle and clear lactate faster, lifting the ceiling of your all-day effort. Keep it controlled; tempo is comfortably hard, not all-out."
+    ],
+    "compact": [
+      "Tempo {sport}, {duration} min at {zone_desc}. You're in the productive range (TSB {tsb:+.0f}); threshold work lifts the pace you can hold before lactate builds.",
+      "Comfortably hard {sport}, {duration} min at {zone_desc}. Readiness is up and the fatigue is productive, so raise your lactate threshold today."
+    ]
+  },
+  "cardio.quality_intervals": {
+    "full": [
+      "Do {duration} min with a hard interval block at {zone_desc} today; readiness is high ({readiness}) and you're carrying no fatigue, so this is the day to push. Three to five minute efforts spend the most time near your VO2max ceiling, and that is the specific stimulus that enlarges your heart's stroke volume and sharpens how much oxygen your muscles pull from the blood. It is potent and costly, so bank one hard day and keep everything around it genuinely easy.",
+      "Today suits intervals: {duration} min on the {sport} with hard reps at {zone_desc}. You're fresh (TSB {tsb:+.0f}) with readiness at {readiness}, and short, hard efforts raise your VO2max ceiling in a way easy miles simply cannot, driving central adaptations in the heart and peripheral ones in the muscle. One quality session is plenty; stack the rest of the week easy so you actually recover from it."
+    ],
+    "compact": [
+      "Intervals, {duration} min with hard reps at {zone_desc}. You're fresh and ready ({readiness}); this is the session that raises your VO2max ceiling. Keep the rest of the week easy.",
+      "Hard {sport} intervals, {duration} min at {zone_desc}. No fatigue and high readiness make today the one to push; go hard here, easy everywhere else."
+    ]
+  },
+  "cardio.easy_conversational": {
+    "full": [
+      "Keep it simple today: {duration} min easy on the {sport} at {zone_desc}. Nothing in your numbers says push (TSB {tsb:+.0f}, readiness {readiness}), and steady easy work is how you hold aerobic fitness without piling up fatigue you would have to recover from. Conversational pace, no heroics; the goal is a solid, repeatable session.",
+      "An easy {duration}-min {sport} at {zone_desc} is the right call. With readiness at {readiness} this is maintenance, not a test: easy aerobic work keeps your mitochondrial and capillary adaptations ticking over while leaving you fresh for the days that do call for intensity."
+    ],
+    "compact": [
+      "Easy {sport}, {duration} min at {zone_desc}. Nothing says push today; steady aerobic work maintains fitness without adding fatigue.",
+      "Conversational {sport}, {duration} min at {zone_desc}. Keep it relaxed and repeatable; this is maintenance, not a test."
+    ]
+  },
+  "cardio.recovery_flush": {
+    "full": [
+      "Keep today short and very easy: {duration} min on the {sport} at {zone_desc}. You put in a hard effort recently and your fatigue reflects it (TSB {tsb:+.0f}). Gentle movement actually speeds recovery, nudging blood through tired muscle to clear metabolic byproducts, whereas another hard day just deepens the hole. If it stops feeling easy, cut it short.",
+      "A recovery flush is the move: {duration} min of very easy {sport} at {zone_desc}. After a hard session, light aerobic work raises blood flow without adding meaningful training stress, which helps you turn the last effort into fitness rather than digging further into fatigue (TSB {tsb:+.0f}). Easy means easy here."
+    ],
+    "compact": [
+      "Recovery flush, {duration} min very easy on the {sport} at {zone_desc}. Light movement clears fatigue faster than sitting still; keep it gentle.",
+      "Short and easy {sport}, {duration} min at {zone_desc}. You're carrying fatigue (TSB {tsb:+.0f}); flush it, don't add to it."
+    ]
+  },
+  "cardio.cross_train_swap": {
+    "full": [
+      "Swap the routine today: {duration} min of easy {alt_sport} instead of another {sport} session. You've strung together {streak} sessions in the same sport, and that repeated, identical loading is where overuse niggles start. A different activity keeps the aerobic stimulus going while giving the specific tissues and joints from your usual sport a real break.",
+      "Try {duration} min of easy {alt_sport} today. Your recent training has leaned hard on one pattern, {streak} sessions of {sport} in a row, and mixing in another aerobic sport spreads the mechanical stress around while still building the same central, heart-and-lung fitness. Same engine, different wear."
+    ],
+    "compact": [
+      "Easy {alt_sport}, {duration} min. You've done {streak} straight {sport} sessions; a different sport keeps the aerobic work but spreads the load.",
+      "Cross-train today: {duration} min easy {alt_sport}. Same aerobic benefit, less repetitive stress than more {sport}."
+    ]
+  },
+  "cardio.rebuild_base": {
+    "full": [
+      "Get back to steady aerobic work today, {duration} min on the {sport} at {zone_desc}. Your form is very high (TSB {tsb:+.0f}), which usually means you've been training below what your body adapted to, and fitness fades in that gap: blood plasma volume can drop within days and your muscles' aerobic enzymes decline inside two to three weeks. Steady volume now arrests the slide before it costs you real conditioning.",
+      "Time to rebuild the base: {duration} min of aerobic {sport} at {zone_desc}. A TSB of {tsb:+.0f} is well past fresh and into detraining territory, where the adaptations you worked for start unwinding. The fix is not a hero session, it is a return to consistent, steady aerobic volume; start today."
+    ],
+    "compact": [
+      "Steady aerobic {sport}, {duration} min at {zone_desc}. Your form is very high (TSB {tsb:+.0f}); fitness fades when load drops, so rebuild the base.",
+      "Aerobic {sport}, {duration} min at {zone_desc}. You're past fresh into detraining; consistent volume brings the engine back."
+    ]
+  },
+  "cardio.consistency_nudge": {
+    "full": [
+      "Ease back in with {duration} min easy on the {sport} at {zone_desc}. It has been quiet lately, only {recent_count} sessions in the last two weeks, so don't overthink the first one back. Fitness responds to consistency far more than to any single hard workout; the win today is simply getting a repeatable, easy session on the board.",
+      "Get one easy session in today: {duration} min of {sport} at {zone_desc}. With only {recent_count} sessions in the past fortnight, the priority is rhythm, not intensity. Aerobic fitness is built by frequent, mostly easy work, so the habit matters more right now than the effort."
+    ],
+    "compact": [
+      "Easy {sport}, {duration} min at {zone_desc}. Only {recent_count} sessions in two weeks; rebuild the habit, intensity can wait.",
+      "Short easy {sport}, {duration} min at {zone_desc}. Consistency drives fitness more than any single hard day; just get it in."
+    ]
+  }
+}

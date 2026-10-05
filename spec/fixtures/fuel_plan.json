@@ -1,0 +1,6890 @@
+{
+ "targets": [
+  {
+   "duration_min": 25,
+   "temperature_c": null,
+   "humidity_pct": null,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 30,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 25,
+   "temperature_c": null,
+   "humidity_pct": null,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "normal",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 25,
+   "temperature_c": null,
+   "humidity_pct": 80.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 30,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 25,
+   "temperature_c": null,
+   "humidity_pct": 80.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "hot",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 25,
+   "temperature_c": 18.0,
+   "humidity_pct": 40.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 30,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 25,
+   "temperature_c": 18.0,
+   "humidity_pct": 40.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "normal",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 25,
+   "temperature_c": 26.0,
+   "humidity_pct": 30.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 30,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 25,
+   "temperature_c": 26.0,
+   "humidity_pct": 30.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "hot",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 25,
+   "temperature_c": 22.0,
+   "humidity_pct": 75.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 30,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 25,
+   "temperature_c": 22.0,
+   "humidity_pct": 75.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "hot",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 25,
+   "temperature_c": 19.0,
+   "humidity_pct": 90.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 30,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 25,
+   "temperature_c": 19.0,
+   "humidity_pct": 90.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "normal",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 25,
+   "temperature_c": 33.0,
+   "humidity_pct": 50.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 30,
+    "fluid_ml_per_h": 800,
+    "sodium_mg_per_h": 800,
+    "interval_min": 20,
+    "band": "very_hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 25,
+   "temperature_c": 33.0,
+   "humidity_pct": 50.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "very_hot",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 60,
+   "temperature_c": null,
+   "humidity_pct": null,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 30,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 60,
+   "temperature_c": null,
+   "humidity_pct": null,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "normal",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 60,
+   "temperature_c": null,
+   "humidity_pct": 80.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 30,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 60,
+   "temperature_c": null,
+   "humidity_pct": 80.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "hot",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 60,
+   "temperature_c": 18.0,
+   "humidity_pct": 40.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 30,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 60,
+   "temperature_c": 18.0,
+   "humidity_pct": 40.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "normal",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 60,
+   "temperature_c": 26.0,
+   "humidity_pct": 30.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 30,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 60,
+   "temperature_c": 26.0,
+   "humidity_pct": 30.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "hot",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 60,
+   "temperature_c": 22.0,
+   "humidity_pct": 75.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 30,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 60,
+   "temperature_c": 22.0,
+   "humidity_pct": 75.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "hot",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 60,
+   "temperature_c": 19.0,
+   "humidity_pct": 90.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 30,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 60,
+   "temperature_c": 19.0,
+   "humidity_pct": 90.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "normal",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 60,
+   "temperature_c": 33.0,
+   "humidity_pct": 50.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 30,
+    "fluid_ml_per_h": 800,
+    "sodium_mg_per_h": 800,
+    "interval_min": 20,
+    "band": "very_hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 60,
+   "temperature_c": 33.0,
+   "humidity_pct": 50.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "very_hot",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 61,
+   "temperature_c": null,
+   "humidity_pct": null,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 61,
+   "temperature_c": null,
+   "humidity_pct": null,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "normal",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 61,
+   "temperature_c": null,
+   "humidity_pct": 80.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 61,
+   "temperature_c": null,
+   "humidity_pct": 80.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "hot",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 61,
+   "temperature_c": 18.0,
+   "humidity_pct": 40.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 61,
+   "temperature_c": 18.0,
+   "humidity_pct": 40.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "normal",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 61,
+   "temperature_c": 26.0,
+   "humidity_pct": 30.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 61,
+   "temperature_c": 26.0,
+   "humidity_pct": 30.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "hot",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 61,
+   "temperature_c": 22.0,
+   "humidity_pct": 75.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 61,
+   "temperature_c": 22.0,
+   "humidity_pct": 75.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "hot",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 61,
+   "temperature_c": 19.0,
+   "humidity_pct": 90.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 61,
+   "temperature_c": 19.0,
+   "humidity_pct": 90.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "normal",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 61,
+   "temperature_c": 33.0,
+   "humidity_pct": 50.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 800,
+    "sodium_mg_per_h": 800,
+    "interval_min": 20,
+    "band": "very_hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 61,
+   "temperature_c": 33.0,
+   "humidity_pct": 50.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "very_hot",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 119.5,
+   "temperature_c": null,
+   "humidity_pct": null,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 119.5,
+   "temperature_c": null,
+   "humidity_pct": null,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "normal",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 119.5,
+   "temperature_c": null,
+   "humidity_pct": 80.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 119.5,
+   "temperature_c": null,
+   "humidity_pct": 80.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "hot",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 119.5,
+   "temperature_c": 18.0,
+   "humidity_pct": 40.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 119.5,
+   "temperature_c": 18.0,
+   "humidity_pct": 40.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "normal",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 119.5,
+   "temperature_c": 26.0,
+   "humidity_pct": 30.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 119.5,
+   "temperature_c": 26.0,
+   "humidity_pct": 30.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "hot",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 119.5,
+   "temperature_c": 22.0,
+   "humidity_pct": 75.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 119.5,
+   "temperature_c": 22.0,
+   "humidity_pct": 75.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "hot",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 119.5,
+   "temperature_c": 19.0,
+   "humidity_pct": 90.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 119.5,
+   "temperature_c": 19.0,
+   "humidity_pct": 90.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "normal",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 119.5,
+   "temperature_c": 33.0,
+   "humidity_pct": 50.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 800,
+    "sodium_mg_per_h": 800,
+    "interval_min": 20,
+    "band": "very_hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 119.5,
+   "temperature_c": 33.0,
+   "humidity_pct": 50.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "very_hot",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 120,
+   "temperature_c": null,
+   "humidity_pct": null,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 120,
+   "temperature_c": null,
+   "humidity_pct": null,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "normal",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 120,
+   "temperature_c": null,
+   "humidity_pct": 80.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 120,
+   "temperature_c": null,
+   "humidity_pct": 80.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "hot",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 120,
+   "temperature_c": 18.0,
+   "humidity_pct": 40.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 120,
+   "temperature_c": 18.0,
+   "humidity_pct": 40.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "normal",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 120,
+   "temperature_c": 26.0,
+   "humidity_pct": 30.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 120,
+   "temperature_c": 26.0,
+   "humidity_pct": 30.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "hot",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 120,
+   "temperature_c": 22.0,
+   "humidity_pct": 75.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 120,
+   "temperature_c": 22.0,
+   "humidity_pct": 75.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "hot",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 120,
+   "temperature_c": 19.0,
+   "humidity_pct": 90.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 120,
+   "temperature_c": 19.0,
+   "humidity_pct": 90.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "normal",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 120,
+   "temperature_c": 33.0,
+   "humidity_pct": 50.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 800,
+    "sodium_mg_per_h": 800,
+    "interval_min": 20,
+    "band": "very_hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 120,
+   "temperature_c": 33.0,
+   "humidity_pct": 50.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "very_hot",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 150,
+   "temperature_c": null,
+   "humidity_pct": null,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 80,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 150,
+   "temperature_c": null,
+   "humidity_pct": null,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "normal",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 150,
+   "temperature_c": null,
+   "humidity_pct": 80.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 80,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 150,
+   "temperature_c": null,
+   "humidity_pct": 80.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "hot",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 150,
+   "temperature_c": 18.0,
+   "humidity_pct": 40.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 80,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 150,
+   "temperature_c": 18.0,
+   "humidity_pct": 40.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "normal",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 150,
+   "temperature_c": 26.0,
+   "humidity_pct": 30.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 80,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 150,
+   "temperature_c": 26.0,
+   "humidity_pct": 30.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "hot",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 150,
+   "temperature_c": 22.0,
+   "humidity_pct": 75.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 80,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 150,
+   "temperature_c": 22.0,
+   "humidity_pct": 75.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "hot",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 150,
+   "temperature_c": 19.0,
+   "humidity_pct": 90.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 80,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 150,
+   "temperature_c": 19.0,
+   "humidity_pct": 90.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "normal",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 150,
+   "temperature_c": 33.0,
+   "humidity_pct": 50.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 80,
+    "fluid_ml_per_h": 800,
+    "sodium_mg_per_h": 800,
+    "interval_min": 20,
+    "band": "very_hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 150,
+   "temperature_c": 33.0,
+   "humidity_pct": 50.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "very_hot",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 240,
+   "temperature_c": null,
+   "humidity_pct": null,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 80,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 240,
+   "temperature_c": null,
+   "humidity_pct": null,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "normal",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 240,
+   "temperature_c": null,
+   "humidity_pct": 80.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 80,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 240,
+   "temperature_c": null,
+   "humidity_pct": 80.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "hot",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 240,
+   "temperature_c": 18.0,
+   "humidity_pct": 40.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 80,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 240,
+   "temperature_c": 18.0,
+   "humidity_pct": 40.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "normal",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 240,
+   "temperature_c": 26.0,
+   "humidity_pct": 30.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 80,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 240,
+   "temperature_c": 26.0,
+   "humidity_pct": 30.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "hot",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 240,
+   "temperature_c": 22.0,
+   "humidity_pct": 75.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 80,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 240,
+   "temperature_c": 22.0,
+   "humidity_pct": 75.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "hot",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 240,
+   "temperature_c": 19.0,
+   "humidity_pct": 90.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 80,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 240,
+   "temperature_c": 19.0,
+   "humidity_pct": 90.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "normal",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 240,
+   "temperature_c": 33.0,
+   "humidity_pct": 50.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 80,
+    "fluid_ml_per_h": 800,
+    "sodium_mg_per_h": 800,
+    "interval_min": 20,
+    "band": "very_hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 240,
+   "temperature_c": 33.0,
+   "humidity_pct": 50.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "very_hot",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 241,
+   "temperature_c": null,
+   "humidity_pct": null,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 90,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 241,
+   "temperature_c": null,
+   "humidity_pct": null,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "normal",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 241,
+   "temperature_c": null,
+   "humidity_pct": 80.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 90,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 241,
+   "temperature_c": null,
+   "humidity_pct": 80.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "hot",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 241,
+   "temperature_c": 18.0,
+   "humidity_pct": 40.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 90,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 241,
+   "temperature_c": 18.0,
+   "humidity_pct": 40.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "normal",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 241,
+   "temperature_c": 26.0,
+   "humidity_pct": 30.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 90,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 241,
+   "temperature_c": 26.0,
+   "humidity_pct": 30.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "hot",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 241,
+   "temperature_c": 22.0,
+   "humidity_pct": 75.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 90,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 241,
+   "temperature_c": 22.0,
+   "humidity_pct": 75.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "hot",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 241,
+   "temperature_c": 19.0,
+   "humidity_pct": 90.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 90,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 241,
+   "temperature_c": 19.0,
+   "humidity_pct": 90.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "normal",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 241,
+   "temperature_c": 33.0,
+   "humidity_pct": 50.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 90,
+    "fluid_ml_per_h": 800,
+    "sodium_mg_per_h": 800,
+    "interval_min": 20,
+    "band": "very_hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 241,
+   "temperature_c": 33.0,
+   "humidity_pct": 50.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "very_hot",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 600,
+   "temperature_c": null,
+   "humidity_pct": null,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 90,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 600,
+   "temperature_c": null,
+   "humidity_pct": null,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "normal",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 600,
+   "temperature_c": null,
+   "humidity_pct": 80.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 90,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 600,
+   "temperature_c": null,
+   "humidity_pct": 80.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "hot",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 600,
+   "temperature_c": 18.0,
+   "humidity_pct": 40.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 90,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 600,
+   "temperature_c": 18.0,
+   "humidity_pct": 40.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "normal",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 600,
+   "temperature_c": 26.0,
+   "humidity_pct": 30.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 90,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 600,
+   "temperature_c": 26.0,
+   "humidity_pct": 30.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "hot",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 600,
+   "temperature_c": 22.0,
+   "humidity_pct": 75.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 90,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 600,
+   "temperature_c": 22.0,
+   "humidity_pct": 75.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "hot",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 600,
+   "temperature_c": 19.0,
+   "humidity_pct": 90.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 90,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 600,
+   "temperature_c": 19.0,
+   "humidity_pct": 90.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "normal",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 600,
+   "temperature_c": 33.0,
+   "humidity_pct": 50.0,
+   "override": {},
+   "expected": {
+    "carbs_g_per_h": 90,
+    "fluid_ml_per_h": 800,
+    "sodium_mg_per_h": 800,
+    "interval_min": 20,
+    "band": "very_hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 600,
+   "temperature_c": 33.0,
+   "humidity_pct": 50.0,
+   "override": {
+    "carbs": 72,
+    "fluid": 900,
+    "sodium": 1000,
+    "interval": 15
+   },
+   "expected": {
+    "carbs_g_per_h": 72,
+    "fluid_ml_per_h": 900,
+    "sodium_mg_per_h": 1000,
+    "interval_min": 15,
+    "band": "very_hot",
+    "custom": {
+     "carbs": true,
+     "fluid": true,
+     "sodium": true,
+     "interval": true
+    }
+   }
+  }
+ ],
+ "timeline": [
+  {
+   "duration_min": 45,
+   "targets": {
+    "carbs_g_per_h": 30,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": true,
+     "fluid": false,
+     "sodium": false,
+     "interval": true
+    }
+   },
+   "products": [],
+   "laps": null,
+   "expected": {
+    "items": [
+     {
+      "minute": 20,
+      "distance_m": null,
+      "product_uid": null,
+      "name": null,
+      "carbs_g": 10,
+      "sodium_mg": 0,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 40,
+      "distance_m": null,
+      "product_uid": null,
+      "name": null,
+      "carbs_g": 10,
+      "sodium_mg": 0,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     }
+    ],
+    "totals": {
+     "carbs_g": 20,
+     "sodium_mg": 0,
+     "fluid_ml": 0,
+     "caffeine_mg": 0
+    },
+    "per_hour": {
+     "carbs_g": 27,
+     "sodium_mg": 0,
+     "fluid_ml": 0,
+     "caffeine_mg": 0
+    }
+   }
+  },
+  {
+   "duration_min": 95,
+   "targets": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": true,
+     "fluid": false,
+     "sodium": false,
+     "interval": true
+    }
+   },
+   "products": [
+    {
+     "uid": "p-gel",
+     "name": "Gel",
+     "carbs_g": 25.0,
+     "sodium_mg": 50,
+     "fluid_ml": 0,
+     "caffeine_mg": 0
+    }
+   ],
+   "laps": [
+    {
+     "lap": 1,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 290.0
+    },
+    {
+     "lap": 2,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 290.0
+    },
+    {
+     "lap": 3,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 290.0
+    },
+    {
+     "lap": 4,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 290.0
+    },
+    {
+     "lap": 5,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 290.0
+    },
+    {
+     "lap": 6,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 290.0
+    },
+    {
+     "lap": 7,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 290.0
+    },
+    {
+     "lap": 8,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 290.0
+    },
+    {
+     "lap": 9,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 290.0
+    },
+    {
+     "lap": 10,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 290.0
+    },
+    {
+     "lap": 11,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 290.0
+    },
+    {
+     "lap": 12,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 290.0
+    },
+    {
+     "lap": 13,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 290.0
+    },
+    {
+     "lap": 14,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 290.0
+    },
+    {
+     "lap": 15,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 290.0
+    },
+    {
+     "lap": 16,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 290.0
+    },
+    {
+     "lap": 17,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 290.0
+    },
+    {
+     "lap": 18,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 290.0
+    },
+    {
+     "lap": 19,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 290.0
+    },
+    {
+     "lap": 20,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 290.0
+    },
+    {
+     "lap": 21,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 290.0
+    },
+    {
+     "lap": 22,
+     "distance_m": 97.5,
+     "target_sec_per_km": 290
+    }
+   ],
+   "expected": {
+    "items": [
+     {
+      "minute": 20,
+      "distance_m": 4138,
+      "product_uid": "p-gel",
+      "name": "Gel",
+      "carbs_g": 25.0,
+      "sodium_mg": 50,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 40,
+      "distance_m": 8276,
+      "product_uid": "p-gel",
+      "name": "Gel",
+      "carbs_g": 25.0,
+      "sodium_mg": 50,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 80,
+      "distance_m": 16552,
+      "product_uid": "p-gel",
+      "name": "Gel",
+      "carbs_g": 25.0,
+      "sodium_mg": 50,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     }
+    ],
+    "totals": {
+     "carbs_g": 75,
+     "sodium_mg": 150,
+     "fluid_ml": 0,
+     "caffeine_mg": 0
+    },
+    "per_hour": {
+     "carbs_g": 47,
+     "sodium_mg": 95,
+     "fluid_ml": 0,
+     "caffeine_mg": 0
+    }
+   }
+  },
+  {
+   "duration_min": 190,
+   "targets": {
+    "carbs_g_per_h": 80,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": true,
+     "fluid": false,
+     "sodium": false,
+     "interval": true
+    }
+   },
+   "products": [
+    {
+     "uid": "p-gel",
+     "name": "Gel",
+     "carbs_g": 25.0,
+     "sodium_mg": 50,
+     "fluid_ml": 0,
+     "caffeine_mg": 0
+    },
+    {
+     "uid": "p-big",
+     "name": "Big Gel",
+     "carbs_g": 40.0,
+     "sodium_mg": 200,
+     "fluid_ml": 0,
+     "caffeine_mg": 100
+    }
+   ],
+   "laps": [
+    {
+     "lap": 1,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 278.1
+    },
+    {
+     "lap": 2,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 277.71428571428567
+    },
+    {
+     "lap": 3,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 277.3285714285714
+    },
+    {
+     "lap": 4,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 276.9428571428572
+    },
+    {
+     "lap": 5,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 276.5571428571428
+    },
+    {
+     "lap": 6,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 276.1714285714286
+    },
+    {
+     "lap": 7,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 275.7857142857143
+    },
+    {
+     "lap": 8,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 275.4
+    },
+    {
+     "lap": 9,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 275.01428571428573
+    },
+    {
+     "lap": 10,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 274.62857142857143
+    },
+    {
+     "lap": 11,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 274.2428571428572
+    },
+    {
+     "lap": 12,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 273.85714285714283
+    },
+    {
+     "lap": 13,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 273.4714285714286
+    },
+    {
+     "lap": 14,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 273.0857142857143
+    },
+    {
+     "lap": 15,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 272.7
+    },
+    {
+     "lap": 16,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 272.31428571428575
+    },
+    {
+     "lap": 17,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 271.92857142857144
+    },
+    {
+     "lap": 18,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 271.54285714285714
+    },
+    {
+     "lap": 19,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 271.15714285714284
+    },
+    {
+     "lap": 20,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 270.7714285714286
+    },
+    {
+     "lap": 21,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 270.38571428571424
+    },
+    {
+     "lap": 22,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 270.0
+    },
+    {
+     "lap": 23,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 269.6142857142857
+    },
+    {
+     "lap": 24,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 269.2285714285714
+    },
+    {
+     "lap": 25,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 268.84285714285716
+    },
+    {
+     "lap": 26,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 268.45714285714286
+    },
+    {
+     "lap": 27,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 268.07142857142856
+    },
+    {
+     "lap": 28,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 267.6857142857143
+    },
+    {
+     "lap": 29,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 267.3
+    },
+    {
+     "lap": 30,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 266.9142857142857
+    },
+    {
+     "lap": 31,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 266.5285714285714
+    },
+    {
+     "lap": 32,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 266.14285714285717
+    },
+    {
+     "lap": 33,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 265.75714285714287
+    },
+    {
+     "lap": 34,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 265.37142857142857
+    },
+    {
+     "lap": 35,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 264.98571428571427
+    },
+    {
+     "lap": 36,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 264.6
+    },
+    {
+     "lap": 37,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 264.2142857142857
+    },
+    {
+     "lap": 38,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 263.8285714285714
+    },
+    {
+     "lap": 39,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 263.4428571428572
+    },
+    {
+     "lap": 40,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 263.0571428571429
+    },
+    {
+     "lap": 41,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 262.6714285714286
+    },
+    {
+     "lap": 42,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 262.2857142857143
+    },
+    {
+     "lap": 43,
+     "distance_m": 195.0,
+     "target_sec_per_km": 270
+    }
+   ],
+   "expected": {
+    "items": [
+     {
+      "minute": 20,
+      "distance_m": 4325,
+      "product_uid": "p-gel",
+      "name": "Gel",
+      "carbs_g": 25.0,
+      "sodium_mg": 50,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 40,
+      "distance_m": 8676,
+      "product_uid": "p-gel",
+      "name": "Gel",
+      "carbs_g": 25.0,
+      "sodium_mg": 50,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 60,
+      "distance_m": 13054,
+      "product_uid": "p-gel",
+      "name": "Gel",
+      "carbs_g": 25.0,
+      "sodium_mg": 50,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 80,
+      "distance_m": 17459,
+      "product_uid": "p-gel",
+      "name": "Gel",
+      "carbs_g": 25.0,
+      "sodium_mg": 50,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 100,
+      "distance_m": 21892,
+      "product_uid": "p-big",
+      "name": "Big Gel",
+      "carbs_g": 40.0,
+      "sodium_mg": 200,
+      "fluid_ml": 0,
+      "caffeine_mg": 100
+     },
+     {
+      "minute": 120,
+      "distance_m": 26353,
+      "product_uid": "p-gel",
+      "name": "Gel",
+      "carbs_g": 25.0,
+      "sodium_mg": 50,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 140,
+      "distance_m": 30843,
+      "product_uid": "p-gel",
+      "name": "Gel",
+      "carbs_g": 25.0,
+      "sodium_mg": 50,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 160,
+      "distance_m": 35363,
+      "product_uid": "p-gel",
+      "name": "Gel",
+      "carbs_g": 25.0,
+      "sodium_mg": 50,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 180,
+      "distance_m": 39912,
+      "product_uid": "p-gel",
+      "name": "Gel",
+      "carbs_g": 25.0,
+      "sodium_mg": 50,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     }
+    ],
+    "totals": {
+     "carbs_g": 240,
+     "sodium_mg": 600,
+     "fluid_ml": 0,
+     "caffeine_mg": 100
+    },
+    "per_hour": {
+     "carbs_g": 76,
+     "sodium_mg": 189,
+     "fluid_ml": 0,
+     "caffeine_mg": 32
+    }
+   }
+  },
+  {
+   "duration_min": 190,
+   "targets": {
+    "carbs_g_per_h": 80,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "interval_min": 15,
+    "band": "normal",
+    "custom": {
+     "carbs": true,
+     "fluid": false,
+     "sodium": false,
+     "interval": true
+    }
+   },
+   "products": [
+    {
+     "uid": "p-big",
+     "name": "Big Gel",
+     "carbs_g": 40.0,
+     "sodium_mg": 200,
+     "fluid_ml": 0,
+     "caffeine_mg": 100
+    },
+    {
+     "uid": "p-gel",
+     "name": "Gel",
+     "carbs_g": 25.0,
+     "sodium_mg": 50,
+     "fluid_ml": 0,
+     "caffeine_mg": 0
+    }
+   ],
+   "laps": [
+    {
+     "lap": 1,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 261.9
+    },
+    {
+     "lap": 2,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 262.2857142857143
+    },
+    {
+     "lap": 3,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 262.6714285714286
+    },
+    {
+     "lap": 4,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 263.0571428571429
+    },
+    {
+     "lap": 5,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 263.4428571428572
+    },
+    {
+     "lap": 6,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 263.8285714285714
+    },
+    {
+     "lap": 7,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 264.2142857142857
+    },
+    {
+     "lap": 8,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 264.6
+    },
+    {
+     "lap": 9,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 264.98571428571427
+    },
+    {
+     "lap": 10,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 265.37142857142857
+    },
+    {
+     "lap": 11,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 265.75714285714287
+    },
+    {
+     "lap": 12,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 266.14285714285717
+    },
+    {
+     "lap": 13,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 266.5285714285714
+    },
+    {
+     "lap": 14,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 266.9142857142857
+    },
+    {
+     "lap": 15,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 267.3
+    },
+    {
+     "lap": 16,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 267.6857142857143
+    },
+    {
+     "lap": 17,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 268.07142857142856
+    },
+    {
+     "lap": 18,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 268.45714285714286
+    },
+    {
+     "lap": 19,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 268.84285714285716
+    },
+    {
+     "lap": 20,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 269.2285714285714
+    },
+    {
+     "lap": 21,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 269.6142857142857
+    },
+    {
+     "lap": 22,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 270.0
+    },
+    {
+     "lap": 23,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 270.38571428571424
+    },
+    {
+     "lap": 24,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 270.7714285714286
+    },
+    {
+     "lap": 25,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 271.15714285714284
+    },
+    {
+     "lap": 26,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 271.54285714285714
+    },
+    {
+     "lap": 27,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 271.92857142857144
+    },
+    {
+     "lap": 28,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 272.31428571428575
+    },
+    {
+     "lap": 29,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 272.7
+    },
+    {
+     "lap": 30,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 273.0857142857143
+    },
+    {
+     "lap": 31,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 273.4714285714286
+    },
+    {
+     "lap": 32,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 273.85714285714283
+    },
+    {
+     "lap": 33,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 274.2428571428572
+    },
+    {
+     "lap": 34,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 274.62857142857143
+    },
+    {
+     "lap": 35,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 275.01428571428573
+    },
+    {
+     "lap": 36,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 275.4
+    },
+    {
+     "lap": 37,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 275.7857142857143
+    },
+    {
+     "lap": 38,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 276.1714285714286
+    },
+    {
+     "lap": 39,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 276.5571428571428
+    },
+    {
+     "lap": 40,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 276.9428571428572
+    },
+    {
+     "lap": 41,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 277.3285714285714
+    },
+    {
+     "lap": 42,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 277.71428571428567
+    },
+    {
+     "lap": 43,
+     "distance_m": 195.0,
+     "target_sec_per_km": 270
+    }
+   ],
+   "expected": {
+    "items": [
+     {
+      "minute": 15,
+      "distance_m": 3430,
+      "product_uid": "p-gel",
+      "name": "Gel",
+      "carbs_g": 25.0,
+      "sodium_mg": 50,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 30,
+      "distance_m": 6843,
+      "product_uid": "p-gel",
+      "name": "Gel",
+      "carbs_g": 25.0,
+      "sodium_mg": 50,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 60,
+      "distance_m": 13619,
+      "product_uid": "p-gel",
+      "name": "Gel",
+      "carbs_g": 25.0,
+      "sodium_mg": 50,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 75,
+      "distance_m": 16982,
+      "product_uid": "p-gel",
+      "name": "Gel",
+      "carbs_g": 25.0,
+      "sodium_mg": 50,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 90,
+      "distance_m": 20329,
+      "product_uid": "p-gel",
+      "name": "Gel",
+      "carbs_g": 25.0,
+      "sodium_mg": 50,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 105,
+      "distance_m": 23660,
+      "product_uid": "p-gel",
+      "name": "Gel",
+      "carbs_g": 25.0,
+      "sodium_mg": 50,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 135,
+      "distance_m": 30275,
+      "product_uid": "p-gel",
+      "name": "Gel",
+      "carbs_g": 25.0,
+      "sodium_mg": 50,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 150,
+      "distance_m": 33559,
+      "product_uid": "p-gel",
+      "name": "Gel",
+      "carbs_g": 25.0,
+      "sodium_mg": 50,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 165,
+      "distance_m": 36829,
+      "product_uid": "p-gel",
+      "name": "Gel",
+      "carbs_g": 25.0,
+      "sodium_mg": 50,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 180,
+      "distance_m": 40083,
+      "product_uid": "p-gel",
+      "name": "Gel",
+      "carbs_g": 25.0,
+      "sodium_mg": 50,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     }
+    ],
+    "totals": {
+     "carbs_g": 250,
+     "sodium_mg": 500,
+     "fluid_ml": 0,
+     "caffeine_mg": 0
+    },
+    "per_hour": {
+     "carbs_g": 79,
+     "sodium_mg": 158,
+     "fluid_ml": 0,
+     "caffeine_mg": 0
+    }
+   }
+  },
+  {
+   "duration_min": 300,
+   "targets": {
+    "carbs_g_per_h": 90,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": true,
+     "fluid": false,
+     "sodium": false,
+     "interval": true
+    }
+   },
+   "products": [
+    {
+     "uid": "p-mix",
+     "name": "Drink Mix",
+     "carbs_g": 45.5,
+     "sodium_mg": 500,
+     "fluid_ml": 500,
+     "caffeine_mg": 0
+    },
+    {
+     "uid": "p-chew",
+     "name": "Chews",
+     "carbs_g": 12.5,
+     "sodium_mg": 30,
+     "fluid_ml": 0,
+     "caffeine_mg": 0
+    },
+    {
+     "uid": "p-zero",
+     "name": "Water",
+     "carbs_g": 0.0,
+     "sodium_mg": 0,
+     "fluid_ml": 500,
+     "caffeine_mg": 0
+    }
+   ],
+   "laps": null,
+   "expected": {
+    "items": [
+     {
+      "minute": 20,
+      "distance_m": null,
+      "product_uid": "p-mix",
+      "name": "Drink Mix",
+      "carbs_g": 45.5,
+      "sodium_mg": 500,
+      "fluid_ml": 500,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 40,
+      "distance_m": null,
+      "product_uid": "p-chew",
+      "name": "Chews",
+      "carbs_g": 12.5,
+      "sodium_mg": 30,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 60,
+      "distance_m": null,
+      "product_uid": "p-mix",
+      "name": "Drink Mix",
+      "carbs_g": 45.5,
+      "sodium_mg": 500,
+      "fluid_ml": 500,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 80,
+      "distance_m": null,
+      "product_uid": "p-chew",
+      "name": "Chews",
+      "carbs_g": 12.5,
+      "sodium_mg": 30,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 100,
+      "distance_m": null,
+      "product_uid": "p-mix",
+      "name": "Drink Mix",
+      "carbs_g": 45.5,
+      "sodium_mg": 500,
+      "fluid_ml": 500,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 120,
+      "distance_m": null,
+      "product_uid": "p-chew",
+      "name": "Chews",
+      "carbs_g": 12.5,
+      "sodium_mg": 30,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 140,
+      "distance_m": null,
+      "product_uid": "p-mix",
+      "name": "Drink Mix",
+      "carbs_g": 45.5,
+      "sodium_mg": 500,
+      "fluid_ml": 500,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 160,
+      "distance_m": null,
+      "product_uid": "p-chew",
+      "name": "Chews",
+      "carbs_g": 12.5,
+      "sodium_mg": 30,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 180,
+      "distance_m": null,
+      "product_uid": "p-mix",
+      "name": "Drink Mix",
+      "carbs_g": 45.5,
+      "sodium_mg": 500,
+      "fluid_ml": 500,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 200,
+      "distance_m": null,
+      "product_uid": "p-chew",
+      "name": "Chews",
+      "carbs_g": 12.5,
+      "sodium_mg": 30,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 220,
+      "distance_m": null,
+      "product_uid": "p-mix",
+      "name": "Drink Mix",
+      "carbs_g": 45.5,
+      "sodium_mg": 500,
+      "fluid_ml": 500,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 240,
+      "distance_m": null,
+      "product_uid": "p-chew",
+      "name": "Chews",
+      "carbs_g": 12.5,
+      "sodium_mg": 30,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 260,
+      "distance_m": null,
+      "product_uid": "p-mix",
+      "name": "Drink Mix",
+      "carbs_g": 45.5,
+      "sodium_mg": 500,
+      "fluid_ml": 500,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 280,
+      "distance_m": null,
+      "product_uid": "p-chew",
+      "name": "Chews",
+      "carbs_g": 12.5,
+      "sodium_mg": 30,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     }
+    ],
+    "totals": {
+     "carbs_g": 406,
+     "sodium_mg": 3710,
+     "fluid_ml": 3500,
+     "caffeine_mg": 0
+    },
+    "per_hour": {
+     "carbs_g": 81,
+     "sodium_mg": 742,
+     "fluid_ml": 700,
+     "caffeine_mg": 0
+    }
+   }
+  },
+  {
+   "duration_min": 240,
+   "targets": {
+    "carbs_g_per_h": 90,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "interval_min": 30,
+    "band": "normal",
+    "custom": {
+     "carbs": true,
+     "fluid": false,
+     "sodium": false,
+     "interval": true
+    }
+   },
+   "products": [
+    {
+     "uid": "p-zero",
+     "name": "Water",
+     "carbs_g": 0.0,
+     "sodium_mg": 0,
+     "fluid_ml": 500,
+     "caffeine_mg": 0
+    }
+   ],
+   "laps": [
+    {
+     "lap": 1,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 288.0
+    },
+    {
+     "lap": 2,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 288.0
+    },
+    {
+     "lap": 3,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 288.0
+    },
+    {
+     "lap": 4,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 288.0
+    },
+    {
+     "lap": 5,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 288.0
+    },
+    {
+     "lap": 6,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 288.0
+    },
+    {
+     "lap": 7,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 288.0
+    },
+    {
+     "lap": 8,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 288.0
+    },
+    {
+     "lap": 9,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 288.0
+    },
+    {
+     "lap": 10,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 288.0
+    },
+    {
+     "lap": 11,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 288.0
+    },
+    {
+     "lap": 12,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 288.0
+    },
+    {
+     "lap": 13,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 288.0
+    },
+    {
+     "lap": 14,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 288.0
+    },
+    {
+     "lap": 15,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 288.0
+    },
+    {
+     "lap": 16,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 288.0
+    },
+    {
+     "lap": 17,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 288.0
+    },
+    {
+     "lap": 18,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 288.0
+    },
+    {
+     "lap": 19,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 288.0
+    },
+    {
+     "lap": 20,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 288.0
+    },
+    {
+     "lap": 21,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 288.0
+    },
+    {
+     "lap": 22,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 288.0
+    },
+    {
+     "lap": 23,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 288.0
+    },
+    {
+     "lap": 24,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 288.0
+    },
+    {
+     "lap": 25,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 288.0
+    },
+    {
+     "lap": 26,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 288.0
+    },
+    {
+     "lap": 27,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 288.0
+    },
+    {
+     "lap": 28,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 288.0
+    },
+    {
+     "lap": 29,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 288.0
+    },
+    {
+     "lap": 30,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 288.0
+    },
+    {
+     "lap": 31,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 288.0
+    },
+    {
+     "lap": 32,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 288.0
+    },
+    {
+     "lap": 33,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 288.0
+    },
+    {
+     "lap": 34,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 288.0
+    },
+    {
+     "lap": 35,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 288.0
+    },
+    {
+     "lap": 36,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 288.0
+    },
+    {
+     "lap": 37,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 288.0
+    },
+    {
+     "lap": 38,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 288.0
+    },
+    {
+     "lap": 39,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 288.0
+    },
+    {
+     "lap": 40,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 288.0
+    },
+    {
+     "lap": 41,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 288.0
+    },
+    {
+     "lap": 42,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 288.0
+    },
+    {
+     "lap": 43,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 288.0
+    },
+    {
+     "lap": 44,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 288.0
+    },
+    {
+     "lap": 45,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 288.0
+    },
+    {
+     "lap": 46,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 288.0
+    },
+    {
+     "lap": 47,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 288.0
+    },
+    {
+     "lap": 48,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 288.0
+    },
+    {
+     "lap": 49,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 288.0
+    },
+    {
+     "lap": 50,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 288.0
+    }
+   ],
+   "expected": {
+    "items": [
+     {
+      "minute": 30,
+      "distance_m": 6250,
+      "product_uid": null,
+      "name": null,
+      "carbs_g": 45,
+      "sodium_mg": 0,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 60,
+      "distance_m": 12500,
+      "product_uid": null,
+      "name": null,
+      "carbs_g": 45,
+      "sodium_mg": 0,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 90,
+      "distance_m": 18750,
+      "product_uid": null,
+      "name": null,
+      "carbs_g": 45,
+      "sodium_mg": 0,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 120,
+      "distance_m": 25000,
+      "product_uid": null,
+      "name": null,
+      "carbs_g": 45,
+      "sodium_mg": 0,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 150,
+      "distance_m": 31250,
+      "product_uid": null,
+      "name": null,
+      "carbs_g": 45,
+      "sodium_mg": 0,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 180,
+      "distance_m": 37500,
+      "product_uid": null,
+      "name": null,
+      "carbs_g": 45,
+      "sodium_mg": 0,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 210,
+      "distance_m": 43750,
+      "product_uid": null,
+      "name": null,
+      "carbs_g": 45,
+      "sodium_mg": 0,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     }
+    ],
+    "totals": {
+     "carbs_g": 315,
+     "sodium_mg": 0,
+     "fluid_ml": 0,
+     "caffeine_mg": 0
+    },
+    "per_hour": {
+     "carbs_g": 79,
+     "sodium_mg": 0,
+     "fluid_ml": 0,
+     "caffeine_mg": 0
+    }
+   }
+  },
+  {
+   "duration_min": 60,
+   "targets": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": true,
+     "fluid": false,
+     "sodium": false,
+     "interval": true
+    }
+   },
+   "products": [
+    {
+     "uid": "p-gel",
+     "name": "Gel",
+     "carbs_g": 25.0,
+     "sodium_mg": 50,
+     "fluid_ml": 0,
+     "caffeine_mg": 0
+    },
+    {
+     "uid": "p-big",
+     "name": "Big Gel",
+     "carbs_g": 40.0,
+     "sodium_mg": 200,
+     "fluid_ml": 0,
+     "caffeine_mg": 100
+    },
+    {
+     "uid": "p-mix",
+     "name": "Drink Mix",
+     "carbs_g": 45.5,
+     "sodium_mg": 500,
+     "fluid_ml": 500,
+     "caffeine_mg": 0
+    },
+    {
+     "uid": "p-chew",
+     "name": "Chews",
+     "carbs_g": 12.5,
+     "sodium_mg": 30,
+     "fluid_ml": 0,
+     "caffeine_mg": 0
+    },
+    {
+     "uid": "p-zero",
+     "name": "Water",
+     "carbs_g": 0.0,
+     "sodium_mg": 0,
+     "fluid_ml": 500,
+     "caffeine_mg": 0
+    }
+   ],
+   "laps": [
+    {
+     "lap": 1,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 2,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 3,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 4,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 5,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 6,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 7,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 8,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 9,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 10,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    }
+   ],
+   "expected": {
+    "items": [
+     {
+      "minute": 20,
+      "distance_m": 3333,
+      "product_uid": "p-gel",
+      "name": "Gel",
+      "carbs_g": 25.0,
+      "sodium_mg": 50,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 40,
+      "distance_m": 6667,
+      "product_uid": "p-chew",
+      "name": "Chews",
+      "carbs_g": 12.5,
+      "sodium_mg": 30,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     }
+    ],
+    "totals": {
+     "carbs_g": 38,
+     "sodium_mg": 80,
+     "fluid_ml": 0,
+     "caffeine_mg": 0
+    },
+    "per_hour": {
+     "carbs_g": 38,
+     "sodium_mg": 80,
+     "fluid_ml": 0,
+     "caffeine_mg": 0
+    }
+   }
+  },
+  {
+   "duration_min": 600,
+   "targets": {
+    "carbs_g_per_h": 100,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "interval_min": 25,
+    "band": "normal",
+    "custom": {
+     "carbs": true,
+     "fluid": false,
+     "sodium": false,
+     "interval": true
+    }
+   },
+   "products": [
+    {
+     "uid": "p-chew",
+     "name": "Chews",
+     "carbs_g": 12.5,
+     "sodium_mg": 30,
+     "fluid_ml": 0,
+     "caffeine_mg": 0
+    }
+   ],
+   "laps": [
+    {
+     "lap": 1,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 2,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 3,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 4,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 5,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 6,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 7,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 8,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 9,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 10,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 11,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 12,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 13,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 14,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 15,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 16,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 17,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 18,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 19,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 20,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 21,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 22,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 23,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 24,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 25,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 26,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 27,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 28,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 29,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 30,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 31,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 32,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 33,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 34,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 35,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 36,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 37,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 38,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 39,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 40,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 41,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 42,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 43,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 44,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 45,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 46,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 47,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 48,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 49,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 50,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 51,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 52,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 53,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 54,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 55,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 56,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 57,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 58,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 59,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 60,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 61,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 62,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 63,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 64,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 65,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 66,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 67,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 68,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 69,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 70,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 71,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 72,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 73,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 74,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 75,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 76,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 77,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 78,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 79,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 80,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 81,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 82,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 83,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 84,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 85,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 86,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 87,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 88,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 89,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 90,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 91,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 92,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 93,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 94,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 95,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 96,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 97,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 98,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 99,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    },
+    {
+     "lap": 100,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 360.0
+    }
+   ],
+   "expected": {
+    "items": [
+     {
+      "minute": 25,
+      "distance_m": 4167,
+      "product_uid": "p-chew",
+      "name": "Chews",
+      "carbs_g": 12.5,
+      "sodium_mg": 30,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 50,
+      "distance_m": 8333,
+      "product_uid": "p-chew",
+      "name": "Chews",
+      "carbs_g": 12.5,
+      "sodium_mg": 30,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 75,
+      "distance_m": 12500,
+      "product_uid": "p-chew",
+      "name": "Chews",
+      "carbs_g": 12.5,
+      "sodium_mg": 30,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 100,
+      "distance_m": 16667,
+      "product_uid": "p-chew",
+      "name": "Chews",
+      "carbs_g": 12.5,
+      "sodium_mg": 30,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 125,
+      "distance_m": 20833,
+      "product_uid": "p-chew",
+      "name": "Chews",
+      "carbs_g": 12.5,
+      "sodium_mg": 30,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 150,
+      "distance_m": 25000,
+      "product_uid": "p-chew",
+      "name": "Chews",
+      "carbs_g": 12.5,
+      "sodium_mg": 30,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 175,
+      "distance_m": 29167,
+      "product_uid": "p-chew",
+      "name": "Chews",
+      "carbs_g": 12.5,
+      "sodium_mg": 30,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 200,
+      "distance_m": 33333,
+      "product_uid": "p-chew",
+      "name": "Chews",
+      "carbs_g": 12.5,
+      "sodium_mg": 30,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 225,
+      "distance_m": 37500,
+      "product_uid": "p-chew",
+      "name": "Chews",
+      "carbs_g": 12.5,
+      "sodium_mg": 30,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 250,
+      "distance_m": 41667,
+      "product_uid": "p-chew",
+      "name": "Chews",
+      "carbs_g": 12.5,
+      "sodium_mg": 30,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 275,
+      "distance_m": 45833,
+      "product_uid": "p-chew",
+      "name": "Chews",
+      "carbs_g": 12.5,
+      "sodium_mg": 30,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 300,
+      "distance_m": 50000,
+      "product_uid": "p-chew",
+      "name": "Chews",
+      "carbs_g": 12.5,
+      "sodium_mg": 30,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 325,
+      "distance_m": 54167,
+      "product_uid": "p-chew",
+      "name": "Chews",
+      "carbs_g": 12.5,
+      "sodium_mg": 30,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 350,
+      "distance_m": 58333,
+      "product_uid": "p-chew",
+      "name": "Chews",
+      "carbs_g": 12.5,
+      "sodium_mg": 30,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 375,
+      "distance_m": 62500,
+      "product_uid": "p-chew",
+      "name": "Chews",
+      "carbs_g": 12.5,
+      "sodium_mg": 30,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 400,
+      "distance_m": 66667,
+      "product_uid": "p-chew",
+      "name": "Chews",
+      "carbs_g": 12.5,
+      "sodium_mg": 30,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 425,
+      "distance_m": 70833,
+      "product_uid": "p-chew",
+      "name": "Chews",
+      "carbs_g": 12.5,
+      "sodium_mg": 30,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 450,
+      "distance_m": 75000,
+      "product_uid": "p-chew",
+      "name": "Chews",
+      "carbs_g": 12.5,
+      "sodium_mg": 30,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 475,
+      "distance_m": 79167,
+      "product_uid": "p-chew",
+      "name": "Chews",
+      "carbs_g": 12.5,
+      "sodium_mg": 30,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 500,
+      "distance_m": 83333,
+      "product_uid": "p-chew",
+      "name": "Chews",
+      "carbs_g": 12.5,
+      "sodium_mg": 30,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 525,
+      "distance_m": 87500,
+      "product_uid": "p-chew",
+      "name": "Chews",
+      "carbs_g": 12.5,
+      "sodium_mg": 30,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 550,
+      "distance_m": 91667,
+      "product_uid": "p-chew",
+      "name": "Chews",
+      "carbs_g": 12.5,
+      "sodium_mg": 30,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 575,
+      "distance_m": 95833,
+      "product_uid": "p-chew",
+      "name": "Chews",
+      "carbs_g": 12.5,
+      "sodium_mg": 30,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     }
+    ],
+    "totals": {
+     "carbs_g": 288,
+     "sodium_mg": 690,
+     "fluid_ml": 0,
+     "caffeine_mg": 0
+    },
+    "per_hour": {
+     "carbs_g": 29,
+     "sodium_mg": 69,
+     "fluid_ml": 0,
+     "caffeine_mg": 0
+    }
+   }
+  }
+ ],
+ "gut": [
+  {
+   "race_carbs": 60,
+   "race_date": "2026-12-06",
+   "workouts": [
+    {
+     "uid": "w00",
+     "scheduled_date": "2026-08-01",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 90,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w01",
+     "scheduled_date": "2026-09-13",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 90,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w02",
+     "scheduled_date": "2026-09-15",
+     "sport": "strength_training",
+     "workout_type": "long",
+     "duration_minutes": 90,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w03",
+     "scheduled_date": "2026-09-20",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 60,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w04",
+     "scheduled_date": "2026-09-27",
+     "sport": "cycling",
+     "workout_type": "long",
+     "duration_minutes": 150,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w05",
+     "scheduled_date": "2026-10-04",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 100,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w06",
+     "scheduled_date": "2026-10-11",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 110,
+     "fuel_carbs_per_hour": 55
+    },
+    {
+     "uid": "w07",
+     "scheduled_date": "2026-10-18",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 120,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w08",
+     "scheduled_date": "2026-10-25",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 120,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w09",
+     "scheduled_date": "2026-11-01",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 130,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w10",
+     "scheduled_date": "2026-11-08",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 140,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w11",
+     "scheduled_date": "2026-11-15",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 150,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w12",
+     "scheduled_date": "2026-11-26",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 90,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w13",
+     "scheduled_date": "2026-12-06",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 200,
+     "fuel_carbs_per_hour": null
+    }
+   ],
+   "logs": [],
+   "expected": {
+    "w01": 40,
+    "w04": 50,
+    "w05": 60,
+    "w06": 55,
+    "w07": 60,
+    "w08": 60,
+    "w09": 60,
+    "w10": 60,
+    "w11": 60,
+    "w12": 60
+   }
+  },
+  {
+   "race_carbs": 60,
+   "race_date": "2026-12-06",
+   "workouts": [
+    {
+     "uid": "w00",
+     "scheduled_date": "2026-08-01",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 90,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w01",
+     "scheduled_date": "2026-09-13",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 90,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w02",
+     "scheduled_date": "2026-09-15",
+     "sport": "strength_training",
+     "workout_type": "long",
+     "duration_minutes": 90,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w03",
+     "scheduled_date": "2026-09-20",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 60,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w04",
+     "scheduled_date": "2026-09-27",
+     "sport": "cycling",
+     "workout_type": "long",
+     "duration_minutes": 150,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w05",
+     "scheduled_date": "2026-10-04",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 100,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w06",
+     "scheduled_date": "2026-10-11",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 110,
+     "fuel_carbs_per_hour": 55
+    },
+    {
+     "uid": "w07",
+     "scheduled_date": "2026-10-18",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 120,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w08",
+     "scheduled_date": "2026-10-25",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 120,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w09",
+     "scheduled_date": "2026-11-01",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 130,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w10",
+     "scheduled_date": "2026-11-08",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 140,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w11",
+     "scheduled_date": "2026-11-15",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 150,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w12",
+     "scheduled_date": "2026-11-26",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 90,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w13",
+     "scheduled_date": "2026-12-06",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 200,
+     "fuel_carbs_per_hour": null
+    }
+   ],
+   "logs": [
+    {
+     "uid": "l1",
+     "planned_workout_uid": "w01",
+     "date": "2026-09-13",
+     "comfort": 5,
+     "carbs_g": 60,
+     "duration_min": 90
+    }
+   ],
+   "expected": {
+    "w01": 40,
+    "w04": 50,
+    "w05": 60,
+    "w06": 55,
+    "w07": 60,
+    "w08": 60,
+    "w09": 60,
+    "w10": 60,
+    "w11": 60,
+    "w12": 60
+   }
+  },
+  {
+   "race_carbs": 60,
+   "race_date": "2026-12-06",
+   "workouts": [
+    {
+     "uid": "w00",
+     "scheduled_date": "2026-08-01",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 90,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w01",
+     "scheduled_date": "2026-09-13",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 90,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w02",
+     "scheduled_date": "2026-09-15",
+     "sport": "strength_training",
+     "workout_type": "long",
+     "duration_minutes": 90,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w03",
+     "scheduled_date": "2026-09-20",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 60,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w04",
+     "scheduled_date": "2026-09-27",
+     "sport": "cycling",
+     "workout_type": "long",
+     "duration_minutes": 150,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w05",
+     "scheduled_date": "2026-10-04",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 100,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w06",
+     "scheduled_date": "2026-10-11",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 110,
+     "fuel_carbs_per_hour": 55
+    },
+    {
+     "uid": "w07",
+     "scheduled_date": "2026-10-18",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 120,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w08",
+     "scheduled_date": "2026-10-25",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 120,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w09",
+     "scheduled_date": "2026-11-01",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 130,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w10",
+     "scheduled_date": "2026-11-08",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 140,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w11",
+     "scheduled_date": "2026-11-15",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 150,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w12",
+     "scheduled_date": "2026-11-26",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 90,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w13",
+     "scheduled_date": "2026-12-06",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 200,
+     "fuel_carbs_per_hour": null
+    }
+   ],
+   "logs": [
+    {
+     "uid": "l1",
+     "planned_workout_uid": "w01",
+     "date": "2026-09-13",
+     "comfort": 2,
+     "carbs_g": 40,
+     "duration_min": 90
+    },
+    {
+     "uid": "l2",
+     "planned_workout_uid": "w04",
+     "date": "2026-09-27",
+     "comfort": 3,
+     "carbs_g": 90,
+     "duration_min": 150
+    },
+    {
+     "uid": "l3",
+     "planned_workout_uid": "w05",
+     "date": "2026-10-04",
+     "comfort": 4,
+     "carbs_g": 20,
+     "duration_min": null
+    },
+    {
+     "uid": "l4",
+     "planned_workout_uid": "w07",
+     "date": "2026-10-18",
+     "comfort": 1,
+     "carbs_g": 100,
+     "duration_min": 120
+    },
+    {
+     "uid": "l5",
+     "planned_workout_uid": "w07",
+     "date": "2026-10-19",
+     "comfort": 5,
+     "carbs_g": 120,
+     "duration_min": 120
+    }
+   ],
+   "expected": {
+    "w01": 40,
+    "w04": 30,
+    "w05": 30,
+    "w06": 55,
+    "w07": 60,
+    "w08": 60,
+    "w09": 60,
+    "w10": 60,
+    "w11": 60,
+    "w12": 60
+   }
+  },
+  {
+   "race_carbs": 90,
+   "race_date": "2026-12-06",
+   "workouts": [
+    {
+     "uid": "w00",
+     "scheduled_date": "2026-08-01",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 90,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w01",
+     "scheduled_date": "2026-09-13",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 90,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w02",
+     "scheduled_date": "2026-09-15",
+     "sport": "strength_training",
+     "workout_type": "long",
+     "duration_minutes": 90,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w03",
+     "scheduled_date": "2026-09-20",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 60,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w04",
+     "scheduled_date": "2026-09-27",
+     "sport": "cycling",
+     "workout_type": "long",
+     "duration_minutes": 150,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w05",
+     "scheduled_date": "2026-10-04",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 100,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w06",
+     "scheduled_date": "2026-10-11",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 110,
+     "fuel_carbs_per_hour": 55
+    },
+    {
+     "uid": "w07",
+     "scheduled_date": "2026-10-18",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 120,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w08",
+     "scheduled_date": "2026-10-25",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 120,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w09",
+     "scheduled_date": "2026-11-01",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 130,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w10",
+     "scheduled_date": "2026-11-08",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 140,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w11",
+     "scheduled_date": "2026-11-15",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 150,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w12",
+     "scheduled_date": "2026-11-26",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 90,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w13",
+     "scheduled_date": "2026-12-06",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 200,
+     "fuel_carbs_per_hour": null
+    }
+   ],
+   "logs": [],
+   "expected": {
+    "w01": 40,
+    "w04": 50,
+    "w05": 60,
+    "w06": 55,
+    "w07": 65,
+    "w08": 75,
+    "w09": 85,
+    "w10": 90,
+    "w11": 90,
+    "w12": 90
+   }
+  },
+  {
+   "race_carbs": 90,
+   "race_date": "2026-12-06",
+   "workouts": [
+    {
+     "uid": "w00",
+     "scheduled_date": "2026-08-01",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 90,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w01",
+     "scheduled_date": "2026-09-13",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 90,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w02",
+     "scheduled_date": "2026-09-15",
+     "sport": "strength_training",
+     "workout_type": "long",
+     "duration_minutes": 90,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w03",
+     "scheduled_date": "2026-09-20",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 60,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w04",
+     "scheduled_date": "2026-09-27",
+     "sport": "cycling",
+     "workout_type": "long",
+     "duration_minutes": 150,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w05",
+     "scheduled_date": "2026-10-04",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 100,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w06",
+     "scheduled_date": "2026-10-11",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 110,
+     "fuel_carbs_per_hour": 55
+    },
+    {
+     "uid": "w07",
+     "scheduled_date": "2026-10-18",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 120,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w08",
+     "scheduled_date": "2026-10-25",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 120,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w09",
+     "scheduled_date": "2026-11-01",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 130,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w10",
+     "scheduled_date": "2026-11-08",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 140,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w11",
+     "scheduled_date": "2026-11-15",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 150,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w12",
+     "scheduled_date": "2026-11-26",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 90,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w13",
+     "scheduled_date": "2026-12-06",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 200,
+     "fuel_carbs_per_hour": null
+    }
+   ],
+   "logs": [
+    {
+     "uid": "l1",
+     "planned_workout_uid": "w01",
+     "date": "2026-09-13",
+     "comfort": 5,
+     "carbs_g": 60,
+     "duration_min": 90
+    }
+   ],
+   "expected": {
+    "w01": 40,
+    "w04": 50,
+    "w05": 60,
+    "w06": 55,
+    "w07": 65,
+    "w08": 75,
+    "w09": 85,
+    "w10": 90,
+    "w11": 90,
+    "w12": 90
+   }
+  },
+  {
+   "race_carbs": 90,
+   "race_date": "2026-12-06",
+   "workouts": [
+    {
+     "uid": "w00",
+     "scheduled_date": "2026-08-01",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 90,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w01",
+     "scheduled_date": "2026-09-13",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 90,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w02",
+     "scheduled_date": "2026-09-15",
+     "sport": "strength_training",
+     "workout_type": "long",
+     "duration_minutes": 90,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w03",
+     "scheduled_date": "2026-09-20",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 60,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w04",
+     "scheduled_date": "2026-09-27",
+     "sport": "cycling",
+     "workout_type": "long",
+     "duration_minutes": 150,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w05",
+     "scheduled_date": "2026-10-04",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 100,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w06",
+     "scheduled_date": "2026-10-11",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 110,
+     "fuel_carbs_per_hour": 55
+    },
+    {
+     "uid": "w07",
+     "scheduled_date": "2026-10-18",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 120,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w08",
+     "scheduled_date": "2026-10-25",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 120,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w09",
+     "scheduled_date": "2026-11-01",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 130,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w10",
+     "scheduled_date": "2026-11-08",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 140,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w11",
+     "scheduled_date": "2026-11-15",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 150,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w12",
+     "scheduled_date": "2026-11-26",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 90,
+     "fuel_carbs_per_hour": null
+    },
+    {
+     "uid": "w13",
+     "scheduled_date": "2026-12-06",
+     "sport": "running",
+     "workout_type": "long",
+     "duration_minutes": 200,
+     "fuel_carbs_per_hour": null
+    }
+   ],
+   "logs": [
+    {
+     "uid": "l1",
+     "planned_workout_uid": "w01",
+     "date": "2026-09-13",
+     "comfort": 2,
+     "carbs_g": 40,
+     "duration_min": 90
+    },
+    {
+     "uid": "l2",
+     "planned_workout_uid": "w04",
+     "date": "2026-09-27",
+     "comfort": 3,
+     "carbs_g": 90,
+     "duration_min": 150
+    },
+    {
+     "uid": "l3",
+     "planned_workout_uid": "w05",
+     "date": "2026-10-04",
+     "comfort": 4,
+     "carbs_g": 20,
+     "duration_min": null
+    },
+    {
+     "uid": "l4",
+     "planned_workout_uid": "w07",
+     "date": "2026-10-18",
+     "comfort": 1,
+     "carbs_g": 100,
+     "duration_min": 120
+    },
+    {
+     "uid": "l5",
+     "planned_workout_uid": "w07",
+     "date": "2026-10-19",
+     "comfort": 5,
+     "carbs_g": 120,
+     "duration_min": 120
+    }
+   ],
+   "expected": {
+    "w01": 40,
+    "w04": 30,
+    "w05": 30,
+    "w06": 55,
+    "w07": 65,
+    "w08": 75,
+    "w09": 85,
+    "w10": 90,
+    "w11": 90,
+    "w12": 90
+   }
+  }
+ ],
+ "race_fit": [
+  {
+   "name": "10K",
+   "sport": "running",
+   "laps": [
+    {
+     "lap": 1,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 300.0
+    },
+    {
+     "lap": 2,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 300.0
+    },
+    {
+     "lap": 3,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 300.0
+    },
+    {
+     "lap": 4,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 300.0
+    },
+    {
+     "lap": 5,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 300.0
+    },
+    {
+     "lap": 6,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 300.0
+    },
+    {
+     "lap": 7,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 300.0
+    },
+    {
+     "lap": 8,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 300.0
+    },
+    {
+     "lap": 9,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 300.0
+    },
+    {
+     "lap": 10,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 300.0
+    }
+   ],
+   "pace_coaching": true,
+   "hr_coaching": false,
+   "max_hr": null,
+   "fuel_items": [
+    {
+     "minute": 40,
+     "distance_m": 8000,
+     "product_uid": "p-gel",
+     "name": "Gel",
+     "carbs_g": 25.0,
+     "sodium_mg": 50,
+     "fluid_ml": 0,
+     "caffeine_mg": 0
+    }
+   ],
+   "time_created_ms": 1790000000000,
+   "hex": "0e20d8529d0200002e464954179040000000000500010001028402028403048c04048600050100feff0100000080ef134541000031000200028401010201310a004200001a0006fe02840804070401000b010005048c06028402000031304b000100200000000c004300001b0009fe02840701000101000204861404860d02840008070301000404860300000205000000000000000002005761726d2055700002000000004400001b000bfe02840701000101000204861404860d02840005070301000404860504860604860401000001a08601000000000002004b6d2031000000000000660c0000b40d00000402000001a08601000000000002004b6d2032000000000000660c0000b40d00000403000001a08601000000000002004b6d2033000000000000660c0000b40d00000404000001a08601000000000002004b6d2034000000000000660c0000b40d00000405000001a08601000000000002004b6d2035000000000000660c0000b40d00000406000001a08601000000000002004b6d2036000000000000660c0000b40d00000407000001a08601000000000002004b6d2037000000000000660c0000b40d00000408000001a08601000000000002004b6d2038000000000000660c0000b40d00004500001b000bfe02840701000101000204861404860d0284000c070301000404860504860604860509000001a08601000000000002004b6d203920c2b72047656c000000000000660c0000b40d00004600001b000bfe02840701000101000204861404860d0284000607030100040486050486060486060a000001a08601000000000002004b6d203130000000000000660c0000b40d00004700001b0009fe02840701000101000204861404860d0284000a07030100040486070b00030500000000000000000200436f6f6c20446f776e000200000000e81a"
+  },
+  {
+   "name": "Half Marathon",
+   "sport": "running",
+   "laps": [
+    {
+     "lap": 1,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 295.8
+    },
+    {
+     "lap": 2,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 295.2476190476191
+    },
+    {
+     "lap": 3,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 294.69523809523804
+    },
+    {
+     "lap": 4,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 294.1428571428571
+    },
+    {
+     "lap": 5,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 293.5904761904762
+    },
+    {
+     "lap": 6,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 293.03809523809525
+    },
+    {
+     "lap": 7,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 292.4857142857143
+    },
+    {
+     "lap": 8,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 291.93333333333334
+    },
+    {
+     "lap": 9,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 291.38095238095235
+    },
+    {
+     "lap": 10,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 290.8285714285714
+    },
+    {
+     "lap": 11,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 290.2761904761905
+    },
+    {
+     "lap": 12,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 289.7238095238095
+    },
+    {
+     "lap": 13,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 289.1714285714286
+    },
+    {
+     "lap": 14,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 288.61904761904765
+    },
+    {
+     "lap": 15,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 288.06666666666666
+    },
+    {
+     "lap": 16,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 287.51428571428573
+    },
+    {
+     "lap": 17,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 286.96190476190475
+    },
+    {
+     "lap": 18,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 286.4095238095238
+    },
+    {
+     "lap": 19,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 285.8571428571429
+    },
+    {
+     "lap": 20,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 285.3047619047619
+    },
+    {
+     "lap": 21,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 284.752380952381
+    },
+    {
+     "lap": 22,
+     "distance_m": 97.5,
+     "target_sec_per_km": 290
+    }
+   ],
+   "pace_coaching": true,
+   "hr_coaching": false,
+   "max_hr": null,
+   "fuel_items": [
+    {
+     "minute": 20,
+     "distance_m": 4069,
+     "product_uid": "p-gel",
+     "name": "Gel",
+     "carbs_g": 25.0,
+     "sodium_mg": 50,
+     "fluid_ml": 0,
+     "caffeine_mg": 0
+    },
+    {
+     "minute": 40,
+     "distance_m": 8168,
+     "product_uid": "p-gel",
+     "name": "Gel",
+     "carbs_g": 25.0,
+     "sodium_mg": 50,
+     "fluid_ml": 0,
+     "caffeine_mg": 0
+    },
+    {
+     "minute": 80,
+     "distance_m": 16465,
+     "product_uid": "p-gel",
+     "name": "Gel",
+     "carbs_g": 25.0,
+     "sodium_mg": 50,
+     "fluid_ml": 0,
+     "caffeine_mg": 0
+    },
+    {
+     "minute": 100,
+     "distance_m": 20664,
+     "product_uid": "p-gel",
+     "name": "Gel",
+     "carbs_g": 25.0,
+     "sodium_mg": 50,
+     "fluid_ml": 0,
+     "caffeine_mg": 0
+    }
+   ],
+   "time_created_ms": 1790000000000,
+   "hex": "0e20d8527b0400002e464954fff240000000000500010001028402028403048c04048600050100feff0100000080ef134541000031000200028401010201310a004200001a0006fe0284080e070401000b010005048c06028402000048616c66204d61726174686f6e0001002000000018004300001b0009fe02840701000101000204861404860d02840008070301000404860300000205000000000000000002005761726d2055700002000000004400001b000bfe02840701000101000204861404860d02840005070301000404860504860604860401000001a08601000000000002004b6d2031000000000000910c0000e90d00000402000001a08601000000000002004b6d2032000000000000970c0000f00d00000403000001a08601000000000002004b6d20330000000000009c0c0000f70d00000404000001a08601000000000002004b6d2034000000000000a20c0000fe0d00004500001b000bfe02840701000101000204861404860d0284000c070301000404860504860604860505000001a08601000000000002004b6d203520c2b72047656c000000000000a80c0000050e00000406000001a08601000000000002004b6d2036000000000000ae0c00000c0e00000407000001a08601000000000002004b6d2037000000000000b40c0000130e00000408000001a08601000000000002004b6d2038000000000000ba0c00001a0e00000509000001a08601000000000002004b6d203920c2b72047656c000000000000bf0c0000220e00004600001b000bfe02840701000101000204861404860d0284000607030100040486050486060486060a000001a08601000000000002004b6d203130000000000000c50c0000290e0000060b000001a08601000000000002004b6d203131000000000000cb0c0000300e0000060c000001a08601000000000002004b6d203132000000000000d10c0000380e0000060d000001a08601000000000002004b6d203133000000000000d70c00003f0e0000060e000001a08601000000000002004b6d203134000000000000dd0c0000460e0000060f000001a08601000000000002004b6d203135000000000000e30c00004e0e00000610000001a08601000000000002004b6d203136000000000000e90c0000550e00004700001b000bfe02840701000101000204861404860d0284000d070301000404860504860604860711000001a08601000000000002004b6d20313720c2b72047656c000000000000ef0c00005c0e00000612000001a08601000000000002004b6d203138000000000000f50c0000640e00000613000001a08601000000000002004b6d203139000000000000fb0c00006b0e00000614000001a08601000000000002004b6d203230000000000000010d0000730e00000715000001a08601000000000002004b6d20323120c2b72047656c000000000000080d00007b0e00000616000001162600000000000002004b6d203232000000000000ce0c0000340e00004800001b0009fe02840701000101000204861404860d0284000a07030100040486081700030500000000000000000200436f6f6c20446f776e000200000000d4f6"
+  },
+  {
+   "name": "Marathon",
+   "sport": "running",
+   "laps": [
+    {
+     "lap": 1,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 280.0,
+     "hr_ceiling": 150
+    },
+    {
+     "lap": 2,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 280.0,
+     "hr_ceiling": 151
+    },
+    {
+     "lap": 3,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 280.0,
+     "hr_ceiling": 152
+    },
+    {
+     "lap": 4,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 280.0,
+     "hr_ceiling": 153
+    },
+    {
+     "lap": 5,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 280.0,
+     "hr_ceiling": 154
+    },
+    {
+     "lap": 6,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 280.0,
+     "hr_ceiling": 155
+    },
+    {
+     "lap": 7,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 280.0,
+     "hr_ceiling": 156
+    },
+    {
+     "lap": 8,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 280.0,
+     "hr_ceiling": 157
+    },
+    {
+     "lap": 9,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 280.0,
+     "hr_ceiling": 158
+    },
+    {
+     "lap": 10,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 280.0,
+     "hr_ceiling": 159
+    },
+    {
+     "lap": 11,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 280.0,
+     "hr_ceiling": 160
+    },
+    {
+     "lap": 12,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 280.0,
+     "hr_ceiling": 161
+    },
+    {
+     "lap": 13,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 280.0,
+     "hr_ceiling": 162
+    },
+    {
+     "lap": 14,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 280.0,
+     "hr_ceiling": 163
+    },
+    {
+     "lap": 15,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 280.0,
+     "hr_ceiling": 164
+    },
+    {
+     "lap": 16,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 280.0,
+     "hr_ceiling": 165
+    },
+    {
+     "lap": 17,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 280.0,
+     "hr_ceiling": 166
+    },
+    {
+     "lap": 18,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 280.0,
+     "hr_ceiling": 167
+    },
+    {
+     "lap": 19,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 280.0,
+     "hr_ceiling": 168
+    },
+    {
+     "lap": 20,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 280.0,
+     "hr_ceiling": 169
+    },
+    {
+     "lap": 21,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 280.0,
+     "hr_ceiling": 150
+    },
+    {
+     "lap": 22,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 280.0,
+     "hr_ceiling": 151
+    },
+    {
+     "lap": 23,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 280.0,
+     "hr_ceiling": 152
+    },
+    {
+     "lap": 24,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 280.0,
+     "hr_ceiling": 153
+    },
+    {
+     "lap": 25,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 280.0,
+     "hr_ceiling": 154
+    },
+    {
+     "lap": 26,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 280.0,
+     "hr_ceiling": 155
+    },
+    {
+     "lap": 27,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 280.0,
+     "hr_ceiling": 156
+    },
+    {
+     "lap": 28,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 280.0,
+     "hr_ceiling": 157
+    },
+    {
+     "lap": 29,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 280.0,
+     "hr_ceiling": 158
+    },
+    {
+     "lap": 30,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 280.0,
+     "hr_ceiling": 159
+    },
+    {
+     "lap": 31,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 280.0,
+     "hr_ceiling": 160
+    },
+    {
+     "lap": 32,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 280.0,
+     "hr_ceiling": 161
+    },
+    {
+     "lap": 33,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 280.0,
+     "hr_ceiling": 162
+    },
+    {
+     "lap": 34,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 280.0,
+     "hr_ceiling": 163
+    },
+    {
+     "lap": 35,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 280.0,
+     "hr_ceiling": 164
+    },
+    {
+     "lap": 36,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 280.0,
+     "hr_ceiling": 165
+    },
+    {
+     "lap": 37,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 280.0,
+     "hr_ceiling": 166
+    },
+    {
+     "lap": 38,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 280.0,
+     "hr_ceiling": 167
+    },
+    {
+     "lap": 39,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 280.0,
+     "hr_ceiling": 168
+    },
+    {
+     "lap": 40,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 280.0,
+     "hr_ceiling": 169
+    },
+    {
+     "lap": 41,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 280.0,
+     "hr_ceiling": 150
+    },
+    {
+     "lap": 42,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 280.0,
+     "hr_ceiling": 151
+    },
+    {
+     "lap": 43,
+     "distance_m": 195.0,
+     "target_sec_per_km": 280,
+     "hr_ceiling": 152
+    }
+   ],
+   "pace_coaching": false,
+   "hr_coaching": true,
+   "max_hr": 190,
+   "fuel_items": [
+    {
+     "minute": 20,
+     "distance_m": 4286,
+     "product_uid": "p-big",
+     "name": "Big Gel",
+     "carbs_g": 40.0,
+     "sodium_mg": 200,
+     "fluid_ml": 0,
+     "caffeine_mg": 100
+    },
+    {
+     "minute": 40,
+     "distance_m": 8571,
+     "product_uid": "p-chew",
+     "name": "Chews",
+     "carbs_g": 12.5,
+     "sodium_mg": 30,
+     "fluid_ml": 0,
+     "caffeine_mg": 0
+    },
+    {
+     "minute": 60,
+     "distance_m": 12857,
+     "product_uid": "p-big",
+     "name": "Big Gel",
+     "carbs_g": 40.0,
+     "sodium_mg": 200,
+     "fluid_ml": 0,
+     "caffeine_mg": 100
+    },
+    {
+     "minute": 80,
+     "distance_m": 17143,
+     "product_uid": "p-chew",
+     "name": "Chews",
+     "carbs_g": 12.5,
+     "sodium_mg": 30,
+     "fluid_ml": 0,
+     "caffeine_mg": 0
+    },
+    {
+     "minute": 100,
+     "distance_m": 21429,
+     "product_uid": "p-big",
+     "name": "Big Gel",
+     "carbs_g": 40.0,
+     "sodium_mg": 200,
+     "fluid_ml": 0,
+     "caffeine_mg": 100
+    },
+    {
+     "minute": 120,
+     "distance_m": 25714,
+     "product_uid": "p-chew",
+     "name": "Chews",
+     "carbs_g": 12.5,
+     "sodium_mg": 30,
+     "fluid_ml": 0,
+     "caffeine_mg": 0
+    },
+    {
+     "minute": 140,
+     "distance_m": 30000,
+     "product_uid": "p-big",
+     "name": "Big Gel",
+     "carbs_g": 40.0,
+     "sodium_mg": 200,
+     "fluid_ml": 0,
+     "caffeine_mg": 100
+    },
+    {
+     "minute": 160,
+     "distance_m": 34286,
+     "product_uid": "p-chew",
+     "name": "Chews",
+     "carbs_g": 12.5,
+     "sodium_mg": 30,
+     "fluid_ml": 0,
+     "caffeine_mg": 0
+    },
+    {
+     "minute": 180,
+     "distance_m": 38571,
+     "product_uid": "p-big",
+     "name": "Big Gel",
+     "carbs_g": 40.0,
+     "sodium_mg": 200,
+     "fluid_ml": 0,
+     "caffeine_mg": 100
+    }
+   ],
+   "time_created_ms": 1790000000000,
+   "hex": "0e20d852cd0700002e46495447ac40000000000500010001028402028403048c04048600050100feff0100000080ef134541000031000200028401010201310a004200001a0006fe02840809070401000b010005048c0602840200004d61726174686f6e000100200000002d004300001b0009fe02840701000101000204861404860d02840008070301000404860300000205000000000000000002005761726d2055700002000000004400001b000bfe02840701000101000204861404860d02840005070301000404860504860604860401000001a08601000000000002004b6d2031000100000000f0000000fa0000000402000001a08601000000000002004b6d2032000100000000f1000000fb0000000403000001a08601000000000002004b6d2033000100000000f2000000fc0000000404000001a08601000000000002004b6d2034000100000000f3000000fd0000004500001b000bfe02840701000101000204861404860d02840010070301000404860504860604860505000001a08601000000000002004b6d203520c2b7204269672047656c000100000000f4000000fe0000000406000001a08601000000000002004b6d2036000100000000f5000000ff0000000407000001a08601000000000002004b6d2037000100000000f6000000000100000408000001a08601000000000002004b6d2038000100000000f7000000010100004600001b000bfe02840701000101000204861404860d0284000e070301000404860504860604860609000001a08601000000000002004b6d203920c2b7204368657773000100000000f8000000020100004700001b000bfe02840701000101000204861404860d0284000607030100040486050486060486070a000001a08601000000000002004b6d203130000100000000f900000003010000070b000001a08601000000000002004b6d203131000100000000fa00000004010000070c000001a08601000000000002004b6d203132000100000000fb000000050100004800001b000bfe02840701000101000204861404860d0284001107030100040486050486060486080d000001a08601000000000002004b6d20313320c2b7204269672047656c000100000000fc00000006010000070e000001a08601000000000002004b6d203134000100000000fd00000007010000070f000001a08601000000000002004b6d203135000100000000fe000000080100000710000001a08601000000000002004b6d203136000100000000ff000000090100000711000001a08601000000000002004b6d203137000100000000000100000a0100004900001b000bfe02840701000101000204861404860d0284000f070301000404860504860604860912000001a08601000000000002004b6d20313820c2b7204368657773000100000000010100000b0100000713000001a08601000000000002004b6d203139000100000000020100000c0100000714000001a08601000000000002004b6d203230000100000000030100000d0100000715000001a08601000000000002004b6d203231000100000000f0000000fa0000000816000001a08601000000000002004b6d20323220c2b7204269672047656c000100000000f1000000fb0000000717000001a08601000000000002004b6d203233000100000000f2000000fc0000000718000001a08601000000000002004b6d203234000100000000f3000000fd0000000719000001a08601000000000002004b6d203235000100000000f4000000fe000000091a000001a08601000000000002004b6d20323620c2b7204368657773000100000000f5000000ff000000071b000001a08601000000000002004b6d203237000100000000f600000000010000071c000001a08601000000000002004b6d203238000100000000f700000001010000071d000001a08601000000000002004b6d203239000100000000f800000002010000071e000001a08601000000000002004b6d203330000100000000f900000003010000081f000001a08601000000000002004b6d20333120c2b7204269672047656c000100000000fa000000040100000720000001a08601000000000002004b6d203332000100000000fb000000050100000721000001a08601000000000002004b6d203333000100000000fc000000060100000722000001a08601000000000002004b6d203334000100000000fd000000070100000923000001a08601000000000002004b6d20333520c2b7204368657773000100000000fe000000080100000724000001a08601000000000002004b6d203336000100000000ff000000090100000725000001a08601000000000002004b6d203337000100000000000100000a0100000726000001a08601000000000002004b6d203338000100000000010100000b0100000827000001a08601000000000002004b6d20333920c2b7204269672047656c000100000000020100000c0100000728000001a08601000000000002004b6d203430000100000000030100000d0100000729000001a08601000000000002004b6d203431000100000000f0000000fa000000072a000001a08601000000000002004b6d203432000100000000f1000000fb000000072b0000012c4c00000000000002004b6d203433000100000000f2000000fc0000004a00001b0009fe02840701000101000204861404860d0284000a070301000404860a2c00030500000000000000000200436f6f6c20446f776e0002000000003eb0"
+  },
+  {
+   "name": "Gran Fondo",
+   "sport": "cycling",
+   "laps": [
+    {
+     "lap": 1,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 120.0
+    },
+    {
+     "lap": 2,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 120.0
+    },
+    {
+     "lap": 3,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 120.0
+    },
+    {
+     "lap": 4,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 120.0
+    },
+    {
+     "lap": 5,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 120.0
+    },
+    {
+     "lap": 6,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 120.0
+    },
+    {
+     "lap": 7,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 120.0
+    },
+    {
+     "lap": 8,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 120.0
+    },
+    {
+     "lap": 9,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 120.0
+    },
+    {
+     "lap": 10,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 120.0
+    },
+    {
+     "lap": 11,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 120.0
+    },
+    {
+     "lap": 12,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 120.0
+    },
+    {
+     "lap": 13,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 120.0
+    },
+    {
+     "lap": 14,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 120.0
+    },
+    {
+     "lap": 15,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 120.0
+    },
+    {
+     "lap": 16,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 120.0
+    },
+    {
+     "lap": 17,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 120.0
+    },
+    {
+     "lap": 18,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 120.0
+    },
+    {
+     "lap": 19,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 120.0
+    },
+    {
+     "lap": 20,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 120.0
+    },
+    {
+     "lap": 21,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 120.0
+    },
+    {
+     "lap": 22,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 120.0
+    },
+    {
+     "lap": 23,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 120.0
+    },
+    {
+     "lap": 24,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 120.0
+    },
+    {
+     "lap": 25,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 120.0
+    },
+    {
+     "lap": 26,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 120.0
+    },
+    {
+     "lap": 27,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 120.0
+    },
+    {
+     "lap": 28,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 120.0
+    },
+    {
+     "lap": 29,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 120.0
+    },
+    {
+     "lap": 30,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 120.0
+    },
+    {
+     "lap": 31,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 120.0
+    },
+    {
+     "lap": 32,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 120.0
+    },
+    {
+     "lap": 33,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 120.0
+    },
+    {
+     "lap": 34,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 120.0
+    },
+    {
+     "lap": 35,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 120.0
+    },
+    {
+     "lap": 36,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 120.0
+    },
+    {
+     "lap": 37,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 120.0
+    },
+    {
+     "lap": 38,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 120.0
+    },
+    {
+     "lap": 39,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 120.0
+    },
+    {
+     "lap": 40,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 120.0
+    }
+   ],
+   "pace_coaching": true,
+   "hr_coaching": false,
+   "max_hr": null,
+   "fuel_items": [
+    {
+     "minute": 20,
+     "distance_m": 10000,
+     "product_uid": null,
+     "name": null,
+     "carbs_g": 20,
+     "sodium_mg": 0,
+     "fluid_ml": 0,
+     "caffeine_mg": 0
+    },
+    {
+     "minute": 40,
+     "distance_m": 20000,
+     "product_uid": null,
+     "name": null,
+     "carbs_g": 20,
+     "sodium_mg": 0,
+     "fluid_ml": 0,
+     "caffeine_mg": 0
+    },
+    {
+     "minute": 60,
+     "distance_m": 30000,
+     "product_uid": null,
+     "name": null,
+     "carbs_g": 20,
+     "sodium_mg": 0,
+     "fluid_ml": 0,
+     "caffeine_mg": 0
+    }
+   ],
+   "time_created_ms": 1790000000000,
+   "hex": "0e20d852c00600002e46495496f540000000000500010001028402028403048c04048600050100feff0100000080ef134541000031000200028401010201310a004200001a0006fe0284080b070401000b010005048c0602840200004772616e20466f6e646f000200200000002a004300001b0009fe02840701000101000204861404860d02840008070301000404860300000205000000000000000002005761726d2055700002000000004400001b000bfe02840701000101000204861404860d02840005070301000404860504860604860401000001a08601000000000002004b6d2031000000000000ef1c0000332500000402000001a08601000000000002004b6d2032000000000000ef1c0000332500000403000001a08601000000000002004b6d2033000000000000ef1c0000332500000404000001a08601000000000002004b6d2034000000000000ef1c0000332500000405000001a08601000000000002004b6d2035000000000000ef1c0000332500000406000001a08601000000000002004b6d2036000000000000ef1c0000332500000407000001a08601000000000002004b6d2037000000000000ef1c0000332500000408000001a08601000000000002004b6d2038000000000000ef1c0000332500000409000001a08601000000000002004b6d2039000000000000ef1c0000332500004500001b000bfe02840701000101000204861404860d0284000607030100040486050486060486050a000001a08601000000000002004b6d203130000000000000ef1c0000332500004600001b000bfe02840701000101000204861404860d0284001307030100040486050486060486060b000001a08601000000000002004b6d20313120c2b720323067206361726273000000000000ef1c000033250000050c000001a08601000000000002004b6d203132000000000000ef1c000033250000050d000001a08601000000000002004b6d203133000000000000ef1c000033250000050e000001a08601000000000002004b6d203134000000000000ef1c000033250000050f000001a08601000000000002004b6d203135000000000000ef1c0000332500000510000001a08601000000000002004b6d203136000000000000ef1c0000332500000511000001a08601000000000002004b6d203137000000000000ef1c0000332500000512000001a08601000000000002004b6d203138000000000000ef1c0000332500000513000001a08601000000000002004b6d203139000000000000ef1c0000332500000514000001a08601000000000002004b6d203230000000000000ef1c0000332500000615000001a08601000000000002004b6d20323120c2b720323067206361726273000000000000ef1c0000332500000516000001a08601000000000002004b6d203232000000000000ef1c0000332500000517000001a08601000000000002004b6d203233000000000000ef1c0000332500000518000001a08601000000000002004b6d203234000000000000ef1c0000332500000519000001a08601000000000002004b6d203235000000000000ef1c000033250000051a000001a08601000000000002004b6d203236000000000000ef1c000033250000051b000001a08601000000000002004b6d203237000000000000ef1c000033250000051c000001a08601000000000002004b6d203238000000000000ef1c000033250000051d000001a08601000000000002004b6d203239000000000000ef1c000033250000051e000001a08601000000000002004b6d203330000000000000ef1c000033250000061f000001a08601000000000002004b6d20333120c2b720323067206361726273000000000000ef1c0000332500000520000001a08601000000000002004b6d203332000000000000ef1c0000332500000521000001a08601000000000002004b6d203333000000000000ef1c0000332500000522000001a08601000000000002004b6d203334000000000000ef1c0000332500000523000001a08601000000000002004b6d203335000000000000ef1c0000332500000524000001a08601000000000002004b6d203336000000000000ef1c0000332500000525000001a08601000000000002004b6d203337000000000000ef1c0000332500000526000001a08601000000000002004b6d203338000000000000ef1c0000332500000527000001a08601000000000002004b6d203339000000000000ef1c0000332500000528000001a08601000000000002004b6d203430000000000000ef1c0000332500004700001b0009fe02840701000101000204861404860d0284000a07030100040486072900030500000000000000000200436f6f6c20446f776e0002000000003e1d"
+  }
+ ]
+}

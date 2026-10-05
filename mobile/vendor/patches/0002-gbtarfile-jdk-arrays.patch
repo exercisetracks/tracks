@@ -1,0 +1,17 @@
+diff --git a/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/util/GBTarFile.java b/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/util/GBTarFile.java
+index d2bd038..ce007a4 100644
+--- a/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/util/GBTarFile.java
++++ b/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/util/GBTarFile.java
+@@ -1,6 +1,11 @@
+ package nodomain.freeyourgadget.gadgetbridge.util;
+ 
+-import org.bouncycastle.shaded.util.Arrays;
++// PATCHED FOR TRACKS (vendor/patches/0002-gbtarfile-jdk-arrays.patch)
++// Upstream uses Bouncy Castle's Arrays here for a single copyOfRange,
++// and a *shaded* copy of it, which we would have to fake. java.util's
++// method is identical, so this drops a crypto library from the APK for
++// one array copy.
++import java.util.Arrays;
+ import org.slf4j.Logger;
+ import org.slf4j.LoggerFactory;
+ 

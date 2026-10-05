@@ -1,0 +1,96 @@
+diff --git a/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/FileType.java b/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/FileType.java
+index d382bd8..81f35b9 100644
+--- a/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/FileType.java
++++ b/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/FileType.java
+@@ -2,6 +2,10 @@ package nodomain.freeyourgadget.gadgetbridge.service.devices.garmin;
+ 
+ import androidx.annotation.Nullable;
+ 
++import java.util.Collections;
++import java.util.EnumSet;
++import java.util.Set;
++
+ public class FileType {
+     //common
+     //128/4: FIT_TYPE_4, -> garmin/activity
+@@ -34,6 +38,17 @@ public class FileType {
+         return fileType;
+     }
+ 
++    // ---- Tracks-local patch, not upstream: see vendor/gadgetbridge.manifest ----
++    // The watch's own name for this type ("FIT_TYPE_7", "ErrorShutdownReports")
++    // is parsed by SupportedFileTypesStatusMessage and then never read again
++    // upstream. It is the only place the numeric type/subtype pair is tied back
++    // to the names GarminDevice.xml uses, which is what a push has to reason
++    // about when deciding whether a file type is even accepted as input.
++    public String getGarminDeviceFileType() {
++        return garminDeviceFileType;
++    }
++    // ---- end Tracks-local patch ----
++
+     public enum FILETYPE {
+         // virtual/undocumented
+         DIRECTORY(0, 0), // root directory is hardcoded: fileIndex = 0x0000 / 0
+@@ -168,6 +183,62 @@ public class FileType {
+         public final boolean pull;
+         public final String typeName;
+ 
++        /**
++         * Types Tracks wants this sync to fetch on top of {@link #pull}.
++         *
++         * Courses and saved locations are marked non-pullable upstream, and for
++         * a fitness tracker that is right: they are things the user PUT on the
++         * watch, not recordings it produced, so a sync that dragged them back
++         * every time would move the same unchanging files forever.
++         *
++         * Tracks wants them exactly once — when the user asks what is already
++         * on their watch — so this is a deliberate, temporary widening rather
++         * than a change to the table. Set it, sync, clear it.
++         *
++         * Volatile because it is written from the app's own thread and read on
++         * the BLE callback thread that parses the directory.
++         */
++        private static volatile Set<FILETYPE> alsoPull = Collections.emptySet();
++
++        /**
++         * Types every sync fetches, on top of the table's own {@link #pull}.
++         *
++         * The training calendar is here rather than in {@link #alsoPull}
++         * because it answers a question every sync raises: the watch rewrites
++         * Schedule.fit whenever it ingests a schedule, so reading it back is the
++         * only direct evidence that a push became a calendar. Behind the
++         * user-triggered widening it was evidence nobody collected, because the
++         * run that pushes a schedule is a different button from the run that
++         * reads one.
++         *
++         * Deliberately NOT the {@code pull} flag on SCHEDULES itself. That flag
++         * is what {@code markSynced} tests before telling the watch it may
++         * reclaim a file, and a calendar the watch has been invited to discard
++         * is the one outcome worse than not reading it at all.
++         */
++        private static final Set<FILETYPE> ALWAYS_ALSO_PULL =
++                Collections.unmodifiableSet(EnumSet.of(SCHEDULES));
++
++        /** Ask for these in addition to the normally-pulled types. */
++        public static void setAlsoPull(final Set<FILETYPE> types) {
++            alsoPull = types == null || types.isEmpty()
++                    ? Collections.emptySet()
++                    : Collections.unmodifiableSet(EnumSet.copyOf(types));
++        }
++
++        /**
++         * Whether a sync should download this type.
++         *
++         * The one question every download filter asks, in one place — there are
++         * two file-sync protocols and three call sites, and having them disagree
++         * would mean a watch's courses arriving over one transport and not the
++         * other.
++         */
++        public static boolean shouldPull(@Nullable final FILETYPE type) {
++            return type != null
++                    && (type.pull || ALWAYS_ALSO_PULL.contains(type) || alsoPull.contains(type));
++        }
++
+         FILETYPE(final int type, final int subtype) {
+             this(type, subtype, false);
+         }

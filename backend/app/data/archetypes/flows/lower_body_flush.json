@@ -1,0 +1,9 @@
+{
+  "key": "lower_body_flush",
+  "name": "Lower-Body Flush",
+  "tagline": "Lengthen quads, hamstrings and calves after leg day.",
+  "contexts": ["post_workout", "weekly_mobility"],
+  "sports": null,
+  "themes": ["posterior", "hips"],
+  "closer_muscles": ["hamstrings", "glutes"]
+}

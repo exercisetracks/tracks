@@ -1,0 +1,65 @@
+syntax = "proto2";
+
+package garmin_vivomovehr;
+
+option java_package = "nodomain.freeyourgadget.gadgetbridge.proto.garmin";
+
+import "garmin/gdi_authentication_service.proto";
+import "garmin/gdi_device_status.proto";
+import "garmin/gdi_file_sync_service.proto";
+import "garmin/gdi_find_my_watch.proto";
+import "garmin/gdi_core.proto";
+import "garmin/gdi_http_service.proto";
+import "garmin/gdi_app_config_service.proto";
+import "garmin/gdi_installed_apps_service.proto";
+import "garmin/gdi_data_transfer_service.proto";
+import "garmin/gdi_sms_notification.proto";
+import "garmin/gdi_calendar_service.proto";
+import "garmin/gdi_settings_service.proto";
+import "garmin/gdi_notifications_service.proto";
+import "garmin/gdi_ecg_service.proto";
+import "garmin/gdi_explore_sync.proto";
+
+message Smart {
+    optional CalendarService calendar_service = 1;
+    optional HttpService http_service = 2;
+    optional AppConfigService app_config_service = 4;
+    optional InstalledAppsService installed_apps_service = 3;
+    optional DataTransferService data_transfer_service = 7;
+    optional DeviceStatusService device_status_service = 8;
+    optional FindMyWatchService find_my_watch_service = 12;
+    optional CoreService core_service = 13;
+    optional SmsNotificationService sms_notification_service = 16;
+    optional AuthenticationService authenticationService = 27;
+    optional ExploreSyncService explore_sync_service = 22;
+    optional EcgService ecg_service = 39;
+    optional SettingsService settings_service = 42;
+    optional FileSyncService file_sync_service = 43;
+    optional NotificationsService notifications_service = 49;
+    // Tracks-local, undocumented here and upstream. Garmin Connect brackets a
+    // training-calendar push with this service: field 3 {1:1} immediately before
+    // the push begins, and an empty field 6 about half a second before the
+    // schedule upload itself. Its meaning is unread; what is captured is that
+    // Connect sends both and its calendar builds. See AGENTS.md.
+    optional Service47 service_47 = 47;
+}
+
+// Service 47. Named for its field number because nothing names it: it is absent
+// from Gadgetbridge's protos and from every Garmin SDK we can see.
+message Service47 {
+    // Connect sends {1:0} twice early in a session and {1:1} immediately before
+    // pushing a training calendar. The watch answers field 4 with a status.
+    optional Service47SetFlag set_flag = 3;
+    optional Service47SetFlagResponse set_flag_response = 4;
+    // Sent with an empty payload, between the schedule's upload request and the
+    // bytes. Zero-length on the wire, so it carries its meaning in being sent.
+    optional bytes commit = 6;
+}
+
+message Service47SetFlag {
+    optional uint32 enabled = 1;
+}
+
+message Service47SetFlagResponse {
+    optional uint32 status = 1;
+}

@@ -1,0 +1,75 @@
+<?xml version="1.0"?>
+<!-- SPDX-FileCopyrightText: 2026 Hawk Fugagli -->
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<!--
+  Short on purpose. The screen is a 260-pixel circle, and the system builds
+  its own sentences around the app name ("Sync Tracks Music", which just
+  fits). Substitutions are $1$-style: that is what Lang.format takes.
+-->
+<strings>
+    <string id="AppName">Tracks Music</string>
+    <string id="Download">Download</string>
+    <string id="Play">Play</string>
+    <string id="SyncNow">Sync now</string>
+    <string id="SyncNowHint">Download what is ticked</string>
+    <string id="PickSongs">Pick songs</string>
+    <string id="GetMusic">Get music</string>
+    <string id="Albums">Albums</string>
+    <string id="RecentAlbums">Recent albums</string>
+    <string id="AllAlbums">All albums</string>
+    <string id="More">More…</string>
+    <string id="AllMusic">All music</string>
+    <string id="LikedSongs">Liked songs</string>
+    <string id="RecentlyPlayed">Recently played</string>
+    <string id="PickedSongs">Picked songs</string>
+    <string id="SongCount">$1$ songs</string>
+    <string id="OnWatch">on watch</string>
+    <string id="SongsReady">$1$ songs ready</string>
+    <string id="PlaylistsChosen">$1$ playlists chosen</string>
+    <string id="PressToChange">Press START</string>
+    <string id="PressToChoose">Press START</string>
+    <string id="AddMusicHint">Press START to add music</string>
+    <string id="NoMusic">No music yet</string>
+    <string id="NotSignedIn">Not signed in</string>
+    <string id="PressForAccount">Press START to sign in</string>
+    <string id="Account">Account</string>
+    <string id="SignInPhone">Sign in from phone</string>
+    <string id="SignInWatch">Sign in on watch</string>
+    <string id="LogOut">Log out</string>
+    <string id="LogOutConfirm">Log out and delete music?</string>
+    <string id="ServerAddress">Server address</string>
+    <string id="Username">Username</string>
+    <string id="Password">Password</string>
+    <string id="PressToType">Press START to type</string>
+    <string id="SignedIn">Signed in</string>
+    <string id="OldAccountKept">Old account kept</string>
+    <string id="OpenTracksMusic">Open Music in the Tracks app</string>
+    <string id="ThenTryAgain">then try again</string>
+    <string id="ErrLoginRejected">Login rejected</string>
+    <string id="CheckOverWifi">START checks over Wi-Fi</string>
+    <string id="AccountChanged">Account changed</string>
+    <string id="Loading">Loading…</string>
+    <string id="Pairing">Asking phone…</string>
+    <string id="LoggingIn">Signing in…</string>
+    <string id="PairNotReady">Add a music server in Tracks</string>
+    <string id="PairFailed">Phone not reachable</string>
+    <string id="ErrNoServer">No music server</string>
+    <string id="ErrNoPhone">Server not reachable. Phone connected?</string>
+    <string id="ErrNetwork">Server not reachable</string>
+    <string id="ErrAuth">Login rejected. Check Tracks</string>
+    <string id="ErrStorage">Watch storage full</string>
+    <string id="ErrServer">Server error</string>
+    <string id="ErrSkipped">$1$ playlists too big</string>
+    <string id="ErrSomeFailed">$1$ songs failed</string>
+    <string id="ShuffleOn">Shuffle on</string>
+    <string id="ShuffleOff">Shuffle off</string>
+    <string id="RepeatOff">Repeat off</string>
+    <string id="RepeatAll">Repeat all</string>
+    <string id="RepeatOne">Repeat one</string>
+    <string id="WholeAlbum">Whole album</string>
+    <string id="WholeAlbumOn">All songs picked</string>
+    <string id="Search">Search</string>
+    <string id="SearchHint">Find a song by name</string>
+    <string id="NoMatches">Nothing matched</string>
+    <string id="NoAlbums">No albums</string>
+</strings>

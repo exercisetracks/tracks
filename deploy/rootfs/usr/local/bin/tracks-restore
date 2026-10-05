@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+# SPDX-FileCopyrightText: 2026 Hawk Fugagli
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# Puts a tracks-backup back, replacing everything this install holds:
+#
+#   docker exec -i tracks tracks-restore < tracks-2026-10-01.tar.gz
+#
+# Meant for a fresh install (a new machine, a lost volume). On one that
+# already has accounts it would discard them, so there it refuses unless told
+# to with --replace — stdin is the backup, so it cannot ask. The backup's
+# secrets replace this install's, since its database is encrypted under them;
+# everyone signs in again afterwards.
+#
+# A backup from a newer Tracks than this one restores, but the backend will
+# refuse to start on it (main._schema_problem) until this install is updated.
+set -euo pipefail
+# A password the operator passes with -e outlives any restore (env.sh lets it
+# win), so the role must end up with that one; captured before env.sh fills
+# the variable from the current file.
+given_pw="${POSTGRES_PASSWORD-}"
+# shellcheck source=/usr/local/lib/tracks/env.sh
+. /usr/local/lib/tracks/env.sh
+
+if [ -t 0 ]; then
+    echo "tracks-restore reads a backup from its input:" >&2
+    echo "  docker exec -i tracks tracks-restore < tracks-YYYY-MM-DD.tar.gz" >&2
+    exit 1
+fi
+
+psql=("$PGBIN/psql" -h /run/postgresql -U tracks -v ON_ERROR_STOP=1 -q)
+accounts="$("${psql[@]}" -d tracks -tAc "SELECT CASE WHEN to_regclass('users') IS NULL THEN 0 ELSE (SELECT count(*) FROM users) END" 2>/dev/null || echo 0)"
+if [ "${accounts:-0}" != 0 ] && [ "${1:-}" != --replace ]; then
+    echo "[tracks-restore] this install already has $accounts account(s); restoring would delete them." >&2
+    echo "  To replace them: docker exec -i tracks tracks-restore --replace < backup.tar.gz" >&2
+    exit 1
+fi
+
+work="$(mktemp -d)"
+trap 'rm -rf "$work"' EXIT
+chmod 700 "$work"
+tar -C "$work" -xzf -
+for f in tracks.sql secrets.env fit-files; do
+    [ -e "$work/$f" ] || { echo "[tracks-restore] not a tracks-backup: $f is missing" >&2; exit 1; }
+done
+echo "[tracks-restore] backup of Tracks $(cat "$work/VERSION" 2>/dev/null || echo '?')"
+
+# Stop everything that holds a connection or a cached key; the database stays up.
+supervisorctl -c /etc/tracks/supervisord.conf stop garmin-sync web worker backend redis >/dev/null 2>&1 || true
+
+"${psql[@]}" -d postgres -c "DROP DATABASE IF EXISTS tracks WITH (FORCE)"
+"${psql[@]}" -d postgres -c "CREATE DATABASE tracks"
+"${psql[@]}" -d tracks -f "$work/tracks.sql" >/dev/null
+
+install -m 600 -o root -g root "$work/secrets.env" /data/secrets.env
+# The role's password is one of the secrets, so it follows them: the backup's,
+# unless the operator pins their own (see given_pw above).
+new_pw="${given_pw:-$(sed -n 's/^POSTGRES_PASSWORD=//p' /data/secrets.env)}"
+"${psql[@]}" -d postgres -c "ALTER ROLE tracks PASSWORD '${new_pw//\'/\'\'}'"
+
+rm -rf /data/fit-files
+cp -a "$work/fit-files" /data/fit-files
+chown -R "$RUN_UID:$RUN_GID" /data/fit-files
+
+# Each service reads the secrets as it starts (env.sh), so a restart is enough.
+supervisorctl -c /etc/tracks/supervisord.conf start redis backend worker web >/dev/null
+supervisorctl -c /etc/tracks/supervisord.conf start garmin-sync >/dev/null 2>&1 || true
+echo "[tracks-restore] restored. Sign in again in the browser and on the phone."

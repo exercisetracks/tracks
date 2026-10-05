@@ -1,0 +1,11 @@
+# Prevent GVFS / KDE automounter from claiming Garmin USB devices so that
+# the garmin-sync container can open them via libmtp directly.
+#
+# Install:
+#   sudo cp 99-garmin-nomount.rules /etc/udev/rules.d/
+#   sudo udevadm control --reload-rules
+#   sudo udevadm trigger --subsystem-match=usb
+#
+# Then unplug and replug the watch.
+
+SUBSYSTEM=="usb", ATTRS{idVendor}=="091e", ENV{GVFS_IGNORE}="1"

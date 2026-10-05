@@ -1,0 +1,10 @@
+# Docker matches these against the context root only, so anything that can
+# appear in a subdirectory needs `**/`. Without it every nested __pycache__ on
+# the build machine shipped in the image — bytecode compiled from deleted
+# source, carrying the builder's absolute paths.
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/.pytest_cache
+tests
+**/*.log

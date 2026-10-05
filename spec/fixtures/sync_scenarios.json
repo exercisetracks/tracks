@@ -1,0 +1,1077 @@
+{
+ "_comment": "Generated once from hand-written expectations; this file IS the specification. Edit it deliberately. See spec/sync.yaml.",
+ "hlc": [
+  {
+   "name": "a_first_tick_starts_at_now",
+   "op": "tick",
+   "last": null,
+   "node": "000000000000000a",
+   "now": 1000,
+   "expect": "0000000000001000-0000-000000000000000a"
+  },
+  {
+   "name": "two_ticks_in_one_millisecond_are_still_ordered",
+   "op": "tick",
+   "last": "0000000000001000-0000-000000000000000a",
+   "node": "000000000000000a",
+   "now": 1000,
+   "expect": "0000000000001000-0001-000000000000000a"
+  },
+  {
+   "name": "a_clock_that_went_backwards_never_moves_the_stamp_back",
+   "op": "tick",
+   "last": "0000000000005000-0003-000000000000000a",
+   "node": "000000000000000a",
+   "now": 1000,
+   "expect": "0000000000005000-0004-000000000000000a"
+  },
+  {
+   "name": "receiving_a_stamp_from_the_future_moves_past_it",
+   "op": "receive",
+   "last": "0000000000001000-0000-000000000000000a",
+   "node": "000000000000000a",
+   "remote": "0000000000003000-0005-000000000000000b",
+   "now": 2000,
+   "expect": "0000000000003000-0006-000000000000000a"
+  },
+  {
+   "name": "equal_walls_take_the_larger_counter_plus_one",
+   "op": "receive",
+   "last": "0000000000003000-0002-000000000000000a",
+   "node": "000000000000000a",
+   "remote": "0000000000003000-0005-000000000000000b",
+   "now": 1000,
+   "expect": "0000000000003000-0006-000000000000000a"
+  },
+  {
+   "name": "wall_time_ahead_of_both_resets_the_counter",
+   "op": "receive",
+   "last": "0000000000001000-0009-000000000000000a",
+   "node": "000000000000000a",
+   "remote": "0000000000001500-0009-000000000000000b",
+   "now": 4000,
+   "expect": "0000000000004000-0000-000000000000000a"
+  },
+  {
+   "name": "the_local_clock_ahead_of_both_increments",
+   "op": "receive",
+   "last": "0000000000005000-0001-000000000000000a",
+   "node": "000000000000000a",
+   "remote": "0000000000003000-0007-000000000000000b",
+   "now": 2000,
+   "expect": "0000000000005000-0002-000000000000000a"
+  },
+  {
+   "name": "a_stamp_more_than_a_day_ahead_is_refused",
+   "op": "receive",
+   "last": "0000000000001000-0000-000000000000000a",
+   "node": "000000000000000a",
+   "remote": "0000000086401001-0000-000000000000000b",
+   "now": 1000,
+   "expect": "refused"
+  },
+  {
+   "name": "a_stamp_exactly_a_day_ahead_is_accepted",
+   "op": "receive",
+   "last": "0000000000001000-0000-000000000000000a",
+   "node": "000000000000000a",
+   "remote": "0000000086401000-0000-000000000000000b",
+   "now": 1000,
+   "expect": "0000000086401000-0001-000000000000000a"
+  },
+  {
+   "name": "the_format_is_fixed_width_so_strings_sort_as_clocks",
+   "op": "format",
+   "wall_ms": 1727190000000,
+   "counter": 26,
+   "node": "a1b2c3d4e5f60718",
+   "expect": "0001727190000000-001a-a1b2c3d4e5f60718"
+  },
+  {
+   "name": "a_pulled_stamp_far_ahead_is_accepted_by_a_client",
+   "why": "The server already vetted it; refusing would stall a phone with a wrong clock forever.",
+   "op": "receive_pulled",
+   "last": "0000000000001000-0000-000000000000000a",
+   "node": "000000000000000a",
+   "remote": "0000000259201000-0000-000000000000000b",
+   "now": 1000,
+   "expect": "0000000259201000-0001-000000000000000a"
+  }
+ ],
+ "uids": [
+  {
+   "key": "settings",
+   "expect": "44d16814-e84a-5a9d-b137-79bcceb0ef05"
+  },
+  {
+   "key": "device:3345678901",
+   "expect": "60f155c1-f30b-547b-9ec6-4598e68729d1"
+  },
+  {
+   "key": "daily:2026-09-24",
+   "expect": "9c489c7e-5d06-5060-8fe7-ea9454f80cce"
+  },
+  {
+   "key": "activity:3345678901:1727190000",
+   "expect": "f08941e1-e72e-5e41-ae1a-70bb7cb22db3"
+  },
+  {
+   "key": "activity:sha256:abababababababababababababababababababababababababababababababab",
+   "expect": "7237cdb4-91ca-5cf6-a689-47cfd960ae02"
+  },
+  {
+   "key": "orm:Barbell Back Squat",
+   "expect": "9ab96cbd-283c-5d52-a518-0694999f9826"
+  },
+  {
+   "key": "plan:01922a8c-0000-7000-8000-000000000001",
+   "expect": "4cb87548-206f-53d4-9ffc-7a70052cfe0d"
+  }
+ ],
+ "merge": [
+  {
+   "name": "a_write_to_an_unknown_uid_creates_the_row",
+   "why": "A create is just writes to a uid nobody has seen.",
+   "before": {},
+   "change": {
+    "entity": "waypoint",
+    "uid": "01922a8c-0000-7000-8000-000000000001",
+    "fields": {
+     "name": [
+      "Camp 2",
+      "0000000000001000-0000-000000000000000a"
+     ]
+    }
+   },
+   "status": "applied",
+   "refused": {},
+   "after": {
+    "waypoint/01922a8c-0000-7000-8000-000000000001": {
+     "fields": {
+      "name": "Camp 2"
+     },
+     "clock": {
+      "name": "0000000000001000-0000-000000000000000a"
+     },
+     "deleted": null
+    }
+   }
+  },
+  {
+   "name": "a_newer_edit_wins",
+   "why": "",
+   "before": {
+    "waypoint/01922a8c-0000-7000-8000-000000000001": {
+     "fields": {
+      "name": "X"
+     },
+     "clock": {
+      "name": "0000000000001000-0000-000000000000000a"
+     },
+     "deleted": null
+    }
+   },
+   "change": {
+    "entity": "waypoint",
+    "uid": "01922a8c-0000-7000-8000-000000000001",
+    "fields": {
+     "name": [
+      "Y",
+      "0000000000002000-0000-000000000000000a"
+     ]
+    }
+   },
+   "status": "applied",
+   "refused": {},
+   "after": {
+    "waypoint/01922a8c-0000-7000-8000-000000000001": {
+     "fields": {
+      "name": "Y"
+     },
+     "clock": {
+      "name": "0000000000002000-0000-000000000000000a"
+     },
+     "deleted": null
+    }
+   }
+  },
+  {
+   "name": "an_older_edit_loses",
+   "why": "An edit queued on a plane must not clobber one made since.",
+   "before": {
+    "waypoint/01922a8c-0000-7000-8000-000000000001": {
+     "fields": {
+      "name": "Y"
+     },
+     "clock": {
+      "name": "0000000000002000-0000-000000000000000a"
+     },
+     "deleted": null
+    }
+   },
+   "change": {
+    "entity": "waypoint",
+    "uid": "01922a8c-0000-7000-8000-000000000001",
+    "fields": {
+     "name": [
+      "X",
+      "0000000000001000-0000-000000000000000a"
+     ]
+    }
+   },
+   "status": "stale",
+   "refused": {
+    "name": "stale"
+   },
+   "after": {
+    "waypoint/01922a8c-0000-7000-8000-000000000001": {
+     "fields": {
+      "name": "Y"
+     },
+     "clock": {
+      "name": "0000000000002000-0000-000000000000000a"
+     },
+     "deleted": null
+    }
+   }
+  },
+  {
+   "name": "replaying_the_same_edit_changes_nothing",
+   "why": "Ties lose, so a push retried after a dropped connection is harmless.",
+   "before": {
+    "waypoint/01922a8c-0000-7000-8000-000000000001": {
+     "fields": {
+      "name": "X"
+     },
+     "clock": {
+      "name": "0000000000001000-0000-000000000000000a"
+     },
+     "deleted": null
+    }
+   },
+   "change": {
+    "entity": "waypoint",
+    "uid": "01922a8c-0000-7000-8000-000000000001",
+    "fields": {
+     "name": [
+      "X",
+      "0000000000001000-0000-000000000000000a"
+     ]
+    }
+   },
+   "status": "stale",
+   "refused": {
+    "name": "stale"
+   },
+   "after": {
+    "waypoint/01922a8c-0000-7000-8000-000000000001": {
+     "fields": {
+      "name": "X"
+     },
+     "clock": {
+      "name": "0000000000001000-0000-000000000000000a"
+     },
+     "deleted": null
+    }
+   }
+  },
+  {
+   "name": "edits_to_different_fields_both_survive",
+   "why": "A rename on one phone and a completion tick on another are not in conflict.",
+   "before": {
+    "planned_workout/01922a8c-0000-7000-8000-000000000001": {
+     "fields": {
+      "title": "A",
+      "is_complete": false
+     },
+     "clock": {
+      "title": "0000000000002000-0000-000000000000000a",
+      "is_complete": "0000000000001000-0000-000000000000000a"
+     },
+     "deleted": null
+    }
+   },
+   "change": {
+    "entity": "planned_workout",
+    "uid": "01922a8c-0000-7000-8000-000000000001",
+    "fields": {
+     "title": [
+      "B",
+      "0000000000001000-0000-000000000000000a"
+     ],
+     "is_complete": [
+      true,
+      "0000000000003000-0000-000000000000000b"
+     ]
+    }
+   },
+   "status": "partial",
+   "refused": {
+    "title": "stale"
+   },
+   "after": {
+    "planned_workout/01922a8c-0000-7000-8000-000000000001": {
+     "fields": {
+      "title": "A",
+      "is_complete": true
+     },
+     "clock": {
+      "title": "0000000000002000-0000-000000000000000a",
+      "is_complete": "0000000000003000-0000-000000000000000b"
+     },
+     "deleted": null
+    }
+   }
+  },
+  {
+   "name": "clearing_a_field_is_a_write_not_an_absence",
+   "why": "Null is a value; otherwise clearing a description could never sync.",
+   "before": {
+    "injury/01922a8c-0000-7000-8000-000000000001": {
+     "fields": {
+      "notes": "x"
+     },
+     "clock": {
+      "notes": "0000000000001000-0000-000000000000000a"
+     },
+     "deleted": null
+    }
+   },
+   "change": {
+    "entity": "injury",
+    "uid": "01922a8c-0000-7000-8000-000000000001",
+    "fields": {
+     "notes": [
+      null,
+      "0000000000002000-0000-000000000000000a"
+     ]
+    }
+   },
+   "status": "applied",
+   "refused": {},
+   "after": {
+    "injury/01922a8c-0000-7000-8000-000000000001": {
+     "fields": {
+      "notes": null
+     },
+     "clock": {
+      "notes": "0000000000002000-0000-000000000000000a"
+     },
+     "deleted": null
+    }
+   }
+  },
+  {
+   "name": "a_field_not_in_the_contract_is_refused",
+   "why": "A client newer than the server must not write columns the server does not sync.",
+   "before": {},
+   "change": {
+    "entity": "waypoint",
+    "uid": "01922a8c-0000-7000-8000-000000000001",
+    "fields": {
+     "name": [
+      "P",
+      "0000000000001000-0000-000000000000000a"
+     ],
+     "secret": [
+      1,
+      "0000000000001000-0000-000000000000000a"
+     ]
+    }
+   },
+   "status": "partial",
+   "refused": {
+    "secret": "unknown"
+   },
+   "after": {
+    "waypoint/01922a8c-0000-7000-8000-000000000001": {
+     "fields": {
+      "name": "P"
+     },
+     "clock": {
+      "name": "0000000000001000-0000-000000000000000a"
+     },
+     "deleted": null
+    }
+   }
+  },
+  {
+   "name": "a_delete_clears_the_row_to_a_tombstone",
+   "why": "A deleted row's old values are irrelevant, and keeping them would let replicas disagree about them.",
+   "before": {
+    "waypoint/01922a8c-0000-7000-8000-000000000001": {
+     "fields": {
+      "name": "X"
+     },
+     "clock": {
+      "name": "0000000000001000-0000-000000000000000a"
+     },
+     "deleted": null
+    }
+   },
+   "change": {
+    "entity": "waypoint",
+    "uid": "01922a8c-0000-7000-8000-000000000001",
+    "deleted": "0000000000002000-0000-000000000000000a"
+   },
+   "status": "applied",
+   "refused": {},
+   "after": {
+    "waypoint/01922a8c-0000-7000-8000-000000000001": {
+     "fields": {},
+     "clock": {},
+     "deleted": "0000000000002000-0000-000000000000000a"
+    }
+   }
+  },
+  {
+   "name": "an_edit_after_a_delete_does_not_resurrect",
+   "why": "Delete wins: someone who removed a thing does not expect it back.",
+   "before": {
+    "waypoint/01922a8c-0000-7000-8000-000000000001": {
+     "fields": {},
+     "clock": {},
+     "deleted": "0000000000002000-0000-000000000000000a"
+    }
+   },
+   "change": {
+    "entity": "waypoint",
+    "uid": "01922a8c-0000-7000-8000-000000000001",
+    "fields": {
+     "name": [
+      "Z",
+      "0000000000005000-0000-000000000000000b"
+     ]
+    }
+   },
+   "status": "stale",
+   "refused": {
+    "name": "deleted"
+   },
+   "after": {
+    "waypoint/01922a8c-0000-7000-8000-000000000001": {
+     "fields": {},
+     "clock": {},
+     "deleted": "0000000000002000-0000-000000000000000a"
+    }
+   }
+  },
+  {
+   "name": "a_delete_arriving_before_its_create_still_wins",
+   "why": "Two phones can deliver in either order.",
+   "before": {},
+   "change": {
+    "entity": "waypoint",
+    "uid": "01922a8c-0000-7000-8000-000000000001",
+    "deleted": "0000000000002000-0000-000000000000000a"
+   },
+   "status": "applied",
+   "refused": {},
+   "after": {
+    "waypoint/01922a8c-0000-7000-8000-000000000001": {
+     "fields": {},
+     "clock": {},
+     "deleted": "0000000000002000-0000-000000000000000a"
+    }
+   }
+  },
+  {
+   "name": "the_later_delete_stamp_is_kept",
+   "why": "Replicas must agree on the tombstone itself, not only that it exists.",
+   "before": {
+    "waypoint/01922a8c-0000-7000-8000-000000000001": {
+     "fields": {},
+     "clock": {},
+     "deleted": "0000000000002000-0000-000000000000000a"
+    }
+   },
+   "change": {
+    "entity": "waypoint",
+    "uid": "01922a8c-0000-7000-8000-000000000001",
+    "deleted": "0000000000004000-0000-000000000000000a"
+   },
+   "status": "applied",
+   "refused": {},
+   "after": {
+    "waypoint/01922a8c-0000-7000-8000-000000000001": {
+     "fields": {},
+     "clock": {},
+     "deleted": "0000000000004000-0000-000000000000000a"
+    }
+   }
+  },
+  {
+   "name": "an_older_delete_stamp_changes_nothing",
+   "why": "",
+   "before": {
+    "waypoint/01922a8c-0000-7000-8000-000000000001": {
+     "fields": {},
+     "clock": {},
+     "deleted": "0000000000004000-0000-000000000000000a"
+    }
+   },
+   "change": {
+    "entity": "waypoint",
+    "uid": "01922a8c-0000-7000-8000-000000000001",
+    "deleted": "0000000000002000-0000-000000000000000a"
+   },
+   "status": "stale",
+   "refused": {},
+   "after": {
+    "waypoint/01922a8c-0000-7000-8000-000000000001": {
+     "fields": {},
+     "clock": {},
+     "deleted": "0000000000004000-0000-000000000000000a"
+    }
+   }
+  },
+  {
+   "name": "fields_and_delete_in_one_change_leave_a_tombstone",
+   "why": "",
+   "before": {},
+   "change": {
+    "entity": "waypoint",
+    "uid": "01922a8c-0000-7000-8000-000000000001",
+    "fields": {
+     "name": [
+      "X",
+      "0000000000001000-0000-000000000000000a"
+     ]
+    },
+    "deleted": "0000000000002000-0000-000000000000000a"
+   },
+   "status": "applied",
+   "refused": {},
+   "after": {
+    "waypoint/01922a8c-0000-7000-8000-000000000001": {
+     "fields": {},
+     "clock": {},
+     "deleted": "0000000000002000-0000-000000000000000a"
+    }
+   }
+  },
+  {
+   "name": "deleting_a_parent_deletes_its_children",
+   "why": "A flow removed on one phone must not leave its stretches orphaned on another.",
+   "before": {
+    "flow/01922a8c-0000-7000-8000-000000000001": {
+     "fields": {
+      "name": "Hips"
+     },
+     "clock": {
+      "name": "0000000000001000-0000-000000000000000a"
+     },
+     "deleted": null
+    },
+    "flow_stretch/01922a8c-0000-7000-8000-000000000002": {
+     "fields": {
+      "flow_uid": "01922a8c-0000-7000-8000-000000000001",
+      "order": "V"
+     },
+     "clock": {
+      "flow_uid": "0000000000001000-0000-000000000000000a",
+      "order": "0000000000001000-0000-000000000000000a"
+     },
+     "deleted": null
+    },
+    "flow_stretch/01922a8c-0000-7000-8000-000000000003": {
+     "fields": {
+      "flow_uid": "01922a8c-0000-7000-8000-000000000001",
+      "order": "k"
+     },
+     "clock": {
+      "flow_uid": "0000000000001000-0000-000000000000000a",
+      "order": "0000000000001000-0000-000000000000000a"
+     },
+     "deleted": null
+    }
+   },
+   "change": {
+    "entity": "flow",
+    "uid": "01922a8c-0000-7000-8000-000000000001",
+    "deleted": "0000000000003000-0000-000000000000000b"
+   },
+   "status": "applied",
+   "refused": {},
+   "after": {
+    "flow/01922a8c-0000-7000-8000-000000000001": {
+     "fields": {},
+     "clock": {},
+     "deleted": "0000000000003000-0000-000000000000000b"
+    },
+    "flow_stretch/01922a8c-0000-7000-8000-000000000002": {
+     "fields": {},
+     "clock": {},
+     "deleted": "0000000000003000-0000-000000000000000b"
+    },
+    "flow_stretch/01922a8c-0000-7000-8000-000000000003": {
+     "fields": {},
+     "clock": {},
+     "deleted": "0000000000003000-0000-000000000000000b"
+    }
+   }
+  },
+  {
+   "name": "a_child_may_arrive_before_its_parent",
+   "why": "References are kept unresolved rather than refused.",
+   "before": {},
+   "change": {
+    "entity": "flow_stretch",
+    "uid": "01922a8c-0000-7000-8000-000000000002",
+    "fields": {
+     "flow_uid": [
+      "01922a8c-0000-7000-8000-000000000001",
+      "0000000000001000-0000-000000000000000a"
+     ],
+     "order": [
+      "V",
+      "0000000000001000-0000-000000000000000a"
+     ]
+    }
+   },
+   "status": "applied",
+   "refused": {},
+   "after": {
+    "flow_stretch/01922a8c-0000-7000-8000-000000000002": {
+     "fields": {
+      "flow_uid": "01922a8c-0000-7000-8000-000000000001",
+      "order": "V"
+     },
+     "clock": {
+      "flow_uid": "0000000000001000-0000-000000000000000a",
+      "order": "0000000000001000-0000-000000000000000a"
+     },
+     "deleted": null
+    }
+   }
+  },
+  {
+   "name": "a_log_entry_cannot_be_edited",
+   "why": "A dose taken is a fact; changing it is a retraction and a new entry.",
+   "before": {
+    "medication_log/01922a8c-0000-7000-8000-000000000001": {
+     "fields": {
+      "status": "taken"
+     },
+     "clock": {
+      "status": "0000000000001000-0000-000000000000000a"
+     },
+     "deleted": null
+    }
+   },
+   "change": {
+    "entity": "medication_log",
+    "uid": "01922a8c-0000-7000-8000-000000000001",
+    "fields": {
+     "status": [
+      "skipped",
+      "0000000000002000-0000-000000000000000a"
+     ]
+    }
+   },
+   "status": "stale",
+   "refused": {
+    "status": "immutable"
+   },
+   "after": {
+    "medication_log/01922a8c-0000-7000-8000-000000000001": {
+     "fields": {
+      "status": "taken"
+     },
+     "clock": {
+      "status": "0000000000001000-0000-000000000000000a"
+     },
+     "deleted": null
+    }
+   }
+  },
+  {
+   "name": "a_log_entry_can_be_retracted",
+   "why": "",
+   "before": {
+    "medication_log/01922a8c-0000-7000-8000-000000000001": {
+     "fields": {
+      "status": "taken"
+     },
+     "clock": {
+      "status": "0000000000001000-0000-000000000000000a"
+     },
+     "deleted": null
+    }
+   },
+   "change": {
+    "entity": "medication_log",
+    "uid": "01922a8c-0000-7000-8000-000000000001",
+    "deleted": "0000000000002000-0000-000000000000000a"
+   },
+   "status": "applied",
+   "refused": {},
+   "after": {
+    "medication_log/01922a8c-0000-7000-8000-000000000001": {
+     "fields": {},
+     "clock": {},
+     "deleted": "0000000000002000-0000-000000000000000a"
+    }
+   }
+  },
+  {
+   "name": "a_readonly_entity_cannot_be_pushed",
+   "why": "Only the server writes LLM output.",
+   "before": {},
+   "change": {
+    "entity": "coaching_note",
+    "uid": "01922a8c-0000-7000-8000-000000000001",
+    "fields": {
+     "ai_response": [
+      "x",
+      "0000000000001000-0000-000000000000000a"
+     ]
+    }
+   },
+   "status": "rejected",
+   "refused": {},
+   "after": {}
+  },
+  {
+   "name": "a_child_arriving_after_its_parent_was_deleted_is_deleted_too",
+   "why": "Without this, a stretch added on one phone outlives the flow another phone deleted, and replicas diverge.",
+   "before": {
+    "flow/01922a8c-0000-7000-8000-000000000001": {
+     "fields": {},
+     "clock": {},
+     "deleted": "0000000000003000-0000-000000000000000b"
+    }
+   },
+   "change": {
+    "entity": "flow_stretch",
+    "uid": "01922a8c-0000-7000-8000-000000000002",
+    "fields": {
+     "flow_uid": [
+      "01922a8c-0000-7000-8000-000000000001",
+      "0000000000005000-0000-000000000000000b"
+     ],
+     "order": [
+      "V",
+      "0000000000005000-0000-000000000000000b"
+     ]
+    }
+   },
+   "status": "applied",
+   "refused": {},
+   "after": {
+    "flow/01922a8c-0000-7000-8000-000000000001": {
+     "fields": {},
+     "clock": {},
+     "deleted": "0000000000003000-0000-000000000000000b"
+    },
+    "flow_stretch/01922a8c-0000-7000-8000-000000000002": {
+     "fields": {},
+     "clock": {},
+     "deleted": "0000000000003000-0000-000000000000000b"
+    }
+   }
+  },
+  {
+   "name": "a_child_cannot_move_to_another_parent",
+   "why": "A move racing a delete of the old parent cannot converge; moving is delete plus create.",
+   "before": {
+    "flow_stretch/01922a8c-0000-7000-8000-000000000002": {
+     "fields": {
+      "flow_uid": "01922a8c-0000-7000-8000-000000000001",
+      "order": "V"
+     },
+     "clock": {
+      "flow_uid": "0000000000001000-0000-000000000000000a",
+      "order": "0000000000001000-0000-000000000000000a"
+     },
+     "deleted": null
+    }
+   },
+   "change": {
+    "entity": "flow_stretch",
+    "uid": "01922a8c-0000-7000-8000-000000000002",
+    "fields": {
+     "flow_uid": [
+      "01922a8c-0000-7000-8000-000000000003",
+      "0000000000002000-0000-000000000000000a"
+     ]
+    }
+   },
+   "status": "stale",
+   "refused": {
+    "flow_uid": "immutable"
+   },
+   "after": {
+    "flow_stretch/01922a8c-0000-7000-8000-000000000002": {
+     "fields": {
+      "flow_uid": "01922a8c-0000-7000-8000-000000000001",
+      "order": "V"
+     },
+     "clock": {
+      "flow_uid": "0000000000001000-0000-000000000000000a",
+      "order": "0000000000001000-0000-000000000000000a"
+     },
+     "deleted": null
+    }
+   }
+  },
+  {
+   "name": "replaying_a_log_entry_is_stale_not_immutable",
+   "why": "A retried push of a dose must look like a replay, not an attempted edit.",
+   "before": {
+    "medication_log/01922a8c-0000-7000-8000-000000000001": {
+     "fields": {
+      "status": "taken"
+     },
+     "clock": {
+      "status": "0000000000001000-0000-000000000000000a"
+     },
+     "deleted": null
+    }
+   },
+   "change": {
+    "entity": "medication_log",
+    "uid": "01922a8c-0000-7000-8000-000000000001",
+    "fields": {
+     "status": [
+      "taken",
+      "0000000000002000-0000-000000000000000a"
+     ]
+    }
+   },
+   "status": "stale",
+   "refused": {
+    "status": "stale"
+   },
+   "after": {
+    "medication_log/01922a8c-0000-7000-8000-000000000001": {
+     "fields": {
+      "status": "taken"
+     },
+     "clock": {
+      "status": "0000000000001000-0000-000000000000000a"
+     },
+     "deleted": null
+    }
+   }
+  },
+  {
+   "name": "deleting_a_plan_deletes_its_generated_workouts_but_not_hand_added_ones",
+   "why": "A hand-added workout has no plan, so nothing that happens to a plan may touch it.",
+   "before": {
+    "plan/01922a8c-0000-7000-8000-000000000001": {
+     "fields": {
+      "generation": "g1"
+     },
+     "clock": {
+      "generation": "0000000000001000-0000-000000000000000a"
+     },
+     "deleted": null
+    },
+    "planned_workout/01922a8c-0000-7000-8000-000000000002": {
+     "fields": {
+      "plan_uid": "01922a8c-0000-7000-8000-000000000001",
+      "title": "Tempo"
+     },
+     "clock": {
+      "plan_uid": "0000000000001000-0000-000000000000000a",
+      "title": "0000000000001000-0000-000000000000000a"
+     },
+     "deleted": null
+    },
+    "planned_workout/01922a8c-0000-7000-8000-000000000003": {
+     "fields": {
+      "plan_uid": null,
+      "title": "Mine"
+     },
+     "clock": {
+      "plan_uid": "0000000000001000-0000-000000000000000a",
+      "title": "0000000000001000-0000-000000000000000a"
+     },
+     "deleted": null
+    }
+   },
+   "change": {
+    "entity": "plan",
+    "uid": "01922a8c-0000-7000-8000-000000000001",
+    "deleted": "0000000000002000-0000-000000000000000a"
+   },
+   "status": "applied",
+   "refused": {},
+   "after": {
+    "plan/01922a8c-0000-7000-8000-000000000001": {
+     "fields": {},
+     "clock": {},
+     "deleted": "0000000000002000-0000-000000000000000a"
+    },
+    "planned_workout/01922a8c-0000-7000-8000-000000000002": {
+     "fields": {},
+     "clock": {},
+     "deleted": "0000000000002000-0000-000000000000000a"
+    },
+    "planned_workout/01922a8c-0000-7000-8000-000000000003": {
+     "fields": {
+      "plan_uid": null,
+      "title": "Mine"
+     },
+     "clock": {
+      "plan_uid": "0000000000001000-0000-000000000000000a",
+      "title": "0000000000001000-0000-000000000000000a"
+     },
+     "deleted": null
+    }
+   }
+  }
+ ],
+ "derived": [
+  {
+   "name": "the_most_recently_activated_goal_is_the_active_one",
+   "why": "Two phones can each activate a different goal offline; neither write is refused.",
+   "rule": "active_goal",
+   "rows": {
+    "goal/01922a8c-0000-7000-8000-000000000001": {
+     "fields": {
+      "is_active": true
+     },
+     "clock": {
+      "is_active": "0000000000002000-0000-000000000000000a"
+     },
+     "deleted": null
+    },
+    "goal/01922a8c-0000-7000-8000-000000000002": {
+     "fields": {
+      "is_active": true
+     },
+     "clock": {
+      "is_active": "0000000000003000-0000-000000000000000b"
+     },
+     "deleted": null
+    },
+    "goal/01922a8c-0000-7000-8000-000000000003": {
+     "fields": {
+      "is_active": false
+     },
+     "clock": {
+      "is_active": "0000000000004000-0000-000000000000000a"
+     },
+     "deleted": null
+    }
+   },
+   "expect": "01922a8c-0000-7000-8000-000000000002"
+  },
+  {
+   "name": "workouts_from_an_old_generation_are_dead",
+   "why": "Two phones regenerating offline converge on one set of workouts, not two; hand-added workouts are untouched.",
+   "rule": "dead_workouts",
+   "rows": {
+    "plan/01922a8c-0000-7000-8000-000000000001": {
+     "fields": {
+      "generation": "g2"
+     },
+     "clock": {
+      "generation": "0000000000003000-0000-000000000000000b"
+     },
+     "deleted": null
+    },
+    "planned_workout/01922a8c-0000-7000-8000-000000000002": {
+     "fields": {
+      "plan_uid": "01922a8c-0000-7000-8000-000000000001",
+      "generation": "g1"
+     },
+     "clock": {
+      "plan_uid": "0000000000001000-0000-000000000000000a",
+      "generation": "0000000000001000-0000-000000000000000a"
+     },
+     "deleted": null
+    },
+    "planned_workout/01922a8c-0000-7000-8000-000000000003": {
+     "fields": {
+      "plan_uid": null,
+      "generation": null
+     },
+     "clock": {
+      "plan_uid": "0000000000001000-0000-000000000000000a",
+      "generation": "0000000000001000-0000-000000000000000a"
+     },
+     "deleted": null
+    }
+   },
+   "expect": [
+    "01922a8c-0000-7000-8000-000000000002"
+   ]
+  },
+  {
+   "name": "a_new_generations_workouts_arriving_before_the_plan_are_not_dead",
+   "why": "Delete wins, so calling them dead would destroy the regeneration that just happened on another phone.",
+   "rule": "dead_workouts",
+   "rows": {
+    "plan/01922a8c-0000-7000-8000-000000000001": {
+     "fields": {
+      "generation": "g1"
+     },
+     "clock": {
+      "generation": "0000000000001000-0000-000000000000000a"
+     },
+     "deleted": null
+    },
+    "planned_workout/01922a8c-0000-7000-8000-000000000002": {
+     "fields": {
+      "plan_uid": "01922a8c-0000-7000-8000-000000000001",
+      "generation": "g2"
+     },
+     "clock": {
+      "plan_uid": "0000000000003000-0000-000000000000000b",
+      "generation": "0000000000003000-0000-000000000000000b"
+     },
+     "deleted": null
+    }
+   },
+   "expect": []
+  },
+  {
+   "name": "a_workout_the_user_moved_is_never_dead",
+   "why": "Regeneration keeps moved workouts on their day; one moved while another phone regenerated offline must not be reaped as the old generation's leftover.",
+   "rule": "dead_workouts",
+   "rows": {
+    "plan/01922a8c-0000-7000-8000-000000000001": {
+     "fields": {
+      "generation": "g2"
+     },
+     "clock": {
+      "generation": "0000000000003000-0000-000000000000000b"
+     },
+     "deleted": null
+    },
+    "planned_workout/01922a8c-0000-7000-8000-000000000002": {
+     "fields": {
+      "plan_uid": "01922a8c-0000-7000-8000-000000000001",
+      "generation": "g1",
+      "moved_by_user": true
+     },
+     "clock": {
+      "plan_uid": "0000000000001000-0000-000000000000000a",
+      "generation": "0000000000001000-0000-000000000000000a",
+      "moved_by_user": "0000000000002000-0000-000000000000000a"
+     },
+     "deleted": null
+    },
+    "planned_workout/01922a8c-0000-7000-8000-000000000003": {
+     "fields": {
+      "plan_uid": "01922a8c-0000-7000-8000-000000000001",
+      "generation": "g1",
+      "moved_by_user": false
+     },
+     "clock": {
+      "plan_uid": "0000000000001000-0000-000000000000000a",
+      "generation": "0000000000001000-0000-000000000000000a",
+      "moved_by_user": "0000000000001000-0000-000000000000000a"
+     },
+     "deleted": null
+    }
+   },
+   "expect": [
+    "01922a8c-0000-7000-8000-000000000003"
+   ]
+  }
+ ]
+}

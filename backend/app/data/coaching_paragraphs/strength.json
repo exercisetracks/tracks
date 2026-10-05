@@ -1,0 +1,62 @@
+{
+  "strength.overdue": {
+    "full": [
+      "Slot in a {focus} strength session today, about {duration} min. You haven't lifted in {days_since} days, under the twice-a-week that keeps strength from sliding. After a session the muscle's protein-building machinery only stays elevated for a day or two before settling back to baseline, so training each area twice a week keeps you in that adaptive window far more of the time than one long session can. Spreading ten to twenty hard sets per muscle across the week is the dose the research points to, and it breaks up the repetitive stress of an all-cardio block.",
+      "Time for a {focus} strength day, roughly {duration} min. It has been {days_since} days since your last one, and strength is a use-it-or-lose-it quality: the signal to build fades within about 48 hours of a session, which is why consistency beats the occasional big effort. Two sessions a week, ten to twenty quality sets per muscle group, is the target worth defending."
+    ],
+    "compact": [
+      "{focus} strength, about {duration} min. It's been {days_since} days; strength slips without two sessions a week, so get one in.",
+      "Strength day, {focus}, {duration} min. The build signal fades within about two days of a session; you're overdue at {days_since}."
+    ]
+  },
+  "strength.heavy_fresh": {
+    "full": [
+      "You're fresh and recovered, so make it a heavy {focus} day, about {duration} min. Load the main lifts with lower reps and longer rest; heavy work recruits your high-threshold motor units, the ones that drive real strength gains, and doing it while fresh (TSB {tsb:+.0f}, readiness {readiness}) keeps both the quality and the safety high. Save the high-rep burnout sets for a more fatigued day.",
+      "Today suits heavy lifting: a {focus} session around {duration} min with challenging loads and full rest between sets. With readiness at {readiness} and no accumulated fatigue, your nervous system can express real force, which is exactly what heavy, low-rep work trains. Leave a couple of reps in reserve and let the rest periods do their job."
+    ],
+    "compact": [
+      "Heavy {focus} strength, about {duration} min. You're fresh ({readiness}); low reps and long rest recruit the motor units that build strength.",
+      "Heavy day, {focus}, {duration} min. No fatigue means clean, safe force production; load the main lifts and rest fully."
+    ]
+  },
+  "strength.posterior_caution": {
+    "full": [
+      "Point today's strength at your {focus}, about {duration} min. Your last big effort already taxed the posterior chain, so stacking heavy hinges or squats on top isn't ideal; muscle groups need roughly 48 hours to recover before they adapt rather than just accumulate damage. An upper-body session lets you keep training productively while your hamstrings, glutes, and lower back get that window.",
+      "Keep the load off the posterior chain today and train {focus} instead, {duration} min. That last session hit your hamstrings and lower back hard, and hitting them again before they've had about two days would cut into recovery rather than add to it. Push and pull for the upper body now; the legs get their turn once they've rebuilt."
+    ],
+    "compact": [
+      "{focus} strength, {duration} min. Your last effort loaded the posterior chain; give it 48 hours and train upper body today.",
+      "Upper-body day, {duration} min. Avoid stacking heavy hinges on tired hamstrings; let them recover while you train elsewhere."
+    ]
+  },
+  "strength.return_after_layoff": {
+    "full": [
+      "Ease back in today with a full-body session at moderate loads, stopping two reps short of failure, about {duration} min. It has been {days_since} days, so this is re-entry, not a test: the first session back always causes the most muscle damage and soreness, and your body then adapts so the next bout does far less. That protection is the repeated-bout effect, and it's why going too hard now just buys a wrecked week for no extra gain. Keep the next one light too.",
+      "Treat today as a restart: {focus}, moderate weights, {duration} min, well short of failure. After {days_since} days away, your muscles have lost some of their protective conditioning, so the first session will feel harder and leave you sorer than the load justifies. Go submaximal now and the repeated-bout effect makes the following sessions markedly smoother."
+    ],
+    "compact": [
+      "Full-body restart, {duration} min, moderate and short of failure. It's been {days_since} days; the first session back is always the sorest, so ease in.",
+      "Easy re-entry strength, {duration} min. After {days_since} days off, go submaximal; the next session will hurt far less."
+    ]
+  },
+  "strength.maintenance": {
+    "full": [
+      "Keep the rhythm going with a {focus} session today, about {duration} min. You're training strength consistently, and it's been {days_since} days since the last one, enough recovery to load the same patterns again productively. Holding two-plus quality sessions a week is what preserves the strength and tendon stiffness that support everything else you do.",
+      "You're on a good strength cadence, so bank another {focus} day, {duration} min. At {days_since} days since your last session the target muscles have recovered and are ready to adapt again. Consistency is the whole game here; two solid sessions a week keeps your hard-won strength from quietly eroding."
+    ],
+    "compact": [
+      "{focus} strength, {duration} min. It's been {days_since} days and you're recovered; keep the twice-a-week rhythm.",
+      "Strength day, {focus}, {duration} min. You're on cadence; maintaining two sessions a week protects your strength base."
+    ]
+  },
+  "strength.sport_support": {
+    "full": [
+      "Add two heavy strength sessions a week, starting today with {focus}, about {duration} min. Your training is almost all {sport}, and heavy lifting is one of the best-evidenced ways to get faster at endurance: it stiffens your tendons so they return more energy on each stride or pedal stroke, and recruits more muscle per contraction, improving your economy by a few percent. Because those gains are neural and tendon-driven rather than size-driven, a couple of sessions a week won't add weight or slow you down.",
+      "Bring some strength work into a mostly-{sport} routine, {focus}, {duration} min. Endurance athletes who lift heavy improve their movement economy, meaning every stride or stroke costs less oxygen, largely through stiffer tendons and better motor-unit recruitment rather than bigger muscles. Two focused sessions a week is the dose, and it pays off in your {sport}."
+    ],
+    "compact": [
+      "Support strength, {focus}, {duration} min. Your training is almost all {sport}; heavy lifting improves economy through stiffer tendons, no added weight.",
+      "{focus} strength, {duration} min. Two heavy sessions a week make endurance cheaper, stride for stride."
+    ]
+  }
+}

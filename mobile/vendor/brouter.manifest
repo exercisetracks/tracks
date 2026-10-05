@@ -1,0 +1,54 @@
+# SPDX-FileCopyrightText: 2026 Hawk Fugagli
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# What we vendor from BRouter, and what we deliberately leave behind.
+#
+# Read by pull-brouter.sh. Each line names one of BRouter's Gradle modules and
+# the single package it publishes; the package tree is copied into
+# routing-brouter/src/main/java/ under its ORIGINAL name, so a refresh is a file
+# copy and upstream diffs still apply — the same rule the Gadgetbridge vendor
+# follows.
+#
+# Why vendor at all, when JitPack publishes these five as jars: JitPack builds
+# them itself from a git tag, which makes them prebuilt binaries of third-party
+# provenance. This app targets F-Droid, whose builders compile everything from
+# source out of repositories they trust, and the rest of the dependency list is
+# held to that same standard (see the comments in gradle/libs.versions.toml).
+# 19k lines of MIT-licensed Java that changes a few times a year is a cheaper
+# thing to carry than an exception to that rule.
+#
+# Syntax:
+#   include <module> <package-path>
+#   (blank lines and # comments ignored)
+
+# The route search itself: RoutingEngine, RoutingContext, the cost models, and
+# the formatters. FormatJson is the one that matters most here — it produces the
+# same GeoJSON shape the server's BRouter returns, so an offline route and an
+# online one are the same document to everything downstream.
+include brouter-core btools/router
+
+# Reading rd5 files: the tile grid, the node cache, waypoint matching.
+include brouter-mapaccess btools/mapaccess
+
+# The .brf profile language — parsing it and evaluating it per way.
+include brouter-expressions btools/expressions
+
+# Shared primitives (compact maps, the sorted heap the search runs on, the
+# cheap-ruler distance approximations). Small, and everything else needs it.
+include brouter-codec btools/codec
+include brouter-util btools/util
+
+# NOT vendored:
+#
+#   brouter-server        The HTTP front end. Tracks already runs it as a
+#                         container for the browser and for phones with signal;
+#                         on the phone we call the engine directly.
+#   brouter-routing-app   BRouter's own Android app and its Android service
+#                         interface. We are the app.
+#   brouter-map-creator   Builds rd5 from OSM PBF. Enormous, and the server
+#                         downloads finished segments from brouter.de instead.
+#   misc/profiles2        The .brf profiles and lookups.dat. These are *data*
+#                         that must match the rd5 files, so the phone fetches
+#                         them from the Tracks server (which fetches the same
+#                         files the brouter container uses) rather than pinning
+#                         a copy at vendoring time.

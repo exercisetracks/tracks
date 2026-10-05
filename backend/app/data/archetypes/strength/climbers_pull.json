@@ -1,0 +1,17 @@
+{
+  "key": "climbers_pull",
+  "name": "Climber's Pull Day",
+  "tagline": "Grip, lats and pulling power for the wall.",
+  "intent": "A pull-focused upper session tuned for climbers — vertical pulling, grip endurance and rear-shoulder health to balance all that pulling.",
+  "splits": ["upper_a", "upper_b", "supp_upper_core"],
+  "sports": ["climbing"],
+  "tier_range": [2, 5],
+  "phases": ["any"],
+  "main": [
+    { "slot": "v_pull", "scheme": { "sets": 5, "reps": 5, "rest_seconds": 180 } },
+    { "slot": "h_pull", "scheme": { "sets": 3, "reps": 10 } }
+  ],
+  "supersets": [["forearm_grip", "rear_delt_acc"]],
+  "finisher": null,
+  "cooldown_theme": "shoulders"
+}

@@ -1,0 +1,460 @@
+# SPDX-FileCopyrightText: 2026 Hawk Fugagli
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# The sync contract: what syncs, how it merges, and what goes over the wire.
+#
+# One file, read by both implementations, for the same reason zones.yaml is
+# one file: the server (Python) and the phone (Kotlin) each implement the merge,
+# and the only thing worse than a sync bug is two replicas that agree with
+# themselves and not with each other. spec/fixtures/sync_scenarios.json holds
+# the cases both suites replay; this file holds the vocabulary they are written
+# in. Design and reasoning: docs/offline-first.md.
+#
+# Anything not listed here does not sync. Adding a field to a model does not
+# make it sync; adding it here does.
+
+version: 1
+
+# ── Clocks ────────────────────────────────────────────────────────────────────
+#
+# A hybrid logical clock stamp, written as one string so that plain string
+# comparison — SQLite, Postgres, Python, Kotlin — is the correct ordering:
+#
+#   <wall_ms: 16 decimal digits, zero-padded>-<counter: 4 lowercase hex>-<node: 16 lowercase hex>
+#   e.g. 0001727190000000-0000-a1b2c3d4e5f60718
+#
+# Rules (both implementations; spec/fixtures/sync_scenarios.json "hlc" cases):
+#   tick(now):    wall = max(now, last.wall); counter = last.counter + 1 if wall == last.wall else 0
+#   receive(s, now): if s.wall > now + max_skew_ms → refuse (stamp is ignored, change rejected)
+#     The skew check guards the SERVER receiving a push. A client receiving a
+#     pulled row never refuses it: the server already vetted that stamp against
+#     its own clock, and a phone whose clock is wrong would otherwise stall its
+#     pull cursor forever. A client just advances past it (the ahead-of-skew
+#     rule does not apply; the rest of receive() does).
+#                    else wall = max(now, last.wall, s.wall), and counter =
+#                      max(last.counter, s.counter) + 1  if wall == last.wall == s.wall
+#                      last.counter + 1                  if wall == last.wall only
+#                      s.counter + 1                     if wall == s.wall only
+#                      0                                 otherwise (now is ahead of both)
+#   A change is only applied after its stamp has been received, so a device can
+#   never later mint a stamp that sorts below one it has already accepted.
+#   Counter overflow (> 0xffff) is an error, not a wrap.
+#
+# `node` is 64 random bits generated once per install (phone) or once per
+# server (stored in the database), never reused.
+hlc:
+  format: "{wall_ms:016d}-{counter:04x}-{node:016x}"
+  max_skew_ms: 86400000   # 24 h — a stamp further ahead than this is refused
+
+# ── Identity ─────────────────────────────────────────────────────────────────
+#
+# Every synced row has a `uid`: a UUID, unique within one user's data (not
+# globally — the server scopes it by user, because a standalone phone cannot
+# know its eventual server user id).
+#
+# Random rows use UUIDv7. Rows with a natural key use UUIDv5 under this
+# namespace instead, so that two devices creating "the same" row offline — the
+# same watch, the same day's weight, the same exercise preference — produce the
+# same uid and merge instead of duplicating. `uid_key` on an entity gives the
+# name template; its absence means UUIDv7.
+uid_namespace: 6f1c6b1e-2b0e-4d6a-9c1e-7a3f0d5e8b42
+
+# ── Merge ────────────────────────────────────────────────────────────────────
+#
+# Every entity merges the same way; entity kinds only restrict who may write.
+#
+# A row is: {uid, fields: {name: value}, clock: {name: hlc}, deleted: hlc|null}
+#
+#   write(field, value, stamp):
+#     if row.deleted is not null        → refused ("deleted")
+#     if clock[field] exists and stamp <= clock[field] → refused ("stale")
+#     else value applied, clock[field] = stamp
+#   delete(stamp):
+#     row.deleted = max(row.deleted, stamp), and the row is cleared to a bare
+#     tombstone: fields and clock emptied. A deleted row's old values are
+#     irrelevant, and keeping them would let replicas disagree about them.
+#     Delete wins: no later write, whatever its stamp, un-deletes a row. There
+#     is no undelete.
+#   One change carrying both fields and a delete: fields first, then the delete.
+#   A write to an unknown uid creates the row. Fields never written are absent
+#   (not null) — "absent" and "set to null" are different states.
+#
+# Ties are refused, which makes replay idempotent.
+merge:
+  delete_wins: true
+
+# Kinds:
+#   source   — any client may create, edit, delete.
+#   log      — any client may create and delete (retract); fields are written
+#              once at creation. A write to an existing field of a log row is
+#              refused: "stale" if the value is identical (a replay), otherwise
+#              "immutable". Writing a field the log row does not have yet is
+#              allowed.
+#   readonly — only the server writes; pushes are rejected.
+#
+# `refs` name fields whose value is another row's uid. References may arrive
+# before the row they point at — neither side may assume arrival order.
+#
+# `children_of` marks a row owned by a parent; deleting the parent deletes the
+# children (each gets the parent's delete stamp). Both directions, because
+# arrival order is free:
+#   - parent deleted → every child present is deleted with the parent's stamp;
+#   - a child arriving (or written) while its parent is a tombstone is deleted
+#     on arrival with the parent's stamp.
+# A child whose parent field is null (e.g. a hand-added planned workout) has no
+# parent and is never cascaded.
+# The parent field is set once: after a child's parent field has a value,
+# writing a different value is refused ("immutable"). Moving a child means
+# deleting it and creating a new one, because a move racing a parent delete
+# cannot otherwise converge.
+# `order` fields hold fractional-index strings (alphabet 0-9A-Za-z, compared
+# bytewise).
+
+entities:
+
+  settings:
+    kind: source
+    table: user_settings
+    uid_key: "settings"            # one per user
+    fields: [name, units, theme_mode, accent_color, timezone, weight_kg, height_cm, sex, birth_year,
+             max_hr_mode, max_hr_manual, threshold_hr_mode, threshold_hr_manual,
+             ftp_mode, ftp_manual, css_mode, css_manual, hidden_sports,
+             chart_resolution, pace_coaching, equipment_available, strength_experience,
+             activity_frequency, experience_suggestion_dismissed, tour_seen, tour_enabled,
+             weather_enabled, map_enabled, wildfire_enabled,
+             agps_enabled, agps_source, agps_custom_url, agps_max_age_hours,
+             setup_complete]
+    # Not synced: *_auto (derived), ai_* and music_* (server-side secrets and
+    # services), password_hash, watch/agps runtime timestamps.
+
+  device:
+    kind: source
+    table: devices              # plus the user_devices link
+    uid_key: "device:{serial_number}"
+    fields: [serial_number, manufacturer, manufacturer_id, product_name, product_id,
+             software_version, label, is_primary]
+
+  fit_file:
+    kind: log
+    table: pending_imports      # the blob itself moves through /sync/blobs
+    uid_key: "fit:{sha256}"
+    fields: [sha256, size_bytes, file_kind, device_serial, started_at, filename]
+
+  activity:
+    # The activity's *measurements* are derived from its FIT file on every
+    # device and never sync. Only what a person says about it does.
+    kind: source
+    table: activities
+    # Same device + same start second = same activity, whichever bytes it came
+    # in. A file with no device serial falls back to its own hash.
+    uid_key: "activity:{device_serial}:{start_epoch_s}"
+    uid_key_fallback: "activity:sha256:{sha256}"
+    fields: [name, notes, sport, sub_sport, hidden]
+
+  trip:
+    # A merged multi-day trip (today: activities.is_merged). Totals are derived.
+    kind: source
+    table: activities
+    fields: [name, notes, activity_uids, track_uids]
+    refs: {activity_uids: activity, track_uids: track}
+
+  daily_entry:
+    # Hand-entered values for a day. Device-measured fields are derived.
+    kind: source
+    table: daily_metrics
+    uid_key: "daily:{date}"
+    fields: [date, weight_kg, hydration_ml, calories_in]
+
+  goal:
+    kind: source
+    table: training_goals
+    # Invariant: at most one active goal. Two phones can each activate a
+    # different one offline, so this is resolved on read, never by rejecting a
+    # write: the active goal is the is_active=true row whose `is_active` stamp
+    # is greatest.
+    fields: [goal_type, is_active, event_name, event_sport, event_date, event_distance_meters,
+             ctl_ramp_per_week, fitness_sports, target_weekly_km, volume_sport,
+             days_per_week, plan_intensity, mtb_discipline,
+             cycling_discipline, schedule_tests, include_strength, strength_tier,
+             strength_days_per_week, strength_session_minutes, notes]
+
+  race_plan:
+    kind: source
+    table: race_plans
+    fields: [goal_uid, split_type, split_spread, course_type, pace_hr_mode, pin_lat, pin_lon,
+             use_gpx_distance, course_segments, course_path, technicality_factor,
+             technicality_label, target_hr_ceiling, fueling_plan, lap_paces,
+             triathlon_splits_m, watch_filename, watch_uploaded_at,
+             fuel_carbs_per_hour, fuel_fluid_ml_per_hour, fuel_sodium_mg_per_hour,
+             fuel_interval_min, fuel_product_uids]
+    refs: {goal_uid: goal}
+    # fuel_*_per_hour: the user's own targets; null = the calculated default
+    # (calculators/fuel_plan.py and its Kotlin port). fuel_product_uids is an
+    # ordered JSON list of fuel_product uids the timeline may use — plain data,
+    # not a ref, because a list ref would need a join table for one feature.
+    # Derived, not synced: predicted_seconds, weather_snapshot, fit_b64, generated_at.
+
+  plan:
+    kind: source
+    table: training_plans
+    uid_key: "plan:{goal_uid}"     # one plan per goal
+    # `generation` is a fresh UUIDv7 each time the plan is (re)generated. A
+    # generated workout is dead when its `generation` differs from its plan's
+    # AND its generation stamp is older than the plan's generation stamp;
+    # whichever replica notices deletes it. The stamp check matters: a new
+    # generation's workouts can arrive before the plan row naming it, and
+    # (delete wins) calling them dead would destroy the regeneration.
+    # A workout with moved_by_user true is never dead: regeneration keeps it. Two phones regenerating
+    # offline therefore converge on one set of workouts, not two.
+    fields: [goal_uid, sport, vdot, generation]
+    refs: {goal_uid: goal}
+
+  planned_workout:
+    kind: source
+    table: planned_workouts
+    fields: [plan_uid, generation, scheduled_date, sport, workout_type, title, description,
+             duration_minutes, distance_meters, steps, is_complete, completed_activity_uid,
+             completion_pct, custom_workout_uid, custom_workout_name, recap_completed_at, origin,
+             watch_filename, watch_uploaded_at, watch_deleted_at, fit_time_created,
+             fuel_carbs_per_hour, moved_by_user]
+    refs: {plan_uid: plan, completed_activity_uid: activity, custom_workout_uid: workout}
+    # fuel_carbs_per_hour: a hand-set gut-training target for this session;
+    # null = the progression's (calculators/fuel_plan.py gut_training).
+    # Generated workouts belong to their plan: deleting the plan deletes them.
+    # plan_uid null = added by hand; neither regeneration nor a plan delete
+    # touches it.
+    children_of: {field: plan_uid, entity: plan}
+    # Automatic activity matching WRITES synced fields (is_complete,
+    # completed_activity_uid, completion_pct): whichever device imports the
+    # activity first records the match. That is safe because matching is
+    # deterministic — same day, same sport family, (scheduled_date, uid)
+    # order — so every device that matches computes the same answer and
+    # concurrent writes agree. A manual tick is an ordinary edit of the same
+    # fields and wins by clock like any other.
+
+  workout:
+    kind: source
+    table: user_workouts
+    fields: [name, description, tags, include_in_plan, sync_to_watch]
+
+  workout_exercise:
+    kind: source
+    table: user_workout_exercises
+    children_of: {field: workout_uid, entity: workout}
+    fields: [workout_uid, exercise_name, exercise_source, target_reps,
+             target_sets, rir_target, rest_seconds, weight_method, weight_value, order, notes,
+             item_kind, group_uid, group_kind, group_rounds, group_rest_seconds]
+    refs: {workout_uid: workout}
+    # Blocks. A rest block is a row with item_kind "rest" (its length in
+    # rest_seconds) and no exercise. A repeat group or superset is not a row of
+    # its own: its uid, kind (repeat|superset), rounds and rest are repeated on
+    # every member, and CONSECUTIVE rows (by `order`) sharing group_uid form the
+    # block, with the first member's settings. Held this way so blocks need no
+    # new merge rule: a group edit writes each member, a concurrent reorder can
+    # at worst split a group into two with the same settings — visible, fixable,
+    # and identical on every replica. group_uid is a label, not a ref.
+
+  workout_session:
+    kind: log
+    table: user_workout_sessions
+    fields: [workout_uid, planned_workout_uid, session_data, completed_at, total_volume_kg,
+             session_rpe, notes]
+    refs: {workout_uid: workout, planned_workout_uid: planned_workout}
+
+  exercise_preference:
+    kind: source
+    table: user_exercise_preferences
+    uid_key: "exercise_pref:{exercise_name}"
+    fields: [exercise_name, preference]
+
+  custom_exercise:
+    kind: source
+    table: user_custom_exercises
+    fields: [name, primary_muscles, secondary_muscles, equipment, movement_pattern,
+             is_compound, difficulty, description, instructions, cues, viewer_slug,
+             default_sets, default_reps, garmin_category, garmin_subtype, has_animation]
+
+  one_rep_max:
+    # A hand-set 1RM. The estimate itself is derived from sessions.
+    kind: source
+    table: user_exercise_strength
+    uid_key: "orm:{exercise_name}"
+    fields: [exercise_name, override_1rm_kg]
+
+  animation_confirmation:
+    kind: source
+    table: animation_confirmations
+    uid_key: "anim:{product_id}:{garmin_category}:{garmin_subtype}"
+    fields: [product_id, garmin_category, garmin_subtype, animates]
+
+  flow:
+    kind: source
+    table: user_flexibility_flows
+    fields: [name, description, include_in_plan, sync_to_watch, tags]
+
+  flow_stretch:
+    kind: source
+    table: flow_stretches
+    children_of: {field: flow_uid, entity: flow}
+    fields: [flow_uid, exercise_name, order, sets, duration_seconds, rest_seconds, coaching_note,
+             item_kind, group_uid, group_kind, group_rounds, group_rest_seconds]
+    refs: {flow_uid: flow}
+    # Blocks, exactly as workout_exercise; a rest block's length is
+    # duration_seconds.
+
+  stretch_preference:
+    kind: source
+    table: user_flexibility_preferences
+    uid_key: "stretch_pref:{exercise_name}"
+    fields: [exercise_name, preference]
+
+  custom_stretch:
+    kind: source
+    table: user_custom_stretches
+    fields: [name, primary_muscles, secondary_muscles, equipment, movement_pattern,
+             is_compound, difficulty, duration_per_side_sec, each_side, sets, description,
+             instructions, cautions, cues, breath_cue, position, viewer_slug,
+             garmin_category, garmin_subtype, has_animation]
+
+  medication:
+    kind: source
+    table: medications
+    fields: [name, dose, dose_unit, form, notes, is_active]
+
+  medication_schedule:
+    kind: source
+    table: medication_schedules
+    children_of: {field: medication_uid, entity: medication}
+    fields: [medication_uid, time_of_day, days_of_week, start_date, end_date, notify, is_as_needed]
+    refs: {medication_uid: medication}
+
+  medication_log:
+    kind: log
+    table: medication_log
+    fields: [medication_uid, schedule_uid, status, scheduled_for, logged_at, notes]
+    refs: {medication_uid: medication, schedule_uid: medication_schedule}
+
+  injury:
+    kind: source
+    table: injuries
+    fields: [body_part, injury_type, severity, start_date, end_date, notes]
+
+  meal:
+    kind: source
+    table: meals
+    fields: [name, calories, protein_g, carbs_g, fat_g, notes]
+
+  meal_log:
+    kind: log
+    table: meal_log
+    fields: [meal_uid, name, calories, protein_g, carbs_g, fat_g, logged_at, notes]
+    refs: {meal_uid: meal}
+
+  fuel_product:
+    # A gel, drink, chew or bar the user actually carries. The race plan's
+    # fuelling timeline is built from these.
+    kind: source
+    table: fuel_products
+    fields: [name, kind, carbs_g, sodium_mg, caffeine_mg, fluid_ml, serving, notes]
+
+  gut_training_log:
+    # How a fuelled long session went. Gut training adapts from these, so a
+    # bad day holds the ramp back on every device alike.
+    kind: log
+    table: gut_training_logs
+    fields: [planned_workout_uid, activity_uid, date, duration_min, carbs_g, comfort, notes]
+    refs: {planned_workout_uid: planned_workout, activity_uid: activity}
+
+  track_folder:
+    kind: source
+    table: custom_track_folders
+    fields: [name, color, load_to_device]
+
+  track:
+    kind: source
+    table: custom_tracks
+    fields: [folder_uid, name, color, source, sport, activity_uid, geometry, distance_m,
+             ascent_m, descent_m, bounds, profile, turn_by_turn, course_points, is_external,
+             device_size, hidden, load_to_device, watch_filename, watch_uploaded_at,
+             watch_deleted_at, purge_after_delete, notes]
+    refs: {folder_uid: track_folder, activity_uid: activity}
+
+  waypoint:
+    kind: source
+    table: waypoints
+    fields: [name, lat, lng, ele_m, color, icon, notes, load_to_device, watch_filename,
+             watch_uploaded_at, watch_deleted_at]
+
+  coaching_note:
+    # LLM output from a linked server, kept so it can be reread offline.
+    kind: readonly
+    table: coaching_recommendations
+    fields: [date, goal_uid, ai_response, generated_at]
+    refs: {goal_uid: goal}
+
+# ── Wire ─────────────────────────────────────────────────────────────────────
+#
+# A change on the wire:
+#   {"entity": "waypoint", "uid": "…",
+#    "fields": {"name": ["Camp 2", "<hlc>"]},     # value, stamp — per field
+#    "deleted": "<hlc>"}                          # optional
+#
+# POST /sync/push   {"node": "<16 hex>", "clock": "<sender's current hlc>", "changes": [change…]}
+#   → {"clock": "<server hlc after receive>",
+#      "results": [{"entity", "uid", "status": applied|partial|stale|rejected,
+#                   "refused": {"field": "stale"|"deleted"|"immutable"|"unknown"},
+#                   "reason": "readonly"|"unknown_entity"|"clock_skew"|"wiped"|"invalid"}]}  # rejected only
+#   `invalid`: this one change cannot be stored (malformed uid or stamp, a value
+#   its column cannot hold, a uid that does not match its natural key). Per
+#   change and permanent, so one bad row never blocks the rest of a queue.
+#   Of the reasons, only `clock_skew` is transient: the client keeps that
+#   change pending and retries. The others are permanent and acknowledged.
+#   `partial` = some fields applied, some refused. A pushed change is
+#   acknowledged by any status but `rejected` for a transient reason; the
+#   client clears its dirty fields for everything acknowledged.
+#
+# GET /sync/pull?since=<seq>&limit=<n>
+#   → {"changes": [change…],   # full current row: every field with its stamp
+#      "next": <seq>, "has_more": bool, "server_id": "<16 hex>", "epoch": <int>}
+#   `since` is the server's arrival sequence (one Postgres sequence across
+#   every synced table), 0 for a first sync. The client merges pulled rows with
+#   the same rules as pushed ones, so a pull never undoes an unpushed edit.
+#   Pulled changes carry the same shape as pushed ones, tombstones included
+#   (`deleted` set, no fields).
+#
+#   Every pull response also carries {"server_id": "<16 hex>", "epoch": <int>}.
+#   Two different events look alike to a phone and must not be treated alike:
+#   - server_id changed (the server's database was recreated, and with it its
+#     node id): the phone RE-PUSHES everything it holds, marking every live
+#     row dirty, so the new server gets the data back. Its cursor resets to 0.
+#   - epoch increased (the user deliberately deleted their data — the web's
+#     "Delete my data" bumps a per-account epoch): the phone WIPES its synced
+#     rows and FIT blobs, unpushed edits included, and pulls from 0. Otherwise
+#     any phone still holding the data would quietly undo the deletion.
+#   A push from a phone whose stored epoch is older than the account's is
+#   rejected whole with reason "wiped" (permanent), for the same reason.
+#   `full_resync_required` is retired in favour of these two.
+#
+# Accounts and sign-out:
+#   Signing out unlinks the server and KEEPS the phone's data; for a
+#   standalone-then-linked phone it may be the only copy. A phone's data
+#   belongs to the account it was first linked to (stored as server_id +
+#   account uid). Signing in again to that account resumes. Signing in to a
+#   different account ON THE SAME SERVER is refused while local data exists,
+#   and the app offers an explicit "erase this phone's data" instead.
+#   Signing in on a server with a DIFFERENT server_id cannot be told apart from
+#   the same server rebuilt (a rebuilt database mints new ids for everything),
+#   so the phone asks: "This phone's data came from a different or rebuilt
+#   Tracks server. Restore it into <username> here?" Yes rebinds and re-pushes
+#   everything; no leaves the phone signed out with its data intact. Merging
+#   one person's history into another's account by accident is not
+#   recoverable, which is why this is a question and never automatic.
+#
+# Blobs:
+#   POST /sync/ingest                    — sealed FIT upload (unchanged; works with the vault locked)
+#   GET  /sync/blobs/{sha256}            — the file's bytes
+#   There is no separate manifest: the pulled `fit_file` rows ARE the list of
+#   files the account has, and a client downloads every live one it lacks.
+wire:
+  pull_default_limit: 500
+  pull_max_limit: 2000

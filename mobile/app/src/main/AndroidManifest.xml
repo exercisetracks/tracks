@@ -1,0 +1,346 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  SPDX-FileCopyrightText: 2026 Hawk Fugagli
+  SPDX-License-Identifier: AGPL-3.0-or-later
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!--
+      Bluetooth for the watch. SCAN is flagged neverForLocation because this app
+      pairs a known companion device and has no interest in inferring where the
+      user is - which also spares the user a location prompt they would
+      rightly find odd from a sync feature.
+
+      Declared here rather than in :device-garmin so the whole permission
+      surface is reviewable in one file, which is also what an F-Droid reviewer
+      will read.
+    -->
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_SCAN"
+        android:usesPermissionFlags="neverForLocation" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+
+    <!--
+      The pre-API-31 spelling of the same thing. minSdk is 26, and on 26-30
+      BLUETOOTH_SCAN/CONNECT do not exist - GATT needs these two instead, and
+      they are install-time rather than runtime permissions. maxSdkVersion stops
+      them being requested on newer devices where they would be redundant.
+
+      Notably absent here: ACCESS_FINE_LOCATION as a *Bluetooth* permission,
+      which a raw BLE scan would require on those versions. Companion pairing
+      does the scanning inside the system, so the watch flow never needs it -
+      the reason to prefer that flow is battery, but not having to ask for
+      location is the better argument.
+
+      Location is now requested, but for the map and only for the map (below),
+      which keeps that argument intact: the watch still pairs without it, and a
+      user who never opens the map is never asked.
+    -->
+    <uses-permission
+        android:name="android.permission.BLUETOOTH"
+        android:maxSdkVersion="30" />
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_ADMIN"
+        android:maxSdkVersion="30" />
+
+    <!--
+      Companion device association: the system pairing dialog, plus permission to
+      keep talking to the watch when the app is not in the foreground. Without
+      the background pair, a sync would only ever work while the user is looking
+      at the app, which defeats the point.
+    -->
+    <uses-permission android:name="android.permission.REQUEST_COMPANION_RUN_IN_BACKGROUND" />
+    <uses-permission android:name="android.permission.REQUEST_COMPANION_USE_DATA_IN_BACKGROUND" />
+
+    <!--
+      Android 12 forbids starting a foreground service from the background, and
+      WatchLinkService is started from Application.onCreate — which, after a
+      reboot or when WorkManager wakes the process, *is* the background. Without
+      this the start throws ForegroundServiceStartNotAllowedException and the
+      watch link only ever comes up if the user happens to open the app.
+
+      This permission is the exemption built for exactly this case: a companion
+      app maintaining a connection to an associated device. It is install-time
+      and needs no prompt.
+    -->
+    <uses-permission
+        android:name="android.permission.REQUEST_COMPANION_START_FOREGROUND_SERVICES_FROM_BACKGROUND" />
+
+    <!--
+      Foreground service, typed. Android 14+ requires both the type here and a
+      runtime justification: connectedDevice covers an active watch transfer.
+      Deferrable work (delta sync) uses WorkManager instead and needs none of
+      this.
+    -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
+
+    <!--
+      Recording a run with the screen off. This is the one place in Tracks that
+      follows the user when they are not looking at it, and Android's price for
+      that is exactly right: a typed foreground service and a notification that
+      cannot be dismissed while it runs. See RunService.
+
+      Note what is still absent: ACCESS_BACKGROUND_LOCATION. A foreground service
+      of this type may receive location while the app is backgrounded without it
+      - the background-location grant is for apps that want fixes with no service
+      and no notification at all, which is a much larger ask and one this app has
+      no use for.
+    -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+
+    <!--
+      Pulling an area's tiles onto the phone. Tens of thousands of requests over
+      tens of minutes, which nobody watches — so it happens with the screen off,
+      and a backgrounded app with no foreground component is the first thing
+      Android kills. dataSync is the type Android provides for exactly this
+      shape of work. See MapDownloadService.
+    -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+
+    <!--
+      FlowPlayerService: a stretching flow's timer and spoken cues, kept running
+      with the screen off. None of the named foreground types fits a timer, so
+      specialUse, with the reason declared on the service.
+    -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+
+    <!--
+      Re-arming medication reminders after a reboot. Android clears the alarm
+      table on restart, so without this every reminder someone set silently
+      stops the first time their phone runs out of battery. Install-time, no
+      prompt, and used for nothing else — see MedicationBootReceiver.
+    -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <!-- Sync progress and watch-connection notices. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!--
+      Buzzing alongside the ringtone when the watch asks the phone to make
+      itself findable, and the per-kilometre cues during a recorded run. Normal
+      permission, granted at install, no prompt. See PhoneFinder and RunCues.
+    -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+    <!--
+      Lets the app see which weather apps are installed, so it can tell the user
+      whether anything is actually going to send a forecast. Android 11+ hides
+      the package list by default; this asks only about the weather apps that
+      speak Gadgetbridge's forecast format, not the whole device.
+    -->
+    <queries>
+        <package android:name="org.breezyweather" />
+        <!-- The other weather apps that can send forecasts; see WeatherSources. -->
+        <package android:name="com.ominous.quickweather" />
+        <package android:name="de.kaffeemitkoffein.tinyweatherforecastgermany" />
+
+        <!--
+          And which apps have an icon in the launcher, so Settings can offer a
+          list to block from the watch relay. Deliberately this rather than
+          QUERY_ALL_PACKAGES: the launcher intent covers every app a person
+          means when they say "block this one", and an app that reads
+          notifications has no business also asking for the full inventory of
+          what is installed. Apps that notify without a launcher entry are
+          filled in from what has actually posted - see InstalledApps.
+        -->
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+    </queries>
+
+    <!--
+      The agenda on the watch. Runtime permission and entirely optional: no
+      grant means no agenda, and nothing else changes. Only title, time, and
+      location ever leave the phone — see CalendarReader.
+    -->
+    <!--
+      Where you are, for the map.
+      
+      Coarse as well as fine, and both marked optional at install: a phone
+      without a GPS chip should still install and show the map, just without
+      the blue dot. Android requires asking for both together - a user who
+      grants only approximate location gets COARSE, and the map is perfectly
+      usable at that accuracy for "which valley am I in".
+
+      Background location is deliberately absent. The map shows where you are
+      while you are looking at it; nothing here follows you with the screen off,
+      and asking for that would be a far bigger request than this feature earns.
+    -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-feature android:name="android.hardware.location.gps" android:required="false" />
+    <!--
+      The magnetometer, for the heading arrow and the rotate-with-me camera mode.
+      Install-time rather than a prompt; without it Android throttles the sensor
+      and posts a "Tracks tried to access sensors" notice instead, which is a
+      confusing thing to show for a compass needle.
+    -->
+    <uses-permission android:name="android.permission.HIGH_SAMPLING_RATE_SENSORS" />
+
+    <uses-permission android:name="android.permission.READ_CALENDAR" />
+
+    <uses-feature
+        android:name="android.hardware.bluetooth_le"
+        android:required="false" />
+
+    <!--
+      Required to call CompanionDeviceManager at all: the system checks that the
+      calling package declares this feature and throws
+      "Must declare uses-feature android.software.companion_device_setup"
+      otherwise. Found on a real device, not in any emulator or unit test.
+
+      required="false" so the app still installs on hardware without companion
+      support. Watch pairing is unavailable there — there is no fallback, because
+      the fallback would be a BLE scan and that is the thing this deliberately
+      avoids — but offline maps and cached activities still work, which is a
+      legitimate way to use Tracks.
+    -->
+    <uses-feature
+        android:name="android.software.companion_device_setup"
+        android:required="false" />
+
+    <application
+        android:name=".TracksApplication"
+        android:allowBackup="false"
+        android:label="@string/app_name"
+        android:networkSecurityConfig="@xml/network_security_config"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Tracks">
+
+        <!--
+          allowBackup is off deliberately. This app stores a device secret that
+          decrypts the user's history and an encrypted offline mirror; letting
+          either ride out in a cloud backup would undo the point of keeping them
+          in the Keystore.
+        -->
+
+        <!--
+          Forecasts from whatever weather app the user has. The action is the
+          one weather apps already implement — see WeatherBroadcast for why we
+          speak an existing format rather than invent our own. exported=true is
+          required for another app to reach it at all.
+        -->
+        <receiver
+            android:name=".feeds.WeatherReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="nodomain.freeyourgadget.gadgetbridge.ACTION_GENERIC_WEATHER" />
+                <action android:name="com.exercisetracks.app.ACTION_WEATHER" />
+            </intent-filter>
+        </receiver>
+
+        <!--
+          Notification relay. OPTIONAL — the app is fully functional without it,
+          and the user grants it from system settings if they want notifications
+          on their wrist. See TracksNotificationListener for what is filtered
+          out and why nothing is stored.
+        -->
+        <service
+            android:name=".feeds.TracksNotificationListener"
+            android:exported="false"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
+        <!--
+          Medication reminders. Three receivers rather than one because they are
+          three different events: an alarm coming due, a dose logged from the
+          notification's own buttons, and a reboot that wiped the alarm table.
+          All exported=false — nothing outside this app should be able to fire
+          somebody's reminder or record a dose they did not take.
+        -->
+        <receiver
+            android:name=".meds.MedicationAlarmReceiver"
+            android:exported="false" />
+
+        <receiver
+            android:name=".meds.MedicationActionReceiver"
+            android:exported="false" />
+
+        <receiver
+            android:name=".meds.MedicationBootReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+
+        <!--
+          The background half of a watch sync — see WatchSyncService's own doc
+          comment for why this needs to be a foreground service rather than a
+          plain WorkManager coroutine. exported=false: nothing outside this app
+          has any business starting it.
+        -->
+        <service
+            android:name=".WatchSyncService"
+            android:exported="false"
+            android:foregroundServiceType="connectedDevice" />
+
+        <!--
+          Holds the watch connection open between syncs, so the phone feeds have
+          something to reach. Same foreground type as the sync service and for
+          the same reason: Android will not let a backgrounded app keep a GATT
+          connection, and a notification relay that only works while the app is
+          open is not a relay. See WatchLinkService.
+        -->
+        <service
+            android:name=".WatchLinkService"
+            android:exported="false"
+            android:foregroundServiceType="connectedDevice" />
+
+        <!--
+          Records a run when there is no watch to record it. Typed `location`,
+          which Android 14+ requires both here and as a runtime justification.
+          exported=false: its pause and finish actions come from its own
+          notification, and nothing outside this app should be able to start or
+          stop somebody's run.
+        -->
+        <service
+            android:name=".run.RunService"
+            android:exported="false"
+            android:foregroundServiceType="location" />
+
+        <!-- See FlowPlayerService: a guided stretching flow, screen off, controlled from the lock screen. -->
+        <service
+            android:name=".ui.flexibility.FlowPlayerService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Guided stretching timer with spoken cues, controlled from the notification" />
+        </service>
+
+        <!--
+          Keeps a map-area download alive while the phone is away. It moves no
+          bytes itself — MapLibre owns the transfer — it keeps the process the
+          transfer lives in from being reclaimed, and resumes anything a killed
+          process left half-done. exported=false: it starts from the map screen
+          and stands itself down.
+        -->
+        <service
+            android:name=".map.MapDownloadService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:theme="@style/Theme.Tracks">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

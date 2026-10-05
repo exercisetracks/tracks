@@ -1,0 +1,146 @@
+syntax = "proto2";
+
+package garmin_vivomovehr;
+
+option java_package = "nodomain.freeyourgadget.gadgetbridge.proto.garmin";
+
+message FileSyncService {
+  optional FileRequest file_request = 1;
+  optional FileResponse file_response = 2;
+  // Tracks-local, not upstream: captured from Garmin Connect pushing a training
+  // calendar. This is how Garmin uploads — NOT the legacy GFDI CREATE_FILE /
+  // UPLOAD_REQUEST / FILE_TRANSFER_DATA path. See AGENTS.md.
+  optional UploadRequest upload_request = 3;
+  optional UploadResponse upload_response = 4;
+  // Tracks-local, not upstream. The watch reports the end of every transfer
+  // with this and waits for the response below before moving on. Garmin
+  // Connect answers all 22 of them in a single sync; Tracks answered none,
+  // which is why an upload the watch had accepted never went anywhere.
+  optional TransferComplete transfer_complete = 5;
+  optional TransferCompleteResponse transfer_complete_response = 21;
+  optional FileListRequest file_list_request = 9;
+  optional FileListResponse file_list_response = 10;
+  optional NewFileNotification new_file_notification = 12;
+  optional FileSetFlags file_set_flags = 15;
+  optional FileUpdateNotification file_update_notification = 17;
+}
+
+message NewFileNotification {
+  repeated File file = 1;
+  optional uint32 unk2 = 2; // 24
+  optional uint32 unk3 = 3; // 0
+  optional uint32 unk4 = 4; // 0
+  optional uint32 unk5 = 5; // 15
+  optional uint32 unk6 = 6; // 1
+}
+
+message FileSetFlags {
+  optional FileId file = 1;
+  optional FileId flags = 2;
+}
+
+message FileUpdateNotification {
+  optional FileId file = 1;
+  optional FileId flags = 2;
+}
+
+// Ask the watch to accept a new file. The watch answers UploadResponse with a
+// transfer handle, and the bytes then go over a separate multi-link file
+// transfer service rather than through GFDI messages.
+message UploadRequest {
+  optional File file = 1;
+  optional uint32 unk2 = 2; // 34
+  optional uint32 unk3 = 3; // 0
+  optional uint32 unk4 = 4; // 15
+}
+
+message UploadResponse {
+  optional uint32 status = 1; // 0 = accepted
+  optional uint32 unk2 = 2;   // 0
+  optional uint32 unk3 = 3;   // 0
+  optional uint32 handle = 4; // transfer handle, incrementing
+  optional uint32 unk8 = 8;   // 10
+}
+
+// Watch -> phone, once per transfer, naming the file and the handle it ran on.
+// Sent for files the watch received as well as files it sent.
+//
+// unk3..unk6 are NOT a verdict on the file, though they read like one for a
+// while. Across seventeen consecutive successful uploads they alternated
+// strictly by handle parity -- {3=0, 4=4, 5=10, 6=3} and {3=0, 4=12, 5=5, 6=3}
+// -- with the same FIT type landing on both sets, and they were byte-identical
+// before and after the schedule was re-encoded from scratch. Whatever they
+// describe belongs to the transfer channel, not the content. An earlier note
+// here read them as a failure report on the strength of two samples that
+// happened to fall on opposite parities; they are not.
+message TransferComplete {
+  optional FileId file = 1;
+  optional uint32 handle = 2;
+  optional uint32 unk3 = 3;
+  optional uint32 unk4 = 4;
+  optional uint32 unk5 = 5;
+  optional uint32 unk6 = 6;
+}
+
+// The answer the watch is waiting for. Connect always sends 34 here, the same
+// constant it puts in UploadRequest.unk2.
+message TransferCompleteResponse {
+  optional uint32 unk1 = 1; // 34
+}
+
+message FileRequest {
+  optional File file = 1;
+  optional uint32 unk2 = 2; // 24
+  optional uint32 unk3 = 3; // 0
+  optional uint32 unk4 = 4; // 0
+  optional uint32 unk5 = 5; // 15
+}
+
+message FileResponse {
+  optional uint32 status = 1; // 0 success 3 failure
+  optional uint32 unk2 = 2; // 0
+  optional uint32 handle = 3; // varies
+  optional uint32 unk7 = 7; // 11
+}
+
+message FileListRequest {
+  // Set to FileListResponse.cursor_id to continue an in-progress listing.
+  // Mutually exclusive with start_page_id: only set one of the two.
+  optional uint32 cursor_id = 1;
+  optional uint32 start_page_id = 2; // 33737
+  // Exclusion flags? If we omit this, it sends back already synced files going back months.
+  // 0x000000000000a5a5 / 42405 appears to be the "already synced" flag.
+  optional FileId flags1 = 4;
+  optional FileId flags2 = 5; // 0x000000000000a5a5 / 42405
+}
+
+message FileListResponse {
+  optional uint32 unk1 = 1; // 0
+  // Present when more items are pending for *this* listing (> 100 items) - send it back
+  // on the next FileListRequest.cursor_id to get the remaining items.
+  // Mutually exclusive with next_page_id: only one of the two is set.
+  optional uint32 cursor_id = 2; // 2 on venu 4, 1 on venu 3
+  optional uint32 next_page_id = 3; // 33737, incrementing
+  repeated File file = 4;
+  optional uint32 unk6 = 6; // 1 on venu 4
+}
+
+message File {
+  optional FileId id = 1;
+  optional FileType type = 2;
+  optional uint32 size = 3;
+  optional uint32 page_id = 5; // 33652, 33653, ... incrementing
+  optional uint32 unk4 = 4; // 0 on venu 4
+  optional uint32 unk6 = 6; // 2 on venu 4
+}
+
+message FileId {
+  optional fixed64 id1 = 1;
+  optional fixed64 id2 = 2;
+}
+
+message FileType {
+  optional uint32 unk1 = 1; // 0
+  optional string name = 2;
+  optional uint32 code = 3; // 8 monitor 9 sports
+}

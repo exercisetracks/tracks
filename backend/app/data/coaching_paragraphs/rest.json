@@ -1,0 +1,22 @@
+{
+  "rest.overdue": {
+    "full": [
+      "Take a full rest day. You've trained {streak} days in a row and the numbers are asking for a break (TSB {tsb:+.0f}). Nothing earns you more right now than the recovery will: fitness is built when you rest, not when you train, and unbroken loading eventually raises your risk of illness and injury more than it raises your fitness. A light walk is fine if you want to move, but no real session today.",
+      "Rest today, properly. A streak of {streak} straight training days with fatigue this high (TSB {tsb:+.0f}) is the point of diminishing returns; the adaptations you're chasing happen during recovery, and skipping it just accumulates strain. Give your body the day to turn recent work into fitness."
+    ],
+    "compact": [
+      "Full rest day. {streak} days straight and fatigue is high; recovery is where the fitness gets made.",
+      "Rest today. You've trained {streak} days running; a light walk at most, nothing structured."
+    ]
+  },
+  "rest.injury_risk_ramp": {
+    "full": [
+      "Take a full rest day, or very easy movement at most. Your fitness has jumped about {ramp:.0f} points a week, and here is the risk: your tendons and bones remodel much more slowly than your heart and lungs improve, so when load climbs faster than those tissues can keep up, soft-tissue injury risk rises sharply. One easy day lets the slower-adapting tissue catch up to the engine you've already built.",
+      "Back off today; rest or gentle movement only. A ramp of roughly {ramp:.0f} points a week means you're building load faster than your connective tissue can safely adapt, which is one of the more reliable precursors to overuse injury. Letting the ramp settle now protects the training you've banked."
+    ],
+    "compact": [
+      "Rest day. Your load has ramped about {ramp:.0f} points a week, past where injury risk climbs; let the slower tissues catch up.",
+      "Ease off today. Fitness is rising faster than tendons and bones adapt; a rest day protects against overuse."
+    ]
+  }
+}

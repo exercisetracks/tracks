@@ -1,0 +1,9 @@
+{
+  "key": "full_body_unwind",
+  "name": "Full-Body Unwind",
+  "tagline": "A head-to-toe wind-down for the whole body.",
+  "contexts": ["post_workout", "weekly_mobility"],
+  "sports": null,
+  "themes": ["full_body"],
+  "closer_muscles": ["lower_back"]
+}

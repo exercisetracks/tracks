@@ -1,0 +1,52 @@
+{
+  "mobility.active_recovery": {
+    "full": [
+      "Swap today's session for {duration} min of easy mobility on {muscle_targets}, slow and static. Your fatigue is high (TSB {tsb:+.0f}) and readiness is low ({readiness}), and training only becomes fitness during recovery, when your body rebuilds above where it started. Pile hard work on top of deep fatigue and you just add damage without the resources to adapt, which is the road to overtraining and getting sick. Gentle mobility keeps blood moving without asking anything of that recovery.",
+      "Today is for recovery, not load: {duration} min of slow, static mobility on {muscle_targets}. With readiness at {readiness} and fatigue running high, the productive thing is to let your body catch up, since adaptation happens during rest rather than during the session. Easy mobility supports that by promoting blood flow to tired tissue without adding training stress."
+    ],
+    "compact": [
+      "Easy mobility, {duration} min on {muscle_targets}. Fatigue is high and readiness low; recovery is where fitness is made, so don't add load today.",
+      "Gentle mobility, {duration} min. Slow and static on {muscle_targets}; let your body adapt instead of digging deeper."
+    ]
+  },
+  "mobility.post_long_flush": {
+    "full": [
+      "After that last effort, do {duration} min of targeted mobility on {muscle_targets}. Gentle range-of-motion work moves things along faster than sitting still, easing the tissue that took the most load and helping you feel ready sooner. Hold each position long enough to actually let the muscle release rather than bouncing through it.",
+      "Follow up your recent long session with {duration} min of mobility focused on {muscle_targets}, the areas your {sport} loads most. Easy, deliberate stretching after hard work supports blood flow and comfortable range of motion without adding to the fatigue you're already clearing. Slow and unhurried is the point."
+    ],
+    "compact": [
+      "Targeted mobility, {duration} min on {muscle_targets}. After a long effort, gentle range-of-motion work helps you bounce back faster than doing nothing.",
+      "Post-session mobility, {duration} min. Focus on {muscle_targets}; hold each position and let it release."
+    ]
+  },
+  "mobility.neglected": {
+    "full": [
+      "Give {duration} min to mobility today, working {muscle_targets}. You haven't logged any lately, and it is the easiest thing to skip and the first thing to tighten up. Range of motion is quietly lost through repetitive training, and short, regular sessions preserve it far better than an occasional long one. Little and often is the whole trick.",
+      "Slot in a short mobility session, {duration} min on {muscle_targets}. Consistent training in the same patterns gradually shortens the muscles it uses, and without any counter-work your usable range slowly shrinks. A brief, regular session keeps your positions and stride from tightening over a block of training."
+    ],
+    "compact": [
+      "Mobility, {duration} min on {muscle_targets}. It's easy to skip and quick to tighten up; short and regular beats occasional and long.",
+      "Short mobility session, {duration} min. Work {muscle_targets} to hold the range of motion your training quietly erodes."
+    ]
+  },
+  "mobility.sport_specific_tightness": {
+    "full": [
+      "Spend {duration} min on mobility for {muscle_targets}, the areas your {sport} loads most. Repetitive sport-specific movement is exactly where range of motion quietly disappears, and keeping those muscles supple protects your stride or position from tightening as your training volume adds up. Slow, static holds work best.",
+      "Target {muscle_targets} with {duration} min of mobility today. Your {sport} works those muscles hard and through a limited range, so deliberately opening them back up keeps you moving efficiently and comfortably. Ease into each position and breathe rather than forcing it."
+    ],
+    "compact": [
+      "Mobility for {muscle_targets}, {duration} min. Your {sport} loads these most; keeping them supple protects your stride and position.",
+      "Sport-specific mobility, {duration} min on {muscle_targets}. Static holds where your training tightens you up."
+    ]
+  },
+  "mobility.rest_day_gentle": {
+    "full": [
+      "It's a rest day, so nothing is required. If you want to move, {duration} min of gentle mobility on {muscle_targets} is about the right dose: enough to feel better and keep blood flowing, not enough to count as a workout or eat into recovery.",
+      "No session needed today. Should you feel like moving, keep it to {duration} min of easy mobility on {muscle_targets}; light range-of-motion work supports recovery without adding any real load."
+    ],
+    "compact": [
+      "Optional: {duration} min gentle mobility on {muscle_targets}. Enough to feel good on a rest day, not enough to count as training.",
+      "If you move at all, {duration} min easy mobility. Keep it light; today is for recovery."
+    ]
+  }
+}

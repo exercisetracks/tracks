@@ -1,0 +1,45 @@
+{
+  "name": "tracks-frontend",
+  "version": "1.0.2",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "npm run build:map-style && vite build",
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "postinstall": "patch-package",
+    "test:ui": "vitest --ui",
+    "build:map-style": "node scripts/build-map-style.mjs",
+    "check:map-style": "node scripts/check-map-style.mjs"
+  },
+  "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
+    "@maplibre/maplibre-gl-geocoder": "^1.9.4",
+    "maplibre-gl": "^4.7.1",
+    "patch-package": "^8.0.1",
+    "pmtiles": "^3.2.1",
+    "proj4": "^2.20.9",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "react-muscle-highlighter": "^1.2.0",
+    "react-router-dom": "^6.26.0",
+    "recharts": "^2.12.0"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@vitejs/plugin-react": "^4.3.0",
+    "@vitest/ui": "^4.1.7",
+    "autoprefixer": "^10.4.0",
+    "jsdom": "^29.1.1",
+    "playwright": "^1.60.0",
+    "postcss": "^8.4.0",
+    "tailwindcss": "^3.4.0",
+    "vite": "^5.4.0",
+    "vitest": "^4.1.7"
+  }
+}

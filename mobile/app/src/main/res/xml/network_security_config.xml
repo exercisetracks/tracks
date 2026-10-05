@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    SPDX-FileCopyrightText: 2026 Hawk Fugagli
+    SPDX-License-Identifier: AGPL-3.0-or-later
+
+    Permits plain HTTP, deliberately, and here is the reasoning.
+
+    Since API 28 Android blocks cleartext by default, and this app targets 35.
+    Without this file every request to an `http://` address fails before it
+    leaves the phone — no socket, no timeout, nothing on the wire. Tracks is
+    self-hosted, and the ordinary deployment is a box on the user's own LAN
+    reached at `10.0.0.5:4080` with no certificate, so the default turns the
+    normal case into an unreachable one.
+
+    That was not a hypothetical: it presented as onboarding reporting "No Tracks
+    server" for a server that was running, answering, and pingable from the same
+    phone. The platform had refused the request and the app could not tell the
+    difference between that and a server that was not there.
+
+    THE TRADE, STATED PLAINLY: this permits cleartext to any host, so a user who
+    types an `http://` address for a server on the public internet will send
+    their password over it. Android's network security config cannot express
+    "private address ranges only" — it matches explicit domains, not CIDR
+    blocks — so scoping this to LAN addresses is not available.
+
+    The mitigation is in `discoverApiBase`, which is the thing that decides
+    which scheme is actually used: given an address with no scheme it probes
+    **https first** and only falls back to http when TLS does not answer. So a
+    deployment that supports TLS gets TLS even if the user typed neither, and
+    cleartext is reached only when it is the sole thing on offer. An explicit
+    `http://` is honoured without second-guessing, because someone who typed it
+    meant it.
+
+    Other self-hosted clients — Immich, Nextcloud, Home Assistant — land in the
+    same place for the same reason. This is a considered position, not a default
+    left unexamined.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <!--
+                Both stores. `system` is the ordinary path; `user` matters
+                because self-hosters routinely front Tracks with a private CA
+                or a self-signed certificate, and refusing those would push
+                exactly the users who bothered to set up TLS back onto
+                cleartext — the opposite of what this file is trying to do.
+            -->
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

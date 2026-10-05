@@ -1,0 +1,9 @@
+{
+  "key": "shoulder_release",
+  "name": "Shoulder & Chest Release",
+  "tagline": "Open the chest and shoulders after pressing and pulling.",
+  "contexts": ["post_workout", "weekly_mobility"],
+  "sports": null,
+  "themes": ["shoulders"],
+  "closer_muscles": ["upper_back", "chest"]
+}

@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+# SPDX-FileCopyrightText: 2026 Hawk Fugagli
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# Starts one service, for the supervisor (etc/tracks/supervisord.conf).
+#
+# Everything but PostgreSQL runs as HOST_UID (default 1000) rather than root,
+# as in the multi-container stack: the files it writes in /data and /map-data
+# stay owned by a user on the host, and a compromised service holds no root.
+# The web server binds port 80 unprivileged because Docker sets
+# net.ipv4.ip_unprivileged_port_start=0 inside containers.
+set -euo pipefail
+# shellcheck source=/usr/local/lib/tracks/env.sh
+. /usr/local/lib/tracks/env.sh
+as_user=(gosu "$RUN_UID:$RUN_GID")
+
+# The API and the worker fail on their first query without these, and the
+# supervisor would only restart them into the same failure until they are up.
+wait_for_db() {
+    for _ in $(seq 1 120); do
+        "$PGBIN/pg_isready" -q -h 127.0.0.1 -p 5432 \
+            && redis-cli -h 127.0.0.1 ping >/dev/null 2>&1 && return 0
+        sleep 1
+    done
+    echo "[tracks-run] database or redis did not come up" >&2
+    exit 1
+}
+
+case "${1:?service}" in
+    postgres)
+        exec gosu postgres "$PGBIN/postgres" -D "$PGDATA" \
+            -c listen_addresses=127.0.0.1 -c unix_socket_directories=/run/postgresql \
+            -c jit=off   # LLVM is not in the image; see deploy/Dockerfile
+        ;;
+    redis)
+        # Session-key cache: in memory only, never written to disk (key
+        # material surviving a restart would defeat it), never evicted for
+        # unrelated memory pressure.
+        exec "${as_user[@]}" redis-server --bind 127.0.0.1 --port 6379 --save "" \
+            --appendonly no --maxmemory-policy noeviction --dir /tmp
+        ;;
+    backend)
+        wait_for_db
+        cd /app
+        # entrypoint.sh prepares /map-data and FIT_FILES_DIR, then drops to HOST_UID.
+        exec ./entrypoint.sh uvicorn app.main:app --host 127.0.0.1 --port 8000 \
+            --workers "${UVICORN_WORKERS:-2}"
+        ;;
+    worker)
+        wait_for_db
+        cd /app
+        exec "${as_user[@]}" celery -A app.tasks.celery_app worker --loglevel=info \
+            --concurrency="${CELERY_CONCURRENCY:-2}"
+        ;;
+    tiles)
+        exec "${as_user[@]}" /usr/local/bin/reload-wrapper.sh serve /map-data --cache-size=128
+        ;;
+    brouter)
+        mkdir -p /map-data/brouter/segments4
+        exec "${as_user[@]}" /opt/brouter/jre/bin/java -Djava.awt.headless=true \
+            -Xmx"${BROUTER_HEAP:-256M}" -Xms128M -cp /opt/brouter/brouter.jar btools.server.RouteServer \
+            /map-data/brouter/segments4 /opt/brouter/profiles /opt/brouter/customprofiles 17777 4
+        ;;
+    web)
+        exec "${as_user[@]}" caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
+        ;;
+    garmin-sync)
+        # Pre-authorized for the admin account by the shared bootstrap token,
+        # exactly as the separate garmin-sync container is (see its compose
+        # block): it runs on this host, so there is nothing to pair.
+        export TRACKS_SYNC_TOKEN="${GARMIN_SYNC_BOOTSTRAP_TOKEN:-}" \
+               TRACKS_API_URL=http://127.0.0.1:8000 \
+               GARMIN_SYNC_DEST=/data/garmin-sync \
+               GARMIN_AGPS_CACHE_DIR=/data/garmin-sync/.agps-cache \
+               GARMIN_SYNC_FOLDER_PATH="GARMIN/Activity,GARMIN/Sleep,GARMIN/HRVStatus,GARMIN/Monitor"
+        mkdir -p "$GARMIN_AGPS_CACHE_DIR" && chown "$RUN_UID:$RUN_GID" "$GARMIN_AGPS_CACHE_DIR"
+        exec "${as_user[@]}" python3 /opt/garmin-sync/sync.py
+        ;;
+    *)
+        echo "unknown service: $1" >&2
+        exit 2
+        ;;
+esac

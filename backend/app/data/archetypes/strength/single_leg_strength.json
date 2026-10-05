@@ -1,0 +1,17 @@
+{
+  "key": "single_leg_strength",
+  "name": "Single-Leg Strength",
+  "tagline": "Balanced, bulletproof legs — one side at a time.",
+  "intent": "A unilateral-focused lower session that irons out left-right imbalances and builds the single-leg stability that carries over to running and hiking.",
+  "splits": ["lower_a", "lower_b", "supp_lower"],
+  "sports": null,
+  "tier_range": [2, 5],
+  "phases": ["any"],
+  "main": [
+    { "slot": "squat", "scheme": { "sets": 3, "reps": 8 } },
+    { "slot": "lower_uni", "scheme": { "sets": 3, "reps": 10, "rest_seconds": 90 } }
+  ],
+  "supersets": [["calf", "hip_stability"]],
+  "finisher": null,
+  "cooldown_theme": "hips"
+}

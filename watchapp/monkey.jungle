@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: 2026 Hawk Fugagli
+# SPDX-License-Identifier: AGPL-3.0-or-later
+project.manifest = manifest.xml
+
+# Everything marked (:devconfig) is simulator-only — a baked-in music server
+# for a build with no phone to pair with. build.sh --dev generates a jungle
+# that flips this to exclude (:release) instead; see there.
+base.excludeAnnotations = devconfig

@@ -1,0 +1,20 @@
+diff --git a/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/FileSyncServiceHandler.kt b/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/FileSyncServiceHandler.kt
+index 1d29a41..7b6134b 100644
+--- a/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/FileSyncServiceHandler.kt
++++ b/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/FileSyncServiceHandler.kt
+@@ -109,6 +109,15 @@ class FileSyncServiceHandler(val deviceSupport: GarminSupport) {
+                 "continue file list",
+                 GdiSmartProto.Smart.newBuilder().setFileSyncService(requestFileList()).build()
+             )
++        } else {
++            // Tracks: the listing is finished, and nothing else on the wire says
++            // so. Upstream does not need to know, because it only ever ends a
++            // sync run once a file has actually transferred; Tracks ends the run
++            // when the queue drains, so without this a watch that offers an
++            // empty list (the ordinary case, a day after the last sync) would
++            // have its run declared finished while this request was still in
++            // flight. See vendor/patches/0004-filesync-listing-complete.patch.
++            deviceSupport.onFileListComplete()
+         }
+ 
+         return null

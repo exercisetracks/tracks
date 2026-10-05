@@ -1,0 +1,278 @@
+{
+  "_comment": "GENERATED from the original frontend/src/utils/sportUtils.js by spec/make_fixtures.py. Shared oracle for the Python, JavaScript, and Kotlin evaluators — see spec/codegen.py.",
+  "cases": [
+    {
+      "sport": "cycling",
+      "sub_sport": "indoor_cycling",
+      "expected": "indoor_cycling"
+    },
+    {
+      "sport": "cycling",
+      "sub_sport": "mountain",
+      "expected": "mtb",
+      "note": "Corrected by hand, not re-baselined. The original JS said 'cycling' because no rule matched Garmin's bare sub_sport 'mountain'. That was a bug: real MTB rides got the road-cycling layout. See spec/sport_taxonomy.yaml."
+    },
+    {
+      "sport": "fitness_equipment",
+      "sub_sport": "yoga",
+      "expected": "mind_body"
+    },
+    {
+      "sport": "hiking",
+      "sub_sport": "generic",
+      "expected": "hiking"
+    },
+    {
+      "sport": "rock_climbing",
+      "sub_sport": "bouldering",
+      "expected": "bouldering"
+    },
+    {
+      "sport": "rock_climbing",
+      "sub_sport": "indoor_climbing",
+      "expected": "climbing"
+    },
+    {
+      "sport": "running",
+      "sub_sport": "generic",
+      "expected": "running"
+    },
+    {
+      "sport": "running",
+      "sub_sport": "treadmill",
+      "expected": "running"
+    },
+    {
+      "sport": "snowboarding",
+      "sub_sport": "backcountry",
+      "expected": "skiing"
+    },
+    {
+      "sport": "snowboarding",
+      "sub_sport": "generic",
+      "expected": "skiing"
+    },
+    {
+      "sport": "training",
+      "sub_sport": "cardio_training",
+      "expected": "strength"
+    },
+    {
+      "sport": "training",
+      "sub_sport": "strength_training",
+      "expected": "strength"
+    },
+    {
+      "sport": "training",
+      "sub_sport": "yoga",
+      "expected": "mind_body",
+      "note": "Corrected by hand, not re-baselined. Was 'strength': sport 'training' beat the yoga rule, so real yoga sessions (Garmin files them as training/<sub_sport>) got the strength layout. The sub-sport is the more specific answer. See spec/sport_taxonomy.yaml."
+    },
+    {
+      "sport": "walking",
+      "sub_sport": "generic",
+      "expected": "hiking"
+    },
+    {
+      "sport": "rock_climbing",
+      "sub_sport": "",
+      "expected": "climbing"
+    },
+    {
+      "sport": "bouldering",
+      "sub_sport": "",
+      "expected": "bouldering"
+    },
+    {
+      "sport": "training",
+      "sub_sport": "",
+      "expected": "strength"
+    },
+    {
+      "sport": "yoga",
+      "sub_sport": "",
+      "expected": "mind_body"
+    },
+    {
+      "sport": "training",
+      "sub_sport": "pilates",
+      "expected": "mind_body",
+      "note": "Corrected by hand, not re-baselined. Was 'strength': sport 'training' beat the yoga rule, so real yoga sessions (Garmin files them as training/<sub_sport>) got the strength layout. The sub-sport is the more specific answer. See spec/sport_taxonomy.yaml."
+    },
+    {
+      "sport": "hiking",
+      "sub_sport": "mountain_biking",
+      "expected": "mtb"
+    },
+    {
+      "sport": "walking",
+      "sub_sport": "cycling",
+      "expected": "other"
+    },
+    {
+      "sport": "hiking",
+      "sub_sport": "rock_climbing",
+      "expected": "climbing"
+    },
+    {
+      "sport": "mountain_biking",
+      "sub_sport": "",
+      "expected": "mtb"
+    },
+    {
+      "sport": "cycling",
+      "sub_sport": "mountain_biking",
+      "expected": "mtb"
+    },
+    {
+      "sport": "cycling",
+      "sub_sport": "downhill",
+      "expected": "mtb"
+    },
+    {
+      "sport": "cycling",
+      "sub_sport": "virtual",
+      "expected": "indoor_cycling"
+    },
+    {
+      "sport": "cycling",
+      "sub_sport": "trainer",
+      "expected": "indoor_cycling"
+    },
+    {
+      "sport": "cycling",
+      "sub_sport": "indoor_cycling",
+      "expected": "indoor_cycling"
+    },
+    {
+      "sport": "indoor_cycling",
+      "sub_sport": "",
+      "expected": "indoor_cycling"
+    },
+    {
+      "sport": "cycling",
+      "sub_sport": "road",
+      "expected": "cycling"
+    },
+    {
+      "sport": "cycling",
+      "sub_sport": "gravel",
+      "expected": "cycling"
+    },
+    {
+      "sport": "e_bike_fitness",
+      "sub_sport": "",
+      "expected": "cycling"
+    },
+    {
+      "sport": "running",
+      "sub_sport": "trail",
+      "expected": "running"
+    },
+    {
+      "sport": "trail_running",
+      "sub_sport": "",
+      "expected": "running"
+    },
+    {
+      "sport": "",
+      "sub_sport": "treadmill",
+      "expected": "running"
+    },
+    {
+      "sport": "swimming",
+      "sub_sport": "open_water",
+      "expected": "swimming"
+    },
+    {
+      "sport": "rowing",
+      "sub_sport": "indoor_rowing",
+      "expected": "rowing"
+    },
+    {
+      "sport": "triathlon",
+      "sub_sport": "transition",
+      "expected": "triathlon"
+    },
+    {
+      "sport": "alpine_skiing",
+      "sub_sport": "",
+      "expected": "skiing"
+    },
+    {
+      "sport": "cross_country_skiing",
+      "sub_sport": "",
+      "expected": "nordic_skiing"
+    },
+    {
+      "sport": "snowshoeing",
+      "sub_sport": "",
+      "expected": "nordic_skiing"
+    },
+    {
+      "sport": "stand_up_paddleboarding",
+      "sub_sport": "",
+      "expected": "paddling"
+    },
+    {
+      "sport": "kayaking",
+      "sub_sport": "",
+      "expected": "paddling"
+    },
+    {
+      "sport": "elliptical",
+      "sub_sport": "",
+      "expected": "fitness_equipment"
+    },
+    {
+      "sport": "",
+      "sub_sport": "stair_climbing",
+      "expected": "fitness_equipment"
+    },
+    {
+      "sport": "basketball",
+      "sub_sport": "",
+      "expected": "team_sports"
+    },
+    {
+      "sport": "boxing",
+      "sub_sport": "",
+      "expected": "team_sports"
+    },
+    {
+      "sport": "golf",
+      "sub_sport": "",
+      "expected": "golf"
+    },
+    {
+      "sport": "inline_skating",
+      "sub_sport": "",
+      "expected": "fitness_equipment"
+    },
+    {
+      "sport": "horseback_riding",
+      "sub_sport": "",
+      "expected": "other"
+    },
+    {
+      "sport": "motorcycling",
+      "sub_sport": "",
+      "expected": "cycling"
+    },
+    {
+      "sport": "",
+      "sub_sport": "",
+      "expected": "other"
+    },
+    {
+      "sport": "Rock Climbing",
+      "sub_sport": "Indoor Climbing",
+      "expected": "climbing"
+    },
+    {
+      "sport": "UNKNOWN_SPORT",
+      "sub_sport": "UNKNOWN_SUB",
+      "expected": "other"
+    }
+  ]
+}

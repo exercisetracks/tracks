@@ -1,0 +1,198 @@
+# Sport taxonomy — FIT sport/sub_sport pairs to a Tracks sport type.
+#
+# This is the single source of truth. `spec/codegen.py` generates the Python,
+# JavaScript, and Kotlin data modules from it; nothing downstream is edited by
+# hand. Change a rule here, run the codegen, and every client agrees.
+#
+# ── Why this file exists ─────────────────────────────────────────────────────
+# The type decided here selects which of 19 activity layouts renders, so a
+# disagreement between clients isn't cosmetic — the phone and the browser show
+# a different page for the same ride. Keeping the rules as data in one place is
+# what makes that impossible rather than merely unlikely.
+#
+# ── ORDER IS SIGNIFICANT ─────────────────────────────────────────────────────
+# Rules are evaluated top to bottom and the first match wins. Several pairs
+# depend on that and will silently change meaning if reordered:
+#
+#   * bouldering before climbing   — "rock_climbing/bouldering" is bouldering
+#   * mind_body before strength    — Garmin files a logged yoga session under
+#                                    training/yoga; the sub-sport says what it
+#                                    was, so it is mind & body. Bare "training"
+#                                    is still strength.
+#   * hiking before running        — and it excludes bike/rock terms, so a
+#                                    "mountain biking" activity isn't a hike
+#   * indoor_cycling before mtb    — a virtual ride is indoor, not off-road
+#   * mtb before cycling           — "mountain_biking" would match /bik/
+#
+# ── Matching model ───────────────────────────────────────────────────────────
+# Both fields are lowercased and every non-alphanumeric character becomes "_".
+# `combined` is then `"<sport> <sub_sport>"` joined by a single space.
+#
+# A rule matches when ANY entry in `any` matches AND NO entry in `none` does.
+# An entry is either a single condition or `all:` of conditions.
+# A condition is `{field, matches: <regex>}` or `{field, equals: <literal>}`.
+# `matches` is an unanchored search, so patterns are substrings by default.
+#
+# Patterns stay to plain alternation of literals — no lookaround, no
+# backreferences, no character classes beyond the basics — because they must
+# mean the same thing to Python's `re`, JavaScript's RegExp, and Kotlin's Regex.
+
+types:
+  - bouldering
+  - climbing
+  - strength
+  - running
+  - hiking
+  - cycling
+  - mtb
+  - indoor_cycling
+  - swimming
+  - rowing
+  - triathlon
+  - skiing
+  - nordic_skiing
+  - paddling
+  - golf
+  - team_sports
+  - fitness_equipment
+  - mind_body
+  - other
+
+fallback: other
+
+rules:
+  - type: bouldering
+    why: Before generic climbing — bouldering is filed under rock_climbing.
+    any:
+      - {field: combined, matches: "bouldering"}
+
+  - type: climbing
+    why: Rock, indoor rope, and sport climbing.
+    any:
+      - {field: combined, matches: "rock_climbing|floor_climbing|indoor_climbing"}
+
+  - type: mind_body
+    why: >
+      Yoga, pilates, breathwork, meditation — before strength on purpose.
+      Garmin files logged yoga as training/yoga; the sub-sport is the more
+      specific answer, so it wins over the bare sport "training". This was
+      once the other way round (training won the tie) and put real yoga
+      sessions on the strength layout and into strength counts.
+    any:
+      - {field: combined, matches: "yoga|pilates|breath|meditat|mindful"}
+
+  - type: strength
+    why: The bare sport "training" is overwhelmingly weights.
+    any:
+      - {field: sport, equals: training}
+      - {field: combined, matches: "strength_training|weight_training|crossfit"}
+
+  - type: hiking
+    why: >
+      Hiking and walking. The exclusion matters: without it "mountain biking"
+      matches /bik/ nowhere but "walk" appears in some bike sub-sports, and
+      rock scrambles were landing here instead of on climbing.
+    any:
+      - {field: sport, matches: "hik|walk"}
+    none:
+      - {field: combined, matches: "mountain_bik|rock|bike|cycl"}
+
+  - type: running
+    why: All run variants, plus a bare treadmill sub-sport.
+    any:
+      - {field: sport, matches: "run"}
+      - {field: sub_sport, equals: treadmill}
+
+  - type: indoor_cycling
+    why: Spin, virtual, and trainer rides — before mtb so a virtual ride isn't off-road.
+    any:
+      - {field: combined, matches: "indoor_cycling|virtual_cycling|spin"}
+      - {field: sub_sport, equals: indoor_cycling}
+      - all:
+          - {field: sport, equals: cycling}
+          - {field: sub_sport, matches: "virtual|indoor|trainer|spin"}
+
+  - type: mtb
+    why: >
+      Before generic cycling, which would otherwise claim "mountain_biking" via
+      /bik/. The bare sub-sport "mountain" is matched exactly rather than as a
+      substring: that is what Garmin actually writes for an MTB ride, and it was
+      falling through to generic cycling — real rides getting the road layout.
+      An exact match is safe here because hiking is evaluated earlier, so
+      hiking/mountain is already claimed before this rule sees it.
+    any:
+      - {field: combined, matches: "mountain_bik|trail_bik|mtb|downhill"}
+      - {field: sub_sport, equals: mountain}
+
+  - type: cycling
+    why: Road, gravel, e-bike, and generic rides.
+    any:
+      - {field: sport, matches: "cycl|bik|ride"}
+      - {field: sub_sport, matches: "road|gravel|cyclocross|track_cycling|hand_cycling|recumbent"}
+
+  - type: swimming
+    any:
+      - {field: combined, matches: "swim|open_water"}
+
+  - type: rowing
+    why: Indoor and outdoor.
+    any:
+      - {field: combined, matches: "row"}
+
+  - type: triathlon
+    why: Multisport and duathlon file here too, including bare transitions.
+    any:
+      - {field: combined, matches: "triathlon|multisport|duathlon|transition"}
+
+  - type: skiing
+    why: Alpine and snowboarding — downhill snow sports.
+    any:
+      - {field: combined, matches: "alpine_ski|downhill_ski|snowboard"}
+
+  - type: nordic_skiing
+    why: Cross-country, skate skiing, snowshoeing.
+    any:
+      - {field: combined, matches: "cross_country|nordic_ski|skate_ski|snowshoe"}
+
+  - type: paddling
+    why: Paddle and water sports generally.
+    any:
+      - {field: combined, matches: "kayak|canoe|paddle|stand_up|surfing|sail|windsurf|kitesurf|wakeboard|water_ski|raft"}
+
+  - type: fitness_equipment
+    why: Elliptical and stair machines, and treadmill when no run sport claimed it.
+    any:
+      - {field: combined, matches: "elliptical|stair|fitness_equipment"}
+      - {field: sub_sport, equals: elliptical}
+      - {field: sub_sport, equals: stair_climbing}
+
+  - type: team_sports
+    why: Team and racket sports.
+    any:
+      - {field: combined, matches: "basketball|soccer|football|tennis|volleyball|baseball|softball|hockey|lacrosse|rugby|handball|squash|racquetball|pickleball|badminton"}
+
+  - type: team_sports
+    why: Combat sports share the team_sports layout.
+    any:
+      - {field: combined, matches: "box|wrestling|mma|martial|judo|karate"}
+
+  - type: golf
+    any:
+      - {field: combined, matches: "golf"}
+
+  - type: fitness_equipment
+    why: Inline and ice skating share the fitness-equipment layout.
+    any:
+      - {field: combined, matches: "skating|skateboard|inline"}
+
+  - type: other
+    why: >
+      Horseback, hunting, fishing. Redundant with the fallback, kept so the
+      classification is stated rather than inferred from silence.
+    any:
+      - {field: combined, matches: "horseback|hunting|fishing|equestrian"}
+
+  - type: other
+    why: Motorised and airborne activities. Redundant with the fallback, as above.
+    any:
+      - {field: combined, matches: "motorcycl|snowmobil|driving|boating|flying"}

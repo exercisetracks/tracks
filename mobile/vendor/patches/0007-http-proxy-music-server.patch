@@ -1,0 +1,853 @@
+diff --git a/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/http/GarminHttpRequest.java b/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/http/GarminHttpRequest.java
+index 661186d..d9431ad 100644
+--- a/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/http/GarminHttpRequest.java
++++ b/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/http/GarminHttpRequest.java
+@@ -1,52 +1,64 @@
++// SPDX-FileCopyrightText: 2026 Hawk Fugagli
++// SPDX-License-Identifier: AGPL-3.0-or-later
+ package nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.http;
+ 
+ import android.net.Uri;
++import android.util.Log;
+ 
+-import com.google.gson.JsonElement;
+-import com.google.gson.JsonObject;
++import org.json.JSONObject;
+ 
+-import java.util.HashMap;
++import java.nio.charset.StandardCharsets;
++import java.util.Iterator;
+ import java.util.LinkedHashMap;
+ import java.util.List;
+ import java.util.Locale;
+ import java.util.Map;
+ 
+ import nodomain.freeyourgadget.gadgetbridge.proto.garmin.GdiHttpService;
+-import nodomain.freeyourgadget.gadgetbridge.util.HttpUtils;
+ 
++/**
++ * One request the watch asked the phone to make, in either of the two shapes
++ * the protocol has for it.
++ *
++ * <p>A {@code RawRequest} is what native firmware features use; a
++ * {@code WebRequest} is what a Connect IQ app's {@code makeWebRequest}
++ * becomes, and its headers arrive Garmin-JSON encoded rather than as a list.
++ * Callers see one map of lower-cased header names either way.
++ */
+ public class GarminHttpRequest {
++    private static final String TAG = "GarminHttpRequest";
+     private final GdiHttpService.HttpService.RawRequest rawRequest;
+     private final GdiHttpService.HttpService.WebRequest webRequest;
+-
+     private final int messageRequestId;
+-
+     private final String method;
+     private final Uri uri;
+-    private final Map<String, String> headers;
++    private final Map<String, String> headers = new LinkedHashMap<>();
+ 
+-    public GarminHttpRequest(final GdiHttpService.HttpService.RawRequest rawRequest,
+-                             final int messageRequestId) {
++    public GarminHttpRequest(final GdiHttpService.HttpService.RawRequest rawRequest, final int messageRequestId) {
+         this.messageRequestId = messageRequestId;
+         this.rawRequest = rawRequest;
+         this.webRequest = null;
+-        this.method = rawRequest.getMethod().name();
++        this.method = rawRequest.hasMethod() ? rawRequest.getMethod().name() : "GET";
+         this.uri = Uri.parse(rawRequest.getUrl());
+-        this.headers = headersToMap(rawRequest.getHeaderList());
++        for (final GdiHttpService.HttpService.Header header : rawRequest.getHeaderList()) {
++            headers.put(header.getKey().toLowerCase(Locale.ROOT), header.getValue());
++        }
+     }
+ 
+-    public GarminHttpRequest(final GdiHttpService.HttpService.WebRequest webRequest,
+-                             final int messageRequestId) throws GarminJsonException {
++    public GarminHttpRequest(final GdiHttpService.HttpService.WebRequest webRequest, final int messageRequestId) throws GarminJsonException {
+         this.messageRequestId = messageRequestId;
+         this.rawRequest = null;
+         this.webRequest = webRequest;
+-        this.method = webRequest.getMethod().name();
++        this.method = webRequest.hasMethod() ? webRequest.getMethod().name() : "GET";
+         this.uri = Uri.parse(webRequest.getUrl());
+-        this.headers = new LinkedHashMap<>();
+         if (!webRequest.getHeaders().isEmpty()) {
+-            final JsonElement garminHeaders = GarminJson.decode(webRequest.getHeaders().toByteArray());
+-            if (garminHeaders instanceof JsonObject jsonObject) {
+-                for (String key : jsonObject.keySet()) {
+-                    headers.put(key, jsonObject.get(key).getAsString());
++            final Object decoded = GarminJson.decode(webRequest.getHeaders().toByteArray());
++            if (decoded instanceof JSONObject) {
++                final JSONObject map = (JSONObject) decoded;
++                final Iterator<String> keys = map.keys();
++                while (keys.hasNext()) {
++                    final String key = keys.next();
++                    headers.put(key.toLowerCase(Locale.ROOT), String.valueOf(map.opt(key)));
+                 }
+             }
+         }
+@@ -64,11 +76,15 @@ public class GarminHttpRequest {
+         return webRequest;
+     }
+ 
++    public boolean isWebRequest() {
++        return webRequest != null;
++    }
++
+     public Uri getUri() {
+         return uri;
+     }
+ 
+-    public String getDomain() {
++    public String getHost() {
+         return uri.getHost();
+     }
+ 
+@@ -80,27 +96,75 @@ public class GarminHttpRequest {
+         return uri.getPath();
+     }
+ 
++    /**
++     * The body to send on, in the encoding the destination server expects.
++     *
++     * A Connect IQ {@code makeWebRequest} hands its parameters over in Garmin's
++     * binary JSON, the same as its headers — so forwarding those bytes straight
++     * to a real server posts a binary blob where it expects a document, and the
++     * server answers 400. That reads on the watch as "server not reachable",
++     * because a failed POST is indistinguishable from an unreachable host from
++     * where the app is standing. Found against Navidrome's login, which is the
++     * first POST the watch ever makes.
++     *
++     * The encoding announces itself with a magic number, so anything that is
++     * not Garmin-JSON — a native firmware request, an already-plain body — is
++     * passed through untouched.
++     */
+     public byte[] getBody() {
+-        return rawRequest != null ? rawRequest.getRawBody().toByteArray() : webRequest.getBody().toByteArray();
++        if (rawRequest != null) {
++            return rawRequest.getRawBody().toByteArray();
++        }
++        final byte[] body = webRequest.getBody().toByteArray();
++        if (!GarminJson.looksEncoded(body)) {
++            return body;
++        }
++        try {
++            return reencode(GarminJson.decode(body));
++        } catch (final GarminJsonException e) {
++            // Better to send what the watch gave us than to drop the request.
++            Log.w(TAG, "could not decode the watch's request body; sending it as-is", e);
++            return body;
++        }
+     }
+ 
+-    public String getMethod() {
+-        return method;
++    /** Garmin-JSON turned back into whatever this request's content type says. */
++    private byte[] reencode(final Object decoded) {
++        final String contentType = headers.get("content-type");
++        if (contentType != null
++                && contentType.toLowerCase(Locale.ROOT).contains("x-www-form-urlencoded")
++                && decoded instanceof JSONObject) {
++            return formEncode((JSONObject) decoded).getBytes(StandardCharsets.UTF_8);
++        }
++        return String.valueOf(decoded).getBytes(StandardCharsets.UTF_8);
++    }
++
++    private static String formEncode(final JSONObject object) {
++        final StringBuilder out = new StringBuilder();
++        final Iterator<String> keys = object.keys();
++        while (keys.hasNext()) {
++            final String key = keys.next();
++            if (out.length() > 0) {
++                out.append('&');
++            }
++            out.append(Uri.encode(key)).append('=').append(Uri.encode(String.valueOf(object.opt(key))));
++        }
++        return out.toString();
+     }
+ 
+-    public Map<String, String> getQuery() {
+-        return HttpUtils.urlQueryParameters(uri.getQuery());
++    public String getMethod() {
++        return method;
+     }
+ 
+     public Map<String, String> getHeaders() {
+         return headers;
+     }
+ 
+-    private static Map<String, String> headersToMap(final List<GdiHttpService.HttpService.Header> headers) {
+-        final Map<String, String> ret = new HashMap<>();
+-        for (final GdiHttpService.HttpService.Header header : headers) {
+-            ret.put(header.getKey().toLowerCase(Locale.ROOT), header.getValue());
++    /** The largest body the watch will accept, for a web request; unbounded otherwise. */
++    public int getMaxResponseLength() {
++        if (webRequest != null && webRequest.hasMaxResponseLength()) {
++            return webRequest.getMaxResponseLength();
+         }
+-        return ret;
++        return Integer.MAX_VALUE;
+     }
+ }
+diff --git a/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/http/GarminHttpResponse.java b/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/http/GarminHttpResponse.java
+index 297c79e..b2481fa 100644
+--- a/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/http/GarminHttpResponse.java
++++ b/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/http/GarminHttpResponse.java
+@@ -1,28 +1,19 @@
++// SPDX-FileCopyrightText: 2026 Hawk Fugagli
++// SPDX-License-Identifier: AGPL-3.0-or-later
+ package nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.http;
+ 
+ import java.util.LinkedHashMap;
+ import java.util.Map;
+-import java.util.concurrent.Callable;
+ 
++/**
++ * What the phone answers a watch HTTP request with, before it is encoded into
++ * the protobuf shape the watch expects. Header names are lower-case.
++ */
+ public class GarminHttpResponse {
+-    private boolean complete = true;
+     private int status = 200;
+     private final Map<String, String> headers = new LinkedHashMap<>();
+     private byte[] body = new byte[0];
+ 
+-    private Callable<Void> onDataSuccessfullySentListener;
+-
+-    public GarminHttpResponse() {
+-    }
+-
+-    public boolean isComplete() {
+-        return complete;
+-    }
+-
+-    public void setComplete(final boolean complete) {
+-        this.complete = complete;
+-    }
+-
+     public int getStatus() {
+         return status;
+     }
+@@ -42,12 +33,4 @@ public class GarminHttpResponse {
+     public void setBody(final byte[] body) {
+         this.body = body;
+     }
+-
+-    public Callable<Void> getOnDataSuccessfullySentListener() {
+-        return onDataSuccessfullySentListener;
+-    }
+-
+-    public void setOnDataSuccessfullySentListener(final Callable<Void> onDataSuccessfullySentListener) {
+-        this.onDataSuccessfullySentListener = onDataSuccessfullySentListener;
+-    }
+ }
+diff --git a/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/http/GarminJson.java b/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/http/GarminJson.java
+index 9f2406b..ff80766 100644
+--- a/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/http/GarminJson.java
++++ b/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/http/GarminJson.java
+@@ -1,17 +1,21 @@
++// SPDX-FileCopyrightText: 2026 Hawk Fugagli
++// SPDX-License-Identifier: AGPL-3.0-or-later
++//
++// Ported from Gadgetbridge's GarminJson (AGPL-3.0-or-later) onto org.json,
++// which Android ships, so the module does not have to take on Gson for one
++// codec. The wire format is unchanged.
+ package nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.http;
+ 
+-import com.google.gson.JsonArray;
+-import com.google.gson.JsonElement;
+-import com.google.gson.JsonNull;
+-import com.google.gson.JsonObject;
+-import com.google.gson.JsonPrimitive;
++import org.json.JSONArray;
++import org.json.JSONException;
++import org.json.JSONObject;
+ 
+ import java.io.ByteArrayOutputStream;
+-import java.io.IOException;
+ import java.nio.ByteBuffer;
+ import java.nio.ByteOrder;
+ import java.nio.charset.StandardCharsets;
+ import java.util.Arrays;
++import java.util.Iterator;
+ import java.util.LinkedHashMap;
+ import java.util.LinkedHashSet;
+ import java.util.LinkedList;
+@@ -19,9 +23,21 @@ import java.util.Map;
+ import java.util.Queue;
+ import java.util.Set;
+ 
+-import nodomain.freeyourgadget.gadgetbridge.util.GB;
+-
+-public class GarminJson {
++/**
++ * Garmin's binary JSON, as used by the watch's HTTP proxy.
++ *
++ * <p>A Connect IQ {@code makeWebRequest} does not travel as text. The watch
++ * sends its request headers, and expects any JSON response body, in this
++ * encoding: a string table (every distinct string once, null-terminated,
++ * length-prefixed) followed by a data section that references strings by
++ * offset and lays containers out breadth-first. Sending the watch plain JSON
++ * text where it expects this produces a parse failure on the watch, not an
++ * error the phone ever sees — which is why this exists.
++ *
++ * <p>Values are the org.json vocabulary: {@link JSONObject}, {@link JSONArray},
++ * {@link String}, {@link Number}, {@link Boolean}, and {@link JSONObject#NULL}.
++ */
++public final class GarminJson {
+     private static final byte[] STRING_SECTION_MAGIC = {(byte) 0xab, (byte) 0xcd, (byte) 0xab, (byte) 0xcd};
+     private static final byte[] DATA_SECTION_MAGIC = {(byte) 0xda, (byte) 0x7a, (byte) 0xda, (byte) 0x7a};
+ 
+@@ -35,125 +51,144 @@ public class GarminJson {
+     private static final byte TYPE_SINT64 = 0x0e;
+     private static final byte TYPE_DOUBLE = 0x0f;
+ 
+-    public static byte[] encode(final JsonElement object) throws GarminJsonException {
+-        try {
+-            // First pass: collect all strings
+-            Set<String> strings = new LinkedHashSet<>();
+-            collectStrings(object, strings);
+-
+-            // Build string section
+-            final ByteArrayOutputStream stringSection = new ByteArrayOutputStream();
+-            int currentOffset = 0;
+-            final Map<String, Integer> finalOffsets = new LinkedHashMap<>();
+-            for (final String str : strings) {
+-                finalOffsets.put(str, currentOffset);
+-                final byte[] strBytes = str.getBytes(StandardCharsets.UTF_8);
+-                final int length = strBytes.length + 1; // +1 for null terminator
+-                stringSection.write((length >> 8) & 0xFF);
+-                stringSection.write(length & 0xFF);
+-                stringSection.write(strBytes);
+-                stringSection.write(0x00);
+-                currentOffset += 2 + strBytes.length + 1;
+-            }
+-
+-            // Build data section (breadth-first)
+-            final ByteArrayOutputStream dataSection = new ByteArrayOutputStream();
+-            encodeValueBreadthFirst(object, dataSection, finalOffsets);
++    private GarminJson() {
++    }
+ 
+-            final ByteArrayOutputStream output = new ByteArrayOutputStream();
++    /**
++     * True when these bytes are a Garmin-JSON document rather than plain text.
++     *
++     * Both sections start with a magic number, and a document always begins
++     * with one of them, so this is a decision rather than a guess. Needed
++     * because a Connect IQ request body arrives in this encoding while the
++     * server it is bound for expects the real thing.
++     */
++    public static boolean looksEncoded(final byte[] bytes) {
++        return startsWith(bytes, STRING_SECTION_MAGIC) || startsWith(bytes, DATA_SECTION_MAGIC);
++    }
+ 
+-            // Write string section, if any
+-            if (stringSection.size() > 0) {
+-                output.write(STRING_SECTION_MAGIC);
+-                writeUint32BE(output, stringSection.size());
+-                output.write(stringSection.toByteArray());
++    private static boolean startsWith(final byte[] bytes, final byte[] magic) {
++        if (bytes == null || bytes.length < magic.length) {
++            return false;
++        }
++        for (int i = 0; i < magic.length; i++) {
++            if (bytes[i] != magic[i]) {
++                return false;
+             }
++        }
++        return true;
++    }
+ 
+-            // Write data section
+-            output.write(DATA_SECTION_MAGIC);
+-            writeUint32BE(output, dataSection.size());
+-            output.write(dataSection.toByteArray());
++    public static byte[] encode(final Object value) throws GarminJsonException {
++        // First pass: every distinct string, in first-seen order.
++        final Set<String> strings = new LinkedHashSet<>();
++        collectStrings(value, strings);
++
++        final ByteArrayOutputStream stringSection = new ByteArrayOutputStream();
++        final Map<String, Integer> offsets = new LinkedHashMap<>();
++        int offset = 0;
++        for (final String str : strings) {
++            offsets.put(str, offset);
++            final byte[] bytes = str.getBytes(StandardCharsets.UTF_8);
++            final int length = bytes.length + 1; // null terminator
++            stringSection.write((length >> 8) & 0xFF);
++            stringSection.write(length & 0xFF);
++            stringSection.write(bytes, 0, bytes.length);
++            stringSection.write(0x00);
++            offset += 2 + length;
++        }
++
++        final ByteArrayOutputStream dataSection = new ByteArrayOutputStream();
++        encodeBreadthFirst(value, dataSection, offsets);
+ 
+-            return output.toByteArray();
+-        } catch (final IOException e) {
+-            throw new GarminJsonException("Failed to encode GarminJson", e);
++        final ByteArrayOutputStream out = new ByteArrayOutputStream();
++        if (stringSection.size() > 0) {
++            out.write(STRING_SECTION_MAGIC, 0, 4);
++            writeUint32BE(out, stringSection.size());
++            final byte[] s = stringSection.toByteArray();
++            out.write(s, 0, s.length);
+         }
++        out.write(DATA_SECTION_MAGIC, 0, 4);
++        writeUint32BE(out, dataSection.size());
++        final byte[] d = dataSection.toByteArray();
++        out.write(d, 0, d.length);
++        return out.toByteArray();
+     }
+ 
+-    private static void encodeValueBreadthFirst(final Object rootObj,
+-                                                final ByteArrayOutputStream out,
+-                                                final Map<String, Integer> stringOffsets) throws GarminJsonException {
+-        final Queue<Object> queue = new LinkedList<>();
+-        queue.add(rootObj);
++    private static boolean isNull(final Object o) {
++        return o == null || o == JSONObject.NULL;
++    }
+ 
++    private static void collectStrings(final Object root, final Set<String> strings) {
++        final Queue<Object> queue = new LinkedList<>();
++        queue.add(root);
+         while (!queue.isEmpty()) {
+             final Object obj = queue.poll();
+-
+-            if (obj == null || obj instanceof JsonNull) {
+-                out.write(TYPE_NULL);
+-            } else if (obj instanceof JsonPrimitive jsonPrimitive) {
+-                if (jsonPrimitive.isBoolean()) {
+-                    out.write(TYPE_BOOL);
+-                    out.write(jsonPrimitive.getAsBoolean() ? 0x01 : 0x00);
+-                } else if (jsonPrimitive.isNumber()) {
+-                    final Number num = jsonPrimitive.getAsNumber();
+-                    // Check the actual value to determine the appropriate type
+-                    // This handles LazilyParsedNumber and other Number implementations
+-                    final double doubleValue = num.doubleValue();
+-                    final long longValue = num.longValue();
+-
+-                    // Check if it's a floating point number
+-                    if (doubleValue != longValue || num instanceof Float || num instanceof Double) {
+-                        // It has a fractional part or is explicitly a float/double
+-                        if (num instanceof Float || (Math.abs(doubleValue) < Float.MAX_VALUE && doubleValue == (float) doubleValue)) {
+-                            out.write(TYPE_FLOAT);
+-                            writeFloat(out, num.floatValue());
+-                        } else {
+-                            out.write(TYPE_DOUBLE);
+-                            writeDouble(out, num.doubleValue());
+-                        }
+-                    } else {
+-                        // It's an integer value
+-                        if (longValue >= Integer.MIN_VALUE && longValue <= Integer.MAX_VALUE) {
+-                            out.write(TYPE_SINT32);
+-                            writeUint32BE(out, (int) longValue);
+-                        } else {
+-                            out.write(TYPE_SINT64);
+-                            writeUint64BE(out, longValue);
+-                        }
++            if (obj instanceof JSONObject) {
++                final JSONObject map = (JSONObject) obj;
++                final Iterator<String> keys = map.keys();
++                while (keys.hasNext()) {
++                    final String key = keys.next();
++                    strings.add(key);
++                    final Object v = map.opt(key);
++                    if (v instanceof String) {
++                        strings.add((String) v);
++                    } else if (v instanceof JSONObject || v instanceof JSONArray) {
++                        queue.add(v);
+                     }
+-                } else if (jsonPrimitive.isString()) {
+-                    out.write(TYPE_STRING);
+-                    final String str = jsonPrimitive.getAsString();
+-                    final Integer offset = stringOffsets.get(str);
+-                    if (offset == null) {
+-                        throw new GarminJsonException("String not found in offset map: " + str);
++                }
++            } else if (obj instanceof JSONArray) {
++                final JSONArray array = (JSONArray) obj;
++                for (int i = 0; i < array.length(); i++) {
++                    final Object v = array.opt(i);
++                    if (v instanceof String) {
++                        strings.add((String) v);
++                    } else if (v instanceof JSONObject || v instanceof JSONArray) {
++                        queue.add(v);
+                     }
+-                    writeUint32BE(out, offset);
+-                } else {
+-                    throw new GarminJsonException("Unexpected json primitive: " + jsonPrimitive.getClass().getName());
+                 }
+-            } else if (obj instanceof String str) {
++            } else if (obj instanceof String) {
++                strings.add((String) obj);
++            }
++        }
++    }
++
++    private static void encodeBreadthFirst(final Object root,
++                                           final ByteArrayOutputStream out,
++                                           final Map<String, Integer> offsets) throws GarminJsonException {
++        final Queue<Object> queue = new LinkedList<>();
++        queue.add(root);
++        while (!queue.isEmpty()) {
++            final Object obj = queue.poll();
++            if (isNull(obj)) {
++                out.write(TYPE_NULL);
++            } else if (obj instanceof Boolean) {
++                out.write(TYPE_BOOL);
++                out.write((Boolean) obj ? 0x01 : 0x00);
++            } else if (obj instanceof Number) {
++                writeNumber((Number) obj, out);
++            } else if (obj instanceof String) {
+                 out.write(TYPE_STRING);
+-                final Integer offset = stringOffsets.get(str);
+-                if (offset == null) {
+-                    throw new GarminJsonException("String not found in offset map: " + str);
++                final Integer at = offsets.get(obj);
++                if (at == null) {
++                    throw new GarminJsonException("String not in table: " + obj);
+                 }
+-                writeUint32BE(out, offset);
+-            } else if (obj instanceof JsonArray jsonArray) {
++                writeUint32BE(out, at);
++            } else if (obj instanceof JSONArray) {
++                final JSONArray array = (JSONArray) obj;
+                 out.write(TYPE_ARRAY);
+-                writeUint32BE(out, jsonArray.size());
+-                // Add array elements to queue for breadth-first processing
+-                for (final JsonElement element : jsonArray) {
+-                    queue.add(element);
++                writeUint32BE(out, array.length());
++                for (int i = 0; i < array.length(); i++) {
++                    queue.add(array.opt(i));
+                 }
+-            } else if (obj instanceof JsonObject jsonObj) {
++            } else if (obj instanceof JSONObject) {
++                final JSONObject map = (JSONObject) obj;
+                 out.write(TYPE_MAP);
+-                writeUint32BE(out, jsonObj.size());
+-                // Add key-value pairs to queue for breadth-first processing
+-                for (final Map.Entry<String, JsonElement> entry : jsonObj.entrySet()) {
+-                    queue.add(entry.getKey());
+-                    queue.add(entry.getValue());
++                writeUint32BE(out, map.length());
++                final Iterator<String> keys = map.keys();
++                while (keys.hasNext()) {
++                    final String key = keys.next();
++                    queue.add(key);
++                    queue.add(map.opt(key));
+                 }
+             } else {
+                 throw new GarminJsonException("Unsupported type: " + obj.getClass().getName());
+@@ -161,172 +196,133 @@ public class GarminJson {
+         }
+     }
+ 
+-    public static JsonElement decode(final byte[] bytes) throws GarminJsonException {
+-        if (bytes.length < 4 + 4 + 1) {
+-            throw new GarminJsonException("Not enough bytes for GarminJson in " + GB.hexdump(bytes));
++    private static void writeNumber(final Number num, final ByteArrayOutputStream out) {
++        final double d = num.doubleValue();
++        final long l = num.longValue();
++        final boolean fractional = d != l || num instanceof Float || num instanceof Double;
++        if (fractional) {
++            if (num instanceof Float || (Math.abs(d) < Float.MAX_VALUE && d == (float) d)) {
++                out.write(TYPE_FLOAT);
++                writeUint32BE(out, Float.floatToIntBits((float) d));
++            } else {
++                out.write(TYPE_DOUBLE);
++                writeUint64BE(out, Double.doubleToLongBits(d));
++            }
++        } else if (l >= Integer.MIN_VALUE && l <= Integer.MAX_VALUE) {
++            out.write(TYPE_SINT32);
++            writeUint32BE(out, (int) l);
++        } else {
++            out.write(TYPE_SINT64);
++            writeUint64BE(out, l);
+         }
++    }
+ 
++    public static Object decode(final byte[] bytes) throws GarminJsonException {
++        if (bytes.length < 4 + 4 + 1) {
++            throw new GarminJsonException("Not enough bytes for GarminJson: " + bytes.length);
++        }
+         final ByteBuffer buffer = ByteBuffer.wrap(bytes).order(ByteOrder.BIG_ENDIAN);
+ 
+-        // Parse string section if present
+         final Map<Integer, String> strings = new LinkedHashMap<>();
+         final byte[] magic = new byte[4];
+         buffer.get(magic);
+-
+         if (Arrays.equals(magic, STRING_SECTION_MAGIC)) {
+-            final int stringSectionLength = buffer.getInt();
+-            final int stringSectionEnd = buffer.position() + stringSectionLength;
+-            final int stringSectionStart = buffer.position();
+-
+-            while (buffer.position() < stringSectionEnd) {
+-                final int stringStart = buffer.position() - stringSectionStart;
++            final int sectionLength = buffer.getInt();
++            final int sectionStart = buffer.position();
++            final int sectionEnd = sectionStart + sectionLength;
++            while (buffer.position() < sectionEnd) {
++                final int at = buffer.position() - sectionStart;
+                 final int length = buffer.getShort() & 0xFFFF;
+-                final byte[] strBytes = new byte[length - 1]; // -1 for null terminator
+-                buffer.get(strBytes);
+-                buffer.get(); // skip null terminator
+-                final String str = new String(strBytes, StandardCharsets.UTF_8);
+-                strings.put(stringStart, str);
++                final byte[] str = new byte[length - 1];
++                buffer.get(str);
++                buffer.get(); // null terminator
++                strings.put(at, new String(str, StandardCharsets.UTF_8));
+             }
+-
+-            // Read data section magic
+             buffer.get(magic);
+         }
+-
+         if (!Arrays.equals(magic, DATA_SECTION_MAGIC)) {
+-            throw new GarminJsonException("Expected data section magic, got " + GB.hexdump(magic));
++            throw new GarminJsonException("Expected data section magic");
+         }
+-
+-        final int dataSectionLength = buffer.getInt();
+-        if (buffer.position() + dataSectionLength > bytes.length) {
+-            throw new GarminJsonException(String.format(
+-                    "Not enough bytes to decode data section: length=%d, remaining=%d",
+-                    dataSectionLength,
+-                    bytes.length - buffer.position()
+-            ));
++        final int dataLength = buffer.getInt();
++        if (buffer.position() + dataLength > bytes.length) {
++            throw new GarminJsonException("Data section runs past the end: " + dataLength);
+         }
+ 
+-        final Object rootObject = decodeValue(buffer, strings);
++        final Object root = decodeValue(buffer, strings);
+ 
+-        // Process placeholders breadth-first using a queue
++        // Containers come back as placeholders whose children follow later in
++        // the stream, breadth-first — same order they were written.
+         final Queue<Object> queue = new LinkedList<>();
+-        queue.add(rootObject);
+-
++        queue.add(root);
+         while (!queue.isEmpty()) {
+-            Object current = queue.poll();
+-
+-            if (current instanceof MapPlaceholder mp) {
++            final Object current = queue.poll();
++            if (current instanceof MapPlaceholder) {
++                final MapPlaceholder mp = (MapPlaceholder) current;
+                 for (int i = 0; i < mp.size; i++) {
+                     final Object key = decodeValue(buffer, strings);
+                     final Object value = decodeValue(buffer, strings);
+-
+-                    // Unwrap placeholders to get the actual JSON object/array
+-                    Object actualValue = value;
+-                    if (value instanceof MapPlaceholder) {
+-                        actualValue = ((MapPlaceholder) value).obj;
+-                        queue.add(value);
+-                    } else if (value instanceof ArrayPlaceholder) {
+-                        actualValue = ((ArrayPlaceholder) value).array;
+-                        queue.add(value);
++                    try {
++                        mp.obj.put(String.valueOf(unwrap(key)), unwrap(value));
++                    } catch (final JSONException e) {
++                        throw new GarminJsonException("Bad map entry", e);
+                     }
+-
+-                    mp.obj.add(String.valueOf(((JsonPrimitive) key).getAsString()), (JsonElement) actualValue);
++                    enqueueIfContainer(value, queue);
+                 }
+-            } else if (current instanceof ArrayPlaceholder ap) {
++            } else if (current instanceof ArrayPlaceholder) {
++                final ArrayPlaceholder ap = (ArrayPlaceholder) current;
+                 for (int i = 0; i < ap.length; i++) {
+-                    Object value = decodeValue(buffer, strings);
+-
+-                    // Unwrap placeholders to get the actual JSON object/array
+-                    Object actualValue = value;
+-                    if (value instanceof MapPlaceholder) {
+-                        actualValue = ((MapPlaceholder) value).obj;
+-                        queue.add(value);
+-                    } else if (value instanceof ArrayPlaceholder) {
+-                        actualValue = ((ArrayPlaceholder) value).array;
+-                        queue.add(value);
+-                    }
+-
+-                    ap.array.add((JsonElement) actualValue);
++                    final Object value = decodeValue(buffer, strings);
++                    ap.array.put(unwrap(value));
++                    enqueueIfContainer(value, queue);
+                 }
+             }
+         }
++        return unwrap(root);
++    }
+ 
+-        if (rootObject instanceof ArrayPlaceholder ap) {
+-            return ap.array;
+-        } else if (rootObject instanceof MapPlaceholder mp) {
+-            return mp.obj;
+-        } else if (rootObject instanceof JsonElement jsonElement) {
+-            return jsonElement;
+-        } else {
+-            throw new GarminJsonException("Unexpected root object " + rootObject.getClass());
++    private static void enqueueIfContainer(final Object value, final Queue<Object> queue) {
++        if (value instanceof MapPlaceholder || value instanceof ArrayPlaceholder) {
++            queue.add(value);
+         }
+     }
+ 
+-    private static void collectStrings(final JsonElement rootObj, final Set<String> strings) {
+-        final Queue<JsonElement> queue = new LinkedList<>();
+-        queue.add(rootObj);
+-
+-        while (!queue.isEmpty()) {
+-            final JsonElement obj = queue.poll();
+-
+-            if (obj instanceof JsonObject jsonObj) {
+-                for (final Map.Entry<String, JsonElement> entry : jsonObj.entrySet()) {
+-                    strings.add(entry.getKey());
+-                    final JsonElement value = entry.getValue();
+-                    if (value.isJsonPrimitive() && value.getAsJsonPrimitive().isString()) {
+-                        strings.add(value.getAsString());
+-                    } else if (value.isJsonObject() || value.isJsonArray()) {
+-                        queue.add(value);
+-                    }
+-                }
+-            } else if (obj instanceof JsonArray jsonArray) {
+-                for (final JsonElement element : jsonArray) {
+-                    if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()) {
+-                        strings.add(element.getAsString());
+-                    } else if (element.isJsonObject() || element.isJsonArray()) {
+-                        queue.add(element);
+-                    }
+-                }
+-            } else if (obj instanceof JsonPrimitive primitive) {
+-                if (primitive.isString()) {
+-                    strings.add(primitive.getAsString());
+-                }
+-            }
++    private static Object unwrap(final Object value) {
++        if (value instanceof MapPlaceholder) {
++            return ((MapPlaceholder) value).obj;
+         }
++        if (value instanceof ArrayPlaceholder) {
++            return ((ArrayPlaceholder) value).array;
++        }
++        return value;
+     }
+ 
+     private static Object decodeValue(final ByteBuffer buffer, final Map<Integer, String> strings) throws GarminJsonException {
+-        byte type = buffer.get();
+-
++        final byte type = buffer.get();
+         switch (type) {
+             case TYPE_NULL:
+-                return JsonNull.INSTANCE;
++                return JSONObject.NULL;
+             case TYPE_BOOL:
+-                return new JsonPrimitive(buffer.get() != 0x00);
++                return buffer.get() != 0x00;
+             case TYPE_SINT32:
+-                return new JsonPrimitive(buffer.getInt());
++                return buffer.getInt();
+             case TYPE_SINT64:
+-                return new JsonPrimitive(buffer.getLong());
++                return buffer.getLong();
+             case TYPE_FLOAT:
+-                return new JsonPrimitive(buffer.getFloat());
++                return buffer.getFloat();
+             case TYPE_DOUBLE:
+-                return new JsonPrimitive(buffer.getDouble());
+-            case TYPE_STRING:
+-                final int offset = buffer.getInt();
+-                final String str = strings.get(offset);
++                return buffer.getDouble();
++            case TYPE_STRING: {
++                final int at = buffer.getInt();
++                final String str = strings.get(at);
+                 if (str == null) {
+-                    throw new GarminJsonException("String not found in offset map: " + offset);
++                    throw new GarminJsonException("String offset not in table: " + at);
+                 }
+-                return new JsonPrimitive(str);
++                return str;
++            }
+             case TYPE_ARRAY:
+-                final int arrayLength = buffer.getInt();
+-                // Decoding is breadth-first - don't decode children yet
+-                // return placeholder with the expected number of children
+-                return new ArrayPlaceholder(new JsonArray(), arrayLength);
++                return new ArrayPlaceholder(new JSONArray(), buffer.getInt());
+             case TYPE_MAP:
+-                final int mapSize = buffer.getInt();
+-                // Decoding is breadth-first - don't decode children yet
+-                // return placeholder with the expected number of children
+-                return new MapPlaceholder(new JsonObject(), mapSize);
++                return new MapPlaceholder(new JSONObject(), buffer.getInt());
+             default:
+                 throw new GarminJsonException("Unknown type: 0x" + Integer.toHexString(type & 0xFF));
+         }
+@@ -340,27 +336,28 @@ public class GarminJson {
+     }
+ 
+     private static void writeUint64BE(final ByteArrayOutputStream out, final long value) {
+-        out.write((int) ((value >> 56) & 0xFF));
+-        out.write((int) ((value >> 48) & 0xFF));
+-        out.write((int) ((value >> 40) & 0xFF));
+-        out.write((int) ((value >> 32) & 0xFF));
+-        out.write((int) ((value >> 24) & 0xFF));
+-        out.write((int) ((value >> 16) & 0xFF));
+-        out.write((int) ((value >> 8) & 0xFF));
+-        out.write((int) (value & 0xFF));
++        for (int shift = 56; shift >= 0; shift -= 8) {
++            out.write((int) ((value >> shift) & 0xFF));
++        }
+     }
+ 
+-    private static void writeFloat(final ByteArrayOutputStream out, final float value) {
+-        writeUint32BE(out, Float.floatToIntBits(value));
+-    }
++    private static final class MapPlaceholder {
++        final JSONObject obj;
++        final int size;
+ 
+-    private static void writeDouble(final ByteArrayOutputStream out, final double value) {
+-        writeUint64BE(out, Double.doubleToLongBits(value));
++        MapPlaceholder(final JSONObject obj, final int size) {
++            this.obj = obj;
++            this.size = size;
++        }
+     }
+ 
+-    private record MapPlaceholder(JsonObject obj, int size) {
+-    }
++    private static final class ArrayPlaceholder {
++        final JSONArray array;
++        final int length;
+ 
+-    private record ArrayPlaceholder(JsonArray array, int length) {
++        ArrayPlaceholder(final JSONArray array, final int length) {
++            this.array = array;
++            this.length = length;
++        }
+     }
+ }
+diff --git a/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/http/GarminJsonException.java b/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/http/GarminJsonException.java
+index d556bce..9a3d0cd 100644
+--- a/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/http/GarminJsonException.java
++++ b/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/http/GarminJsonException.java
+@@ -1,3 +1,5 @@
++// SPDX-FileCopyrightText: 2026 Hawk Fugagli
++// SPDX-License-Identifier: AGPL-3.0-or-later
+ package nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.http;
+ 
+ public class GarminJsonException extends Exception {

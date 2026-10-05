@@ -1,0 +1,230 @@
+diff --git a/mobile/device-garmin/src/main/proto/garmin/gdi_explore_sync.proto b/mobile/device-garmin/src/main/proto/garmin/gdi_explore_sync.proto
+index a0e1c6e..d0f2032 100644
+--- a/mobile/device-garmin/src/main/proto/garmin/gdi_explore_sync.proto
++++ b/mobile/device-garmin/src/main/proto/garmin/gdi_explore_sync.proto
+@@ -119,9 +119,19 @@ message StartSyncRequest {
+   optional int32 protocol_version = 2;
+   optional bytes app_uuid = 3;
+   optional uint32 sync_capabilities = 4;
++  // Repeated, one per capability the client is actually exercising. Garmin
++  // Explore sends 4 (TRACKING_EVENT), 8 (COURSES) and 2 (ACTIVE_LINES) and
++  // sends no actual_capabilities at all; Tracks previously sent the bitmask in
++  // field 6 and nothing here, and the watch never asked it for anything.
++  repeated CapabilityDetail capability_detail = 5;
+   optional uint32 actual_capabilities = 6;
+ }
+ 
++message CapabilityDetail {
++  optional uint32 capability = 1;
++  optional uint32 unk2 = 2; // 0
++}
++
+ message StartSyncResponse {
+   optional StartSyncStatus status = 1;
+   optional int32 supported_protocol_version = 3;
+@@ -152,17 +162,60 @@ message CollectionDigestWriteResponse {
+ }
+ 
+ message CollectionDigestReadRequest {
++  optional uint32 page = 4;
+ }
+ 
++// The phone's list of collections. Captured from Garmin Explore; upstream stubs
++// this to {status}, which tells the watch the phone owns no collections at all.
+ message CollectionDigestReadResponse {
+   required ReadStatus status = 1;
++  optional CollectionDigest digest = 2;
++  optional uint32 unk3 = 3;
++}
++
++message CollectionDigest {
++  repeated CollectionRef collection = 1;
++}
++
++message CollectionRef {
++  optional bytes uuid = 1;
++  optional uint32 unk2 = 2;      // 0
++  optional uint32 unk3 = 3;      // 1
++  optional VersionStamp version_stamp = 4;
+ }
+ 
+ message CollectionReadRequest {
++  optional CollectionReadOp op = 1;
++}
++
++message CollectionReadOp {
++  optional CollectionRef collection = 1;
++  optional uint32 unk3 = 3;
+ }
+ 
++// Also stubbed upstream. A collection's item list is where deletion actually
++// lives: a removed item keeps its entry with tombstone = true and gains a fresh
++// version stamp, and is simultaneously dropped from the line digest.
+ message CollectionReadResponse {
+   required ReadStatus status = 1;
++  optional Collection collection = 2;
++  optional uint32 unk3 = 3;
++}
++
++message Collection {
++  optional bytes uuid = 1;
++  optional CollectionItems items = 3;
++}
++
++message CollectionItems {
++  repeated CollectionItem item = 1;
++}
++
++message CollectionItem {
++  optional bytes uuid = 1;
++  optional VersionStamp version_stamp = 2;
++  optional bool tombstone = 3;
++  optional uint32 item_kind = 4; // 0 = waypoint, 3 = line/course
+ }
+ 
+ message WaypointDigestWriteRequest {
+@@ -231,8 +284,13 @@ message LineDigestWriteResponse {
+ message LineDigestReadRequest {
+ }
+ 
++// Upstream stubs this to {status}, which is why Gadgetbridge could never push
++// or delete a line: answering with a bare status tells the watch the phone's
++// library is empty. Captured from Garmin Explore — the digest really is here.
+ message LineDigestReadResponse {
+   required ReadStatus status = 1;
++  optional LineDigest digest = 2;
++  optional uint32 unk3 = 3;
+ }
+ 
+ message Line {
+@@ -309,10 +367,22 @@ message LineDataReadyResponse {
+   optional LineDataRequestOp next_data_request = 1;
+ }
+ 
++// The hinge of the whole session. The watch asks where it got to with this
++// client; the phone answers where it is now, and the watch then reads exactly
++// the range between the two. Answering with no ending_transaction_id — which is
++// what Gadgetbridge does, calling itself a read-only client — describes an empty
++// range, so the watch reads nothing and the phone's library is never asked for.
+ message ChangeSummaryRequest {
+   optional uint32 starting_transaction_id = 1;
++  optional uint32 unk2 = 2;
++  optional uint32 unk3 = 3;
+ }
+ 
+ message ChangeSummaryResponse {
+   optional uint32 ending_transaction_id = 1;
++  // Observed as 1/1/1 alongside the three reads that follow — collections,
++  // waypoints, lines — so these look like per-content-type "has changes" flags.
++  optional uint32 has_collections = 3;
++  optional uint32 has_waypoints = 4;
++  optional uint32 has_lines = 5;
+ }
+diff --git a/mobile/device-garmin/src/main/proto/garmin/gdi_file_sync_service.proto b/mobile/device-garmin/src/main/proto/garmin/gdi_file_sync_service.proto
+index 3110306..3ce0ca0 100644
+--- a/mobile/device-garmin/src/main/proto/garmin/gdi_file_sync_service.proto
++++ b/mobile/device-garmin/src/main/proto/garmin/gdi_file_sync_service.proto
+@@ -7,6 +7,17 @@ option java_package = "nodomain.freeyourgadget.gadgetbridge.proto.garmin";
+ message FileSyncService {
+   optional FileRequest file_request = 1;
+   optional FileResponse file_response = 2;
++  // Tracks-local, not upstream: captured from Garmin Connect pushing a training
++  // calendar. This is how Garmin uploads — NOT the legacy GFDI CREATE_FILE /
++  // UPLOAD_REQUEST / FILE_TRANSFER_DATA path. See AGENTS.md.
++  optional UploadRequest upload_request = 3;
++  optional UploadResponse upload_response = 4;
++  // Tracks-local, not upstream. The watch reports the end of every transfer
++  // with this and waits for the response below before moving on. Garmin
++  // Connect answers all 22 of them in a single sync; Tracks answered none,
++  // which is why an upload the watch had accepted never went anywhere.
++  optional TransferComplete transfer_complete = 5;
++  optional TransferCompleteResponse transfer_complete_response = 21;
+   optional FileListRequest file_list_request = 9;
+   optional FileListResponse file_list_response = 10;
+   optional NewFileNotification new_file_notification = 12;
+@@ -33,6 +44,50 @@ message FileUpdateNotification {
+   optional FileId flags = 2;
+ }
+ 
++// Ask the watch to accept a new file. The watch answers UploadResponse with a
++// transfer handle, and the bytes then go over a separate multi-link file
++// transfer service rather than through GFDI messages.
++message UploadRequest {
++  optional File file = 1;
++  optional uint32 unk2 = 2; // 34
++  optional uint32 unk3 = 3; // 0
++  optional uint32 unk4 = 4; // 15
++}
++
++message UploadResponse {
++  optional uint32 status = 1; // 0 = accepted
++  optional uint32 unk2 = 2;   // 0
++  optional uint32 unk3 = 3;   // 0
++  optional uint32 handle = 4; // transfer handle, incrementing
++  optional uint32 unk8 = 8;   // 10
++}
++
++// Watch -> phone, once per transfer, naming the file and the handle it ran on.
++// Sent for files the watch received as well as files it sent.
++//
++// unk3..unk6 are NOT a verdict on the file, though they read like one for a
++// while. Across seventeen consecutive successful uploads they alternated
++// strictly by handle parity -- {3=0, 4=4, 5=10, 6=3} and {3=0, 4=12, 5=5, 6=3}
++// -- with the same FIT type landing on both sets, and they were byte-identical
++// before and after the schedule was re-encoded from scratch. Whatever they
++// describe belongs to the transfer channel, not the content. An earlier note
++// here read them as a failure report on the strength of two samples that
++// happened to fall on opposite parities; they are not.
++message TransferComplete {
++  optional FileId file = 1;
++  optional uint32 handle = 2;
++  optional uint32 unk3 = 3;
++  optional uint32 unk4 = 4;
++  optional uint32 unk5 = 5;
++  optional uint32 unk6 = 6;
++}
++
++// The answer the watch is waiting for. Connect always sends 34 here, the same
++// constant it puts in UploadRequest.unk2.
++message TransferCompleteResponse {
++  optional uint32 unk1 = 1; // 34
++}
++
+ message FileRequest {
+   optional File file = 1;
+   optional uint32 unk2 = 2; // 24
+diff --git a/mobile/device-garmin/src/main/proto/garmin/gdi_smart_proto.proto b/mobile/device-garmin/src/main/proto/garmin/gdi_smart_proto.proto
+index 4bfe21e..16496cd 100644
+--- a/mobile/device-garmin/src/main/proto/garmin/gdi_smart_proto.proto
++++ b/mobile/device-garmin/src/main/proto/garmin/gdi_smart_proto.proto
+@@ -36,4 +36,30 @@ message Smart {
+     optional SettingsService settings_service = 42;
+     optional FileSyncService file_sync_service = 43;
+     optional NotificationsService notifications_service = 49;
++    // Tracks-local, undocumented here and upstream. Garmin Connect brackets a
++    // training-calendar push with this service: field 3 {1:1} immediately before
++    // the push begins, and an empty field 6 about half a second before the
++    // schedule upload itself. Its meaning is unread; what is captured is that
++    // Connect sends both and its calendar builds. See AGENTS.md.
++    optional Service47 service_47 = 47;
++}
++
++// Service 47. Named for its field number because nothing names it: it is absent
++// from Gadgetbridge's protos and from every Garmin SDK we can see.
++message Service47 {
++    // Connect sends {1:0} twice early in a session and {1:1} immediately before
++    // pushing a training calendar. The watch answers field 4 with a status.
++    optional Service47SetFlag set_flag = 3;
++    optional Service47SetFlagResponse set_flag_response = 4;
++    // Sent with an empty payload, between the schedule's upload request and the
++    // bytes. Zero-length on the wire, so it carries its meaning in being sent.
++    optional bytes commit = 6;
++}
++
++message Service47SetFlag {
++    optional uint32 enabled = 1;
++}
++
++message Service47SetFlagResponse {
++    optional uint32 status = 1;
+ }

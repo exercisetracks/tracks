@@ -1,0 +1,17 @@
+{
+  "key": "leg_day_power",
+  "name": "Leg Day",
+  "tagline": "Squat, hinge, drive — full lower power.",
+  "intent": "A complete lower-body session built around the squat and hinge, adding single-leg work and calves for balanced, powerful legs.",
+  "splits": ["ppl_legs"],
+  "sports": null,
+  "tier_range": [4, 5],
+  "phases": ["any"],
+  "main": [
+    { "slot": "squat", "scheme": { "sets": 4, "reps": 6, "rest_seconds": 180 } },
+    { "slot": "hinge", "scheme": { "sets": 3, "reps": 8 } }
+  ],
+  "supersets": [["calf", "core_brace"]],
+  "finisher": "plyo",
+  "cooldown_theme": "hips"
+}

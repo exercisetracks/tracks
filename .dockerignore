@@ -1,0 +1,8 @@
+# Only caddy/Dockerfile builds from the repository root, and it needs only
+# these two directories. Everything else stays out of the context — above all
+# map-data/ (many GB) and fit-files/ (personal health records).
+*
+!caddy/
+!frontend/
+frontend/node_modules
+frontend/dist

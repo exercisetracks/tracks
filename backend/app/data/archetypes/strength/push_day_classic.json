@@ -1,0 +1,17 @@
+{
+  "key": "push_day_classic",
+  "name": "Push Day",
+  "tagline": "Chest, shoulders, triceps — press it all.",
+  "intent": "A classic pressing session that builds the chest, shoulders and triceps across horizontal and vertical angles.",
+  "splits": ["ppl_push"],
+  "sports": null,
+  "tier_range": [4, 5],
+  "phases": ["any"],
+  "main": [
+    { "slot": "h_push", "scheme": { "sets": 4, "reps": 6, "rest_seconds": 150 } },
+    { "slot": "v_push", "scheme": { "sets": 3, "reps": 8 } }
+  ],
+  "supersets": [["side_delt_acc", "triceps_acc"]],
+  "finisher": null,
+  "cooldown_theme": "shoulders"
+}

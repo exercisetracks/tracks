@@ -1,0 +1,160 @@
+diff --git a/node_modules/react-muscle-highlighter/dist/cjs/index.js b/node_modules/react-muscle-highlighter/dist/cjs/index.js
+index aa7475d..9fca73b 100644
+--- a/node_modules/react-muscle-highlighter/dist/cjs/index.js
++++ b/node_modules/react-muscle-highlighter/dist/cjs/index.js
+@@ -1,15 +1,13 @@
+-"use strict";
+-Object.defineProperty(exports, "__esModule", { value: true });
+-const jsx_runtime_1 = require("react/jsx-runtime");
+-const react_1 = require("react");
+-const bodyFront_1 = require("./assets/bodyFront");
+-const bodyBack_1 = require("./assets/bodyBack");
+-const bodyFemaleFront_1 = require("./assets/bodyFemaleFront");
+-const bodyFemaleBack_1 = require("./assets/bodyFemaleBack");
+-const SvgMaleWrapper_1 = require("./components/SvgMaleWrapper");
+-const SvgFemaleWrapper_1 = require("./components/SvgFemaleWrapper");
++import { jsx as _jsx } from "react/jsx-runtime";
++import { useCallback } from "react";
++import { bodyFront } from "./assets/bodyFront";
++import { bodyBack } from "./assets/bodyBack";
++import { bodyFemaleFront } from "./assets/bodyFemaleFront";
++import { bodyFemaleBack } from "./assets/bodyFemaleBack";
++import { SvgMaleWrapper } from "./components/SvgMaleWrapper";
++import { SvgFemaleWrapper } from "./components/SvgFemaleWrapper";
+ const Body = ({ colors = ["#0984e3", "#74b9ff"], data, scale = 1, side = "front", gender = "male", onBodyPartPress, border = "#dfdfdf", disabledParts = [], hiddenParts = [], defaultFill = "#3f3f3f", defaultStroke = "none", defaultStrokeWidth = 0, }) => {
+-    const getPartStyles = (0, react_1.useCallback)((bodyPart) => {
++    const getPartStyles = useCallback((bodyPart) => {
+         // Per-part styles override global defaults
+         return {
+             fill: bodyPart.styles?.fill ?? defaultFill,
+@@ -17,7 +15,7 @@ const Body = ({ colors = ["#0984e3", "#74b9ff"], data, scale = 1, side = "front"
+             strokeWidth: bodyPart.styles?.strokeWidth ?? defaultStrokeWidth,
+         };
+     }, [defaultFill, defaultStroke, defaultStrokeWidth]);
+-    const mergedBodyParts = (0, react_1.useCallback)((dataSource) => {
++    const mergedBodyParts = useCallback((dataSource) => {
+         const filteredDataSource = dataSource.filter((part) => !hiddenParts.includes(part.slug));
+         // Create a map of user data by slug for faster lookup
+         const userDataMap = new Map();
+@@ -67,19 +65,14 @@ const Body = ({ colors = ["#0984e3", "#74b9ff"], data, scale = 1, side = "front"
+     };
+     const isPartDisabled = (slug) => slug && disabledParts.includes(slug);
+     const renderBodySvg = (bodyToRender) => {
+-        const SvgWrapper = gender === "male" ? SvgMaleWrapper_1.SvgMaleWrapper : SvgFemaleWrapper_1.SvgFemaleWrapper;
+-        return ((0, jsx_runtime_1.jsx)(SvgWrapper, { side: side, scale: scale, border: border, children: mergedBodyParts(bodyToRender).map((bodyPart) => {
++        const SvgWrapper = gender === "male" ? SvgMaleWrapper : SvgFemaleWrapper;
++        return (_jsx(SvgWrapper, { side: side, scale: scale, border: border, children: mergedBodyParts(bodyToRender).map((bodyPart) => {
+                 const commonPaths = (bodyPart.path?.common || []).map((path, index) => {
+                     const partStyles = getPartStyles(bodyPart);
+                     const fillColor = getColorToFill(bodyPart);
+-                    return ((0, jsx_runtime_1.jsx)("path", { onClick: isPartDisabled(bodyPart.slug)
++                    return (_jsx("path", { onClick: isPartDisabled(bodyPart.slug)
+                             ? undefined
+-                            : () => onBodyPartPress?.(bodyPart), style: {
+-                            cursor: isPartDisabled(bodyPart.slug)
+-                                ? "not-allowed"
+-                                : "pointer",
+-                            opacity: isPartDisabled(bodyPart.slug) ? 0.6 : 1,
+-                        }, "aria-disabled": isPartDisabled(bodyPart.slug), id: bodyPart.slug, fill: fillColor ?? partStyles.fill, stroke: partStyles.stroke, strokeWidth: partStyles.strokeWidth, d: path }, `${bodyPart.slug}-common-${index}`));
++                            : () => onBodyPartPress?.(bodyPart), className: isPartDisabled(bodyPart.slug) ? "rmh-disabled" : "rmh-clickable", opacity: isPartDisabled(bodyPart.slug) ? 0.6 : 1, "aria-disabled": isPartDisabled(bodyPart.slug), id: bodyPart.slug, fill: fillColor ?? partStyles.fill, stroke: partStyles.stroke, strokeWidth: partStyles.strokeWidth, d: path }, `${bodyPart.slug}-common-${index}`));
+                 });
+                 const leftPaths = (bodyPart.path?.left || []).map((path, index) => {
+                     const isOnlyRight = data.find((d) => d.slug === bodyPart.slug)?.side === "right";
+@@ -87,14 +80,9 @@ const Body = ({ colors = ["#0984e3", "#74b9ff"], data, scale = 1, side = "front"
+                     const fillColor = isOnlyRight
+                         ? defaultFill
+                         : getColorToFill(bodyPart);
+-                    return ((0, jsx_runtime_1.jsx)("path", { onClick: isPartDisabled(bodyPart.slug)
++                    return (_jsx("path", { onClick: isPartDisabled(bodyPart.slug)
+                             ? undefined
+-                            : () => onBodyPartPress?.(bodyPart, "left"), style: {
+-                            cursor: isPartDisabled(bodyPart.slug)
+-                                ? "not-allowed"
+-                                : "pointer",
+-                            opacity: isPartDisabled(bodyPart.slug) ? 0.6 : 1,
+-                        }, id: bodyPart.slug, fill: fillColor ?? partStyles.fill, stroke: partStyles.stroke, strokeWidth: partStyles.strokeWidth, d: path }, `${bodyPart.slug}-left-${index}`));
++                            : () => onBodyPartPress?.(bodyPart, "left"), className: isPartDisabled(bodyPart.slug) ? "rmh-disabled" : "rmh-clickable", opacity: isPartDisabled(bodyPart.slug) ? 0.6 : 1, id: bodyPart.slug, fill: fillColor ?? partStyles.fill, stroke: partStyles.stroke, strokeWidth: partStyles.strokeWidth, d: path }, `${bodyPart.slug}-left-${index}`));
+                 });
+                 const rightPaths = (bodyPart.path?.right || []).map((path, index) => {
+                     const isOnlyLeft = data.find((d) => d.slug === bodyPart.slug)?.side === "left";
+@@ -102,26 +90,21 @@ const Body = ({ colors = ["#0984e3", "#74b9ff"], data, scale = 1, side = "front"
+                     const fillColor = isOnlyLeft
+                         ? defaultFill
+                         : getColorToFill(bodyPart);
+-                    return ((0, jsx_runtime_1.jsx)("path", { onClick: isPartDisabled(bodyPart.slug)
++                    return (_jsx("path", { onClick: isPartDisabled(bodyPart.slug)
+                             ? undefined
+-                            : () => onBodyPartPress?.(bodyPart, "right"), style: {
+-                            cursor: isPartDisabled(bodyPart.slug)
+-                                ? "not-allowed"
+-                                : "pointer",
+-                            opacity: isPartDisabled(bodyPart.slug) ? 0.6 : 1,
+-                        }, id: bodyPart.slug, fill: fillColor ?? partStyles.fill, stroke: partStyles.stroke, strokeWidth: partStyles.strokeWidth, d: path }, `${bodyPart.slug}-right-${index}`));
++                            : () => onBodyPartPress?.(bodyPart, "right"), className: isPartDisabled(bodyPart.slug) ? "rmh-disabled" : "rmh-clickable", opacity: isPartDisabled(bodyPart.slug) ? 0.6 : 1, id: bodyPart.slug, fill: fillColor ?? partStyles.fill, stroke: partStyles.stroke, strokeWidth: partStyles.strokeWidth, d: path }, `${bodyPart.slug}-right-${index}`));
+                 });
+                 return [...commonPaths, ...leftPaths, ...rightPaths];
+             }) }));
+     };
+     const bodyToRender = gender === "female"
+         ? side === "front"
+-            ? bodyFemaleFront_1.bodyFemaleFront
+-            : bodyFemaleBack_1.bodyFemaleBack
++            ? bodyFemaleFront
++            : bodyFemaleBack
+         : side === "front"
+-            ? bodyFront_1.bodyFront
+-            : bodyBack_1.bodyBack;
++            ? bodyFront
++            : bodyBack;
+     return renderBodySvg(bodyToRender);
+ };
+-exports.default = Body;
++export default Body;
+ //# sourceMappingURL=index.js.map
+\ No newline at end of file
+diff --git a/node_modules/react-muscle-highlighter/dist/esm/index.js b/node_modules/react-muscle-highlighter/dist/esm/index.js
+index f8c4b9a..9fca73b 100644
+--- a/node_modules/react-muscle-highlighter/dist/esm/index.js
++++ b/node_modules/react-muscle-highlighter/dist/esm/index.js
+@@ -72,12 +72,7 @@ const Body = ({ colors = ["#0984e3", "#74b9ff"], data, scale = 1, side = "front"
+                     const fillColor = getColorToFill(bodyPart);
+                     return (_jsx("path", { onClick: isPartDisabled(bodyPart.slug)
+                             ? undefined
+-                            : () => onBodyPartPress?.(bodyPart), style: {
+-                            cursor: isPartDisabled(bodyPart.slug)
+-                                ? "not-allowed"
+-                                : "pointer",
+-                            opacity: isPartDisabled(bodyPart.slug) ? 0.6 : 1,
+-                        }, "aria-disabled": isPartDisabled(bodyPart.slug), id: bodyPart.slug, fill: fillColor ?? partStyles.fill, stroke: partStyles.stroke, strokeWidth: partStyles.strokeWidth, d: path }, `${bodyPart.slug}-common-${index}`));
++                            : () => onBodyPartPress?.(bodyPart), className: isPartDisabled(bodyPart.slug) ? "rmh-disabled" : "rmh-clickable", opacity: isPartDisabled(bodyPart.slug) ? 0.6 : 1, "aria-disabled": isPartDisabled(bodyPart.slug), id: bodyPart.slug, fill: fillColor ?? partStyles.fill, stroke: partStyles.stroke, strokeWidth: partStyles.strokeWidth, d: path }, `${bodyPart.slug}-common-${index}`));
+                 });
+                 const leftPaths = (bodyPart.path?.left || []).map((path, index) => {
+                     const isOnlyRight = data.find((d) => d.slug === bodyPart.slug)?.side === "right";
+@@ -87,12 +82,7 @@ const Body = ({ colors = ["#0984e3", "#74b9ff"], data, scale = 1, side = "front"
+                         : getColorToFill(bodyPart);
+                     return (_jsx("path", { onClick: isPartDisabled(bodyPart.slug)
+                             ? undefined
+-                            : () => onBodyPartPress?.(bodyPart, "left"), style: {
+-                            cursor: isPartDisabled(bodyPart.slug)
+-                                ? "not-allowed"
+-                                : "pointer",
+-                            opacity: isPartDisabled(bodyPart.slug) ? 0.6 : 1,
+-                        }, id: bodyPart.slug, fill: fillColor ?? partStyles.fill, stroke: partStyles.stroke, strokeWidth: partStyles.strokeWidth, d: path }, `${bodyPart.slug}-left-${index}`));
++                            : () => onBodyPartPress?.(bodyPart, "left"), className: isPartDisabled(bodyPart.slug) ? "rmh-disabled" : "rmh-clickable", opacity: isPartDisabled(bodyPart.slug) ? 0.6 : 1, id: bodyPart.slug, fill: fillColor ?? partStyles.fill, stroke: partStyles.stroke, strokeWidth: partStyles.strokeWidth, d: path }, `${bodyPart.slug}-left-${index}`));
+                 });
+                 const rightPaths = (bodyPart.path?.right || []).map((path, index) => {
+                     const isOnlyLeft = data.find((d) => d.slug === bodyPart.slug)?.side === "left";
+@@ -102,12 +92,7 @@ const Body = ({ colors = ["#0984e3", "#74b9ff"], data, scale = 1, side = "front"
+                         : getColorToFill(bodyPart);
+                     return (_jsx("path", { onClick: isPartDisabled(bodyPart.slug)
+                             ? undefined
+-                            : () => onBodyPartPress?.(bodyPart, "right"), style: {
+-                            cursor: isPartDisabled(bodyPart.slug)
+-                                ? "not-allowed"
+-                                : "pointer",
+-                            opacity: isPartDisabled(bodyPart.slug) ? 0.6 : 1,
+-                        }, id: bodyPart.slug, fill: fillColor ?? partStyles.fill, stroke: partStyles.stroke, strokeWidth: partStyles.strokeWidth, d: path }, `${bodyPart.slug}-right-${index}`));
++                            : () => onBodyPartPress?.(bodyPart, "right"), className: isPartDisabled(bodyPart.slug) ? "rmh-disabled" : "rmh-clickable", opacity: isPartDisabled(bodyPart.slug) ? 0.6 : 1, id: bodyPart.slug, fill: fillColor ?? partStyles.fill, stroke: partStyles.stroke, strokeWidth: partStyles.strokeWidth, d: path }, `${bodyPart.slug}-right-${index}`));
+                 });
+                 return [...commonPaths, ...leftPaths, ...rightPaths];
+             }) }));

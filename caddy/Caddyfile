@@ -1,0 +1,184 @@
+# Single entry point for the whole Tracks stack.
+#
+# Routing: /api/tiles/* -> go-pmtiles (map tiles); /api/* -> backend; /* -> frontend SPA.
+#
+# Basemap is ONE logical source split by zoom across two physical files so the
+# giant z0-12 overview is never rewritten on a region download:
+#   z13-15 (@bm_detail) -> master_basemap_detail.pmtiles  (small region detail)
+#   z0-12  (@bm_over)   -> planet_basemap.pmtiles          (static, never rewritten)
+# The split is server-side, so MapLibre sees one continuous source (no z12/z13 seam).
+# Matchers are mutually exclusive (the @other_tiles wildcard excludes basemap) so
+# routing doesn't depend on Caddy's directive-specificity ordering. NOTE: blocks
+# must be multi-line and rewrites use `uri replace` (a `{placeholder}` directly
+# after text is mis-parsed as a block opener by the Caddyfile lexer).
+
+# No admin API. Caddy otherwise listens on localhost:2019 for live
+# reconfiguration, and in the all-in-one image every service shares that
+# localhost: anything running there could rewrite the routing or the security
+# headers below. Nothing uses it — config changes are a restart (AGENTS.md
+# explains why `caddy reload` was never reliable here anyway).
+{
+	admin off
+}
+
+# Upstreams are the compose service names by default. The all-in-one image
+# (deploy/Dockerfile) runs every service in one container and points these at
+# 127.0.0.1 through TRACKS_BACKEND / TRACKS_TILES instead.
+
+(frontend-proxy) {
+	reverse_proxy frontend:3000
+}
+
+(frontend-static) {
+	root * /srv
+	# Everything that is not a hashed asset revalidates. index.html above all:
+	# it names the bundles, and a cached copy would keep loading the previous
+	# release's after an upgrade.
+	@unhashed not path *.js *.css *.woff2 *.png *.jpg *.svg *.ico
+	header @unhashed Cache-Control "no-cache"
+	# A client-side route (/activities/12) is not a file; the SPA handles it.
+	try_files {path} /index.html
+	file_server
+}
+
+:80 {
+	# Compress everything compressible (JS/CSS/HTML/JSON/SVG). Tiles already
+	# arrive gzip-encoded from go-pmtiles (tippecanoe pre-compresses inside the
+	# archive), so encode sees an existing Content-Encoding there and skips
+	# re-compressing them — this only picks up the app bundle/HTML/API JSON.
+	encode zstd gzip
+
+	# ── Security headers ────────────────────────────────────────────────────
+	# Set here because this is the one place every response passes through,
+	# API and app alike, so there is no second path that can quietly miss them.
+	#
+	# Why these matter more here than they would elsewhere: the access token
+	# lives in localStorage (see frontend/src/auth/AuthContext.jsx), it is valid
+	# for 30 days, and nothing server-side can revoke it early. So a single
+	# injected script would be able to read a user's entire health history and
+	# keep reading it for a month. These headers are the layer that keeps that
+	# from being one bug away.
+	header {
+		# Stop the browser second-guessing Content-Type. A tile or an uploaded
+		# blob that sniffs as HTML would otherwise run on this origin.
+		X-Content-Type-Options "nosniff"
+		# No framing: this app has no embeddable surface, and clickjacking a
+		# self-hosted instance is otherwise free. frame-ancestors is the CSP
+		# spelling and wins where both are understood; X-Frame-Options covers
+		# anything that predates it.
+		X-Frame-Options "DENY"
+		# Don't leak the path being viewed (activity ids, map coordinates) to
+		# any third-party host the page reaches.
+		Referrer-Policy "strict-origin-when-cross-origin"
+		# Camera, microphone and payment are things this app never asks for, so
+		# denying them means an injected script cannot ask either. Geolocation
+		# is allowed to this origin only — unused today, but a "show my
+		# location" map control is the obvious next thing, and `(self)` still
+		# denies it to anything embedded.
+		#
+		# `usb` is deliberately absent rather than denied: frontend/src/lib/mtp.js
+		# talks to the watch over WebUSB, and `usb=()` here breaks browser device
+		# sync outright. That was in the first draft of this line, and it took
+		# loading the app under the policy to notice — worth keeping in mind
+		# before adding anything else to this list.
+		Permissions-Policy "camera=(), microphone=(), payment=(), geolocation=(self)"
+		# Remove the server fingerprint rather than advertise a version to scan.
+		-Server
+	}
+
+	# CSP is separate from the block above because it is the one header here
+	# whose value depends on how the frontend is being served.
+	#
+	# 'unsafe-inline'/'unsafe-eval' in script-src are what the Vite dev server
+	# needs (HMR injects inline scripts and evaluates modules), and dev mode is
+	# this compose file's default — see docker-compose.yml. They weaken
+	# script-src to roughly nothing, which is exactly why the rest of this
+	# policy is written not to depend on it: object-src, base-uri and
+	# form-action each close an injection route on their own, and
+	# frame-ancestors cannot be reached from script at all.
+	#
+	# PRODUCTION: when you switch the frontend to the built bundle (`npm run
+	# preview`), drop 'unsafe-inline' and 'unsafe-eval' from script-src. The
+	# built bundle needs neither, and that is the change that turns this from
+	# defence-in-depth into an actual XSS control. Verified against the running
+	# app — blob: workers are MapLibre's, and data: images are the sprite sheet.
+	header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ws: wss: blob: data:; worker-src 'self' blob:; child-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+
+	@staticAssets path *.js *.css *.woff2 *.png *.jpg *.svg *.ico
+	header @staticAssets Cache-Control "public, max-age=31536000, immutable"
+
+	handle /api/tiles/version {
+		uri replace /api/ /
+		reverse_proxy {$TRACKS_BACKEND:backend:8000}
+	}
+
+	handle_path /api/tiles/master_dem/*.webp {
+		# master_dem URLs carry ?v=mtime (see sources.js/ensureDemSource) — any
+		# region merge that changes this tile bumps the URL, so caching the old
+		# URL forever is safe and never goes stale.
+		header Cache-Control "public, max-age=31536000, immutable"
+		reverse_proxy {$TRACKS_TILES:go-pmtiles:8080} {
+			@d204 status 204
+			handle_response @d204 {
+				respond "" 404
+			}
+		}
+	}
+
+	@bm_detail path_regexp ^/api/tiles/basemap/1[3-5]/
+	handle @bm_detail {
+		uri replace /api/tiles/basemap/ /master_basemap_detail/
+		reverse_proxy {$TRACKS_TILES:go-pmtiles:8080} {
+			@b204 status 204
+			handle_response @b204 {
+				respond "" 404
+			}
+		}
+	}
+	@bm_over {
+		path /api/tiles/basemap/*
+		not path_regexp ^/api/tiles/basemap/1[3-5]/
+	}
+	handle @bm_over {
+		# The z0-12 planet file is static (never rewritten by region merges), but
+		# go-pmtiles sends no Cache-Control at all, so browsers couldn't even
+		# heuristically cache it — every revisited zoom level re-hit the server.
+		# A day of freshness + a week of stale-while-revalidate keeps zoom-outs
+		# instant; the Etag still gives cheap 304s after expiry. z13-15 detail
+		# (@bm_detail above) stays deliberately uncached — see @other_tiles note.
+		header Cache-Control "public, max-age=86400, stale-while-revalidate=604800"
+		uri replace /api/tiles/basemap/ /planet_basemap/
+		reverse_proxy {$TRACKS_TILES:go-pmtiles:8080}
+	}
+
+	@other_tiles {
+		path /api/tiles/*
+		not path /api/tiles/basemap/*
+	}
+	handle @other_tiles {
+		# Everything here (master_overlay/master_contours/master_routes) is
+		# fetched with a ?v=mtime query string that changes on every region
+		# merge (see buildSourceUrl/refreshTiles) — same URL always means same
+		# content, so this is safe to cache forever. Deliberately excludes
+		# /api/tiles/basemap/* (handled above): that source has NO version
+		# param, and relies on going uncached so freshly-downloaded z13-15
+		# detail is "fetched fresh on the next zoom-in" (see sources.js).
+		header Cache-Control "public, max-age=31536000, immutable"
+		uri strip_prefix /api/tiles
+		reverse_proxy {$TRACKS_TILES:go-pmtiles:8080}
+	}
+
+	handle_path /api/* {
+		reverse_proxy {$TRACKS_BACKEND:backend:8000}
+	}
+	# The app itself. Development proxies to the Vite server so edits show on
+	# refresh; the released tracks-web image sets TRACKS_FRONTEND=static and
+	# serves the built bundle from this container instead, which takes a whole
+	# Node process out of every install. One Caddyfile for both, so the
+	# security headers above cannot differ between what is tested and what
+	# ships. `{$VAR}` is substituted before parsing, which is what lets it pick
+	# a snippet.
+	handle {
+		import frontend-{$TRACKS_FRONTEND:proxy}
+	}
+}

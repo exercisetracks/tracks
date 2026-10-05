@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Tracks</string>
+    <!-- Medication reminders. High-importance channel: unlike the sync notices
+         this one is meant to interrupt. -->
+    <string name="medication_channel_name">Medication reminders</string>
+    <string name="medication_channel_description">Reminds you when a scheduled dose is due.</string>
+    <string name="medication_due_title">Time to take %1$s</string>
+    <string name="medication_due_text">Tap to log it</string>
+    <string name="medication_action_taken">Taken</string>
+    <string name="medication_action_skip">Skip</string>
+    <string name="watch_sync_channel_name">Watch sync</string>
+    <string name="watch_sync_channel_description">Progress while Tracks talks to your watch in the background</string>
+    <string name="watch_sync_title">Syncing watch</string>
+    <string name="watch_sync_connecting">Connecting…</string>
+
+    <!-- Offline map downloads. See MapDownloadService. -->
+    <string name="map_download_channel">Offline maps</string>
+    <string name="map_download_channel_description">Progress while an area is being saved for offline use</string>
+    <string name="map_download_title">Saving map area</string>
+    <string name="map_download_starting">Starting…</string>
+    <string name="map_download_areas">%1$d areas</string>
+
+    <!-- The persistent connection notification. See WatchLinkService. -->
+    <string name="watch_link_title">Watch connected</string>
+    <string name="watch_link_connecting">Connecting…</string>
+    <string name="watch_link_connected">%1$s · notifications and weather active</string>
+    <string name="watch_link_waiting">Waiting for your watch…</string>
+    <string name="watch_sync_progress">%1$d file(s) so far…</string>
+    <string name="watch_sync_failed">Sync failed — will try again later</string>
+    <string name="watch_sync_already_running">Already syncing</string>
+    <string name="watch_sync_not_paired">No watch paired</string>
+    <string name="watch_sync_nothing_new">Nothing new from the watch</string>
+    <string name="watch_sync_not_registered">Pulled %1$d file(s) — sign in to finish setup</string>
+    <string name="watch_sync_result">Pulled %1$d, delivered %2$d</string>
+    <string name="backup_reminder_channel_name">Backup reminders</string>
+    <string name="backup_reminder_channel_description">A weekly nudge when this phone holds your only copy and has not been backed up in two weeks.</string>
+    <string name="backup_reminder_title">Back up your Tracks data</string>
+    <string name="backup_reminder_text">This phone is the only copy and has no backup from the last two weeks.</string>
+</resources>

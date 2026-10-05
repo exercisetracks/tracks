@@ -1,0 +1,17 @@
+{
+  "key": "press_and_pull_power",
+  "name": "Press & Pull Power",
+  "tagline": "Balanced upper-body strength, push meets pull.",
+  "intent": "An upper session that trains horizontal and vertical pressing against equal pulling volume — the balanced shoulders and strong back that keep you healthy under load.",
+  "splits": ["upper_a", "upper_b"],
+  "sports": null,
+  "tier_range": [2, 5],
+  "phases": ["any"],
+  "main": [
+    { "slot": "h_push", "scheme": { "sets": 4, "reps": 6, "rest_seconds": 150 } },
+    { "slot": "h_pull", "scheme": { "sets": 4, "reps": 8 } }
+  ],
+  "supersets": [["biceps_acc", "triceps_acc"], ["side_delt_acc", "rear_delt_acc"]],
+  "finisher": null,
+  "cooldown_theme": "shoulders"
+}

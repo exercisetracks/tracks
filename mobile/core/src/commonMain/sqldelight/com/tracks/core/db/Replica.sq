@@ -1,0 +1,129 @@
+-- SPDX-FileCopyrightText: 2026 Hawk Fugagli
+-- SPDX-License-Identifier: AGPL-3.0-or-later
+--
+-- The phone as a replica: every synced row, whatever its entity, in one table.
+--
+-- ## Why one generic table rather than one per entity
+--
+-- Because every entity merges by the same rule (see com.tracks.core.replica.Merge
+-- and spec/sync.yaml), and a table per entity would be thirty copies of the same
+-- upsert, the same dirty tracking and the same tombstone handling — thirty
+-- places for one of them to drift. The rows are small and few (a person's
+-- flows, goals, medications; not their GPS), so decoding a JSON object per row
+-- costs nothing a screen would notice. Derived data — activity measurements,
+-- daily health, anything with thousands of rows and range queries — does not
+-- live here and never syncs; it gets typed tables of its own.
+--
+-- ## Not derived, unlike the tables in Tracks.sq
+--
+-- These rows are sources: for a phone with no server they are the only copy.
+-- They are still dropped on a schema change (see TracksSchema), because there
+-- are no migrations anywhere in this project yet — a deliberate, temporary
+-- decision recorded in docs/offline-first.md — but that is a cost accepted
+-- while nobody else depends on the app, not a property of the data.
+
+CREATE TABLE synced_row (
+    entity      TEXT NOT NULL,
+    uid         TEXT NOT NULL,
+    -- JSON object of written fields. A field that is absent was never written;
+    -- one written as null is present with a JSON null.
+    fields      TEXT NOT NULL,
+    -- JSON object: field → HLC stamp of its last write.
+    clock       TEXT NOT NULL,
+    -- HLC stamp of the delete, or null. A tombstone has `{}` fields and clock.
+    deleted     TEXT,
+    -- JSON array of fields edited here that the server has not acknowledged;
+    -- "_deleted" stands for the delete itself.
+    dirty       TEXT NOT NULL DEFAULT '[]',
+    -- Denormalised so "every flow_stretch of flow X" is an index lookup rather
+    -- than a scan decoding every row's JSON. Mirrors the field named by the
+    -- entity's children_of; null for entities without one.
+    parent_uid  TEXT,
+    -- Kept alongside `dirty` so finding work to push is an index lookup.
+    is_dirty    INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (entity, uid)
+);
+
+CREATE INDEX synced_row_parent ON synced_row(entity, parent_uid);
+CREATE INDEX synced_row_dirty ON synced_row(is_dirty);
+
+-- Single row: this install's clock, where the pull got to, and whose data this is.
+--
+-- Separate from sync_state in Tracks.sq, which is the old changefeed's cursor
+-- and goes away with it.
+CREATE TABLE replica_state (
+    id             INTEGER NOT NULL PRIMARY KEY CHECK (id = 1),
+    -- 16 hex digits, generated once per install and never reused. Reusing a
+    -- node id on another install would let two devices mint identical stamps.
+    node           TEXT NOT NULL,
+    -- The last stamp issued or received; the clock resumes from here after a
+    -- restart, so it can never issue one below what it has already seen.
+    last_hlc       TEXT,
+    -- The server's arrival sequence number, 0 before the first pull.
+    pull_cursor    INTEGER NOT NULL DEFAULT 0,
+    -- The server this cursor belongs to, as its pulls last named it. A pull
+    -- naming a different one means the server was recreated: re-push.
+    server_id      TEXT,
+    -- The account's epoch as last seen. A higher one means the user deleted
+    -- their data on purpose: this phone deletes its copy too.
+    epoch          INTEGER,
+    -- The account this phone's data belongs to, fixed at the first sign-in.
+    -- Signing out keeps the data and this binding; signing in to anyone else
+    -- is refused until the phone is explicitly erased.
+    bound_server   TEXT,
+    bound_account  TEXT
+);
+
+selectState:
+SELECT * FROM replica_state WHERE id = 1;
+
+insertState:
+INSERT INTO replica_state(id, node, last_hlc, pull_cursor) VALUES (1, ?, NULL, 0);
+
+setClock:
+UPDATE replica_state SET last_hlc = ? WHERE id = 1;
+
+setCursor:
+UPDATE replica_state SET pull_cursor = ? WHERE id = 1;
+
+setServer:
+UPDATE replica_state SET server_id = ?, epoch = ? WHERE id = 1;
+
+setBinding:
+UPDATE replica_state SET bound_server = ?, bound_account = ? WHERE id = 1;
+
+countRows:
+SELECT count(*) FROM synced_row;
+
+deleteAllRows:
+DELETE FROM synced_row;
+
+selectRow:
+SELECT * FROM synced_row WHERE entity = ? AND uid = ?;
+
+selectEntity:
+SELECT * FROM synced_row WHERE entity = ? ORDER BY uid;
+
+selectLiveEntity:
+SELECT * FROM synced_row WHERE entity = ? AND deleted IS NULL ORDER BY uid;
+
+selectChildren:
+SELECT * FROM synced_row WHERE entity = ? AND parent_uid = ? AND deleted IS NULL;
+
+selectAll:
+SELECT * FROM synced_row ORDER BY entity, uid;
+
+selectDirty:
+SELECT * FROM synced_row WHERE is_dirty = 1 ORDER BY entity, uid LIMIT ?;
+
+countDirty:
+SELECT count(*) FROM synced_row WHERE is_dirty = 1;
+
+-- REPLACE, for the reasons given at upsertActivity in Tracks.sq: the whole row
+-- is always written, and nothing references this table.
+upsertRow:
+INSERT OR REPLACE INTO synced_row(entity, uid, fields, clock, deleted, dirty, parent_uid, is_dirty)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+
+setDirty:
+UPDATE synced_row SET dirty = ?, is_dirty = ? WHERE entity = ? AND uid = ?;

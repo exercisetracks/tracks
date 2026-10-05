@@ -1,0 +1,17 @@
+{
+  "key": "runners_hill_power",
+  "name": "Hill Power Builder",
+  "tagline": "Single-leg strength and spring for the climbs.",
+  "intent": "A running-specific lower session: unilateral strength and calf work for hill power and durability, capped with a plyometric finisher for reactive spring.",
+  "splits": ["supp_lower", "lower_a", "lower_b"],
+  "sports": ["running", "hiking", "mountain_biking"],
+  "tier_range": [1, 4],
+  "phases": ["any"],
+  "main": [
+    { "slot": "lower_uni", "scheme": { "sets": 3, "reps": 8, "rest_seconds": 120 } },
+    { "slot": "hinge", "scheme": { "sets": 3, "reps": 6 } }
+  ],
+  "supersets": [["calf", "hip_stability"]],
+  "finisher": "plyo",
+  "cooldown_theme": "posterior"
+}

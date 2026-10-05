@@ -1,0 +1,88 @@
+# SPDX-FileCopyrightText: 2026 Hawk Fugagli
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# Bulk licensing for files that carry no header of their own.
+#
+# The vendored Gadgetbridge sources are the reason this file exists: only 23 of
+# them carry a copyright line upstream, and stamping the other 94 with a Tracks
+# header would misattribute someone else's work. Declaring it here keeps the
+# repository REUSE-compliant without touching a single vendored byte — which
+# also keeps `vendor/pull-gadgetbridge.sh` refreshes as clean file copies.
+
+version = 1
+
+[[annotations]]
+path = "mobile/device-garmin/src/main/java/nodomain/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2015-2026 The Gadgetbridge contributors"
+SPDX-License-Identifier = "AGPL-3.0-or-later"
+
+[[annotations]]
+path = "mobile/device-garmin/src/main/proto/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2015-2026 The Gadgetbridge contributors"
+SPDX-License-Identifier = "AGPL-3.0-or-later"
+
+[[annotations]]
+path = "mobile/fit-codegen/src/main/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2015-2026 The Gadgetbridge contributors"
+SPDX-License-Identifier = "AGPL-3.0-or-later"
+
+# Generated at vendoring time by vendor/generate-gb-resources.py. The string
+# values are copied verbatim from Gadgetbridge's own strings.xml, so they carry
+# its copyright rather than ours; the drawable aliases are ours but are not
+# worth separating out.
+[[annotations]]
+path = "mobile/device-garmin/src/main/res/values/gadgetbridge_*.xml"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2015-2026 The Gadgetbridge contributors"
+SPDX-License-Identifier = "AGPL-3.0-or-later"
+
+# Same situation as Gadgetbridge: BRouter's sources carry an `@author ab` tag
+# rather than a copyright line, and stamping 101 files with a Tracks header
+# would misattribute them. Declared in bulk so `vendor/pull-brouter.sh` stays a
+# clean file copy.
+[[annotations]]
+path = "mobile/routing-brouter/src/main/java/btools/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2014-2026 BRouter contributors"
+SPDX-License-Identifier = "MIT"
+
+[[annotations]]
+path = "mobile/gradle/wrapper/gradle-wrapper.jar"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Gradle Inc."
+SPDX-License-Identifier = "Apache-2.0"
+
+[[annotations]]
+path = "spec/fixtures/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Hawk Fugagli"
+SPDX-License-Identifier = "AGPL-3.0-or-later"
+
+[[annotations]]
+# The Connect IQ launcher icon is a binary that cannot carry a header. It is
+# generated, not vendored -- see the script in the commit that added it.
+path = "watchapp/resources/drawables/*.png"
+SPDX-FileCopyrightText = "2026 Hawk Fugagli"
+SPDX-License-Identifier = "AGPL-3.0-or-later"
+
+
+[[annotations]]
+# Inter (https://rsms.me/inter), v4.1 variable font, subset to Latin with
+# pyftsubset (tnum and the usual layout features kept). SIL OFL 1.1, text in
+# LICENSES/OFL-1.1.txt. Inter declares no Reserved Font Name, so a subset may
+# keep the name.
+path = ["mobile/app/src/main/res/font/inter.ttf", "frontend/src/assets/fonts/InterVariable.woff2"]
+SPDX-FileCopyrightText = "2016 The Inter Project Authors (https://github.com/rsms/inter)"
+SPDX-License-Identifier = "OFL-1.1"
+
+# Frozen phone schema snapshots, written by SchemaMigrationTest. They are
+# replayed statement by statement, so a header comment would be one more
+# statement to keep out of the comparison.
+[[annotations]]
+path = "mobile/core/src/jvmTest/resources/schema/*.sql"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Hawk Fugagli"
+SPDX-License-Identifier = "AGPL-3.0-or-later"

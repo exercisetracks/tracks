@@ -1,0 +1,226 @@
+# SPDX-FileCopyrightText: 2026 Hawk Fugagli
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# What we vendor from Gadgetbridge, and what we deliberately leave behind.
+#
+# Read by pull-gadgetbridge.sh. Paths are relative to Gadgetbridge's
+# app/src/main/java/nodomain/freeyourgadget/gadgetbridge/ and are copied into
+# device-garmin/ under the SAME package names. That is deliberate: it makes a
+# future pull a file copy rather than a rewrite, keeps upstream diffs
+# applicable, and makes the provenance of every vendored file obvious from its
+# package. Our shims for the pieces we do not take live in the same namespace,
+# in :device-gb-compat.
+#
+# Adding another vendor later (Amazfit, Xiaomi, Polar) means adding its
+# packages here and re-running the script. The shim layer is the reusable
+# investment; the per-vendor cost should be close to a copy.
+#
+# Syntax:
+#   include <path>        Java, from app/src/main/java/nodomain/freeyourgadget/gadgetbridge/
+#   include-proto <path>  .proto, from app/src/main/proto/ (compiled at build time)
+#   include-codegen <path> from FitCodeGenerator/src/main/, into :fit-codegen
+#   exclude <path>        carve-out applied after includes
+#   (blank lines and # comments ignored)
+
+# ── FIT codec ────────────────────────────────────────────────────────────────
+# Reading and writing FIT records. 53 of 55 files are free of Gadgetbridge's
+# database; the two that are not are its importer, which we explicitly do not
+# want — Tracks ships raw FIT bytes to the server and lets the server parse
+# them, so duplicating that here would be a second parser to keep in step.
+include service/devices/garmin/fit
+exclude service/devices/garmin/fit/FitImporter.java
+exclude service/devices/garmin/fit/FitAsyncProcessor.java
+
+# ── FIT message code generator ───────────────────────────────────────────────
+# Not app code — a build tool, and a mandatory one. Gadgetbridge checks in only
+# four FIT message classes; the other ~400 are generated at build time from
+# Garmin's profile JSON. Even those four are only halves: FitRecord extends a
+# generated AbstractFitRecord. So without this, nothing in the FIT layer
+# compiles at all.
+#
+# It lands in :fit-codegen, a plain JVM module, so the generator itself never
+# reaches the APK — only its output does. Same package names as upstream, so a
+# refresh stays a file copy. Paths are relative to FitCodeGenerator/src/main/.
+include-codegen java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/fit/codegen
+include-codegen resources/fit_profile.json
+
+# ── GFDI protocol ────────────────────────────────────────────────────────────
+# The message layer: file transfer (which is how workouts and courses get onto
+# a watch), notifications, music control, weather, device settings.
+#
+# messages/status/SetFileFlagsStatusMessage.java carries a small Tracks-local
+# patch on top of upstream — search the file itself for "Tracks-local patch" —
+# that publicizes the FlagsStatus enum and adds getters for it and the file
+# identifier. Upstream parses this response and drops it; Tracks awaits it to
+# know whether a course delete over BLE actually applied. A fresh pull
+# overwrites it silently; reapply that hunk (a `git diff` against the previous
+# vendored copy shows exactly it) before committing the refresh.
+include service/devices/garmin/messages
+
+# ── Protobuf definitions ─────────────────────────────────────────────────────
+# Garmin's protobuf services — calendar sync, music control, device settings,
+# authentication. These are .proto sources compiled by the protobuf Gradle
+# plugin, not checked-in Java, so they land in a different source root.
+include-proto garmin
+
+# ── Vendor identification ────────────────────────────────────────────────────
+# Capability flags a watch reports about itself, and the preference keys the
+# protocol code reads. Not the coordinator or the sample providers — those are
+# Gadgetbridge's device registry and its database, both of which Tracks has its
+# own answer for.
+include devices/garmin/GarminCapability.java
+include devices/garmin/GarminPreferences.java
+
+# ── BLE transport ────────────────────────────────────────────────────────────
+# The transaction queue, GATT callbacks, and connection scaffolding every BLE
+# device in Gadgetbridge sits on. Vendored whole because it is vendor-neutral:
+# a future Amazfit or Polar implementation uses the same queue, so this is the
+# part that pays for itself twice.
+include service/btle
+# Gadgetbridge's own scanning and multi-device plumbing. Tracks pairs one watch
+# through CompanionDeviceManager, which hands back an association that survives
+# reboots and lets the OS wake us on presence — a large battery saving over
+# scanning, and the reason none of this is needed.
+exclude service/btle/BLEScanService.java
+exclude service/btle/BleIntentApi.java
+exclude service/btle/AbstractBTLEMultiDeviceSupport.java
+# Standard-GATT profiles for devices that are not watches — a PineTime
+# filesystem, blood-pressure cuffs, weight scales, thermometers. Measured, not
+# assumed: nothing outside service/btle/profiles/ references any of them. Only
+# the abstract base (AbstractBleProfile, kept) and alertnotification's
+# AlertCategory enum (used by BLETypeConversions) are actually reachable.
+#
+# They are also the most expensive files to keep: they drag in Gadgetbridge's
+# UI strings, its zip/URI helpers, PineTime constants, and kotlin-parcelize —
+# a whole Gradle plugin — for capabilities Tracks does not have.
+exclude service/btle/profiles/adablefs
+exclude service/btle/profiles/battery
+exclude service/btle/profiles/bloodpressure
+exclude service/btle/profiles/deviceinfo
+exclude service/btle/profiles/healthThermometer
+exclude service/btle/profiles/heartrate
+exclude service/btle/profiles/weightScale
+exclude service/btle/profiles/alertnotification/AlertNotificationProfile.java
+
+# ── Garmin device support ────────────────────────────────────────────────────
+# The communicator (GFDI over BLE, both protocol versions) and the handlers
+# that drive it. GarminSupport itself is excluded — see below.
+include service/devices/garmin/communicator
+include service/devices/garmin/ChecksumCalculator.java
+include service/devices/garmin/FileToDownload.java
+# FileTransferHandler.java carries one Tracks-local patch on top of upstream —
+# search the file itself for "Tracks-local patch": parseDirectoryEntries()
+# hands a listing straight to addFileToDownloadList when the newer sync
+# protocol is in use, rather than parsing entries the protobuf listing will
+# supply anyway. A fresh pull overwrites it silently; reapply the hunk (a
+# `git diff` against the previous vendored copy shows exactly it) before
+# committing the refresh.
+#
+# It used to carry two more — DirectoryEntry.getFileNumber() and
+# requestDirectoryListing()/DirectoryListingListener — which existed to find a
+# course's current fileIndex by matching the byte size a push sent, so that a
+# SetFileFlagsMessage DELETE could address it. That whole approach is gone:
+# the watch answered DELETE with ERROR, course removal was rebuilt on
+# Explore-sync tombstones, and the machinery sat unreachable until it was
+# removed. Fewer hunks to reapply on the next refresh.
+include service/devices/garmin/FileTransferHandler.java
+include service/devices/garmin/FileType.java
+include service/devices/garmin/FitLocalMessageHandler.java
+include service/devices/garmin/GarminByteBufferReader.java
+include service/devices/garmin/GarminPrefs.java
+include service/devices/garmin/GarminTimeUtils.java
+include service/devices/garmin/GarminUtils.java
+include service/devices/garmin/MessageHandler.java
+include service/devices/garmin/NotificationsHandler.java
+include service/devices/garmin/ProtocolBufferHandler.java
+include service/devices/garmin/agps
+include service/devices/garmin/deviceevents
+# Garmin's on-watch HTTP proxy — the watch asks the phone to fetch things for
+# it. Left out of the first pass: it drags in Gadgetbridge's contacts entities
+# and internet firewall, and nothing Tracks needs yet goes through it. Weather
+# reaches the watch over GFDI instead.
+#include service/devices/garmin/http
+
+# ── Support types the protocol code refers to ────────────────────────────────
+# Small, dependency-free value types. Vendored rather than reimplemented
+# because they are part of the protocol's vocabulary — an ActivityKind or a
+# NotificationType we invented would have to be mapped back to theirs at every
+# call site, which is more code and more places to be wrong.
+include deviceevents/GBDeviceEvent.java
+include deviceevents/GBDeviceEventFindPhone.java
+include deviceevents/GBDeviceEventMusicControl.java
+include deviceevents/GBDeviceEventUpdatePreferences.java
+include deviceevents/GBDeviceEventVersionInfo.java
+include model/ActivityKind.java
+include model/ActivityPoint.java
+include model/GPSCoordinate.java
+include model/NotificationType.java
+include util/ArrayUtils.java
+include util/CheckSums.java
+include util/StringUtils.java
+include util/LimitedQueue.java
+include util/GBTarFile.java
+include util/Prefs.java
+include util/FileUtils.java
+include util/GBToStringBuilder.java
+# The newer protobuf file-sync protocol hands files over zlib-deflated, unlike
+# the directory-listing path which streams them raw. Without this the V2
+# download path has nothing to inflate with.
+include util/CompressionUtils.kt
+include util/protobuf
+include util/gpx/model
+
+# Notification, call, and canned-reply payloads. Pure value types with no
+# coupling — the vocabulary the GFDI notification layer speaks, so inventing
+# our own would mean translating at every call site.
+include model/NotificationSpec.java
+include model/CallSpec.java
+include model/CannedMessagesSpec.java
+
+# Two GDI protobuf sub-handlers that are genuinely self-contained. The others
+# (AppConfig, ExploreSync, Http, DataTransfer) reach into Gadgetbridge's UI,
+# database and exporters, so they are shimmed instead — see SHIMS.md.
+include service/devices/garmin/FileSyncServiceHandler.kt
+include service/devices/garmin/EcgServiceHandler.kt
+
+# ── Left behind, on purpose ──────────────────────────────────────────────────
+#
+#   util/GB.java
+#       707 lines of toasts, notification channels, and GBApplication access —
+#       Gadgetbridge's UI layer wearing a utility class's name. :device-gb-compat
+#       provides the handful of methods the protocol code actually calls,
+#       routed to Tracks' own logging instead of a toast.
+#
+#   util/DateTimeUtils.java
+#       Vendored, then measured and dropped. Only five of its methods are
+#       reachable, none of them the two that need
+#       com.github.pfichtner:durationformatter — a JitPack dependency. JitPack
+#       builds from a git tag at request time and is not reproducible, which
+#       matters because F-Droid is the eventual distribution target. Shimmed in
+#       src/compat with the five methods, and no new repository.
+#
+#   util/AndroidUtils.java
+#       Was vendored; measured and dropped. Exactly one of its thirteen public
+#       methods is reachable from the code we keep — safeUnregisterBroadcastReceiver,
+#       called twice from BondAction. The rest is theming, file sharing and
+#       toasts, and it was the single largest source of resource references
+#       outside ActivityKind, pulling in Material3 and androidx.cardview for
+#       colours Tracks never renders. Shimmed in src/compat at ~30 lines.
+#
+#
+#   service/devices/garmin/GarminSupport.java
+#       The orchestrator, and the most entangled file in the set — it reaches
+#       into GBApplication, the DAO session, preferences, and the UI. Our
+#       equivalent lives in com.tracks.device.garmin and drives the vendored
+#       protocol directly.
+#
+#   service/devices/garmin/communicator/
+#       Pulled in a later pass with the BLE layer; it depends on GB's entity
+#       classes for the download-then-import path we are replacing.
+#
+#   activities/, adapter/, widget/
+#       Gadgetbridge's user interface. Tracks has its own.
+#
+#   entities/, database/
+#       greenDAO. Tracks stores activity data on the server and mirrors
+#       summaries in SQLDelight; a second ORM would be a second source of truth.

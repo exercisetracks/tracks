@@ -1,0 +1,505 @@
+diff --git a/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/FileTransferHandler.java b/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/FileTransferHandler.java
+index cd2dd5a..aecb7b3 100644
+--- a/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/FileTransferHandler.java
++++ b/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/FileTransferHandler.java
+@@ -30,8 +30,10 @@ import java.io.File;
+ import java.io.IOException;
+ import java.nio.ByteBuffer;
+ import java.nio.ByteOrder;
++import java.util.ArrayList;
+ import java.util.Date;
+ import java.util.HashSet;
++import java.util.List;
+ import java.util.Set;
+ 
+ import nodomain.freeyourgadget.gadgetbridge.GBApplication;
+@@ -60,6 +62,24 @@ public class FileTransferHandler implements MessageHandler {
+     private final Upload upload;
+     private int maxPacketSize = 375;
+ 
++    // The biggest upload message we dare send at the current BLE MTU, so one
++    // FileTransferDataMessage always crosses the link inside the watch's own
++    // per-message timeout. Unbounded until an MTU is known — see setLinkMtu.
++    //
++    // Why this exists: an app (.prg) still goes over this legacy upload path,
++    // and on a fēnix 6X that negotiated MTU 23 — 18 payload bytes per BLE
++    // write — a full 4000-byte message needs ~220 writes and roughly 20 s to
++    // arrive, which is exactly when the watch abandons the transfer. Nothing
++    // else uses this path any more: FIT files go over file-sync. A healthy MTU
++    // leaves the cap above maxPacketSize, so this changes nothing there.
++    private int maxUploadMessageSize = Integer.MAX_VALUE;
++
++    // ~8 s of link time at any MTU, comfortably under the watch's timeout:
++    // this many BLE fragments per upload message, times the fragment payload.
++    private static final int MAX_FRAGMENTS_PER_UPLOAD_MESSAGE = 96;
++    // But never so small that a real MTU crawls — a floor of one small message.
++    private static final int MIN_UPLOAD_MESSAGE = 256;
++
+     public FileTransferHandler(GarminSupport deviceSupport) {
+         this.deviceSupport = deviceSupport;
+         this.download = new Download();
+@@ -78,6 +98,18 @@ public class FileTransferHandler implements MessageHandler {
+         this.maxPacketSize = maxPacketSize;
+     }
+ 
++    /**
++     * Bound the upload message size to what the link can carry in time.
++     *
++     * The BLE write payload is roughly MTU minus the ATT (3) and MLR (2)
++     * headers; an upload message that spans more than a few dozen of those
++     * risks the watch's per-message timeout. Called on every MTU change.
++     */
++    public void setLinkMtu(final int mtu) {
++        final int linkChunk = Math.max(1, mtu - 5);
++        this.maxUploadMessageSize = Math.max(MIN_UPLOAD_MESSAGE, linkChunk * MAX_FRAGMENTS_PER_UPLOAD_MESSAGE);
++    }
++
+     @Override
+     public GFDIMessage handle(GFDIMessage message) {
+         if (message instanceof DownloadRequestStatusMessage)
+@@ -128,7 +160,6 @@ public CreateFileMessage initiateUpload(byte[] fileAsByteArray, FileType.FILETYP
+     return new CreateFileMessage(fileAsByteArray.length, filetype);
+ }
+ 
+-
+     public class Download {
+         private FileFragment currentlyDownloading;
+ 
+@@ -204,12 +235,15 @@ public CreateFileMessage initiateUpload(byte[] fileAsByteArray, FileType.FILETYP
+ 
+         private void parseDirectoryEntries() {
+             LOG.debug("Parsing directory entries for {}", currentlyDownloading.directoryEntry);
++
++            // ---- Tracks-local patch, not upstream ----
+             if (deviceSupport.newSyncProtocol()) {
+                 // Signal to the support class that we got the directory - but ignore the entries
+                 // Well request them using the new sync protocol
+                 deviceSupport.addFileToDownloadList(currentlyDownloading.directoryEntry);
+                 return;
+             }
++            // ---- end Tracks-local patch ----
+ 
+             if ((currentlyDownloading.getDataSize() % 16) != 0)
+                 throw new IllegalArgumentException("Invalid directory data length");
+@@ -239,7 +273,9 @@ public CreateFileMessage initiateUpload(byte[] fileAsByteArray, FileType.FILETYP
+                     LOG.warn("Unsupported directory entry of type {}/{}: {}", fileDataType, fileSubType, directoryEntry);
+                     continue;
+                 }
+-                if (fileType != FileType.FILETYPE.DIRECTORY && !filetype.pull && !fetchUnknownFiles) {
++                if (fileType != FileType.FILETYPE.DIRECTORY
++                        && !FileType.FILETYPE.shouldPull(filetype)
++                        && !fetchUnknownFiles) {
+                     LOG.debug("Skipping directory entry: {}", directoryEntry);
+                     continue;
+                 }
+@@ -252,6 +288,7 @@ public CreateFileMessage initiateUpload(byte[] fileAsByteArray, FileType.FILETYP
+             }
+             currentlyDownloading = null;
+         }
++
+     }
+ 
+     private void updateUploadProgress(final int percentage) {
+@@ -282,6 +319,24 @@ public CreateFileMessage initiateUpload(byte[] fileAsByteArray, FileType.FILETYP
+         }
+     }
+ 
++    /**
++     * Why the watch last refused an upload, and at which step, or null.
++     *
++     * A string rather than one of the enums because there are three of them —
++     * create, upload request, and data transfer each answer with their own —
++     * and which step failed is as much of the answer as the code is. "The watch
++     * rejected the file" was true at any of them and useful at none.
++     */
++    private volatile String lastRefusal;
++
++    public String getLastRefusal() {
++        return lastRefusal;
++    }
++
++    public void clearLastRefusal() {
++        lastRefusal = null;
++    }
++
+     public class Upload {
+         private FileFragment currentlyUploading;
+ 
+@@ -293,8 +348,16 @@ public CreateFileMessage initiateUpload(byte[] fileAsByteArray, FileType.FILETYP
+                 }
+                 return new UploadRequestMessage(createFileStatusMessage.getFileIndex(), currentlyUploading.getDataSize());
+             } else {
+-                LOG.warn("Cannot proceed with upload");
++                // Recorded and *reported*, both of which upstream omits. The
++                // reason is the only thing that tells a permanent refusal from
++                // a transient one; and without the progress update nothing ever
++                // completes the caller's signal, so a refused upload used to
++                // hang until its timeout rather than fail with an answer in
++                // hand.
++                lastRefusal = "creating the file: " + createFileStatusMessage.getCreateStatus();
++                LOG.warn("Cannot proceed with upload: {}", lastRefusal);
+                 this.currentlyUploading = null;
++                updateUploadProgress(-1);
+             }
+             return null;
+         }
+@@ -307,7 +370,8 @@ public CreateFileMessage initiateUpload(byte[] fileAsByteArray, FileType.FILETYP
+                     throw new IllegalStateException("Received upload request with unaligned offset");
+                 return currentlyUploading.take();
+             } else {
+-                LOG.warn("Cannot proceed with upload");
++                lastRefusal = "starting the transfer: " + uploadRequestStatusMessage.getUploadStatus();
++                LOG.warn("Cannot proceed with upload: {}", lastRefusal);
+                 if (currentlyUploading.directoryEntry.filetype != FileType.FILETYPE.SETTINGS) {
+                     updateUploadProgress(-1);
+                 }
+@@ -337,7 +401,9 @@ public CreateFileMessage initiateUpload(byte[] fileAsByteArray, FileType.FILETYP
+                         throw new IllegalStateException("Received file transfer status with unaligned offset");
+                     return currentlyUploading.take();
+                 } else {
+-                    LOG.warn("Cannot proceed with upload");
++                    lastRefusal = "sending the file: "
++                            + fileTransferDataStatusMessage.getTransferStatus();
++                    LOG.warn("Cannot proceed with upload: {}", lastRefusal);
+                     updateUploadProgress(-1);
+                     this.currentlyUploading = null;
+                 }
+@@ -398,7 +464,8 @@ public CreateFileMessage initiateUpload(byte[] fileAsByteArray, FileType.FILETYP
+ 
+         private FileTransferDataMessage take() {
+             final int currentOffset = this.dataHolder.position();
+-            final byte[] chunk = new byte[Math.min(this.dataHolder.remaining(), maxPacketSize - 13)]; //actual payload in FileTransferDataMessage
++            final int budget = Math.min(maxPacketSize - 13, maxUploadMessageSize);
++            final byte[] chunk = new byte[Math.min(this.dataHolder.remaining(), budget)]; //actual payload in FileTransferDataMessage
+             this.dataHolder.get(chunk);
+             setRunningCrc(ChecksumCalculator.computeCrc(getRunningCrc(), chunk, 0, chunk.length));
+             return new FileTransferDataMessage(chunk, currentOffset, getRunningCrc());
+diff --git a/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/communicator/v2/CommunicatorV2.java b/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/communicator/v2/CommunicatorV2.java
+index c2ca504..33cd894 100644
+--- a/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/communicator/v2/CommunicatorV2.java
++++ b/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/communicator/v2/CommunicatorV2.java
+@@ -612,6 +612,19 @@ public class CommunicatorV2 implements ICommunicator {
+         return toSend.array();
+     }
+ 
++    /** Ask the watch to close one file-transfer handle, freeing its slot. */
++    public void closeTransferHandle(final int handle) {
++        final Service service = serviceByHandle.get(handle);
++        if (service == null) {
++            LOG.debug("No service for handle {}; already closed", handle);
++            return;
++        }
++        LOG.debug("Closing transfer handle {} ({})", handle, service);
++        mSupport.createTransactionBuilder("close transfer " + handle)
++                .write(characteristicSend, closeService(service, handle))
++                .queue();
++    }
++
+     private byte[] closeService(final Service service, final int handle) {
+         final ByteBuffer toSend = ByteBuffer.allocate(13).order(ByteOrder.LITTLE_ENDIAN);
+         toSend.put((byte) 0);
+@@ -716,6 +729,21 @@ public class CommunicatorV2 implements ICommunicator {
+ 
+     public interface ServiceWriter {
+         void write(String taskName, byte[] value);
++
++        /**
++         * Release this transfer channel once everything written has been
++         * acknowledged.
++         *
++         * <p>The watch expects the client to close a file-transfer channel when
++         * it is done sending. Nothing did, so the watch reclaimed each one on its
++         * own timer — measured at exactly 30.0 seconds of silence after the last
++         * fragment was acked, which is where half of every sync's wall-clock time
++         * went. Waiting for the drain rather than closing straight after the last
++         * write is what keeps this safe: the reliable layer may still be
++         * retransmitting, and closing under that would truncate the file.
++         */
++        default void closeWhenDrained() {
++        }
+     }
+ 
+     public class MlServiceWriter implements ServiceWriter {
+@@ -734,6 +762,13 @@ public class CommunicatorV2 implements ICommunicator {
+                     .write(characteristicSend, buf.array())
+                     .queue();
+         }
++
++        @Override
++        public void closeWhenDrained() {
++            // No reliability layer here, so there is nothing to drain: the writes
++            // are already queued on the GATT transaction queue in order.
++            closeTransferHandle(handle);
++        }
+     }
+ 
+     private MlrCommunicator createMlrCommunicator(final int handle, final ServiceCallback callback) {
+@@ -753,7 +788,7 @@ public class CommunicatorV2 implements ICommunicator {
+         return new MlrCommunicator(handle, maxWriteSize, messageSender, callback::onMessage);
+     }
+ 
+-    public static class MlrServiceWriter implements ServiceWriter {
++    public class MlrServiceWriter implements ServiceWriter {
+         private final MlrCommunicator mlrComm;
+ 
+         private MlrServiceWriter(final MlrCommunicator mlrComm) {
+@@ -764,5 +799,10 @@ public class CommunicatorV2 implements ICommunicator {
+         public void write(final String taskName, final byte[] value) {
+             mlrComm.sendMessage(taskName, value);
+         }
++
++        @Override
++        public void closeWhenDrained() {
++            mlrComm.notifyWhenDrained(() -> closeTransferHandle(mlrComm.getHandle()));
++        }
+     }
+ }
+diff --git a/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/communicator/v2/MlrCommunicator.java b/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/communicator/v2/MlrCommunicator.java
+index 23caa55..40635e3 100644
+--- a/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/communicator/v2/MlrCommunicator.java
++++ b/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/communicator/v2/MlrCommunicator.java
+@@ -26,6 +26,8 @@ public class MlrCommunicator {
+     private static final int INITIAL_MAX_UNACKED_SEND = 0x20;
+     private static final int MAX_RETRANSMISSION_TIMEOUT = 20000;
+     private static final int INITIAL_RETRANSMISSION_TIMEOUT = 1000;
++    /** How much the retransmission timeout eases per acknowledged batch — see processAck. */
++    private static final int RECOVERY_STEP_MS = 100;
+     private static final int ACK_TIMEOUT = 250;
+     private static final int ACK_TRIGGER_THRESHOLD = 5;
+ 
+@@ -66,6 +68,41 @@ public class MlrCommunicator {
+         this.maxPacketSize = maxPacketSize;
+     }
+ 
++    /** Fired once when every queued fragment has been sent and acknowledged. */
++    private Runnable drainListener;
++
++    /**
++     * Call {@code listener} when the send queue has fully drained.
++     *
++     * <p>Used to close a file-transfer channel at the only safe moment. The watch
++     * waits for the client to close once it has the file and, if nobody does,
++     * reclaims the channel on a 30-second timer — measured at exactly 30.0s of
++     * silence after the last fragment was acked, on every second upload. Closing
++     * earlier, on "we finished writing", would race retransmission and truncate.
++     */
++    public void notifyWhenDrained(final Runnable listener) {
++        drainListener = listener;
++        maybeNotifyDrained();
++    }
++
++    /** The handle this communicator owns, so its transfer slot can be released. */
++    public int getHandle() {
++        return handle;
++    }
++
++    private void maybeNotifyDrained() {
++        if (drainListener == null) {
++            return;
++        }
++        if (lastRcvAck != nextSendSeq || !fragmentQueue.isEmpty()) {
++            return;
++        }
++        final Runnable listener = drainListener;
++        drainListener = null;
++        LOG.debug("Send queue drained; notifying listener");
++        listener.run();
++    }
++
+     public void sendMessage(final String taskName, final byte[] message) {
+         if (message == null || message.length == 0) {
+             return;
+@@ -181,10 +218,25 @@ public class MlrCommunicator {
+ 
+         lastRcvAck = reqNum;
+ 
++        // Recovery, the mirror of the backoff in onRetransmissionTimeout.
++        // Upstream only ever shrinks the window and stretches the timeout, so
++        // a few late acks — a watch busy pulling a thousand files, say — leave
++        // the link at one 18-byte fragment per round trip for the rest of the
++        // connection. Measured: a 4 KB message then takes 20 s, which is the
++        // watch's own limit, and it aborts the transfer. Each acknowledged
++        // batch earns one fragment of window back and eases the timeout a
++        // little, so a healthy link is fast again within a few seconds.
++        if (numAcked > 0) {
++            maxNumUnackedSend = Math.min(INITIAL_MAX_UNACKED_SEND, maxNumUnackedSend + 1);
++            retransmissionTimeout = Math.max(INITIAL_RETRANSMISSION_TIMEOUT, retransmissionTimeout - RECOVERY_STEP_MS);
++        }
++
+         // Restart retransmission timer if there are still unacked packets
+         if (lastRcvAck != nextSendSeq) {
+             startRetransmissionTimer();
+         }
++
++        maybeNotifyDrained();
+     }
+ 
+     private void scheduleAckIfNeeded() {
+@@ -214,23 +266,34 @@ public class MlrCommunicator {
+         LOG.debug("Sent ACK packet: reqNum={}", nextRcvSeq);
+     }
+ 
++    //! Send as many queued fragments as the window allows, not just one.
++    //!
++    //! This is a sliding-window protocol: up to `maxNumUnackedSend` packets may
++    //! be in flight at once, and the whole point of the window is that they go
++    //! out back to back and the acks come back in a batch. Sending a single
++    //! fragment per call — which is what this did — collapses the window to one
++    //! packet per round trip, and on a watch that pins the connection interval
++    //! at 45 ms that is a 140 KB app taking ten minutes instead of the seconds
++    //! it takes over a full window. So fill the window each time we are run.
+     private void runProtocol() {
+         if (closed) {
+             LOG.warn("Attempted to run protocol after closed");
+             return;
+         }
+ 
+-        // Check if we can send more packets
+-        final int numSentUnacked = (nextSendSeq - lastRcvAck + MAX_SEQ_NUM + 1) % (MAX_SEQ_NUM + 1);
++        while (true) {
++            final int numSentUnacked = (nextSendSeq - lastRcvAck + MAX_SEQ_NUM + 1) % (MAX_SEQ_NUM + 1);
++            if (numSentUnacked >= maxNumUnackedSend) {
++                // Window full: wait for acks to free room.
++                return;
++            }
+ 
+-        if (numSentUnacked >= maxNumUnackedSend) {
+-            LOG.debug("Cannot send more packets: {} unacked, max {}", numSentUnacked, maxNumUnackedSend);
+-            return;
+-        }
++            final Fragment fragment = fragmentQueue.poll();
++            if (fragment == null) {
++                // Nothing more queued.
++                return;
++            }
+ 
+-        // Send next fragment if available
+-        final Fragment fragment = fragmentQueue.poll();
+-        if (fragment != null) {
+             // Update the fragment with the current reqNum before storing it
+             final Fragment fragmentWithReqNum = new Fragment(fragment.taskName, fragment.num, fragment.data, nextRcvSeq);
+             final byte[] packet = createPacket(nextRcvSeq, nextSendSeq, fragment.data);
+@@ -239,7 +302,7 @@ public class MlrCommunicator {
+ 
+             nextSendSeq = (nextSendSeq + 1) % (MAX_SEQ_NUM + 1);
+ 
+-            // Start retransmission timer if this is the first unacked packet
++            // Start the retransmission timer on the first packet of a burst.
+             if (numSentUnacked == 0) {
+                 startRetransmissionTimer();
+             }
+diff --git a/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/messages/status/CreateFileStatusMessage.java b/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/messages/status/CreateFileStatusMessage.java
+index cdc4204..f4c7fa8 100644
+--- a/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/messages/status/CreateFileStatusMessage.java
++++ b/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/messages/status/CreateFileStatusMessage.java
+@@ -38,6 +38,19 @@ public class CreateFileStatusMessage extends GFDIStatusMessage {
+         return new CreateFileStatusMessage(garminMessage, status, createStatus, fileIndex, filetype, fileNumber);
+     }
+ 
++    /**
++     * Why the watch refused, in its own words.
++     *
++     * Tracks surfaces this. Upstream logs it and drops it, which is reasonable
++     * for a client that only ever pushes workouts; it is not reasonable when
++     * the answer distinguishes "this watch cannot store that kind of file at
++     * all" from "it is full" — one is permanent and one clears itself, and
++     * "the watch rejected the file" says neither.
++     */
++    public CreateStatus getCreateStatus() {
++        return createStatus;
++    }
++
+     public int getFileIndex() {
+         return fileIndex;
+     }
+diff --git a/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/messages/status/FileTransferDataStatusMessage.java b/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/messages/status/FileTransferDataStatusMessage.java
+index ee4e9ca..a80bb3b 100644
+--- a/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/messages/status/FileTransferDataStatusMessage.java
++++ b/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/messages/status/FileTransferDataStatusMessage.java
+@@ -37,6 +37,11 @@ public class FileTransferDataStatusMessage extends GFDIStatusMessage {
+         return new FileTransferDataStatusMessage(garminMessage, status, transferStatus, dataOffset, false);
+     }
+ 
++    /** Why the watch stopped mid-transfer — see CreateFileStatusMessage. */
++    public TransferStatus getTransferStatus() {
++        return transferStatus;
++    }
++
+     public int getDataOffset() {
+         return dataOffset;
+     }
+diff --git a/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/messages/status/SetFileFlagsStatusMessage.java b/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/messages/status/SetFileFlagsStatusMessage.java
+index b5416c4..81ef184 100644
+--- a/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/messages/status/SetFileFlagsStatusMessage.java
++++ b/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/messages/status/SetFileFlagsStatusMessage.java
+@@ -39,8 +39,23 @@ public class SetFileFlagsStatusMessage extends GFDIStatusMessage {
+ 
+     }
+ 
++    // ---- Tracks-local patch, not upstream ----
++    // Upstream parses and logs this response but never hands it to a caller —
++    // reasonable when nothing upstream ever asked for anything but ARCHIVE,
++    // whose result nobody acted on either. Tracks asks for DELETE too, and a
++    // caller that changes behaviour based on the watch's answer needs the
++    // answer. See gadgetbridge.manifest for why this file carries a local
++    // patch.
++    public int getFileIdentifier() {
++        return fileIdentifier;
++    }
++
++    public FlagsStatus getFlagsStatus() {
++        return flagsStatus;
++    }
++    // ---- end Tracks-local patch ----
+ 
+-    enum FlagsStatus {
++    public enum FlagsStatus {
+         APPLIED,
+         ERROR, //guessed
+         ;
+diff --git a/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/messages/status/UploadRequestStatusMessage.java b/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/messages/status/UploadRequestStatusMessage.java
+index b4ba6ed..9dbeccb 100644
+--- a/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/messages/status/UploadRequestStatusMessage.java
++++ b/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/messages/status/UploadRequestStatusMessage.java
+@@ -35,6 +35,11 @@ public class UploadRequestStatusMessage extends GFDIStatusMessage {
+         return new UploadRequestStatusMessage(garminMessage, status, uploadStatus, dataOffset, maxFileSize, crcSeed);
+     }
+ 
++    /** Why the watch would not start the transfer — see CreateFileStatusMessage. */
++    public UploadStatus getUploadStatus() {
++        return uploadStatus;
++    }
++
+     public int getDataOffset() {
+         return dataOffset;
+     }
+diff --git a/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/util/CompressionUtils.kt b/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/util/CompressionUtils.kt
+index cfe6474..2a79a15 100644
+--- a/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/util/CompressionUtils.kt
++++ b/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/util/CompressionUtils.kt
+@@ -44,6 +44,25 @@ object CompressionUtils {
+         return baosInflated.toByteArray()
+     }
+ 
++    /**
++     * zlib-deflate, the format [inflate] reads back.
++     *
++     * Added for uploads: Garmin's file-transfer channel carries the file
++     * deflated in both directions, and only the download half existed here.
++     */
++    fun deflate(bytes: ByteArray): ByteArray {
++        val deflater = java.util.zip.Deflater()
++        deflater.setInput(bytes)
++        deflater.finish()
++        val out = ByteArrayOutputStream(bytes.size)
++        val buf = ByteArray(8096)
++        while (!deflater.finished()) {
++            out.write(buf, 0, deflater.deflate(buf))
++        }
++        deflater.end()
++        return out.toByteArray()
++    }
++
+     fun gunzipUtf8String(compressed: ByteArray?): String {
+         val byteInput = ByteArrayInputStream(compressed)
+         return GZIPInputStream(byteInput).bufferedReader(Charsets.UTF_8).use { it.readText() }

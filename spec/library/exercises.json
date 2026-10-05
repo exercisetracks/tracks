@@ -1,0 +1,5905 @@
+[
+ {
+  "cues": [],
+  "description": "Hip internal and external rotation mobility. Addresses a key restriction in cyclists and runners.",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Sit on the floor with both legs bent to 90° — front leg externally rotated, rear leg internally rotated.\n2. Sit upright and lean forward gently over the front shin, feeling the stretch in the front hip.\n3. Hold 60 seconds, then switch legs.\n4. Gradually lower your torso toward the floor as mobility improves.\nTip: If hip rocks off the floor, sit on a folded blanket to reduce the demand.",
+  "is_compound": false,
+  "movement_pattern": "isometric",
+  "name": "90/90 Hip Stretch",
+  "primary_muscles": [
+   "hip_external_rotators",
+   "glutes",
+   "hip_abductors"
+  ],
+  "secondary_muscles": [
+   "hip_flexors"
+  ],
+  "sport_relevance": {
+   "cycling": 3,
+   "hiking": 3,
+   "mountain_biking": 3,
+   "running": 3,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "One of the highest anti-extension core demands of any exercise. Build up gradually.",
+  "difficulty": 3,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Kneel with an ab wheel in both hands directly below shoulders.\n2. Roll forward slowly, extending your hips and arms until your body is nearly horizontal.\n3. Use abs to pull the wheel back to the start — do not use a hip-hinging action.\n4. Control is everything: if you cannot pull back under control, you extended too far.\nTip: Practice \"rollout to a wall\" — touch the wall at a safe distance before progressing further.",
+  "is_compound": true,
+  "movement_pattern": "isometric",
+  "name": "Ab Wheel Rollout",
+  "primary_muscles": [
+   "core",
+   "abs"
+  ],
+  "secondary_muscles": [
+   "lats",
+   "shoulders",
+   "hip_flexors"
+  ],
+  "sport_relevance": {
+   "cycling": 3,
+   "hiking": 3,
+   "mountain_biking": 3,
+   "running": 3,
+   "strength": 3
+  }
+ },
+ {
+  "cues": [
+   "Feet shoulder-width apart",
+   "Reach your hips back",
+   "Keep your heels planted"
+  ],
+  "description": "Bodyweight squat. Good for warm-up activation or if no equipment available. Progress to goblet or barbell.",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": "squat",
+  "garmin_subtype": 100,
+  "has_animation": true,
+  "instructions": "1. Sit with feet on the floor in an air squat position; stand up fully.\n2. Repeat as a simple unloaded bodyweight squat.\n3. Focus on quad drive and glute squeeze at lockout.\nTip: Good warm-up movement or active recovery.",
+  "is_compound": true,
+  "movement_pattern": "squat",
+  "name": "Air Squat",
+  "primary_muscles": [
+   "quads",
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "hamstrings",
+   "core"
+  ],
+  "sport_relevance": {
+   "cycling": 1,
+   "hiking": 1,
+   "running": 1,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [],
+  "description": "One arm at a time. Strict tempo.",
+  "difficulty": 1,
+  "equipment": [
+   "dumbbell"
+  ],
+  "garmin_category": "row",
+  "garmin_subtype": 34,
+  "has_animation": true,
+  "instructions": null,
+  "is_compound": true,
+  "movement_pattern": "pull",
+  "name": "Alternating Dumbbell Row",
+  "primary_muscles": [
+   "upper_back",
+   "lats"
+  ],
+  "secondary_muscles": [
+   "biceps",
+   "rear_delts"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "generic": 3,
+   "running": 1
+  }
+ },
+ {
+  "cues": [],
+  "description": "Machine calf/ankle press. 6 studies in cyclist strength meta-analysis confirm relevance.",
+  "difficulty": 1,
+  "equipment": [
+   "machine",
+   "bodyweight"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": null,
+  "is_compound": false,
+  "movement_pattern": "isolation",
+  "name": "Ankle Plantar Flexion",
+  "primary_muscles": [
+   "calves"
+  ],
+  "secondary_muscles": [],
+  "sport_relevance": {
+   "cycling": 3,
+   "hiking": 2,
+   "running": 3,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [],
+  "description": "Rotating shoulder press hitting all three delt heads through full ROM.",
+  "difficulty": 2,
+  "equipment": [
+   "dumbbell"
+  ],
+  "garmin_category": "shoulder_press",
+  "garmin_subtype": 1,
+  "has_animation": true,
+  "instructions": "1. Sit upright; hold dumbbells at shoulder height with palms facing you (like top of a curl).\n2. As you press up, rotate palms outward so they face away at full extension.\n3. Lower while rotating palms back to the starting position.\n4. Repeat in one smooth, controlled motion.\nTip: Start lighter than you think — the rotation reduces effective strength early in the lift.",
+  "is_compound": true,
+  "movement_pattern": "push",
+  "name": "Arnold Press",
+  "primary_muscles": [
+   "front_delts",
+   "side_delts"
+  ],
+  "secondary_muscles": [
+   "triceps",
+   "rear_delts",
+   "traps"
+  ],
+  "sport_relevance": {
+   "cycling": 1,
+   "hiking": 1,
+   "mountain_biking": 1,
+   "running": 1,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Machine or band-assisted pull-up — builds strength toward unassisted pull-ups.",
+  "difficulty": 1,
+  "equipment": [
+   "machine"
+  ],
+  "garmin_category": "pull_up",
+  "garmin_subtype": 1,
+  "has_animation": false,
+  "instructions": "1. Set the assistance weight (higher = easier). Kneel or stand on the platform.\n2. Grip the bar just wider than shoulders with an overhand grip.\n3. Pull your chin above the bar, squeezing shoulder blades together at the top.\n4. Lower slowly under control to full arm extension.\nTip: Reduce assistance by 5 kg every few weeks as you get stronger.",
+  "is_compound": true,
+  "movement_pattern": "pull",
+  "name": "Assisted Pull-Up",
+  "primary_muscles": [
+   "lats",
+   "upper_back"
+  ],
+  "secondary_muscles": [
+   "biceps",
+   "rear_delts"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 1,
+   "mountain_biking": 2,
+   "running": 1,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [],
+  "description": "Band-resisted adduction. Great warm-up for runners and cyclists to activate the groin.",
+  "difficulty": 1,
+  "equipment": [
+   "band"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Anchor a resistance band to a sturdy low point (e.g., squat rack post).\n2. Loop the other end around the inside ankle; stand with the band pulling outward.\n3. Pull the leg inward across the body against the band resistance.\n4. Return under control. Switch sides.\nTip: Use a lighter band for higher reps (15–20) as a pre-run activation drill.",
+  "is_compound": false,
+  "movement_pattern": "isolation",
+  "name": "Banded Hip Adduction",
+  "primary_muscles": [
+   "hip_adductors"
+  ],
+  "secondary_muscles": [
+   "core"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 2,
+   "mountain_biking": 2,
+   "running": 2,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [
+   "Brace your core before you descend",
+   "Push your knees out over your toes",
+   "Drive up through mid-foot"
+  ],
+  "description": "King of lower body exercises. 3–5 sets x 4–8 reps at 80–85% 1RM for strength; 3 x 8–12 at 70% for hypertrophy.",
+  "difficulty": 2,
+  "equipment": [
+   "barbell"
+  ],
+  "garmin_category": "squat",
+  "garmin_subtype": 6,
+  "has_animation": true,
+  "instructions": "1. Set barbell on squat rack at upper-chest height.\n2. Duck under the bar: position it across the upper traps (high bar) or rear delts (low bar). Step back.\n3. Stand hip-width apart, toes 15–30° out.\n4. Brace core and descend until hips are below knee crease.\n5. Drive through the floor to return to standing.\nTip: Keep knees tracking over toes; do not let them cave inward.",
+  "is_compound": true,
+  "movement_pattern": "squat",
+  "name": "Barbell Back Squat",
+  "primary_muscles": [
+   "quads",
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "hamstrings",
+   "lower_back",
+   "core"
+  ],
+  "sport_relevance": {
+   "cycling": 3,
+   "hiking": 2,
+   "mountain_biking": 3,
+   "rowing": 2,
+   "running": 3,
+   "strength": 3
+  }
+ },
+ {
+  "cues": [
+   "Pinch your shoulder blades down and back",
+   "Lower to your mid-chest",
+   "Drive the bar up and slightly back"
+  ],
+  "description": "Primary chest builder. Important antagonist work for climbers (shoulder health). 3–5 x 5 for strength.",
+  "difficulty": 2,
+  "equipment": [
+   "barbell"
+  ],
+  "garmin_category": "bench_press",
+  "garmin_subtype": 1,
+  "has_animation": true,
+  "instructions": "1. Lie on a flat bench; grip barbell slightly wider than shoulders.\n2. Unrack the bar and lower it to mid-chest, elbows at ~75°.\n3. Press back to full extension — bar travels in a slight arc back toward the rack.\n4. Keep shoulder blades retracted and lower back slightly arched.\nTip: Ensure a spotter is present for heavy sets; never press without safety bars.",
+  "is_compound": true,
+  "movement_pattern": "push",
+  "name": "Barbell Bench Press",
+  "primary_muscles": [
+   "chest",
+   "triceps"
+  ],
+  "secondary_muscles": [
+   "shoulders"
+  ],
+  "sport_relevance": {
+   "climbing": 1,
+   "paddling": 2,
+   "strength": 3
+  }
+ },
+ {
+  "cues": [
+   "Hinge to about 45°, flat back",
+   "Pull to your lower ribs",
+   "Squeeze your shoulder blades"
+  ],
+  "description": "Heavy horizontal pull. Core and lower back stabilization under load. Key for paddlers and rowers.",
+  "difficulty": 2,
+  "equipment": [
+   "barbell"
+  ],
+  "garmin_category": "row",
+  "garmin_subtype": 46,
+  "has_animation": true,
+  "instructions": "1. Hold barbell at hip level with overhand grip, slightly wider than hip-width.\n2. Hinge at hips until torso is 45–90° to the floor; slight knee bend.\n3. Row bar to lower chest/upper abdomen, driving elbows back.\n4. Lower under control to full arm extension.\nTip: Lead with the elbows, not the hands. Avoid jerking the lower back.",
+  "is_compound": true,
+  "movement_pattern": "pull",
+  "name": "Barbell Bent Over Row",
+  "primary_muscles": [
+   "upper_back",
+   "lats",
+   "biceps"
+  ],
+  "secondary_muscles": [
+   "lower_back",
+   "core"
+  ],
+  "sport_relevance": {
+   "climbing": 3,
+   "mountain_biking": 2,
+   "paddling": 4,
+   "rowing": 3,
+   "strength": 3
+  }
+ },
+ {
+  "cues": [],
+  "description": "Standard bicep builder allowing heavier loads than dumbbells.",
+  "difficulty": 1,
+  "equipment": [
+   "barbell"
+  ],
+  "garmin_category": "curl",
+  "garmin_subtype": 0,
+  "has_animation": true,
+  "instructions": "1. Stand with barbell at hips, shoulder-width underhand grip.\n2. Curl bar up to shoulder height, keeping upper arms stationary at your sides.\n3. Squeeze the biceps hard at the top.\n4. Lower under control to full extension before the next rep.\nTip: Avoid leaning back — if you have to, the weight is too heavy.",
+  "is_compound": false,
+  "movement_pattern": "pull",
+  "name": "Barbell Bicep Curl",
+  "primary_muscles": [
+   "biceps"
+  ],
+  "secondary_muscles": [
+   "forearms",
+   "front_delts"
+  ],
+  "sport_relevance": {
+   "cycling": 1,
+   "hiking": 1,
+   "mountain_biking": 1,
+   "running": 1,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [
+   "Bar over mid-foot",
+   "Take the slack out of the bar",
+   "Push the floor away"
+  ],
+  "description": "Full posterior chain builder. Use for pure strength goals; RDL preferred for endurance athletes.",
+  "difficulty": 3,
+  "equipment": [
+   "barbell"
+  ],
+  "garmin_category": "deadlift",
+  "garmin_subtype": 0,
+  "has_animation": true,
+  "instructions": "1. Stand with feet hip-width; bar over mid-foot.\n2. Hinge down and grip bar just outside the legs; chest up, neutral spine.\n3. Brace hard; drive through the floor pushing heels away.\n4. Lock hips and shoulders simultaneously at the top.\n5. Hinge back down under control.\nTip: The bar should remain in contact with your shins/thighs throughout the lift.",
+  "is_compound": true,
+  "movement_pattern": "hinge",
+  "name": "Barbell Deadlift",
+  "primary_muscles": [
+   "hamstrings",
+   "glutes",
+   "lower_back"
+  ],
+  "secondary_muscles": [
+   "quads",
+   "traps",
+   "core",
+   "forearms"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "mountain_biking": 2,
+   "rowing": 3,
+   "running": 2,
+   "strength": 3
+  }
+ },
+ {
+  "cues": [],
+  "description": "Floor-based hip thrust. Easier setup than bench version.",
+  "difficulty": 2,
+  "equipment": [
+   "barbell"
+  ],
+  "garmin_category": "hip_raise",
+  "garmin_subtype": 0,
+  "has_animation": true,
+  "instructions": null,
+  "is_compound": false,
+  "movement_pattern": "hinge",
+  "name": "Barbell Hip Thrust on Floor",
+  "primary_muscles": [
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "hamstrings",
+   "core"
+  ],
+  "sport_relevance": {
+   "cycling": 3,
+   "generic": 3,
+   "running": 3
+  }
+ },
+ {
+  "cues": [],
+  "description": "Direct trap builder. Important for neck and shoulder stability in cyclists.",
+  "difficulty": 1,
+  "equipment": [
+   "barbell"
+  ],
+  "garmin_category": "shrug",
+  "garmin_subtype": 0,
+  "has_animation": true,
+  "instructions": "1. Stand holding barbell or dumbbells at hip level with an overhand grip.\n2. Shrug shoulders straight up toward ears as high as possible.\n3. Hold for 1 second; lower under control.\nTip: Do not roll the shoulders — pure elevation only.",
+  "is_compound": false,
+  "movement_pattern": "pull",
+  "name": "Barbell Shrug",
+  "primary_muscles": [
+   "traps"
+  ],
+  "secondary_muscles": [
+   "forearms",
+   "upper_back"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 1,
+   "mountain_biking": 2,
+   "running": 1,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Step onto box with barbell on back. Unilateral leg strength.",
+  "difficulty": 2,
+  "equipment": [
+   "barbell",
+   "box"
+  ],
+  "garmin_category": "squat",
+  "garmin_subtype": 17,
+  "has_animation": true,
+  "instructions": null,
+  "is_compound": true,
+  "movement_pattern": "squat",
+  "name": "Barbell Step-up",
+  "primary_muscles": [
+   "quads",
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "hamstrings",
+   "core"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "generic": 3,
+   "running": 3
+  }
+ },
+ {
+  "cues": [],
+  "description": "Oblique-dominant crunch with a rotation component.",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": "crunch",
+  "garmin_subtype": 2,
+  "has_animation": true,
+  "instructions": "1. Lie on your back; hands behind head, legs lifted with knees at 90°.\n2. Bring your right elbow toward your left knee as you extend the right leg.\n3. Alternate sides in a smooth pedalling motion.\n4. Keep the lower back pressed to the floor throughout.\nTip: Move slowly with control — fast bicycles often become neck-yanking, not abs work.",
+  "is_compound": false,
+  "movement_pattern": "rotation",
+  "name": "Bicycle Crunch",
+  "primary_muscles": [
+   "abs",
+   "obliques"
+  ],
+  "secondary_muscles": [
+   "hip_flexors"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 2,
+   "mountain_biking": 2,
+   "paddling": 3,
+   "running": 2,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [],
+  "description": "Anti-rotation core stability. Excellent for lower-back health in all endurance sports.",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": "plank",
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Get on all fours with hands under shoulders and knees under hips.\n2. Extend your right arm straight forward and your left leg straight back simultaneously.\n3. Hold for 2–3 seconds, keeping the spine neutral — no rotation or hip drop.\n4. Return and repeat on the opposite side.\nTip: Think \"lengthen\" rather than \"lift\" — quality over height of the limbs.",
+  "is_compound": true,
+  "movement_pattern": "isometric",
+  "name": "Bird Dog",
+  "primary_muscles": [
+   "core",
+   "lower_back"
+  ],
+  "secondary_muscles": [
+   "glutes",
+   "upper_back"
+  ],
+  "sport_relevance": {
+   "cycling": 3,
+   "hiking": 3,
+   "mountain_biking": 3,
+   "running": 3,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [
+   "Long step, tall torso",
+   "Lower until both knees are ~90°",
+   "Drive through the front heel"
+  ],
+  "description": "Unloaded lunge. Good starting point before adding dumbbells.",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": "lunge",
+  "garmin_subtype": 32,
+  "has_animation": true,
+  "instructions": "1. Stand with feet hip-width; step one foot back a lunge-width.\n2. Hold dumbbells at your sides or barbell on your back.\n3. Drop the rear knee toward the floor, keeping front shin vertical.\n4. Return to standing by pushing through the front heel.\nTip: Think of this as moving straight down, not forward.",
+  "is_compound": true,
+  "movement_pattern": "squat",
+  "name": "Bodyweight Lunge",
+  "primary_muscles": [
+   "quads",
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "hamstrings",
+   "core"
+  ],
+  "sport_relevance": {
+   "hiking": 2,
+   "running": 2,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [
+   "Load your hips, swing your arms",
+   "Land soft and quiet on the box",
+   "Stand tall, then step down"
+  ],
+  "description": "Lower body power — combined with heavy lifting gives ES -1.035 for runners (largest effect size). 2–4 x 5–8 reps.",
+  "difficulty": 2,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": "plyo",
+  "garmin_subtype": 33,
+  "has_animation": true,
+  "instructions": "1. Stand in front of a sturdy box; feet hip-width apart.\n2. Load into a quarter squat and swing arms back.\n3. Explode upward, driving arms overhead, and land softly on the box with both feet.\n4. Stand fully on the box, then step down one foot at a time.\nTip: Land with knees soft and bent — avoid landing with straight legs.",
+  "is_compound": true,
+  "movement_pattern": "plyometric",
+  "name": "Box Jump",
+  "primary_muscles": [
+   "quads",
+   "glutes",
+   "calves"
+  ],
+  "secondary_muscles": [
+   "hamstrings",
+   "core"
+  ],
+  "sport_relevance": {
+   "hiking": 2,
+   "mountain_biking": 2,
+   "running": 3,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Horizontal power jump measuring and developing leg drive.",
+  "difficulty": 2,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Stand with feet hip-width apart; load into a quarter squat.\n2. Swing arms back, then explosively jump forward as far as possible.\n3. Land softly on two feet, absorbing with the quads and glutes.\n4. Reset and repeat.\nTip: Focus on a soft landing — noisy landings indicate poor eccentric strength.",
+  "is_compound": true,
+  "movement_pattern": "plyometric",
+  "name": "Broad Jump",
+  "primary_muscles": [
+   "quads",
+   "glutes",
+   "calves"
+  ],
+  "secondary_muscles": [
+   "hamstrings",
+   "core"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 2,
+   "mountain_biking": 3,
+   "running": 3,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [
+   "Most of your weight on the front foot",
+   "Drop straight down",
+   "Keep your front shin vertical"
+  ],
+  "description": "Rear-foot-elevated split squat. Near-unilateral loading with excellent glute/quad targeting.",
+  "difficulty": 2,
+  "equipment": [
+   "dumbbell",
+   "barbell",
+   "bodyweight"
+  ],
+  "garmin_category": "lunge",
+  "garmin_subtype": 18,
+  "has_animation": true,
+  "instructions": "1. Place rear foot on a bench; step forward lunge-width with front foot.\n2. Descend until rear knee approaches the floor and front thigh is parallel.\n3. Drive through the front heel to return to the top.\n4. Keep torso upright; avoid leaning excessively forward.\nTip: The front foot position determines stress distribution — further forward = more glute; closer = more quad.",
+  "is_compound": true,
+  "movement_pattern": "squat",
+  "name": "Bulgarian Split Squat",
+  "primary_muscles": [
+   "quads",
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "hamstrings",
+   "core"
+  ],
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "hiking": 3,
+   "mountain_biking": 2,
+   "paddling": 2,
+   "running": 3,
+   "strength": 3
+  }
+ },
+ {
+  "cues": [],
+  "description": "Full-body conditioning exercise combining squat thrust and jump.",
+  "difficulty": 2,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Start standing; squat down and place hands on floor.\n2. Jump or step feet back to a plank position.\n3. Perform a push-up (optional for harder version).\n4. Jump or step feet forward to hands; explode upward into a jump.\nTip: Scale by removing the push-up and jump; progress by adding a pull-up at the top.",
+  "is_compound": true,
+  "movement_pattern": "plyometric",
+  "name": "Burpee",
+  "primary_muscles": [
+   "quads",
+   "glutes",
+   "chest",
+   "core"
+  ],
+  "secondary_muscles": [
+   "shoulders",
+   "triceps",
+   "calves"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 2,
+   "mountain_biking": 2,
+   "running": 2,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [],
+  "description": "Cable fly maintains constant tension through full ROM unlike dumbbells.",
+  "difficulty": 1,
+  "equipment": [
+   "cable"
+  ],
+  "garmin_category": "flye",
+  "garmin_subtype": 3,
+  "has_animation": true,
+  "instructions": "1. Set pulleys to shoulder height. Stand in the middle, one foot forward for balance.\n2. Grab handles, lean slightly forward, arms wide with a soft elbow bend.\n3. Bring hands together in front of chest in an arc, squeezing pecs hard at the finish.\n4. Slowly return arms back to the starting position under control.\nTip: Vary pulley height — low-to-high targets upper chest; high-to-low hits lower pec.",
+  "is_compound": false,
+  "movement_pattern": "push",
+  "name": "Cable Chest Fly",
+  "primary_muscles": [
+   "chest"
+  ],
+  "secondary_muscles": [
+   "front_delts"
+  ],
+  "sport_relevance": {
+   "cycling": 1,
+   "hiking": 1,
+   "mountain_biking": 1,
+   "running": 1,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Weighted crunch with consistent cable resistance — allows progressive loading of the abs.",
+  "difficulty": 2,
+  "equipment": [
+   "cable"
+  ],
+  "garmin_category": "crunch",
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Kneel in front of a high cable; grip the rope attachment behind your neck.\n2. With hips stationary, crunch your rib cage toward your hips.\n3. Feel the abs fully contract at the bottom; slowly return to the upright position.\nTip: The hips stay still — only the spine flexes. Think \"rib cage to hips\", not \"head to knees\".",
+  "is_compound": false,
+  "movement_pattern": "isometric",
+  "name": "Cable Crunch",
+  "primary_muscles": [
+   "abs"
+  ],
+  "secondary_muscles": [
+   "hip_flexors",
+   "obliques"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 2,
+   "mountain_biking": 2,
+   "running": 2,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Cable maintains consistent tension at the bottom of the rep unlike free weights.",
+  "difficulty": 1,
+  "equipment": [
+   "cable"
+  ],
+  "garmin_category": "curl",
+  "garmin_subtype": 2,
+  "has_animation": true,
+  "instructions": "1. Attach a straight bar or EZ bar to a low cable pulley. Stand facing the machine.\n2. Grip the bar underhand; curl it up to shoulder height, keeping elbows at sides.\n3. Squeeze at the top; lower slowly back to straight arms.\nTip: Great as a finisher after barbell curls — higher rep range for a pump.",
+  "is_compound": false,
+  "movement_pattern": "pull",
+  "name": "Cable Curl",
+  "primary_muscles": [
+   "biceps"
+  ],
+  "secondary_muscles": [
+   "forearms",
+   "front_delts"
+  ],
+  "sport_relevance": {
+   "cycling": 1,
+   "hiking": 1,
+   "mountain_biking": 1,
+   "running": 1,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [],
+  "description": "Cable version maintains constant tension through the full raise.",
+  "difficulty": 1,
+  "equipment": [
+   "cable"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Attach a straight bar to low cable pulley. Stand facing away from the machine.\n2. Grip the bar overhand; raise it forward and up to shoulder height.\n3. Lower slowly back to hip level.\nTip: Keep elbows slightly bent and avoid shrugging the traps at the top.",
+  "is_compound": false,
+  "movement_pattern": "push",
+  "name": "Cable Front Raise",
+  "primary_muscles": [
+   "front_delts"
+  ],
+  "secondary_muscles": [
+   "side_delts"
+  ],
+  "sport_relevance": {
+   "cycling": 1,
+   "hiking": 1,
+   "mountain_biking": 1,
+   "running": 1,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [],
+  "description": "Cable adduction isolating the inner thigh. Balances the hip abductor work in lateral lunges.",
+  "difficulty": 1,
+  "equipment": [
+   "cable"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Attach ankle strap to low cable pulley and strap to the inside ankle.\n2. Stand sideways to the machine; hold the frame for balance.\n3. With a straight leg, pull the strapped leg across the body past the standing leg.\n4. Return to start under control.\nTip: Keep the torso upright — no leaning. Perform both sides.",
+  "is_compound": false,
+  "movement_pattern": "isolation",
+  "name": "Cable Hip Adduction",
+  "primary_muscles": [
+   "hip_adductors"
+  ],
+  "secondary_muscles": [
+   "hip_flexors",
+   "core"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 2,
+   "mountain_biking": 2,
+   "running": 2,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [],
+  "description": "Glute isolation with constant cable tension. Useful for runners and cyclists.",
+  "difficulty": 1,
+  "equipment": [
+   "cable"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Attach an ankle strap to a low cable; secure to one ankle.\n2. Face the cable machine, holding it lightly for balance.\n3. Kick the strapped leg back and up, squeezing the glute hard at full extension.\n4. Return slowly to the starting position.\nTip: Keep the hip still — only the leg moves. Avoid rotating the torso.",
+  "is_compound": false,
+  "movement_pattern": "hinge",
+  "name": "Cable Kickback",
+  "primary_muscles": [
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "hamstrings",
+   "lower_back"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 2,
+   "mountain_biking": 2,
+   "running": 3,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [],
+  "description": "Cable provides constant tension compared to dumbbells, better for shoulder hypertrophy.",
+  "difficulty": 1,
+  "equipment": [
+   "cable"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Stand next to a low cable with the handle in your far hand.\n2. Raise your arm out to the side until it is parallel to the floor.\n3. Pause, then lower slowly under control.\n4. Lean slightly into the cable to increase ROM at the bottom.\nTip: Use a cross-body grip for extra stretch; keep the elbow slightly bent throughout.",
+  "is_compound": false,
+  "movement_pattern": "push",
+  "name": "Cable Lateral Raise",
+  "primary_muscles": [
+   "side_delts"
+  ],
+  "secondary_muscles": [
+   "traps",
+   "front_delts"
+  ],
+  "sport_relevance": {
+   "cycling": 1,
+   "hiking": 1,
+   "mountain_biking": 1,
+   "running": 1,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [],
+  "description": "Overhead stretch-to-contraction movement for lat thickness.",
+  "difficulty": 2,
+  "equipment": [
+   "cable"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Attach a straight bar or rope to a high cable. Kneel or stand facing the machine.\n2. Extend arms overhead, gripping bar. Keep a slight elbow bend.\n3. Pull bar down in an arc to your hips, lats contracting fully at the bottom.\n4. Return slowly to the stretched overhead position.\nTip: Keep torso rigid — this is not a crunch; let the lats do the work.",
+  "is_compound": false,
+  "movement_pattern": "pull",
+  "name": "Cable Pullover",
+  "primary_muscles": [
+   "lats"
+  ],
+  "secondary_muscles": [
+   "chest",
+   "triceps",
+   "core"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 1,
+   "mountain_biking": 2,
+   "running": 1,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Hip hinge with constant cable tension — great for learning the movement pattern.",
+  "difficulty": 1,
+  "equipment": [
+   "cable"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Attach a rope to a low cable. Stand facing away, straddling the cable.\n2. Hinge forward with slight knee bend, letting the rope go between your legs.\n3. Drive hips forward powerfully to stand, squeezing glutes at lockout.\n4. Control the return hinge; do not let cable pull you back.\nTip: This teaches the RDL/hinge pattern safely — perfect for beginners.",
+  "is_compound": true,
+  "movement_pattern": "hinge",
+  "name": "Cable Pull-Through",
+  "primary_muscles": [
+   "glutes",
+   "hamstrings"
+  ],
+  "secondary_muscles": [
+   "lower_back",
+   "core"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 2,
+   "mountain_biking": 2,
+   "running": 3,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Cross-cable rear delt fly — constant tension for postural correction.",
+  "difficulty": 1,
+  "equipment": [
+   "cable"
+  ],
+  "garmin_category": "flye",
+  "garmin_subtype": 5,
+  "has_animation": true,
+  "instructions": "1. Attach cable at chest height; stand at the mid-point with a handle in each hand (arms crossed).\n2. Pull both handles to the sides, driving elbows back and squeezing shoulder blades.\n3. Return slowly.\nTip: One of the few exercises directly targeting the rear delts with constant tension.",
+  "is_compound": false,
+  "movement_pattern": "pull",
+  "name": "Cable Rear Delt Fly",
+  "primary_muscles": [
+   "rear_delts"
+  ],
+  "secondary_muscles": [
+   "mid_back",
+   "traps"
+  ],
+  "sport_relevance": {
+   "cycling": 3,
+   "hiking": 2,
+   "mountain_biking": 3,
+   "running": 2,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Standing cable row. Pull cable to mid-chest.",
+  "difficulty": 1,
+  "equipment": [
+   "cable",
+   "machine"
+  ],
+  "garmin_category": "row",
+  "garmin_subtype": 1,
+  "has_animation": true,
+  "instructions": null,
+  "is_compound": true,
+  "movement_pattern": "pull",
+  "name": "Cable Row Standing",
+  "primary_muscles": [
+   "upper_back",
+   "lats"
+  ],
+  "secondary_muscles": [
+   "biceps",
+   "rear_delts"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "generic": 3,
+   "paddling": 3,
+   "running": 1
+  }
+ },
+ {
+  "cues": [],
+  "description": "Standing calf stretch against wall (gastrocnemius) + bent-knee version (soleus). 30–60s each.",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": "warm_up",
+  "garmin_subtype": 37,
+  "has_animation": true,
+  "instructions": "1. Stand facing a wall with hands on it; step one foot back.\n2. Keep the back heel on the floor and lean into the wall.\n3. Hold 30–45 seconds for gastrocnemius; bend the back knee slightly for soleus.\n4. Switch sides.\nTip: Use the bent-knee version for Achilles/soleus issues especially.",
+  "is_compound": false,
+  "movement_pattern": "isometric",
+  "name": "Calf Stretch",
+  "primary_muscles": [
+   "calves"
+  ],
+  "secondary_muscles": [
+   "achilles"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 3,
+   "running": 3
+  }
+ },
+ {
+  "cues": [],
+  "description": "Dynamic spine mobilization. 10–15 slow reps. Excellent warm-up for any workout.",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": "warm_up",
+  "garmin_subtype": 38,
+  "has_animation": true,
+  "instructions": "1. Get on all fours with wrists under shoulders.\n2. Cow: let the belly drop, lift the tailbone and head (inhale).\n3. Cat: round the spine to the ceiling, tuck the tailbone and chin (exhale).\n4. Flow between the two positions for 10 reps.\nTip: This is a great spinal mobility warm-up — do it before any workout.",
+  "is_compound": false,
+  "movement_pattern": "isometric",
+  "name": "Cat-Cow",
+  "primary_muscles": [
+   "lower_back",
+   "core"
+  ],
+  "secondary_muscles": [
+   "neck"
+  ],
+  "sport_relevance": {
+   "cycling": 3,
+   "rowing": 3,
+   "running": 2,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Lean forward on dip bars to shift emphasis to lower chest.",
+  "difficulty": 2,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": "dip",
+  "garmin_subtype": 2,
+  "has_animation": false,
+  "instructions": "1. Support yourself on parallel dip bars with arms extended.\n2. Lean forward 30–45° and lower until upper arms are parallel to floor.\n3. Feel a stretch across the chest at the bottom.\n4. Press back up, keeping the forward lean throughout.\nTip: Add weight via belt or hold dumbbell between feet once bodyweight is easy.",
+  "is_compound": true,
+  "movement_pattern": "push",
+  "name": "Chest Dip",
+  "primary_muscles": [
+   "chest",
+   "triceps"
+  ],
+  "secondary_muscles": [
+   "front_delts"
+  ],
+  "sport_relevance": {
+   "cycling": 1,
+   "hiking": 1,
+   "mountain_biking": 1,
+   "running": 1,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Chest support eliminates lower-back involvement for pure back isolation.",
+  "difficulty": 1,
+  "equipment": [
+   "dumbbell",
+   "machine"
+  ],
+  "garmin_category": "row",
+  "garmin_subtype": 4,
+  "has_animation": true,
+  "instructions": "1. Set an incline bench to 45°. Lie face down with chest on the pad; feet on floor.\n2. Hold dumbbells hanging straight down with palms facing each other.\n3. Row elbows back and up, squeezing shoulder blades together at the top.\n4. Lower all the way to full arm extension before each rep.\nTip: Great for high-rep work since spinal erectors are taken out of the equation.",
+  "is_compound": true,
+  "movement_pattern": "pull",
+  "name": "Chest-Supported Row",
+  "primary_muscles": [
+   "mid_back",
+   "rear_delts"
+  ],
+  "secondary_muscles": [
+   "biceps",
+   "traps"
+  ],
+  "sport_relevance": {
+   "cycling": 3,
+   "hiking": 2,
+   "mountain_biking": 3,
+   "paddling": 3,
+   "rowing": 3,
+   "running": 2,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Restorative lower back and hip stretch. 60–90s. Good after cycling and deadlifts.",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": "warm_up",
+  "garmin_subtype": 39,
+  "has_animation": true,
+  "instructions": "1. Kneel down and sit back toward your heels, arms extending forward on the floor.\n2. Walk hands forward until you feel a stretch through the lats and spine.\n3. Rest forehead on the floor; hold for 60–90 seconds.\nTip: Widen knees for a deeper hip flexor stretch.",
+  "is_compound": false,
+  "movement_pattern": "isometric",
+  "name": "Child Pose",
+  "primary_muscles": [
+   "lower_back",
+   "hip_flexors"
+  ],
+  "secondary_muscles": [
+   "lats",
+   "shoulders"
+  ],
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 3,
+   "rowing": 2,
+   "running": 2,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Underhand pull-up. Bias toward biceps.",
+  "difficulty": 4,
+  "equipment": [
+   "pullup_bar"
+  ],
+  "garmin_category": "pull_up",
+  "garmin_subtype": 39,
+  "has_animation": true,
+  "instructions": null,
+  "is_compound": true,
+  "movement_pattern": "pull",
+  "name": "Chin-up",
+  "primary_muscles": [
+   "lats",
+   "biceps"
+  ],
+  "secondary_muscles": [
+   "upper_back"
+  ],
+  "sport_relevance": {
+   "climbing": 4,
+   "cycling": 2,
+   "generic": 3,
+   "running": 2
+  }
+ },
+ {
+  "cues": [
+   "Palms facing you, full hang",
+   "Lead with your chest",
+   "Squeeze your biceps at the top"
+  ],
+  "description": "Supinated grip — more bicep involvement than pull-up. Slightly easier for beginners.",
+  "difficulty": 4,
+  "equipment": [
+   "pullup_bar"
+  ],
+  "garmin_category": "pull_up",
+  "garmin_subtype": 39,
+  "has_animation": true,
+  "instructions": "1. Grab a pull-up bar with an underhand grip, shoulder-width.\n2. From a dead hang, pull your chest to the bar.\n3. Lead with the elbows pulled toward your hips.\n4. Lower under control to full arm extension.\nTip: Chin-up (underhand) emphasises biceps more than pull-up (overhand).",
+  "is_compound": true,
+  "movement_pattern": "pull",
+  "name": "Chin-Up",
+  "primary_muscles": [
+   "lats",
+   "biceps"
+  ],
+  "secondary_muscles": [
+   "upper_back",
+   "shoulders"
+  ],
+  "sport_relevance": {
+   "climbing": 4,
+   "paddling": 2,
+   "rowing": 2,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [
+   "Stack your hips, heels together",
+   "Open the top knee, keep the pelvis still",
+   "Feel it in the side of your glute"
+  ],
+  "description": "Side-lying hip external rotation. Important for runners to prevent hip drop and patellofemoral pain.",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight",
+   "band"
+  ],
+  "garmin_category": "hip_raise",
+  "garmin_subtype": 44,
+  "has_animation": true,
+  "instructions": "1. Lie on your side with band just above the knees; hips and knees stacked.\n2. Rotate the top knee outward while keeping feet together.\n3. Hold 2 seconds at end range; lower slowly.\n4. Keep pelvis perfectly still — no rocking.\nTip: This directly targets glute medius, a key knee stabiliser for runners.",
+  "is_compound": false,
+  "movement_pattern": "isometric",
+  "name": "Clamshell",
+  "primary_muscles": [
+   "hip_abductors",
+   "glutes"
+  ],
+  "secondary_muscles": [],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 2,
+   "running": 3,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [],
+  "description": "Shifts bench press emphasis to triceps. Grip 1–2 hand-widths apart.",
+  "difficulty": 2,
+  "equipment": [
+   "barbell"
+  ],
+  "garmin_category": "bench_press",
+  "garmin_subtype": 3,
+  "has_animation": true,
+  "instructions": "1. Lie on flat bench; grip bar with hands about shoulder-width apart (not too narrow).\n2. Unrack and lower bar to lower chest/sternum, keeping elbows tucked close to body.\n3. Press back to lockout, driving through the triceps.\n4. Reset scapulae between sets to protect shoulder joint.\nTip: Wrist wraps help if narrow grip causes wrist discomfort.",
+  "is_compound": true,
+  "movement_pattern": "push",
+  "name": "Close-Grip Bench Press",
+  "primary_muscles": [
+   "triceps",
+   "chest"
+  ],
+  "secondary_muscles": [
+   "front_delts"
+  ],
+  "sport_relevance": {
+   "cycling": 1,
+   "hiking": 1,
+   "mountain_biking": 1,
+   "running": 1,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Isolated single-arm curl with elbow braced on inner thigh. Classic peak-contraction movement.",
+  "difficulty": 1,
+  "equipment": [
+   "dumbbell"
+  ],
+  "garmin_category": "curl",
+  "garmin_subtype": 3,
+  "has_animation": true,
+  "instructions": "1. Sit on a bench with legs wide; hold dumbbell in one hand.\n2. Rest the back of your upper arm on the inside of the same thigh.\n3. Curl the dumbbell to shoulder height, supinating the wrist at the top.\n4. Lower fully; complete all reps on one side before switching.\nTip: Twist your little finger up at the top for maximum bicep peak contraction.",
+  "is_compound": false,
+  "movement_pattern": "pull",
+  "name": "Concentration Curl",
+  "primary_muscles": [
+   "biceps"
+  ],
+  "secondary_muscles": [
+   "forearms"
+  ],
+  "sport_relevance": {
+   "cycling": 1,
+   "hiking": 1,
+   "mountain_biking": 1,
+   "running": 1,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [],
+  "description": "Adductor side plank. One of the best groin-strengthening exercises; reduces adductor strain risk in runners.",
+  "difficulty": 2,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Lie on your side next to a bench. Place the top leg on the bench; position the bottom leg under the bench.\n2. Lift hips so the body forms a straight line from shoulders to feet.\n3. Hold the top position; the bottom inner thigh bears the load.\n4. Start with 15–20 seconds per side; build to 45–60 seconds.\nTip: Lower the bench or use a lower surface to reduce difficulty. Keep hips stacked.",
+  "is_compound": true,
+  "movement_pattern": "isometric",
+  "name": "Copenhagen Plank",
+  "primary_muscles": [
+   "hip_adductors"
+  ],
+  "secondary_muscles": [
+   "core",
+   "obliques",
+   "glutes"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 2,
+   "mountain_biking": 2,
+   "running": 3,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [],
+  "description": "Deep hip flexor and quad stretch. Essential for cyclists and desk-bound athletes.",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Kneel in a lunge with your rear shin against a wall (rear knee on the floor, shin vertical).\n2. Upright your torso as much as possible, feeling the stretch in the front of the rear hip and quad.\n3. Hold for 60–120 seconds per side.\n4. Gently squeeze the rear glute to increase the anterior hip stretch.\nTip: Use a pad under the rear knee. Start 10 cm from the wall and work toward touching it.",
+  "is_compound": false,
+  "movement_pattern": "isometric",
+  "name": "Couch Stretch",
+  "primary_muscles": [
+   "hip_flexors",
+   "quads"
+  ],
+  "secondary_muscles": [
+   "glutes"
+  ],
+  "sport_relevance": {
+   "cycling": 3,
+   "hiking": 3,
+   "mountain_biking": 3,
+   "running": 3,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Mountain climber with knees crossing toward opposite elbow.",
+  "difficulty": 2,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": "plank",
+  "garmin_subtype": 6,
+  "has_animation": true,
+  "instructions": null,
+  "is_compound": true,
+  "movement_pattern": "cardio",
+  "name": "Cross-body Mountain Climber",
+  "primary_muscles": [
+   "obliques",
+   "core"
+  ],
+  "secondary_muscles": [
+   "shoulders",
+   "hip_flexors"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "generic": 3,
+   "running": 2
+  }
+ },
+ {
+  "cues": [
+   "Press your low back into the floor",
+   "Move opposite arm and leg",
+   "Move slowly, keep breathing"
+  ],
+  "description": "Anti-extension with contralateral arm/leg movement. Excellent for lumbar stability without spinal loading.",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": "hip_stability",
+  "garmin_subtype": 1,
+  "has_animation": true,
+  "instructions": "1. Lie on your back; arms overhead, legs extended straight.\n2. Brace your core — press your lower back gently toward the floor.\n3. Hold this position, breathing normally.\n4. Do not allow the lower back to arch away from the floor.\nTip: Start with 20–30 seconds and build to 60+ seconds without form breakdown.",
+  "is_compound": false,
+  "movement_pattern": "isometric",
+  "name": "Dead Bug",
+  "primary_muscles": [
+   "core"
+  ],
+  "secondary_muscles": [
+   "hip_flexors"
+  ],
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "paddling": 3,
+   "running": 3,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [
+   "Full grip, arms straight",
+   "Relax your shoulders down",
+   "Breathe and hold"
+  ],
+  "description": "Passive hang for grip/forearm endurance. ES 1.23 for forearm endurance in climbing meta-analysis. 10–30s holds.",
+  "difficulty": 2,
+  "equipment": [
+   "pullup_bar"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Grip a bar overhead; let body weight decompress the spine.\n2. Hold 30–60 seconds.\nTip: Breathe deeply into the stretch for a full spinal decompression.",
+  "is_compound": false,
+  "movement_pattern": "isometric",
+  "name": "Dead Hang",
+  "primary_muscles": [
+   "forearms",
+   "lats"
+  ],
+  "secondary_muscles": [
+   "shoulders"
+  ],
+  "sport_relevance": {
+   "climbing": 5,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [],
+  "description": "Decline angle targets lower pec fibres. Less shoulder stress than flat bench.",
+  "difficulty": 2,
+  "equipment": [
+   "barbell"
+  ],
+  "garmin_category": "bench_press",
+  "garmin_subtype": 4,
+  "has_animation": true,
+  "instructions": "1. Set bench to 15–30° decline; secure ankles under pads.\n2. Grip bar slightly wider than shoulders; unrack with arms extended.\n3. Lower bar to lower chest, elbows at ~45° from torso.\n4. Press back to full lockout.\nTip: Keep core braced — the decline position increases abdominal demand.",
+  "is_compound": true,
+  "movement_pattern": "push",
+  "name": "Decline Barbell Press",
+  "primary_muscles": [
+   "chest"
+  ],
+  "secondary_muscles": [
+   "triceps",
+   "front_delts"
+  ],
+  "sport_relevance": {
+   "cycling": 1,
+   "hiking": 1,
+   "mountain_biking": 1,
+   "running": 1,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Feet elevated push-up targets upper chest and anterior deltoid.",
+  "difficulty": 2,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Place feet on a bench or box; hands on floor shoulder-width apart.\n2. Lower chest toward floor with elbows at ~45° from torso.\n3. Press back to full arm extension.\nTip: The higher the elevation the more upper-chest and delt involvement.",
+  "is_compound": true,
+  "movement_pattern": "push",
+  "name": "Decline Push-Up",
+  "primary_muscles": [
+   "chest",
+   "front_delts"
+  ],
+  "secondary_muscles": [
+   "triceps"
+  ],
+  "sport_relevance": {
+   "cycling": 1,
+   "hiking": 1,
+   "mountain_biking": 1,
+   "running": 1,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [],
+  "description": "Advanced reactive plyometric. Step off a box and immediately explode upward on landing.",
+  "difficulty": 3,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Stand on a box 30–60 cm high. Step (do not jump) off the edge.\n2. As both feet contact the ground simultaneously, immediately jump as high as possible.\n3. Minimise ground contact time — the goal is reactive stiffness.\n4. Land softly, reset, and return to the box.\nTip: Only use this exercise if you can already squat 1.5× bodyweight — it loads the tendons heavily.",
+  "is_compound": true,
+  "movement_pattern": "plyometric",
+  "name": "Depth Jump",
+  "primary_muscles": [
+   "quads",
+   "calves",
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "hamstrings",
+   "core"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 2,
+   "mountain_biking": 3,
+   "running": 3,
+   "strength": 3
+  }
+ },
+ {
+  "cues": [],
+  "description": "Bodyweight close-grip push-up maximising tricep activation.",
+  "difficulty": 2,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Get into a push-up position with thumbs and index fingers touching to form a diamond.\n2. Lower chest toward the diamond, keeping elbows close to sides.\n3. Push back to full arm extension.\n4. Keep core rigid throughout — avoid hip sag.\nTip: If too hard, elevate hands on a bench to reduce load.",
+  "is_compound": true,
+  "movement_pattern": "push",
+  "name": "Diamond Push-Up",
+  "primary_muscles": [
+   "triceps",
+   "chest"
+  ],
+  "secondary_muscles": [
+   "front_delts"
+  ],
+  "sport_relevance": {
+   "cycling": 1,
+   "hiking": 1,
+   "mountain_biking": 1,
+   "running": 1,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [],
+  "description": "Hip-flexed calf raise providing a deeper stretch of the gastrocnemius.",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight",
+   "machine"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Stand with hips bent and torso supported on a bench or machine; heels hanging off a step.\n2. Lower heels as far as possible, then rise up onto the balls of your feet.\n3. Hold the top position briefly; lower under control.\nTip: The hip flexion increases gastrocnemius ROM compared to a standing raise.",
+  "is_compound": false,
+  "movement_pattern": "isolation",
+  "name": "Donkey Calf Raise",
+  "primary_muscles": [
+   "calves"
+  ],
+  "secondary_muscles": [],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 3,
+   "mountain_biking": 2,
+   "running": 3,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [],
+  "description": "Anterior shoulder and pec stretch — crucial counterbalance to cycling's forward posture.",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Stand in a doorway; place forearms on both sides at shoulder height (or 90°).\n2. Step one foot forward and gently lean into the stretch.\n3. Hold for 30–60 seconds; switch foot position to vary the angle.\n4. Breathe deeply and allow the chest to open progressively.\nTip: Try arm positions at 0°, 45°, and 90° to stretch different portions of the pec.",
+  "is_compound": false,
+  "movement_pattern": "isometric",
+  "name": "Doorway Chest Stretch",
+  "primary_muscles": [
+   "chest",
+   "front_delts"
+  ],
+  "secondary_muscles": [
+   "biceps",
+   "pec_minor"
+  ],
+  "sport_relevance": {
+   "cycling": 3,
+   "hiking": 2,
+   "mountain_biking": 3,
+   "running": 2,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Bruce Lee's signature core movement. Elite anti-extension full-body strength.",
+  "difficulty": 3,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Lie on a bench; grip the sides behind your head for support.\n2. Press your shoulders down into the bench; raise your entire body to vertical.\n3. Lower your straight body slowly toward the bench as a rigid plank — only shoulders should touch.\n4. Return to vertical before the next rep.\nTip: Tuck progression first (bent knees) before attempting the straight-leg version.",
+  "is_compound": true,
+  "movement_pattern": "isometric",
+  "name": "Dragon Flag",
+  "primary_muscles": [
+   "abs",
+   "core"
+  ],
+  "secondary_muscles": [
+   "lats",
+   "hip_flexors"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 2,
+   "mountain_biking": 2,
+   "running": 2,
+   "strength": 3
+  }
+ },
+ {
+  "cues": [
+   "Wrists stacked over elbows",
+   "Lower to a deep stretch",
+   "Press the dumbbells together at the top"
+  ],
+  "description": "Greater ROM than barbell; better for shoulder health. Preferred for injury-prone shoulders.",
+  "difficulty": 1,
+  "equipment": [
+   "dumbbell"
+  ],
+  "garmin_category": "bench_press",
+  "garmin_subtype": 6,
+  "has_animation": true,
+  "instructions": "1. Lie on a flat bench holding dumbbells at chest height, palms forward.\n2. Press dumbbells up and in, meeting above your chest at lockout.\n3. Lower under control to chest level with a slight stretch.\nTip: Neutral grip (palms facing each other) is a shoulder-friendly variant for those with impingement.",
+  "is_compound": true,
+  "movement_pattern": "push",
+  "name": "Dumbbell Bench Press",
+  "primary_muscles": [
+   "chest",
+   "triceps"
+  ],
+  "secondary_muscles": [
+   "shoulders"
+  ],
+  "sport_relevance": {
+   "climbing": 2,
+   "paddling": 2,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [
+   "Elbows pinned to your sides",
+   "Curl without swinging",
+   "Squeeze at the top"
+  ],
+  "description": "Biceps isolation. Lower priority for endurance athletes; included in pure strength programs.",
+  "difficulty": 1,
+  "equipment": [
+   "dumbbell"
+  ],
+  "garmin_category": "curl",
+  "garmin_subtype": 46,
+  "has_animation": true,
+  "instructions": "1. Stand holding a dumbbell in each hand, palms facing your thighs.\n2. Curl both dumbbells to shoulder height, supinating (rotating) your palms upward during the lift.\n3. Squeeze at the top; lower under control to full extension.\nTip: Avoid swinging your back — if you have to, the weight is too heavy.",
+  "is_compound": false,
+  "movement_pattern": "isolation",
+  "name": "Dumbbell Biceps Curl",
+  "primary_muscles": [
+   "biceps"
+  ],
+  "secondary_muscles": [
+   "forearms"
+  ],
+  "sport_relevance": {
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Isolation movement stretching the pec under load. Best for hypertrophy work.",
+  "difficulty": 1,
+  "equipment": [
+   "dumbbell"
+  ],
+  "garmin_category": "flye",
+  "garmin_subtype": 1,
+  "has_animation": true,
+  "instructions": "1. Lie on flat bench holding dumbbells directly above chest, palms facing each other.\n2. Slightly bend elbows (soft lock) and lower dumbbells in a wide arc to chest level.\n3. Feel a deep stretch at the bottom, then squeeze chest to bring dumbbells back together.\n4. Stop just before dumbbells touch at the top to maintain tension.\nTip: Keep a fixed elbow angle throughout — this is not a press; the arms should stay still.",
+  "is_compound": false,
+  "movement_pattern": "push",
+  "name": "Dumbbell Chest Fly",
+  "primary_muscles": [
+   "chest"
+  ],
+  "secondary_muscles": [
+   "front_delts",
+   "biceps"
+  ],
+  "sport_relevance": {
+   "cycling": 1,
+   "hiking": 1,
+   "mountain_biking": 1,
+   "running": 1,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Isolates anterior deltoid. Useful after pressing work for shoulder health.",
+  "difficulty": 1,
+  "equipment": [
+   "dumbbell"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Stand holding dumbbells at hip level, palms facing your thighs.\n2. Raise both dumbbells in front of you to shoulder height with a slight elbow bend.\n3. Pause briefly at the top, then lower under control.\n4. Avoid swinging the torso to generate momentum.\nTip: Alternating arms reduces fatigue and lets you focus on each side.",
+  "is_compound": false,
+  "movement_pattern": "push",
+  "name": "Dumbbell Front Raise",
+  "primary_muscles": [
+   "front_delts"
+  ],
+  "secondary_muscles": [
+   "side_delts",
+   "traps"
+  ],
+  "sport_relevance": {
+   "cycling": 1,
+   "hiking": 1,
+   "mountain_biking": 1,
+   "running": 1,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [],
+  "description": "Hold dumbbell at chest, squat to depth.",
+  "difficulty": 1,
+  "equipment": [
+   "dumbbell"
+  ],
+  "garmin_category": "squat",
+  "garmin_subtype": 37,
+  "has_animation": true,
+  "instructions": null,
+  "is_compound": true,
+  "movement_pattern": "squat",
+  "name": "Dumbbell Goblet Squat",
+  "primary_muscles": [
+   "quads",
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "core"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "generic": 3,
+   "running": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Push press with dumbbells. Leg drive into press.",
+  "difficulty": 2,
+  "equipment": [
+   "dumbbell"
+  ],
+  "garmin_category": "shoulder_press",
+  "garmin_subtype": 8,
+  "has_animation": true,
+  "instructions": null,
+  "is_compound": true,
+  "movement_pattern": "push",
+  "name": "Dumbbell Push Press",
+  "primary_muscles": [
+   "shoulders",
+   "triceps"
+  ],
+  "secondary_muscles": [
+   "quads",
+   "core"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "generic": 3,
+   "running": 1
+  }
+ },
+ {
+  "cues": [
+   "Hinge back, keep the dumbbells close",
+   "Flat back throughout",
+   "Squeeze your glutes to stand"
+  ],
+  "description": "Dumbbell RDL — great for beginners learning the hip hinge. More ROM than barbell version.",
+  "difficulty": 1,
+  "equipment": [
+   "dumbbell"
+  ],
+  "garmin_category": "deadlift",
+  "garmin_subtype": 4,
+  "has_animation": true,
+  "instructions": "1. Hold dumbbells at hip level; stand hip-width apart.\n2. Hinge at the hips, pushing them back, until you feel a strong hamstring stretch.\n3. Slide the dumbbells down your thighs to just below the knee.\n4. Drive hips forward to return to standing.\nTip: Keep the dumbbells close to your body — if they drift forward, lower back stress increases.",
+  "is_compound": true,
+  "movement_pattern": "hinge",
+  "name": "Dumbbell Romanian Deadlift",
+  "primary_muscles": [
+   "hamstrings",
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "lower_back",
+   "core"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 2,
+   "mountain_biking": 2,
+   "running": 3,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [
+   "Flat back, brace on the bench",
+   "Row to your hip, not your shoulder",
+   "Lower under control"
+  ],
+  "description": "Unilateral row — excellent for shoulder blade retraction and lat development.",
+  "difficulty": 1,
+  "equipment": [
+   "dumbbell"
+  ],
+  "garmin_category": "row",
+  "garmin_subtype": 2,
+  "has_animation": true,
+  "instructions": "1. Place one hand and knee on a bench; hold a dumbbell in the free hand.\n2. Let the arm hang straight down from the shoulder.\n3. Row the dumbbell to your hip, driving the elbow back and up.\n4. Lower to full arm extension before each rep.\nTip: Think \"elbow to ceiling\", not \"hand to hip\".",
+  "is_compound": true,
+  "movement_pattern": "pull",
+  "name": "Dumbbell Row",
+  "primary_muscles": [
+   "upper_back",
+   "lats",
+   "biceps"
+  ],
+  "secondary_muscles": [
+   "lower_back"
+  ],
+  "sport_relevance": {
+   "climbing": 3,
+   "mountain_biking": 2,
+   "paddling": 3,
+   "rowing": 3,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [
+   "Start at ear height",
+   "Press up and slightly in",
+   "Do not flare the ribs"
+  ],
+  "description": "Seated or standing dumbbell press. More shoulder-friendly than barbell for beginners.",
+  "difficulty": 1,
+  "equipment": [
+   "dumbbell"
+  ],
+  "garmin_category": "shoulder_press",
+  "garmin_subtype": 24,
+  "has_animation": true,
+  "instructions": "1. Sit on a bench or stand; hold dumbbells at shoulder level with palms facing forward.\n2. Press dumbbells overhead until arms are extended.\n3. Lower under control back to shoulder level.\nTip: Seated version allows heavier loads with less core stability demand.",
+  "is_compound": true,
+  "movement_pattern": "push",
+  "name": "Dumbbell Shoulder Press",
+  "primary_muscles": [
+   "shoulders",
+   "triceps"
+  ],
+  "secondary_muscles": [
+   "upper_back",
+   "core"
+  ],
+  "sport_relevance": {
+   "climbing": 2,
+   "paddling": 2,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Dumbbell shrug allows more natural positioning than barbell.",
+  "difficulty": 1,
+  "equipment": [
+   "dumbbell"
+  ],
+  "garmin_category": "shrug",
+  "garmin_subtype": 1,
+  "has_animation": true,
+  "instructions": "1. Stand holding dumbbells at your sides, arms straight.\n2. Elevate both shoulders straight up toward the ears as high as possible.\n3. Pause briefly at the top; lower slowly.\nTip: Take a 3-second eccentric to increase time under tension.",
+  "is_compound": false,
+  "movement_pattern": "pull",
+  "name": "Dumbbell Shrug",
+  "primary_muscles": [
+   "traps"
+  ],
+  "secondary_muscles": [
+   "forearms"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 1,
+   "mountain_biking": 2,
+   "running": 1,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [
+   "Weights at your sides, chest proud",
+   "Sit back and down",
+   "Stand tall at the top"
+  ],
+  "description": "Accessible squat variation. Hold dumbbells at sides or at shoulders.",
+  "difficulty": 1,
+  "equipment": [
+   "dumbbell"
+  ],
+  "garmin_category": "squat",
+  "garmin_subtype": 29,
+  "has_animation": true,
+  "instructions": "1. Stand with feet at squat width holding dumbbells at your sides or at shoulders.\n2. Brace core; descend to parallel — thighs parallel to the floor.\n3. Drive through heels to return to standing.\nTip: If dumbbells swing forward, your posture is breaking down — reduce weight.",
+  "is_compound": true,
+  "movement_pattern": "squat",
+  "name": "Dumbbell Squat",
+  "primary_muscles": [
+   "quads",
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "hamstrings",
+   "core"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 2,
+   "mountain_biking": 2,
+   "running": 2,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Both hands grip EZ bar overhead, lower behind head.",
+  "difficulty": 2,
+  "equipment": [
+   "barbell"
+  ],
+  "garmin_category": "triceps_extension",
+  "garmin_subtype": 8,
+  "has_animation": true,
+  "instructions": null,
+  "is_compound": false,
+  "movement_pattern": "isolation",
+  "name": "EZ-Bar Overhead Triceps Extension",
+  "primary_muscles": [
+   "triceps"
+  ],
+  "secondary_muscles": [
+   "shoulders"
+  ],
+  "sport_relevance": {
+   "generic": 2
+  }
+ },
+ {
+  "cues": [
+   "Pull the rope toward your forehead",
+   "Lead with your elbows high",
+   "Squeeze the rear delts"
+  ],
+  "description": "Rear deltoid and external rotator exercise. Critical shoulder health work — especially for climbers.",
+  "difficulty": 1,
+  "equipment": [
+   "cable",
+   "band"
+  ],
+  "garmin_category": "row",
+  "garmin_subtype": 5,
+  "has_animation": true,
+  "instructions": "1. Stand at a cable or face a resistance band anchored at shoulder height.\n2. With hands at shoulder height and elbows bent, externally rotate a bar or handle in both hands.\n3. Feel the shoulders rotate open; pause and return.\nTip: This is the most sport-specific rear-delt and rotator cuff exercise for cyclists.",
+  "is_compound": false,
+  "movement_pattern": "pull",
+  "name": "Face Pull",
+  "primary_muscles": [
+   "upper_back",
+   "rear_delts"
+  ],
+  "secondary_muscles": [
+   "shoulders",
+   "biceps"
+  ],
+  "sport_relevance": {
+   "climbing": 3,
+   "paddling": 3,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Full-body loaded carry — builds grip, traps, core stability and work capacity.",
+  "difficulty": 2,
+  "equipment": [
+   "dumbbell",
+   "kettlebell",
+   "barbell"
+  ],
+  "garmin_category": "carry",
+  "garmin_subtype": 0,
+  "has_animation": true,
+  "instructions": "1. Pick up heavy dumbbells or kettlebells at your sides; stand tall.\n2. Walk forward for the prescribed distance at a steady pace.\n3. Keep shoulders back and down, core braced, and head neutral.\n4. Set down with a hip hinge, not a rounded back.\nTip: Work up to carrying your bodyweight total (half each hand) for 30 m.",
+  "is_compound": true,
+  "movement_pattern": "carry",
+  "name": "Farmer's Carry",
+  "primary_muscles": [
+   "traps",
+   "forearms",
+   "core"
+  ],
+  "secondary_muscles": [
+   "quads",
+   "glutes",
+   "calves"
+  ],
+  "sport_relevance": {
+   "climbing": 4,
+   "cycling": 2,
+   "hiking": 3,
+   "mountain_biking": 3,
+   "running": 3,
+   "strength": 3
+  }
+ },
+ {
+  "cues": [],
+  "description": "Activates glute medius — important pre-run warm-up or rehabilitation exercise.",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight",
+   "band"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Get on all fours (hands under shoulders, knees under hips).\n2. Keeping the knee bent, lift one leg out to the side as high as possible.\n3. Pause at the top; lower under control.\n4. Keep the core braced and hips level throughout.\nTip: Place a resistance band above the knees to increase difficulty.",
+  "is_compound": false,
+  "movement_pattern": "isolation",
+  "name": "Fire Hydrant",
+  "primary_muscles": [
+   "glutes",
+   "hip_abductors"
+  ],
+  "secondary_muscles": [
+   "hip_external_rotators",
+   "core"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 2,
+   "mountain_biking": 2,
+   "running": 3,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [],
+  "description": "Wrist extension stretch for forearm flexors. Essential post-climbing cool-down.",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": "warm_up",
+  "garmin_subtype": 41,
+  "has_animation": true,
+  "instructions": "1. Extend one arm in front of you, elbow straight, palm up.\n2. With the other hand, bend the wrist gently downward (fingers pointing to the floor).\n3. Hold 30–45 seconds; switch sides.\nTip: Essential for cyclists and those who type a lot — prevents repetitive strain.",
+  "is_compound": false,
+  "movement_pattern": "isometric",
+  "name": "Forearm Flexor Stretch",
+  "primary_muscles": [
+   "forearms"
+  ],
+  "secondary_muscles": [],
+  "sport_relevance": {
+   "climbing": 3,
+   "paddling": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Short-range glute pump in a hip-external-rotation position. High-rep glute activator.",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight",
+   "barbell"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Lie on your back; press the soles of your feet together, knees falling out (like a frog).\n2. Drive hips up by squeezing glutes, feet remaining pressed together.\n3. Squeeze hard at the top for 1–2 seconds; lower.\n4. Focus on glute contraction — this is a small range of motion exercise.\nTip: Use a barbell across the hips (hip thrust style) for a loaded version.",
+  "is_compound": false,
+  "movement_pattern": "hinge",
+  "name": "Frog Pump",
+  "primary_muscles": [
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "hamstrings",
+   "hip_abductors"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 2,
+   "mountain_biking": 2,
+   "running": 2,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [],
+  "description": "Bar on front of shoulders demands upright torso — excellent quad and core developer.",
+  "difficulty": 3,
+  "equipment": [
+   "barbell"
+  ],
+  "garmin_category": "squat",
+  "garmin_subtype": 13,
+  "has_animation": true,
+  "instructions": "1. Rest barbell in the front rack position (fingertips under bar, elbows high) or use cross-arm grip.\n2. Stand feet shoulder-width, toes slightly out.\n3. Keep elbows high throughout; descend until hips are below knees.\n4. Drive up through the floor, maintaining a tall chest.\nTip: Any elbow drop means the weight is too heavy or thoracic mobility is lacking.",
+  "is_compound": true,
+  "movement_pattern": "squat",
+  "name": "Front Squat",
+  "primary_muscles": [
+   "quads",
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "core",
+   "upper_back",
+   "hamstrings"
+  ],
+  "sport_relevance": {
+   "cycling": 3,
+   "hiking": 2,
+   "mountain_biking": 3,
+   "running": 3,
+   "strength": 3
+  }
+ },
+ {
+  "cues": [
+   "Press through your heels",
+   "Lift until hips and knees align",
+   "Pause and squeeze at the top"
+  ],
+  "description": "Bodyweight or loaded hip bridge. Great warm-up activation or beginner glute exercise.",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight",
+   "dumbbell"
+  ],
+  "garmin_category": "hip_raise",
+  "garmin_subtype": 4,
+  "has_animation": true,
+  "instructions": "1. Lie on your back with knees bent and feet flat on the floor, hip-width apart.\n2. Place hands at sides; drive through heels to lift your hips off the floor.\n3. Squeeze glutes hard at the top; do not hyperextend the lower back.\n4. Lower under control until hips touch the floor.\nTip: Place a dumbbell or barbell across your hips to add resistance.",
+  "is_compound": true,
+  "movement_pattern": "hinge",
+  "name": "Glute Bridge",
+  "primary_muscles": [
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "hamstrings",
+   "core"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 2,
+   "running": 3,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [],
+  "description": "Figure-4 or seated glute and piriformis stretch.",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Sit on the floor and cross one ankle over the opposite thigh (figure-4 position).\n2. Gently press the bent knee down and lean forward slightly.\n3. For more depth, pull the bottom leg toward your chest.\n4. Hold 45–60 seconds; switch sides.\nTip: Also effective lying on your back for a more relaxed version.",
+  "is_compound": false,
+  "movement_pattern": "isometric",
+  "name": "Glute Stretch",
+  "primary_muscles": [
+   "glutes",
+   "hip_external_rotators"
+  ],
+  "secondary_muscles": [],
+  "sport_relevance": {
+   "cycling": 3,
+   "hiking": 3,
+   "mountain_biking": 3,
+   "running": 3,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [
+   "Hold the weight tight to your chest",
+   "Sit down between your hips",
+   "Keep your chest tall"
+  ],
+  "description": "Excellent beginner squat — counterbalance teaches upright torso. Dumbbell or kettlebell held at chest.",
+  "difficulty": 1,
+  "equipment": [
+   "dumbbell",
+   "kettlebell"
+  ],
+  "garmin_category": "squat",
+  "garmin_subtype": 37,
+  "has_animation": true,
+  "instructions": "1. Stand with feet slightly wider than shoulder-width; hold a dumbbell or goblet at chest.\n2. Squat down to just below parallel, keeping chest up and heels flat.\n3. Drive through heels to return to standing.\nTip: Hold the dumbbell counterbalance — it teaches an upright torso position naturally.",
+  "is_compound": true,
+  "movement_pattern": "squat",
+  "name": "Goblet Squat",
+  "primary_muscles": [
+   "quads",
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "core",
+   "upper_back"
+  ],
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "hiking": 2,
+   "mountain_biking": 2,
+   "running": 3,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Hinge pattern that conditions the lower back and hamstring under load. Use light weight.",
+  "difficulty": 2,
+  "equipment": [
+   "barbell",
+   "bodyweight"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Stand with feet shoulder-width; barbell across upper back or overhead.\n2. With a slight knee bend, hinge forward at the hips until torso is ~45°.\n3. Feel the hamstring load; reverse the hinge to return to standing.\nTip: This conditions the lower back under load — start very light and progress gradually.",
+  "is_compound": true,
+  "movement_pattern": "hinge",
+  "name": "Good Morning",
+  "primary_muscles": [
+   "hamstrings",
+   "lower_back"
+  ],
+  "secondary_muscles": [
+   "glutes",
+   "core"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 2,
+   "mountain_biking": 2,
+   "running": 3,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Machine squat with feet forward, isolating the quads with reduced lower-back stress.",
+  "difficulty": 2,
+  "equipment": [
+   "machine"
+  ],
+  "garmin_category": "squat",
+  "garmin_subtype": 15,
+  "has_animation": true,
+  "instructions": "1. Position shoulders under pads; feet hip-to-shoulder width on the platform.\n2. Release the safety handles and lower until thighs are at least parallel.\n3. Drive through heels and midfoot to return to start.\n4. Lock safety handles before exiting.\nTip: A high foot position targets glutes more; low foot position hits quads harder.",
+  "is_compound": true,
+  "movement_pattern": "squat",
+  "name": "Hack Squat",
+  "primary_muscles": [
+   "quads",
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "hamstrings",
+   "calves"
+  ],
+  "sport_relevance": {
+   "cycling": 3,
+   "hiking": 2,
+   "mountain_biking": 2,
+   "running": 2,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [
+   "Neutral grip, thumbs up",
+   "Keep your elbows still",
+   "Lower slowly"
+  ],
+  "description": "Neutral-grip curl that strongly targets brachialis and brachioradialis.",
+  "difficulty": 1,
+  "equipment": [
+   "dumbbell"
+  ],
+  "garmin_category": "curl",
+  "garmin_subtype": 8,
+  "has_animation": true,
+  "instructions": "1. Stand holding dumbbells at sides with palms facing your thighs (neutral grip).\n2. Curl both dumbbells simultaneously toward shoulders, keeping palms facing inward throughout.\n3. Squeeze at the top, then lower fully.\nTip: Alternate arms to increase time under tension per side.",
+  "is_compound": false,
+  "movement_pattern": "pull",
+  "name": "Hammer Curl",
+  "primary_muscles": [
+   "biceps",
+   "forearms"
+  ],
+  "secondary_muscles": [
+   "brachialis"
+  ],
+  "sport_relevance": {
+   "climbing": 3,
+   "cycling": 1,
+   "hiking": 1,
+   "mountain_biking": 1,
+   "running": 1,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [],
+  "description": "Standing or seated hamstring stretch. Hold 30–60s each leg. Important post-run.",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": "warm_up",
+  "garmin_subtype": 44,
+  "has_animation": true,
+  "instructions": "1. Sit or stand; extend one leg and reach toward the toes.\n2. Hold 30–45 seconds; switch sides.\nTip: Bend the knee slightly if tightness is severe to protect the sciatic nerve.",
+  "is_compound": false,
+  "movement_pattern": "isometric",
+  "name": "Hamstring Stretch",
+  "primary_muscles": [
+   "hamstrings"
+  ],
+  "secondary_muscles": [],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 2,
+   "running": 3
+  }
+ },
+ {
+  "cues": [],
+  "description": "Hang from bar, draw knees up. Anti-extension.",
+  "difficulty": 2,
+  "equipment": [
+   "pullup_bar"
+  ],
+  "garmin_category": "crunch",
+  "garmin_subtype": 20,
+  "has_animation": true,
+  "instructions": null,
+  "is_compound": false,
+  "movement_pattern": "isolation",
+  "name": "Hanging Knee Raise",
+  "primary_muscles": [
+   "abs",
+   "hip_flexors"
+  ],
+  "secondary_muscles": [
+   "obliques"
+  ],
+  "sport_relevance": {
+   "generic": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Demanding lower-ab and hip flexor exercise. Great grip and lat strength builder too.",
+  "difficulty": 2,
+  "equipment": [
+   "pullup_bar"
+  ],
+  "garmin_category": "leg_raise",
+  "garmin_subtype": 1,
+  "has_animation": true,
+  "instructions": "1. Hang from a pull-up bar with hands just wider than shoulder width.\n2. Keep legs together; raise knees or straight legs toward chest.\n3. Pause at the top; lower slowly without swinging.\n4. If swinging, pause fully at the bottom before each rep.\nTip: Bend knees first for an easier version; toes-to-bar is the hardest progression.",
+  "is_compound": false,
+  "movement_pattern": "isometric",
+  "name": "Hanging Leg Raise",
+  "primary_muscles": [
+   "abs",
+   "hip_flexors"
+  ],
+  "secondary_muscles": [
+   "obliques",
+   "forearms"
+  ],
+  "sport_relevance": {
+   "climbing": 3,
+   "cycling": 2,
+   "hiking": 2,
+   "mountain_biking": 2,
+   "running": 3,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Seated hip abduction — targets glute medius and hip abductors for knee stability.",
+  "difficulty": 1,
+  "equipment": [
+   "machine"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Sit in the machine with pads against your outer thighs.\n2. Push thighs outward against the resistance, fully abducting the hips.\n3. Pause briefly at the end range, then slowly return.\nTip: Lean forward slightly to better target glute medius vs. hip flexor.",
+  "is_compound": false,
+  "movement_pattern": "isolation",
+  "name": "Hip Abduction Machine",
+  "primary_muscles": [
+   "hip_abductors",
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "hip_external_rotators"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 2,
+   "mountain_biking": 2,
+   "running": 3,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [],
+  "description": "Inner thigh machine. Balances abduction work; addresses a common weakness in runners.",
+  "difficulty": 1,
+  "equipment": [
+   "machine"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Sit in the machine with pads against your inner thighs.\n2. Squeeze thighs together against the resistance; hold briefly at the finish.\n3. Return slowly to the open position.\nTip: Pair this with hip abduction in the same session for balanced hip strength.",
+  "is_compound": false,
+  "movement_pattern": "isolation",
+  "name": "Hip Adduction Machine",
+  "primary_muscles": [
+   "hip_adductors"
+  ],
+  "secondary_muscles": [
+   "hip_flexors"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 2,
+   "mountain_biking": 2,
+   "running": 2,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [],
+  "description": "Dynamic hip mobility drill used as a warm-up before lower-body sessions or runs.",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Stand with hands on hips, feet shoulder-width apart.\n2. Rotate your hips in a large circle clockwise — forward, side, back, side.\n3. Complete 10 circles, then reverse direction.\n4. Gradually increase the range of motion with each rotation.\nTip: This is best done in warm-up, not as a static stretch.",
+  "is_compound": false,
+  "movement_pattern": "isometric",
+  "name": "Hip Circle",
+  "primary_muscles": [
+   "hip_flexors",
+   "glutes",
+   "hip_abductors",
+   "hip_external_rotators"
+  ],
+  "secondary_muscles": [
+   "lower_back",
+   "core"
+  ],
+  "sport_relevance": {
+   "cycling": 3,
+   "hiking": 3,
+   "mountain_biking": 3,
+   "running": 3,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [],
+  "description": "Half-kneeling hip flexor stretch. Hold 30–60s each side. Critical after running and cycling.",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": "warm_up",
+  "garmin_subtype": 45,
+  "has_animation": true,
+  "instructions": "1. Reach forward with one leg and grab the ankle, pulling it to your glutes.\n2. Hold for 30–45 seconds; switch sides.\nTip: Perform this post-run or post-cycle to address hip flexor shortening.",
+  "is_compound": false,
+  "movement_pattern": "isometric",
+  "name": "Hip Flexor Stretch",
+  "primary_muscles": [
+   "hip_flexors"
+  ],
+  "secondary_muscles": [],
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 3,
+   "hiking": 2,
+   "mountain_biking": 3,
+   "running": 3
+  }
+ },
+ {
+  "cues": [
+   "Tuck your chin, ribs down",
+   "Drive through your heels",
+   "Squeeze glutes hard at the top"
+  ],
+  "description": "Highest glute activation of any exercise. Essential for runners — reduces injury risk and improves push-off power.",
+  "difficulty": 1,
+  "equipment": [
+   "barbell",
+   "dumbbell",
+   "machine"
+  ],
+  "garmin_category": "hip_raise",
+  "garmin_subtype": 1,
+  "has_animation": true,
+  "instructions": "1. Add weight (dumbbell, plate, barbell) across the hip crease.\n2. Set up with shoulder blades on a bench; feet hip-width on the floor.\n3. Drive hips upward to full extension, squeezing glutes hard at the top.\n4. Lower under control.\nTip: The set-up is the hardest part of the hip thrust — take your time positioning correctly.",
+  "is_compound": true,
+  "movement_pattern": "hinge",
+  "name": "Hip Thrust",
+  "primary_muscles": [
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "hamstrings",
+   "core"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 2,
+   "mountain_biking": 2,
+   "paddling": 3,
+   "running": 3,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [
+   "Low back pressed flat",
+   "Arms and legs long",
+   "Only lower as far as you can hold the flat back"
+  ],
+  "description": "Gymnastics core position. Foundation for advanced bodyweight movements.",
+  "difficulty": 2,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": "crunch",
+  "garmin_subtype": 24,
+  "has_animation": true,
+  "instructions": "1. Lie on your back; engage your core so your lower back presses into the floor.\n2. Extend arms at 45° and legs off the floor.\n3. Hold this \"boat-like\" position, breathing steadily.\n4. Do not let the lower back arch away from the floor.\nTip: Build from 20 seconds to 60 seconds; add a slight rock for a dynamic variation.",
+  "is_compound": false,
+  "movement_pattern": "isometric",
+  "name": "Hollow Hold",
+  "primary_muscles": [
+   "core",
+   "hip_flexors"
+  ],
+  "secondary_muscles": [],
+  "sport_relevance": {
+   "climbing": 3,
+   "gymnastics": 3,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Barbell version of incline press. Allows heavier load than dumbbells.",
+  "difficulty": 2,
+  "equipment": [
+   "barbell"
+  ],
+  "garmin_category": "bench_press",
+  "garmin_subtype": 12,
+  "has_animation": true,
+  "instructions": "1. Set bench to 30–45° and position bar just above upper chest at rack.\n2. Grip slightly wider than shoulder-width; unrack with straight arms.\n3. Lower bar to upper chest under control, elbows at ~60° from torso.\n4. Press back to lockout, driving bar in a slight arc back over face.\nTip: Keep feet flat and lower back slightly arched for a stable base.",
+  "is_compound": true,
+  "movement_pattern": "push",
+  "name": "Incline Barbell Press",
+  "primary_muscles": [
+   "chest",
+   "front_delts"
+  ],
+  "secondary_muscles": [
+   "triceps"
+  ],
+  "sport_relevance": {
+   "cycling": 1,
+   "hiking": 1,
+   "mountain_biking": 1,
+   "running": 1,
+   "strength": 3
+  }
+ },
+ {
+  "cues": [],
+  "description": "Inclined position provides a longer stretch on the long head of the bicep.",
+  "difficulty": 2,
+  "equipment": [
+   "dumbbell"
+  ],
+  "garmin_category": "curl",
+  "garmin_subtype": 10,
+  "has_animation": true,
+  "instructions": "1. Set bench to 45–60° incline. Sit back with arms hanging freely at your sides.\n2. Curl both dumbbells simultaneously, keeping upper arms behind the torso plane.\n3. Supinate (rotate outward) as you curl for maximum bicep activation.\n4. Lower fully — the stretch is the point of this exercise.\nTip: The long head stretch makes this more demanding than a standing curl at lighter weights.",
+  "is_compound": false,
+  "movement_pattern": "pull",
+  "name": "Incline Dumbbell Curl",
+  "primary_muscles": [
+   "biceps"
+  ],
+  "secondary_muscles": [
+   "forearms"
+  ],
+  "sport_relevance": {
+   "cycling": 1,
+   "hiking": 1,
+   "mountain_biking": 1,
+   "running": 1,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [
+   "Set the bench to about 30°",
+   "Lower to your upper chest",
+   "Keep your wrists stacked"
+  ],
+  "description": "Upper-chest focused press. Set bench to 30–45°; steeper angles shift load to delts.",
+  "difficulty": 2,
+  "equipment": [
+   "dumbbell"
+  ],
+  "garmin_category": "bench_press",
+  "garmin_subtype": 11,
+  "has_animation": true,
+  "instructions": "1. Set bench to 30–45° incline. Sit with dumbbells on thighs.\n2. Kick dumbbells up as you lean back; position at chest level with palms facing forward.\n3. Press to lockout, keeping a slight arch in lower back.\n4. Lower under control until elbows are at 90° or just below chest level.\nTip: Avoid flaring elbows past 75°; keep shoulder blades retracted throughout.",
+  "is_compound": true,
+  "movement_pattern": "push",
+  "name": "Incline Dumbbell Press",
+  "primary_muscles": [
+   "chest",
+   "front_delts"
+  ],
+  "secondary_muscles": [
+   "triceps"
+  ],
+  "sport_relevance": {
+   "cycling": 1,
+   "hiking": 1,
+   "mountain_biking": 1,
+   "running": 1,
+   "strength": 3
+  }
+ },
+ {
+  "cues": [],
+  "description": "Hands-elevated push-up — great regression for beginners or warm-up.",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Place hands on a bench or box at shoulder width; body in a straight line.\n2. Lower chest to the edge of the bench, elbows at ~45°.\n3. Push back to full lockout.\nTip: Lower the surface height progressively to make this harder over time.",
+  "is_compound": true,
+  "movement_pattern": "push",
+  "name": "Incline Push-Up",
+  "primary_muscles": [
+   "chest"
+  ],
+  "secondary_muscles": [
+   "triceps",
+   "front_delts"
+  ],
+  "sport_relevance": {
+   "cycling": 1,
+   "hiking": 1,
+   "mountain_biking": 1,
+   "running": 1,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [
+   "Body rigid, heels planted",
+   "Pull your chest to the bar",
+   "Do not let your hips sag"
+  ],
+  "description": "Bodyweight horizontal pull — scales difficulty by adjusting body angle.",
+  "difficulty": 2,
+  "equipment": [
+   "barbell"
+  ],
+  "garmin_category": "row",
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Set a barbell in a rack at hip height. Lie underneath, gripping the bar overhand.\n2. Keep body in a straight line from head to heels.\n3. Pull chest to the bar, squeezing shoulder blades at the top.\n4. Lower under control back to full arm extension.\nTip: Elevate feet to increase difficulty; bend knees to make it easier.",
+  "is_compound": true,
+  "movement_pattern": "pull",
+  "name": "Inverted Row",
+  "primary_muscles": [
+   "mid_back",
+   "lats"
+  ],
+  "secondary_muscles": [
+   "biceps",
+   "rear_delts",
+   "core"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 2,
+   "mountain_biking": 2,
+   "running": 2,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Lateral thigh stretch for IT band syndrome prevention — common in runners and cyclists.",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Stand with ankles touching.\n2. Cross one foot behind the other.\n3. Lean sideways away from the crossed-behind leg.\nTip: Reach the top arm overhead for a bigger stretch.",
+  "is_compound": false,
+  "movement_pattern": "isometric",
+  "name": "IT Band Stretch",
+  "primary_muscles": [
+   "hip_abductors"
+  ],
+  "secondary_muscles": [
+   "glutes",
+   "quads"
+  ],
+  "sport_relevance": {
+   "cycling": 3,
+   "hiking": 3,
+   "mountain_biking": 3,
+   "running": 3,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [],
+  "description": "Explosive split-squat jump — builds single-leg power for runners and trail athletes.",
+  "difficulty": 2,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": "lunge",
+  "garmin_subtype": 3,
+  "has_animation": true,
+  "instructions": "1. Start in a lunge position with front foot flat and rear foot on the ball.\n2. Explosively jump up, switching legs in mid-air.\n3. Land softly in the opposite lunge position and immediately jump again.\n4. Absorb each landing with a controlled dip into the lunge.\nTip: Focus on quality of landing. If knees cave, slow down and perfect the movement.",
+  "is_compound": true,
+  "movement_pattern": "plyometric",
+  "name": "Jump Lunge",
+  "primary_muscles": [
+   "quads",
+   "glutes",
+   "calves"
+  ],
+  "secondary_muscles": [
+   "hamstrings",
+   "core",
+   "hip_flexors"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 3,
+   "mountain_biking": 3,
+   "running": 3,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Ballistic hip hinge developing glute power and cardiovascular capacity.",
+  "difficulty": 2,
+  "equipment": [
+   "kettlebell"
+  ],
+  "garmin_category": "kettlebell_swing",
+  "garmin_subtype": 0,
+  "has_animation": false,
+  "instructions": "1. Hold kettlebell with both hands; stand with feet shoulder-width apart.\n2. Hike the bell back between your legs, hinging at the hips (not squatting).\n3. Drive hips forward explosively, letting the kettlebell float to shoulder height.\n4. Let it swing back between legs and hinge again immediately.\nTip: Power comes from the hips, not the arms. Keep arms relaxed throughout.",
+  "is_compound": true,
+  "movement_pattern": "hinge",
+  "name": "Kettlebell Swing",
+  "primary_muscles": [
+   "glutes",
+   "hamstrings"
+  ],
+  "secondary_muscles": [
+   "lower_back",
+   "core",
+   "shoulders"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 2,
+   "mountain_biking": 3,
+   "running": 3,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [
+   "Pivot your back foot as you turn",
+   "Rotate through your hips",
+   "Arms stay long"
+  ],
+  "description": "Rotational power — directly mimics paddling and rowing trunk rotation.",
+  "difficulty": 2,
+  "equipment": [
+   "barbell"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Hold a barbell or landmine with both hands at one end.\n2. Stand with feet shoulder-width; arms extended outward.\n3. Rotate the bar from one hip to the other in a sweeping arc.\n4. Drive rotation from the hips; let the core follow.\nTip: This is a rotational power exercise — use moderate weight with controlled speed.",
+  "is_compound": false,
+  "movement_pattern": "rotation",
+  "name": "Landmine Rotation",
+  "primary_muscles": [
+   "core",
+   "obliques"
+  ],
+  "secondary_muscles": [
+   "shoulders",
+   "upper_back"
+  ],
+  "sport_relevance": {
+   "mountain_biking": 2,
+   "paddling": 4,
+   "rowing": 3,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [
+   "Soft athletic stance",
+   "Step wide, keep tension on the band",
+   "Do not let your knees cave in"
+  ],
+  "description": "Glute medius activation — prevents lateral knee collapse in runners. Use as warm-up activation.",
+  "difficulty": 1,
+  "equipment": [
+   "band"
+  ],
+  "garmin_category": "hip_stability",
+  "garmin_subtype": 11,
+  "has_animation": true,
+  "instructions": "1. Stand beside a resistance band anchored to a low point; band above the knee.\n2. Step outward against band resistance, maintaining slight squat position.\n3. Step back in; repeat for the prescribed distance.\n4. Do both directions per set.\nTip: Keep toes forward and bend slightly at the hip and knee to activate glute medius more.",
+  "is_compound": false,
+  "movement_pattern": "isometric",
+  "name": "Lateral Band Walk",
+  "primary_muscles": [
+   "hip_abductors",
+   "glutes"
+  ],
+  "secondary_muscles": [],
+  "sport_relevance": {
+   "hiking": 2,
+   "running": 3,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [],
+  "description": "Lateral hop building frontal-plane stability and ankle stiffness.",
+  "difficulty": 2,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Stand on one foot; load into a mini squat.\n2. Hop explosively to the side, landing on the opposite foot.\n3. Absorb the landing with a slight knee bend; stabilise for 1–2 seconds.\n4. Bound back to the starting side.\nTip: Progress from wide steady hops to narrow quick reactive bounds.",
+  "is_compound": true,
+  "movement_pattern": "plyometric",
+  "name": "Lateral Bound",
+  "primary_muscles": [
+   "glutes",
+   "quads",
+   "hip_abductors"
+  ],
+  "secondary_muscles": [
+   "calves",
+   "hamstrings"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 3,
+   "mountain_biking": 3,
+   "running": 3,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Frontal-plane lunge targeting hip abductors and groin — often neglected in endurance athletes.",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight",
+   "dumbbell"
+  ],
+  "garmin_category": "lunge",
+  "garmin_subtype": 4,
+  "has_animation": true,
+  "instructions": "1. Stand with feet together; step one foot wide to the side.\n2. Sit back into the stepping leg, keeping the opposite leg straight.\n3. Squat as deep as hip mobility allows; knee tracks over toes.\n4. Push off the bent leg to return to starting position.\nTip: Keep toes forward or only slightly out for a deeper hip stretch.",
+  "is_compound": true,
+  "movement_pattern": "squat",
+  "name": "Lateral Lunge",
+  "primary_muscles": [
+   "glutes",
+   "quads",
+   "hip_abductors",
+   "hip_adductors"
+  ],
+  "secondary_muscles": [
+   "hamstrings",
+   "hip_flexors"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 2,
+   "mountain_biking": 3,
+   "running": 2,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [
+   "Slight bend in the elbows",
+   "Lead with your elbows to shoulder height",
+   "Lower slowly, no swinging"
+  ],
+  "description": "Medial deltoid isolation. Shoulder aesthetics and overhead stability.",
+  "difficulty": 1,
+  "equipment": [
+   "dumbbell",
+   "cable"
+  ],
+  "garmin_category": "lateral_raise",
+  "garmin_subtype": 34,
+  "has_animation": true,
+  "instructions": "1. Stand with feet shoulder-width apart; hold a dumbbell or cable at shoulder height.\n2. Raise it out to the side to shoulder level with a slight elbow bend.\n3. Pause; lower under control.\nTip: Lean forward slightly to increase the gleno-humeral arc — better targeting side delt.",
+  "is_compound": false,
+  "movement_pattern": "isolation",
+  "name": "Lateral Raise",
+  "primary_muscles": [
+   "shoulders"
+  ],
+  "secondary_muscles": [],
+  "sport_relevance": {
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Seated cable pull-down. Easier alternative to pull-ups.",
+  "difficulty": 1,
+  "equipment": [
+   "cable",
+   "machine"
+  ],
+  "garmin_category": "pull_up",
+  "garmin_subtype": 13,
+  "has_animation": true,
+  "instructions": null,
+  "is_compound": true,
+  "movement_pattern": "pull",
+  "name": "Lat Pull-down",
+  "primary_muscles": [
+   "lats",
+   "upper_back"
+  ],
+  "secondary_muscles": [
+   "biceps",
+   "rear_delts"
+  ],
+  "sport_relevance": {
+   "climbing": 3,
+   "cycling": 2,
+   "generic": 3,
+   "running": 1
+  }
+ },
+ {
+  "cues": [
+   "Tall chest, slight lean back",
+   "Pull the bar to your collarbone",
+   "Control the bar back up"
+  ],
+  "description": "Machine vertical pull — good for building to pull-ups or adding volume safely.",
+  "difficulty": 1,
+  "equipment": [
+   "cable",
+   "machine"
+  ],
+  "garmin_category": "pull_up",
+  "garmin_subtype": 13,
+  "has_animation": true,
+  "instructions": "1. Sit at a lat pulldown station; grab the bar with a slightly wider-than-shoulder-width overhand grip.\n2. Lean back slightly; pull the bar to your upper chest, driving elbows toward your hips.\n3. Squeeze the lats at the bottom; return to full arm extension.\nTip: Lead with the elbows, not the hands. Imagine \"bending the bar around your body\".",
+  "is_compound": true,
+  "movement_pattern": "pull",
+  "name": "Lat Pulldown",
+  "primary_muscles": [
+   "lats",
+   "biceps"
+  ],
+  "secondary_muscles": [
+   "upper_back",
+   "shoulders"
+  ],
+  "sport_relevance": {
+   "climbing": 3,
+   "paddling": 3,
+   "rowing": 2,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Overhead lat stretch — useful after rows, pull-ups, and paddle sports.",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Grip a doorframe or pull-up bar overhead with one hand.\n2. Let your bodyweight hang or lean gently away from the support hand.\n3. Hold 30–60 seconds, feeling the stretch along the side of your torso.\n4. Shift the hip away from the anchored arm to increase the stretch.\nTip: A kneeling version (on a foam roller or bench) provides a deep lat stretch without hanging.",
+  "is_compound": false,
+  "movement_pattern": "isometric",
+  "name": "Lat Stretch",
+  "primary_muscles": [
+   "lats",
+   "side_delts"
+  ],
+  "secondary_muscles": [
+   "triceps",
+   "obliques"
+  ],
+  "sport_relevance": {
+   "cycling": 3,
+   "hiking": 2,
+   "mountain_biking": 3,
+   "running": 2,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [
+   "Curl your heels toward your glutes",
+   "Pause at the top",
+   "Lower under control"
+  ],
+  "description": "Prone or seated machine curl. Secondary to Nordic hamstring curl for endurance athletes.",
+  "difficulty": 1,
+  "equipment": [
+   "machine"
+  ],
+  "garmin_category": "leg_curl",
+  "garmin_subtype": 0,
+  "has_animation": true,
+  "instructions": "1. Lie face down on a leg curl machine; pads resting on the backs of your ankles.\n2. Curl your heels toward your glutes, squeezing the hamstrings at the top.\n3. Pause briefly; lower under full control.\nTip: Point toes to increase hamstring involvement; flex toes toward shins to engage more calf.",
+  "is_compound": false,
+  "movement_pattern": "isolation",
+  "name": "Leg Curl",
+  "primary_muscles": [
+   "hamstrings"
+  ],
+  "secondary_muscles": [
+   "calves"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "running": 2,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Pure quad isolation. Use for rehab, activation or finishing sets.",
+  "difficulty": 1,
+  "equipment": [
+   "machine"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Sit in the leg extension machine; pads resting on top of your lower shins.\n2. Extend both legs until they are parallel to the floor; squeeze quads at lockout.\n3. Lower under control to 90° — do not let the stack touch.\nTip: Use a slow eccentric (3–4 seconds) for greater quad stimulus.",
+  "is_compound": false,
+  "movement_pattern": "isolation",
+  "name": "Leg Extension",
+  "primary_muscles": [
+   "quads"
+  ],
+  "secondary_muscles": [],
+  "sport_relevance": {
+   "cycling": 3,
+   "hiking": 2,
+   "mountain_biking": 2,
+   "running": 2,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [
+   "Feet shoulder-width on the platform",
+   "Lower until knees reach 90°",
+   "Do not lock out hard at the top"
+  ],
+  "description": "Key exercise in cycling strength meta-analysis (4 studies). Bilateral press — lower back spared.",
+  "difficulty": 1,
+  "equipment": [
+   "machine"
+  ],
+  "garmin_category": "squat",
+  "garmin_subtype": 0,
+  "has_animation": true,
+  "instructions": "1. Sit in the leg press machine; feet hip-width on the platform, toes slightly out.\n2. Release the safety locks and lower the sled until knees reach 90°.\n3. Press through the full foot to extend legs (do not fully lock out knees).\n4. Return under control.\nTip: Keep lower back flat against the pad — if it peels away, you are going too deep.",
+  "is_compound": true,
+  "movement_pattern": "squat",
+  "name": "Leg Press",
+  "primary_muscles": [
+   "quads",
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "hamstrings"
+  ],
+  "sport_relevance": {
+   "cycling": 3,
+   "mountain_biking": 3,
+   "running": 2,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Lying lower-ab exercise. Press lower back into the floor to protect it.",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": "leg_raise",
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Lie flat on your back with hands under your glutes or at your sides.\n2. Keeping legs straight, raise them to 90° (or as high as comfortable).\n3. Lower slowly until heels are just above the floor.\n4. Repeat without touching the ground.\nTip: If this causes lower-back pain, bend your knees slightly.",
+  "is_compound": false,
+  "movement_pattern": "isometric",
+  "name": "Leg Raise",
+  "primary_muscles": [
+   "abs",
+   "hip_flexors"
+  ],
+  "secondary_muscles": [
+   "obliques"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 2,
+   "mountain_biking": 2,
+   "running": 2,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [
+   "Step out and drop your back knee",
+   "Front knee tracks over your toes",
+   "Push back to the start"
+  ],
+  "description": "Classic lunging movement. Alternating forward lunges train gait-pattern stability.",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight",
+   "dumbbell",
+   "barbell"
+  ],
+  "garmin_category": "lunge",
+  "garmin_subtype": 32,
+  "has_animation": true,
+  "instructions": null,
+  "is_compound": true,
+  "movement_pattern": "squat",
+  "name": "Lunge",
+  "primary_muscles": [
+   "quads",
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "hamstrings",
+   "core"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 2,
+   "running": 2,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Beginner-friendly chest press. Guided path allows focus on muscle contraction.",
+  "difficulty": 1,
+  "equipment": [
+   "machine"
+  ],
+  "garmin_category": "bench_press",
+  "garmin_subtype": 17,
+  "has_animation": true,
+  "instructions": "1. Adjust seat so handles are at mid-chest height. Sit with back firmly against pad.\n2. Grip handles with palms facing down or neutral; press forward to full arm extension.\n3. Squeeze chest at lockout for 1 second.\n4. Return slowly, stopping just before the weight stack touches.\nTip: Keep shoulder blades pinched together to protect the shoulder joint.",
+  "is_compound": true,
+  "movement_pattern": "push",
+  "name": "Machine Chest Press",
+  "primary_muscles": [
+   "chest"
+  ],
+  "secondary_muscles": [
+   "triceps",
+   "front_delts"
+  ],
+  "sport_relevance": {
+   "cycling": 1,
+   "hiking": 1,
+   "mountain_biking": 1,
+   "running": 1,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [],
+  "description": "Guided horizontal pull — consistent groove for beginners.",
+  "difficulty": 1,
+  "equipment": [
+   "machine"
+  ],
+  "garmin_category": "row",
+  "garmin_subtype": 12,
+  "has_animation": true,
+  "instructions": "1. Adjust chest pad height so handles align with your lower chest. Grip handles.\n2. Keep chest against pad; pull handles toward lower chest squeezing mid-back.\n3. Slowly return to full extension.\nTip: Use the chest pad strictly — do not lean back to cheat.",
+  "is_compound": true,
+  "movement_pattern": "pull",
+  "name": "Machine Row",
+  "primary_muscles": [
+   "mid_back",
+   "lats"
+  ],
+  "secondary_muscles": [
+   "biceps",
+   "rear_delts"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 1,
+   "mountain_biking": 2,
+   "paddling": 3,
+   "rowing": 2,
+   "running": 1,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [],
+  "description": "Guided shoulder press — good for beginners or high-fatigue sets.",
+  "difficulty": 1,
+  "equipment": [
+   "machine"
+  ],
+  "garmin_category": "shoulder_press",
+  "garmin_subtype": 9,
+  "has_animation": true,
+  "instructions": "1. Adjust seat so handles align with shoulder tops. Grip handles with palms facing forward.\n2. Press up to full arm extension without locking elbows aggressively.\n3. Lower to start position; do not let the stack touch between reps.\nTip: Some machines have a neutral-grip option which reduces shoulder impingement risk.",
+  "is_compound": true,
+  "movement_pattern": "push",
+  "name": "Machine Shoulder Press",
+  "primary_muscles": [
+   "front_delts",
+   "side_delts"
+  ],
+  "secondary_muscles": [
+   "triceps",
+   "traps"
+  ],
+  "sport_relevance": {
+   "cycling": 1,
+   "hiking": 1,
+   "mountain_biking": 1,
+   "running": 1,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [],
+  "description": "Plank with alternating knee drives. Dynamic core + cardio.",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": "plank",
+  "garmin_subtype": 14,
+  "has_animation": true,
+  "instructions": null,
+  "is_compound": true,
+  "movement_pattern": "cardio",
+  "name": "Mountain Climber",
+  "primary_muscles": [
+   "core",
+   "hip_flexors"
+  ],
+  "secondary_muscles": [
+   "shoulders"
+  ],
+  "sport_relevance": {
+   "cycling": 3,
+   "generic": 3,
+   "running": 3
+  }
+ },
+ {
+  "cues": [],
+  "description": "Neck extension strengthens the posterior neck muscles. Important for athletes in contact sports and postural health.",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight",
+   "band"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Sit tall; place hands behind head with fingers interlaced.\n2. Press head back into hands with gentle resistance; do not move the neck.\n3. Hold 5–10 seconds, then relax.\n4. Perform 8–12 reps.\nTip: Keep the chin tucked slightly — avoid jutting the head forward.",
+  "is_compound": false,
+  "movement_pattern": "isolation",
+  "name": "Neck Extension",
+  "primary_muscles": [
+   "upper_back"
+  ],
+  "secondary_muscles": [],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 1,
+   "mountain_biking": 1,
+   "running": 1,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [],
+  "description": "Chin tucks strengthen the deep neck flexors. Excellent for desk workers and cyclists to counter forward head posture.",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Sit or stand tall with shoulders relaxed.\n2. Tuck chin straight back (like making a double chin) without tilting the head up or down.\n3. Hold 2–3 seconds, then release.\n4. Perform 10–15 reps.\nTip: Imagine a string pulling the back of your head straight up.",
+  "is_compound": false,
+  "movement_pattern": "isolation",
+  "name": "Neck Flexion (Chin Tucks)",
+  "primary_muscles": [
+   "upper_back"
+  ],
+  "secondary_muscles": [
+   "core"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 1,
+   "mountain_biking": 1,
+   "running": 1,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [],
+  "description": "Side neck strengthening. Helps reduce tension headaches and improves lateral neck stability.",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Sit tall with shoulders relaxed.\n2. Slowly tilt head to one side, bringing ear toward shoulder without raising shoulder.\n3. Hold 2–3 seconds; return to centre.\n4. Alternate sides for 8–12 reps each.\nTip: Place a hand on the side of the head for gentle added resistance.",
+  "is_compound": false,
+  "movement_pattern": "isolation",
+  "name": "Neck Lateral Flexion",
+  "primary_muscles": [
+   "upper_back"
+  ],
+  "secondary_muscles": [
+   "obliques"
+  ],
+  "sport_relevance": {
+   "cycling": 1,
+   "hiking": 1,
+   "mountain_biking": 1,
+   "running": 1,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [],
+  "description": "Gentle neck and upper trap mobility. Valuable for cyclists who hold a forward head position.",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Sit or stand tall; gently drop one ear toward the shoulder.\n2. Hold for 20–30 seconds, allowing gravity to provide the stretch.\n3. Slowly return to centre; repeat on the other side.\n4. Optionally, add slight forward and backward tilts of the head.\nTip: Never force the neck — gentle sustained pressure is sufficient.",
+  "is_compound": false,
+  "movement_pattern": "isometric",
+  "name": "Neck Roll",
+  "primary_muscles": [
+   "traps"
+  ],
+  "secondary_muscles": [
+   "upper_back"
+  ],
+  "sport_relevance": {
+   "cycling": 3,
+   "hiking": 2,
+   "mountain_biking": 3,
+   "running": 2,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [
+   "Keep hips extended, body straight",
+   "Lower as slowly as you can",
+   "Catch yourself and push back up"
+  ],
+  "description": "Eccentric hamstring exercise — highest evidence for hamstring injury prevention in runners. ES -0.266 on running economy.",
+  "difficulty": 2,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": "leg_curl",
+  "garmin_subtype": 0,
+  "has_animation": true,
+  "instructions": "1. Kneel on the ground with one leg, the other on a towel or slider.\n2. Keep your upper body completely still — only the standing leg moves.\n3. Curl the sliding leg toward your body by driving through the hamstring.\n4. Lower back to straight very slowly (3–5 seconds).\nTip: This is one of the highest-injury-prevention exercises for runners.",
+  "is_compound": true,
+  "movement_pattern": "hinge",
+  "name": "Nordic Hamstring Curl",
+  "primary_muscles": [
+   "hamstrings"
+  ],
+  "secondary_muscles": [
+   "glutes",
+   "calves"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "mountain_biking": 2,
+   "running": 3,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Overhead loaded carry builds shoulder stability and full-body bracing.",
+  "difficulty": 2,
+  "equipment": [
+   "dumbbell",
+   "kettlebell",
+   "barbell"
+  ],
+  "garmin_category": "carry",
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Press a dumbbell, kettlebell, or barbell overhead and lock out the elbow.\n2. Walk for the prescribed distance, keeping arm straight and shoulder packed.\n3. Keep ribs down — avoid excessively arching the lower back.\n4. Switch arms at the halfway point.\nTip: Keep the wrist directly above the shoulder — any drift increases shoulder stress.",
+  "is_compound": true,
+  "movement_pattern": "carry",
+  "name": "Overhead Carry",
+  "primary_muscles": [
+   "shoulders",
+   "core",
+   "traps"
+  ],
+  "secondary_muscles": [
+   "triceps",
+   "obliques",
+   "glutes"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 3,
+   "mountain_biking": 3,
+   "running": 2,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [
+   "Squeeze your glutes, ribs down",
+   "Press around your face, not forward",
+   "Finish with the bar over your ears"
+  ],
+  "description": "Overhead pressing — builds shoulder strength and stability. Important for overhead athletes.",
+  "difficulty": 2,
+  "equipment": [
+   "barbell"
+  ],
+  "garmin_category": "shoulder_press",
+  "garmin_subtype": 4,
+  "has_animation": true,
+  "instructions": "1. Stand with feet shoulder-width, barbell on upper back.\n2. Press the bar overhead until arms are fully extended — bar travels in a slight arc over the head.\n3. Lower to the front rack position under control.\n4. Keep core braced throughout; do not hyperextend the lower back.\nTip: A slightly wider grip is easier on the shoulders than a narrow grip.",
+  "is_compound": true,
+  "movement_pattern": "push",
+  "name": "Overhead Press",
+  "primary_muscles": [
+   "shoulders",
+   "triceps"
+  ],
+  "secondary_muscles": [
+   "upper_back",
+   "core"
+  ],
+  "sport_relevance": {
+   "climbing": 2,
+   "paddling": 2,
+   "strength": 3
+  }
+ },
+ {
+  "cues": [],
+  "description": "Long-head dominant — overhead position fully stretches the long head of the tricep.",
+  "difficulty": 1,
+  "equipment": [
+   "dumbbell",
+   "cable",
+   "barbell"
+  ],
+  "garmin_category": "triceps_extension",
+  "garmin_subtype": 3,
+  "has_animation": true,
+  "instructions": "1. Hold a single dumbbell overhead with both hands gripping the top plate, arms extended.\n2. Keep upper arms close to ears; lower the dumbbell behind your head by bending elbows.\n3. Extend back to the start position, focusing on the squeeze at lockout.\nTip: Keep core braced and avoid arching the lower back excessively.",
+  "is_compound": false,
+  "movement_pattern": "push",
+  "name": "Overhead Tricep Extension",
+  "primary_muscles": [
+   "triceps"
+  ],
+  "secondary_muscles": [],
+  "sport_relevance": {
+   "cycling": 1,
+   "hiking": 1,
+   "mountain_biking": 1,
+   "running": 1,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [],
+  "description": "Anti-rotation stability drill. Transfers directly to running efficiency and bike power.",
+  "difficulty": 2,
+  "equipment": [
+   "cable",
+   "band"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Stand sideways to a cable pulley at chest height; grab the handle with both hands at your chest.\n2. Brace your core and press the handle straight out in front of you to full arm extension.\n3. Hold for 2–3 seconds, resisting the cable's rotational pull.\n4. Return hands to chest and repeat.\nTip: The key is to prevent rotation — if you twist at all, reduce weight.",
+  "is_compound": true,
+  "movement_pattern": "isometric",
+  "name": "Pallof Press",
+  "primary_muscles": [
+   "core",
+   "obliques"
+  ],
+  "secondary_muscles": [
+   "chest",
+   "shoulders"
+  ],
+  "sport_relevance": {
+   "cycling": 3,
+   "hiking": 3,
+   "mountain_biking": 3,
+   "running": 3,
+   "strength": 3
+  }
+ },
+ {
+  "cues": [],
+  "description": "Machine fly isolating the chest with constant resistance through the arc.",
+  "difficulty": 1,
+  "equipment": [
+   "machine"
+  ],
+  "garmin_category": "flye",
+  "garmin_subtype": 6,
+  "has_animation": true,
+  "instructions": "1. Adjust seat so elbows are at shoulder height on the pads.\n2. Place forearms on pads and bring them together in front of chest.\n3. Squeeze pecs hard when pads meet; hold for 1 second.\n4. Slowly return to start, feeling the chest stretch at the end.\nTip: Do not let the weight stack touch between reps to keep constant tension.",
+  "is_compound": false,
+  "movement_pattern": "push",
+  "name": "Pec Deck",
+  "primary_muscles": [
+   "chest"
+  ],
+  "secondary_muscles": [
+   "front_delts"
+  ],
+  "sport_relevance": {
+   "cycling": 1,
+   "hiking": 1,
+   "mountain_biking": 1,
+   "running": 1,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [],
+  "description": "Dead-stop barbell row from the floor — eliminates momentum for strict strength training.",
+  "difficulty": 3,
+  "equipment": [
+   "barbell"
+  ],
+  "garmin_category": "row",
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Set up as for a Barbell Bent Over Row with the bar on the floor.\n2. Back is parallel to the floor; grip slightly wider than shoulder width.\n3. Explosively row the bar to your lower chest from a dead stop.\n4. Return bar fully to the floor and pause before each rep.\nTip: Each rep starts from rest — this removes the elastic energy cheating common in regular rows.",
+  "is_compound": true,
+  "movement_pattern": "pull",
+  "name": "Pendlay Row",
+  "primary_muscles": [
+   "mid_back",
+   "lats",
+   "traps"
+  ],
+  "secondary_muscles": [
+   "biceps",
+   "rear_delts",
+   "lower_back"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 2,
+   "mountain_biking": 2,
+   "rowing": 3,
+   "running": 2,
+   "strength": 3
+  }
+ },
+ {
+  "cues": [],
+  "description": "Deep hip opener. Targets glute medius and piriformis. 60–90s each side.",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": "warm_up",
+  "garmin_subtype": 59,
+  "has_animation": true,
+  "instructions": "1. From a downward dog, bring one leg forward and place it flat on the floor in front of the opposite hip.\n2. Lower the rear hip toward the floor; sit square.\n3. Walk hands forward to deepen the stretch.\n4. Hold 60–90 seconds; switch sides.\nTip: Use a folded blanket under the front hip if it floats above the ground.",
+  "is_compound": false,
+  "movement_pattern": "isometric",
+  "name": "Pigeon Pose",
+  "primary_muscles": [
+   "hip_external_rotators",
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "hip_flexors"
+  ],
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "hiking": 2,
+   "mountain_biking": 2,
+   "running": 3
+  }
+ },
+ {
+  "cues": [],
+  "description": "Bodyweight overhead press progression. Bridges push-up to handstand push-up.",
+  "difficulty": 2,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Start in a downward-dog position — hips high, forming an inverted V.\n2. Bend elbows to lower the crown of your head toward the floor between your hands.\n3. Press back up to the starting inverted V position.\nTip: Elevate feet on a box to increase difficulty and shoulder loading.",
+  "is_compound": true,
+  "movement_pattern": "push",
+  "name": "Pike Push-Up",
+  "primary_muscles": [
+   "front_delts",
+   "side_delts"
+  ],
+  "secondary_muscles": [
+   "triceps",
+   "traps"
+  ],
+  "sport_relevance": {
+   "cycling": 1,
+   "hiking": 1,
+   "mountain_biking": 1,
+   "running": 1,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [
+   "Elbows under your shoulders",
+   "Squeeze glutes, tuck your ribs",
+   "Do not let your hips drop"
+  ],
+  "description": "Anti-extension core stability. 30–60s holds. Foundation for all strength and endurance sports.",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": "plank",
+  "garmin_subtype": 43,
+  "has_animation": true,
+  "instructions": "1. Get into a forearm plank; elbows under shoulders, body in a straight line.\n2. Brace core — do not let hips rise or sink.\n3. Breathe steadily and hold for the prescribed time.\nTip: Quality over duration. A 30-second perfect plank is better than a 2-minute hip-sag.",
+  "is_compound": false,
+  "movement_pattern": "isometric",
+  "name": "Plank",
+  "primary_muscles": [
+   "core"
+  ],
+  "secondary_muscles": [
+   "shoulders",
+   "glutes"
+  ],
+  "sport_relevance": {
+   "climbing": 3,
+   "cycling": 2,
+   "hiking": 2,
+   "paddling": 3,
+   "running": 2,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Total-body power movement developing explosive hip extension. Technical — learn from a coach.",
+  "difficulty": 5,
+  "equipment": [
+   "barbell"
+  ],
+  "garmin_category": "olympic_lift",
+  "garmin_subtype": 3,
+  "has_animation": true,
+  "instructions": "1. Set up as for a deadlift; bar over mid-foot, grip just outside the legs.\n2. First pull: drive bar from floor to knee by extending the legs, keeping the back angle.\n3. Second pull: when the bar passes the knee, explosively extend hips and shrug violently.\n4. Third pull: drop under the bar and catch it in a front rack position at shoulder height.\nTip: Master the hang clean first before pulling from the floor.",
+  "is_compound": true,
+  "movement_pattern": "hinge",
+  "name": "Power Clean",
+  "primary_muscles": [
+   "glutes",
+   "hamstrings",
+   "traps",
+   "quads"
+  ],
+  "secondary_muscles": [
+   "calves",
+   "core",
+   "forearms"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 2,
+   "mountain_biking": 3,
+   "running": 3,
+   "strength": 3
+  }
+ },
+ {
+  "cues": [],
+  "description": "Olympic lift pulling bar overhead in one motion. Requires significant mobility and technique.",
+  "difficulty": 5,
+  "equipment": [
+   "barbell"
+  ],
+  "garmin_category": "olympic_lift",
+  "garmin_subtype": 4,
+  "has_animation": true,
+  "instructions": "1. Wide snatch grip (hands at the smooth/grip junction); bar over mid-foot.\n2. First pull from floor to knee, then explosive second pull — extend hips and shrug aggressively.\n3. Pull yourself under the bar and receive it overhead with locked elbows.\n4. Catch in a partial squat (power snatch) or full squat (full snatch).\nTip: The snatch demands thoracic extension and shoulder flexibility — address these first.",
+  "is_compound": true,
+  "movement_pattern": "hinge",
+  "name": "Power Snatch",
+  "primary_muscles": [
+   "glutes",
+   "hamstrings",
+   "traps",
+   "shoulders"
+  ],
+  "secondary_muscles": [
+   "quads",
+   "calves",
+   "core"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 2,
+   "mountain_biking": 2,
+   "running": 2,
+   "strength": 3
+  }
+ },
+ {
+  "cues": [],
+  "description": "Arm braced against the pad eliminates shoulder swing cheating.",
+  "difficulty": 2,
+  "equipment": [
+   "barbell",
+   "dumbbell",
+   "cable"
+  ],
+  "garmin_category": "curl",
+  "garmin_subtype": 13,
+  "has_animation": true,
+  "instructions": "1. Sit at a preacher bench; drape upper arms over the angled pad.\n2. Grip bar with shoulder-width underhand grip; arms nearly extended.\n3. Curl bar up to shoulder height, squeezing at the top.\n4. Lower slowly to near-full extension — do not drop the weight.\nTip: The stretch at the bottom is key; do not let elbows leave the pad.",
+  "is_compound": false,
+  "movement_pattern": "pull",
+  "name": "Preacher Curl",
+  "primary_muscles": [
+   "biceps"
+  ],
+  "secondary_muscles": [
+   "forearms"
+  ],
+  "sport_relevance": {
+   "cycling": 1,
+   "hiking": 1,
+   "mountain_biking": 1,
+   "running": 1,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [
+   "Start from a full dead hang",
+   "Pull your elbows down to your ribs",
+   "Chin over the bar, no kipping"
+  ],
+  "description": "Premier vertical pull. Highest priority exercise for climbers. Weighted when bodyweight too easy.",
+  "difficulty": 4,
+  "equipment": [
+   "pullup_bar"
+  ],
+  "garmin_category": "pull_up",
+  "garmin_subtype": 38,
+  "has_animation": true,
+  "instructions": "1. Grip a pull-up bar with an overhand grip, just wider than shoulders.\n2. Hang fully; pull your chin above the bar by driving elbows toward your hips.\n3. Lower under control to a full dead hang.\nTip: Activate the lats before pulling — think \"pull the bar to your chest\" not \"pull yourself up\".",
+  "is_compound": true,
+  "movement_pattern": "pull",
+  "name": "Pull-Up",
+  "primary_muscles": [
+   "lats",
+   "biceps"
+  ],
+  "secondary_muscles": [
+   "upper_back",
+   "shoulders",
+   "core"
+  ],
+  "sport_relevance": {
+   "climbing": 4,
+   "paddling": 3,
+   "rowing": 3,
+   "strength": 3
+  }
+ },
+ {
+  "cues": [
+   "Hands under your shoulders",
+   "Body in one straight line",
+   "Lower until your chest nearly touches"
+  ],
+  "description": "Fundamental push pattern. Critical antagonist work for climbers to prevent imbalance injuries.",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": "push_up",
+  "garmin_subtype": 77,
+  "has_animation": true,
+  "instructions": "1. Start in a high plank with hands directly under shoulders.\n2. Lower your chest to the floor with elbows at 45° from the torso.\n3. Press back to full arm extension.\n4. Keep a rigid plank throughout — no hip sag or piking.\nTip: Elevate hands to make easier; elevate feet to make harder.",
+  "is_compound": true,
+  "movement_pattern": "push",
+  "name": "Push-Up",
+  "primary_muscles": [
+   "chest",
+   "triceps",
+   "shoulders"
+  ],
+  "secondary_muscles": [
+   "core"
+  ],
+  "sport_relevance": {
+   "climbing": 3,
+   "paddling": 2,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Partial deadlift from knee height allowing supramaximal loading for trap and back thickness.",
+  "difficulty": 3,
+  "equipment": [
+   "barbell"
+  ],
+  "garmin_category": "deadlift",
+  "garmin_subtype": 20,
+  "has_animation": true,
+  "instructions": "1. Set safeties in a rack so the bar starts just below or at knee height.\n2. Grip the bar slightly wider than hip-width; brace hard.\n3. Pull to standing, driving hips forward at the top.\n4. Return bar to the rack pins under control.\nTip: Use straps — grip is typically the limiting factor at heavy rack pull loads.",
+  "is_compound": true,
+  "movement_pattern": "hinge",
+  "name": "Rack Pull",
+  "primary_muscles": [
+   "hamstrings",
+   "glutes",
+   "lower_back",
+   "traps"
+  ],
+  "secondary_muscles": [
+   "core",
+   "forearms"
+  ],
+  "sport_relevance": {
+   "cycling": 1,
+   "hiking": 1,
+   "mountain_biking": 1,
+   "running": 1,
+   "strength": 3
+  }
+ },
+ {
+  "cues": [],
+  "description": "Critical for shoulder health in cyclists and desk workers with rounded shoulders.",
+  "difficulty": 1,
+  "equipment": [
+   "dumbbell"
+  ],
+  "garmin_category": "flye",
+  "garmin_subtype": 0,
+  "has_animation": true,
+  "instructions": "1. Hinge forward at hips until torso is nearly parallel to floor.\n2. Hold dumbbells hanging straight down with palms facing each other.\n3. Raise both arms out to the sides in an arc, squeezing the rear delts.\n4. Keep a slight elbow bend and pause at the top before lowering.\nTip: Use light weight and high reps — rear delts respond well to 15–25 reps.",
+  "is_compound": false,
+  "movement_pattern": "pull",
+  "name": "Rear Delt Fly",
+  "primary_muscles": [
+   "rear_delts"
+  ],
+  "secondary_muscles": [
+   "mid_back",
+   "traps"
+  ],
+  "sport_relevance": {
+   "cycling": 3,
+   "hiking": 2,
+   "mountain_biking": 3,
+   "running": 2,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Plank position alternating dumbbell rows. Anti-rotation core.",
+  "difficulty": 3,
+  "equipment": [
+   "dumbbell"
+  ],
+  "garmin_category": "row",
+  "garmin_subtype": 15,
+  "has_animation": true,
+  "instructions": null,
+  "is_compound": true,
+  "movement_pattern": "pull",
+  "name": "Renegade Row",
+  "primary_muscles": [
+   "upper_back",
+   "lats"
+  ],
+  "secondary_muscles": [
+   "core",
+   "shoulders"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "generic": 3,
+   "running": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Lying, lift hips off floor. Lower-ab focus.",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": "crunch",
+  "garmin_subtype": 34,
+  "has_animation": true,
+  "instructions": null,
+  "is_compound": false,
+  "movement_pattern": "isolation",
+  "name": "Reverse Crunch",
+  "primary_muscles": [
+   "abs",
+   "hip_flexors"
+  ],
+  "secondary_muscles": [],
+  "sport_relevance": {
+   "generic": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Overhand grip emphasises brachioradialis and extensor forearm muscles.",
+  "difficulty": 1,
+  "equipment": [
+   "barbell",
+   "dumbbell"
+  ],
+  "garmin_category": "curl",
+  "garmin_subtype": 14,
+  "has_animation": true,
+  "instructions": "1. Stand holding barbell or dumbbells with a pronated (overhand) grip.\n2. Curl the weight up to shoulder height, keeping elbows stationary.\n3. Lower under control to full extension.\nTip: A common weakness — expect to use roughly 40% less weight than a standard curl.",
+  "is_compound": false,
+  "movement_pattern": "pull",
+  "name": "Reverse Curl",
+  "primary_muscles": [
+   "forearms",
+   "brachialis"
+  ],
+  "secondary_muscles": [
+   "biceps"
+  ],
+  "sport_relevance": {
+   "climbing": 3,
+   "cycling": 1,
+   "hiking": 2,
+   "mountain_biking": 1,
+   "running": 1,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [],
+  "description": "Underhand cable triceps push-down.",
+  "difficulty": 1,
+  "equipment": [
+   "cable",
+   "machine"
+  ],
+  "garmin_category": "triceps_extension",
+  "garmin_subtype": 17,
+  "has_animation": true,
+  "instructions": null,
+  "is_compound": false,
+  "movement_pattern": "isolation",
+  "name": "Reverse-Grip Press-down",
+  "primary_muscles": [
+   "triceps"
+  ],
+  "secondary_muscles": [
+   "forearms"
+  ],
+  "sport_relevance": {
+   "generic": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Stepping back reduces knee shear compared to forward lunge — knee-friendly unilateral squat.",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight",
+   "dumbbell",
+   "barbell"
+  ],
+  "garmin_category": "lunge",
+  "garmin_subtype": 7,
+  "has_animation": true,
+  "instructions": "1. Stand upright; step one foot directly back onto the ball of the rear foot.\n2. Lower the rear knee toward the floor, keeping front shin vertical.\n3. Push through the front heel to step back to standing.\n4. Alternate legs or complete all reps on one side.\nTip: Keep torso upright; avoid leaning forward at the hip.",
+  "is_compound": true,
+  "movement_pattern": "squat",
+  "name": "Reverse Lunge",
+  "primary_muscles": [
+   "quads",
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "hamstrings",
+   "calves",
+   "core"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 3,
+   "mountain_biking": 2,
+   "running": 3,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Extensor forearm strength — often neglected, important for elbow tendon health.",
+  "difficulty": 1,
+  "equipment": [
+   "dumbbell",
+   "barbell"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Sit on a bench; forearms on thighs, palms facing down.\n2. Hold a light dumbbell; curl the wrist upward (extension).\n3. Lower under control back to the starting position.\nTip: Use half the weight you use for regular wrist curls — extensors are weaker.",
+  "is_compound": false,
+  "movement_pattern": "isolation",
+  "name": "Reverse Wrist Curl",
+  "primary_muscles": [
+   "forearms"
+  ],
+  "secondary_muscles": [],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 2,
+   "mountain_biking": 3,
+   "running": 1,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [
+   "Soft knees, hinge from the hips",
+   "Slide the bar down your thighs",
+   "Feel the stretch in your hamstrings"
+  ],
+  "description": "Premier hamstring developer. Critical for running economy (ES -0.469 in meta-analysis). Hip hinge to just below knee.",
+  "difficulty": 2,
+  "equipment": [
+   "barbell"
+  ],
+  "garmin_category": "deadlift",
+  "garmin_subtype": 23,
+  "has_animation": true,
+  "instructions": "1. Hold barbell at hip level, slightly wider than hip-width.\n2. Keep a very slight knee bend; hinge at hips with a flat back.\n3. Slide the bar down the thighs to just below the knee.\n4. Drive hips forward to return to standing.\nTip: This is a hip hinge, not a squat. The knees barely move; the change is purely at the hip.",
+  "is_compound": true,
+  "movement_pattern": "hinge",
+  "name": "Romanian Deadlift",
+  "primary_muscles": [
+   "hamstrings",
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "lower_back",
+   "core"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 2,
+   "mountain_biking": 2,
+   "paddling": 3,
+   "running": 3,
+   "strength": 3
+  }
+ },
+ {
+  "cues": [],
+  "description": "Rope attachment allows wrists to rotate at the bottom for peak tricep contraction.",
+  "difficulty": 1,
+  "equipment": [
+   "cable"
+  ],
+  "garmin_category": "triceps_extension",
+  "garmin_subtype": 7,
+  "has_animation": true,
+  "instructions": "1. Attach rope to a high cable pulley. Grip each end of the rope, elbows tucked at sides.\n2. Push rope down, spreading the ends apart as wrists pronate at full extension.\n3. Pause and squeeze at the bottom; slowly return to 90° elbows.\nTip: Keep elbows stationary — if they drift back, you are using too much weight.",
+  "is_compound": false,
+  "movement_pattern": "push",
+  "name": "Rope Pushdown",
+  "primary_muscles": [
+   "triceps"
+  ],
+  "secondary_muscles": [],
+  "sport_relevance": {
+   "cycling": 1,
+   "hiking": 1,
+   "mountain_biking": 1,
+   "running": 1,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [
+   "Lean back to engage your core",
+   "Rotate from the ribs, not the arms",
+   "Tap each side under control"
+  ],
+  "description": "Seated rotation exercise. Add weight for progression. Very relevant for paddlers and rowers.",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight",
+   "dumbbell"
+  ],
+  "garmin_category": "core",
+  "garmin_subtype": 46,
+  "has_animation": true,
+  "instructions": "1. Sit on the floor or a bench; anchor feet.\n2. Hold a weight at chest level or behind the head.\n3. Rotate your torso to one side as far as possible; touch the ground.\n4. Rotate to the other side in a controlled sweep.\nTip: Initiate rotation from the obliques, not by swinging the arms.",
+  "is_compound": false,
+  "movement_pattern": "rotation",
+  "name": "Russian Twist",
+  "primary_muscles": [
+   "core",
+   "obliques"
+  ],
+  "secondary_muscles": [],
+  "sport_relevance": {
+   "climbing": 2,
+   "paddling": 4,
+   "rowing": 3,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Seated alternating curl. Reduces body english.",
+  "difficulty": 1,
+  "equipment": [
+   "dumbbell"
+  ],
+  "garmin_category": "curl",
+  "garmin_subtype": 32,
+  "has_animation": true,
+  "instructions": null,
+  "is_compound": false,
+  "movement_pattern": "isolation",
+  "name": "Seated Alternating Dumbbell Curl",
+  "primary_muscles": [
+   "biceps"
+  ],
+  "secondary_muscles": [
+   "forearms"
+  ],
+  "sport_relevance": {
+   "generic": 2
+  }
+ },
+ {
+  "cues": [
+   "Tall spine, do not round",
+   "Pull to your belly button",
+   "Let the shoulder blades spread on the return"
+  ],
+  "description": "Essential horizontal pull. Cycling and rowing athletes especially benefit.",
+  "difficulty": 1,
+  "equipment": [
+   "cable"
+  ],
+  "garmin_category": "row",
+  "garmin_subtype": 17,
+  "has_animation": true,
+  "instructions": "1. Sit at cable row station with feet on footrest, knees slightly bent.\n2. Grip handle and lean slightly forward with a neutral spine.\n3. Pull handle to lower abdomen, squeezing shoulder blades together at the finish.\n4. Straighten arms fully and reach forward before the next rep.\nTip: Avoid rounding the lower back — maintain neutral spine through each rep.",
+  "is_compound": true,
+  "movement_pattern": "pull",
+  "name": "Seated Cable Row",
+  "primary_muscles": [
+   "mid_back",
+   "lats"
+  ],
+  "secondary_muscles": [
+   "biceps",
+   "rear_delts",
+   "traps"
+  ],
+  "sport_relevance": {
+   "cycling": 3,
+   "hiking": 2,
+   "mountain_biking": 3,
+   "paddling": 3,
+   "rowing": 3,
+   "running": 2,
+   "strength": 3
+  }
+ },
+ {
+  "cues": [],
+  "description": "Seated position isolates the soleus (deep calf muscle) over the gastrocnemius.",
+  "difficulty": 1,
+  "equipment": [
+   "machine",
+   "dumbbell"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Sit at a seated calf raise machine; pads resting on thighs just above knees.\n2. Push up onto the balls of your feet, squeezing calves at the top.\n3. Lower heels as far below the footrest as possible for a full stretch.\nTip: The soleus responds to higher reps (15–25) due to its slow-twitch fibre composition.",
+  "is_compound": false,
+  "movement_pattern": "isolation",
+  "name": "Seated Calf Raise",
+  "primary_muscles": [
+   "calves"
+  ],
+  "secondary_muscles": [],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 3,
+   "mountain_biking": 2,
+   "running": 3,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [],
+  "description": "Classic seated hamstring and posterior chain stretch.",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Sit on the floor with both legs extended straight.\n2. Reach forward toward your toes with a flat back initially, then allow the back to round.\n3. Hold the furthest position for 30–60 seconds.\n4. Breathe into the stretch — use each exhale to gently reach further.\nTip: Use a yoga strap around your feet if you cannot reach them.",
+  "is_compound": false,
+  "movement_pattern": "isometric",
+  "name": "Seated Forward Fold",
+  "primary_muscles": [
+   "hamstrings",
+   "lower_back"
+  ],
+  "secondary_muscles": [
+   "calves",
+   "glutes"
+  ],
+  "sport_relevance": {
+   "cycling": 3,
+   "hiking": 3,
+   "mountain_biking": 3,
+   "running": 3,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Isolated hamstring flexion in a seated position — good for athletes with lower-back issues.",
+  "difficulty": 1,
+  "equipment": [
+   "machine"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Sit in a leg curl machine; back against pad, lever under ankles.\n2. Curl heels toward buttocks through the full range of motion.\n3. Pause briefly at peak contraction; lower under control.\nTip: Seated version is more comfortable for those who find lying leg curl uncomfortable on the hip.",
+  "is_compound": false,
+  "movement_pattern": "isolation",
+  "name": "Seated Leg Curl",
+  "primary_muscles": [
+   "hamstrings"
+  ],
+  "secondary_muscles": [
+   "calves",
+   "glutes"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 2,
+   "mountain_biking": 2,
+   "running": 3,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [],
+  "description": "Bodyweight inner-thigh lift. Low-load rehab/prehab exercise for groin strains.",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Lie on your side with the bottom leg straight and the top leg bent with foot flat on the floor in front of the bottom knee.\n2. Lift the bottom leg a few inches off the floor, squeezing the inner thigh.\n3. Lower with control.\nTip: Keep both hips stacked vertically — avoid rolling forward or backward.",
+  "is_compound": false,
+  "movement_pattern": "isolation",
+  "name": "Side-Lying Hip Adduction",
+  "primary_muscles": [
+   "hip_adductors"
+  ],
+  "secondary_muscles": [
+   "core"
+  ],
+  "sport_relevance": {
+   "cycling": 1,
+   "hiking": 1,
+   "mountain_biking": 1,
+   "running": 1,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [
+   "Stack your feet and hips",
+   "Lift into one straight line",
+   "Do not let the bottom hip sink"
+  ],
+  "description": "Lateral core stability. Critical for runners to prevent lateral pelvic drop and IT band issues.",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": "plank",
+  "garmin_subtype": 66,
+  "has_animation": true,
+  "instructions": "1. Get into a plank position; raise your hips to a side plank, balancing on one forearm and the side of one foot.\n2. Keep the body in a straight line from head to feet.\n3. Stack feet or stagger them for more stability.\n4. Hold for the prescribed time.\nTip: Hip dip variations (lower hip to floor and raise) add dynamic demand.",
+  "is_compound": false,
+  "movement_pattern": "isometric",
+  "name": "Side Plank",
+  "primary_muscles": [
+   "core",
+   "obliques"
+  ],
+  "secondary_muscles": [
+   "glutes",
+   "hip_abductors"
+  ],
+  "sport_relevance": {
+   "hiking": 2,
+   "paddling": 2,
+   "running": 3,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Unilateral cable pull — mimics paddling mechanics. Rotational component trains paddling-specific muscles.",
+  "difficulty": 1,
+  "equipment": [
+   "cable"
+  ],
+  "garmin_category": "row",
+  "garmin_subtype": 20,
+  "has_animation": true,
+  "instructions": "1. Sit at a cable row; grip a single handle with one hand.\n2. Row the handle to your lower ribcage, rotating the shoulder back at the finish.\n3. Return to full extension with a slight reach forward.\nTip: Unilateral rows expose and correct side-to-side strength imbalances.",
+  "is_compound": true,
+  "movement_pattern": "pull",
+  "name": "Single Arm Cable Row",
+  "primary_muscles": [
+   "lats",
+   "upper_back",
+   "biceps"
+  ],
+  "secondary_muscles": [
+   "core"
+  ],
+  "sport_relevance": {
+   "climbing": 2,
+   "paddling": 4,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Unilateral progression of the glute bridge — eliminates dominant-side compensation.",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Lie on your back, one knee bent with foot flat; extend the other leg straight.\n2. Drive through the planted heel to lift hips off the floor.\n3. Squeeze the glute hard at the top; both hips should be level.\n4. Lower under control and repeat.\nTip: Wrap a band just above the knees to cue hip external rotation.",
+  "is_compound": true,
+  "movement_pattern": "hinge",
+  "name": "Single-Leg Glute Bridge",
+  "primary_muscles": [
+   "glutes",
+   "hamstrings"
+  ],
+  "secondary_muscles": [
+   "core",
+   "lower_back"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 2,
+   "mountain_biking": 2,
+   "running": 3,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [],
+  "description": "Highest-ranked exercise in cyclist strength meta-analysis (10 studies). Unilateral loading matches cycling mechanics.",
+  "difficulty": 1,
+  "equipment": [
+   "machine"
+  ],
+  "garmin_category": "squat",
+  "garmin_subtype": 0,
+  "has_animation": true,
+  "instructions": "1. Sit at the leg press machine (single-leg version).\n2. Place one foot in the centre of the platform; other leg off to the side.\n3. Lower the sled under control until knee reaches 90°.\n4. Press back to near full extension.\nTip: Excellent for exposing and correcting left/right imbalances.",
+  "is_compound": true,
+  "movement_pattern": "squat",
+  "name": "Single Leg Leg Press",
+  "primary_muscles": [
+   "quads",
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "hamstrings"
+  ],
+  "sport_relevance": {
+   "cycling": 3,
+   "mountain_biking": 3,
+   "running": 2,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [
+   "Hinge over the standing leg",
+   "Hips level, do not rotate",
+   "Control the way down"
+  ],
+  "description": "Unilateral hinge — critical for injury prevention in runners. Builds single-leg stability and hamstring strength.",
+  "difficulty": 2,
+  "equipment": [
+   "dumbbell",
+   "bodyweight"
+  ],
+  "garmin_category": "deadlift",
+  "garmin_subtype": 14,
+  "has_animation": true,
+  "instructions": "1. Stand holding a light dumbbell in the raised hand; balance on the opposite foot.\n2. Hinge forward, lowering the dumbbell toward the floor while the free leg extends behind you.\n3. Return to standing by driving the hip forward.\n4. Complete all reps on one side before switching.\nTip: Fix a point on the floor to maintain balance; keep hips level throughout.",
+  "is_compound": true,
+  "movement_pattern": "hinge",
+  "name": "Single Leg Romanian Deadlift",
+  "primary_muscles": [
+   "hamstrings",
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "lower_back",
+   "core"
+  ],
+  "sport_relevance": {
+   "climbing": 2,
+   "hiking": 3,
+   "mountain_biking": 2,
+   "running": 3,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Pistol squat variation. Highest single-leg strength demand. Requires significant mobility and balance.",
+  "difficulty": 3,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": "squat",
+  "garmin_subtype": 42,
+  "has_animation": true,
+  "instructions": "1. Stand on one leg; find a fixed point to focus on.\n2. Lower into a single-leg squat (pistol) as deeply as your strength and mobility allow.\n3. Drive through the heel to return to standing.\n4. Keep the knee tracking over the toes.\nTip: Use a TRX or hold a pole for balance assistance when learning.",
+  "is_compound": true,
+  "movement_pattern": "squat",
+  "name": "Single Leg Squat",
+  "primary_muscles": [
+   "quads",
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "hamstrings",
+   "core"
+  ],
+  "sport_relevance": {
+   "hiking": 3,
+   "mountain_biking": 2,
+   "running": 3,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Pure quad isolation through a full knee flexion range. Advanced — go slow.",
+  "difficulty": 3,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": "squat",
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Stand holding a support lightly; feet hip-width, heels elevated on a plate.\n2. Allow knees to travel forward over toes as you lean back and lower.\n3. Descend until your body is nearly parallel to the floor.\n4. Reverse by contracting quads — do not use hip to assist.\nTip: Work up to this slowly — it puts significant stress on the patellar tendon.",
+  "is_compound": false,
+  "movement_pattern": "squat",
+  "name": "Sissy Squat",
+  "primary_muscles": [
+   "quads"
+  ],
+  "secondary_muscles": [
+   "hip_flexors",
+   "core"
+  ],
+  "sport_relevance": {
+   "cycling": 3,
+   "hiking": 2,
+   "mountain_biking": 2,
+   "running": 2,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Classic full sit-up.",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": "sit_up",
+  "garmin_subtype": 29,
+  "has_animation": true,
+  "instructions": null,
+  "is_compound": false,
+  "movement_pattern": "isolation",
+  "name": "Sit-up",
+  "primary_muscles": [
+   "abs",
+   "hip_flexors"
+  ],
+  "secondary_muscles": [],
+  "sport_relevance": {
+   "generic": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Long-head tricep isolation. EZ bar reduces wrist strain vs. straight bar.",
+  "difficulty": 2,
+  "equipment": [
+   "barbell",
+   "dumbbell"
+  ],
+  "garmin_category": "triceps_extension",
+  "garmin_subtype": 1,
+  "has_animation": true,
+  "instructions": "1. Lie on a flat bench holding barbell or dumbbells directly above chest, arms straight.\n2. Keeping upper arms vertical, bend elbows to lower the bar toward your forehead or behind your head.\n3. Press back to full extension by contracting the triceps.\n4. Keep upper arms stationary throughout — only the forearms move.\nTip: A slight back angle (not quite vertical upper arms) protects the elbow joint.",
+  "is_compound": false,
+  "movement_pattern": "push",
+  "name": "Skull Crusher",
+  "primary_muscles": [
+   "triceps"
+  ],
+  "secondary_muscles": [
+   "chest",
+   "front_delts"
+  ],
+  "sport_relevance": {
+   "cycling": 1,
+   "hiking": 1,
+   "mountain_biking": 1,
+   "running": 1,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [
+   "Sink to a quarter squat",
+   "Explode straight up",
+   "Absorb the landing with soft knees"
+  ],
+  "description": "Vertical jump from squat position. Rate of force development training — key plyometric for runners.",
+  "difficulty": 2,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": "plyo",
+  "garmin_subtype": 3,
+  "has_animation": true,
+  "instructions": "1. Stand with feet shoulder-width, hands on hips.\n2. Push hips upward and jump as high as possible.\n3. Land softly on the balls of your feet, bending hips and knees to absorb.\nTip: Focus on vertical displacement. Count ground contact time for power development tracking.",
+  "is_compound": true,
+  "movement_pattern": "plyometric",
+  "name": "Squat Jump",
+  "primary_muscles": [
+   "quads",
+   "glutes",
+   "calves"
+  ],
+  "secondary_muscles": [
+   "hamstrings",
+   "core"
+  ],
+  "sport_relevance": {
+   "mountain_biking": 2,
+   "running": 3,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Burpee without push-up + jump. Lower impact.",
+  "difficulty": 2,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": "total_body",
+  "garmin_subtype": 7,
+  "has_animation": true,
+  "instructions": null,
+  "is_compound": true,
+  "movement_pattern": "cardio",
+  "name": "Squat Thrust",
+  "primary_muscles": [
+   "full_body"
+  ],
+  "secondary_muscles": [],
+  "sport_relevance": {
+   "cycling": 2,
+   "generic": 3,
+   "running": 2
+  }
+ },
+ {
+  "cues": [
+   "Rise onto the balls of your feet",
+   "Full pause at the top",
+   "Lower until you feel the stretch"
+  ],
+  "description": "Gastroc + soleus isolation. Critical for runners and cyclists — ankle plantar flexion power (6 studies in cycling meta-analysis).",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight",
+   "machine",
+   "dumbbell"
+  ],
+  "garmin_category": "calf_raise",
+  "garmin_subtype": 18,
+  "has_animation": true,
+  "instructions": "1. Stand with feet hip-to-shoulder width on a step or the floor.\n2. Rise onto the balls of your feet as high as possible.\n3. Hold the top position for 1 second; lower heels as far below the step as possible.\nTip: Doing these one-leg-at-a-time doubles the load and develops asymmetry awareness.",
+  "is_compound": false,
+  "movement_pattern": "isolation",
+  "name": "Standing Calf Raise",
+  "primary_muscles": [
+   "calves"
+  ],
+  "secondary_muscles": [],
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 3,
+   "hiking": 3,
+   "mountain_biking": 2,
+   "paddling": 1,
+   "running": 3,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Standard standing curl.",
+  "difficulty": 1,
+  "equipment": [
+   "dumbbell"
+  ],
+  "garmin_category": "curl",
+  "garmin_subtype": 37,
+  "has_animation": true,
+  "instructions": null,
+  "is_compound": false,
+  "movement_pattern": "isolation",
+  "name": "Standing Dumbbell Biceps Curl",
+  "primary_muscles": [
+   "biceps"
+  ],
+  "secondary_muscles": [
+   "forearms"
+  ],
+  "sport_relevance": {
+   "generic": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Simple standing adduction — can be loaded with band or cable. Good for warm-ups.",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight",
+   "band",
+   "cable"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Stand tall, holding a wall or post for balance.\n2. Shift all weight to one leg; lift the other leg slightly off the floor.\n3. Sweep the lifted leg inward across the standing leg; squeeze the inner thigh.\n4. Return with control.\nTip: Add a band around the ankle and a fixed point for resistance. Perform both sides.",
+  "is_compound": false,
+  "movement_pattern": "isolation",
+  "name": "Standing Hip Adduction",
+  "primary_muscles": [
+   "hip_adductors"
+  ],
+  "secondary_muscles": [
+   "glutes",
+   "core"
+  ],
+  "sport_relevance": {
+   "cycling": 1,
+   "hiking": 1,
+   "mountain_biking": 1,
+   "running": 1,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [],
+  "description": "Classic quad stretch. Useful pre/post-run warm-down.",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Stand with feet shoulder-width; hold the ankle from behind.\n2. Keep knees together; pull ankle toward glute until a quad stretch is felt.\nTip: Hold a wall for balance.",
+  "is_compound": false,
+  "movement_pattern": "isometric",
+  "name": "Standing Quad Stretch",
+  "primary_muscles": [
+   "quads",
+   "hip_flexors"
+  ],
+  "secondary_muscles": [],
+  "sport_relevance": {
+   "cycling": 3,
+   "hiking": 3,
+   "mountain_biking": 3,
+   "running": 3,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [
+   "Whole foot on the box",
+   "Drive through the top leg",
+   "Control the way down"
+  ],
+  "description": "Box or bench step-up. Mimics stair climbing; excellent for hikers and trail runners.",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight",
+   "dumbbell"
+  ],
+  "garmin_category": "squat",
+  "garmin_subtype": 66,
+  "has_animation": true,
+  "instructions": "1. Stand with barbell on upper back/traps or hold dumbbells at shoulders.\n2. Step one foot onto a box or bench, then drive through that heel to step up.\n3. Bring the trailing foot up to the box; stand fully.\n4. Step back down and repeat.\nTip: Push through the elevated heel — do not use the rear foot to push off.",
+  "is_compound": true,
+  "movement_pattern": "squat",
+  "name": "Step Up",
+  "primary_muscles": [
+   "quads",
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "hamstrings",
+   "core"
+  ],
+  "sport_relevance": {
+   "hiking": 3,
+   "mountain_biking": 2,
+   "running": 3,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Minimal knee bend version stressing lower back and hamstrings through full ROM.",
+  "difficulty": 2,
+  "equipment": [
+   "barbell",
+   "dumbbell"
+  ],
+  "garmin_category": "deadlift",
+  "garmin_subtype": 29,
+  "has_animation": false,
+  "instructions": "1. Hold barbell with overhand grip; stand tall with a slight knee bend.\n2. Hinge forward with a flat back, letting the bar slide down your shins to mid-shin or floor.\n3. Pull through the hamstrings and glutes to return to standing.\nTip: The key difference from RDL is increased lower-back involvement — keep form strict.",
+  "is_compound": true,
+  "movement_pattern": "hinge",
+  "name": "Stiff-Leg Deadlift",
+  "primary_muscles": [
+   "hamstrings",
+   "lower_back"
+  ],
+  "secondary_muscles": [
+   "glutes",
+   "calves"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 2,
+   "mountain_biking": 2,
+   "running": 3,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Isolates lat without bicep involvement. Great for learning the lat pull-down pattern.",
+  "difficulty": 2,
+  "equipment": [
+   "cable"
+  ],
+  "garmin_category": "pull_up",
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Stand at a high cable; grip bar overhand, arms extended, slight elbow bend.\n2. Pull bar down in an arc to your hips by engaging the lats — arms stay straight.\n3. Hold briefly at your thighs, then raise back to start under control.\nTip: Think \"push the bar toward the floor\" rather than pulling it.",
+  "is_compound": false,
+  "movement_pattern": "pull",
+  "name": "Straight-Arm Pulldown",
+  "primary_muscles": [
+   "lats"
+  ],
+  "secondary_muscles": [
+   "core",
+   "triceps"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 1,
+   "mountain_biking": 2,
+   "running": 1,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Unilateral carry with anti-lateral-flexion demand — mimics hiking and trail running terrain.",
+  "difficulty": 1,
+  "equipment": [
+   "dumbbell",
+   "kettlebell"
+  ],
+  "garmin_category": "carry",
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Hold a heavy dumbbell or kettlebell in one hand at your side.\n2. Walk forward maintaining completely upright posture and level hips.\n3. Resist the urge to lean toward the weight — your obliques fight this.\n4. Complete the distance; switch sides.\nTip: Use heavier weight than you think — this is core strength, not a bicep exercise.",
+  "is_compound": true,
+  "movement_pattern": "carry",
+  "name": "Suitcase Carry",
+  "primary_muscles": [
+   "core",
+   "obliques",
+   "traps"
+  ],
+  "secondary_muscles": [
+   "glutes",
+   "quads",
+   "forearms"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 3,
+   "mountain_biking": 3,
+   "running": 3,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Wide stance reduces lower-back stress; more hip abductor and quad involvement than conventional.",
+  "difficulty": 3,
+  "equipment": [
+   "barbell"
+  ],
+  "garmin_category": "deadlift",
+  "garmin_subtype": 30,
+  "has_animation": false,
+  "instructions": "1. Stand with feet wider than shoulder width, toes pointing 30–45° out.\n2. Grip the bar inside your legs, shoulder-width or narrow.\n3. Push knees out in line with toes as you drive up through heels.\n4. Lock hips and shoulders at the same time at the top.\nTip: Hip mobility is key — if knees cave, work on hip external rotation first.",
+  "is_compound": true,
+  "movement_pattern": "hinge",
+  "name": "Sumo Deadlift",
+  "primary_muscles": [
+   "glutes",
+   "hamstrings",
+   "quads"
+  ],
+  "secondary_muscles": [
+   "lower_back",
+   "traps",
+   "core",
+   "hip_adductors"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 2,
+   "mountain_biking": 2,
+   "running": 2,
+   "strength": 3
+  }
+ },
+ {
+  "cues": [],
+  "description": "Wide-stance squat increasing inner thigh and glute involvement.",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight",
+   "dumbbell",
+   "kettlebell"
+  ],
+  "garmin_category": "squat",
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Stand with feet wider than shoulder width, toes pointing out 45°.\n2. Hold a dumbbell or kettlebell at chest or hang it between your legs.\n3. Squat down keeping knees tracking over toes.\n4. Drive through heels to return to standing, squeezing glutes at the top.\nTip: A pause at the bottom helps mobility — try 2–3 second holds initially.",
+  "is_compound": true,
+  "movement_pattern": "squat",
+  "name": "Sumo Squat",
+  "primary_muscles": [
+   "glutes",
+   "quads",
+   "hip_abductors",
+   "hip_adductors"
+  ],
+  "secondary_muscles": [
+   "hamstrings",
+   "calves"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 2,
+   "mountain_biking": 2,
+   "running": 2,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [],
+  "description": "Unstable surface demands hamstring-glute co-contraction. No equipment needed beyond a ball.",
+  "difficulty": 2,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Lie on your back; heels resting on a Swiss ball, arms at sides for stability.\n2. Lift hips off the floor by engaging glutes and core.\n3. Curl the ball toward your buttocks by bending your knees.\n4. Extend legs back out and repeat without dropping hips.\nTip: Keep hips elevated throughout — dropping them makes this much easier.",
+  "is_compound": true,
+  "movement_pattern": "hinge",
+  "name": "Swiss Ball Leg Curl",
+  "primary_muscles": [
+   "hamstrings",
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "calves",
+   "core",
+   "lower_back"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 2,
+   "mountain_biking": 2,
+   "running": 3,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Chest-supported or free-standing version. Allows very heavy loading for back thickness.",
+  "difficulty": 3,
+  "equipment": [
+   "barbell"
+  ],
+  "garmin_category": "row",
+  "garmin_subtype": 22,
+  "has_animation": true,
+  "instructions": "1. Straddle a barbell with a landmine or T-bar attachment. Hinge forward to ~45°.\n2. Grip handle with both hands; row toward lower chest, driving elbows back.\n3. Squeeze mid-back at the top; lower under control.\nTip: Use chest support to remove lower back fatigue and focus on the back.",
+  "is_compound": true,
+  "movement_pattern": "pull",
+  "name": "T-Bar Row",
+  "primary_muscles": [
+   "mid_back",
+   "lats"
+  ],
+  "secondary_muscles": [
+   "biceps",
+   "rear_delts",
+   "traps"
+  ],
+  "sport_relevance": {
+   "cycling": 3,
+   "hiking": 2,
+   "mountain_biking": 3,
+   "paddling": 3,
+   "rowing": 3,
+   "running": 2,
+   "strength": 3
+  }
+ },
+ {
+  "cues": [],
+  "description": "Thread-the-needle or seated thoracic rotation. Critical for paddlers and cyclists.",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": "warm_up",
+  "garmin_subtype": 24,
+  "has_animation": true,
+  "instructions": "1. Lie on your back; bend knees to 90° with feet flat.\n2. Place hands behind head; perform a gentle crunch while simultaneously rotating one shoulder toward the opposite knee.\n3. Hold briefly; return to centre.\n4. Switch sides.\nTip: This mobilises the thoracic spine — important for cyclists who get stiff in this area.",
+  "is_compound": false,
+  "movement_pattern": "rotation",
+  "name": "Thoracic Rotation Stretch",
+  "primary_muscles": [
+   "thoracic_spine"
+  ],
+  "secondary_muscles": [
+   "upper_back",
+   "shoulders"
+  ],
+  "sport_relevance": {
+   "climbing": 3,
+   "cycling": 3,
+   "paddling": 3,
+   "rowing": 3
+  }
+ },
+ {
+  "cues": [],
+  "description": "Demanding hanging core exercise requiring hip flexor strength and grip endurance.",
+  "difficulty": 3,
+  "equipment": [
+   "pullup_bar"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Hang from a pull-up bar with hands slightly wider than shoulders.\n2. Brace core; bring feet up until they touch the bar between your hands.\n3. Lower under control, minimising swing.\n4. If swinging, come to a dead hang between reps.\nTip: Work through hanging knee raises and hanging leg raises before attempting this.",
+  "is_compound": false,
+  "movement_pattern": "isometric",
+  "name": "Toes to Bar",
+  "primary_muscles": [
+   "abs",
+   "hip_flexors"
+  ],
+  "secondary_muscles": [
+   "lats",
+   "forearms",
+   "obliques"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 2,
+   "mountain_biking": 2,
+   "running": 3,
+   "strength": 3
+  }
+ },
+ {
+  "cues": [],
+  "description": "Hex bar deadlift — reduced lower-back stress; great for athletes new to barbell pulling.",
+  "difficulty": 2,
+  "equipment": [
+   "barbell"
+  ],
+  "garmin_category": "deadlift",
+  "garmin_subtype": 31,
+  "has_animation": false,
+  "instructions": "1. Step inside the trap bar; feet hip-width apart under the handles.\n2. Hinge down and grip handles; chest up, neutral spine, hips back.\n3. Drive through the floor to stand, keeping bar path vertical.\n4. Hinge back down under control.\nTip: The neutral handle grip eliminates wrist pronation — often more comfortable than straight bar.",
+  "is_compound": true,
+  "movement_pattern": "hinge",
+  "name": "Trap Bar Deadlift",
+  "primary_muscles": [
+   "quads",
+   "glutes",
+   "hamstrings"
+  ],
+  "secondary_muscles": [
+   "lower_back",
+   "traps",
+   "core"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 3,
+   "mountain_biking": 3,
+   "running": 3,
+   "strength": 3
+  }
+ },
+ {
+  "cues": [],
+  "description": "Bench or parallel-bar dip with upright torso targeting triceps.",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": "dip",
+  "garmin_subtype": 0,
+  "has_animation": false,
+  "instructions": "1. Sit on the edge of a bench; hands beside hips, fingers pointing forward.\n2. Slide hips off bench and lower by bending elbows until upper arms are parallel to floor.\n3. Keep torso upright and close to the bench.\n4. Push back up to full arm extension.\nTip: Keep hips close to the bench — moving them out converts this into a chest dip.",
+  "is_compound": true,
+  "movement_pattern": "push",
+  "name": "Tricep Dip",
+  "primary_muscles": [
+   "triceps"
+  ],
+  "secondary_muscles": [
+   "chest",
+   "front_delts"
+  ],
+  "sport_relevance": {
+   "cycling": 1,
+   "hiking": 1,
+   "mountain_biking": 1,
+   "running": 1,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [],
+  "description": "Isolation with peak contraction at full extension. Best done in cable for constant tension.",
+  "difficulty": 1,
+  "equipment": [
+   "dumbbell",
+   "cable"
+  ],
+  "garmin_category": "triceps_extension",
+  "garmin_subtype": 2,
+  "has_animation": true,
+  "instructions": "1. Hinge forward at hips until torso is nearly parallel to floor; support with one hand on a bench.\n2. Hold dumbbell with upper arm parallel to torso and elbow bent at 90°.\n3. Extend forearm straight back until arm is fully extended, squeezing the tricep.\n4. Lower under control back to 90°.\nTip: Keep elbow pinned to your side — any movement defeats the purpose.",
+  "is_compound": false,
+  "movement_pattern": "push",
+  "name": "Tricep Kickback",
+  "primary_muscles": [
+   "triceps"
+  ],
+  "secondary_muscles": [],
+  "sport_relevance": {
+   "cycling": 1,
+   "hiking": 1,
+   "mountain_biking": 1,
+   "running": 1,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [
+   "Elbows tight to your body",
+   "Extend fully, pause",
+   "Control the way up"
+  ],
+  "description": "Cable triceps pushdown. Antagonist to pull-up/row movements; useful for elbow health in climbers.",
+  "difficulty": 1,
+  "equipment": [
+   "cable",
+   "machine"
+  ],
+  "garmin_category": "triceps_extension",
+  "garmin_subtype": 39,
+  "has_animation": true,
+  "instructions": "1. Set a cable at a low pulley; attach a rope. Stand with the rope handle overhead, facing the machine.\n2. Pull the rope down to one side behind your head (tricep overhead extension).\nTip: Works the tricep long head effectively due to the overhead stretched position.",
+  "is_compound": false,
+  "movement_pattern": "isolation",
+  "name": "Triceps Pushdown",
+  "primary_muscles": [
+   "triceps"
+  ],
+  "secondary_muscles": [],
+  "sport_relevance": {
+   "climbing": 2,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Vertical jump with knee tuck — builds explosive hip flexion and leg power.",
+  "difficulty": 2,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Stand with feet hip-width apart; load into a slight squat.\n2. Explode up, driving knees up toward your chest at the peak of the jump.\n3. Land softly on the balls of your feet and immediately reload for the next rep.\nTip: Land quietly — emphasises soft ankles, knees, and hips for injury prevention.",
+  "is_compound": true,
+  "movement_pattern": "plyometric",
+  "name": "Tuck Jump",
+  "primary_muscles": [
+   "quads",
+   "calves",
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "hip_flexors",
+   "core"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 2,
+   "mountain_biking": 2,
+   "running": 3,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Trap and lateral delt builder. Use moderate weight — internal rotation at top can stress AC joint.",
+  "difficulty": 2,
+  "equipment": [
+   "barbell",
+   "dumbbell",
+   "cable"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Hold barbell or dumbbells at hip level with an overhand grip, hands shoulder-width or narrower.\n2. Pull elbows up and out until hands reach chin height; elbows stay higher than hands throughout.\n3. Pause briefly then lower under control.\nTip: Keep the bar close to your body. Stop if you feel any shoulder pinching.",
+  "is_compound": true,
+  "movement_pattern": "pull",
+  "name": "Upright Row",
+  "primary_muscles": [
+   "side_delts",
+   "traps"
+  ],
+  "secondary_muscles": [
+   "front_delts",
+   "biceps"
+  ],
+  "sport_relevance": {
+   "cycling": 1,
+   "hiking": 1,
+   "mountain_biking": 1,
+   "running": 1,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Lying, simultaneously lift legs + torso to V.",
+  "difficulty": 2,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": "sit_up",
+  "garmin_subtype": 31,
+  "has_animation": true,
+  "instructions": null,
+  "is_compound": false,
+  "movement_pattern": "isolation",
+  "name": "V-up",
+  "primary_muscles": [
+   "abs",
+   "hip_flexors"
+  ],
+  "secondary_muscles": [],
+  "sport_relevance": {
+   "generic": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Full-body crunch reaching hands toward toes simultaneously.",
+  "difficulty": 2,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Lie flat with arms extended overhead and legs straight.\n2. Simultaneously lift legs and torso, reaching hands toward toes at the top.\n3. Your body forms a \"V\" shape at the peak.\n4. Lower under control back to the starting position.\nTip: Keep legs straight throughout; bend them if the full version is too difficult.",
+  "is_compound": false,
+  "movement_pattern": "isometric",
+  "name": "V-Up",
+  "primary_muscles": [
+   "abs",
+   "hip_flexors"
+  ],
+  "secondary_muscles": [
+   "obliques"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 2,
+   "mountain_biking": 2,
+   "running": 2,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Dynamic lunge pattern with balance challenge. Good carry-over to trail and hiking.",
+  "difficulty": 2,
+  "equipment": [
+   "bodyweight",
+   "dumbbell",
+   "barbell"
+  ],
+  "garmin_category": "lunge",
+  "garmin_subtype": 9,
+  "has_animation": true,
+  "instructions": "1. Step forward with one foot, dropping the rear knee toward the floor.\n2. Push off the rear foot and bring it forward to the next lunge step.\n3. Continue alternating legs for the prescribed distance or reps.\nTip: Stay tall — avoid leaning forward. Use dumbbells to increase difficulty.",
+  "is_compound": true,
+  "movement_pattern": "squat",
+  "name": "Walking Lunge",
+  "primary_muscles": [
+   "quads",
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "hamstrings",
+   "calves",
+   "core"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 3,
+   "mountain_biking": 3,
+   "running": 3,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Isometric quad endurance. Excellent for cyclists — mimics seated climbing position.",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Stand with back against a smooth wall; feet 2 feet from the wall.\n2. Slide down until thighs are parallel to the floor (90° knee angle).\n3. Hold position with arms at sides or crossed.\n4. Breathe steadily; time the hold.\nTip: Add weight on thighs or a resistance band around knees to progress.",
+  "is_compound": true,
+  "movement_pattern": "isometric",
+  "name": "Wall Sit",
+  "primary_muscles": [
+   "quads",
+   "glutes"
+  ],
+  "secondary_muscles": [
+   "calves",
+   "hamstrings"
+  ],
+  "sport_relevance": {
+   "cycling": 3,
+   "hiking": 3,
+   "mountain_biking": 3,
+   "running": 2,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [],
+  "description": "Add weight via belt once bodyweight pull-ups become easy. Primary climbing strength builder (ES 0.91 for RFD).",
+  "difficulty": 5,
+  "equipment": [
+   "pullup_bar"
+  ],
+  "garmin_category": "pull_up",
+  "garmin_subtype": 24,
+  "has_animation": true,
+  "instructions": "1. Grip a pull-up bar with hands slightly wider than shoulders; add weight using a belt.\n2. Dead hang; pull chin above the bar.\n3. Lower under full control.\nTip: Use 2.5–5 kg increments. The eccentric is as important as the concentric for strength.",
+  "is_compound": true,
+  "movement_pattern": "pull",
+  "name": "Weighted Pull-Up",
+  "primary_muscles": [
+   "lats",
+   "biceps"
+  ],
+  "secondary_muscles": [
+   "upper_back",
+   "shoulders",
+   "core"
+  ],
+  "sport_relevance": {
+   "climbing": 4,
+   "strength": 3
+  }
+ },
+ {
+  "cues": [],
+  "description": "Rotational power movement — sport-specific for cyclists, runners, and hikers.",
+  "difficulty": 2,
+  "equipment": [
+   "cable",
+   "dumbbell",
+   "band"
+  ],
+  "garmin_category": "woodchop",
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Set cable to high position (or low for upward chop). Stand sideways.\n2. Grip handle with both hands; arms extended.\n3. Pull the cable diagonally across your body from high-to-low (or low-to-high), rotating through the core.\n4. Control the return; hips and shoulders rotate together.\nTip: Drive through the legs and hips — this is a full-body rotation, not just arms.",
+  "is_compound": true,
+  "movement_pattern": "rotation",
+  "name": "Woodchop",
+  "primary_muscles": [
+   "obliques",
+   "core"
+  ],
+  "secondary_muscles": [
+   "shoulders",
+   "hips",
+   "lats"
+  ],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 2,
+   "mountain_biking": 3,
+   "running": 3,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [],
+  "description": "Full-body mobility flow hitting hips, thoracic spine, and hamstrings in one movement.",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Step into a deep lunge, front foot flat, rear knee down.\n2. Place the same-side hand as the front foot on the floor inside the foot.\n3. Rotate the opposite elbow toward the ceiling, opening the thoracic spine.\n4. Straighten the front leg for a hamstring stretch, then return.\nTip: Move through this slowly — 5 breaths in each position. Make it a warm-up ritual.",
+  "is_compound": true,
+  "movement_pattern": "isometric",
+  "name": "World's Greatest Stretch",
+  "primary_muscles": [
+   "hip_flexors",
+   "glutes",
+   "thoracic_spine"
+  ],
+  "secondary_muscles": [
+   "hamstrings",
+   "chest",
+   "hip_external_rotators"
+  ],
+  "sport_relevance": {
+   "cycling": 3,
+   "hiking": 3,
+   "mountain_biking": 3,
+   "running": 3,
+   "strength": 3
+  }
+ },
+ {
+  "cues": [],
+  "description": "Flexor forearm strength for grip. Important for mountain bikers and climbers.",
+  "difficulty": 1,
+  "equipment": [
+   "dumbbell",
+   "barbell"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Sit on a bench; forearms resting on thighs with wrists at the knee edge, palms facing up.\n2. Hold a dumbbell and let it roll to the fingertips.\n3. Curl the wrist upward fully, contracting the forearm flexors.\n4. Lower under control.\nTip: Pair with reverse wrist curls for balanced flexor/extensor development.",
+  "is_compound": false,
+  "movement_pattern": "isolation",
+  "name": "Wrist Curl",
+  "primary_muscles": [
+   "forearms"
+  ],
+  "secondary_muscles": [],
+  "sport_relevance": {
+   "cycling": 2,
+   "hiking": 2,
+   "mountain_biking": 3,
+   "running": 1,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [
+   "Arms stay straight",
+   "Shoulders away from ears"
+  ],
+  "description": "Hang and pull only the shoulder blades down — the first rung toward a pull-up, and gentle on the shoulders.",
+  "difficulty": 1,
+  "equipment": [
+   "pullup_bar"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Hang from the bar with arms straight, hands just wider than shoulders.\n2. Without bending your elbows, pull your shoulder blades down and together so your body rises a few centimetres.\n3. Lower slowly back to a full hang.\nTip: Feet on a chair take some of your weight if a full hang is too much.",
+  "is_compound": true,
+  "movement_pattern": "pull",
+  "name": "Scapular Pull-Up",
+  "primary_muscles": [
+   "lats",
+   "upper_back"
+  ],
+  "secondary_muscles": [
+   "forearms",
+   "biceps"
+  ],
+  "sport_relevance": {
+   "climbing": 3,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [
+   "Chin over the bar to start",
+   "Slow and controlled on the way down"
+  ],
+  "description": "Jump or step to the top of a pull-up and lower for 3–5 seconds — builds the strength for the first unassisted rep.",
+  "difficulty": 2,
+  "equipment": [
+   "pullup_bar"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Stand on a box or chair so your chin is over the bar.\n2. Lower yourself as slowly as you can, 3–5 seconds, to a full hang.\n3. Step back up and repeat.\nTip: When you can lower for 5 seconds, try a full pull-up.",
+  "is_compound": true,
+  "movement_pattern": "pull",
+  "name": "Negative Pull-Up",
+  "primary_muscles": [
+   "lats",
+   "biceps"
+  ],
+  "secondary_muscles": [
+   "upper_back",
+   "forearms",
+   "core"
+  ],
+  "sport_relevance": {
+   "climbing": 3,
+   "paddling": 2,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [
+   "Full hang at the bottom",
+   "Pull elbows toward your hips"
+  ],
+  "description": "A resistance band takes part of your weight so you can practise the full pull-up range.",
+  "difficulty": 2,
+  "equipment": [
+   "pullup_bar"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Loop a resistance band over the bar and set a knee or foot in it.\n2. Grip just wider than shoulders and pull your chin over the bar.\n3. Lower under control to a full hang.\nTip: Use a lighter band every few weeks as you get stronger.",
+  "is_compound": true,
+  "movement_pattern": "pull",
+  "name": "Band-Assisted Pull-Up",
+  "primary_muscles": [
+   "lats",
+   "biceps"
+  ],
+  "secondary_muscles": [
+   "upper_back",
+   "rear_delts"
+  ],
+  "sport_relevance": {
+   "climbing": 3,
+   "paddling": 2,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [
+   "Elbows to ribs",
+   "Chest tall"
+  ],
+  "description": "A vertical pull with a band anchored overhead — lat work with no bar at all.",
+  "difficulty": 1,
+  "equipment": [
+   "band"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Anchor a band above head height (a door anchor works) and kneel facing it.\n2. Hold the band with arms extended and pull your elbows down toward your ribs.\n3. Return slowly to full extension.\nTip: Step back for more tension.",
+  "is_compound": true,
+  "movement_pattern": "pull",
+  "name": "Band Lat Pulldown",
+  "primary_muscles": [
+   "lats",
+   "upper_back"
+  ],
+  "secondary_muscles": [
+   "biceps",
+   "rear_delts"
+  ],
+  "sport_relevance": {
+   "climbing": 2,
+   "cycling": 2,
+   "paddling": 3,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [
+   "Soft elbows",
+   "Ribs down"
+  ],
+  "description": "Lat and chest lengthening lift over the head with one dumbbell.",
+  "difficulty": 1,
+  "equipment": [
+   "dumbbell"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Lie across a bench (or lie on the floor) holding one dumbbell over your chest with both hands.\n2. With soft elbows, lower it in an arc behind your head until you feel your lats stretch.\n3. Pull it back over your chest.\nTip: Keep your ribs down; don't arch your lower back.",
+  "is_compound": false,
+  "movement_pattern": "pull",
+  "name": "Dumbbell Pullover",
+  "primary_muscles": [
+   "lats"
+  ],
+  "secondary_muscles": [
+   "chest",
+   "triceps"
+  ],
+  "sport_relevance": {
+   "paddling": 2,
+   "strength": 2
+  }
+ },
+ {
+  "cues": [
+   "Elbows to hips",
+   "Neck long"
+  ],
+  "description": "Lying face down, sweep the arms from overhead to the hips — lat work with no equipment.",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Lie face down with arms extended overhead, forehead resting near the floor.\n2. Lift your arms and chest slightly and pull your elbows down toward your hips, as if pulling a bar to your chest.\n3. Reach forward again with control.\nTip: Keep your neck long; move from the shoulder blades.",
+  "is_compound": true,
+  "movement_pattern": "pull",
+  "name": "Prone Lat Pulldown",
+  "primary_muscles": [
+   "lats",
+   "upper_back"
+  ],
+  "secondary_muscles": [
+   "rear_delts"
+  ],
+  "sport_relevance": {
+   "climbing": 1,
+   "strength": 1
+  }
+ },
+ {
+  "cues": [
+   "Thumbs up",
+   "Squeeze the shoulder blades"
+  ],
+  "description": "Face-down raises that train the mid-back and rear shoulders with no equipment.",
+  "difficulty": 1,
+  "equipment": [
+   "bodyweight"
+  ],
+  "garmin_category": null,
+  "garmin_subtype": null,
+  "has_animation": false,
+  "instructions": "1. Lie face down with arms in a Y overhead.\n2. Lift the arms a few centimetres, hold one second, and lower.\n3. Repeat with the arms out in a T, then bent in a W.\nTip: Thumbs up, and squeeze the shoulder blades together each rep.",
+  "is_compound": true,
+  "movement_pattern": "pull",
+  "name": "Prone Y-T-W Raise",
+  "primary_muscles": [
+   "upper_back",
+   "rear_delts"
+  ],
+  "secondary_muscles": [
+   "mid_back",
+   "traps"
+  ],
+  "sport_relevance": {
+   "paddling": 2,
+   "strength": 1
+  }
+ }
+]

@@ -1,0 +1,17 @@
+{
+  "key": "posterior_chain_foundation",
+  "name": "Posterior Chain Foundation",
+  "tagline": "Own your hinge, build a bulletproof backside.",
+  "intent": "A hinge-led lower session that strengthens hamstrings, glutes and the whole posterior chain — the engine for running, jumping and injury resilience.",
+  "splits": ["lower_a", "lower_b", "supp_lower"],
+  "sports": null,
+  "tier_range": [2, 5],
+  "phases": ["any"],
+  "main": [
+    { "slot": "hinge", "scheme": { "sets": 4, "reps": 6, "rest_seconds": 180 } },
+    { "slot": "squat", "scheme": null }
+  ],
+  "supersets": [["calf", "core_brace"]],
+  "finisher": "carry_core",
+  "cooldown_theme": "posterior"
+}

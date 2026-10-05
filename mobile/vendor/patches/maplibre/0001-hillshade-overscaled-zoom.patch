@@ -1,0 +1,28 @@
+diff --git a/src/mbgl/renderer/layers/hillshade_prepare_layer_tweaker.cpp b/src/mbgl/renderer/layers/hillshade_prepare_layer_tweaker.cpp
+index f62f464..773be40 100644
+--- a/src/mbgl/renderer/layers/hillshade_prepare_layer_tweaker.cpp
++++ b/src/mbgl/renderer/layers/hillshade_prepare_layer_tweaker.cpp
+@@ -43,7 +43,6 @@ void HillshadePrepareLayerTweaker::execute(LayerGroupBase& layerGroup, const Pai
+         if (!drawable.getTileID() || !drawable.getData() || !checkTweakDrawable(drawable)) {
+             return;
+         }
+-        const UnwrappedTileID tileID = drawable.getTileID()->toUnwrapped();
+         const auto& drawableData = static_cast<const gfx::HillshadePrepareDrawableData&>(*drawable.getData());
+ 
+         mat4 matrix;
+@@ -54,7 +53,14 @@ void HillshadePrepareLayerTweaker::execute(LayerGroupBase& layerGroup, const Pai
+         const HillshadePrepareTilePropsUBO tilePropsUBO = {
+             .unpack = getUnpackVector(drawableData.encoding),
+             .dimension = {static_cast<float>(drawableData.stride), static_cast<float>(drawableData.stride)},
+-            .zoom = static_cast<float>(tileID.canonical.z),
++            // Overscaled, not canonical. MapLibre GL JS feeds `overscaledZ`
++            // here, and the shader's pixel-slope-to-world-slope conversion is a
++            // function of this value — so a DEM tile shown past its source's
++            // maxzoom shades several times weaker on Native than in the browser
++            // from the very same style. Tracks draws relief from a z0-7 planet
++            // DEM overzoomed across the whole detail band, which is exactly that
++            // case, and the two clients disagreed visibly.
++            .zoom = static_cast<float>(drawable.getTileID()->overscaledZ),
+             .maxzoom = static_cast<float>(drawableData.maxzoom)};
+ 
+         auto& drawableUniforms = drawable.mutableUniformBuffers();

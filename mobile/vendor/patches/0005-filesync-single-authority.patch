@@ -1,0 +1,31 @@
+diff --git a/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/ProtocolBufferHandler.java b/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/ProtocolBufferHandler.java
+index 08114bb..e3b1cb7 100644
+--- a/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/ProtocolBufferHandler.java
++++ b/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/ProtocolBufferHandler.java
+@@ -211,7 +211,13 @@ public class ProtocolBufferHandler implements MessageHandler {
+                 }
+             }
+             if (smart.hasFileSyncService()) {
+-                if (deviceSupport.getDevicePrefs().getBoolean("new_sync_protocol", false)) {
++                // Tracks: ask the support class rather than re-reading the
++                // preference. Which protocol a connection speaks is now decided
++                // once, per connection, from the watch's own capabilities — so
++                // a raw preference read here answers a different question and
++                // gets it wrong on every watch that never set one. See
++                // vendor/patches/0005-filesync-single-authority.patch.
++                if (deviceSupport.newSyncProtocol()) {
+                     processed = true;
+                     final GdiFileSyncService.FileSyncService response = fileSyncServiceHandler.handle(smart.getFileSyncService());
+                     if (response != null) {
+@@ -222,7 +228,10 @@ public class ProtocolBufferHandler implements MessageHandler {
+                 }
+             }
+             if (smart.hasEcgService()) {
+-                if (deviceSupport.getDevicePrefs().getBoolean("new_sync_protocol", false)) {
++                // Tracks: same single authority as above. Upstream gates ECG on
++                // the file-sync preference because both arrived with the same
++                // firmware generation, and that reading is preserved here.
++                if (deviceSupport.newSyncProtocol()) {
+                     processed = true;
+                     final GdiEcgService.EcgService response = ecgServiceHandler.handle(smart.getEcgService());
+                     if (response != null) {
