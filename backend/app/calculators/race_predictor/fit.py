@@ -78,6 +78,7 @@ def generate_race_fit(
         _write_file_id,
         _write_steps,
         _write_workout_mesg,
+        finish_encoder,
     )
     from garmin_fit_sdk import Encoder
 
@@ -147,4 +148,4 @@ def generate_race_fit(
     _write_workout_mesg(enc, name=name, sport=sport_v, sub_sport=sub_sport_v,
                         num_valid_steps=len(steps))
     _write_steps(enc, steps)
-    return bytes(enc.close())
+    return finish_encoder(enc)

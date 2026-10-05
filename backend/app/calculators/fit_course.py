@@ -34,6 +34,8 @@ from datetime import datetime, timedelta, timezone
 
 from garmin_fit_sdk import Encoder
 
+from app.calculators.fit_workout import finish_encoder
+
 _PRODUCT_CONNECT = 65534          # Garmin "connect" product sentinel (see fit_workout)
 _FILE_CREATOR_SW_VER = 2609
 _SEMI = 2 ** 31 / 180.0           # degrees → semicircles
@@ -232,4 +234,4 @@ def generate_course_fit(
                 "name":          _fit_str(cp.get("name") or "", 50),
             })
 
-    return bytes(enc.close())
+    return finish_encoder(enc)

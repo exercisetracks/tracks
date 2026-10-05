@@ -1263,7 +1263,7 @@ def generate_workout_fit(name: str, sport: str, plan_steps: list[dict],
     _write_workout_mesg(enc, name=name, sport=sport_v, sub_sport=sub_sport_v,
                         num_valid_steps=len(steps), description=description)
     _write_steps(enc, steps)
-    return bytes(enc.close())
+    return finish_encoder(enc)
 
 
 # ── Public API: strength / flexibility / yoga workout ────────────────────────
@@ -1342,7 +1342,7 @@ def generate_strength_workout_fit(name: str,
                         modern_format=is_yoga_routing)
     _write_steps(enc, steps)
     _write_exercise_titles(enc, titles)
-    return bytes(enc.close())
+    return finish_encoder(enc)
 
 
 # ── Public API: Schedule.fit (training calendar entries) ─────────────────────
@@ -1351,6 +1351,26 @@ _FIT_EPOCH_UNIX = 631065600  # 1989-12-31T00:00:00Z
 
 _CRC_TABLE = (0x0000, 0xCC01, 0xD801, 0x1400, 0xF001, 0x3C00, 0x2800, 0xE401,
               0xA001, 0x6C00, 0x7800, 0xB401, 0x5000, 0x9C01, 0x8801, 0x4400)
+
+
+# The profile version every Encoder-built file declares. Pinned rather than
+# taken from garmin_fit_sdk, which stamps its own: the phone builds these same
+# files byte for byte (mobile/core/.../fit/WorkoutFit.kt, held to the server by
+# shared golden bytes), so an SDK upgrade must not change a header on one side
+# only. The number only labels the profile; the messages written here exist,
+# unchanged, in every profile since.
+SDK_FILE_PROFILE_VERSION = 21208
+
+
+def finish_encoder(enc) -> bytes:
+    """Close a garmin_fit_sdk Encoder and return its bytes with the header's
+    profile version set to SDK_FILE_PROFILE_VERSION, header and file CRCs
+    recomputed to match."""
+    data = bytearray(enc.close())
+    struct.pack_into("<H", data, 2, SDK_FILE_PROFILE_VERSION)
+    struct.pack_into("<H", data, 12, _fit_crc(bytes(data[:12])))
+    struct.pack_into("<H", data, len(data) - 2, _fit_crc(bytes(data[:-2])))
+    return bytes(data)
 
 
 def _fit_crc(data: bytes, crc: int = 0) -> int:
