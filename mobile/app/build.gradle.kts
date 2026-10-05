@@ -25,14 +25,13 @@ android {
         minSdk = 26
         targetSdk = 35
         // major * 10000 + minor * 100 + patch, so the code always climbs with
-        // the name and either one can be read from the other — with one
-        // exception. 1.0.2 was published after 1.1.0 (10100) had already
-        // reached phones, and Android refuses to install a lower code over a
-        // higher one without an uninstall, which loses the app's data. So
-        // 1.0.2 is 10101, and the next release must be above it: 1.1.2 or
-        // later, or a code bumped by hand.
-        versionCode = 10101
-        versionName = "1.0.2"
+        // the name and either one can be read from the other. One release broke
+        // the rule: 1.0.2 shipped after 1.1.0 (10100) and so was given 10101,
+        // because Android refuses a lower code over a higher one without an
+        // uninstall, which loses the app's data. Every version from 1.1.2 on
+        // follows the formula again, and is above it.
+        versionCode = 10102
+        versionName = "1.1.2"
     }
 
     /**
