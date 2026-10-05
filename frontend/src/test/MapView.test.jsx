@@ -22,11 +22,6 @@ vi.mock('maplibre-gl', () => ({
   addProtocol: mockMaplibreGL.addProtocol,
 }));
 
-vi.mock('pmtiles', () => ({
-  Protocol: vi.fn(() => ({ tile: vi.fn() })),
-  __esModule: true,
-}));
-
 let _protocolFlag = false;
 
 vi.mock('../pages/maps/hooks/useMapInit', async () => {

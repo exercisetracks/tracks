@@ -43,8 +43,6 @@ export default defineConfig({
           if (id.includes("node_modules/maplibre-gl")) return "maplibre";
           // Heavy, independently-used libs — split out of the main entry chunk
           // so they cache separately and don't bloat every page's initial load.
-          if (id.includes("node_modules/proj4")) return "vendor-proj4";
-          if (id.includes("node_modules/pmtiles")) return "vendor-pmtiles";
           if (id.includes("node_modules/@dnd-kit")) return "vendor-dndkit";
           if (id.includes("node_modules/react-router") || id.includes("node_modules/@remix-run")) {
             return "vendor-router";

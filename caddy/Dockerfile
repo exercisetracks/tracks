@@ -10,7 +10,7 @@
 # The root .dockerignore keeps everything else out of the build context.
 
 # Node 22: see frontend/Dockerfile for why nothing older can build this.
-FROM node:22-alpine AS build
+FROM node:24-alpine AS build
 WORKDIR /app
 RUN apk add --no-cache libc6-compat
 # Lockfile and patches before the install, for the reasons frontend/Dockerfile

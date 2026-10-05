@@ -11,7 +11,7 @@
 // coordinate is flipped at the MapLibre boundary.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import maplibregl from "maplibre-gl";
+import maplibregl from "../../lib/maplibre";
 import MapLibreMap from "../map/MapLibreMap";
 
 // Inline SVG for the weather pin marker (violet teardrop with a white dot).

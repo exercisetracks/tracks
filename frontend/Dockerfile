@@ -6,7 +6,7 @@
 # all. It went unnoticed because `npm run dev` is plain `vite` and never
 # invokes build:map-style: development worked while the production image could
 # not be built, which is the failure that hides longest.
-FROM node:22-alpine
+FROM node:24-alpine
 
 WORKDIR /app
 

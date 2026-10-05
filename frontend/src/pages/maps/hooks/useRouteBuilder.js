@@ -9,7 +9,7 @@
 // controls the map UI binds to. Accent colour is resolved from the theme CSS
 // var since MapLibre's colour parser doesn't understand CSS var().
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
-import maplibregl from "maplibre-gl";
+import maplibregl from "../../../lib/maplibre";
 import { api } from "../../../api/client";
 
 const ROUTE_SRC = "route";

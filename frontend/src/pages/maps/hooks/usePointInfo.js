@@ -6,7 +6,7 @@
 // (elevation, weather, place) from the backend. Returns the selected-point state
 // + clear control that PointInfoPanel renders.
 import { useEffect, useRef, useState, useCallback } from "react";
-import maplibregl from "maplibre-gl";
+import maplibregl from "../../../lib/maplibre";
 import { api } from "../../../api/client";
 
 // Trail/route line layers to read "nearby trails" from (client-side, from the

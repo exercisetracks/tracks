@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import MaplibreGeocoder from "@maplibre/maplibre-gl-geocoder";
 import "@maplibre/maplibre-gl-geocoder/dist/maplibre-gl-geocoder.css";
-import maplibregl from "maplibre-gl";
+import maplibregl from "../../../lib/maplibre";
 import { api } from "../../../api/client";
 
 function getBbox(map) {

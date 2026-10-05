@@ -6,7 +6,7 @@
 // forwardRef) so the parent activity view can drive hover/cursor sync between
 // the map and the activity graphs.
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
-import maplibregl from "maplibre-gl";
+import maplibregl from "../lib/maplibre";
 import { useTheme } from "../context/ThemeContext";
 import MapLibreMap from "./map/MapLibreMap";
 
