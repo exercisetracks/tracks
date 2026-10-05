@@ -42,6 +42,9 @@ public final class MatchedWaypoint {
     dos.writeInt(waypoint.ilat);
     dos.writeInt(waypoint.ilon);
     dos.writeDouble(radius);
+    dos.writeByte(wpttype);
+    dos.writeShort(name.length());
+    dos.writeBytes(name);
   }
 
   public static MatchedWaypoint readFromStream(DataInput dis) throws IOException {
@@ -60,6 +63,11 @@ public final class MatchedWaypoint {
     mwp.waypoint.ilat = dis.readInt();
     mwp.waypoint.ilon = dis.readInt();
     mwp.radius = dis.readDouble();
+    mwp.wpttype = dis.readByte();
+    int len = dis.readShort();
+    byte[] bytes = new byte[len];
+    dis.readFully(bytes);
+    mwp.name = new String(bytes);
     return mwp;
   }
 

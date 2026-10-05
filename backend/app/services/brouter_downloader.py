@@ -28,10 +28,14 @@ logger = logging.getLogger(__name__)
 
 SEGMENTS_URL = "https://brouter.de/brouter/segments4"
 
-# Profiles come from the BRouter source tree rather than brouter.de, which is
-# also where `brouter/Dockerfile` gets the container's copies — same upstream,
-# same revision policy, so the phone and the server weigh trails identically.
-PROFILES_URL = "https://raw.githubusercontent.com/abrensch/brouter/master/misc/profiles2"
+# Profiles come from the BRouter source tree at the release tag the server
+# container runs (brouter/Dockerfile) and the phone vendors
+# (mobile/routing-brouter/VENDORED.md), so all three weigh trails identically.
+# Not master: master moves ahead of any release, and a lookups.dat newer than
+# the engine reading it is how a phone stops routing after an unrelated push
+# upstream. Bump all three together.
+BROUTER_VERSION = "1.7.10"
+PROFILES_URL = f"https://raw.githubusercontent.com/abrensch/brouter/v{BROUTER_VERSION}/misc/profiles2"
 
 # What a phone needs to route offline, and no more. `lookups.dat` is the tag
 # dictionary the rd5 files are encoded against and is not optional; `trekking`

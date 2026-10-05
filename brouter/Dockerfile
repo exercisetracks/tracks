@@ -12,14 +12,14 @@
 # A Java runtime holding only what BRouter uses (`jdeps --print-module-deps`
 # on the jar), about a quarter of a full JRE. java.desktop is among them for
 # AWT classes the server never draws with; it runs headless.
-FROM eclipse-temurin:21-jdk AS jre
+FROM eclipse-temurin:25-jdk AS jre
 RUN jlink --add-modules java.base,java.desktop,java.sql,jdk.unsupported \
       --strip-debug --no-man-pages --no-header-files --compress=zip-6 \
       --output /opt/brouter/jre
 
 FROM debian:trixie-slim AS fetch
-ARG BROUTER_VERSION=1.7.9
-ARG BROUTER_SHA256=5f8ea4acc72d791589cbd7453c472df12ab955e2ad42e6ac84339ed883ce7987
+ARG BROUTER_VERSION=1.7.10
+ARG BROUTER_SHA256=023fec3ba997758e8cd7ab9e1bae52e962af3f00b57683e3de86b84ffad01532
 RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates unzip \
     && curl -fsSL -o /tmp/brouter.zip \
        "https://github.com/abrensch/brouter/releases/download/v${BROUTER_VERSION}/brouter-${BROUTER_VERSION}.zip" \

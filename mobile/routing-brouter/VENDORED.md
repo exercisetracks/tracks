@@ -11,10 +11,10 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 | | |
 |---|---|
 | Upstream | https://github.com/abrensch/brouter |
-| Version | `v1.7.9` |
-| Pulled | 2026-08-17 |
+| Version | `v1.7.10` |
+| Pulled | 2026-10-05 |
 | Java files | 101 |
-| Lines | 19306 |
+| Lines | 19327 |
 | Licence | MIT |
 
 Everything under `src/main/java/btools/` is BRouter's work, kept under its

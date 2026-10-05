@@ -11,10 +11,10 @@
 # file copy and upstream diffs still apply.
 #
 # Usage:
-#   vendor/pull-brouter.sh /path/to/brouter v1.7.9
+#   vendor/pull-brouter.sh /path/to/brouter v1.7.10
 #
 # A checkout is easy to get:
-#   git clone --depth 1 --branch v1.7.9 https://github.com/abrensch/brouter
+#   git clone --depth 1 --branch v1.7.10 https://github.com/abrensch/brouter
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

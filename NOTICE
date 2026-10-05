@@ -75,7 +75,7 @@ phone can plan a trail route with no network at all.
 
     Licensed under the MIT License.
 
-Vendored from BRouter v1.7.9 under mobile/routing-brouter/src/main/java/btools/,
+Vendored from BRouter v1.7.10 under mobile/routing-brouter/src/main/java/btools/,
 with the file list and the reasons for the carve-outs in
 mobile/vendor/brouter.manifest. Refresh with mobile/vendor/pull-brouter.sh. As
 with Gadgetbridge, the sources keep their original package names and carry no
