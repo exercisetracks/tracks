@@ -25,7 +25,7 @@ Bump `MIN_CLIENT_API_VERSION` only when you remove something old clients
 depend on — that's a deliberate act of dropping support, not a side effect.
 """
 
-SERVER_VERSION = "1.1.2"
+SERVER_VERSION = "1.1.3"
 
 # 2: /sync/push + /sync/pull replace /sync/delta and the old offline write
 # paths outright (docs/offline-first.md: no backwards compatibility), so a
