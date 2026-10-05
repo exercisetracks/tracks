@@ -23,7 +23,7 @@ from __future__ import annotations
 from datetime import date, datetime, time, timezone
 from decimal import Decimal
 
-from sqlalchemy import Date, DateTime, Numeric, Time, select
+from sqlalchemy import Date, DateTime, Float, Numeric, Time, select
 from sqlalchemy.orm import Session
 
 from app.models.activity import Activity, Device, User, UserDevice
@@ -82,7 +82,9 @@ def _from_wire(column, value):
             return time.fromisoformat(str(value))
     except ValueError as exc:
         raise ValueError(f"{column.name}: {exc}") from exc
-    if isinstance(t, Numeric) and not isinstance(value, (int, float)):
+    # Float named alongside Numeric: since SQLAlchemy 2.1 it is no longer a
+    # subclass, and without it a float column took any value unchecked.
+    if isinstance(t, (Numeric, Float)) and not isinstance(value, (int, float)):
         raise ValueError(f"{column.name}: expected a number")
     return value
 

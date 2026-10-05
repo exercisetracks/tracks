@@ -2,4 +2,4 @@ pytest
 fakeredis
 # The oracle for app.services.contour_generator.contours.gaussian_blur, which
 # replaced scipy in the image (140 MB for one function). Tests only.
-scipy==1.17.1
+scipy==1.18.1

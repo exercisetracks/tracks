@@ -7,9 +7,9 @@
 # multi-layer region overlay.pmtiles, and tile-join stitches per-region overlays
 # into master_overlay.pmtiles. Only the two binaries are copied into the runtime
 # image (the build toolchain is discarded).
-FROM debian:bookworm-slim AS tippecanoe
+FROM debian:trixie-slim AS tippecanoe
 ENV DEBIAN_FRONTEND=noninteractive
-ARG TIPPECANOE_REF=2.78.0
+ARG TIPPECANOE_REF=2.79.0
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
        git build-essential libsqlite3-dev zlib1g-dev ca-certificates \
@@ -27,7 +27,7 @@ RUN apt-get update \
 # The release asset is named for the machine (x86_64 / arm64), so it is read
 # from the build's own `uname -m` rather than hard-coded: an arm64 image (a
 # Raspberry Pi, an ARM NAS) otherwise carries an x86 binary that cannot run.
-ARG PMTILES_VERSION=1.30.3
+ARG PMTILES_VERSION=1.31.2
 RUN set -e; apt-get update && apt-get install -y --no-install-recommends curl; \
     arch="$(uname -m)"; if [ "$arch" = "aarch64" ]; then arch=arm64; fi; \
     curl -fsSL -o /tmp/pmtiles.tar.gz \
@@ -52,9 +52,9 @@ RUN set -e; apt-get update && apt-get install -y --no-install-recommends curl; \
 #
 # Same base as the runtime image, so the libmp3lame it links against is the
 # one the runtime installs.
-FROM python:3.12-slim AS ffmpeg
-ARG FFMPEG_VERSION=7.1.5
-ARG FFMPEG_SHA256=de668509caf9e35e3cd162473441fdb29538c6d96ed080292b3cf9e6fc5d558f
+FROM python:3.14-slim AS ffmpeg
+ARG FFMPEG_VERSION=9.0.2
+ARG FFMPEG_SHA256=8c3850283eb25fa026482078a04051e0be17347b09ef81a0849bec15a96e002e
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
        build-essential nasm pkg-config curl ca-certificates xz-utils libmp3lame-dev zlib1g-dev \
@@ -75,7 +75,7 @@ RUN apt-get update \
     && rm -rf /opt/ffmpeg/include /opt/ffmpeg/lib/pkgconfig /opt/ffmpeg/share
 
 # ── runtime image ─────────────────────────────────────────────────────────────
-FROM python:3.12-slim
+FROM python:3.14-slim
 
 ENV DEBIAN_FRONTEND=noninteractive
 

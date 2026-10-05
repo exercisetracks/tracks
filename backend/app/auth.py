@@ -7,7 +7,8 @@ import bcrypt
 import redis
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from jose import JWTError, jwt
+import jwt
+from jwt import InvalidTokenError
 from sqlalchemy.orm import Session
 
 from app.config import settings
@@ -52,7 +53,7 @@ def create_token(user_id: int, sid: str | None = None) -> str:
 
 
 def decode_token(token: str) -> dict:
-    """Raises JWTError on an invalid/expired token — callers decide the HTTP
+    """Raises InvalidTokenError on an invalid/expired token — callers decide the HTTP
     response. Shared by require_auth and require_crypto_session so both
     dependencies agree on exactly what makes a token valid."""
     return jwt.decode(token, settings.jwt_secret, algorithms=[_ALGORITHM])
@@ -130,7 +131,7 @@ def require_auth(
     try:
         payload = decode_token(credentials.credentials)
         user_id = int(payload["sub"])
-    except (JWTError, KeyError, ValueError):
+    except (InvalidTokenError, KeyError, ValueError):
         raise HTTPException(status_code=401, detail="Invalid or expired token")
 
     user = db.get(User, user_id)

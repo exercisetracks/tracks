@@ -251,7 +251,7 @@ class TestRequireCryptoSession:
         """An old-style token minted without create_token's sid param (or a
         forged one) has no session to look up."""
         from fastapi import HTTPException
-        from jose import jwt
+        import jwt
         from app.config import settings
 
         token = jwt.encode({"sub": "1"}, settings.jwt_secret, algorithm="HS256")

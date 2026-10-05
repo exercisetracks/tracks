@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 import logging
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 log = logging.getLogger(__name__)
@@ -73,6 +74,19 @@ class Settings(BaseSettings):
     # app, which does need one). Optional: operators without a Garmin
     # device just leave it unset. See app.services.sync_agent_auth.
     garmin_sync_bootstrap_token: str = ""
+
+    @field_validator("database_url")
+    @classmethod
+    def _pin_postgres_driver(cls, v: str) -> str:
+        # A bare postgresql:// URL means whichever driver SQLAlchemy prefers,
+        # and 2.1 changed that from psycopg2 to psycopg 3. This backend is
+        # psycopg2 throughout (execute_values bulk inserts, COPY through the
+        # raw cursor), and every install's DATABASE_URL — .env and the
+        # all-in-one image's env.sh alike — is a bare postgresql:// URL, so
+        # the driver is named here rather than in each of them.
+        if v.startswith("postgresql://"):
+            return "postgresql+psycopg2://" + v[len("postgresql://"):]
+        return v
 
 
 settings = Settings()

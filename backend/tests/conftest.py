@@ -61,7 +61,15 @@ def _test_database_url() -> str:
     return urlunsplit(parts._replace(path=f"/{parts.path.lstrip('/')}_test"))
 
 
-TEST_DATABASE_URL = _test_database_url()
+def _with_psycopg2(url: str) -> str:
+    """The driver the app pins (see Settings._pin_postgres_driver): a bare
+    postgresql:// URL would get psycopg 3 from SQLAlchemy 2.1."""
+    if url.startswith("postgresql://"):
+        return "postgresql+psycopg2://" + url[len("postgresql://"):]
+    return url
+
+
+TEST_DATABASE_URL = _with_psycopg2(_test_database_url())
 
 # The guard. Everything below truncates and drops; aimed at the real database it
 # would delete a user's activities, sleep and health records. Nothing is

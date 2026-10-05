@@ -57,7 +57,7 @@ const { chromium } = require('playwright');
 
 1. **JWT token**: Generate one or get from `.env` JWT_SECRET. Create with:
    ```python
-   from jose import jwt
+   import jwt  # PyJWT
    from datetime import datetime, timedelta, timezone
    token = jwt.encode(
        {'sub': '1', 'exp': datetime.now(timezone.utc) + timedelta(days=30)},
