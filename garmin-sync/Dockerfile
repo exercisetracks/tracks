@@ -6,7 +6,7 @@
 # Needs privileged mode (or explicit USB device passthrough) in docker-compose
 # so libmtp can open the USB device.
 
-FROM debian:bookworm-slim
+FROM debian:trixie-slim
 
 # Runtime deps:
 #   libmtp9 / libmtp-runtime — ctypes target (libmtp.so.9)
