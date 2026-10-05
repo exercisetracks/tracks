@@ -16,8 +16,8 @@ androidx-activity = "1.9.3"
 androidx-lifecycle = "2.8.7"
 androidx-navigation = "2.8.5"
 androidx-work = "2.10.0"
-androidx-security = "1.1.0-alpha06"
-sqlcipher = "4.6.1"
+androidx-security = "1.1.0"
+sqlcipher = "4.17.0"
 androidx-sqlite = "2.4.0"
 androidx-test = "1.6.1"
 robolectric = "4.14.1"
@@ -25,13 +25,13 @@ robolectric = "4.14.1"
 # without a device — the phone is somebody's phone. Apache-2, Maven Central.
 roborazzi = "1.39.0"
 junit4 = "4.13.2"
-protobuf = "4.29.3"
+protobuf = "4.36.2"
 protobuf-plugin = "0.9.4"
-slf4j = "2.0.16"
+slf4j = "2.0.20"
 androidx-annotation = "1.9.1"
-json = "20250107"
-desugar-jdk-libs = "2.1.3"
-apache-commons = "3.17.0"
+json = "20260814"
+desugar-jdk-libs = "2.1.5"
+apache-commons = "3.21.0"
 androidx-localbroadcastmanager = "1.1.0"
 androidx-core = "1.15.0"
 androidx-media = "1.7.0"
@@ -56,12 +56,12 @@ androidx-fragment = "1.8.9"
 # The libsodium sealed box has no JDK or AndroidX equivalent, and every
 # alternative that does ships a prebuilt .so - which F-Droid will not take.
 # Bouncy Castle is pure Java and has all four primitives the construction needs.
-bouncycastle = "1.78.1"
+bouncycastle = "1.86"
 # The watch-app bundle is one solid xz stream: 93 near-identical Connect IQ
 # builds are 6.8 MB compressed one by one and 0.2 MB compressed together, and
 # the JDK has no decoder for anything with a window wider than 32 KB. Pure
 # Java, 0BSD, on Maven Central. See watchapp/devices.py.
-xz = "1.10"
+xz = "1.12"
 
 [libraries]
 xz = { module = "org.tukaani:xz", version.ref = "xz" }
