@@ -157,15 +157,7 @@ export default function PlanCalendarSection({ goalId, refreshKey, imperial = fal
             <button
               onClick={handleSync}
               disabled={syncing}
-              className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors disabled:opacity-50 ${
-                syncStatus === "ok"
-                  ? "bg-accent-50 dark:bg-accent-900/30 border-accent-200 dark:border-accent-800 text-accent-700 dark:text-accent-400"
-                  : syncStatus === "pending"
-                  ? "bg-amber-50 dark:bg-amber-900/30 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400"
-                  : syncStatus === "error"
-                  ? "bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800 text-red-700 dark:text-red-400"
-                  : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
-              }`}
+              className={`btn btn-sm ${syncStatus === "error" ? "btn-danger" : syncStatus === "pending" ? "btn-neutral" : "btn-tonal"}`}
             >
               {syncing ? "Requesting…" : syncStatus === "ok" ? "Synced ✓" : syncStatus === "pending" ? "Syncing…" : syncStatus === "error" ? "Failed" : "Sync to Watch"}
             </button>

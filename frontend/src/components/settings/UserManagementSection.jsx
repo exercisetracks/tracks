@@ -90,7 +90,7 @@ export default function UserManagementSection() {
                   setTimeout(() => setCopied(false), 2000);
                 });
               }}
-              className="text-xs font-medium text-amber-800 dark:text-amber-300 hover:underline"
+              className="btn btn-tonal btn-sm"
             >
               {copied ? "Copied!" : "Copy"}
             </button>

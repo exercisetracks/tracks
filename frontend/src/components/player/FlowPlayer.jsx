@@ -94,7 +94,7 @@ function ControlButton({ onClick, label, disabled }) {
     <button
       onClick={onClick}
       disabled={disabled}
-      className="px-3.5 py-1.5 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30"
+      className="btn btn-neutral"
     >
       {label}
     </button>

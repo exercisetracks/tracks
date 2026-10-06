@@ -5,6 +5,7 @@
 // MuscleMapPicker, and a drag-and-drop (@dnd-kit) ordered list of exercises.
 // Presentational pieces live in ./workouts/ (SortableExercise, ExercisePickRow,
 // constants); this file owns the tab's data loading and edit state.
+import { PlusIcon } from "./ui/Button";
 import { useState, useEffect, useCallback } from "react";
 import { api } from "../api/client";
 import { MuscleMapPicker } from "./activity/charts/MuscleMap";
@@ -221,7 +222,7 @@ export default function WorkoutsTab() {
             <div className="flex items-center justify-between mb-3">
               <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">Your Workouts ({workouts.length})</p>
               <button onClick={startNew}
-                className="px-2.5 py-1 rounded-lg bg-accent-600 hover:bg-accent-700 text-white text-sm font-medium transition-colors">+ New Workout</button>
+                className="btn btn-tonal btn-sm"><PlusIcon />New Workout</button>
             </div>
             {workouts.length === 0 ? (
               <div className="text-center py-11 text-slate-400 dark:text-slate-500">
@@ -242,8 +243,8 @@ export default function WorkoutsTab() {
                         {wo.description && <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{wo.description}</p>}
                       </div>
                       <div className="flex gap-1">
-                        <button onClick={() => startEdit(wo)} className="text-[10px] px-1.5 py-1 rounded bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600">Edit</button>
-                        <button onClick={() => deleteWorkout(wo.id)} className="text-[10px] px-1.5 py-1 rounded bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40">Delete</button>
+                        <button onClick={() => startEdit(wo)} className="btn btn-neutral btn-sm">Edit</button>
+                        <button onClick={() => deleteWorkout(wo.id)} className="btn btn-danger btn-sm">Delete</button>
                       </div>
                     </div>
                     {(wo.tags || []).length > 0 && (
@@ -269,9 +270,9 @@ export default function WorkoutsTab() {
               <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">{editingId ? "Edit Workout" : "New Workout"}</p>
               <div className="flex gap-2">
                 <button onClick={() => { setEditMode(false); setEditingId(null); }}
-                  className="text-xs px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">Cancel</button>
+                  className="btn btn-neutral btn-sm">Cancel</button>
                 <button onClick={saveWorkout} disabled={saving || !workoutName.trim() || fromEditor(workoutExercises).length === 0}
-                  className="text-xs px-2.5 py-1 rounded-lg bg-accent-600 hover:bg-accent-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium transition-colors">
+                  className="btn btn-primary btn-sm">
                   {saving ? "Saving…" : "Save Workout"}
                 </button>
               </div>

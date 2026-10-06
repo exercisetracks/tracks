@@ -27,7 +27,7 @@ export default function RecapBanner({ pendingRecaps, onReview }) {
       </div>
       <button
         type="button"
-        className="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold whitespace-nowrap"
+        className="btn btn-primary btn-sm"
       >
         Review →
       </button>

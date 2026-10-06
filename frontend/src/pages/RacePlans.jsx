@@ -60,7 +60,7 @@ function GoalCard({ goal, imperial }) {
       </div>
       <Link
         to={`/race-plans/${goal.id}`}
-        className="shrink-0 px-2.5 py-1.5 bg-accent-600 hover:bg-accent-700 text-white text-sm font-medium rounded-lg transition-colors"
+        className="btn btn-tonal btn-sm"
       >
         {plan?.generated_at ? "View plan" : "Create plan"}
       </Link>

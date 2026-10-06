@@ -126,13 +126,7 @@ export default function WorkoutDetail({ workout, onClose, onMarkComplete, onSess
           )}
           <button
             onClick={() => onMarkComplete(workout)}
-            className={`w-full py-1.5 rounded-lg text-sm font-medium transition-colors ${
-              workout.is_complete
-                ? "bg-accent-50 dark:bg-accent-900/30 text-accent-700 dark:text-accent-400 border border-accent-200 dark:border-accent-800"
-                : runnable
-                  ? "border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
-                  : "bg-accent-600 hover:bg-accent-700 text-white"
-            }`}
+            className={`btn w-full ${workout.is_complete ? "btn-tonal" : runnable ? "btn-neutral" : "btn-primary"}`}
           >
             {workout.is_complete ? "Marked complete ✓" : "Mark as complete"}
           </button>

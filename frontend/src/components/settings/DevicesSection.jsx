@@ -104,11 +104,7 @@ export default function DevicesSection() {
                     onClick={() => makePrimary(d)}
                     disabled={primarySaving === d.id || isPrimary(d)}
                     title={isPrimary(d) ? "Your primary device" : "Set as primary device"}
-                    className={`px-2 py-1 rounded-lg text-xs font-medium border transition-colors disabled:opacity-100 ${
-                      isPrimary(d)
-                        ? "border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"
-                        : "border-slate-300 dark:border-slate-600 text-slate-500 hover:border-amber-400 hover:text-amber-600 dark:hover:text-amber-400"
-                    }`}
+                    className={`btn btn-sm ${isPrimary(d) ? "btn-tonal" : "btn-neutral"}`}
                   >
                     {primarySaving === d.id ? "…" : (isPrimary(d) ? "★ Primary" : "☆ Set primary")}
                   </button>
@@ -117,11 +113,7 @@ export default function DevicesSection() {
                   type="button"
                   onClick={() => toggle(d)}
                   disabled={toggling === d.id}
-                  className={`shrink-0 px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors disabled:opacity-50 ${
-                    d.claimed
-                      ? "border-accent-300 dark:border-accent-700 bg-accent-50 dark:bg-accent-900/30 text-accent-700 dark:text-accent-400 hover:bg-red-50 hover:border-red-300 hover:text-red-600 dark:hover:bg-red-900/30 dark:hover:border-red-700 dark:hover:text-red-400"
-                      : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:border-accent-400 hover:text-accent-600 dark:hover:text-accent-400"
-                  }`}
+                  className={`btn btn-sm ${d.claimed ? "btn-tonal" : "btn-neutral"}`}
                 >
                   {toggling === d.id ? "…" : d.claimed ? "Claimed" : "Claim"}
                 </button>

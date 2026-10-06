@@ -399,7 +399,7 @@ export default function RacePlan() {
       <div className="flex items-center gap-4 flex-wrap">
         <button
           onClick={generate} disabled={generating}
-          className="px-4 py-2 bg-accent-600 hover:bg-accent-700 disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-colors flex items-center gap-2"
+          className="btn btn-primary"
         >
           {generating ? (
             <>

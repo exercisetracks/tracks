@@ -58,11 +58,7 @@ export default function WorkoutDetail({ workout, onClose, onMarkComplete, imperi
         <div className="p-3.5 border-t border-slate-200 dark:border-slate-700">
           <button
             onClick={() => onMarkComplete(workout)}
-            className={`w-full py-1.5 rounded-lg text-sm font-medium transition-colors ${
-              workout.is_complete
-                ? "bg-accent-50 dark:bg-accent-900/30 text-accent-700 dark:text-accent-400 border border-accent-200 dark:border-accent-800"
-                : "bg-accent-600 hover:bg-accent-700 text-white"
-            }`}
+            className={`btn w-full ${workout.is_complete ? "btn-tonal" : "btn-primary"}`}
           >
             {workout.is_complete ? "Marked complete" : "Mark as complete"}
           </button>
