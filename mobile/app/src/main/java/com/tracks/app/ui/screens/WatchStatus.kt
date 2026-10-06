@@ -10,8 +10,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -30,7 +28,7 @@ import com.tracks.device.ConnectionState
 /**
  * The watch: what is paired, what it is doing, and the two buttons that matter.
  *
- * ## Why this is a card in Settings and not a tab
+ * ## Why this is in Settings and not a tab
  *
  * It had a bottom-bar slot for a while, on the reasoning that watch sync is why
  * this app exists. That confused *important* with *interacted with*. Sync runs
@@ -51,73 +49,56 @@ import com.tracks.device.ConnectionState
  * case the app exists for.
  */
 @Composable
-fun WatchCard(
+fun WatchStatus(
     watch: WatchUiState,
     busy: Boolean,
     onPair: () -> Unit,
     onSync: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(
-                "WATCH",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.primary,
-            )
-            com.tracks.app.ui.components.InfoTip(
-                com.tracks.app.ui.components.MetricInfo("Watch", "Syncs about hourly while in range — no signal needed."),
-            )
-        }
-        Card(
-            Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant,
-            ),
+    // The body of Settings' Watch section, which supplies the card;
+    // see SettingsScreen.
+    Column(
+        modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Column(
-                Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    ConnectionDot(watch.connection)
-                    Column {
-                        Text(
-                            watch.pairedName ?: "No watch paired",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
-                        Text(
-                            connectionLabel(watch.connection),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
+            ConnectionDot(watch.connection)
+            Column {
+                Text(
+                    watch.pairedName ?: "No watch paired",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    connectionLabel(watch.connection),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
 
-                if (watch.batteryPercent != null || watch.pulled.isNotEmpty()) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
-                        watch.batteryPercent?.let { StatValue("$it%", "Battery") }
-                        if (watch.pulled.isNotEmpty()) {
-                            StatValue("${watch.pulled.size}", "Files this run")
-                        }
-                    }
-                }
-
-                // Indeterminate on purpose: the watch never says how many files
-                // it intends to send, so a percentage here would be invented.
-                if (busy) {
-                    LinearProgressIndicator(Modifier.fillMaxWidth())
-                }
-
-                ButtonRow {
-                    PrimaryButton("Sync now", onClick = onSync, enabled = !busy && watch.pairedName != null)
-                    TonalButton(if (watch.pairedName == null) "Pair a watch" else "Re-pair", onClick = onPair, enabled = !busy)
+        if (watch.batteryPercent != null || watch.pulled.isNotEmpty()) {
+            Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+                watch.batteryPercent?.let { StatValue("$it%", "Battery") }
+                if (watch.pulled.isNotEmpty()) {
+                    StatValue("${watch.pulled.size}", "Files this run")
                 }
             }
+        }
+
+        // Indeterminate on purpose: the watch never says how many files
+        // it intends to send, so a percentage here would be invented.
+        if (busy) {
+            LinearProgressIndicator(Modifier.fillMaxWidth())
+        }
+
+        ButtonRow {
+            PrimaryButton("Sync now", onClick = onSync, enabled = !busy && watch.pairedName != null)
+            TonalButton(if (watch.pairedName == null) "Pair a watch" else "Re-pair", onClick = onPair, enabled = !busy)
         }
     }
 }

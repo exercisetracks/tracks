@@ -1,8 +1,12 @@
 // SPDX-FileCopyrightText: 2026 Hawk Fugagli
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Setup step 2 — Body stats. Units (metric/imperial, with live weight/height
-// conversion on toggle), weight, height, birth year, biological sex, and
-// timezone. Reads and writes only the `body` draft slice via onChange.
+// conversion on toggle), weight, height, age, biological sex, and timezone.
+// Reads and writes only the `body` draft slice via onChange.
+//
+// Age is the one required field: it is `required` on the input, so the
+// browser holds Continue until it is filled with a plausible age.
+import { MAX_AGE, MIN_AGE } from "../../lib/age";
 import { INPUT, SELECT, FieldRow } from "./primitives";
 
 const TIMEZONES_COMMON = [
@@ -53,7 +57,7 @@ export default function StepBody({ data, onChange, onNext, onBack }) {
         </div>
       </FieldRow>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-3 gap-3">
         <FieldRow label="Weight" hint={imperial ? "(lbs)" : "(kg)"}>
           <input
             className={INPUT}
@@ -78,23 +82,20 @@ export default function StepBody({ data, onChange, onNext, onBack }) {
             onChange={e => onChange("height", e.target.value)}
           />
         </FieldRow>
+        <FieldRow label="Age">
+          <input
+            className={INPUT}
+            type="number"
+            min={MIN_AGE}
+            max={MAX_AGE}
+            step="1"
+            required
+            placeholder="e.g. 35"
+            value={data.age}
+            onChange={e => onChange("age", e.target.value)}
+          />
+        </FieldRow>
       </div>
-
-      <FieldRow label="Birth year" hint="(optional)">
-        <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-2">
-          With your height, weight and sex, sets starting run paces until you have runs recorded.
-        </p>
-        <input
-          className={INPUT}
-          type="number"
-          min={1900}
-          max={new Date().getFullYear()}
-          step="1"
-          placeholder="e.g. 1990"
-          value={data.birthYear}
-          onChange={e => onChange("birthYear", e.target.value)}
-        />
-      </FieldRow>
 
       <FieldRow label="Biological sex">
         <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-2">

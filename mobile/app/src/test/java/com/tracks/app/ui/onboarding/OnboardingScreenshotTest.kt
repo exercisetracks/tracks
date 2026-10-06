@@ -12,7 +12,9 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
 import com.github.takahirom.roborazzi.captureRoboImage
 import com.tracks.app.ui.profile.BodyForm
-import com.tracks.app.ui.profile.FeaturesForm
+import com.tracks.app.ui.profile.ConnectivityRow
+import com.tracks.app.ui.profile.PrivacyForm
+import com.tracks.app.ui.profile.Tone
 import com.tracks.app.ui.profile.FrequencyForm
 import com.tracks.app.ui.profile.LookForm
 import com.tracks.app.ui.profile.ProfileState
@@ -45,7 +47,7 @@ class OnboardingScreenshotTest {
     private val profile = ProfileState(
         values = mapOf(
             "name" to "Alex", "units" to "imperial", "sex" to "female", "weight_kg" to 61.0,
-            "height_cm" to 168.0, "timezone" to "America/New_York",
+            "height_cm" to 168.0, "birth_year" to 1990.0, "timezone" to "America/New_York",
             "max_hr_mode" to "manual", "max_hr_manual" to 194.0,
             "equipment_available" to listOf("bodyweight", "dumbbell"),
             "strength_experience" to "regular", "theme_mode" to "system", "accent_color" to "emerald",
@@ -54,6 +56,7 @@ class OnboardingScreenshotTest {
         ),
         sports = listOf("running", "cycling", "golf", "hiking"),
         loaded = true,
+        auto = mapOf("threshold_hr" to 168.0, "ftp" to 231.0),
     )
 
     private fun shot(name: String, mode: ThemeMode, content: @Composable () -> Unit) {
@@ -105,14 +108,23 @@ class OnboardingScreenshotTest {
         PermissionsList(grantsFor(hasDevice = true), mapOf("location" to true), {}, {})
     }
 
-    /** Settings' account sections with no watch: no pace coaching, no time zone. */
+    /** Settings' account sections with no watch: no satellite pre-fetch, no time zone. */
     @Test fun settings_no_device_light() = shot("settings_no_device_light", ThemeMode.Light) {
         androidx.compose.runtime.CompositionLocalProvider(com.tracks.app.ui.components.LocalHasDevice provides false) {
             SettingsCard("Profile") { BodyForm(profile) { _, _ -> } }
             SettingsCard("Training") { TrainingPrefsForm(profile, { _, _ -> }, { it.replaceFirstChar(Char::uppercase) }) }
-            SettingsCard("How often you train") { FrequencyForm(profile) { _, _ -> } }
+            SettingsCard("Privacy & connectivity") { PrivacyForm(profile, { _, _ -> }, hasDevice = false) { noServerAi() } }
         }
     }
+
+    /** A narrow phone stacks the body fields rather than squeezing three into a row. */
+    @Config(qualifiers = "w320dp-h1600dp-xxhdpi")
+    @Test fun settings_profile_narrow_light() = shot("settings_profile_narrow_light", ThemeMode.Light) {
+        SettingsCard("Profile") { BodyForm(profile) { _, _ -> } }
+    }
+
+    @Composable
+    private fun noServerAi() = ConnectivityRow("AI coaching", "Needs a Tracks server — the coach runs there", Tone.Off, checked = null)
 
     @Test fun look_dark() = shot("onboarding_look_dark", ThemeMode.Dark) {
         ProfileStep("Look", "Shared with the web.", {}, {}) { LookForm(profile) { _, _ -> } }
@@ -125,11 +137,17 @@ class OnboardingScreenshotTest {
     }
 
     @Test fun settings_sections_light() = shot("settings_sections_light", ThemeMode.Light) {
-        SettingsCard("Training") { TrainingPrefsForm(profile, { _, _ -> }, { it.replaceFirstChar(Char::uppercase) }) }
-        SettingsCard("Privacy & data") { FeaturesForm(profile) { _, _ -> } }
+        SettingsCard("Heart rate & power") { ZonesForm(profile) { _, _ -> } }
+        SettingsCard("Strength") { StrengthForm(profile) { _, _ -> } }
+        SettingsCard("Privacy & connectivity") {
+            PrivacyForm(profile.copy(values = profile.values + ("agps_enabled" to true) + ("map_enabled" to true)), { _, _ -> }, hasDevice = true) { noServerAi() }
+        }
     }
 
     @Test fun settings_sections_dark() = shot("settings_sections_dark", ThemeMode.Dark) {
         SettingsCard("Profile") { BodyForm(profile) { _, _ -> } }
+        SettingsCard("Privacy & connectivity") {
+            PrivacyForm(profile.copy(values = profile.values + ("wildfire_enabled" to true)), { _, _ -> }, hasDevice = true) { noServerAi() }
+        }
     }
 }

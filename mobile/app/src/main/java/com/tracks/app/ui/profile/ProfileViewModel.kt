@@ -34,6 +34,16 @@ class ProfileViewModel(private val container: AppContainer) : ViewModel() {
             container.sources.activities().mapNotNull { it.sport }.distinct().sorted()
         }.getOrDefault(emptyList())
         _state.value = ProfileState(values, sports, loaded = true)
+        // After the form is up, not before: this reads every activity, and
+        // the values only fill in the "Auto · …" line under each threshold.
+        val auto = runCatching { container.sources.autoThresholds() }.getOrNull() ?: return@launch
+        _state.value = _state.value.copy(
+            auto = listOfNotNull(
+                auto.maxHr?.let { "max_hr" to it },
+                auto.thresholdHr?.let { "threshold_hr" to it },
+                auto.ftp?.let { "ftp" to it },
+            ).toMap(),
+        )
     }
 
     /**
@@ -63,6 +73,12 @@ data class ProfileState(
     /** Sports this person has actually recorded — the only ones worth offering to hide. */
     val sports: List<String> = emptyList(),
     val loaded: Boolean = false,
+    /**
+     * What Auto works out for each threshold (`max_hr`, `threshold_hr`,
+     * `ftp`), shown whichever mode is chosen — the web's `*_auto` values.
+     * Absent until there is enough history.
+     */
+    val auto: Map<String, Double> = emptyMap(),
 ) {
     fun str(field: String): String? = values[field]?.toString()?.takeIf { it.isNotEmpty() }
     fun num(field: String): Double? = when (val v = values[field]) {

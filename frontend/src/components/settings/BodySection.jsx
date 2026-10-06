@@ -1,12 +1,16 @@
 // SPDX-FileCopyrightText: 2026 Hawk Fugagli
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Body stats section: weight, height (shown in metric or imperial per the user's
-// unit setting), birth year and biological sex. Weight/height/birth year save on
-// blur; sex on change. Until there are runs to measure, these set the estimate
-// running paces start from (backend calculators/plan/running_fitness.py).
+// unit setting), age and biological sex. Weight/height/age save on blur; sex on
+// click. Until there are runs to measure, these set the estimate running paces
+// start from (backend calculators/plan/running_fitness.py).
+//
+// Age is required: it is asked at setup, and a blank here is not saved — the
+// stored value stays — so it cannot be cleared from Settings either.
 import { useCallback, useEffect, useState } from "react";
 import { api } from "../../api/client";
-import { INPUT, SELECT, Section, FieldRow, useSaveStatus } from "./primitives";
+import { ageFromBirthYear, birthYearFromAge, MAX_AGE, MIN_AGE } from "../../lib/age";
+import { INPUT, Section, FieldRow, InlineError, useSaveStatus } from "./primitives";
 
 export default function BodySection({ settings, onSaved }) {
   const imperial = settings?.units === "imperial";
@@ -24,14 +28,16 @@ export default function BodySection({ settings, onSaved }) {
   const [weight, setWeight] = useState("");
   const [height, setHeight] = useState("");
   const [sex, setSex] = useState("");
-  const [birthYear, setBirthYear] = useState("");
+  const [age, setAge] = useState("");
+  const [ageError, setAgeError] = useState("");
   const { status, startSave, markSaved, markError } = useSaveStatus();
 
   useEffect(() => {
     setWeight(toDisplay(settings?.weight_kg));
     setHeight(toDisplayHeight(settings?.height_cm));
     setSex(settings?.sex || "");
-    setBirthYear(settings?.birth_year != null ? String(settings.birth_year) : "");
+    setAge(settings?.birth_year != null ? String(ageFromBirthYear(settings.birth_year)) : "");
+    setAgeError("");
   }, [settings, toDisplay, toDisplayHeight]);
 
   async function saveWeight() {
@@ -58,21 +64,32 @@ export default function BodySection({ settings, onSaved }) {
     } catch { markError(); }
   }
 
-  async function saveBirthYear() {
-    if (birthYear === "") return;
-    const val = parseInt(birthYear, 10);
-    if (isNaN(val) || val < 1900 || val > new Date().getFullYear()) return;
+  async function saveAge() {
+    const stored = settings?.birth_year;
+    const year = birthYearFromAge(age);
+    if (year == null) {
+      setAgeError(`Enter an age from ${MIN_AGE} to ${MAX_AGE}.`);
+      return;
+    }
+    setAgeError("");
+    if (year === stored) return;
     startSave();
     try {
-      await api.updateSettings({ birth_year: val });
+      await api.updateSettings({ birth_year: year });
       onSaved();
       markSaved();
     } catch { markError(); }
   }
 
+  async function saveSex(v) {
+    setSex(v);
+    startSave();
+    try { await api.updateSettings({ sex: v }); onSaved(); markSaved(); } catch { markError(); }
+  }
+
   return (
     <Section title="Body Stats" status={status}>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <FieldRow label="Weight" hint={imperial ? "(lbs)" : "(kg)"}>
           <input className={INPUT} type="number" step="0.1" min={0}
             placeholder={imperial ? "165" : "75"}
@@ -87,36 +104,37 @@ export default function BodySection({ settings, onSaved }) {
             onChange={e => setHeight(e.target.value)}
             onBlur={saveHeight} />
         </FieldRow>
-        <FieldRow label="Birth year" hint="(optional)">
-          <input className={INPUT} type="number" step="1" min={1900} max={new Date().getFullYear()}
-            placeholder="1990"
-            value={birthYear}
-            onChange={e => setBirthYear(e.target.value)}
-            onBlur={saveBirthYear} />
+        {/* Accounts made before age was required may have none yet; say so
+            here, since nothing else will ask again. */}
+        <FieldRow label="Age" hint={settings?.birth_year == null ? "(required)" : null}>
+          <input className={INPUT} type="number" step="1" min={MIN_AGE} max={MAX_AGE} required
+            placeholder="35"
+            value={age}
+            aria-invalid={!!ageError}
+            onChange={e => setAge(e.target.value)}
+            onBlur={saveAge} />
         </FieldRow>
       </div>
+      <InlineError msg={ageError} />
       <p className="text-xs text-slate-400 mt-2">
         Until you have runs recorded, these set the paces a running plan starts from. After that, your runs do.
       </p>
-      <div className="mt-4">
-        <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Biological sex</p>
-        <p className="text-xs text-slate-400 mb-2">Used for the muscle anatomy model, and for starting paces before you have runs recorded.</p>
-        <select
-          value={sex}
-          onChange={async (e) => {
-            const v = e.target.value;
-            setSex(v);
-            if (!v) return;
-            startSave();
-            try { await api.updateSettings({ sex: v }); onSaved(); markSaved(); } catch { markError(); }
-          }}
-          className={SELECT}
-        >
-          <option value="">Select...</option>
-          <option value="male">Male</option>
-          <option value="female">Female</option>
-        </select>
-      </div>
+      {/* Two buttons rather than a dropdown, as in setup and on the phone:
+          both choices are visible without opening anything. */}
+      <FieldRow label="Biological sex" hint="— muscle anatomy model and starting paces">
+        <div className="flex rounded-lg overflow-hidden border border-slate-300 dark:border-slate-700 text-sm">
+          {[["male", "Male"], ["female", "Female"]].map(([v, l]) => (
+            <button key={v} type="button" onClick={() => saveSex(v)}
+              className={`flex-1 py-1.5 font-medium transition-colors ${
+                sex === v
+                  ? "bg-accent-600 text-white"
+                  : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
+              }`}>
+              {l}
+            </button>
+          ))}
+        </div>
+      </FieldRow>
     </Section>
   );
 }

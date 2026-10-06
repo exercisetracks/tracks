@@ -9,9 +9,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -20,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.tracks.app.ui.components.TonalButton
+import com.tracks.app.ui.theme.Tokens
 
 /**
  * What the phone is actually feeding the watch, and what is stopping it.
@@ -39,42 +37,17 @@ data class FeedStatus(
     val onAction: (() -> Unit)? = null,
 )
 
+/** The feeds as rows inside Settings' Watch section, which supplies the card. */
 @Composable
-fun FeedsCard(feeds: List<FeedStatus>, modifier: Modifier = Modifier) {
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(
-            "PHONE FEEDS",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.primary,
-        )
-        Card(
-            Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant,
-            ),
-        ) {
-            Column(Modifier.padding(vertical = 4.dp)) {
-                feeds.forEachIndexed { index, feed ->
-                    if (index > 0) {
-                        HorizontalDivider(
-                            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
-                        )
-                    }
-                    FeedRow(feed)
-                }
-            }
-        }
+fun FeedRows(feeds: List<FeedStatus>, modifier: Modifier = Modifier) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(Tokens.Space.s3)) {
+        feeds.forEach { FeedRow(it) }
     }
 }
 
 @Composable
 private fun FeedRow(feed: FeedStatus) {
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp),

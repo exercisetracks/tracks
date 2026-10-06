@@ -38,6 +38,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -207,6 +208,12 @@ fun OnboardingScreen(
                         "About you",
                         "Used for calories, zones and the body model. All of it can be changed later in Settings.",
                         onBack = ::back, onNext = ::next,
+                        // Read from the view model, not `profile`: the age
+                        // committed by Continue's own focus change has not
+                        // recomposed into `profile` yet.
+                        missing = {
+                            if (profileVm.state.value.num("birth_year") == null) "Enter your age to continue." else null
+                        },
                     ) { if (profile.loaded) BodyForm(profile, set) }
                     OnboardingStep.Zones -> ProfileStep(
                         "Heart rate & power",
@@ -404,20 +411,40 @@ internal fun WelcomeStep(onServer: () -> Unit, onStandalone: () -> Unit, onResto
     TonalButton("Restore from a backup", onClick = onRestore)
 }
 
-/** One profile step: heading, the shared form, and Back / Continue. */
+/**
+ * One profile step: heading, the shared form, and Back / Continue.
+ *
+ * [missing] names what the step still needs, or null when it can be left.
+ * It is asked only once Continue has taken focus off the form, because the
+ * forms write a typed number when its field loses focus: a button disabled
+ * until the value was stored would stay disabled under someone who typed
+ * their age and went straight for Continue.
+ */
 @Composable
 internal fun ProfileStep(
     title: String,
     body: String,
     onBack: () -> Unit,
     onNext: () -> Unit,
+    missing: () -> String? = { null },
     form: @Composable () -> Unit,
 ) {
+    val focus = LocalFocusManager.current
+    var blocked by remember { mutableStateOf<String?>(null) }
     StepHeading(title, body)
     form()
+    blocked?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error) }
     Row(horizontalArrangement = Arrangement.spacedBy(Tokens.Space.s2)) {
         NeutralButton("Back", onClick = onBack, modifier = Modifier.weight(1f))
-        PrimaryButton("Continue", onClick = onNext, modifier = Modifier.weight(1f))
+        PrimaryButton(
+            "Continue",
+            onClick = {
+                focus.clearFocus()
+                blocked = missing()
+                if (blocked == null) onNext()
+            },
+            modifier = Modifier.weight(1f),
+        )
     }
 }
 

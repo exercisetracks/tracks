@@ -86,6 +86,23 @@ class LocalMatchEffectsTest {
         assertEquals(300.0, w.sources.importThresholds().ftp)
     }
 
+    /**
+     * Settings shows what Auto would use beside a manual entry, as the web
+     * shows `ftp_auto`. Read through the manual mode, it would show nothing,
+     * and switching to Auto would be a guess at what the value becomes.
+     */
+    @Test
+    fun the_automatic_values_are_known_while_the_mode_is_manual() = runBlocking {
+        val w = world()
+        w.settings("ftp_mode" to "manual", "ftp_manual" to "300", "threshold_hr_mode" to "manual", "threshold_hr_manual" to "170")
+        w.activity("a1", "2026-09-01T07:00:00", "cycling", maxHr = 180, best20 = 263.0)
+        w.matched("a1", "field_test:ftp20")
+        val auto = w.sources.autoThresholds()
+        assertEquals(250.0, auto.ftp)
+        assertEquals(167.0, auto.thresholdHr)   // round(180 × 0.93)
+        assertEquals(180.0, auto.maxHr)
+    }
+
     /** An unfinished test sets nothing, as the server only applies complete ones. */
     @Test
     fun an_incomplete_test_sets_nothing() = runBlocking {

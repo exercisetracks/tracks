@@ -306,6 +306,22 @@ class LocalSources(
     }
 
     /**
+     * What "auto" resolves to for each threshold, whatever the mode is set to
+     * — the web's `*_auto` columns, so Settings can show the value an Auto
+     * choice would use before anyone picks it. Same sources as
+     * [importThresholds]: the latest field test, else the whole history.
+     */
+    suspend fun autoThresholds(): ImportThresholds = io {
+        val tests = LocalMatchEffects(this, library).fieldTests("auto", "auto")
+        val history = LocalAutoThresholds(this, library).history()
+        return@io ImportThresholds(
+            ftp = tests.ftpAuto?.toDouble() ?: history.ftp?.toDouble(),
+            thresholdHr = tests.thresholdHrAuto?.toDouble() ?: history.thresholdHr?.toDouble(),
+            maxHr = history.maxHr?.toDouble(),
+        )
+    }
+
+    /**
      * `active_mtb_discipline`: the active MTB event goal's discipline, which
      * scales MTB load when it is read (TrainingLoad.scaleTss).
      */

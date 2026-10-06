@@ -126,8 +126,10 @@ heuristic, unverified, chosen to err slow_. With nothing answered it is VDOT
 
 Age matters (VO2max falls roughly 10% a decade after 25; performance holds to
 about 35 and declines modestly to 50–60, then faster — Tanaka & Seals 2008), so
-setup and settings ask an optional **birth year**. A year rather than a date,
-because the model needs age in years.
+setup and settings require an **age**. It is stored as the birth year
+(`birth_year`), so it stays right in later years without an edit; a year rather
+than a date, because the model needs age in years, and asked as an age because
+that is what people can answer without arithmetic.
 
 A profile estimate sets the paces in a plan's notes and nothing else: it is not
 stored as the plan's VDOT, so the watch gets no pace targets from a guess, and

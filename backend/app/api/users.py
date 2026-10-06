@@ -173,6 +173,9 @@ def get_settings(user: User = Depends(require_auth), db: Session = Depends(get_d
     return us
 
 
+_CLEARABLE_SETTINGS = frozenset({"ai_provider", "ai_model", "ai_endpoint"})
+
+
 @router.patch("/me/settings", response_model=UserSettingsOut)
 def update_settings(
     update: UserSettingsUpdate,
@@ -181,6 +184,14 @@ def update_settings(
 ):
     us = _get_or_create_settings(db, user.id)
     data = update.model_dump(exclude_none=True)
+    # exclude_none reads a null as "not sent", which is right for nearly every
+    # field — but it left AI coaching impossible to turn off: choosing "None"
+    # sends ai_provider: null, and that was dropped. These take an explicit
+    # null as "clear". The stored key is kept; turning coaching back on with
+    # the same provider should not mean pasting it again.
+    for field in _CLEARABLE_SETTINGS & update.model_fields_set:
+        if getattr(update, field) is None:
+            data[field] = None
 
     # Handle AI API key separately — encrypt before storing, never expose plaintext
     ai_api_key = data.pop("ai_api_key", None)

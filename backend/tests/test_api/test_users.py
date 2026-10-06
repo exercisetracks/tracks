@@ -156,6 +156,23 @@ class TestUpdateSettings:
         resp = client.patch("/users/me/settings", json={"ai_provider": "ollama"})
         assert resp.status_code == 200
 
+    def test_ai_coaching_can_be_turned_off(self, client, user):
+        """Choosing "None" sends nulls. Read as "not sent", they left the
+        provider in place, so coaching could be turned on but never off."""
+        client.patch("/users/me/settings",
+                     json={"ai_provider": "ollama", "ai_model": "llama3", "ai_endpoint": "http://ollama:11434"})
+        resp = client.patch("/users/me/settings",
+                            json={"ai_provider": None, "ai_model": None, "ai_endpoint": None})
+        assert resp.status_code == 200
+        body = resp.json()
+        assert (body["ai_provider"], body["ai_model"], body["ai_endpoint"]) == (None, None, None)
+
+    def test_a_null_still_leaves_other_settings_alone(self, client, user):
+        """Only the AI fields take null as "clear"; elsewhere it stays "not sent"."""
+        client.patch("/users/me/settings", json={"weight_kg": 70.0})
+        resp = client.patch("/users/me/settings", json={"weight_kg": None})
+        assert resp.json()["weight_kg"] == 70.0
+
     def test_invalid_timezone_rejected(self, client, user):
         resp = client.patch("/users/me/settings", json={"timezone": "Mars/Olympus"})
         assert resp.status_code == 422

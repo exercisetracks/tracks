@@ -33,6 +33,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.jsonArray
@@ -490,6 +491,20 @@ class TracksClient(
         http.patch(url(Endpoints.USER_SETTINGS)) {
             contentType(ContentType.Application.Json)
             setBody(update)
+            bearer(token)
+        }
+    }
+
+    /**
+     * A partial update of text fields, for those where `null` means "clear
+     * it" — turning AI coaching off sends `ai_provider: null`, which
+     * [UserSettingsUpdate] would drop as unset. Plain strings in, so `:app`
+     * needs no JSON types.
+     */
+    suspend fun patchUserSettings(fields: Map<String, String?>): UserSettings = request { token ->
+        http.patch(url(Endpoints.USER_SETTINGS)) {
+            contentType(ContentType.Application.Json)
+            setBody(JsonObject(fields.mapValues { (_, v) -> JsonPrimitive(v) }))
             bearer(token)
         }
     }

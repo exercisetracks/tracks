@@ -14,6 +14,7 @@ import { api, TOKEN_KEY } from "../api/client";
 import { StepIndicator } from "../components/setup/primitives";
 import StepAccount from "../components/setup/StepAccount";
 import StepBody from "../components/setup/StepBody";
+import { birthYearFromAge } from "../lib/age";
 import StepZones from "../components/setup/StepZones";
 import StepStrength from "../components/setup/StepStrength";
 import StepAGPS from "../components/setup/StepAGPS";
@@ -35,7 +36,7 @@ export default function Setup() {
       ? { username: user.username || "", name: user.name || "", password: "", confirm: "" }
       : { username: "", name: "", password: "", confirm: "" }
   );
-  const [body, setBody]       = useState({ units: "metric", weight: "", height: "", birthYear: "", sex: "", timezone: Intl.DateTimeFormat().resolvedOptions().timeZone ?? "UTC" });
+  const [body, setBody]       = useState({ units: "metric", weight: "", height: "", age: "", sex: "", timezone: Intl.DateTimeFormat().resolvedOptions().timeZone ?? "UTC" });
   const [zones, setZones]     = useState({ maxHrMode: "auto", maxHrManual: "", thresholdHrMode: "auto", thresholdHrManual: "", ftpMode: "auto", ftpManual: "" });
   const [strength, setStrength] = useState({ equipment_available: ["bodyweight", "dumbbell"], strength_experience: null });
   const [agps, setAgps]       = useState({ agpsEnabled: false, weatherEnabled: false, mapEnabled: false, wildfireEnabled: false, gnisEnabled: false, garminSyncEnabled: true });
@@ -65,8 +66,10 @@ export default function Setup() {
       if (body.weight)  settings.weight_kg  = imperial ? parseFloat(body.weight) / 2.20462 : parseFloat(body.weight);
       if (body.height)  settings.height_cm  = imperial ? parseFloat(body.height) * 2.54    : parseFloat(body.height);
       if (body.sex)     settings.sex        = body.sex;
-      const birthYear = parseInt(body.birthYear, 10);
-      if (birthYear >= 1900 && birthYear <= new Date().getFullYear()) settings.birth_year = birthYear;
+      // Asked as an age, stored as the year (lib/age.js). StepBody's input
+      // is required, so this is set by the time setup finishes.
+      const birthYear = birthYearFromAge(body.age);
+      if (birthYear != null) settings.birth_year = birthYear;
       settings.max_hr_mode       = zones.maxHrMode;
       settings.threshold_hr_mode = zones.thresholdHrMode;
       settings.ftp_mode          = zones.ftpMode;

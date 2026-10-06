@@ -797,6 +797,16 @@ data class UserSettings(
     @SerialName("ftp_mode") val ftpMode: String = "auto",
     @SerialName("ftp_manual") val ftpManual: Int? = null,
     @SerialName("ftp_auto") val ftpAuto: Int? = null,
+
+    /**
+     * AI coaching, which runs on the server and so never syncs (spec/sync.yaml
+     * leaves `ai_*` out). The key itself is write-only: the server answers
+     * only whether one is stored, never the key.
+     */
+    @SerialName("ai_provider") val aiProvider: String? = null,
+    @SerialName("ai_model") val aiModel: String? = null,
+    @SerialName("ai_endpoint") val aiEndpoint: String? = null,
+    @SerialName("ai_configured") val aiConfigured: Boolean = false,
 ) {
     val imperial: Boolean get() = units.equals("imperial", ignoreCase = true)
 
