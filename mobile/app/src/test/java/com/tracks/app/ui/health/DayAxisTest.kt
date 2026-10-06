@@ -175,4 +175,22 @@ class DayAxisTest {
         assertEquals(40, axis.days)
         assertNotNull(axis.fraction(today.minusDays(40)))
     }
+
+    @Test
+    fun `this afternoon's stress is not pressed against the right edge`() {
+        // An axis ending at the start of today put every one of today's
+        // readings past the edge, and they were all clamped onto it.
+        val axis = DayAxis.of(listOf(today.minusDays(1).toString()), throughEnd = true)!!
+        assertEquals(2, axis.days)
+        assertEquals(0.75f, axis.fraction(today, 0.5f)!!, 0.001f)
+        assertEquals(0.25f, axis.fraction(today.minusDays(1), 0.5f)!!, 0.001f)
+    }
+
+    @Test
+    fun `the far edge of an end-of-day axis is still today`() {
+        val axis = DayAxis.of(listOf(today.minusDays(3).toString()), throughEnd = true)!!
+        assertEquals(today, axis.dateAt(1f))
+        assertEquals(today.minusDays(3), axis.dateAt(0f))
+        assertNull(axis.fraction(today.plusDays(1)))
+    }
 }

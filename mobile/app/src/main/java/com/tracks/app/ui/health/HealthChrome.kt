@@ -114,10 +114,26 @@ internal fun hoursMinutes(hours: Double): String {
  * sync shows as trailing space instead of quietly rescaling itself away. Same
  * choice the web app makes, for the same reason.
  */
-internal class DayAxis(private val from: java.time.LocalDate, private val to: java.time.LocalDate) {
+internal class DayAxis(
+    private val from: java.time.LocalDate,
+    private val to: java.time.LocalDate,
+    /**
+     * Whether the right edge is the *end* of [to] rather than its start.
+     *
+     * One reading per day sits on its date, so the right edge of those charts
+     * is today itself. The stress curve is different: its readings are spread
+     * through each day, and on an axis ending at the start of today every one
+     * of this morning's readings had a position past the edge — all of them
+     * clamped onto the last pixel, so today was drawn as a vertical line at
+     * the right of the chart. Spanning to the end of the day gives today a
+     * slot as wide as every other.
+     */
+    private val throughEnd: Boolean = false,
+) {
 
     /** Days from end to end, never zero — a single reading still needs a width. */
-    val days: Int = java.time.temporal.ChronoUnit.DAYS.between(from, to).toInt().coerceAtLeast(1)
+    val days: Int = (java.time.temporal.ChronoUnit.DAYS.between(from, to).toInt() + if (throughEnd) 1 else 0)
+        .coerceAtLeast(1)
 
     /**
      * How wide a bar standing for one day may be drawn.
@@ -140,8 +156,16 @@ internal class DayAxis(private val from: java.time.LocalDate, private val to: ja
     val start: java.time.LocalDate get() = from
 
     /** The day at a position, 0f at the left edge and 1f at the right. */
-    fun dateAt(fraction: Float): java.time.LocalDate =
-        from.plusDays(Math.round(days * fraction.coerceIn(0f, 1f)).toLong())
+    fun dateAt(fraction: Float): java.time.LocalDate {
+        val at = days * fraction.coerceIn(0f, 1f)
+        // Through the end of its last day, a position belongs to the day it
+        // falls inside, and the far edge is the end of [to] — not the next day.
+        return if (throughEnd) {
+            from.plusDays(kotlin.math.floor(at).toLong().coerceAtMost(days - 1L))
+        } else {
+            from.plusDays(Math.round(at).toLong())
+        }
+    }
 
     /** 0f at the left edge, 1f at the right. Null for a date outside the span. */
     fun fraction(date: java.time.LocalDate): Float? = fraction(date, 0f)
@@ -157,7 +181,7 @@ internal class DayAxis(private val from: java.time.LocalDate, private val to: ja
      */
     fun fraction(date: java.time.LocalDate, within: Float): Float? {
         val offset = java.time.temporal.ChronoUnit.DAYS.between(from, date).toInt()
-        if (offset < 0 || offset > days) return null
+        if (offset < 0 || offset > days || (throughEnd && offset == days)) return null
         return ((offset + within.coerceIn(0f, 1f)) / days).coerceIn(0f, 1f)
     }
 
@@ -184,13 +208,18 @@ internal class DayAxis(private val from: java.time.LocalDate, private val to: ja
          * The right edge is today, or the last reading when that is somehow
          * later — which a phone whose clock is behind the server's can produce.
          */
-        fun of(dates: List<String>, from: java.time.LocalDate? = null): DayAxis? {
+        fun of(
+            dates: List<String>,
+            from: java.time.LocalDate? = null,
+            /** For readings spread through each day — see the constructor's [throughEnd]. */
+            throughEnd: Boolean = false,
+        ): DayAxis? {
             val parsed = dates.mapNotNull(::parseDay)
             val first = parsed.minOrNull() ?: return null
             val last = parsed.maxOrNull() ?: return null
             val today = java.time.LocalDate.now()
             val start = from?.takeIf { it.isBefore(first) } ?: first
-            return DayAxis(start, maxOf(today, last))
+            return DayAxis(start, maxOf(today, last), throughEnd)
         }
 
         fun parseDay(iso: String): java.time.LocalDate? =

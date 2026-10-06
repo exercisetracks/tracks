@@ -128,7 +128,11 @@ fun StressHistoryPanel(
     val dates = remember(days, averages, intraday) {
         if (intraday) days.map { it.date } else averages.dates
     }
-    val dayAxis = remember(dates, windowStart) { DayAxis.of(dates, windowStart) }
+    // Through the end of today: the curve's readings fill each day, and an
+    // axis ending at today's midnight pressed all of this morning's onto the
+    // right-hand edge. The daily averages hang at midday, so they want the
+    // same slot rather than a point on the edge.
+    val dayAxis = remember(dates, windowStart) { DayAxis.of(dates, windowStart, throughEnd = true) }
 
     val samples = remember(days, averages, dayAxis, intraday) {
         val axis = dayAxis ?: return@remember emptyList()
