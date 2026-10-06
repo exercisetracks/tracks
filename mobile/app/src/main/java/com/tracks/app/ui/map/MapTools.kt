@@ -267,7 +267,13 @@ private fun Weather(container: AppContainer, point: PointInfo, loading: Boolean)
         Text(
             // The difference matters: one of these is worth waiting for and the
             // other is not, and the sheet now opens before either is known.
-            if (loading) "Fetching the forecast…" else "Forecast unavailable for here.",
+            when {
+                loading -> "Fetching the forecast…"
+                // Off by the user's own choice: say so and where to undo it,
+                // or it reads as the server being broken.
+                point.weatherDisabled -> "Weather is turned off. Turn it on in Settings → Privacy & connectivity."
+                else -> "Forecast unavailable for here."
+            },
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

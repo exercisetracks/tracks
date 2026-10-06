@@ -102,7 +102,7 @@ class UserSettingsOut(BaseModel):
         # absence of any saved progress as an empty map.
         return v or {}
 
-    # Weather data for race plans (Open-Meteo, free, no API key)
+    # Weather everywhere it is fetched: races, map points, watch (Open-Meteo)
     weather_enabled: bool = True
 
     # Map tiles — downloads global basemap and DEM tiles from third-party servers

@@ -213,6 +213,23 @@ def wildfire_smoke(user: User = Depends(require_auth)):
     return wildfire.fetch_smoke()
 
 
+def _weather_enabled(user_id: int) -> bool:
+    """Whether the user allows point forecasts — the privacy toggle that says
+    their coordinates may be sent to Open-Meteo.
+
+    Unlike wildfire, which only ever sends nationwide feed requests, every
+    forecast carries the tapped (or trained-at) location, so this gates every
+    endpoint that calls the provider. No settings row yet means the column
+    default, which is on.
+    """
+    db = SessionLocal()
+    try:
+        us = db.query(UserSettings).filter_by(user_id=user_id).first()
+        return us is None or bool(us.weather_enabled)
+    finally:
+        db.close()
+
+
 def _nearest_poi(lat: float, lon: float, radius_deg: float = 0.03) -> dict | None:
     """Nearest named POI within ~radius_deg of (lat, lon), or None."""
     db = SessionLocal()
@@ -253,7 +270,8 @@ def _nearest_poi(lat: float, lon: float, radius_deg: float = 0.03) -> dict | Non
 @router.get("/point/hourly")
 def point_hourly(lat: float = Query(..., ge=-90, le=90),
                  lon: float = Query(..., ge=-180, le=180),
-                 date: str = Query(..., pattern=r"^\d{4}-\d{2}-\d{2}$")):
+                 date: str = Query(..., pattern=r"^\d{4}-\d{2}-\d{2}$"),
+                 user: User = Depends(require_auth)):
     """The hour-by-hour forecast for one day at one point.
 
     Split from ``/point`` rather than folded into it because the two are asked
@@ -278,6 +296,11 @@ def point_hourly(lat: float = Query(..., ge=-90, le=90),
     if days < 1 or days > 16:
         raise HTTPException(400, "That day is outside the forecast window")
 
+    # Turned off reads as "nothing to show" rather than an error: the clients
+    # already render an empty day, and the toggle is the user's own choice.
+    if not _weather_enabled(user.id):
+        return {"date": date, "hours": [], "weather_disabled": True}
+
     forecast = weather.fetch_point_forecast(lat, lon, days=days, include_hourly=True)
     if not forecast:
         return {"date": date, "hours": []}
@@ -291,7 +314,8 @@ def point_hourly(lat: float = Query(..., ge=-90, le=90),
 
 @router.get("/point/weather")
 def point_weather(lat: float = Query(..., ge=-90, le=90),
-                  lon: float = Query(..., ge=-180, le=180)):
+                  lon: float = Query(..., ge=-180, le=180),
+                  user: User = Depends(require_auth)):
     """Just the forecast for a point.
 
     Separate from ``/point`` so a client can put a panel on screen before this
@@ -301,13 +325,16 @@ def point_weather(lat: float = Query(..., ge=-90, le=90),
     both of which are local lookups measured in milliseconds, arrived at the
     speed of the slowest thing in the response.
     """
+    if not _weather_enabled(user.id):
+        return {"weather": None, "weather_disabled": True}
     return {"weather": weather.fetch_point_forecast(lat, lon)}
 
 
 @router.get("/point")
 def point_info(lat: float = Query(..., ge=-90, le=90),
                lon: float = Query(..., ge=-180, le=180),
-               weather_included: bool = Query(True, alias="weather")):
+               weather_included: bool = Query(True, alias="weather"),
+               user: User = Depends(require_auth)):
     """Info about an arbitrary clicked map point: elevation, weather forecast,
     and the nearest named POI. (Nearby trails are read client-side from the
     rendered vector tiles, so they aren't duplicated here.)
@@ -317,6 +344,10 @@ def point_info(lat: float = Query(..., ge=-90, le=90),
     because the web app asks for this in one request and a default that changed
     its behaviour would be a silent regression there.
     """
+    # The rest of the panel is local lookups, so a disabled forecast drops only
+    # that part; `weather_disabled` lets the panel say why it is missing rather
+    # than reporting the provider as unavailable.
+    weather_disabled = weather_included and not _weather_enabled(user.id)
     elev_m = None
     try:
         vals = elevation_sampler.sample_elevations([[lon, lat]])
@@ -332,5 +363,7 @@ def point_info(lat: float = Query(..., ge=-90, le=90),
         "nearest_poi": _nearest_poi(lat, lon),
         # Land type is derived client-side from the already-downloaded basemap
         # tiles (usePointInfo), so no runtime OSM/Overpass call is made here.
-        "weather": weather.fetch_point_forecast(lat, lon) if weather_included else None,
+        "weather": (weather.fetch_point_forecast(lat, lon)
+                    if weather_included and not weather_disabled else None),
+        "weather_disabled": weather_disabled,
     }

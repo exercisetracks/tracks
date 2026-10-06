@@ -2,9 +2,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Privacy & connectivity: the central place to see — and toggle — every opt-in
 // feature that can talk to an external service. Each boolean (AGPS, map tiles,
-// race weather) has a live switch wired to updateSettings. AI coaching and
-// AGPS carry their full configuration in an expandable panel under their row,
-// so they don't need standalone sections.
+// weather) has a live switch wired to updateSettings. AI coaching and AGPS
+// carry their full configuration in an expandable panel under their row, so
+// they don't need standalone sections; the rest expand to explain what they
+// send.
 import { useState } from "react";
 import { api } from "../../api/client";
 import { Section } from "./primitives";
@@ -105,8 +106,23 @@ export default function PrivacySummarySection({ settings, onSaved }) {
       ),
     },
     {
-      key: "weather_enabled", name: "Race Weather", on: weatherEnabled, control: "toggle", tone: weatherEnabled ? "info" : "off",
-      desc: weatherEnabled ? "Sends race location (lat/lon) to Open-Meteo for forecasts" : "Location stays local",
+      key: "weather_enabled", name: "Weather", on: weatherEnabled, control: "toggle", tone: weatherEnabled ? "info" : "off",
+      desc: weatherEnabled ? "Sends race and map locations (lat/lon) to Open-Meteo for forecasts" : "Locations stay local",
+      panel: (
+        <div className="px-2.5 py-2.5 bg-slate-50/70 dark:bg-slate-800/30">
+          <div className="rounded-lg bg-sky-50 dark:bg-sky-900/20 border border-sky-200 dark:border-sky-800 p-2.5">
+            <p className="text-xs font-medium text-sky-700 dark:text-sky-400">One switch for every forecast</p>
+            <p className="text-xs text-sky-600 dark:text-sky-500 mt-0.5 leading-relaxed">
+              Your server asks Open-Meteo (free, no account) for weather at three
+              kinds of place: a race plan's location, for weather-adjusted pacing;
+              a point you tap on the map; and where you last trained, for your
+              watch's forecast. Each request sends <span className="font-medium">those coordinates</span>,
+              nothing else. Turning this off stops all three — race plans pace
+              without a weather adjustment and the map panel shows no forecast.
+            </p>
+          </div>
+        </div>
+      ),
     },
     {
       key: "wildfire_enabled", name: "Live Wildfire & Smoke", on: wildfireEnabled, control: "toggle", tone: wildfireEnabled ? "warn" : "off",
@@ -164,9 +180,13 @@ export default function PrivacySummarySection({ settings, onSaved }) {
                     {r.on ? (aiIsLocal ? "Local" : "Connected") : "Off"}
                   </span>
                 )}
-                {r.panel && (
+                {/* A row without a panel (AGPS while off) keeps the chevron's
+                    width, so every switch lines up in one column. */}
+                {r.panel ? (
                   <ExpandButton open={expanded === r.key} label={`Configure ${r.name}`}
                                 onClick={() => setExpanded(expanded === r.key ? null : r.key)} />
+                ) : (
+                  <span className="w-6 shrink-0" aria-hidden="true" />
                 )}
               </div>
             </div>

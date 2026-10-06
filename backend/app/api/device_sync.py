@@ -113,6 +113,15 @@ def watch_weather(
     404 rather than an empty body when there is nothing to say, so the client can
     tell "no forecast for you" from "a forecast of nothing".
     """
+    # The location sent is where this person trains, so the same privacy toggle
+    # that gates race and map forecasts gates this one. 403, as for wildfire:
+    # distinct from "nothing to locate by" and "provider down", and the phone
+    # treats any failure as "keep what it had".
+    us = db.query(UserSettings).filter_by(user_id=user.id).first()
+    if us is not None and not us.weather_enabled:
+        raise HTTPException(
+            status_code=403, detail="Weather is disabled — enable it in Settings")
+
     point = _latest_activity_point(user, db)
     if point is None:
         raise HTTPException(

@@ -285,7 +285,12 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
                 if (open == null || !open.samePlaceAs(here)) state
                 else state.copy(
                     weatherLoading = false,
-                    point = if (forecast != null) open.copy(weather = forecast) else open,
+                    point = when {
+                        forecast == null -> open
+                        forecast.weatherDisabled -> open.copy(weatherDisabled = true)
+                        forecast.weather != null -> open.copy(weather = forecast.weather)
+                        else -> open
+                    },
                 )
             }
         }

@@ -124,9 +124,11 @@ class UserSettings(Base, Synced):
     tour_enabled         = Column(Boolean, nullable=False, default=True,
                                   server_default="true")
 
-    # Weather data for race plans — fetches forecast/historical from Open-Meteo
-    # when a race location pin is set. Defaults on so new users get weather-aware
-    # pacing straight away. Set to false to keep location data fully local.
+    # Weather from Open-Meteo — every forecast Tracks fetches: race plans
+    # (forecast/historical at the race pin), the map's point info, and the
+    # watch's forecast. Each sends a location, so this one switch gates them
+    # all. Defaults on so new users get weather-aware pacing straight away. Set
+    # to false to keep location data fully local.
     weather_enabled      = Column(Boolean, nullable=False, default=True)
 
     # Map tiles — downloads global basemap and DEM tiles from third-party tile

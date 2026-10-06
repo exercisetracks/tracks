@@ -179,6 +179,8 @@ function PointInfoPanel({ point, trails, pois, activities = [], land, info, load
           <div className="text-[10px] uppercase tracking-wide text-slate-400 mb-1">Weather</div>
           {loading && !info ? (
             <div className="text-slate-400 text-xs">Loading forecast…</div>
+          ) : info?.weather_disabled ? (
+            <div className="text-slate-400 text-xs">Weather is off — turn it on in Settings → Privacy</div>
           ) : !cur ? (
             <div className="text-slate-400 text-xs">Forecast unavailable</div>
           ) : (

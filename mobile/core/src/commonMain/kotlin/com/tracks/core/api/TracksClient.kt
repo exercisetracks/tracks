@@ -1201,16 +1201,17 @@ class TracksClient(
         }
     }
 
-    /** The forecast for a point, on its own. */
-    suspend fun pointWeather(lat: Double, lon: Double): PointWeather? {
-        val body: PointWeatherEnvelope = request { token ->
-            http.get(url(Endpoints.MAP_POINT_WEATHER)) {
-                bearer(token)
-                parameter("lat", lat)
-                parameter("lon", lon)
-            }
+    /**
+     * The forecast for a point, on its own — the whole envelope, because a
+     * missing forecast is either the provider failing or the user having
+     * turned Weather off, and the sheet says different things for each.
+     */
+    suspend fun pointWeather(lat: Double, lon: Double): PointWeatherEnvelope = request { token ->
+        http.get(url(Endpoints.MAP_POINT_WEATHER)) {
+            bearer(token)
+            parameter("lat", lat)
+            parameter("lon", lon)
         }
-        return body.weather
     }
 
     /**

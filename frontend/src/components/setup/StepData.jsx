@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Hawk Fugagli
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Setup step — Map & weather data. Four independent opt-in toggles: worldwide
-// map tiles, race weather forecasts, live wildfire/smoke overlays, and USGS
+// map tiles, weather forecasts, live wildfire/smoke overlays, and USGS
 // GNIS POI data. Reads/writes mapEnabled/weatherEnabled/wildfireEnabled/
 // gnisEnabled on the shared `agps` draft slice.
 import { ToggleCard } from "./primitives";
@@ -29,17 +29,17 @@ export default function StepData({ data, onChange, onNext, onBack }) {
       <ToggleCard
         checked={data.weatherEnabled}
         onChange={v => onChange("weatherEnabled", v)}
-        title="Race weather data"
+        title="Weather data"
         hint="Change any time in Settings."
         icon={
           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15a4.5 4.5 0 0 0 4.5 4.5H18a3.75 3.75 0 0 0 1.332-7.257 3 3 0 0 0-3.758-3.848 5.25 5.25 0 0 0-10.233 2.33A4.502 4.502 0 0 0 2.25 15Z" />
           </svg>
         }
-        description="Automatically fetch forecast and historical weather for race plans."
+        description="Fetch forecasts for race plans, places you tap on the map, and your watch."
         points={[
           ["+", "Free, no API key needed (Open-Meteo)"],
-          ["-", "Sends your race location (lat/lon) to Open-Meteo's servers"],
+          ["-", "Sends those locations (lat/lon) to Open-Meteo's servers"],
         ]}
       />
 

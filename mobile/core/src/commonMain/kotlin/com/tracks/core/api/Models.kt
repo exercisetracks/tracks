@@ -382,6 +382,12 @@ data class PointInfo(
      * server's side, or a point the provider has no grid for.
      */
     val weather: PointWeather? = null,
+    /**
+     * The user turned Weather off in privacy settings, so the server never
+     * asked. Kept apart from a null [weather] so the sheet can say "off" rather
+     * than "unavailable" — one is a choice, the other looks like a fault.
+     */
+    @SerialName("weather_disabled") val weatherDisabled: Boolean = false,
 )
 
 /** Current conditions plus the daily outlook, in metric as the server sends it. */
@@ -434,6 +440,8 @@ data class WeatherHour(
 @Serializable
 data class PointWeatherEnvelope(
     val weather: PointWeather? = null,
+    /** See [PointInfo.weatherDisabled]. */
+    @SerialName("weather_disabled") val weatherDisabled: Boolean = false,
 )
 
 /** A day's hours, as the server groups them. */

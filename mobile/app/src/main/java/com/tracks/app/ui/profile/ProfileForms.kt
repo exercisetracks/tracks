@@ -466,8 +466,8 @@ fun PrivacyForm(state: ProfileState, set: SetField, hasDevice: Boolean, aiRow: @
         ) { set("map_enabled", it) }
         val weather = state.bool("weather_enabled", true)
         ConnectivityRow(
-            "Race weather",
-            if (weather) "Sends race locations to Open-Meteo for forecasts" else "Locations stay on your server",
+            "Weather",
+            if (weather) "Sends race, map and watch locations to Open-Meteo for forecasts" else "Locations stay on your server",
             if (weather) Tone.Info else Tone.Off,
             weather,
         ) { set("weather_enabled", it) }
