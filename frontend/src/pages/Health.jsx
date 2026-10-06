@@ -1,30 +1,67 @@
 // SPDX-FileCopyrightText: 2026 Hawk Fugagli
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Health page: a "Today" snapshot (last night's sleep + latest vitals) over a
-// unified Trends explorer, then meals, medications, and injury tracking with a
-// timeline. This file owns page-level data fetching and injury CRUD state; the
-// presentational/chart pieces live in components/health/.
+// Health page: every reading as a dial against its scale, grouped Activity /
+// Body / Vitals, each opening its own history; the run of nights on a clock in
+// the Sleep card; then injuries, medications and meals. The same design as the
+// phone's Health screen — see components/health/MetricGaugeGroup.jsx for why
+// dials replaced the old "Today" strip and metric-picker Trends chart.
+//
+// This file owns page-level data fetching, the window every chart is drawn
+// over, and injury CRUD state; the dials and charts live in components/health/.
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { api } from "../api/client";
 import MealSection from "../components/MealSection";
 import MedicationSection from "../components/MedicationSection";
 
 import { isoToday } from "../components/health/helpers";
 import { Section, Card } from "../components/health/ui";
-import TodayPanel from "../components/health/TodayPanel";
-import TrendPanel from "../components/health/TrendPanel";
+import MetricGaugeGroup from "../components/health/MetricGaugeGroup";
+import SleepPanel from "../components/health/SleepPanel";
+import ManualEntryPanel from "../components/health/ManualEntryPanel";
+import { healthGroups, hasMeasurements } from "../components/health/metrics";
+import { sleepNights } from "../components/health/sleepClock";
+import { localIso } from "../components/health/scales";
 import InjuryTimeline from "../components/health/InjuryTimeline";
 import InjuryForm from "../components/health/InjuryForm";
 import InjuryCard from "../components/health/InjuryCard";
 import InjuryActivitiesDrawer from "../components/health/InjuryActivitiesDrawer";
+import Tabs from "../components/ui/Tabs";
 import { PlusIcon } from "../components/ui/Button";
+
+/**
+ * How far back every chart on the page looks. One window for the whole page,
+ * in the header, because it governs every dial's history and the sleep card
+ * alike — the same reason the phone puts it in its app bar.
+ */
+const RANGES = [
+  { key: "7d",   label: "7 days",   days: 7 },
+  { key: "30d",  label: "30 days",  days: 30 },
+  { key: "1y",   label: "1 year",   days: 365 },
+  { key: "life", label: "Lifetime", days: null },
+];
+
+/**
+ * Past a month, the stress chart draws daily averages rather than every
+ * reading — a legibility limit, not a fetch one: a year of three-minute samples
+ * is a fifth of a pixel each. The server caps its own window on top of this.
+ */
+const INTRADAY_MAX_DAYS = 31;
+
+function windowStart(range) {
+  if (range.days == null) return null;
+  const d = new Date();
+  d.setDate(d.getDate() - range.days);
+  return localIso(d);
+}
 
 export default function Health() {
   const [metrics,   setMetrics]   = useState([]);
-  const [form,      setForm]      = useState([]);
   const [injuries,  setInjuries]  = useState([]);
   const [settings,  setSettings]  = useState(null);
+  const [stress,    setStress]    = useState([]);
+  const [rangeKey,  setRangeKey]  = useState("30d");
+  const [logOpen,   setLogOpen]   = useState(false);
 
   const [highlightedInjuryId, setHighlightedInjuryId] = useState(null);
   const [showInjuryForm,     setShowInjuryForm]     = useState(false);
@@ -34,9 +71,11 @@ export default function Health() {
   const injuryRefs = useRef({});
 
   const imperial = settings?.units === "imperial";
+  const range = RANGES.find(r => r.key === rangeKey) ?? RANGES[1];
+  const start = windowStart(range);
 
-  // Full history — the Trends chart offers a Lifetime range, so fetch everything
-  // rather than a fixed recent window.
+  // Full history — the window offers Lifetime, so fetch everything once and
+  // filter on the way out rather than refetching on every range change.
   const fetchMetrics = useCallback(() => {
     api.getHealthSummary(36500).then(setMetrics).catch(() => {});
   }, []);
@@ -48,10 +87,36 @@ export default function Health() {
   useEffect(() => {
     fetchMetrics();
     fetchInjuries();
-    // Form (TSB) history, for overlaying against the health metrics.
-    api.getTrainingLoad().then(setForm).catch(() => {});
     api.getSettings().then(setSettings).catch(() => {});
   }, [fetchMetrics, fetchInjuries]);
+
+  // The stress curve, on windows short enough to draw one. A longer window
+  // clears it: a month of readings drawn across a year of axis would be a
+  // smear at the right edge pretending to be a year of data. The guard drops
+  // an answer for a window the user has already left.
+  useEffect(() => {
+    if (range.days == null || range.days > INTRADAY_MAX_DAYS) { setStress([]); return undefined; }
+    let live = true;
+    api.getStressDetail({ after: start })
+      .then(days => { if (live) setStress(days ?? []); })
+      .catch(() => { if (live) setStress([]); });
+    return () => { live = false; };
+  }, [range.days, start]);
+
+  const days = useMemo(
+    () => (start ? metrics.filter(m => m.date >= start) : metrics),
+    [metrics, start],
+  );
+  const groups = useMemo(
+    () => healthGroups({ days, imperial, start, stress }),
+    [days, imperial, start, stress],
+  );
+  const nights = useMemo(() => sleepNights(days), [days]);
+  // The watch's half of the page only exists with readings one left behind —
+  // anywhere in the history, not just this window, so a quiet week shows
+  // blank dials rather than hiding them. Without any, the page is the half
+  // anyone can fill in.
+  const showMeasured = useMemo(() => metrics.some(hasMeasurements), [metrics]);
 
   // ── Injury CRUD ──────────────────────────────────────────────────────────────
 
@@ -95,19 +160,45 @@ export default function Health() {
 
   // ── Render ───────────────────────────────────────────────────────────────────
 
+  // The one button for everything a watch cannot know, inside the card whose
+  // dials it fills in rather than floating loose on the page.
+  const logFooter = (
+    <>
+      <button
+        type="button"
+        onClick={() => setLogOpen(o => !o)}
+        data-tour="health-log"
+        className="btn btn-tonal btn-sm w-full justify-center"
+      >
+        {logOpen ? "Close" : <><PlusIcon />Log weight, water or calories</>}
+      </button>
+      {logOpen && (
+        <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+          <ManualEntryPanel today={isoToday()} imperial={imperial} onSaved={fetchMetrics} />
+        </div>
+      )}
+    </>
+  );
+
   return (
     <div className="p-5 max-w-7xl mx-auto space-y-8">
-      <h1 className="text-xl font-bold text-slate-900 dark:text-white">Health</h1>
-
-      {/* Today — last night's sleep + today's vitals, with inline logging */}
-      <div data-tour="health-today">
-        <TodayPanel metrics={metrics} imperial={imperial} onSaved={fetchMetrics} />
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <h1 className="text-xl font-bold text-slate-900 dark:text-white">Health</h1>
+        <Tabs tabs={RANGES} value={rangeKey} onChange={setRangeKey} size="sm" dataTour="health-range" />
       </div>
 
-      {/* Trends — multi-select metrics (incl. Form) over one chart */}
-      <div data-tour="health-trends">
-        <TrendPanel metrics={metrics} form={form} imperial={imperial} />
-      </div>
+      {showMeasured ? (
+        <>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <MetricGaugeGroup {...groups.activity} start={start} />
+            <MetricGaugeGroup {...groups.body} start={start} footer={logFooter} />
+          </div>
+          <MetricGaugeGroup {...groups.vitals} start={start} columns={6} />
+          <SleepPanel nights={nights} start={start} />
+        </>
+      ) : (
+        <MetricGaugeGroup {...groups.body} start={start} footer={logFooter} />
+      )}
 
       {/* Injuries */}
       <Section

@@ -149,22 +149,28 @@ export const TOURS = {
 
   health: [
     {
-      anchor: '[data-tour="health-today"]',
-      title: "Today at a glance",
-      body: "Last night's sleep and your latest vitals — HRV, resting HR, SpO₂, and weight — for a quick morning read.",
+      anchor: '[data-tour="health-vitals"]',
+      title: "Every reading on its scale",
+      body: "Each dial shows today's reading against its range — green is good, red is worth a look. Click any dial to see its history and what the number means.",
       placement: "bottom",
     },
     {
-      anchor: '[data-tour="health-trends"]',
-      title: "Trends",
-      body: "Chart any metric's history — sleep stages, HRV, weight, Form and more. Select several at once to overlay them and spot how they move together, over 7 days up to your lifetime.",
+      anchor: '[data-tour="health-range"]',
+      title: "Pick the window",
+      body: "How far back every history on the page looks, from the last week to your lifetime.",
       placement: "bottom",
+    },
+    {
+      anchor: '[data-tour="health-sleep"]',
+      title: "Your nights on a clock",
+      body: "Each night is drawn when it happened, split into deep, REM and light sleep. Click a night to see it stage by stage.",
+      placement: "top",
     },
     {
       anchor: '[data-tour="health-log"]',
       title: "Log an entry",
       body: "Add weight, hydration, or calories for any date. Meals and medications have their own sections below.",
-      placement: "bottom",
+      placement: "top",
     },
     {
       anchor: '[data-tour="health-injuries"]',

@@ -6,7 +6,9 @@
 
 import { isoToday } from "./helpers";
 
-// Sleep-stage colours (shared by the sleep chart, tooltip and breakdown row).
+// Sleep-stage colours, shared by every view of a night — the sleep card, the
+// Sleep dial's arc and the phone (HealthChrome.kt). The colour is the
+// stage's name once a reader has learned it, so they must not disagree.
 export const SLEEP_COLORS = {
   deep:  "#6366f1",
   rem:   "#a855f7",

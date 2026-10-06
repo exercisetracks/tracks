@@ -216,6 +216,10 @@ export const api = {
 
   // Health
   getHealthSummary:    (days = 30) => get(`/health/summary?days=${days}`),
+  // One night's stage timeline (empty `stages` for nights recorded before the
+  // importer kept them), and the stress curve behind the daily averages.
+  getSleepNight:       (date)   => get(`/health/sleep/${date}`),
+  getStressDetail:     (p = {}) => get(`/health/stress${qs(p)}`),
   patchDailyMetric:    (date, data) => { _cacheDelPrefix("GET", "/health/summary"); return patch(`/health/daily/${date}`, data); },
   getInjuries:         ()       => get("/health/injuries"),
   createInjury:        (data)   => { _cacheDel("GET", "/health/injuries"); return post("/health/injuries", data); },
