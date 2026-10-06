@@ -40,6 +40,7 @@ import { SCORE_COLOR, localIso } from "./scales";
 import { clockLabel, clockScale, hoursMinutes, laneOf, nightClock } from "./sleepClock";
 import { dayMs } from "./HistoryCharts";
 import { EXPLAIN } from "./explain";
+import { InfoButton, InfoPanel } from "./ui";
 
 const AWAKE = SLEEP_COLORS.other;
 const PLOT_H = 280;
@@ -57,22 +58,10 @@ export default function SleepPanel({ nights, start }) {
     <section data-tour="health-sleep">
       <div className="flex items-center gap-2 mb-3">
         <h2 className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Sleep</h2>
-        <button
-          type="button"
-          onClick={() => setShowInfo(s => !s)}
-          aria-expanded={showInfo}
-          aria-label="About the sleep chart"
-          className="w-4 h-4 rounded-full text-[10px] font-bold flex items-center justify-center bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700"
-        >
-          ?
-        </button>
+        <InfoButton open={showInfo} onToggle={() => setShowInfo(s => !s)} label="About the sleep chart" />
       </div>
       <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
-        {showInfo && (
-          <div className="mb-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 px-4 py-3 space-y-2 text-sm text-slate-600 dark:text-slate-300">
-            {EXPLAIN.sleepStages.body.map((p, i) => <p key={i}>{p}</p>)}
-          </div>
-        )}
+        {showInfo && <InfoPanel body={EXPLAIN.sleepStages.body} className="mb-4" />}
         {!chosen ? (
           <p className="py-10 text-center text-sm text-slate-400 dark:text-slate-500">
             No sleep recorded in this window. Worn overnight, the watch records it while you sleep.

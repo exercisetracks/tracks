@@ -168,8 +168,8 @@ export const TOURS = {
     },
     {
       anchor: '[data-tour="health-log"]',
-      title: "Log an entry",
-      body: "Add weight, hydration, or calories for any date. Meals and medications have their own sections below.",
+      title: "Log today",
+      body: "Weight, water and food in one form. Tick “Remember this meal” and it becomes a one-click chip for next time; pick a date to fill in a day you missed.",
       placement: "top",
     },
     {

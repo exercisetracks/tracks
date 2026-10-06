@@ -290,9 +290,11 @@ object Explain {
     )
 
     val CaloriesIn = MetricInfo(
-        "Calories in",
-        "What you have logged eating today, from the meals list. Compare it " +
-            "with the day's burn to see roughly where the balance landed.",
+        "Calories eaten",
+        "Everything you logged eating that day, added up. Compare it with the " +
+            "day's burn to see roughly where the balance landed.",
+        "Days from before food was logged meal by meal show the daily total " +
+            "that was typed in instead.",
     )
 
     // ── Activity ─────────────────────────────────────────────────────────────

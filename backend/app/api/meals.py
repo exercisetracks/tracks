@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Hawk Fugagli
 # SPDX-License-Identifier: AGPL-3.0-or-later
-from datetime import datetime, timezone, timedelta, date
+from datetime import datetime, timezone, timedelta
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -136,58 +136,3 @@ def delete_log_entry(entry_id: int, db: Session = Depends(get_db), user: User = 
         raise HTTPException(status_code=404, detail="Log entry not found")
     db.delete(e)
     db.commit()
-
-
-@router.get("/log/summary")
-def meal_log_summary(
-    days: int = 7,
-    db: Session = Depends(get_db),
-    user: User = Depends(require_auth),
-):
-    """
-    Returns per-day calorie/macro totals and time-of-day hour buckets
-    for both the current day and a 7-day (or `days`-day) weekly average.
-    """
-    since = datetime.now(timezone.utc) - timedelta(days=days)
-    entries = (
-        db.query(MealLog)
-        .filter(MealLog.user_id == user.id, MealLog.logged_at >= since)
-        .order_by(MealLog.logged_at)
-        .all()
-    )
-
-    today_str = date.today().isoformat()
-    # Bucket hours 0-23 for today and as weekly average
-    today_hours   = [0] * 24
-    weekly_hours  = [0] * 24
-    weekly_days_seen = set()
-
-    for e in entries:
-        local_dt  = e.logged_at.astimezone()
-        hour      = local_dt.hour
-        day_str   = local_dt.date().isoformat()
-        weekly_hours[hour] += e.calories
-        weekly_days_seen.add(day_str)
-        if day_str == today_str:
-            today_hours[hour] += e.calories
-
-    n_days = max(len(weekly_days_seen), 1)
-    avg_hours = [round(v / n_days) for v in weekly_hours]
-
-    today_entries = [
-        {"id": e.id, "name": e.name, "calories": e.calories,
-         "protein_g": float(e.protein_g) if e.protein_g else None,
-         "carbs_g": float(e.carbs_g) if e.carbs_g else None,
-         "fat_g": float(e.fat_g) if e.fat_g else None,
-         "logged_at": e.logged_at.isoformat(),
-         "meal_id": e.meal_id}
-        for e in entries
-        if e.logged_at.astimezone().date().isoformat() == today_str
-    ]
-
-    return {
-        "today_entries":  today_entries,
-        "today_total":    {"calories": sum(e["calories"] for e in today_entries)},
-        "today_by_hour":  today_hours,
-        "weekly_by_hour": avg_hours,
-    }

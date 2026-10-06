@@ -15,6 +15,7 @@
 import { useEffect, useRef, useState } from "react";
 import { gaugeFigure, zoneFor } from "../RadialGauge";
 import { isFresh, verdictFor } from "./scales";
+import { InfoButton, InfoPanel } from "./ui";
 
 const shortDate = iso => new Date(iso + "T00:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric" });
 
@@ -56,19 +57,7 @@ export default function HistoryModal({
           <div className="flex items-center gap-2">
             <h2 className="text-base font-bold text-slate-900 dark:text-white">{title}</h2>
             {info && (
-              <button
-                type="button"
-                onClick={() => setShowInfo(s => !s)}
-                aria-expanded={showInfo}
-                aria-label={`What is ${title}?`}
-                className={`w-5 h-5 rounded-full text-[11px] font-bold flex items-center justify-center transition-colors ${
-                  showInfo
-                    ? "bg-slate-700 text-white dark:bg-slate-200 dark:text-slate-900"
-                    : "bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700"
-                }`}
-              >
-                ?
-              </button>
+              <InfoButton open={showInfo} onToggle={() => setShowInfo(s => !s)} label={`What is ${title}?`} size="md" />
             )}
           </div>
           <button
@@ -80,11 +69,7 @@ export default function HistoryModal({
           </button>
         </div>
 
-        {showInfo && info && (
-          <div className="rounded-xl bg-slate-50 dark:bg-slate-800/60 px-4 py-3 space-y-2 text-sm text-slate-600 dark:text-slate-300">
-            {info.body.map((p, i) => <p key={i}>{p}</p>)}
-          </div>
-        )}
+        {showInfo && info && <InfoPanel body={info.body} />}
 
         {n === 0 ? (
           <p className="py-10 text-center text-sm text-slate-400">No history recorded yet.</p>

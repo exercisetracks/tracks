@@ -49,6 +49,15 @@ export const EXPLAIN = {
     "There are no good or bad bands here, and there will not be: the dial only places today within your own range for the window."),
   hydration: info("Hydration",
     "What you have logged drinking that day. Sweat losses run roughly half a litre to a litre an hour of hard exercise, more in heat."),
-  caloriesIn: info("Calories in",
-    "What you have logged eating that day. Compare it with the day's burn to see roughly where the balance landed."),
+  caloriesIn: info("Calories eaten",
+    "Everything you logged eating that day, added up. Compare it with the day's burn to see roughly where the balance landed.",
+    "Days from before food was logged meal by meal show the daily total that was typed in instead."),
+  // The group-level note behind Body's "?". The rule it describes is isFresh
+  // in scales.js — one day for water and food, never for weight — and the
+  // wording has to change if that does.
+  body: info("Body",
+    "These are the numbers you log yourself, with the Log today button.",
+    "Water and calories eaten are daily totals, so they expire: a dial shows its newest entry for one day after the day it was logged, then goes to a dash until you log again. Yesterday's water is still on the dial today; by tomorrow it is history.",
+    "Weight is the exception. It stays on the dial until you log a new one, because a body weight is still true the morning after you stood on the scales.",
+    "Nothing is deleted when a dial expires — click it to see every entry in the window."),
 };

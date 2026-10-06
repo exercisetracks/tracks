@@ -235,7 +235,6 @@ export const api = {
   getMealLog:         (days = 7) => get(`/meals/log?days=${days}`),
   logMeal:            (data)     => { _cacheDelPrefix("GET", "/meals/log"); return post("/meals/log", data); },
   deleteMealLog:      (id)       => { _cacheDelPrefix("GET", "/meals/log"); return del(`/meals/log/${id}`); },
-  getMealLogSummary:  (days = 7) => get(`/meals/log/summary?days=${days}`),
 
   // Medications
   getMedications:     ()         => get("/medications"),

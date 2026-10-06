@@ -232,6 +232,20 @@ data class Meal(
     val notes: String? = null,
 )
 
+/**
+ * A saved meal as written: what "Remember this meal" creates and Manage edits.
+ * Notes are left off — nothing on the phone edits them, and a field that is
+ * not sent is a field that is not overwritten.
+ */
+@Serializable
+data class MealIn(
+    val name: String,
+    val calories: Int = 0,
+    @SerialName("protein_g") val proteinG: Double? = null,
+    @SerialName("carbs_g") val carbsG: Double? = null,
+    @SerialName("fat_g") val fatG: Double? = null,
+)
+
 /** A meal actually eaten, at a time. */
 @Serializable
 data class MealLog(

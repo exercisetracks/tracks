@@ -13,6 +13,7 @@ import com.tracks.core.api.InjuryCreate
 import com.tracks.core.api.InjuryUpdate
 import com.tracks.core.api.Meal
 import com.tracks.core.api.MealLog
+import com.tracks.core.api.MealIn
 import com.tracks.core.api.MealLogCreate
 import com.tracks.app.meds.DoseSlot
 import com.tracks.app.meds.MedicationReminders
@@ -157,6 +158,16 @@ data class Trend(val dates: List<String> = emptyList(), val values: List<Double>
  * A date in the future is a phone whose clock is ahead of the server's. That
  * is not staleness and must not blank a dial.
  */
+/**
+ * The local calendar day a UTC stamp falls on, as `yyyy-MM-dd` — or null for a
+ * stamp that does not parse. Offset-less stamps are read as local already.
+ */
+internal fun localDayOf(stamp: String, zone: java.time.ZoneId = java.time.ZoneId.systemDefault()): String? =
+    runCatching { java.time.OffsetDateTime.parse(stamp).atZoneSameInstant(zone).toLocalDate().toString() }
+        .recoverCatching { java.time.LocalDateTime.parse(stamp).toLocalDate().toString() }
+        .recoverCatching { LocalDate.parse(stamp.take(10)).toString() }
+        .getOrNull()
+
 internal fun isFresh(
     date: String?,
     freshDays: Long?,
@@ -268,7 +279,30 @@ data class HealthUiState(
         get() = dosesOn(LocalDate.now(), medications, medicationLog)
 
     val mealsToday: List<MealLog>
-        get() = mealLog.filter { it.loggedAt.startsWith(today) }
+        // By the local day it was eaten on. The stamp is UTC, and matching its
+        // text against today's date filed an evening meal under tomorrow.
+        get() = mealLog.filter { localDayOf(it.loggedAt) == today }
+
+    /**
+     * What the Eaten dial counts: each day's food entries added up.
+     *
+     * There used to be two calorie-eaten figures that never agreed — a typed
+     * daily total on the metric row, which drove the dial, and the meal log,
+     * which the dial ignored. The log is the source now. Days from before it,
+     * which carry only a typed total, keep that total so their history is not
+     * lost, but a day with any food logged counts the food and never both.
+     */
+    val eaten: Trend
+        get() {
+            val cutoff = range.afterDate()
+            val food = mealLog.mapNotNull { e -> localDayOf(e.loggedAt)?.let { it to e.calories } }
+                .filter { (day, _) -> cutoff == null || day >= cutoff }
+                .groupBy({ it.first }, { it.second })
+                .mapValues { (_, kcal) -> kcal.sum().toDouble() }
+            val typed = days.mapNotNull { d -> d.caloriesIn?.let { d.date to it.toDouble() } }.toMap()
+            val dates = (food.keys + typed.keys).sorted()
+            return Trend(dates, dates.map { food[it] ?: typed.getValue(it) })
+        }
 
     val caloriesToday: Int get() = mealsToday.sumOf { it.calories }
 
@@ -428,7 +462,6 @@ class HealthViewModel(private val container: AppContainer) : ViewModel() {
         viewModelScope.launch {
             val src = container.sources
             val logFrom = LocalDate.now().minusDays(LOG_DAYS.toLong()).toString()
-            val mealFrom = LocalDate.now().minusDays(MEAL_LOG_DAYS.toLong()).toString()
             val medications = src.list("medication", Medication.serializer()).map { m ->
                 m.copy(schedules = src.children("medication_schedule", m.id)
                     .mapNotNull { src.decode(it, MedicationSchedule.serializer()) })
@@ -440,8 +473,10 @@ class HealthViewModel(private val container: AppContainer) : ViewModel() {
                     medicationLog = src.list("medication_log", MedicationLog.serializer())
                         .filter { l -> l.loggedAt >= logFrom }.sortedBy { l -> l.loggedAt },
                     meals = src.list("meal", Meal.serializer()).sortedBy { m -> m.name.lowercase() },
-                    mealLog = src.list("meal_log", MealLog.serializer())
-                        .filter { l -> l.loggedAt >= mealFrom }.sortedBy { l -> l.loggedAt },
+                    // All of it, not a recent slice: the Eaten dial counts
+                    // food, and its history reaches as far back as the window
+                    // does. A few rows a day is nothing to hold.
+                    mealLog = src.list("meal_log", MealLog.serializer()).sortedBy { l -> l.loggedAt },
                     pending = container.replica.pendingCount().toInt(),
                 )
             }
@@ -554,6 +589,53 @@ class HealthViewModel(private val container: AppContainer) : ViewModel() {
     fun deleteMealLog(id: Int) = write { container.sources.delete("meal_log", id) }
 
     /**
+     * Log a food line from the form, and keep it as a saved meal if asked.
+     *
+     * Remembered only when no saved meal already has the name: the name is the
+     * identity a person sees, and two chips called "Porridge" would be a puzzle.
+     * A typed name that matches one is logged against it either way, so the
+     * chip and the keyboard produce the same entry.
+     */
+    fun logFood(entry: MealLogCreate, remember: Boolean) = write {
+        val src = container.sources
+        val existing = _state.value.meals.firstOrNull { it.name.equals(entry.name, ignoreCase = true) }?.id
+        val mealId = existing ?: if (remember) {
+            src.create(
+                "meal",
+                MealIn(entry.name, entry.calories ?: 0, entry.proteinG, entry.carbsG, entry.fatG),
+                MealIn.serializer(),
+            )
+        } else {
+            null
+        }
+        src.create(
+            "meal_log",
+            entry.copy(mealId = mealId, calories = entry.calories ?: 0, loggedAt = entry.loggedAt ?: nowIso()),
+            MealLogCreate.serializer(),
+        )
+    }
+
+    /**
+     * Correct a saved meal. Every field is sent explicitly: an edit leaves out
+     * values still at their defaults, so a calorie count set to 0 or a macro
+     * cleared would otherwise never be written.
+     */
+    fun saveMeal(id: Int, meal: MealIn) = write {
+        container.sources.edit(
+            "meal", id, meal, MealIn.serializer(),
+            extra = mapOf(
+                "calories" to meal.calories,
+                "protein_g" to meal.proteinG,
+                "carbs_g" to meal.carbsG,
+                "fat_g" to meal.fatG,
+            ),
+        )
+    }
+
+    /** Past entries keep their own copy of the name and calories, so nothing logged is lost. */
+    fun deleteSavedMeal(id: Int) = write { container.sources.delete("meal", id) }
+
+    /**
      * Correct today's weight, hydration, or calories in.
      *
      * The date is fixed here rather than at send time. A weight typed on Sunday
@@ -635,9 +717,6 @@ class HealthViewModel(private val container: AppContainer) : ViewModel() {
          * being sent under a name the endpoint does not read.
          */
         const val LOG_DAYS = 30
-
-        /** Meals are only read for "what did I eat lately". */
-        const val MEAL_LOG_DAYS = 14
 
         /**
          * The folder a watch imports from on its own.

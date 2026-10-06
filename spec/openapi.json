@@ -6982,53 +6982,6 @@
         }
       }
     },
-    "/meals/log/summary": {
-      "get": {
-        "tags": [
-          "meals"
-        ],
-        "summary": "Meal Log Summary",
-        "description": "Returns per-day calorie/macro totals and time-of-day hour buckets\nfor both the current day and a 7-day (or `days`-day) weekly average.",
-        "operationId": "meal_log_summary_meals_log_summary_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "days",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "default": 7,
-              "title": "Days"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/fuel/products": {
       "get": {
         "tags": [

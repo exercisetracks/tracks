@@ -21,6 +21,7 @@
 import { useState } from "react";
 import RadialGauge from "../RadialGauge";
 import HistoryModal from "./HistoryModal";
+import { InfoButton, InfoPanel } from "./ui";
 import { MetricHistoryChart } from "./HistoryCharts";
 import { FRESH_DAYS, currentOf, verdictFor, zonesFor } from "./scales";
 
@@ -32,18 +33,30 @@ const COLUMNS = {
   6: "grid-cols-3 sm:grid-cols-6",
 };
 
-export default function MetricGaugeGroup({ title, metrics, start, missingHint, footer, dataTour, columns = 3 }) {
+export default function MetricGaugeGroup({ title, info, metrics, start, missingHint, footer, dataTour, columns = 3 }) {
   const [open, setOpen] = useState(null);
+  const [showInfo, setShowInfo] = useState(false);
   const anyData = metrics.some(m => m.trend.values.length > 0);
   const openMetric = metrics.find(m => m.key === open);
 
   return (
-    <section data-tour={dataTour}>
-      <h2 className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3">
-        {title}
-      </h2>
-      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3.5">
-        <div className={`grid ${COLUMNS[columns] ?? COLUMNS[3]} gap-1`}>
+    // A column that fills its grid cell, so groups side by side end level
+    // whatever each one holds — Body carries a button that Activity does not.
+    <section data-tour={dataTour} className="flex flex-col h-full">
+      <div className="flex items-center gap-2 mb-3">
+        <h2 className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+          {title}
+        </h2>
+        {info && (
+          <InfoButton open={showInfo} onToggle={() => setShowInfo(s => !s)} label={`About ${title}`} />
+        )}
+      </div>
+      <div className="flex-1 flex flex-col bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3.5">
+        {showInfo && info && <InfoPanel body={info.body} className="mb-3" />}
+        {/* Centred when there is no footer, so a group stretched to match a
+            taller neighbour keeps its dials in the middle rather than
+            leaving all the spare height underneath them. */}
+        <div className={`grid ${COLUMNS[columns] ?? COLUMNS[3]} gap-1 ${footer ? "" : "my-auto"}`}>
           {metrics.map(m => (
             <GaugeTile key={m.key} metric={m} start={start} onOpen={() => setOpen(m.key)} />
           ))}
@@ -51,7 +64,9 @@ export default function MetricGaugeGroup({ title, metrics, start, missingHint, f
         {!anyData && missingHint && (
           <p className="mt-2 text-xs text-center text-slate-400 dark:text-slate-500">{missingHint}</p>
         )}
-        {footer && <div className="mt-3">{footer}</div>}
+        {/* Pinned to the bottom, so a taller neighbour stretches the space
+            above the button rather than leaving a gap below it. */}
+        {footer && <div className="mt-auto pt-3">{footer}</div>}
       </div>
 
       {openMetric && (

@@ -212,7 +212,8 @@ fun HealthScreen(vm: HealthViewModel, modifier: Modifier = Modifier) {
                 HealthMetric(
                     label = "Eaten",
                     longLabel = "Calories eaten",
-                    trend = state.series { it.caloriesIn },
+                    // Food logged, added up per day — see [HealthUiState.eaten].
+                    trend = state.eaten,
                     unit = "kcal",
                     scale = MetricScale.Personal(CALORIE_COLOR),
                     info = Explain.CaloriesIn,
@@ -224,7 +225,7 @@ fun HealthScreen(vm: HealthViewModel, modifier: Modifier = Modifier) {
             // card whose dials it fills in. It replaced a permanently-expanded
             // entry card and a nutrition card that between them took a third of
             // the page to be used for ten seconds a day.
-            footer = { LogButton("Log weight, water or a meal", onClick = { logging = true }) },
+            footer = { LogButton("Log today", onClick = { logging = true }) },
         )
 
         MedicationsSection(
@@ -249,13 +250,16 @@ fun HealthScreen(vm: HealthViewModel, modifier: Modifier = Modifier) {
     if (logging) {
         HealthLogSheet(
             weightKg = state.latestOf { it.weightKg },
-            hydrationMl = state.latestOf { it.hydrationMl },
+            hydrationMl = state.days.lastOrNull { it.date == state.today }?.hydrationMl,
             savedMeals = state.meals,
             mealsToday = state.mealsToday,
             caloriesToday = state.caloriesToday,
             onSaveDay = vm::patchToday,
-            onLogMeal = vm::logMeal,
-            onDeleteMeal = vm::deleteMealLog,
+            onLogSaved = vm::logMeal,
+            onLogFood = vm::logFood,
+            onSaveMeal = vm::saveMeal,
+            onDeleteSavedMeal = vm::deleteSavedMeal,
+            onDeleteEntry = vm::deleteMealLog,
             onDismiss = { logging = false },
         )
     }

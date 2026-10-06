@@ -11,14 +11,13 @@
 
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { api } from "../api/client";
-import MealSection from "../components/MealSection";
 import MedicationSection from "../components/MedicationSection";
 
 import { isoToday } from "../components/health/helpers";
 import { Section, Card } from "../components/health/ui";
 import MetricGaugeGroup from "../components/health/MetricGaugeGroup";
 import SleepPanel from "../components/health/SleepPanel";
-import ManualEntryPanel from "../components/health/ManualEntryPanel";
+import LogTodayModal from "../components/health/LogTodayModal";
 import { healthGroups, hasMeasurements } from "../components/health/metrics";
 import { sleepNights } from "../components/health/sleepClock";
 import { localIso } from "../components/health/scales";
@@ -34,11 +33,14 @@ import { PlusIcon } from "../components/ui/Button";
  * in the header, because it governs every dial's history and the sleep card
  * alike — the same reason the phone puts it in its app bar.
  */
+// Longest first, like the dashboard's period and the phone's pills: the same
+// control counting in opposite directions on adjacent pages feels wrong
+// without anyone being able to say why.
 const RANGES = [
-  { key: "7d",   label: "7 days",   days: 7 },
-  { key: "30d",  label: "30 days",  days: 30 },
-  { key: "1y",   label: "1 year",   days: 365 },
   { key: "life", label: "Lifetime", days: null },
+  { key: "1y",   label: "1 year",   days: 365 },
+  { key: "30d",  label: "30 days",  days: 30 },
+  { key: "7d",   label: "7 days",   days: 7 },
 ];
 
 /**
@@ -62,6 +64,8 @@ export default function Health() {
   const [stress,    setStress]    = useState([]);
   const [rangeKey,  setRangeKey]  = useState("30d");
   const [logOpen,   setLogOpen]   = useState(false);
+  const [meals,     setMeals]     = useState([]);
+  const [food,      setFood]      = useState([]);
 
   const [highlightedInjuryId, setHighlightedInjuryId] = useState(null);
   const [showInjuryForm,     setShowInjuryForm]     = useState(false);
@@ -71,7 +75,7 @@ export default function Health() {
   const injuryRefs = useRef({});
 
   const imperial = settings?.units === "imperial";
-  const range = RANGES.find(r => r.key === rangeKey) ?? RANGES[1];
+  const range = RANGES.find(r => r.key === rangeKey) ?? RANGES[2];
   const start = windowStart(range);
 
   // Full history — the window offers Lifetime, so fetch everything once and
@@ -80,15 +84,23 @@ export default function Health() {
     api.getHealthSummary(36500).then(setMetrics).catch(() => {});
   }, []);
 
+  // Saved meals, and every food entry — the Eaten dial counts them, so they
+  // are fetched over the same full history as the metrics.
+  const fetchFood = useCallback(() => {
+    api.getMeals().then(setMeals).catch(() => {});
+    api.getMealLog(36500).then(setFood).catch(() => {});
+  }, []);
+
   const fetchInjuries = useCallback(() => {
     api.getInjuries().then(setInjuries).catch(() => {});
   }, []);
 
   useEffect(() => {
     fetchMetrics();
+    fetchFood();
     fetchInjuries();
     api.getSettings().then(setSettings).catch(() => {});
-  }, [fetchMetrics, fetchInjuries]);
+  }, [fetchMetrics, fetchFood, fetchInjuries]);
 
   // The stress curve, on windows short enough to draw one. A longer window
   // clears it: a month of readings drawn across a year of axis would be a
@@ -108,8 +120,8 @@ export default function Health() {
     [metrics, start],
   );
   const groups = useMemo(
-    () => healthGroups({ days, imperial, start, stress }),
-    [days, imperial, start, stress],
+    () => healthGroups({ days, imperial, start, stress, food }),
+    [days, imperial, start, stress, food],
   );
   const nights = useMemo(() => sleepNights(days), [days]);
   // The watch's half of the page only exists with readings one left behind —
@@ -163,21 +175,14 @@ export default function Health() {
   // The one button for everything a watch cannot know, inside the card whose
   // dials it fills in rather than floating loose on the page.
   const logFooter = (
-    <>
-      <button
-        type="button"
-        onClick={() => setLogOpen(o => !o)}
-        data-tour="health-log"
-        className="btn btn-tonal btn-sm w-full justify-center"
-      >
-        {logOpen ? "Close" : <><PlusIcon />Log weight, water or calories</>}
-      </button>
-      {logOpen && (
-        <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
-          <ManualEntryPanel today={isoToday()} imperial={imperial} onSaved={fetchMetrics} />
-        </div>
-      )}
-    </>
+    <button
+      type="button"
+      onClick={() => setLogOpen(true)}
+      data-tour="health-log"
+      className="btn btn-tonal w-full"
+    >
+      <PlusIcon />Log today
+    </button>
   );
 
   return (
@@ -268,10 +273,16 @@ export default function Health() {
         <MedicationSection />
       </Section>
 
-      {/* Nutrition & Meals */}
-      <Section title="Nutrition">
-        <MealSection />
-      </Section>
+      {logOpen && (
+        <LogTodayModal
+          days={metrics}
+          meals={meals}
+          log={food}
+          imperial={imperial}
+          onChanged={() => { fetchMetrics(); fetchFood(); }}
+          onClose={() => setLogOpen(false)}
+        />
+      )}
 
       {/* Activities drawer */}
       {viewingInjury && (

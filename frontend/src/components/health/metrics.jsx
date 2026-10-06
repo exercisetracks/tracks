@@ -15,6 +15,7 @@ import { SLEEP_COLORS } from "./constants";
 import { EXPLAIN } from "./explain";
 import { SleepTrendChart } from "./HistoryCharts";
 import StressHistory from "./StressHistory";
+import { eatenSeries } from "./food";
 
 const KG_TO_LB = 2.20462;
 
@@ -129,9 +130,10 @@ export function sleepMetric(days, start) {
 
 /**
  * The page's dial groups. `days` is the window's rows, oldest first; `stress`
- * the intraday curve (empty on windows too long to draw one).
+ * the intraday curve (empty on windows too long to draw one); `food` the meal
+ * log, which is what the Eaten dial counts — see food.js.
  */
-export function healthGroups({ days, imperial, start, stress }) {
+export function healthGroups({ days, imperial, start, stress, food = [] }) {
   const stressAverages = series(days, d => d.avg_stress_level);
 
   const activity = {
@@ -209,6 +211,7 @@ export function healthGroups({ days, imperial, start, stress }) {
   const body = {
     title: "Body",
     dataTour: "health-body",
+    info: EXPLAIN.body,
     missingHint: "Nothing here is measured — log a day and the dials start from there.",
     metrics: [
       {
@@ -232,7 +235,7 @@ export function healthGroups({ days, imperial, start, stress }) {
       },
       {
         key: "calories_in", label: "Eaten", longLabel: "Calories eaten", unit: "kcal",
-        trend: series(days, d => d.calories_in),
+        trend: eatenSeries(days, food, start),
         scale: { kind: "personal", color: CALORIE_COLOR },
         info: EXPLAIN.caloriesIn,
       },
