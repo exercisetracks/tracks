@@ -313,6 +313,23 @@ def _in_words(seconds: int) -> str:
     return "1 minute" if minutes == 1 else f"{minutes} minutes"
 
 
+def is_complete_archive(path: str | Path) -> bool:
+    """Has this archive finished downloading?
+
+    go-pmtiles extract creates the output at its full size up front, fills in
+    the tiles, and writes the header last — so an extract that was killed
+    (a restart mid-download, an upgrade) leaves a file of the right size with
+    a zeroed header. ``exists()`` called that finished, and the download was
+    never tried again while every tile request to it failed. The magic number
+    is the last thing written, so its presence means the rest is there too.
+    """
+    try:
+        with open(path, "rb") as f:
+            return f.read(7) == b"PMTiles"
+    except OSError:
+        return False
+
+
 def extract_global(resolve_source: Callable[[], str], output: str | Path,
                    maxzoom: int, download_id: DownloadId, timeout: int = 7200,
                    sleep: Callable[[float], None] = time.sleep) -> None:
@@ -321,17 +338,28 @@ def extract_global(resolve_source: Callable[[], str], output: str | Path,
     ``resolve_source`` is called before every attempt rather than once, so a
     basemap build that could not be resolved while the network was blocked is
     resolved properly once it is not. Any other failure is raised as before.
+
+    The extract is written beside ``output`` and renamed into place only once
+    it is complete, so the served name never points at a half-written archive
+    (see is_complete_archive).
     """
+    output = Path(output)
+    partial = output.with_name(output.stem + ".downloading.pmtiles")
     for attempt in itertools.count():
         source = resolve_source()
         global_download_tracker.start(download_id)
+        partial.unlink(missing_ok=True)
         try:
-            extract_with_progress(source, output, maxzoom, download_id, timeout=timeout)
+            extract_with_progress(source, partial, maxzoom, download_id, timeout=timeout)
+            os.replace(partial, output)
             return
         except SourceUnreachable as e:
-            Path(output).unlink(missing_ok=True)
+            partial.unlink(missing_ok=True)
             wait = _UNREACHABLE_BACKOFF[min(attempt, len(_UNREACHABLE_BACKOFF) - 1)]
             logger.warning("%s — retrying in %ds", e, wait)
             global_download_tracker.fail(
                 download_id, f"{e} The download will retry by itself in {_in_words(wait)}.")
             sleep(wait)
+        except BaseException:
+            partial.unlink(missing_ok=True)
+            raise

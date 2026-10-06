@@ -12,6 +12,7 @@ halves of the fix: the error says what to allow, and the download comes back
 on its own once it is allowed.
 """
 import sys
+from pathlib import Path
 
 import httpx
 import pytest
@@ -22,6 +23,7 @@ from app.services.global_download_tracker import global_download_tracker
 from app.services.pmtiles_extract import (
     SourceUnreachable,
     extract_global,
+    is_complete_archive,
     resolve_source_url,
     run_pmtiles_with_progress,
 )
@@ -82,6 +84,7 @@ class TestTheDownloadComesBackByItself:
             attempts.append(source)
             if len(attempts) <= 6:
                 raise SourceUnreachable("build.protomaps.com", BLOCKED, blocked=True)
+            Path(output).write_bytes(b"PMTiles" + bytes(120))
 
         def sleep(seconds):
             errors_seen.append(global_download_tracker.get_state("overview")["error"])
@@ -103,6 +106,57 @@ class TestTheDownloadComesBackByItself:
         with pytest.raises(RuntimeError, match="disk full"):
             extract_global(lambda: "https://x/y.pmtiles", tmp_path / "out.pmtiles",
                            12, "overview", sleep=lambda s: pytest.fail("should not retry"))
+
+
+class TestAnInterruptedDownloadIsNotMistakenForAFinishedOne:
+    """go-pmtiles creates the file at full size and writes the header last.
+
+    A restart mid-download left that file under the served name, and because
+    it existed, startup recovery and the download itself both called it done:
+    the basemap stayed broken, and never downloaded again.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _state_file(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(tracker_module, "_STATE_FILE", tmp_path / "state.json")
+
+    def test_a_file_without_its_header_is_unfinished(self, tmp_path):
+        killed = tmp_path / "planet_basemap.pmtiles"
+        killed.write_bytes(bytes(4096))
+        done = tmp_path / "done.pmtiles"
+        done.write_bytes(b"PMTiles" + bytes(120))
+
+        assert not is_complete_archive(killed)
+        assert is_complete_archive(done)
+        assert not is_complete_archive(tmp_path / "missing.pmtiles")
+
+    def test_the_served_name_only_ever_holds_a_finished_archive(self, tmp_path, monkeypatch):
+        output = tmp_path / "planet_basemap.pmtiles"
+        seen_during = []
+
+        def extract(source, out, maxzoom, download_id, timeout):
+            assert Path(out) != output, "the extract must not write to the served name"
+            seen_during.append(output.exists())
+            Path(out).write_bytes(b"PMTiles" + bytes(120))
+
+        monkeypatch.setattr(pmtiles_extract, "extract_with_progress", extract)
+        extract_global(lambda: "https://x/y.pmtiles", output, 12, "overview")
+
+        assert seen_during == [False]
+        assert is_complete_archive(output)
+        assert list(tmp_path.glob("*.downloading.pmtiles")) == []
+
+    def test_a_killed_download_is_downloaded_again(self, tmp_path, monkeypatch):
+        from app.services import global_overview
+
+        monkeypatch.setattr(global_overview.settings, "map_data_dir", str(tmp_path))
+        monkeypatch.setattr(global_overview.settings, "pmtiles_source_url", "https://x/y.pmtiles")
+        (tmp_path / "planet_basemap.pmtiles").write_bytes(bytes(4096))
+        monkeypatch.setattr(pmtiles_extract, "extract_with_progress",
+                            lambda s, out, *a, **k: Path(out).write_bytes(b"PMTiles" + bytes(120)))
+
+        assert global_overview.ensure_global_overview()
+        assert is_complete_archive(tmp_path / "planet_basemap.pmtiles")
 
 
 def test_an_unreachable_host_is_not_searched_for_older_builds(monkeypatch):

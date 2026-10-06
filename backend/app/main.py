@@ -269,11 +269,15 @@ def _recover_map_data() -> None:
         # Treat the overview as present if EITHER the z0-12 basemap or the legacy
         # z0-7 file exists, so the multi-GB z0-12 upgrade is never auto-triggered
         # by startup recovery — it's pulled explicitly when the operator opts in.
+        # Complete, not merely present: an extract killed mid-download leaves a
+        # full-size file with no header (see is_complete_archive).
+        from app.services.pmtiles_extract import is_complete_archive
         overview_missing = not (
-            (data_dir / "planet_basemap.pmtiles").exists()
+            is_complete_archive(data_dir / "planet_basemap.pmtiles")
             or (data_dir / "planet_z7.pmtiles").exists()
         )
-        dem_missing = settings.dem_source_url and not (data_dir / "planet_dem_z7.pmtiles").exists()
+        dem_missing = settings.dem_source_url and not is_complete_archive(
+            data_dir / "planet_dem_z7.pmtiles")
 
         if overview_missing or dem_missing:
             logger.info(

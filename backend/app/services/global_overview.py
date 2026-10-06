@@ -29,7 +29,9 @@ from pathlib import Path
 from app.config import settings
 from app.services import region_merger
 from app.services.global_download_tracker import global_download_tracker
-from app.services.pmtiles_extract import extract_global, resolve_source_url
+from app.services.pmtiles_extract import (
+    extract_global, is_complete_archive, resolve_source_url,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -46,8 +48,11 @@ _running = threading.Lock()
 def ensure_global_overview() -> bool:
     """Download the global basemap overview if it doesn't exist. Returns True if downloaded."""
     output = Path(settings.map_data_dir) / f"{OVERVIEW_NAME}.pmtiles"
-    if output.exists():
+    if is_complete_archive(output):
         return False
+    if output.exists():
+        logger.warning("Removing an unfinished basemap download: %s", output)
+        output.unlink()
 
     if not settings.pmtiles_source_url:
         logger.warning("PMTILES_SOURCE_URL not set — skipping global overview")
@@ -67,8 +72,6 @@ def ensure_global_overview() -> bool:
         msg = str(e)
         logger.error("Global overview download failed: %s", msg)
         global_download_tracker.fail("overview", msg)
-        # Don't leave a half-written archive behind.
-        Path(str(output)).unlink(missing_ok=True)
         return False
 
 

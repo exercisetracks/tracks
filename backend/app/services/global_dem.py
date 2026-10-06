@@ -9,7 +9,7 @@ from pathlib import Path
 from app.config import settings
 from app.services import region_merger
 from app.services.global_download_tracker import global_download_tracker
-from app.services.pmtiles_extract import extract_global
+from app.services.pmtiles_extract import extract_global, is_complete_archive
 
 logger = logging.getLogger(__name__)
 
@@ -24,8 +24,11 @@ _running = threading.Lock()
 
 def ensure_global_dem() -> bool:
     output = Path(settings.map_data_dir) / f"{PLANET_DEM_Z7}.pmtiles"
-    if output.exists():
+    if is_complete_archive(output):
         return False
+    if output.exists():
+        logger.warning("Removing an unfinished terrain download: %s", output)
+        output.unlink()
 
     if not settings.dem_source_url:
         logger.warning("DEM_SOURCE_URL not set — skipping global DEM download")
@@ -42,7 +45,6 @@ def ensure_global_dem() -> bool:
         msg = str(e)
         logger.error("Global DEM download failed: %s", msg)
         global_download_tracker.fail("dem", msg)
-        Path(str(output)).unlink(missing_ok=True)
         return False
 
 
