@@ -66,17 +66,9 @@ object Endpoints {
     // Inspecting a point, finding a place, and snapping a line to real trails.
     const val MAP_POINT = "/maps/point"
 
-    /** One day of that point's forecast, hour by hour. */
-    const val MAP_POINT_HOURLY = "/maps/point/hourly"
-
-    /**
-     * The forecast alone, so a panel can open before it arrives.
-     *
-     * The rest of point info is local to the server — a DEM lookup and a
-     * gazetteer row — while this is a call out to Open-Meteo. Asking for them
-     * together made the fast part as slow as the slow part.
-     */
-    const val MAP_POINT_WEATHER = "/maps/point/weather"
+    // No forecast endpoints: the phone asks Open-Meteo itself
+    // (core/weather/OpenMeteo.kt). The server keeps /maps/point/weather,
+    // /maps/point/hourly and /device-sync/weather for phones on older releases.
     const val POI_SEARCH = "/maps/poi/search"
 
     /**
@@ -250,13 +242,6 @@ object Endpoints {
      */
     const val SCHEDULE_FIT = "/device-sync/schedule-fit"
     const val SCHEDULE_BUNDLE = "/device-sync/schedule-bundle"
-    /**
-     * A forecast for the watch, when nothing on the phone is broadcasting one.
-     *
-     * Located from the user's most recent activity rather than the phone's GPS,
-     * so it needs no location permission — see the endpoint's own note.
-     */
-    const val WATCH_WEATHER = "/device-sync/weather"
     const val DELETE_LIST = "/device-sync/delete-list"
     const val AGPS = "/device-sync/agps"
     const val WATCH_SYNCED = "/device-sync/synced"
@@ -293,7 +278,7 @@ object Endpoints {
         HEATMAP, TRACKS_GEOJSON, MAP_STYLE,
         REGIONS, REGION_BY_ID, REGION_PROGRESS, REGION_DOWNLOAD,
         REGION_ESTIMATE, REGION_SUGGEST_NAME,
-        MAP_POINT, MAP_POINT_HOURLY, MAP_POINT_WEATHER, POI_SEARCH, POI_OFFLINE, ROUTE_SNAP,
+        MAP_POINT, POI_SEARCH, POI_OFFLINE, ROUTE_SNAP,
         ROUTE_ELEVATION,
         COURSES, WAYPOINTS,
         ROUTE_OFFLINE_MANIFEST, ROUTE_OFFLINE_SEGMENT, ROUTE_OFFLINE_PROFILE,
@@ -306,7 +291,7 @@ object Endpoints {
         MEDICATIONS, MEDICATION_BY_ID, MEDICATION_LOG, MEDICATION_LOG_ENTRY,
         MEALS, MEAL_LOG, PLAN_WORKOUT,
         GOALS, GOAL_PLAN, GOAL_PLAN_GENERATE, PLAN_WORKOUTS,
-        PUSH_LIST, MARK_UPLOADED, SCHEDULE_FIT, WATCH_WEATHER, DELETE_LIST, AGPS,
+        PUSH_LIST, MARK_UPLOADED, SCHEDULE_FIT, DELETE_LIST, AGPS,
         WATCH_SYNCED,
         SYNC_AGENTS, SYNC_PUBKEY, SYNC_INGEST, COURSE_INGEST, WAYPOINT_INGEST,
         STRETCHES, CUSTOM_STRETCHES, FLOWS, FLOW_BY_ID,

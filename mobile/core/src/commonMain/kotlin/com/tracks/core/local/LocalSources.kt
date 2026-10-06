@@ -129,6 +129,20 @@ class LocalSources(
         }
     }
 
+    /**
+     * Where this person last trained: the start of the newest activity that
+     * has GPS, for the watch forecast. Walks back [lookback] activities rather
+     * than trusting the newest, because an indoor session records no position
+     * and a treadmill run should not leave the watch without a forecast until
+     * the next time somebody goes outside. Hidden and deleted activities are
+     * skipped, as everywhere else.
+     */
+    suspend fun recentStartPoint(lookback: Int = 25): Pair<Double, Double>? = io {
+        activities().asSequence().take(lookback)
+            .mapNotNull { a -> library.uidOf(a.id)?.let(library::startPoint) }
+            .firstOrNull()
+    }
+
     /** Rename, re-sport, note or hide one activity — a source edit on a derived row. */
     suspend fun editActivity(id: Int, values: Map<String, Any?>): Unit = io {
         val uid = library.uidOf(id) ?: return@io

@@ -84,20 +84,12 @@ class WatchManager(
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob()),
     private val integration: DeviceIntegration = GarminIntegration(context),
     /**
-     * How to reach the server, for the weather fallback.
-     *
-     * A supplier rather than a client, because the client is built lazily from
-     * a container this class is constructed by — taking one eagerly would make
-     * a paired watch pay for HTTP setup before anything asked it to.
-     */
-    private val clientProvider: () -> TracksClient = {
-        (context.applicationContext as TracksApplication).container.client()
-    },
-    /**
-     * As [clientProvider], for the cached courses/waypoints library a course
+     * The app's container, for the cached courses/waypoints library a course
      * or waypoint push reads and patches — see [pushCourseNow]/
-     * [pushWaypointsNow]. Lazy for the same reason: a container built before
-     * anything asks for one should not pay for it.
+     * [pushWaypointsNow] — and for the weather fallback's settings, activity
+     * files and Open-Meteo client. A supplier rather than the container,
+     * because the container is built lazily and taking it eagerly would make a
+     * paired watch pay for that setup before anything asked it to.
      */
     private val containerProvider: () -> com.tracks.app.AppContainer = {
         (context.applicationContext as TracksApplication).container
@@ -1141,9 +1133,10 @@ class WatchManager(
      * was configured to broadcast, with nothing on either screen to say why;
      * the watch asks about once a minute and every one of those was dropped.
      *
-     * So the server is the fallback, not the primary. It locates the forecast
-     * from the user's most recent activity, which needs no location permission
-     * and is very nearly the right answer for "where does this person train".
+     * So Tracks' own forecast is the fallback, not the primary. It is located at
+     * the user's most recent activity with GPS, which needs no location
+     * permission and is very nearly the right answer for "where does this
+     * person train", and asked of Open-Meteo directly — see [directForecast].
      */
     private fun sendLatestWeather() {
         WeatherReceiver.latest?.let { report ->
@@ -1151,9 +1144,9 @@ class WatchManager(
             return
         }
         send("send weather") {
-            val report = serverForecast()
+            val report = directForecast()
             if (report == null) {
-                Log.i(TAG, "no weather app is broadcasting, and the server had no forecast either")
+                Log.i(TAG, "no weather app is broadcasting, and Tracks had no forecast of its own either")
             } else {
                 integration.sendWeather(report)
             }
@@ -1161,22 +1154,42 @@ class WatchManager(
     }
 
     /**
-     * The server's forecast, cached for [WEATHER_TTL_MS].
+     * A forecast fetched from Open-Meteo by the phone, cached for [WEATHER_TTL_MS].
+     *
+     * Direct rather than through the server, which used to make this request
+     * on the phone's behalf: the location comes from the phone's own activity
+     * files and the forecast from the internet, so the server added nothing but
+     * a second thing that had to be reachable. Now a watch on a trip, out of
+     * reach of a home server, still gets a forecast.
      *
      * The watch asks every minute and the weather does not change that fast, so
      * without a cache this would be a network round trip per minute for the
      * whole time a watch is connected — on an app whose entire premise is
      * battery discipline.
+     *
+     * Privacy: the Weather switch is checked before every request, and turning
+     * it off drops the cached copy too — "off" should mean the watch stops
+     * showing a forecast Tracks fetched, not that it keeps the last one.
      */
-    private suspend fun serverForecast(): WeatherReport? {
+    private suspend fun directForecast(): WeatherReport? {
+        val container = containerProvider()
+        if (!container.weatherAllowed()) {
+            cachedForecast = null
+            return null
+        }
         val cached = cachedForecast
         if (cached != null && SystemClock.elapsedRealtime() - cachedForecastAt < WEATHER_TTL_MS) {
             return cached
         }
-        val fetched = try {
-            clientProvider().watchWeather().toReport()
-        } catch (e: Exception) {
-            Log.w(TAG, "could not fetch a forecast from the server", e)
+        val point = runCatching { container.sources.recentStartPoint() }.getOrNull()
+        if (point == null) {
+            Log.i(TAG, "no activity with GPS on this phone, so there is nowhere to forecast for")
+            return cached
+        }
+        val fetched = container.openMeteo.watch(point.first, point.second, System.currentTimeMillis() / 1000)
+            ?.toReport()
+        if (fetched == null) {
+            Log.w(TAG, "could not fetch a forecast from Open-Meteo")
             // The stale copy beats nothing: a forecast an hour old is still
             // roughly today's weather, and the alternative is an empty glance.
             return cached
@@ -1184,7 +1197,7 @@ class WatchManager(
         cachedForecast = fetched
         cachedForecastAt = SystemClock.elapsedRealtime()
         com.tracks.app.feeds.WeatherSources.recordServerForecast(context)
-        Log.i(TAG, "server forecast for ${fetched.location}: ${fetched.currentTempC}C ${fetched.currentCondition}")
+        Log.i(TAG, "forecast for ${fetched.location}: ${fetched.currentTempC}C ${fetched.currentCondition}")
         return fetched
     }
 
@@ -1317,11 +1330,11 @@ class WatchManager(
 private const val WEATHER_TTL_MS = 30 * 60 * 1000L
 
 /**
- * The server's forecast in the shape the watch protocol carries.
+ * Tracks' forecast in the shape the watch protocol carries.
  *
  * A straight field rename — the mapping that actually needed judgement (WMO
- * codes to the OpenWeatherMap ids these broadcasts speak) is done server-side,
- * beside the provider, so it is not repeated per client.
+ * codes to the OpenWeatherMap ids these broadcasts speak) is done in
+ * [com.tracks.core.weather.OpenMeteo], beside the provider.
  */
 private fun WatchWeather.toReport() = WeatherReport(
     location = location,

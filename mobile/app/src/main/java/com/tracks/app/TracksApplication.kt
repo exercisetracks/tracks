@@ -674,6 +674,29 @@ class AppContainer(private val context: Context) {
 
     fun offlineDem(): com.tracks.app.map.OfflineDem = dem
 
+    /**
+     * Forecasts, asked of Open-Meteo directly rather than through the server —
+     * see [com.tracks.core.weather.OpenMeteo] for why and what it sends. Lazy:
+     * most sessions never open a forecast.
+     */
+    val openMeteo: com.tracks.core.weather.OpenMeteo by lazy { com.tracks.core.weather.OpenMeteo() }
+
+    /**
+     * Whether the Weather privacy switch allows a forecast request. Read from
+     * the synced settings row on every call, not cached, so turning it off on
+     * the web or here stops the next request rather than the next launch. A
+     * row that never set it gets the server's default, on.
+     *
+     * Security: this is the only thing standing between a tap on the map and a
+     * coordinate leaving the phone, so every [openMeteo] call goes through it.
+     */
+    suspend fun weatherAllowed(): Boolean =
+        when (val v = runCatching { sources.settingValues() }.getOrNull()?.get("weather_enabled")) {
+            is Boolean -> v
+            is String -> v.toBooleanStrictOrNull() ?: true
+            else -> true
+        }
+
     val crypto: IngestCrypto = BouncyCastleIngestCrypto()
 
     /**

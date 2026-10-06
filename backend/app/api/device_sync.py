@@ -112,6 +112,10 @@ def watch_weather(
 
     404 rather than an empty body when there is nothing to say, so the client can
     tell "no forecast for you" from "a forecast of nothing".
+
+    Kept for phones on older releases. Current phones locate and fetch this
+    forecast themselves (mobile core/weather/OpenMeteo.kt), so it works where
+    the phone has signal but no route to this server.
     """
     # The location sent is where this person trains, so the same privacy toggle
     # that gates race and map forecasts gates this one. 403, as for wildfire:

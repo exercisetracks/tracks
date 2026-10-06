@@ -283,6 +283,9 @@ def point_hourly(lat: float = Query(..., ge=-90, le=90),
     ``forecast_days`` is stretched to reach the requested date because
     Open-Meteo counts days forward from today rather than taking a range, and
     the daily strip this is opened from runs a week out.
+
+    The phone now asks Open-Meteo itself (mobile core/weather/OpenMeteo.kt);
+    this stays for phones on releases from before that.
     """
     try:
         wanted = _date.fromisoformat(date)
@@ -324,6 +327,9 @@ def point_weather(lat: float = Query(..., ge=-90, le=90),
     on a slow link — and bundling it meant the elevation and the place name,
     both of which are local lookups measured in milliseconds, arrived at the
     speed of the slowest thing in the response.
+
+    Only phones on older releases call this; current ones ask Open-Meteo
+    directly.
     """
     if not _weather_enabled(user.id):
         return {"weather": None, "weather_disabled": True}

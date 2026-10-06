@@ -9,10 +9,12 @@ import android.net.Uri
 /**
  * Where the watch's weather comes from, and how to tell whether it is coming.
  *
- * Tracks does not fetch weather itself. A weather app on the phone sends its
- * forecast in Gadgetbridge's broadcast format, [WeatherReceiver] takes it, and
- * the watch gets it from there; when nothing has sent one, the Tracks server's
- * forecast fills in (see `WatchManager.sendLatestWeather`). This holds the
+ * A weather app on the phone is the preferred source: it sends its forecast in
+ * Gadgetbridge's broadcast format, [WeatherReceiver] takes it, and the watch
+ * gets it from there. When nothing has sent one, Tracks asks Open-Meteo itself
+ * for where the user last trained (see `WatchManager.sendLatestWeather`) —
+ * the "server" names below predate that request moving onto the phone, and
+ * the preference key keeps its name so existing history survives. This holds the
  * apps that speak that format, the steps to switch it on in each, and a
  * small persisted record of what actually arrived — the in-memory forecast
  * alone was gone after every process restart, so Settings said "has not sent a
@@ -139,7 +141,7 @@ object WeatherSources {
         val provider = installed.firstOrNull { it.recommended } ?: installed.firstOrNull()
         val appAt = history.appAt
         val serverNote = history.serverAt?.takeIf { nowMs - it < FRESH_MS }
-            ?.let { " The watch is getting your Tracks server's forecast meanwhile (last at ${timeLabel(it)})." }
+            ?.let { " The watch is getting Tracks' own forecast meanwhile (last at ${timeLabel(it)})." }
             ?: ""
         return when {
             appAt != null && nowMs - appAt < FRESH_MS -> Status(
@@ -159,7 +161,7 @@ object WeatherSources {
             )
             history.serverAt != null && nowMs - history.serverAt < FRESH_MS -> Status(
                 State.SERVER_ONLY, null,
-                "No weather app is installed, so the watch gets your Tracks server's forecast " +
+                "No weather app is installed, so the watch gets Tracks' own forecast for where you last trained " +
                     "(last at ${timeLabel(history.serverAt)}). Install Breezy Weather for forecasts where you are.",
             )
             else -> Status(

@@ -244,7 +244,7 @@ fun PointSheet(
  * The days were static text. On a map used to decide when to go somewhere that
  * is the wrong half of the answer — "Thursday: 18°/4°, 60%" does not say
  * whether the 60% is the dawn you were planning to walk in or the afternoon you
- * would be back by. Tapping a day asks the server for that day's hours, which
+ * would be back by. Tapping a day asks Open-Meteo for that day's hours, which
  * is a request worth making only when somebody asks the question.
  */
 @Composable
@@ -258,8 +258,16 @@ private fun Weather(container: AppContainer, point: PointInfo, loading: Boolean)
     LaunchedEffect(openDay) {
         val date = openDay ?: return@LaunchedEffect
         loadingHours = true
-        hours = runCatching { container.client().pointHourly(point.lat, point.lon, date) }
-            .getOrNull()?.hours.orEmpty()
+        // The strip only exists when a forecast was allowed, but the switch can
+        // be turned off while the sheet is open; check again before sending.
+        hours = if (!container.weatherAllowed()) emptyList()
+        else {
+            val today = java.time.LocalDate.now()
+            container.openMeteo.hourly(
+                point.lat, point.lon, date,
+                com.tracks.core.fit.decode.CivilDate(today.year, today.monthValue, today.dayOfMonth),
+            ).hours
+        }
         loadingHours = false
     }
 

@@ -313,12 +313,12 @@ data class ScheduleFit(
 )
 
 /**
- * A forecast the server fetched, for a phone with no weather app feeding it.
+ * A forecast for the watch, for a phone with no weather app feeding it.
  *
  * Shaped to match what the watch protocol carries rather than what Open-Meteo
- * returns, because the mapping needs a provider's WMO codes turned into the
- * OpenWeatherMap ids these broadcasts speak — and that belongs on the server,
- * next to the provider, not in three clients.
+ * returns: [com.tracks.core.weather.OpenMeteo] turns the provider's WMO codes
+ * into the OpenWeatherMap ids these broadcasts speak, beside the request. The
+ * server's `/device-sync/weather` returns the same shape for older phones.
  */
 @Serializable
 data class WatchWeather(
@@ -374,23 +374,21 @@ data class PointInfo(
     @SerialName("elevation_ft") val elevationFeet: Double? = null,
     @SerialName("nearest_poi") val nearestPoi: NearbyPoi? = null,
     /**
-     * Conditions and the week ahead, when the server could reach Open-Meteo.
-     *
-     * The server has always sent this and the phone has always thrown it away —
-     * the model stopped at elevation and the nearest place, so every tap paid
-     * for a forecast nobody saw. Null is a real answer: no network on the
-     * server's side, or a point the provider has no grid for.
+     * Conditions and the week ahead. The phone asks for point info without it
+     * and fills this in from Open-Meteo directly, once that answers. Null is a
+     * real answer: no network, or a point the provider has no grid for.
      */
     val weather: PointWeather? = null,
     /**
-     * The user turned Weather off in privacy settings, so the server never
-     * asked. Kept apart from a null [weather] so the sheet can say "off" rather
-     * than "unavailable" — one is a choice, the other looks like a fault.
+     * The user turned Weather off in privacy settings, so nothing was asked.
+     * Kept apart from a null [weather] so the sheet can say "off" rather than
+     * "unavailable" — one is a choice, the other looks like a fault. Set by
+     * the phone after reading the setting; the server sends it too.
      */
     @SerialName("weather_disabled") val weatherDisabled: Boolean = false,
 )
 
-/** Current conditions plus the daily outlook, in metric as the server sends it. */
+/** Current conditions plus the daily outlook, in metric. */
 @Serializable
 data class PointWeather(
     val current: WeatherNow? = null,
@@ -436,15 +434,7 @@ data class WeatherHour(
     @SerialName("humidity_pct") val humidityPct: Double? = null,
 )
 
-/** `/maps/point/weather` wraps the forecast, so a null is a shape rather than a body. */
-@Serializable
-data class PointWeatherEnvelope(
-    val weather: PointWeather? = null,
-    /** See [PointInfo.weatherDisabled]. */
-    @SerialName("weather_disabled") val weatherDisabled: Boolean = false,
-)
-
-/** A day's hours, as the server groups them. */
+/** A day's hours, grouped as the server's `/maps/point/hourly` did. */
 @Serializable
 data class HourlyForecast(
     val date: String = "",

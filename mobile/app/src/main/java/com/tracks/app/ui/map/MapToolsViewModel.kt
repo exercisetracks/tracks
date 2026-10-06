@@ -266,8 +266,8 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
             val client = container.client()
             // Two requests, deliberately. Elevation and the nearest place are
             // local lookups on the server and come back in milliseconds; the
-            // forecast is a call out of the building. Asking together made the
-            // fast half arrive at the speed of the slow half.
+            // forecast is a call to Open-Meteo. Asking together made the fast
+            // half arrive at the speed of the slow half.
             val info = runCatching {
                 client.pointInfo(position.latitude, position.longitude, withWeather = false)
             }.getOrNull() ?: offlineElevationOnly(client, here)
@@ -277,18 +277,21 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
                 else state.copy(pointLoading = false, point = info ?: state.point)
             }
 
-            val forecast = runCatching {
-                container.client().pointWeather(position.latitude, position.longitude)
-            }.getOrNull()
+            // Straight to Open-Meteo, not through the server: the forecast then
+            // works wherever the phone has signal, server reachable or not. The
+            // privacy switch is checked first, so with Weather off the tapped
+            // coordinate never leaves the phone.
+            val allowed = container.weatherAllowed()
+            val forecast = if (!allowed) null
+            else container.openMeteo.point(position.latitude, position.longitude)
             _state.update { state ->
                 val open = state.point
                 if (open == null || !open.samePlaceAs(here)) state
                 else state.copy(
                     weatherLoading = false,
                     point = when {
-                        forecast == null -> open
-                        forecast.weatherDisabled -> open.copy(weatherDisabled = true)
-                        forecast.weather != null -> open.copy(weather = forecast.weather)
+                        !allowed -> open.copy(weatherDisabled = true)
+                        forecast != null -> open.copy(weather = forecast)
                         else -> open
                     },
                 )

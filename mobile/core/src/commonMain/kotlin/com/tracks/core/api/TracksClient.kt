@@ -1112,16 +1112,6 @@ class TracksClient(
         http.get(url(Endpoints.SCHEDULE_BUNDLE)) { bearer(token) }
     }
 
-    /**
-     * The server's own forecast for the watch.
-     *
-     * Only worth calling when no weather app is broadcasting to the phone; the
-     * server 404s when the user has no activity with GPS to locate them by.
-     */
-    suspend fun watchWeather(): WatchWeather = request { token ->
-        http.get(url(Endpoints.WATCH_WEATHER)) { bearer(token) }
-    }
-
     // ── Offline map regions ──────────────────────────────────────────────
     //
     // The phone never extracts tiles itself; it asks the server for an area and
@@ -1185,8 +1175,9 @@ class TracksClient(
      * Elevation and the nearest named place at a point.
      *
      * [withWeather] off is the phone's normal case: the sheet opens on what the
-     * server can answer locally and asks [pointWeather] for the rest, so the
-     * panel is on screen while the forecast is still in flight.
+     * server can answer locally and asks Open-Meteo directly for the forecast
+     * (see [com.tracks.core.weather.OpenMeteo]), so the panel is on screen
+     * while the forecast is still in flight.
      */
     suspend fun pointInfo(
         lat: Double,
@@ -1200,36 +1191,6 @@ class TracksClient(
             if (!withWeather) parameter("weather", false)
         }
     }
-
-    /**
-     * The forecast for a point, on its own — the whole envelope, because a
-     * missing forecast is either the provider failing or the user having
-     * turned Weather off, and the sheet says different things for each.
-     */
-    suspend fun pointWeather(lat: Double, lon: Double): PointWeatherEnvelope = request { token ->
-        http.get(url(Endpoints.MAP_POINT_WEATHER)) {
-            bearer(token)
-            parameter("lat", lat)
-            parameter("lon", lon)
-        }
-    }
-
-    /**
-     * One day of that point's forecast, hour by hour.
-     *
-     * [date] is a local `YYYY-MM-DD` as the daily strip reports it, and the
-     * hours come back in the point's own timezone rather than the phone's —
-     * which is the right answer for a place you are not standing in yet.
-     */
-    suspend fun pointHourly(lat: Double, lon: Double, date: String): HourlyForecast =
-        request { token ->
-            http.get(url(Endpoints.MAP_POINT_HOURLY)) {
-                bearer(token)
-                parameter("lat", lat)
-                parameter("lon", lon)
-                parameter("date", date)
-            }
-        }
 
     /**
      * Ground heights under [coordinates], `[lng, lat]` as GeoJSON orders them.
