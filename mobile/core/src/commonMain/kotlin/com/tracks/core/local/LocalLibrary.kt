@@ -79,8 +79,32 @@ class LocalLibrary(
 
     fun markUploaded(sha256: String) = q.markUploaded(sha256)
 
-    /** A new server has none of our files; every one must go up again. */
-    fun markAllNotUploaded() = q.markAllNotUploaded()
+    /**
+     * Called before every upload run with the server the replica is bound to:
+     * if the `uploaded` flags were earned on a different one, they are all
+     * cleared, so every file goes up again.
+     *
+     * The replica's own "give the new server everything" paths — a recreated
+     * server, and the user answering yes to restoring this phone into an
+     * account on another server — re-queue synced rows only. FIT files are
+     * not rows; they kept their flags from the old server, so the new one got
+     * every activity's name and every plan, and never the files themselves:
+     * no activity history, no past health days. Keying the flags to a server
+     * covers both paths, and any later one, without each having to remember.
+     *
+     * With no server recorded yet the flags are taken as they stand: a fresh
+     * phone's flags are all its first server's (history it downloaded), and a
+     * phone upgraded from schema 7 had them cleared by that migration, since
+     * nothing then said which server they belonged to.
+     */
+    suspend fun uploadsGoTo(serverId: String) = lock.withLock {
+        db.transaction {
+            val recorded = q.selectUploadServer().executeAsOneOrNull()
+            if (recorded == serverId) return@transaction
+            if (recorded != null) q.markAllNotUploaded()
+            q.setUploadServer(serverId)
+        }
+    }
 
     // ── Activities ──────────────────────────────────────────────────────────
 
@@ -281,6 +305,7 @@ class LocalLibrary(
             q.deleteAllActivities()
             q.deleteAllDays()
             q.deleteAllFiles()
+            q.deleteUploadServer()
         }
         changed()
     }

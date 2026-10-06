@@ -69,6 +69,26 @@ UPDATE local_file SET uploaded = 0;
 deleteAllFiles:
 DELETE FROM local_file;
 
+-- Which server `local_file.uploaded` is about. The flag alone cannot say, and
+-- a phone that moves its data to a second server with the files still marked
+-- sent never sends them: the new server gets every edit and plan, and none of
+-- the history they describe. One row, absent until the first upload run with
+-- a known server; see LocalLibrary.uploadsGoTo.
+
+CREATE TABLE local_upload_server (
+    id        INTEGER NOT NULL PRIMARY KEY CHECK (id = 0),
+    server_id TEXT NOT NULL
+);
+
+selectUploadServer:
+SELECT server_id FROM local_upload_server WHERE id = 0;
+
+setUploadServer:
+INSERT OR REPLACE INTO local_upload_server(id, server_id) VALUES (0, ?);
+
+deleteUploadServer:
+DELETE FROM local_upload_server;
+
 -- ── Activities ──────────────────────────────────────────────────────────────
 --
 -- Summary columns for the list and the fitness model, which filter and sort;

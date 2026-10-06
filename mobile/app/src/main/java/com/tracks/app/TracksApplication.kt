@@ -302,8 +302,8 @@ class AppContainer(private val context: Context) {
         )
         try {
             val report = engine.sync()
-            // A recreated server has none of this phone's files either.
-            if (report.newServer) library.markAllNotUploaded()
+            // A recreated server has none of this phone's files either;
+            // uploadFiles sees its new server id and re-sends them.
             sources.changed()
             if (report.wiped) library.clear()
             uploadFiles()
@@ -327,8 +327,12 @@ class AppContainer(private val context: Context) {
      * session. Best effort: whatever fails stays queued for the next run.
      */
     suspend fun uploadFiles(): Int {
+        if (!isLinked()) return 0
+        // Null before the first pull from a server, and on one too old to
+        // speak the sync protocol; neither can have moved the phone elsewhere.
+        replica.server()?.let { library.uploadsGoTo(it.serverId) }
         val pending = library.notUploaded()
-        if (pending.isEmpty() || !isLinked()) return 0
+        if (pending.isEmpty()) return 0
         val uploader = watchUploader() ?: return 0
         try {
             var sent = 0

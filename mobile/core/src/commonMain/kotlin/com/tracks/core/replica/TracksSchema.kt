@@ -46,16 +46,34 @@ object TracksSchema : SqlSchema<QueryResult.Value<Unit>> {
     const val BASELINE: Long = 7
 
     /** Bump together with [FINGERPRINT] whenever any `.sq` file's schema changes. */
-    const val VERSION: Long = 7
+    const val VERSION: Long = 8
 
     /** SHA-256 of the created schema; see `SchemaIdentityTest`. */
-    const val FINGERPRINT: String = "a3b3e49b354ac08d08b86383b0aa79f8e21fd118c3cd95d2290359f10b7ea93c"
+    const val FINGERPRINT: String = "c944feb531c31b87a8c339c4d6501f38af4a1f04df587a89e09da084e3f67934"
 
     /**
      * The step that takes a database *to* each version, keyed by that version.
      * Every version from [BASELINE] + 1 to [VERSION] must have one.
      */
-    val migrations: Map<Long, (SqlDriver) -> Unit> = mapOf()
+    val migrations: Map<Long, (SqlDriver) -> Unit> = mapOf(
+        // Which server the upload flags belong to (LocalLibrary.uploadsGoTo).
+        // Nothing recorded that before, so the flags a phone holds cannot be
+        // trusted for whichever server it now syncs with — a phone already
+        // moved to a second server has them all set and its history never
+        // sent. Clear them: every file goes up once more, and the server
+        // answers "duplicate" for each one it already has.
+        8L to { driver ->
+            driver.execute(
+                null,
+                "CREATE TABLE local_upload_server (\n" +
+                    "    id        INTEGER NOT NULL PRIMARY KEY CHECK (id = 0),\n" +
+                    "    server_id TEXT NOT NULL\n" +
+                    ")",
+                0,
+            )
+            driver.execute(null, "UPDATE local_file SET uploaded = 0", 0)
+        },
+    )
 
     override val version: Long get() = VERSION
 
