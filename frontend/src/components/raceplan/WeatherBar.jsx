@@ -65,7 +65,7 @@ export default function WeatherBar({ weather }) {
       {/* Adjustment breakdown */}
       {hasAdj && (
         <div className="rounded-lg bg-slate-50 dark:bg-slate-800/60 px-2.5 py-1.5 space-y-1">
-          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">
+          <p className="section-title mb-1.5">
             Time adjustments
           </p>
           {heatPct > 0.05 && (

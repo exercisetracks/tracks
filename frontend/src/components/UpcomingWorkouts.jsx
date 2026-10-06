@@ -77,9 +77,9 @@ export default function UpcomingWorkouts({ imperial = false } = {}) {
   if (workouts.length === 0) return null;
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3.5">
+    <div className="card">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+        <h3 className="section-title">
           Upcoming Workouts
         </h3>
         <button

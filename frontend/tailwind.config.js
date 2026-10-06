@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Hawk Fugagli
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { designTheme, designComponents } from "./src/design/tokens.js";
+import kit from "./src/design/kit.js";
 
 /** @type {import('tailwindcss').Config} */
 export default {
@@ -38,7 +39,10 @@ export default {
       },
     },
   },
-  plugins: [buttons],
+  // buttons: the .btn family below. kit: every other shared control —
+  // card, section-title, bar-pill, chip, choice, switch, field, modal
+  // (src/design/kit.js).
+  plugins: [buttons, kit],
 };
 
 /**

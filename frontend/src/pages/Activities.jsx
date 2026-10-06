@@ -31,6 +31,8 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../api/client";
 import SortHeader from "../components/activities/SortHeader";
+import PageHeader from "../components/ui/PageHeader";
+import DatePicker from "../components/ui/DatePicker";
 import ActivityRow from "../components/activities/ActivityRow";
 
 // Number of activities per page.
@@ -200,14 +202,13 @@ export default function Activities() {
   // SECTION 6: RENDER THE PAGE
   // ============================================================
   return (
-    <div className="p-5 max-w-7xl mx-auto space-y-4">
+    <div className="p-5 max-w-7xl mx-auto space-y-6">
       {/* Page header with activity count */}
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-xl font-bold text-slate-900 dark:text-white">Activities</h1>
+      <PageHeader title="Activities">
         <span className="text-sm text-slate-500 dark:text-slate-400">
           {total.toLocaleString()} {total === 1 ? "activity" : "activities"}
         </span>
-      </div>
+      </PageHeader>
 
       {/*
         FILTERS SECTION
@@ -215,7 +216,6 @@ export default function Activities() {
         - Sport dropdown
         - Date range pickers
         - Clear filters button
-        - Sort controls
       */}
       <div data-tour="activities-filters" className="flex flex-wrap gap-2 items-center">
         <input
@@ -223,59 +223,29 @@ export default function Activities() {
           placeholder="Search by name…"
           value={searchInput}
           onChange={e => setSearchInput(e.target.value)}
-          className="text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-accent-500 w-52"
+          className="field w-52"
         />
         <select
           value={sport}
           onChange={e => setParam("sport", e.target.value)}
-          className="text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-accent-500 cursor-pointer"
+          className="field w-auto"
         >
           <option value="">All sports</option>
           {sports.map(s => <option key={s} value={s}>{s}</option>)}
         </select>
-        <input type="date" value={after} onChange={e => setParam("after", e.target.value)}
-          className="text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-accent-500"
-        />
+        <DatePicker value={after} max={before || undefined} placeholder="From" onChange={v => setParam("after", v)} />
         <span className="text-slate-400 text-xs">–</span>
-        <input type="date" value={before} onChange={e => setParam("before", e.target.value)}
-          className="text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-accent-500"
-        />
+        <DatePicker value={before} min={after || undefined} placeholder="To" onChange={v => setParam("before", v)} />
 
         {hasFilters && (
           <button
             onClick={clearFilters}
             className="btn btn-neutral btn-sm"
           >
-            Clear filters ×
+            Clear filters
           </button>
         )}
 
-        {/* Sort control dropdown */}
-        <div data-tour="activities-sort" className="flex items-center gap-1 ml-auto">
-          <span className="text-xs text-slate-400 dark:text-slate-500 uppercase tracking-wider">Sort</span>
-          <select
-            value={sort}
-            onChange={e => setParam("sort", e.target.value)}
-            className="text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-accent-500 cursor-pointer"
-          >
-            <option value="date">Date</option>
-            <option value="sport">Sport</option>
-            <option value="duration">Duration</option>
-            <option value="distance">Distance</option>
-            <option value="speed">Pace / Speed</option>
-            <option value="heartrate">Avg HR</option>
-            <option value="elevation">Elevation</option>
-            <option value="calories">Calories</option>
-          </select>
-          <button
-            type="button"
-            onClick={() => setParam("order", order === "asc" ? "desc" : "asc")}
-            title={order === "asc" ? "Ascending — click to switch to descending" : "Descending — click to switch to ascending"}
-            className="text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-2.5 py-1 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
-          >
-            {order === "asc" ? "↑" : "↓"}
-          </button>
-        </div>
       </div>
 
       {/*
@@ -284,7 +254,7 @@ export default function Activities() {
         - Column headers are sortable
         - Shows all key activity metrics
       */}
-      <div data-tour="activities-table" className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+      <div data-tour="activities-table" className="card p-0 overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center h-40 text-sm text-slate-400 dark:text-slate-500">Loading…</div>
         ) : activities.length === 0 ? (
@@ -292,7 +262,10 @@ export default function Activities() {
         ) : (
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-100 dark:border-slate-800 text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+              {/* The column headers are the sort: click one to order by it,
+                  again to flip the direction. A separate sort dropdown
+                  repeated exactly these, so it went. */}
+              <tr data-tour="activities-sort" className="section-title border-b border-slate-100 dark:border-slate-800">
                 <SortHeader label="Activity"     col="sport"     align="left"  sort={sort} order={order} onClick={toggleSort} />
                 <SortHeader label="Date"         col="date"      align="left"  sort={sort} order={order} onClick={toggleSort} />
                 <SortHeader label="Duration"     col="duration"  align="right" sort={sort} order={order} onClick={toggleSort} />

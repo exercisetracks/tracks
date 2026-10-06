@@ -125,7 +125,7 @@ export default function StrengthWorkoutCard({ workout, compact = false }) {
           <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Post-workout stretches</p>
           <div className="flex flex-wrap gap-1.5">
             {stretches.map((s, i) => (
-              <span key={i} className="text-xs px-1.5 py-0.5 rounded-full bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-700">
+              <span key={i} className="badge bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-700">
                 {s.name} {s.duration_seconds ? `(${s.duration_seconds}s)` : ""}
               </span>
             ))}

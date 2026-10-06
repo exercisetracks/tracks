@@ -449,16 +449,16 @@ export default function WatchSyncModal({ open, autoDevice, onClose, onSynced, mo
   const insecure = typeof window !== "undefined" && !window.isSecureContext;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3.5" onClick={close}>
+    <div className="modal-backdrop" onClick={close}>
       <div
-        className="w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-xl p-5 space-y-4"
+        className="modal max-w-md p-5 space-y-4"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100">
+          <h2 className="modal-title">
             {music ? "Send music to watch" : "Sync watch"}{methodLabel ? ` ${methodLabel}` : ""}
           </h2>
-          <button onClick={close} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">×</button>
+          <button onClick={close} className="icon-btn">×</button>
         </div>
 
         {deviceLabel && (
@@ -482,7 +482,7 @@ export default function WatchSyncModal({ open, autoDevice, onClose, onSynced, mo
         {(phase === "host-checking" || phase === "host-syncing" || phase === "connecting" || phase === "running") && (
           <div className="space-y-3">
             <div className="flex items-center gap-3">
-              <div className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" />
+              <div className="spinner h-4 w-4 shrink-0" />
               <p className="text-sm text-slate-600 dark:text-slate-400 truncate">{statusLine || "Working…"}</p>
             </div>
             {phase === "host-checking" && (

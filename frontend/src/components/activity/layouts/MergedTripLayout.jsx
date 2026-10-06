@@ -43,7 +43,7 @@ export default function MergedTripLayout({ activity, imperial }) {
     <div className="p-3.5 sm:p-5 max-w-4xl mx-auto">
       <div className="flex items-center gap-2 flex-wrap mb-1">
         <h1 className="text-xl font-semibold text-slate-900 dark:text-white">{activity?.name || "Merged trip"}</h1>
-        <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-accent-100 text-accent-700 dark:bg-accent-900/40 dark:text-accent-300">
+        <span className="badge bg-accent-100 text-accent-700 dark:bg-accent-900/40 dark:text-accent-300">
           MERGED TRIP
         </span>
       </div>
@@ -66,7 +66,7 @@ export default function MergedTripLayout({ activity, imperial }) {
         <ElevationProfileCard profile={track?.profile} imperial={imperial} />
       </div>
 
-      <Link to="/maps" className="inline-flex items-center gap-1.5 text-sm text-accent-600 dark:text-accent-400 hover:underline">
+      <Link to="/maps" className="btn btn-tonal w-fit">
         View the merged track on the map
         <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />

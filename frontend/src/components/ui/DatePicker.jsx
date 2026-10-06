@@ -60,9 +60,8 @@ export default function DatePicker({
       <button
         type="button" id={id} ref={anchorRef}
         onClick={() => { setView(selected || today); setOpen((o) => !o); }}
-        className={`inline-flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg border text-sm transition-colors
-          border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 hover:border-accent-400
-          ${selected ? "text-slate-800 dark:text-slate-200" : "text-slate-400 dark:text-slate-500"} ${className}`}
+        className={`field w-auto inline-flex items-center justify-between gap-2 text-left
+          ${selected ? "" : "!text-slate-400 dark:!text-slate-500"} ${className}`}
       >
         <span className="truncate">{label}</span>
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"

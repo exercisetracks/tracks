@@ -106,7 +106,7 @@ export default function UserManagementSection() {
       )}
       {loading ? (
         <div className="flex justify-center py-3.5">
-          <div className="w-5 h-5 border-2 border-accent-500 border-t-transparent rounded-full animate-spin" />
+          <div className="spinner" />
         </div>
       ) : (
         <div className="space-y-3">
@@ -141,14 +141,14 @@ export default function UserManagementSection() {
       )}
 
       <div className="border-t border-slate-100 dark:border-slate-800 pt-3.5">
-        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-3">Add user</p>
+        <p className="section-title mb-3">Add user</p>
         {error && (
-          <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg px-2.5 py-1.5 mb-3">{error}</p>
+          <p className="alert-error mb-3">{error}</p>
         )}
         <form onSubmit={handleCreate} className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Username</label>
+              <label className="field-label">Username</label>
               <input
                 className={INPUT}
                 type="text"
@@ -160,7 +160,7 @@ export default function UserManagementSection() {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Display name</label>
+              <label className="field-label">Display name</label>
               <input
                 className={INPUT}
                 type="text"
@@ -172,7 +172,7 @@ export default function UserManagementSection() {
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Password</label>
+            <label className="field-label">Password</label>
             <input
               className={INPUT}
               type="password"

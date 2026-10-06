@@ -33,9 +33,9 @@ export const HeartRateGraph = React.memo(function HeartRateGraph({
   if (!data?.length) return null;
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3.5">
+    <div className="card">
       <div className="flex items-center gap-1.5 mb-3">
-        <p className="text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Heart Rate</p>
+        <p className="section-title">Heart Rate</p>
       </div>
       <ResponsiveContainer width="100%" height={180}>
         <ComposedChart data={data} syncId="activity-time" onMouseMove={onHover} onMouseLeave={onLeave}>

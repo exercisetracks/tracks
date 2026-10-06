@@ -14,7 +14,7 @@ export default function GoalSelector({ goals, selectedId, onSelect, onGenerate, 
     return (
       <div className="text-sm text-slate-500 dark:text-slate-400">
         No active event or fitness goals.{" "}
-        <a href="/goals" className="text-accent-600 dark:text-accent-400 hover:underline">Add one</a>
+        <a href="/goals" className="btn btn-tonal btn-sm ml-1.5">Add one</a>
       </div>
     );
   }
@@ -23,7 +23,7 @@ export default function GoalSelector({ goals, selectedId, onSelect, onGenerate, 
       <select
         value={selectedId ?? ""}
         onChange={e => onSelect(Number(e.target.value))}
-        className="text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-accent-500"
+        className="field w-auto"
       >
         {eventGoals.map(g => (
           <option key={g.id} value={g.id}>

@@ -15,13 +15,14 @@ export const PHASE_TEXT_COLORS = {
   taper: "text-red-600 dark:text-red-400",
 };
 
-// Period selector options. `days` is the look-back window used to build the
-// `after` query param (null = lifetime, i.e. no filter).
+// Period selector options, longest first. `days` is the look-back window used
+// to build the `after` query param (null = lifetime, i.e. no filter). Labels
+// are the phone's Period.label, so the two apps name a window the same way.
 export const PERIODS = [
   { value: "lifetime", label: "Lifetime",    days: null },
   { value: "yearly",   label: "This year",   days: 365 },
-  { value: "monthly",  label: "Last 30 days", days: 30 },
-  { value: "weekly",   label: "Last 7 days",  days: 7 },
+  { value: "monthly",  label: "30 days",  days: 30 },
+  { value: "weekly",   label: "7 days",   days: 7 },
 ];
 
 export const DAY_MS = 86400000;

@@ -110,12 +110,8 @@ export default function StrengthRunner({ workout, imperial, onClose, onLogged })
           <p className="text-sm text-slate-500 dark:text-slate-400">Rate your overall effort (RPE).</p>
           <div className="grid grid-cols-5 gap-2 w-full">
             {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
-              <button key={n} onClick={() => setSessionRpe(n)}
-                className={`py-2.5 rounded-lg text-sm font-semibold border transition-colors ${
-                  sessionRpe === n
-                    ? "bg-accent-500 border-accent-500 text-white"
-                    : "border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-accent-400"
-                }`}>{n}</button>
+              <button key={n} type="button" aria-pressed={sessionRpe === n} onClick={() => setSessionRpe(n)}
+                className="chip h-11 font-semibold tabular-nums">{n}</button>
             ))}
           </div>
           {error && <p className="text-sm text-red-500">{error}</p>}
@@ -232,7 +228,7 @@ function Overlay({ title, subtitle, onClose, children }) {
           <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 truncate">{title || "Workout"}</p>
           {subtitle && <p className="text-xs text-slate-400">{subtitle}</p>}
         </div>
-        <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-2xl leading-none px-1.5">×</button>
+        <button onClick={onClose} className="icon-btn">×</button>
       </div>
       {children}
     </div>
@@ -247,7 +243,7 @@ function NumInput({ value, onChange, placeholder }) {
       value={value === 0 ? "" : value}
       placeholder={placeholder ?? "0"}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white px-1.5 py-1 text-sm text-center focus:outline-none focus:ring-2 focus:ring-accent-500"
+      className="field field-sm text-center"
     />
   );
 }

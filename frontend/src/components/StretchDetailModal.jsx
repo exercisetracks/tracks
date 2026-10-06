@@ -20,15 +20,15 @@ export default function StretchDetailModal({ stretch, onClose }) {
   if (!stretch) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm" onClick={onClose}>
-      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-lg max-w-lg w-full max-h-[80vh] overflow-y-auto m-4" onClick={e => e.stopPropagation()}>
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal max-w-lg max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between p-3.5 border-b border-slate-200 dark:border-slate-700">
           <div className="flex items-center gap-2 min-w-0">
             <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-full border ${PAT_COLOR[stretch.movement_pattern] || "bg-slate-100 dark:bg-slate-800 text-slate-500"}`}>
               {PAT_LABEL[stretch.movement_pattern] || stretch.movement_pattern}
             </span>
           </div>
-          <button onClick={onClose} className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400">
+          <button onClick={onClose} className="icon-btn">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -42,7 +42,7 @@ export default function StretchDetailModal({ stretch, onClose }) {
             </div>
           )}
           <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="text-base font-semibold text-slate-900 dark:text-white">{stretch.name}</h3>
+            <h3 className="modal-title">{stretch.name}</h3>
             <AnimationBadge
               hasAnimation={stretch.has_animation}
               show={stretch.has_animation !== undefined}
@@ -56,7 +56,7 @@ export default function StretchDetailModal({ stretch, onClose }) {
             <span className="text-sm text-slate-400">Difficulty: {"\u25CF".repeat(stretch.difficulty)}{"\u25CB".repeat(3 - stretch.difficulty)}</span>
           </div>
           {(stretch.primary_muscles || []).length > 0 && (
-            <div><p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Targets</p>
+            <div><p className="section-title mb-1">Targets</p>
               <div className="flex gap-1 flex-wrap">
                 {stretch.primary_muscles.map(m => (
                   <span key={m} className="text-[10px] px-1 py-0.5 rounded bg-accent-100 dark:bg-accent-900/40 text-accent-700 dark:text-accent-300">{muscleLabel(m)}</span>
@@ -68,7 +68,7 @@ export default function StretchDetailModal({ stretch, onClose }) {
             </div>
           )}
           {(stretch.equipment || []).length > 0 && (
-            <div><p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Equipment</p>
+            <div><p className="section-title mb-1">Equipment</p>
               <div className="flex gap-1 flex-wrap">
                 {(stretch.equipment || []).map(e => (
                   <span key={e} className="text-[10px] px-1 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">{e}</span>
@@ -79,7 +79,7 @@ export default function StretchDetailModal({ stretch, onClose }) {
           {stretch.description && <p className="text-sm text-slate-600 dark:text-slate-300">{stretch.description}</p>}
           {(stretch.cues || []).length > 0 && (
             <div>
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Coaching cues</p>
+              <p className="section-title mb-1">Coaching cues</p>
               <ul className="space-y-1">
                 {stretch.cues.map((c, i) => (
                   <li key={i} className="flex gap-2 text-sm text-slate-600 dark:text-slate-300">
@@ -94,7 +94,7 @@ export default function StretchDetailModal({ stretch, onClose }) {
           )}
           {stretch.instructions && (
             <div>
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Instructions</p>
+              <p className="section-title mb-1">Instructions</p>
               <ol className="list-decimal list-inside text-sm text-slate-600 dark:text-slate-300 space-y-1">
                 {stretch.instructions.split("\n").filter(Boolean).map((l, i) => (
                   <li key={i} className="pl-1">{l.replace(/^\d+\.\s*/, "")}</li>

@@ -17,7 +17,7 @@ export function ExerciseCard({ name, sets, summary, imperial = false }) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+    <div className="card p-0 overflow-hidden">
       <button
         className="w-full flex items-center justify-between px-3.5 py-2.5 text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
         onClick={() => setIsOpen(!isOpen)}

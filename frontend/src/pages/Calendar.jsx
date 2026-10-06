@@ -208,7 +208,7 @@ export default function CalendarPage() {
 
         {/* Detail panel (only mounted when a workout is selected) */}
         {selected && (
-          <div className="lg:w-[360px] bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shrink-0">
+          <div className="card p-0 lg:w-[360px] overflow-hidden shrink-0">
             <WorkoutDetail
               workout={selected}
               onClose={() => setSelected(null)}

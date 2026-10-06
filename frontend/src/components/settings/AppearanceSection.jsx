@@ -5,6 +5,7 @@
 import { useTheme } from "../../context/ThemeContext";
 import ColorPicker from "../ColorPicker";
 import { Section } from "./primitives";
+import Tabs from "../ui/Tabs";
 
 const THEME_OPTIONS = [
   ["system", "System", "Follows your device settings"],
@@ -29,29 +30,14 @@ export default function AppearanceSection() {
   return (
     <Section title="Appearance">
       <div>
-        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+        <label className="field-label">
           Color scheme
         </label>
-        <div className="flex rounded-lg overflow-hidden border border-slate-300 dark:border-slate-700 text-sm w-fit">
-          {THEME_OPTIONS.map(([v, label]) => (
-            <button
-              key={v}
-              type="button"
-              onClick={() => setColorScheme(v)}
-              className={`px-2.5 py-1.5 font-medium transition-colors ${
-                colorScheme === v
-                  ? "bg-accent-600 text-white"
-                  : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+        <Tabs tabs={THEME_OPTIONS.map(([key, label]) => ({ key, label }))} value={colorScheme} onChange={setColorScheme} />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+        <label className="field-label">
           Accent color
         </label>
         <div className="flex flex-wrap items-center gap-2">

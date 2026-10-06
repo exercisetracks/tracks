@@ -71,7 +71,7 @@ export const TOURS = {
     {
       anchor: '[data-tour="activities-sort"]',
       title: "Sort your list",
-      body: "Order by date, distance, pace, heart rate, elevation, or calories — ascending or descending.",
+      body: "Click a column to order by it — date, distance, pace, heart rate, elevation or calories — and again to flip the direction.",
       placement: "bottom",
     },
     {

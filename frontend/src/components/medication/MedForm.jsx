@@ -39,34 +39,34 @@ export default function MedForm({ initial, onSave, onCancel, loading }) {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-2 gap-3">
         <div className="col-span-2">
-          <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Medication name *</label>
+          <label className="field-label">Medication name *</label>
           <input type="text" required className={INPUT} placeholder="e.g. Metformin" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} />
         </div>
         <div>
-          <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Dose</label>
+          <label className="field-label">Dose</label>
           <input type="text" className={INPUT} placeholder="e.g. 500" value={form.dose} onChange={e => setForm(p => ({ ...p, dose: e.target.value }))} />
         </div>
         <div>
-          <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Unit</label>
+          <label className="field-label">Unit</label>
           <select className={INPUT} value={form.dose_unit} onChange={e => setForm(p => ({ ...p, dose_unit: e.target.value }))}>
             {DOSE_UNITS.map(u => <option key={u} value={u}>{u}</option>)}
           </select>
         </div>
         <div>
-          <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Form</label>
+          <label className="field-label">Form</label>
           <select className={INPUT} value={form.form} onChange={e => setForm(p => ({ ...p, form: e.target.value }))}>
             {FORMS.map(f => <option key={f} value={f}>{f}</option>)}
           </select>
         </div>
         <div>
-          <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Status</label>
+          <label className="field-label">Status</label>
           <select className={INPUT} value={form.is_active ? "active" : "inactive"} onChange={e => setForm(p => ({ ...p, is_active: e.target.value === "active" }))}>
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
           </select>
         </div>
         <div className="col-span-2">
-          <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Notes</label>
+          <label className="field-label">Notes</label>
           <input type="text" className={INPUT} placeholder="e.g. Take with food" value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} />
         </div>
       </div>

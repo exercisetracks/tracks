@@ -44,14 +44,14 @@ export default function MetricGaugeGroup({ title, info, metrics, start, missingH
     // whatever each one holds — Body carries a button that Activity does not.
     <section data-tour={dataTour} className="flex flex-col h-full">
       <div className="flex items-center gap-2 mb-3">
-        <h2 className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+        <h2 className="section-title">
           {title}
         </h2>
         {info && (
           <InfoButton open={showInfo} onToggle={() => setShowInfo(s => !s)} label={`About ${title}`} />
         )}
       </div>
-      <div className="flex-1 flex flex-col bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3.5">
+      <div className="card flex-1 flex flex-col">
         {showInfo && info && <InfoPanel body={info.body} className="mb-3" />}
         {/* Centred when there is no footer, so a group stretched to match a
             taller neighbour keeps its dials in the middle rather than

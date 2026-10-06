@@ -27,9 +27,12 @@
 // curated in advance, and Manage turns the chips into an editor for the rare
 // fix or deletion.
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { api } from "../../api/client";
 import { PlusIcon } from "../ui/Button";
+import Modal from "../ui/Modal";
+import Checkbox from "../ui/Checkbox";
+import DatePicker from "../ui/DatePicker";
 import { localIso } from "./scales";
 import { foodOn, grams, loggedAtFor } from "./food";
 
@@ -37,12 +40,11 @@ const LB_PER_KG = 2.20462;
 /** A glass, a bottle, a big bottle. Round numbers people actually drink in. */
 const GLASSES = [250, 500, 750];
 
-const INPUT = "w-full text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 px-2.5 h-9 focus:outline-none focus:ring-2 focus:ring-accent-500";
-const LABEL = "block text-xs text-slate-500 dark:text-slate-400 mb-1";
-const HEADING = "text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500";
+const INPUT = "field";
+const LABEL = "field-label";
+const HEADING = "section-title";
 
 export default function LogTodayModal({ days, meals, log, imperial, onChanged, onClose }) {
-  const overlayRef = useRef(null);
   const today = localIso();
   const [date, setDate] = useState(today);
   const [weight, setWeight] = useState("");
@@ -54,12 +56,6 @@ export default function LogTodayModal({ days, meals, log, imperial, onChanged, o
   const [editing, setEditing] = useState(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
-
-  useEffect(() => {
-    function onKey(e) { if (e.key === "Escape") onClose(); }
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [onClose]);
 
   const row = days.find(d => d.date === date);
   // Weight is a standing fact, so "so far" shows the newest one on or before
@@ -142,135 +138,116 @@ export default function LogTodayModal({ days, meals, log, imperial, onChanged, o
   }
 
   return (
-    <div
-      ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-center justify-center p-3.5 bg-black/60 backdrop-blur-sm"
-      onClick={e => { if (e.target === overlayRef.current) onClose(); }}
+    <Modal
+      onClose={onClose}
+      label="Log today"
+      header={
+        <div className="flex items-center gap-2">
+          <h2 className="modal-title">Log</h2>
+          {/* Back-dating stays possible — a weigh-in forgotten yesterday
+              belongs to yesterday — but today is the default and the
+              only thing most visits need. */}
+          <DatePicker value={date} max={today} onChange={v => setDate(v || today)} />
+          {date !== today && (
+            <button type="button" onClick={() => setDate(today)} className="btn btn-neutral btn-sm">Today</button>
+          )}
+        </div>
+      }
+      subtitle={sofar ? `${sofar} so far` : "Nothing logged yet"}
     >
-      <div role="dialog" aria-modal="true" aria-label="Log today"
-        className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-5 space-y-4">
-        <div className="flex items-start justify-between gap-3">
+      <form onSubmit={save} className="space-y-4">
+        <div className="grid grid-cols-2 gap-3">
           <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-base font-bold text-slate-900 dark:text-white">Log</h2>
-              {/* Back-dating stays possible — a weigh-in forgotten yesterday
-                  belongs to yesterday — but today is the default and the
-                  only thing most visits need. */}
-              <input type="date" max={today} value={date} onChange={e => setDate(e.target.value || today)}
-                aria-label="Day to log for"
-                className="text-sm font-semibold bg-transparent text-slate-900 dark:text-white rounded-md px-1 focus:outline-none focus:ring-2 focus:ring-accent-500" />
-              {date !== today && (
-                <button type="button" onClick={() => setDate(today)} className="btn btn-neutral btn-sm">Today</button>
-              )}
-            </div>
-            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-              {sofar ? `${sofar} so far` : "Nothing logged yet"}
-            </p>
+            <label className={LABEL} htmlFor="log-weight">Weight ({unit})</label>
+            <input id="log-weight" type="number" step="0.1" min="0" inputMode="decimal" className={INPUT}
+              value={weight} onChange={e => setWeight(e.target.value)} />
           </div>
-          <button onClick={onClose} aria-label="Close"
-            className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-lg leading-none">
-            ×
-          </button>
+          <div>
+            <label className={LABEL} htmlFor="log-water">Water (ml)</label>
+            <input id="log-water" type="number" step="50" min="0" inputMode="numeric" className={INPUT}
+              value={water} onChange={e => setWater(e.target.value)}
+              placeholder={row?.hydration_ml ? String(row.hydration_ml) : ""} />
+            <div className="mt-2 flex gap-1.5">
+              {GLASSES.map(ml => (
+                <button key={ml} type="button" onClick={() => addGlass(ml)} className="btn btn-neutral btn-sm flex-1">+{ml}</button>
+              ))}
+            </div>
+          </div>
         </div>
 
-        <form onSubmit={save} className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className={LABEL} htmlFor="log-weight">Weight ({unit})</label>
-              <input id="log-weight" type="number" step="0.1" min="0" inputMode="decimal" className={INPUT}
-                value={weight} onChange={e => setWeight(e.target.value)} />
-            </div>
-            <div>
-              <label className={LABEL} htmlFor="log-water">Water (ml)</label>
-              <input id="log-water" type="number" step="50" min="0" inputMode="numeric" className={INPUT}
-                value={water} onChange={e => setWater(e.target.value)}
-                placeholder={row?.hydration_ml ? String(row.hydration_ml) : ""} />
-              <div className="mt-2 flex gap-1.5">
-                {GLASSES.map(ml => (
-                  <button key={ml} type="button" onClick={() => addGlass(ml)} className="btn btn-neutral btn-sm flex-1">+{ml}</button>
-                ))}
-              </div>
-            </div>
+        <div className="space-y-2">
+          <p className={HEADING}>Food</p>
+          <div className="flex gap-2">
+            <input type="text" list="saved-meals" aria-label="What did you eat?" placeholder="What did you eat?"
+              className={INPUT} value={food.name} onChange={e => setFoodName(e.target.value)} />
+            <input type="number" min="0" inputMode="numeric" aria-label="Calories" placeholder="kcal"
+              className={`${INPUT} w-24 shrink-0`} value={food.kcal}
+              onChange={e => setFood(f => ({ ...f, kcal: e.target.value }))} />
+            <datalist id="saved-meals">
+              {meals.map(m => <option key={m.id} value={m.name} />)}
+            </datalist>
           </div>
-
-          <div className="space-y-2">
-            <p className={HEADING}>Food</p>
-            <div className="flex gap-2">
-              <input type="text" list="saved-meals" aria-label="What did you eat?" placeholder="What did you eat?"
-                className={INPUT} value={food.name} onChange={e => setFoodName(e.target.value)} />
-              <input type="number" min="0" inputMode="numeric" aria-label="Calories" placeholder="kcal"
-                className={`${INPUT} w-24 shrink-0`} value={food.kcal}
-                onChange={e => setFood(f => ({ ...f, kcal: e.target.value }))} />
-              <datalist id="saved-meals">
-                {meals.map(m => <option key={m.id} value={m.name} />)}
-              </datalist>
-            </div>
-            {moreOpen && (
-              <div className="grid grid-cols-3 gap-2">
-                {[["protein", "Protein (g)"], ["carbs", "Carbs (g)"], ["fat", "Fat (g)"]].map(([k, label]) => (
-                  <div key={k}>
-                    <label className={LABEL} htmlFor={`log-${k}`}>{label}</label>
-                    <input id={`log-${k}`} type="number" min="0" step="0.1" className={INPUT}
-                      value={food[k]} onChange={e => setFood(f => ({ ...f, [k]: e.target.value }))} />
-                  </div>
-                ))}
-              </div>
-            )}
-            <div className="flex items-center justify-between gap-3">
-              <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300 cursor-pointer select-none">
-                <input type="checkbox" checked={remember} onChange={e => setRemember(e.target.checked)}
-                  className="rounded border-slate-300 dark:border-slate-600 text-accent-600 focus:ring-accent-500" />
-                Remember this meal
-              </label>
-              <button type="button" onClick={() => setMoreOpen(o => !o)} className="btn btn-neutral btn-sm">
-                {moreOpen ? "Fewer details" : "Protein, carbs, fat"}
-              </button>
-            </div>
-          </div>
-
-          <SavedMeals
-            meals={meals}
-            managing={managing}
-            onToggleManage={() => { setManaging(m => !m); setEditing(null); }}
-            onLog={logSaved}
-            editing={editing}
-            onEdit={setEditing}
-            onSaveEdit={(id, data) => run(async () => { await api.updateMeal(id, data); setEditing(null); })}
-            onDelete={id => run(async () => { await api.deleteMeal(id); setEditing(null); })}
-          />
-
-          {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
-
-          <button type="submit" disabled={!pending || saving} className="btn btn-primary w-full">
-            {saving ? "Saving…" : pending > 1 ? `Save ${pending} entries` : "Save"}
-          </button>
-        </form>
-
-        {entries.length > 0 && (
-          <div className="border-t border-slate-100 dark:border-slate-800 pt-3">
-            <div className="flex items-center justify-between mb-1.5">
-              <p className={HEADING}>{date === today ? "Today" : "That day"}</p>
-              <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 tabular-nums">{eaten.toLocaleString()} kcal</p>
-            </div>
-            <ul className="divide-y divide-slate-100 dark:divide-slate-800">
-              {entries.map(e => (
-                <li key={e.id} className="flex items-center gap-3 py-1.5 text-sm">
-                  <span className="w-16 shrink-0 text-xs text-slate-400 tabular-nums">
-                    {new Date(e.logged_at).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
-                  </span>
-                  <span className="flex-1 min-w-0 truncate text-slate-800 dark:text-slate-100">{e.name}</span>
-                  <span className="text-slate-500 dark:text-slate-400 tabular-nums">{e.calories}</span>
-                  <button type="button" onClick={() => run(() => api.deleteMealLog(e.id))} aria-label={`Remove ${e.name}`}
-                    className="w-6 h-6 rounded-full flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">
-                    ×
-                  </button>
-                </li>
+          {moreOpen && (
+            <div className="grid grid-cols-3 gap-2">
+              {[["protein", "Protein (g)"], ["carbs", "Carbs (g)"], ["fat", "Fat (g)"]].map(([k, label]) => (
+                <div key={k}>
+                  <label className={LABEL} htmlFor={`log-${k}`}>{label}</label>
+                  <input id={`log-${k}`} type="number" min="0" step="0.1" className={INPUT}
+                    value={food[k]} onChange={e => setFood(f => ({ ...f, [k]: e.target.value }))} />
+                </div>
               ))}
-            </ul>
+            </div>
+          )}
+          <div className="flex items-center justify-between gap-3">
+            <Checkbox checked={remember} onChange={setRemember}>Remember this meal</Checkbox>
+            <button type="button" onClick={() => setMoreOpen(o => !o)} className="btn btn-neutral btn-sm">
+              {moreOpen ? "Fewer details" : "Protein, carbs, fat"}
+            </button>
           </div>
-        )}
-      </div>
-    </div>
+        </div>
+
+        <SavedMeals
+          meals={meals}
+          managing={managing}
+          onToggleManage={() => { setManaging(m => !m); setEditing(null); }}
+          onLog={logSaved}
+          editing={editing}
+          onEdit={setEditing}
+          onSaveEdit={(id, data) => run(async () => { await api.updateMeal(id, data); setEditing(null); })}
+          onDelete={id => run(async () => { await api.deleteMeal(id); setEditing(null); })}
+        />
+
+        {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+
+        <button type="submit" disabled={!pending || saving} className="btn btn-primary w-full">
+          {saving ? "Saving…" : pending > 1 ? `Save ${pending} entries` : "Save"}
+        </button>
+      </form>
+
+      {entries.length > 0 && (
+        <div className="border-t border-slate-100 dark:border-slate-800 pt-3">
+          <div className="flex items-center justify-between mb-1.5">
+            <p className={HEADING}>{date === today ? "Today" : "That day"}</p>
+            <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 tabular-nums">{eaten.toLocaleString()} kcal</p>
+          </div>
+          <ul className="divide-y divide-slate-100 dark:divide-slate-800">
+            {entries.map(e => (
+              <li key={e.id} className="flex items-center gap-3 py-1.5 text-sm">
+                <span className="w-16 shrink-0 text-xs text-slate-400 tabular-nums">
+                  {new Date(e.logged_at).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
+                </span>
+                <span className="flex-1 min-w-0 truncate text-slate-800 dark:text-slate-100">{e.name}</span>
+                <span className="text-slate-500 dark:text-slate-400 tabular-nums">{e.calories}</span>
+                <button type="button" onClick={() => run(() => api.deleteMealLog(e.id))} aria-label={`Remove ${e.name}`}
+                  className="icon-btn w-6 h-6 hover:!text-red-500">
+                  ×
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </Modal>
   );
 }
 

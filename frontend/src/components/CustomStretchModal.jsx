@@ -93,20 +93,20 @@ export default function CustomStretchModal({ stretch, onClose, onSaved }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm" onClick={onClose}>
-      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-lg max-w-xl w-full max-h-[85vh] overflow-y-auto m-4" onClick={e => e.stopPropagation()}>
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal max-w-xl max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between p-3.5 border-b border-slate-200 dark:border-slate-700">
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-white">{isEdit ? "Edit Custom Stretch" : "New Custom Stretch"}</h3>
-          <button onClick={onClose} className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400">&times;</button>
+          <h3 className="modal-title">{isEdit ? "Edit Custom Stretch" : "New Custom Stretch"}</h3>
+          <button onClick={onClose} className="icon-btn">&times;</button>
         </div>
         <div className="p-3.5 space-y-4">
           {error && <div className="text-xs text-red-500">{error}</div>}
           <div>
-            <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Name *</label>
-            <input value={name} onChange={e => setName(e.target.value)} className="w-full px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-white" />
+            <label className="field-label">Name *</label>
+            <input value={name} onChange={e => setName(e.target.value)} className="field" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Movement Pattern</label>
+            <label className="field-label">Movement Pattern</label>
             <div className="flex gap-1 flex-wrap">
               {PATTERNS.map(({ k, l }) => (
                 <button key={k} onClick={() => setPattern(k)}
@@ -118,17 +118,17 @@ export default function CustomStretchModal({ stretch, onClose, onSaved }) {
           </div>
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Hold duration (s)</label>
+              <label className="field-label">Hold duration (s)</label>
               <input type="number" min={5} max={600} value={duration} onChange={e => setDuration(parseInt(e.target.value) || 60)}
-                className="w-full px-1.5 py-1 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm" />
+                className="field field-sm" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Sets</label>
+              <label className="field-label">Sets</label>
               <input type="number" min={1} max={10} value={defaultSets} onChange={e => setDefaultSets(parseInt(e.target.value) || 1)}
-                className="w-full px-1.5 py-1 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm" />
+                className="field field-sm" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Difficulty</label>
+              <label className="field-label">Difficulty</label>
               <div className="flex gap-1">
                 {[1, 2, 3].map(d => (
                   <button key={d} onClick={() => setDifficulty(d)}
@@ -140,11 +140,11 @@ export default function CustomStretchModal({ stretch, onClose, onSaved }) {
             </div>
           </div>
           <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-            <input type="checkbox" checked={eachSide} onChange={e => setEachSide(e.target.checked)} className="rounded" />
+            <input type="checkbox" checked={eachSide} onChange={e => setEachSide(e.target.checked)} />
             Hold each side
           </label>
           <div>
-            <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Primary Muscles</label>
+            <label className="field-label">Primary Muscles</label>
             <div className="flex gap-1 flex-wrap">
               {MUSCLES.map(m => (
                 <button key={m} onClick={() => toggleMuscle(m, true)}
@@ -155,7 +155,7 @@ export default function CustomStretchModal({ stretch, onClose, onSaved }) {
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Secondary Muscles</label>
+            <label className="field-label">Secondary Muscles</label>
             <div className="flex gap-1 flex-wrap">
               {MUSCLES.map(m => (
                 <button key={m} onClick={() => toggleMuscle(m, false)}
@@ -166,7 +166,7 @@ export default function CustomStretchModal({ stretch, onClose, onSaved }) {
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Equipment</label>
+            <label className="field-label">Equipment</label>
             <div className="flex gap-1 flex-wrap">
               {EQUIPMENT.map(eq => (
                 <button key={eq} onClick={() => toggleEquipment(eq)}
@@ -182,19 +182,19 @@ export default function CustomStretchModal({ stretch, onClose, onSaved }) {
             onChange={setGarminPair}
           />
           <div>
-            <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Description</label>
+            <label className="field-label">Description</label>
             <textarea value={description} onChange={e => setDescription(e.target.value)} rows={2}
-              className="w-full px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm" />
+              className="field" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Instructions</label>
+            <label className="field-label">Instructions</label>
             <textarea value={instructions} onChange={e => setInstructions(e.target.value)} rows={4}
-              placeholder="Step-by-step instructions (one step per line)" className="w-full px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm" />
+              placeholder="Step-by-step instructions (one step per line)" className="field" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Cautions</label>
+            <label className="field-label">Cautions</label>
             <textarea value={cautions} onChange={e => setCautions(e.target.value)} rows={2}
-              className="w-full px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm" />
+              className="field" />
           </div>
         </div>
         <div className="flex items-center justify-end gap-2 p-3.5 border-t border-slate-200 dark:border-slate-700">

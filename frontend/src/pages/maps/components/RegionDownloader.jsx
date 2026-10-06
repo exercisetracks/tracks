@@ -115,7 +115,7 @@ export default function RegionDownloader({
                 placeholder="Area name (e.g. Yosemite)"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-[11px] px-1.5 py-1"
+                className="field field-sm"
               />
               <div className="flex gap-1.5">
                 <button
@@ -232,7 +232,7 @@ export default function RegionDownloader({
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
             </svg>
             <span className="flex-1 text-left">Saved areas</span>
-            <span className="px-1 py-0.5 rounded-full text-[10px] font-semibold bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+            <span className="badge bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
               {installed.length}
             </span>
           </button>

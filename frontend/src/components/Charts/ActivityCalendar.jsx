@@ -258,7 +258,7 @@ export default function ActivityCalendar({ data = [], days = null }) {
   return (
     <div style={{ width: "100%", display: "flex", flexDirection: "column", flex: 1, gap: 12 }}>
       <div className="flex items-center justify-between gap-4">
-        <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider shrink-0">
+        <p className="section-title shrink-0">
           Activity Contributions
         </p>
         {dateRange && (

@@ -21,7 +21,7 @@ export default function StepAI({ data, onChange, onFinish, onBack, loading, erro
   return (
     <div className="space-y-4">
       {error && (
-        <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg px-2.5 py-1.5">{error}</p>
+        <p className="alert-error">{error}</p>
       )}
 
       <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">

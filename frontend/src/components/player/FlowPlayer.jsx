@@ -36,7 +36,7 @@ export default function FlowPlayer({ title, steps, onClose, onComplete }) {
             {t.done ? "Complete" : `Pose ${t.index + 1} of ${t.total}`}
           </p>
         </div>
-        <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-2xl leading-none px-1.5">×</button>
+        <button onClick={onClose} className="icon-btn">×</button>
       </div>
 
       {t.done ? (

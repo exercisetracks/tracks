@@ -14,7 +14,7 @@ import { api } from "../api/client";
 import MedicationSection from "../components/MedicationSection";
 
 import { isoToday } from "../components/health/helpers";
-import { Section, Card } from "../components/health/ui";
+import { Section, Card } from "../components/ui/Section";
 import MetricGaugeGroup from "../components/health/MetricGaugeGroup";
 import SleepPanel from "../components/health/SleepPanel";
 import LogTodayModal from "../components/health/LogTodayModal";
@@ -25,7 +25,8 @@ import InjuryTimeline from "../components/health/InjuryTimeline";
 import InjuryForm from "../components/health/InjuryForm";
 import InjuryCard from "../components/health/InjuryCard";
 import InjuryActivitiesDrawer from "../components/health/InjuryActivitiesDrawer";
-import Tabs from "../components/ui/Tabs";
+import BarPills from "../components/ui/BarPills";
+import PageHeader from "../components/ui/PageHeader";
 import { PlusIcon } from "../components/ui/Button";
 
 /**
@@ -187,10 +188,17 @@ export default function Health() {
 
   return (
     <div className="p-5 max-w-7xl mx-auto space-y-8">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <h1 className="text-xl font-bold text-slate-900 dark:text-white">Health</h1>
-        <Tabs tabs={RANGES} value={rangeKey} onChange={setRangeKey} size="sm" dataTour="health-range" />
-      </div>
+      {/* The range as bar pills beside the title — the same control, in the
+          same place, as the Dashboard's period and the phone's Health tab. */}
+      <PageHeader title="Health">
+        <BarPills
+          dataTour="health-range"
+          label="Range"
+          options={RANGES.map(r => ({ value: r.key, label: r.label }))}
+          value={rangeKey}
+          onChange={setRangeKey}
+        />
+      </PageHeader>
 
       {showMeasured ? (
         <>

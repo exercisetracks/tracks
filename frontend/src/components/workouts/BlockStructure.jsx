@@ -122,7 +122,7 @@ export default function BlockStructure({ rows, setRows, renderRow, restField, no
                               onMinus={() => setRows(setGroup(rows, { ...g, rest: Math.max(0, g.rest - 15) }))}
                               onPlus={() => setRows(setGroup(rows, { ...g, rest: Math.min(900, g.rest + 15) }))} />
                             <button onClick={() => setRows(removeGroup(rows, g.uid))} title={`Remove ${superset ? "superset" : "repeat"} (keeps its ${plural})`}
-                              className="ml-auto text-sm text-red-500 hover:text-red-700 px-1">✕</button>
+                              className="icon-btn icon-btn-sm icon-btn-danger ml-auto">✕</button>
                           </div>
                         );
                       }
@@ -142,7 +142,7 @@ export default function BlockStructure({ rows, setRows, renderRow, restField, no
                             <Handle listeners={listeners} />
                             <span className="text-xs font-medium text-slate-700 dark:text-slate-300 flex-1">Rest</span>
                             <Stepper label="" value={fmt(s)} onMinus={() => setS(Math.max(15, s - 15))} onPlus={() => setS(Math.min(900, s + 15))} />
-                            <button onClick={() => setRows(remove(rows, row._id))} className="text-sm text-red-500 px-1">✕</button>
+                            <button onClick={() => setRows(remove(rows, row._id))} className="icon-btn icon-btn-sm icon-btn-danger">✕</button>
                           </div>
                         );
                       })() : (

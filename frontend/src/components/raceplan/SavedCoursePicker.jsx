@@ -30,7 +30,7 @@ export default function SavedCoursePicker({ goalId, onPicked }) {
   return (
     <select
       aria-label="Choose saved course" disabled={busy} onChange={pick} defaultValue=""
-      className="px-2.5 py-1.5 text-sm rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300"
+      className="field w-auto"
     >
       <option value="">{busy ? "Loading…" : "Choose saved course"}</option>
       {tracks.map((t) => (

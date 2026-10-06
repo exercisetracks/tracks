@@ -101,7 +101,7 @@ const Compass = memo(function Compass({ bearing, pitch, is3D, mapReady, onOrbit,
 
       {!mapReady && (
         <div className="absolute inset-0 grid place-items-center">
-          <div className="w-4 h-4 border-2 border-accent-500 border-t-transparent rounded-full animate-spin" />
+          <div className="spinner w-4 h-4" />
         </div>
       )}
     </div>

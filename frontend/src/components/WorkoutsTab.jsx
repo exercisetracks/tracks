@@ -14,7 +14,8 @@ import ExerciseDetailModal from "./ExerciseDetailModal";
 import { VALID_TAGS, TAG_LABELS, MUSCLE_TO_LIBRARY } from "./workouts/constants";
 import SortableExercise from "./workouts/SortableExercise";
 import BlockStructure from "./workouts/BlockStructure";
-import { InfoTooltip } from "./Charts/fitness/FitnessChartParts";
+import InfoTooltip from "./ui/InfoTooltip";
+import Checkbox from "./ui/Checkbox";
 import { remove as removeRow, toEditor, fromEditor, isMarker } from "../lib/blocks";
 import ExercisePickRow from "./workouts/ExercisePickRow";
 
@@ -181,7 +182,7 @@ export default function WorkoutsTab() {
 
   if (loading) return (
     <div className="flex justify-center py-11">
-      <div className="w-5 h-5 border-2 border-accent-500 border-t-transparent rounded-full animate-spin" />
+      <div className="spinner" />
     </div>
   );
 
@@ -198,7 +199,7 @@ export default function WorkoutsTab() {
           <div className="flex items-center gap-2 mb-2">
             <input type="search" placeholder="Search by name or muscle…" value={search}
               onChange={e => setSearch(e.target.value)}
-              className="flex-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-1.5 py-1 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent-500/40" />
+              className="field field-sm flex-1" />
           </div>
           <div className="space-y-1">
             {filtered.slice(0, 60).map(ex => (
@@ -249,7 +250,7 @@ export default function WorkoutsTab() {
                     </div>
                     {(wo.tags || []).length > 0 && (
                       <div className="flex gap-1 mb-2 flex-wrap">
-                        {wo.tags.map(t => <span key={t} className="text-[10px] px-1.5 py-0.5 rounded-full bg-accent-50 dark:bg-accent-900/20 text-accent-700 dark:text-accent-400 font-medium">{TAG_LABELS[t] || t}</span>)}
+                        {wo.tags.map(t => <span key={t} className="badge bg-accent-50 dark:bg-accent-900/20 text-accent-700 dark:text-accent-400">{TAG_LABELS[t] || t}</span>)}
                       </div>
                     )}
                     <div className="text-[11px] text-slate-500 dark:text-slate-400">
@@ -280,16 +281,16 @@ export default function WorkoutsTab() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-medium text-slate-600 dark:text-slate-400 block mb-1">Workout Name *</label>
+                <label className="field-label">Workout Name *</label>
                 <input type="text" value={workoutName} onChange={e => setWorkoutName(e.target.value)}
                   placeholder="e.g. Upper Body Push"
-                  className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-sm text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent-500/40" />
+                  className="field" />
               </div>
               <div>
-                <label className="text-xs font-medium text-slate-600 dark:text-slate-400 block mb-1">Description</label>
+                <label className="field-label">Description</label>
                 <input type="text" value={workoutDesc} onChange={e => setWorkoutDesc(e.target.value)}
                   placeholder="Optional notes…"
-                  className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-sm text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent-500/40" />
+                  className="field" />
               </div>
             </div>
 
@@ -297,31 +298,21 @@ export default function WorkoutsTab() {
                 training plans" / "sync to watch" said little to a new user.
                 The "?" beside each is outside its label so it does not tick it. */}
             <div className="flex items-center gap-2">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" checked={includeInPlan} onChange={e => setIncludeInPlan(e.target.checked)}
-                className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-accent-600 focus:ring-accent-500" />
-              <span className="text-xs text-slate-600 dark:text-slate-400">Schedule in my plan</span>
-            </label>
+            <Checkbox checked={includeInPlan} onChange={setIncludeInPlan}>Schedule in my plan</Checkbox>
             <InfoTooltip><p>The plan generator may put this workout into your training plan.</p></InfoTooltip>
             </div>
 
             <div className="flex items-center gap-2">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" checked={syncToWatch} onChange={e => setSyncToWatch(e.target.checked)}
-                className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-sky-600 focus:ring-sky-500" />
-              <span className="text-xs text-slate-600 dark:text-slate-400">Save to my watch</span>
-            </label>
+            <Checkbox checked={syncToWatch} onChange={setSyncToWatch}>Save to my watch</Checkbox>
             <InfoTooltip><p>Saved onto your watch as a workout, to start from there. The watch holds up to 25.</p></InfoTooltip>
             </div>
 
             <div>
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-400 block mb-1">Tags</label>
+              <label className="field-label">Tags</label>
               <div className="flex gap-1.5 flex-wrap">
                 {VALID_TAGS.map(tag => (
-                  <button key={tag} onClick={() => toggleTag(tag)}
-                    className={`text-[11px] px-2.5 py-1 rounded-full font-medium transition-colors ${
-                      workoutTags.includes(tag) ? "bg-accent-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600"
-                    }`}>{TAG_LABELS[tag]}</button>
+                  <button key={tag} type="button" aria-pressed={workoutTags.includes(tag)}
+                    onClick={() => toggleTag(tag)} className="chip chip-sm">{TAG_LABELS[tag]}</button>
                 ))}
               </div>
             </div>

@@ -57,10 +57,10 @@ export default function SleepPanel({ nights, start }) {
   return (
     <section data-tour="health-sleep">
       <div className="flex items-center gap-2 mb-3">
-        <h2 className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Sleep</h2>
+        <h2 className="section-title">Sleep</h2>
         <InfoButton open={showInfo} onToggle={() => setShowInfo(s => !s)} label="About the sleep chart" />
       </div>
-      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
+      <div className="card">
         {showInfo && <InfoPanel body={EXPLAIN.sleepStages.body} className="mb-4" />}
         {!chosen ? (
           <p className="py-10 text-center text-sm text-slate-400 dark:text-slate-500">

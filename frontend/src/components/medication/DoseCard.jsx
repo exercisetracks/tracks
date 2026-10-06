@@ -23,7 +23,7 @@ export default function DoseCard({ med, onTake, onSkip, logging }) {
             <span className="text-xs text-slate-400">{med.dose} {med.dose_unit ?? ""}</span>
           )}
           {med.is_overdue && !med.status && (
-            <span className="text-[10px] font-semibold rounded-full px-1.5 py-0.5 bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300">
+            <span className="badge bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300">
               Overdue
             </span>
           )}

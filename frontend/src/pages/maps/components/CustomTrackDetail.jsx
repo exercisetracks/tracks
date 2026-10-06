@@ -9,6 +9,7 @@ import {
 } from "../utils/simplify";
 import ElevationProfileCard from "./ElevationProfileCard";
 import ConfirmDialog from "../../../components/ConfirmDialog";
+import Switch from "../../../components/ui/Switch";
 import ColorPicker from "../../../components/ColorPicker";
 import EyeToggle from "./EyeToggle";
 
@@ -35,17 +36,6 @@ function capProfile(profile) {
   const out = pts.filter((_, i) => i % stride === 0);
   if (out[out.length - 1] !== pts[pts.length - 1]) out.push(pts[pts.length - 1]);
   return { ...profile, points: out };
-}
-
-function Toggle({ on, onClick, disabled }) {
-  return (
-    <button onClick={onClick} disabled={disabled}
-      className={`relative inline-flex h-4 w-7 items-center rounded-full transition-colors disabled:opacity-50 ${
-        on ? "bg-accent-600" : "bg-slate-300 dark:bg-slate-600"}`}>
-      <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
-        on ? "translate-x-3.5" : "translate-x-0.5"}`} />
-    </button>
-  );
 }
 
 export default function CustomTrackDetail({ trackId, folders = [], imperial, onClose, onChanged, onPreviewGeometry }) {
@@ -198,7 +188,7 @@ export default function CustomTrackDetail({ trackId, folders = [], imperial, onC
               <span className="text-emerald-600 dark:text-emerald-400" title="elevation gain">↑{ft(t.ascent_m)}</span>
               <span className="text-rose-500 dark:text-rose-400" title="elevation loss">↓{ft(t.descent_m)}</span>
             </>}
-            <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-lg leading-none px-1">×</button>
+            <button onClick={onClose} className="icon-btn">×</button>
           </div>
         </div>
 
@@ -255,7 +245,7 @@ export default function CustomTrackDetail({ trackId, folders = [], imperial, onC
                   </svg>
                   <select value={t.folder_id ?? ""}
                     onChange={(e) => patch(e.target.value ? { folder_id: Number(e.target.value) } : { clear_folder: true })}
-                    className="max-w-[110px] rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[11px] text-slate-600 dark:text-slate-300 px-1 py-0.5 outline-none">
+                    className="field field-sm max-w-[110px]">
                     <option value="">No folder</option>
                     {folders.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
                   </select>
@@ -267,10 +257,10 @@ export default function CustomTrackDetail({ trackId, folders = [], imperial, onC
                   <input autoFocus value={newFolder} onChange={(e) => setNewFolder(e.target.value)}
                     onKeyDown={(e) => { if (e.key === "Enter") createFolderAndAssign(newFolder); if (e.key === "Escape") setNewFolder(null); }}
                     placeholder="Folder name"
-                    className="w-28 px-1 py-0.5 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[11px] text-slate-700 dark:text-slate-200 outline-none focus:border-accent-400" />
+                    className="field field-sm w-28" />
                   <button onClick={() => createFolderAndAssign(newFolder)}
                     className="btn btn-primary btn-sm">Add</button>
-                  <button onClick={() => setNewFolder(null)} className="text-slate-400 hover:text-slate-600 px-0.5">×</button>
+                  <button onClick={() => setNewFolder(null)} className="icon-btn icon-btn-sm">×</button>
                 </div>
               )
             )}
@@ -286,13 +276,13 @@ export default function CustomTrackDetail({ trackId, folders = [], imperial, onC
             ) : (
               <>
                 <label className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300" title="Upload this track to your Garmin watch on the next sync">
-                  <Toggle on={t.load_to_device} onClick={() => patch({ load_to_device: !t.load_to_device })} />
+                  <Switch small checked={t.load_to_device} onChange={v => patch({ load_to_device: v })} label="Sync to watch" />
                   Sync to watch
                   {deviceLabel && <span className="text-slate-400">· {deviceLabel}</span>}
                 </label>
 
                 <label className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
-                  <Toggle on={t.turn_by_turn} onClick={() => patch({ turn_by_turn: !t.turn_by_turn })} />
+                  <Switch small checked={t.turn_by_turn} onChange={v => patch({ turn_by_turn: v })} label="Turn-by-turn" />
                   Turn-by-turn
                   {t.turn_by_turn && (
                     <span title={turnCheck === "loading" ? "Checking…" : (turnCheck?.reason || "")} className="inline-flex">

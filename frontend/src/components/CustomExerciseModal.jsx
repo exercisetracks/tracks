@@ -36,15 +36,11 @@ function MuscleSelector({ label, selected, onChange }) {
   };
   return (
     <div>
-      <label className="text-xs font-medium text-slate-600 dark:text-slate-400 block mb-1.5">{label}</label>
+      <label className="field-label">{label}</label>
       <div className="flex flex-wrap gap-1">
         {ALL_MUSCLES.map(m => (
-          <button key={m} type="button" onClick={() => toggle(m)}
-            className={`text-[11px] px-1.5 py-0.5 rounded-full border transition-colors ${
-              selected.includes(m)
-                ? "bg-accent-500 text-white border-accent-500"
-                : "bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-600 hover:border-accent-400"
-            }`}>
+          <button key={m} type="button" aria-pressed={selected.includes(m)} onClick={() => toggle(m)}
+            className="chip chip-sm">
             {m.replace(/_/g, " ")}
           </button>
         ))}
@@ -62,15 +58,11 @@ function EquipmentSelector({ selected, onChange }) {
   };
   return (
     <div>
-      <label className="text-xs font-medium text-slate-600 dark:text-slate-400 block mb-1.5">Equipment needed</label>
+      <label className="field-label">Equipment needed</label>
       <div className="flex flex-wrap gap-1">
         {ALL_EQUIPMENT.map(e => (
-          <button key={e} type="button" onClick={() => toggle(e)}
-            className={`text-[11px] px-1.5 py-0.5 rounded-full border transition-colors ${
-              selected.includes(e)
-                ? "bg-accent-500 text-white border-accent-500"
-                : "bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-600 hover:border-accent-400"
-            }`}>
+          <button key={e} type="button" aria-pressed={selected.includes(e)} onClick={() => toggle(e)}
+            className="chip chip-sm">
             {e}
           </button>
         ))}
@@ -157,22 +149,22 @@ export default function CustomExerciseModal({ exercise, onClose, onSaved }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-3.5">
-      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-lg w-full max-w-xl max-h-[90vh] flex flex-col">
+    <div className="modal-backdrop">
+      <div className="modal max-w-xl max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-4 pt-4 pb-2.5 border-b border-slate-100 dark:border-slate-800">
-          <h2 className="text-base font-semibold text-slate-800 dark:text-slate-100">
+          <h2 className="modal-title">
             {isEdit ? "Edit custom exercise" : "New custom exercise"}
           </h2>
           <button onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl leading-none">×</button>
+            className="icon-btn">×</button>
         </div>
 
         {/* Body */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-4 py-3.5 space-y-4">
           {/* Name */}
           <div>
-            <label className="text-xs font-medium text-slate-600 dark:text-slate-400 block mb-1">
+            <label className="field-label">
               Exercise name <span className="text-red-400">*</span>
             </label>
             <input
@@ -180,7 +172,7 @@ export default function CustomExerciseModal({ exercise, onClose, onSaved }) {
               value={name}
               onChange={e => setName(e.target.value)}
               placeholder="e.g. Banded Clamshell"
-              className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-sm text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent-500/40"
+              className="field"
               disabled={saving}
             />
           </div>
@@ -188,13 +180,13 @@ export default function CustomExerciseModal({ exercise, onClose, onSaved }) {
           {/* Movement pattern + compound toggle */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-400 block mb-1.5">
+              <label className="field-label">
                 Movement pattern
               </label>
               <select
                 value={pattern}
                 onChange={e => setPattern(e.target.value)}
-                className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-accent-500/40"
+                className="field"
                 disabled={saving}>
                 <option value="">— select —</option>
                 {ALL_PATTERNS.map(p => <option key={p} value={p}>{p}</option>)}
@@ -202,13 +194,13 @@ export default function CustomExerciseModal({ exercise, onClose, onSaved }) {
             </div>
             <div className="space-y-2">
               <div>
-                <label className="text-xs font-medium text-slate-600 dark:text-slate-400 block mb-1.5">
+                <label className="field-label">
                   Difficulty
                 </label>
                 <select
                   value={difficulty}
                   onChange={e => setDifficulty(Number(e.target.value))}
-                  className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-accent-500/40"
+                  className="field"
                   disabled={saving}>
                   <option value={1}>1 — Beginner</option>
                   <option value={2}>2 — Intermediate</option>
@@ -221,27 +213,26 @@ export default function CustomExerciseModal({ exercise, onClose, onSaved }) {
           {/* Default sets/reps */}
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-400 block mb-1.5">
+              <label className="field-label">
                 Default sets
               </label>
               <input type="number" min={1} max={10} value={defaultSets}
                 onChange={e => setDefaultSets(e.target.value)}
-                className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-accent-500/40"
+                className="field"
                 disabled={saving} />
             </div>
             <div>
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-400 block mb-1.5">
+              <label className="field-label">
                 Default reps
               </label>
               <input type="number" min={1} max={100} value={defaultReps}
                 onChange={e => setDefaultReps(e.target.value)}
-                className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-accent-500/40"
+                className="field"
                 disabled={saving} />
             </div>
             <div className="flex items-end pb-1.5">
               <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" checked={isCompound} onChange={e => setIsCompound(e.target.checked)}
-                  className="rounded text-accent-500 focus:ring-accent-500" disabled={saving} />
+                <input type="checkbox" checked={isCompound} onChange={e => setIsCompound(e.target.checked)} disabled={saving} />
                 <span className="text-xs text-slate-600 dark:text-slate-400">Compound</span>
               </label>
             </div>
@@ -267,7 +258,7 @@ export default function CustomExerciseModal({ exercise, onClose, onSaved }) {
 
           {/* Notes */}
           <div>
-            <label className="text-xs font-medium text-slate-600 dark:text-slate-400 block mb-1.5">
+            <label className="field-label">
               Notes / coaching cue
             </label>
             <textarea
@@ -275,14 +266,14 @@ export default function CustomExerciseModal({ exercise, onClose, onSaved }) {
               value={description}
               onChange={e => setDescription(e.target.value)}
               placeholder="e.g. Best loaded with a dumbbell for stability…"
-              className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-sm text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent-500/40 resize-none"
+              className="field resize-none"
               disabled={saving}
             />
           </div>
 
           {/* Instructions */}
           <div>
-            <label className="text-xs font-medium text-slate-600 dark:text-slate-400 block mb-1">
+            <label className="field-label">
               Step-by-step instructions
             </label>
             <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-1.5">
@@ -293,7 +284,7 @@ export default function CustomExerciseModal({ exercise, onClose, onSaved }) {
               value={instructions}
               onChange={e => setInstructions(e.target.value)}
               placeholder={"1. Starting position…\n2. Movement…\n3. Return…\nTip: Key coaching cue."}
-              className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-sm text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent-500/40 resize-none font-mono"
+              className="field resize-none font-mono"
               disabled={saving}
             />
           </div>

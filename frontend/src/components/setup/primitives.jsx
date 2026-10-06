@@ -7,12 +7,15 @@
 // every step file imports from here to keep the wizard's chrome (step dots,
 // field rows, segmented toggles) identical throughout.
 
+import Switch from "../ui/Switch";
+import Tabs from "../ui/Tabs";
+
 // Ordered wizard steps — drives the StepIndicator dots and labels.
 export const STEPS = ["Account", "Body", "Zones", "Strength", "GPS", "Data", "Look", "AI"];
 
-// Shared Tailwind class strings for text inputs / selects.
-export const INPUT = "w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent-500 placeholder-slate-400";
-export const SELECT = INPUT + " cursor-pointer";
+// Text inputs and selects are the kit's .field (src/design/kit.js).
+export const INPUT = "field";
+export const SELECT = "field";
 
 // Progress dots across the top of the wizard. `current` is the active step index.
 export function StepIndicator({ current }) {
@@ -61,17 +64,7 @@ export function ToggleCard({ icon, title, description, hint, checked, onChange, 
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
             <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{title}</p>
-            <button
-              type="button"
-              onClick={() => onChange(!checked)}
-              className={`shrink-0 px-2.5 py-0.5 rounded-md text-xs font-medium border transition-colors ${
-                checked
-                  ? "border-accent-300 dark:border-accent-700 bg-accent-100 dark:bg-accent-900/40 text-accent-700 dark:text-accent-400"
-                  : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400"
-              }`}
-            >
-              {checked ? "On" : "Off"}
-            </button>
+            <Switch checked={checked} onChange={onChange} label={title} />
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">{description}</p>
           {points && (
@@ -95,7 +88,7 @@ export function ToggleCard({ icon, title, description, hint, checked, onChange, 
 export function FieldRow({ label, hint, children }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+      <label className="field-label">
         {label}
         {hint && <span className="ml-1 text-slate-400 font-normal text-xs">{hint}</span>}
       </label>
@@ -104,20 +97,13 @@ export function FieldRow({ label, hint, children }) {
   );
 }
 
-// Two-button Auto-detect/Manual segmented toggle (used by the Zones step).
+// Two-way Auto-detect/Manual choice (the Zones step) — the shared segmented
+// Tabs, as Settings uses for the same choice.
 export function ModeToggle({ value, onChange }) {
   return (
-    <div className="flex rounded-md overflow-hidden border border-slate-300 dark:border-slate-700 text-xs w-fit">
-      {[["auto", "Auto-detect"], ["manual", "Manual"]].map(([v, l]) => (
-        <button key={v} type="button" onClick={() => onChange(v)}
-          className={`px-2.5 py-1 font-medium transition-colors ${
-            value === v
-              ? "bg-accent-600 text-white"
-              : "bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700"
-          }`}>
-          {l}
-        </button>
-      ))}
+    <div className="w-fit">
+      <Tabs size="sm" value={value} onChange={onChange}
+        tabs={[{ key: "auto", label: "Auto-detect" }, { key: "manual", label: "Manual" }]} />
     </div>
   );
 }

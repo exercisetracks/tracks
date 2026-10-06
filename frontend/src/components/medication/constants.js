@@ -8,7 +8,7 @@
 export function clsx(...args) { return args.filter(Boolean).join(" "); }
 
 // Shared control styles.
-export const INPUT = "text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-accent-500 w-full";
+export const INPUT = "field";
 // The small pills of the shared button family (tailwind.config.js `.btn`);
 // these rows are dense, so every button here is the 32px size.
 export const BTN_PRIMARY = "btn btn-primary btn-sm";

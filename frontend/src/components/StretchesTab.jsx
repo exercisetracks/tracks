@@ -113,7 +113,7 @@ function StretchRow({ stretch, onPrefChange, onEdit, onDelete, onViewDetail,
             </span>
           )}
           {(stretch.primary_muscles || []).slice(0, 3).map(m => (
-            <span key={m} className="text-[10px] px-1 py-0.5 rounded-full bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+            <span key={m} className="badge bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300">
               {muscleLabel(m)}
             </span>
           ))}
@@ -209,7 +209,7 @@ export default function StretchesTab({ onOpenCustomModal }) {
 
   if (loading) return (
     <div className="flex justify-center py-11">
-      <div className="w-5 h-5 border-2 border-accent-500 border-t-transparent rounded-full animate-spin" />
+      <div className="spinner" />
     </div>
   );
 
@@ -234,7 +234,7 @@ export default function StretchesTab({ onOpenCustomModal }) {
             placeholder="Search stretches…"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="flex-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-sm text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent-500/40"
+            className="field flex-1"
           />
           <button
             onClick={() => onOpenCustomModal(null, load)}
@@ -250,13 +250,8 @@ export default function StretchesTab({ onOpenCustomModal }) {
             { key: "excluded",  label: `Excluded (${excludedCount})` },
             { key: "custom",    label: "Custom" },
           ].map(f => (
-            <button key={f.key}
-              onClick={() => setFilter(f.key)}
-              className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
-                filter === f.key
-                  ? "bg-accent-600 text-white"
-                  : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
-              }`}>
+            <button key={f.key} type="button" aria-pressed={filter === f.key}
+              onClick={() => setFilter(f.key)} className="bar-pill">
               {f.label}
             </button>
           ))}

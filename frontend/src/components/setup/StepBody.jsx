@@ -8,6 +8,7 @@
 // browser holds Continue until it is filled with a plausible age.
 import { MAX_AGE, MIN_AGE } from "../../lib/age";
 import { INPUT, SELECT, FieldRow } from "./primitives";
+import Tabs from "../ui/Tabs";
 
 const TIMEZONES_COMMON = [
   "UTC",
@@ -42,19 +43,8 @@ export default function StepBody({ data, onChange, onNext, onBack }) {
   return (
     <form onSubmit={handleNext} className="space-y-4">
       <FieldRow label="Units">
-        <div className="flex rounded-lg overflow-hidden border border-slate-300 dark:border-slate-700 text-sm">
-          {[["metric", "Metric (kg, cm)"], ["imperial", "Imperial (lbs, ft)"]].map(([v, l]) => (
-            <button key={v} type="button"
-              onClick={() => handleUnitsChange(v)}
-              className={`flex-1 py-1.5 font-medium transition-colors ${
-                data.units === v
-                  ? "bg-accent-600 text-white"
-                  : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
-              }`}>
-              {l}
-            </button>
-          ))}
-        </div>
+        <Tabs stretch tabs={[{ key: "metric", label: "Metric (kg, cm)" }, { key: "imperial", label: "Imperial (lbs, ft)" }]}
+          value={data.units} onChange={handleUnitsChange} />
       </FieldRow>
 
       <div className="grid grid-cols-3 gap-3">
@@ -101,19 +91,8 @@ export default function StepBody({ data, onChange, onNext, onBack }) {
         <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-2">
           Used for the muscle anatomy model and starting run paces.
         </p>
-        <div className="flex rounded-lg overflow-hidden border border-slate-300 dark:border-slate-700 text-sm">
-          {[["male", "Male"], ["female", "Female"]].map(([v, l]) => (
-            <button key={v} type="button"
-              onClick={() => onChange("sex", v)}
-              className={`flex-1 py-1.5 font-medium transition-colors ${
-                data.sex === v
-                  ? "bg-accent-600 text-white"
-                  : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
-              }`}>
-              {l}
-            </button>
-          ))}
-        </div>
+        <Tabs stretch tabs={[{ key: "male", label: "Male" }, { key: "female", label: "Female" }]}
+          value={data.sex} onChange={v => onChange("sex", v)} />
       </FieldRow>
 
       <FieldRow label="Timezone">

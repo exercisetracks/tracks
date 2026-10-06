@@ -26,7 +26,7 @@ export function ActivityTimeline({
 
   return (
     <div>
-      <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">
+      <p className="section-title mb-2">
         Session Timeline
       </p>
       <div className="relative h-10 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800 flex">

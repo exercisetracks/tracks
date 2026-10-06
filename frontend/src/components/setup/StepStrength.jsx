@@ -36,15 +36,12 @@ export default function StepStrength({ data, onChange, onNext, onBack }) {
                 type="button"
                 disabled={required}
                 onClick={() => toggleEquipment(value)}
-                className={`flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg border text-sm font-medium transition-colors ${
-                  checked
-                    ? "bg-accent-500 border-accent-500 text-white"
-                    : "border-slate-200 dark:border-slate-700 hover:border-accent-400 dark:hover:border-accent-500 text-slate-700 dark:text-slate-200"
-                } ${required ? "cursor-default opacity-90" : ""}`}
+                aria-pressed={checked}
+                className={`choice flex items-center justify-between gap-2 text-sm font-medium text-slate-800 dark:text-slate-100 ${required ? "cursor-default opacity-90" : ""}`}
               >
                 <span>{label}</span>
                 {checked && (
-                  <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+                  <svg className="w-3.5 h-3.5 shrink-0 text-accent-600" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                 )}
@@ -63,14 +60,11 @@ export default function StepStrength({ data, onChange, onNext, onBack }) {
               key={value}
               type="button"
               onClick={() => onChange("strength_experience", data.strength_experience === value ? null : value)}
-              className={`text-left px-2.5 py-1.5 rounded-lg border transition-colors ${
-                data.strength_experience === value
-                  ? "bg-accent-500 border-accent-500 text-white"
-                  : "border-slate-200 dark:border-slate-700 hover:border-accent-400 dark:hover:border-accent-500 text-slate-700 dark:text-slate-200"
-              }`}
+              aria-pressed={data.strength_experience === value}
+              className="choice"
             >
-              <div className="text-sm font-medium">{label}</div>
-              <div className={`text-[11px] leading-snug mt-0.5 ${data.strength_experience === value ? "text-white/80" : "text-slate-400 dark:text-slate-500"}`}>{blurb}</div>
+              <div className="text-sm font-medium text-slate-800 dark:text-slate-100">{label}</div>
+              <div className="text-xs leading-snug mt-0.5 text-slate-500 dark:text-slate-400">{blurb}</div>
             </button>
           ))}
         </div>

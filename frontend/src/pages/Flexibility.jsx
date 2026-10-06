@@ -5,6 +5,7 @@ import StretchesTab from "../components/StretchesTab";
 import FlowsTab from "../components/FlowsTab";
 import CustomStretchModal from "../components/CustomStretchModal";
 import Tabs from "../components/ui/Tabs";
+import PageHeader from "../components/ui/PageHeader";
 
 const TABS = [
   { key: "Stretches", label: "Stretches" },
@@ -30,8 +31,9 @@ export default function Flexibility() {
   }, [customModalReload]);
 
   return (
-    <div className="max-w-7xl mx-auto px-5 pt-5 pb-1.5">
-      <Tabs dataTour="flex-tabs" tabs={TABS} value={tab} onChange={setTab} stretch className="mb-6" />
+    <div className="p-5 max-w-7xl mx-auto space-y-6">
+      <PageHeader title="Flexibility" />
+      <Tabs dataTour="flex-tabs" tabs={TABS} value={tab} onChange={setTab} stretch />
 
       <div data-tour="flex-content">
         {tab === "Stretches" && <StretchesTab onOpenCustomModal={handleOpenCustomModal} />}

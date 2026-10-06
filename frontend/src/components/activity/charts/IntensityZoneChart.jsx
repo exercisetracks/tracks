@@ -43,9 +43,9 @@ export function IntensityZoneChart({ data, maxHR = 200, imperial = false }) {
   }
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3.5">
+    <div className="card">
       <div className="flex items-center gap-1.5 mb-3">
-        <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Intensity Zones</p>
+        <p className="section-title">Intensity Zones</p>
       </div>
       <ResponsiveContainer width="100%" height={200}>
         <BarChart data={zoneData} margin={{ top: 10, right: 20, bottom: 30, left: 0 }}>

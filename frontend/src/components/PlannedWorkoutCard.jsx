@@ -175,7 +175,7 @@ export default function PlannedWorkoutCard({ workouts, imperial = false }) {
   const [first] = workouts;
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3.5 flex flex-col h-full min-w-0">
+    <div className="card flex flex-col h-full min-w-0">
       <WorkoutDetail w={first} imperial={imperial} />
     </div>
   );

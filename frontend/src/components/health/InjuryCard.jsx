@@ -48,7 +48,7 @@ export default function InjuryCard({
               </span>
               <SeverityBadge severity={injury.severity} />
               {!injury.end_date && (
-                <span className="text-xs rounded-full bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-300 px-1.5 py-0.5 font-medium">
+                <span className="badge bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-300">
                   Active
                 </span>
               )}

@@ -12,7 +12,7 @@ export default function StrategyPanel({ targetHrCeiling, fuelingPlan }) {
       {/* Sustainable average HR ceiling for the whole race */}
       {targetHrCeiling && (
         <div className="space-y-1">
-          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+          <p className="section-title">
             Average HR ceiling
           </p>
           <p className="text-2xl font-mono font-bold text-rose-600 dark:text-rose-400">
@@ -26,7 +26,7 @@ export default function StrategyPanel({ targetHrCeiling, fuelingPlan }) {
       {/* Carbohydrate fueling target + reminder cadence */}
       {fuelingPlan && (
         <div className="space-y-1">
-          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+          <p className="section-title">
             Fueling target
           </p>
           <p className="text-2xl font-mono font-bold text-amber-600 dark:text-amber-400">
@@ -40,7 +40,7 @@ export default function StrategyPanel({ targetHrCeiling, fuelingPlan }) {
       {/* Cycling climbs only: Coggan-based W/kg (and absolute watts) target */}
       {fuelingPlan?.target_w_per_kg && (
         <div className="space-y-1 sm:col-span-2 pt-1.5 border-t border-slate-200 dark:border-slate-800">
-          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+          <p className="section-title">
             Climbing target
           </p>
           <p className="text-2xl font-mono font-bold text-accent-600 dark:text-accent-400">

@@ -54,18 +54,15 @@ export default function EquipmentSection({ settings, onSaved }) {
               type="button"
               disabled={required}
               onClick={() => toggle(value)}
-              className={`flex items-center justify-between gap-2 text-left p-2 rounded-lg border transition-colors ${
-                checked
-                  ? "bg-accent-500 border-accent-500 text-white"
-                  : "border-slate-200 dark:border-slate-700 hover:border-accent-400 dark:hover:border-accent-500"
-              } ${required ? "cursor-default opacity-90" : ""}`}
+              aria-pressed={checked}
+              className={`choice flex items-center justify-between gap-2 ${required ? "cursor-default opacity-90" : ""}`}
             >
               <div className="min-w-0">
-                <p className="text-sm font-medium">{label}</p>
-                <p className={`text-xs ${checked ? "text-white/80" : "text-slate-400 dark:text-slate-500"}`}>{description}</p>
+                <p className="text-sm font-medium text-slate-800 dark:text-slate-100">{label}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">{description}</p>
               </div>
               {checked && (
-                <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+                <svg className="w-4 h-4 shrink-0 text-accent-600" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
               )}

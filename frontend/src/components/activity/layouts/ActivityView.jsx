@@ -44,46 +44,24 @@ import MindBodyLayout from "./MindBodyLayout";
 import FallbackLayout from "./FallbackLayout";
 import MergedTripLayout from "./MergedTripLayout";
 import { HowItFelt } from "../cards/HowItFelt";
+import ConfirmDialog from "../../ConfirmDialog";
+import Checkbox from "../../ui/Checkbox";
 
 function DeleteDialog({ onConfirm, onCancel, deleting }) {
   const [allowReimport, setAllowReimport] = useState(false);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl p-5 w-full max-w-sm mx-4">
-        <h2 className="text-base font-semibold text-slate-900 dark:text-white mb-2">Delete activity?</h2>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mb-5">
-          This permanently removes the activity and all its data.
-        </p>
-
-        <label className="flex items-center gap-3 mb-6 cursor-pointer select-none group">
-          <div
-            onClick={() => setAllowReimport(v => !v)}
-            className={`relative w-10 h-5 rounded-full transition-colors ${allowReimport ? "bg-accent-500" : "bg-slate-300 dark:bg-slate-600"}`}
-          >
-            <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${allowReimport ? "translate-x-5" : ""}`} />
-          </div>
-          <span className="text-sm text-slate-700 dark:text-slate-300">Allow re-import of this file</span>
-        </label>
-
-        <div className="flex gap-3">
-          <button
-            onClick={onCancel}
-            disabled={deleting}
-            className="btn btn-neutral flex-1"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => onConfirm(allowReimport)}
-            disabled={deleting}
-            className="btn btn-danger flex-1"
-          >
-            {deleting ? "Deleting…" : "Delete"}
-          </button>
-        </div>
-      </div>
-    </div>
+    <ConfirmDialog
+      title="Delete activity?"
+      message="This permanently removes the activity and all its data."
+      confirmLabel={deleting ? "Deleting…" : "Delete"}
+      danger
+      busy={deleting}
+      onConfirm={() => onConfirm(allowReimport)}
+      onCancel={onCancel}
+    >
+      <Checkbox checked={allowReimport} onChange={setAllowReimport}>Allow re-import of this file</Checkbox>
+    </ConfirmDialog>
   );
 }
 
@@ -113,7 +91,7 @@ export function ActivityView() {
     return (
       <div className="flex items-center justify-center h-64 text-sm text-slate-400">
         <div className="flex items-center gap-2">
-          <div className="w-5 h-5 border-2 border-accent-500 border-t-transparent rounded-full animate-spin" />
+          <div className="spinner" />
           Loading activity...
         </div>
       </div>

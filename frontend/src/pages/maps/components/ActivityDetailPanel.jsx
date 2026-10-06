@@ -82,7 +82,7 @@ export default function ActivityDetailPanel({ activityId, imperial, onClose, onC
               <span className="text-emerald-600 dark:text-emerald-400" title="elevation gain">↑{ft(act.total_ascent)}</span>
               <span className="text-rose-500 dark:text-rose-400" title="elevation loss">↓{ft(act.total_descent)}</span>
             </>}
-            <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-lg leading-none px-1">×</button>
+            <button onClick={onClose} className="icon-btn">×</button>
           </div>
         </div>
 

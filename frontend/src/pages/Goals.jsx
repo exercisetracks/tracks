@@ -13,11 +13,13 @@ import { api } from "../api/client";
 import PlanCalendarSection from "../components/PlanCalendarSection";
 import { GOAL_TYPES } from "../components/goals/constants";
 import { hasPlan } from "../components/goals/helpers";
-import { Section } from "../components/goals/ui";
+import { Section, Card } from "../components/ui/Section";
+import PageHeader from "../components/ui/PageHeader";
+import { PlusIcon } from "../components/ui/Button";
 import NewGoalForm from "../components/goals/NewGoalForm";
 import ExperienceSuggestionBanner from "../components/ExperienceSuggestionBanner";
 import GoalCard from "../components/goals/GoalCard";
-import ConfirmModal from "../components/goals/ConfirmModal";
+import ConfirmDialog from "../components/ConfirmDialog";
 
 export default function Goals() {
   const [goals,           setGoals]           = useState([]);
@@ -92,25 +94,18 @@ export default function Goals() {
   }
 
   return (
-    <div className="p-5 max-w-7xl mx-auto space-y-4">
+    <div className="p-5 max-w-7xl mx-auto space-y-8">
 
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-bold text-slate-900 dark:text-white">Training</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            One active goal at a time. When a Race/Event goal is active, coaching builds a full training plan through Base, Build, Peak, and Taper phases.
-          </p>
-        </div>
+      <PageHeader
+        title="Training"
+        subtitle="One active goal at a time. When a Race/Event goal is active, coaching builds a full training plan through Base, Build, Peak, and Taper phases."
+      >
         {!showForm && (
-          <button onClick={() => setShowForm(true)} data-tour="goals-new"
-            className="btn btn-primary gap-1.5 shrink-0">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-            </svg>
-            New goal
+          <button onClick={() => setShowForm(true)} data-tour="goals-new" className="btn btn-primary">
+            <PlusIcon />New goal
           </button>
         )}
-      </div>
+      </PageHeader>
 
       {/* Coach note: history-derived experience-level suggestion */}
       <ExperienceSuggestionBanner settings={settings} onChanged={refreshSettings} />
@@ -118,12 +113,14 @@ export default function Goals() {
       {/* New goal form */}
       {showForm && (
         <Section title="New goal">
-          <NewGoalForm
-            imperial={imperial}
-            settings={settings}
-            onCancel={() => setShowForm(false)}
-            onSaved={async () => { setShowForm(false); await loadGoals(); }}
-          />
+          <Card>
+            <NewGoalForm
+              imperial={imperial}
+              settings={settings}
+              onCancel={() => setShowForm(false)}
+              onSaved={async () => { setShowForm(false); await loadGoals(); }}
+            />
+          </Card>
         </Section>
       )}
 
@@ -131,13 +128,14 @@ export default function Goals() {
       <div data-tour="goals-active">
       <Section title="Active Goal">
         {activeGoals.length === 0 ? (
-          <div className="text-center py-7 text-sm text-slate-400 dark:text-slate-500">
-            No active goals yet. {!showForm && (
+          <Card className="flex flex-col items-center gap-3 py-7 text-sm text-slate-400 dark:text-slate-500">
+            No active goals yet.
+            {!showForm && (
               <button onClick={() => setShowForm(true)} className="btn btn-tonal">
-                Create one →
+                <PlusIcon />Create one
               </button>
             )}
-          </div>
+          </Card>
         ) : (
           <div className="space-y-3">
             {activeGoals.map(g => (
@@ -171,7 +169,8 @@ export default function Goals() {
       )}
 
       {confirmDelete && (
-        <ConfirmModal
+        <ConfirmDialog
+          confirmLabel="Delete"
           title="Delete goal?"
           message={`"${confirmDelete.event_name || GOAL_TYPES.find(t => t.id === confirmDelete.goal_type)?.title || "this goal"}" will be permanently removed.`}
           danger

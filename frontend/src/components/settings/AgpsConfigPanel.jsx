@@ -48,12 +48,12 @@ export default function AgpsConfigPanel({ settings, onSaved }) {
     return d === 1 ? "1 day ago" : `${d} days ago`;
   }
 
-  const inputCls = "w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-200 px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-accent-500";
+  const inputCls = "field";
 
   return (
     <div className="px-2.5 py-2.5 space-y-3 bg-slate-50/70 dark:bg-slate-800/30">
       <div>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+        <label className="field-label">
           Data source
         </label>
         <select
@@ -74,7 +74,7 @@ export default function AgpsConfigPanel({ settings, onSaved }) {
 
       {source === "custom" && (
         <div>
-          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+          <label className="field-label">
             Custom download URL
           </label>
           <input
@@ -89,7 +89,7 @@ export default function AgpsConfigPanel({ settings, onSaved }) {
       )}
 
       <div>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+        <label className="field-label">
           Watch file path
         </label>
         <input
@@ -105,7 +105,7 @@ export default function AgpsConfigPanel({ settings, onSaved }) {
       </div>
 
       <div>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+        <label className="field-label">
           Refresh interval (hours)
         </label>
         <input

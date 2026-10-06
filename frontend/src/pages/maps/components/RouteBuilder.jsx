@@ -177,7 +177,7 @@ function SaveTrackForm({ route, elevation, onCancel, onSave }) {
       <input
         autoFocus value={name} onChange={(e) => setName(e.target.value)}
         placeholder="Track name"
-        className="w-full px-1.5 py-1 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-700 dark:text-slate-200 outline-none focus:border-accent-400"
+        className="field field-sm"
       />
       <div className="flex items-center gap-1">
         {TRACK_COLORS.slice(0, 8).map((c) => (
@@ -188,7 +188,7 @@ function SaveTrackForm({ route, elevation, onCancel, onSave }) {
         <ColorPicker value={color} onChange={setColor} size="w-4 h-4" />
       </div>
       <select value={sport} onChange={(e) => setSport(e.target.value)}
-        className="w-full px-1.5 py-1 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[11px] text-slate-600 dark:text-slate-300 outline-none">
+        className="field field-sm">
         {SPORTS.map((s) => <option key={s} value={s}>{s}</option>)}
       </select>
 

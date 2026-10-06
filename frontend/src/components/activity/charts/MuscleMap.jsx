@@ -215,7 +215,7 @@ export function MuscleMapPicker({ selected, onSelect }) {
           <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-1 text-center shrink-0">Back</p>
         </div>
         {selected && (
-          <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[11px] font-medium text-white bg-accent-600 px-1.5 py-0.5 rounded-full shadow">
+          <span className="badge absolute bottom-1 left-1/2 -translate-x-1/2 text-white bg-accent-600 shadow">
             {muscleLabel(selected)}
           </span>
         )}
@@ -236,9 +236,9 @@ export function MuscleMap({ activation = {}, totals = {}, hasData = true }) {
     .map(([key, v]) => [key, totalLoad > 0 ? v / totalLoad : 0]);
 
   return (
-    <div className="flex-1 min-h-0 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3.5 flex flex-col">
+    <div className="card flex-1 min-h-0 flex flex-col">
       <style>{STYLES}</style>
-      <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3">Muscles Worked</p>
+      <p className="section-title mb-3">Muscles Worked</p>
       {!hasData && (
         <div className="flex-1 flex items-center justify-center">
           <p className="text-sm text-slate-400 dark:text-slate-500 italic">No data recorded</p>

@@ -11,6 +11,7 @@ import { useCallback, useEffect, useState } from "react";
 import { api } from "../../api/client";
 import { ageFromBirthYear, birthYearFromAge, MAX_AGE, MIN_AGE } from "../../lib/age";
 import { INPUT, Section, FieldRow, InlineError, useSaveStatus } from "./primitives";
+import Tabs from "../ui/Tabs";
 
 export default function BodySection({ settings, onSaved }) {
   const imperial = settings?.units === "imperial";
@@ -122,18 +123,7 @@ export default function BodySection({ settings, onSaved }) {
       {/* Two buttons rather than a dropdown, as in setup and on the phone:
           both choices are visible without opening anything. */}
       <FieldRow label="Biological sex" hint="— muscle anatomy model and starting paces">
-        <div className="flex rounded-lg overflow-hidden border border-slate-300 dark:border-slate-700 text-sm">
-          {[["male", "Male"], ["female", "Female"]].map(([v, l]) => (
-            <button key={v} type="button" onClick={() => saveSex(v)}
-              className={`flex-1 py-1.5 font-medium transition-colors ${
-                sex === v
-                  ? "bg-accent-600 text-white"
-                  : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
-              }`}>
-              {l}
-            </button>
-          ))}
-        </div>
+        <Tabs stretch tabs={[{ key: "male", label: "Male" }, { key: "female", label: "Female" }]} value={sex} onChange={saveSex} />
       </FieldRow>
     </Section>
   );

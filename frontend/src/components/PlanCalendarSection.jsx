@@ -139,11 +139,11 @@ export default function PlanCalendarSection({ goalId, refreshKey, imperial = fal
   };
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3.5 mt-3">
+    <div className="card mt-3">
       {/* Header */}
       <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
         <div className="flex items-center gap-3 flex-wrap">
-          <h4 className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+          <h4 className="section-title">
             Training Plan
           </h4>
           {plan && (

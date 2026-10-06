@@ -26,6 +26,7 @@ import EquipmentSection from "../components/settings/EquipmentSection";
 import SecuritySection from "../components/settings/SecuritySection";
 import UserManagementSection from "../components/settings/UserManagementSection";
 import DangerZoneSection from "../components/settings/DangerZoneSection";
+import PageHeader from "../components/ui/PageHeader";
 
 export default function Settings() {
   const { user } = useAuth();
@@ -55,17 +56,14 @@ export default function Settings() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-6 h-6 border-2 border-accent-500 border-t-transparent rounded-full animate-spin" />
+        <div className="spinner w-6 h-6" />
       </div>
     );
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-5 py-7 space-y-4">
-      <div className="mb-2">
-        <h1 className="text-xl font-bold text-slate-900 dark:text-white">Settings</h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400">Manage your profile, training zones, and preferences.</p>
-      </div>
+    <div className="p-5 max-w-2xl mx-auto space-y-6">
+      <PageHeader title="Settings" subtitle="Manage your profile, training zones, and preferences." />
 
       <ProfileSection  user={user}     settings={settings} onSaved={handleSaved} />
       <AppearanceSection />

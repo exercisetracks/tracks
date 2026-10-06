@@ -1,31 +1,31 @@
 // SPDX-FileCopyrightText: 2026 Hawk Fugagli
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// App-styled confirmation modal — the shared version of the inline ConfirmModal
-// in Goals.jsx, so delete/destructive confirmations look consistent everywhere
-// (replacing window.confirm()).
+// App-styled confirmation, replacing window.confirm(): the shared Modal with a
+// title, a line of explanation and two buttons. `danger` makes the confirm
+// red. Above other dialogs (z-[70]) because it is often opened from one.
+//
+// `children` sits between the message and the buttons, for a confirmation
+// that carries an option (delete — and allow re-import?) or a typed check
+// (`confirmDisabled` until it is right).
+import Modal from "./ui/Modal";
+
 export default function ConfirmDialog({
   title, message, confirmLabel = "Confirm", cancelLabel = "Cancel",
-  danger = false, onConfirm, onCancel,
+  danger = false, busy = false, confirmDisabled = false, onConfirm, onCancel, children,
 }) {
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-3.5" onClick={onCancel}>
-      <div
-        className="bg-white dark:bg-slate-900 rounded-xl shadow-lg max-w-sm w-full p-4"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{title}</h3>
-        {message && <p className="text-sm text-slate-600 dark:text-slate-400 mt-2">{message}</p>}
-        <div className="flex justify-end gap-2 mt-5">
-          <button onClick={onCancel}
-            className="btn btn-neutral">
-            {cancelLabel}
-          </button>
-          <button onClick={onConfirm}
-            className={`btn ${danger ? "btn-danger" : "btn-primary"}`}>
-            {confirmLabel}
-          </button>
-        </div>
+    <Modal title={title} onClose={busy ? undefined : onCancel} width="max-w-sm" z="z-[70]">
+      {message && <p className="text-sm text-slate-600 dark:text-slate-400">{message}</p>}
+      {children}
+      <div className="flex justify-end gap-2 pt-1">
+        <button type="button" onClick={onCancel} disabled={busy} className="btn btn-neutral">
+          {cancelLabel}
+        </button>
+        <button type="button" onClick={onConfirm} disabled={busy || confirmDisabled}
+          className={`btn ${danger ? "btn-danger" : "btn-primary"}`}>
+          {confirmLabel}
+        </button>
       </div>
-    </div>
+    </Modal>
   );
 }

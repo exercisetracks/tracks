@@ -170,11 +170,8 @@ function DaysPerWeekEditor({ goal, onSaved }) {
             type="button"
             disabled={saving}
             onClick={() => pick(n)}
-            className={`w-7 h-7 rounded-md text-xs font-semibold transition-colors disabled:opacity-40 ${
-              value === n
-                ? "bg-accent-500 text-white"
-                : "border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-accent-400 dark:hover:border-accent-500"
-            }`}
+            aria-pressed={value === n}
+            className="chip chip-sm w-7 px-0 tabular-nums"
           >
             {n}
           </button>
@@ -280,7 +277,7 @@ export default function GoalCard({ goal, ctl, weeklyKm, imperial, settings, onAc
 
   if (editing) {
     return (
-      <div className="rounded-xl border-2 border-accent-400 dark:border-accent-600 p-3.5">
+      <div className="card border-accent-400 dark:border-accent-600">
         <NewGoalForm goal={goal} imperial={imperial} settings={settings}
           onCancel={() => setEditing(false)}
           onSaved={() => { setEditing(false); onReload(); }} />
@@ -317,11 +314,7 @@ export default function GoalCard({ goal, ctl, weeklyKm, imperial, settings, onAc
   })();
 
   return (
-    <div className={`rounded-xl border-2 p-3.5 transition-all ${
-      goal.is_active
-        ? "border-accent-400 dark:border-accent-600 bg-accent-50/40 dark:bg-accent-900/10"
-        : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
-    }`}>
+    <div className={`card ${goal.is_active ? "border-accent-400 dark:border-accent-600" : ""}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3 min-w-0 flex-1">
           <div className="min-w-0 flex-1">

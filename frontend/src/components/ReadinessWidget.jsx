@@ -72,18 +72,18 @@ function HistoryPopup({ history, onClose }) {
   return (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-center justify-center p-3.5 bg-black/60 backdrop-blur-sm"
+      className="modal-backdrop"
       onClick={e => { if (e.target === overlayRef.current) onClose(); }}
     >
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl w-full max-w-2xl p-5">
+      <div className="modal max-w-2xl p-5">
         <div className="flex items-center justify-between mb-5">
           <div>
-            <h2 className="text-base font-bold text-slate-900 dark:text-white">Readiness History</h2>
+            <h2 className="modal-title">Readiness History</h2>
             <p className="text-xs text-slate-400 mt-0.5">Daily recovery score from health data and training load</p>
           </div>
           <button
             onClick={onClose}
-            className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-lg leading-none"
+            className="icon-btn"
           >
             ×
           </button>
@@ -153,7 +153,7 @@ export default function ReadinessWidget({ history = [] }) {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="group h-full w-full bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-2 flex flex-col items-center justify-center gap-1.5 transition-transform duration-150 hover:scale-[1.03] focus:outline-none focus:ring-2 focus:ring-teal-500"
+        className="card group h-full w-full p-2 flex flex-col items-center justify-center gap-1.5 transition-transform duration-150 hover:scale-[1.03] focus:outline-none focus:ring-2 focus:ring-teal-500"
         title="Click to view readiness history"
       >
         <RadialGauge value={value} min={READY_MIN} max={READY_MAX} zones={ZONES} title="READINESS" />

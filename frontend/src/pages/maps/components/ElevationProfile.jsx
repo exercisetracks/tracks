@@ -40,7 +40,7 @@ export default function ElevationProfile({ elevation, snapping, onClose }) {
           <span>↓{elevation.loss} m</span>
           {snapping && <span className="w-2.5 h-2.5 border-[1.5px] border-accent-500 border-t-transparent rounded-full animate-spin" />}
           {onClose && (
-            <button onClick={onClose} className="text-slate-500/70 hover:text-slate-700 dark:hover:text-slate-200 leading-none text-base px-1">×</button>
+            <button onClick={onClose} className="icon-btn">×</button>
           )}
         </div>
       </div>

@@ -18,9 +18,9 @@ export function WeightGraph({ data, onHover, onLeave, lapTimes = [] }) {
     ));
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3.5">
+    <div className="card">
       <div className="flex items-center gap-1.5 mb-3">
-        <p className="text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Weight Progression</p>
+        <p className="section-title">Weight Progression</p>
       </div>
       <ResponsiveContainer width="100%" height={180}>
         <LineChart data={data} onMouseMove={onHover} onMouseLeave={onLeave}>

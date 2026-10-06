@@ -79,7 +79,7 @@ function Alternate({ rec }) {
 export default function CoachingCard({ recommendations = [] }) {
   if (!recommendations.length) {
     return (
-      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3.5 text-sm text-slate-400 dark:text-slate-500 h-full">
+      <div className="card text-sm text-slate-400 dark:text-slate-500 h-full">
         No coaching recommendation available.
       </div>
     );
@@ -88,8 +88,8 @@ export default function CoachingCard({ recommendations = [] }) {
   const [primary, ...rest] = recommendations;
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3.5 flex flex-col h-full">
-      <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">
+    <div className="card flex flex-col h-full">
+      <p className="section-title mb-2">
         Suggested today
       </p>
 
@@ -97,7 +97,7 @@ export default function CoachingCard({ recommendations = [] }) {
 
       {rest.length > 0 && (
         <div className="mt-auto pt-2.5 border-t border-slate-100 dark:border-slate-800">
-          <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">
+          <p className="section-title mb-1">
             Other options
           </p>
           <div className="divide-y divide-slate-100 dark:divide-slate-800">

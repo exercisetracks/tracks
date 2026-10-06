@@ -22,7 +22,8 @@ import { api } from "../../api/client";
 import { experienceDefaultTier } from "../../lib/experienceLevels";
 import { MTB_DISCIPLINES, CYCLING_DISCIPLINES } from "./constants";
 import { changedFields, draftFromGoal, hasPlan, newDraft, pickPreset, pickSport, todayISO } from "./helpers";
-import { InfoTooltip } from "../Charts/fitness/FitnessChartParts";
+import InfoTooltip from "../ui/InfoTooltip";
+import { SwitchRow } from "../ui/Switch";
 import UserIcsCopy from "../plancalendar/UserIcsCopy";
 import { INPUT, LABEL } from "./ui";
 import DatePicker from "../ui/DatePicker";
@@ -301,53 +302,24 @@ export default function NewGoalForm({ goal, imperial, settings, onCancel, onSave
 
           {/* Field-test opt-in: currently MTB / cycling only */}
           {(draft.event_sport === "mountain biking" || draft.event_sport === "cycling") && (
-            <label className="flex items-start gap-3 p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-accent-400 dark:hover:border-accent-500 cursor-pointer transition-colors">
-              <input type="checkbox" className="mt-0.5"
-                checked={!!draft._schedule_tests}
-                onChange={e => set("_schedule_tests", e.target.checked)} />
-              <span className="flex-1">
-                <span className="block text-sm font-medium text-slate-700 dark:text-slate-200">
-                  Schedule field tests
-                </span>
-                <span className="block text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  Inserts 3 test sessions (20-min FTP early, 5-min Pmax start-of-build, 20-min FTP retest mid-peak).
-                  Completed tests will auto-update your FTP / LTHR.
-                </span>
-              </span>
-            </label>
+            <SwitchRow
+              label="Schedule field tests"
+              hint="Inserts 3 test sessions (20-min FTP early, 5-min Pmax start-of-build, 20-min FTP retest mid-peak). Completed tests will auto-update your FTP / LTHR."
+              checked={!!draft._schedule_tests}
+              onChange={v => set("_schedule_tests", v)}
+            />
           )}
 
           {/* Strength training integration — endurance sports only */}
           {draft.event_sport !== "strength_training" && (
-            <div className={`rounded-xl border-2 p-3.5 transition-all cursor-pointer ${
-              draft.include_strength
-                ? "border-accent-500 bg-accent-50/30 dark:bg-accent-900/10"
-                : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600"
-            }`} onClick={() => set("include_strength", !draft.include_strength)}>
-              <div className="flex items-center gap-3">
-                <div className="flex-1">
-                  <div className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                    Strength training
-                  </div>
-                  <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    {draft.include_strength
-                      ? "Sport-specific sessions added to your plan. The intensity slider controls volume and focus."
-                      : "Add strength sessions alongside your endurance plan."}
-                  </div>
-                </div>
-                <div className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
-                  draft.include_strength
-                    ? "bg-accent-500 border-accent-500 text-white"
-                    : "border-slate-300 dark:border-slate-600"
-                }`}>
-                  {draft.include_strength && (
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
-                </div>
-              </div>
-            </div>
+            <SwitchRow
+              label="Strength training"
+              hint={draft.include_strength
+                ? "Sport-specific sessions added to your plan. The intensity slider controls volume and focus."
+                : "Add strength sessions alongside your endurance plan."}
+              checked={!!draft.include_strength}
+              onChange={v => set("include_strength", v)}
+            />
           )}
 
           {draft.include_strength && draft.event_sport !== "strength_training" && (
@@ -390,11 +362,12 @@ export default function NewGoalForm({ goal, imperial, settings, onCancel, onSave
               <DaysPerWeekPicker value={draft.days_per_week} onChange={v => set("days_per_week", v)} />
             </div>
           </div>
-          <label className="flex items-center gap-3 cursor-pointer">
-            <input type="checkbox" checked={!!draft.include_strength}
-              onChange={e => set("include_strength", e.target.checked)} />
-            <span className="text-sm text-slate-700 dark:text-slate-200">Include strength sessions</span>
-          </label>
+          <SwitchRow
+            label="Include strength sessions"
+            hint="Strength sessions woven around the plan."
+            checked={!!draft.include_strength}
+            onChange={v => set("include_strength", v)}
+          />
           {draft.include_strength && (
             <div>
               <p className={LABEL}>Strength focus</p>

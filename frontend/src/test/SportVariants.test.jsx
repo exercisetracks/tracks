@@ -18,14 +18,14 @@ describe('sport variants', () => {
 
   it('keep the Skiing chip lit for an alpine goal', () => {
     render(<SportChooser value="alpine_skiing" onChange={() => {}} />);
-    expect(screen.getByText('Skiing').closest('button').className).toMatch(/bg-accent-500/);
+    expect(screen.getByText('Skiing').closest('button').getAttribute('aria-pressed')).toBe('true');
   });
 
   it('write the specific sport, with the explanation behind the "?"', () => {
     const onChange = vi.fn();
     render(<SportVariantChooser sport="skiing" onChange={onChange} />);
     // A bare "skiing" goal is the first kind, cross-country.
-    expect(screen.getByText('Cross-country').className).toMatch(/bg-accent-500/);
+    expect(screen.getByText('Cross-country').closest('button').getAttribute('aria-pressed')).toBe('true');
     expect(screen.queryByText(/dry-land conditioning/)).toBeNull();
     fireEvent.click(screen.getByText('Alpine'));
     expect(onChange).toHaveBeenCalledWith('alpine_skiing');

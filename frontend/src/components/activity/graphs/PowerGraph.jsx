@@ -21,9 +21,9 @@ export const PowerGraph = React.memo(function PowerGraph({ data, onHover, onLeav
   if (!data?.length) return null;
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3.5">
+    <div className="card">
       <div className="flex items-center gap-1.5 mb-3">
-        <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Power</p>
+        <p className="section-title">Power</p>
       </div>
       <ResponsiveContainer width="100%" height={160}>
         <LineChart data={data} syncId="activity-time" onMouseMove={onHover} onMouseLeave={onLeave}>

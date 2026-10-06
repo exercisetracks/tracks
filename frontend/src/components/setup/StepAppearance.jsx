@@ -5,6 +5,7 @@
 // AND applies the choice live via ThemeContext so the wizard re-themes instantly.
 import { useTheme } from "../../context/ThemeContext";
 import ColorPicker from "../ColorPicker";
+import Tabs from "../ui/Tabs";
 
 const ACCENT_OPTIONS = [
   ["emerald", "Emerald", "#10b981"],
@@ -33,29 +34,15 @@ export default function StepAppearance({ data, onChange, onNext, onBack }) {
   return (
     <div className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+        <label className="field-label">
           Color scheme
         </label>
-        <div className="flex rounded-lg overflow-hidden border border-slate-300 dark:border-slate-700 text-sm w-fit">
-          {[["system", "System"], ["light", "Light"], ["dark", "Dark"]].map(([v, label]) => (
-            <button
-              key={v}
-              type="button"
-              onClick={() => handleColorScheme(v)}
-              className={`px-3.5 py-1.5 font-medium transition-colors ${
-                data.colorScheme === v
-                  ? "bg-accent-600 text-white"
-                  : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+        <Tabs tabs={[{ key: "system", label: "System" }, { key: "light", label: "Light" }, { key: "dark", label: "Dark" }]}
+          value={data.colorScheme} onChange={handleColorScheme} />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+        <label className="field-label">
           Accent color
         </label>
         <div className="flex flex-wrap items-center gap-2.5">

@@ -395,7 +395,7 @@ export default function MapView() {
           </span>
           <span className="flex items-center gap-1.5">
             {customTracks.tracks.length > 0 && (
-              <span className="text-[10px] font-bold px-1 py-0.5 rounded-full bg-accent-100 dark:bg-accent-900/40 text-accent-700 dark:text-accent-300">{customTracks.tracks.length}</span>
+              <span className="badge bg-accent-100 dark:bg-accent-900/40 text-accent-700 dark:text-accent-300">{customTracks.tracks.length}</span>
             )}
             <svg className="w-3.5 h-3.5 opacity-70" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
@@ -527,7 +527,7 @@ export default function MapView() {
 
       {!ready && !error && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#f2efe9] gap-3 z-20">
-          <div className="w-8 h-8 border-2 border-accent-500 border-t-transparent rounded-full animate-spin" />
+          <div className="spinner w-8 h-8" />
           <p className="text-sm text-slate-500">Loading map…</p>
         </div>
       )}
@@ -607,7 +607,7 @@ export default function MapView() {
               </p>
               <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1.5">{error}</p>
             </div>
-            <button onClick={() => setHideBanner(true)} className="shrink-0 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+            <button onClick={() => setHideBanner(true)} className="icon-btn shrink-0">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>

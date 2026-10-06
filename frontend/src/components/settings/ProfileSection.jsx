@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { api } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import { INPUT, SELECT, Section, FieldRow, useSaveStatus } from "./primitives";
+import Tabs from "../ui/Tabs";
 
 const TIMEZONES_COMMON = [
   "UTC",
@@ -71,18 +72,8 @@ export default function ProfileSection({ user, settings, onSaved }) {
           placeholder="Your name" />
       </FieldRow>
       <FieldRow label="Units">
-        <div className="flex rounded-lg overflow-hidden border border-slate-300 dark:border-slate-700 text-sm">
-          {[["metric", "Metric (kg, km)"], ["imperial", "Imperial (lbs, mi)"]].map(([v, l]) => (
-            <button key={v} type="button" onClick={() => saveUnits(v)}
-              className={`flex-1 py-1.5 font-medium transition-colors ${
-                units === v
-                  ? "bg-accent-600 text-white"
-                  : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
-              }`}>
-              {l}
-            </button>
-          ))}
-        </div>
+        <Tabs stretch tabs={[{ key: "metric", label: "Metric (kg, km)" }, { key: "imperial", label: "Imperial (lbs, mi)" }]}
+          value={units} onChange={saveUnits} />
       </FieldRow>
       <FieldRow label="Timezone">
         <select className={SELECT} value={tz} onChange={e => saveTz(e.target.value)}>

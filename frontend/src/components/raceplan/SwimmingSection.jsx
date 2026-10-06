@@ -24,7 +24,7 @@ export default function SwimmingSection({ plan }) {
       )}
       {plan.swim_target_pace && (
         <div className="rounded-lg bg-slate-50 dark:bg-slate-800/60 px-3.5 py-2.5">
-          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
+          <p className="section-title mb-1">
             Target pace
           </p>
           <p className="text-xl font-bold font-mono text-slate-800 dark:text-slate-200">

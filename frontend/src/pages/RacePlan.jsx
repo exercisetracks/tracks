@@ -147,16 +147,16 @@ export default function RacePlan() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[40vh]">
-        <div className="w-6 h-6 border-2 border-accent-500 border-t-transparent rounded-full animate-spin" />
+        <div className="spinner w-6 h-6" />
       </div>
     );
   }
 
   if (!goal) {
     return (
-      <div className="max-w-3xl mx-auto px-3.5 py-7 text-center text-slate-500">
+      <div className="p-5 max-w-3xl mx-auto text-center text-slate-500">
         Goal not found.{" "}
-        <Link to="/race-plans" className="text-accent-600 underline">Back to Race Plans</Link>
+        <Link to="/race-plans" className="btn btn-tonal mt-3">Back to Race Plans</Link>
       </div>
     );
   }
@@ -178,11 +178,11 @@ export default function RacePlan() {
   const mapZoom   = plan?.pin_lat != null && !hasCourse ? 10 : 2;
 
   return (
-    <div className="max-w-4xl mx-auto px-3.5 py-5 space-y-6">
+    <div className="p-5 max-w-4xl mx-auto space-y-6">
 
       {/* Header */}
       <div className="flex items-start gap-3">
-        <Link to="/race-plans" className="mt-1 shrink-0 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+        <Link to="/race-plans" aria-label="Back to race plans" className="icon-btn -ml-1.5">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
@@ -208,12 +208,12 @@ export default function RacePlan() {
       </div>
 
       {error && (
-        <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg px-3.5 py-2.5 flex items-center gap-2">
+        <div className="alert-error flex items-center gap-2">
           <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           {error}
-          <button className="ml-auto text-red-400 hover:text-red-600" onClick={() => setError(null)}>✕</button>
+          <button className="icon-btn icon-btn-sm icon-btn-danger ml-auto" onClick={() => setError(null)}>✕</button>
         </div>
       )}
 
@@ -389,7 +389,7 @@ export default function RacePlan() {
             {" "}
             {maxHr
               ? <span>Your max HR is <strong>{maxHr} bpm</strong>.</span>
-              : <>Max HR not set. <Link to="/settings" className="text-accent-500 hover:underline">Set it in Settings →</Link></>
+              : <>Max HR not set. <Link to="/settings" className="btn btn-tonal btn-sm ml-1.5">Set it in Settings</Link></>
             }
           </p>
         </Section>

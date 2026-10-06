@@ -11,9 +11,9 @@ export function RestHistogram({ data }) {
   if (!data?.length) return null;
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3.5">
+    <div className="card">
       <div className="flex items-center gap-1.5 mb-3">
-        <p className="text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Rest Period Distribution</p>
+        <p className="section-title">Rest Period Distribution</p>
       </div>
       <ResponsiveContainer width="100%" height={180}>
         <BarChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>

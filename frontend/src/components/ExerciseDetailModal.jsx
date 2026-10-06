@@ -100,16 +100,16 @@ export default function ExerciseDetailModal({ exercise, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-3.5"
+      className="modal-backdrop"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-lg w-full max-w-lg max-h-[88vh] flex flex-col">
+      <div className="modal max-w-lg max-h-[88vh] flex flex-col">
 
         {/* Header */}
         <div className="flex items-start justify-between px-4 pt-4 pb-3.5 border-b border-slate-100 dark:border-slate-800">
           <div className="flex-1 min-w-0 pr-2.5">
             <div className="flex items-center gap-2 flex-wrap mb-1.5">
-              <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">
+              <h2 className="modal-title">
                 {exercise.name}
               </h2>
               {exercise.is_custom && (
@@ -140,7 +140,7 @@ export default function ExerciseDetailModal({ exercise, onClose }) {
             </div>
           </div>
           <button onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl leading-none shrink-0 mt-0.5">
+            className="icon-btn shrink-0 mt-0.5">
             ×
           </button>
         </div>

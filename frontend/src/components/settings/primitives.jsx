@@ -7,10 +7,13 @@
 // "card with save status", field layout, and zone table look identical
 // everywhere. Kept in one file because they are tiny and always used together.
 import { useEffect, useRef, useState } from "react";
+import { Section as SharedSection } from "../ui/Section";
+import Tabs from "../ui/Tabs";
 
-// Shared Tailwind class strings for text inputs / selects.
-export const INPUT = "w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent-500 placeholder-slate-400 disabled:opacity-50";
-export const SELECT = INPUT + " cursor-pointer";
+// Text inputs and selects are the kit's .field (src/design/kit.js); these
+// names stay so the sections read as before.
+export const INPUT = "field";
+export const SELECT = "field";
 
 // Transient "Saving… / Saved ✓ / Error" status with auto-clearing timers.
 // A section calls startSave() before an API write, then markSaved()/markError().
@@ -47,16 +50,14 @@ export function SaveStatusText({ status }) {
   );
 }
 
-// Card wrapper with a title and an inline save-status indicator (top right).
+// A settings group: title above the card with the save status at its right,
+// as the phone's SettingsCard — the shared Section, with the settings card's
+// own spacing between rows.
 export function Section({ title, status, children }) {
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
-      <div className="px-4 py-2.5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wide">{title}</h2>
-        <SaveStatusText status={status} />
-      </div>
-      <div className="p-4 space-y-4">{children}</div>
-    </div>
+    <SharedSection title={title} action={<SaveStatusText status={status} />}>
+      <div className="card space-y-4">{children}</div>
+    </SharedSection>
   );
 }
 
@@ -64,7 +65,7 @@ export function Section({ title, status, children }) {
 export function FieldRow({ label, hint, children }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+      <label className="field-label">
         {label}
         {hint && <span className="ml-1.5 text-slate-400 font-normal text-xs">{hint}</span>}
       </label>
@@ -73,22 +74,12 @@ export function FieldRow({ label, hint, children }) {
   );
 }
 
-// Two-button Auto/Manual segmented toggle.
-export function ModeToggle({ value, onChange, disabled }) {
+// Two-way Auto/Manual choice — the shared segmented Tabs, small.
+export function ModeToggle({ value, onChange, disabled, labels = { auto: "Auto", manual: "Manual" } }) {
   return (
-    <div className="flex rounded-md overflow-hidden border border-slate-300 dark:border-slate-700 text-xs w-fit">
-      {[["auto", "Auto"], ["manual", "Manual"]].map(([v, l]) => (
-        <button key={v} type="button"
-          disabled={disabled}
-          onClick={() => onChange(v)}
-          className={`px-2.5 py-1 font-medium transition-colors ${
-            value === v
-              ? "bg-accent-600 text-white"
-              : "bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700"
-          } disabled:opacity-50`}>
-          {l}
-        </button>
-      ))}
+    <div className={`w-fit ${disabled ? "opacity-50 pointer-events-none" : ""}`}>
+      <Tabs size="sm" value={value} onChange={onChange}
+        tabs={[{ key: "auto", label: labels.auto }, { key: "manual", label: labels.manual }]} />
     </div>
   );
 }

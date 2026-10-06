@@ -26,7 +26,9 @@ import WorkoutRecapModal from "../components/WorkoutRecapModal";
 
 import { PERIODS } from "../components/dashboard/constants";
 import { afterDateFor, buildXAxisConfig, fmt } from "../components/dashboard/helpers";
-import { Section } from "../components/dashboard/ui";
+import { Section, Card } from "../components/ui/Section";
+import BarPills from "../components/ui/BarPills";
+import PageHeader from "../components/ui/PageHeader";
 import RecapBanner from "../components/dashboard/RecapBanner";
 
 export default function Dashboard() {
@@ -152,24 +154,18 @@ export default function Dashboard() {
 
   return (
     <div className="p-5 max-w-7xl mx-auto space-y-8">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-bold text-slate-900 dark:text-white">
-            {me?.name ? `Hi, ${me.name}` : "Dashboard"}
-          </h1>
-        </div>
-        <select
-          data-tour="dashboard-period"
+      {/* Header — the period as bar pills beside the title, as on the phone:
+          it governs every card below, so it stays visible rather than
+          behind a dropdown. */}
+      <PageHeader title={me?.name ? `Hi, ${me.name}` : "Dashboard"}>
+        <BarPills
+          dataTour="dashboard-period"
+          label="Period"
+          options={PERIODS}
           value={period}
-          onChange={e => setPeriod(e.target.value)}
-          className="text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-accent-500 cursor-pointer"
-        >
-          {PERIODS.map(p => (
-            <option key={p.value} value={p.value}>{p.label}</option>
-          ))}
-        </select>
-      </div>
+          onChange={setPeriod}
+        />
+      </PageHeader>
 
       {/* Animation feedback banner — only when there are recaps to fill in.
           Clicking opens the modal; modal walks all queued workouts and
@@ -230,40 +226,40 @@ export default function Dashboard() {
 
       {/* Fitness chart — display window follows the period selector */}
       <Section title={`Fitness${period !== "lifetime" ? ` — ${PERIODS.find(p => p.value === period)?.label}` : " — All time"}`}>
-        <div data-tour="dashboard-fitness" className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3.5">
+        <Card data-tour="dashboard-fitness">
           <FitnessChart data={filteredLoad} xAxis={xAxisConfig} />
-        </div>
+        </Card>
       </Section>
 
       {/* Weekly volume chart — shares xAxisConfig with FitnessChart for alignment */}
       <Section title={`Weekly Volume${selectedSport ? ` — ${selectedSport}` : ""}`}>
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3.5">
+        <Card>
           <WeeklyVolumeChart data={weeklyVolume} imperial={imperial} xAxis={xAxisConfig} />
-        </div>
+        </Card>
       </Section>
 
       {/* Activity calendar + sport breakdown */}
       <Section title="Activity History">
         <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4 items-stretch">
-          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3.5 flex flex-col">
+          <Card className="flex flex-col">
             <ActivityCalendar
               data={calendarData}
               days={period === "lifetime" ? null : 365}
             />
-          </div>
-          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3.5">
+          </Card>
+          <Card>
             <SportBreakdown
               data={sportData}
               selectedSport={selectedSport}
               onSportSelect={setSelectedSport}
             />
-          </div>
+          </Card>
         </div>
       </Section>
 
       {/* Geographic heatmap */}
       <Section title="Training Locations">
-        <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
+        <div className="card p-0 overflow-hidden">
           <ActivityHeatmap sport={selectedSport} onSportChange={setSelectedSport} />
         </div>
       </Section>

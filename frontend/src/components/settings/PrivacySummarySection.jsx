@@ -9,25 +9,9 @@
 import { useState } from "react";
 import { api } from "../../api/client";
 import { Section } from "./primitives";
+import Switch from "../ui/Switch";
 import AgpsConfigPanel from "./AgpsConfigPanel";
 import AiConfigPanel from "./AiConfigPanel";
-
-// Small accent-coloured on/off switch.
-function Switch({ on, busy, onClick, label }) {
-  return (
-    <button
-      type="button" role="switch" aria-checked={on} aria-label={label}
-      disabled={busy} onClick={onClick}
-      className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${
-        on ? "bg-accent-500" : "bg-slate-300 dark:bg-slate-600"
-      }`}
-    >
-      <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
-        on ? "translate-x-4" : "translate-x-0.5"
-      }`} />
-    </button>
-  );
-}
 
 // Chevron that expands a row's configuration panel.
 function ExpandButton({ open, onClick, label }) {
@@ -174,8 +158,8 @@ export default function PrivacySummarySection({ settings, onSaved }) {
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
                 {r.control === "toggle" ? (
-                  <Switch on={r.on} busy={busy === r.key} label={`Toggle ${r.name}`}
-                          onClick={() => toggle(r.key, !r.on)} />
+                  <Switch checked={r.on} disabled={busy === r.key} label={`Toggle ${r.name}`}
+                          onChange={v => toggle(r.key, v)} />
                 ) : (
                   <span className={`text-[11px] font-medium ${toneCls[r.tone]}`}>
                     {r.on ? (aiIsLocal ? "Local" : "Connected") : "Off"}

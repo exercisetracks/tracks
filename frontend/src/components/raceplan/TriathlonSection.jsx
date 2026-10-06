@@ -42,7 +42,7 @@ export default function TriathlonSection({ plan, imperial, hrMode, maxHr, hasCou
         const s = TRI_LEG_STYLES[leg.leg] ?? TRI_LEG_STYLES.run;
         return (
         <div key={leg.leg} className="space-y-2">
-          <h3 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+          <h3 className="section-title">
             {s.label} splits
           </h3>
           <PaceTable

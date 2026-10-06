@@ -40,16 +40,16 @@ export default function InjuryActivitiesDrawer({ injury, onClose, imperial = fal
     : `7 days before and after ${fmtDate(injury.start_date)}`;
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center" onClick={onClose}>
+    <div className="modal-backdrop" onClick={onClose}>
       <div
-        className="bg-white dark:bg-slate-900 rounded-t-2xl sm:rounded-2xl border border-slate-200 dark:border-slate-800 w-full sm:max-w-lg max-h-[80vh] overflow-y-auto p-4"
+        className="modal max-w-lg max-h-[80vh] p-5"
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold text-slate-800 dark:text-slate-100">
+          <h3 className="modal-title">
             {injury.body_part} — {injury.injury_type}
           </h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-xl leading-none">×</button>
+          <button onClick={onClose} className="icon-btn">×</button>
         </div>
         <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">{windowDesc}</p>
 

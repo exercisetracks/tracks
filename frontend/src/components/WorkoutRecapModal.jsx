@@ -136,9 +136,9 @@ export default function WorkoutRecapModal({ workoutIds, onClose, onAllDone }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-3.5"
+    <div className="modal-backdrop"
          onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-lg w-full max-w-lg max-h-[90vh] flex flex-col">
+      <div className="modal max-w-lg max-h-[90vh] flex flex-col">
 
         {/* Header */}
         <div className="flex items-start justify-between px-4 pt-4 pb-2.5 border-b border-slate-100 dark:border-slate-800">
@@ -146,7 +146,7 @@ export default function WorkoutRecapModal({ workoutIds, onClose, onAllDone }) {
             <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-0.5">
               Workout recap {workoutIds.length > 1 ? `· ${cursor + 1} of ${workoutIds.length}` : ""}
             </p>
-            <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100 truncate">
+            <h2 className="modal-title truncate">
               {data?.title || (loading ? "Loading…" : "Workout")}
             </h2>
             {data?.scheduled_date && (
@@ -156,7 +156,7 @@ export default function WorkoutRecapModal({ workoutIds, onClose, onAllDone }) {
             )}
           </div>
           <button onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl leading-none">×</button>
+            className="icon-btn">×</button>
         </div>
 
         {/* Body */}
@@ -178,7 +178,7 @@ export default function WorkoutRecapModal({ workoutIds, onClose, onAllDone }) {
 
           {loading && (
             <div className="flex justify-center py-5">
-              <div className="w-5 h-5 border-2 border-accent-500 border-t-transparent rounded-full animate-spin" />
+              <div className="spinner" />
             </div>
           )}
 

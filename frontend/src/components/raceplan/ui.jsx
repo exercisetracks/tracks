@@ -1,35 +1,29 @@
 // SPDX-FileCopyrightText: 2026 Hawk Fugagli
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Small self-contained presentational primitives for the Race Plan page: the
-// titled card shell, the pill-style radio group, and the watch-sync status
-// badge. None of these touch page state — they take everything via props.
+// titled card, the pick-one chip row, and the watch-sync status badge. None of
+// these touch page state — they take everything via props.
 
-// Titled card shell wrapping a block of plan content.
+import { Section as SharedSection } from "../ui/Section";
+
+// A block of the plan: the app's section, its title above one card.
 export function Section({ title, children }) {
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 space-y-4">
-      {title && <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wide">{title}</h2>}
-      {children}
-    </div>
+    <SharedSection title={title}>
+      <div className="card space-y-4">{children}</div>
+    </SharedSection>
   );
 }
 
-// Pill-style radio group. `options` are { value, label, desc? }.
+// Pick-one row of options as chips. `options` are { value, label, desc? }.
 export function RadioGroup({ options, value, onChange, name }) {
   return (
-    <div className="flex flex-wrap gap-2">
+    <div role="radiogroup" aria-label={name} className="flex flex-wrap gap-2">
       {options.map(opt => (
-        <label key={opt.value} title={opt.desc}
-          className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-sm cursor-pointer transition-colors ${
-            value === opt.value
-              ? "border-violet-500 bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300"
-              : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-300"
-          }`}
-        >
-          <input type="radio" name={name} value={opt.value} checked={value === opt.value}
-            onChange={() => onChange(opt.value)} className="sr-only" />
+        <button key={opt.value} type="button" role="radio" title={opt.desc}
+          aria-checked={value === opt.value} onClick={() => onChange(opt.value)} className="chip">
           {opt.label}
-        </label>
+        </button>
       ))}
     </div>
   );

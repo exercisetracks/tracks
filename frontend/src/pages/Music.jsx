@@ -10,6 +10,8 @@ import { api } from "../api/client";
 import WatchSyncModal from "../components/sync/WatchSyncModal";
 import MusicServerPanel from "./MusicServerPanel";
 import WatchAppPanel from "./WatchAppPanel";
+import { Section } from "../components/ui/Section";
+import { PlusIcon } from "../components/ui/Button";
 
 const FILE_LIMIT = 500;
 
@@ -25,12 +27,7 @@ function formatDuration(seconds) {
 }
 
 function Callout({ tone = "amber", children }) {
-  const cls = tone === "amber"
-    ? "bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-900/40"
-    : "bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-900/40";
-  return (
-    <div className={`rounded-xl border px-3.5 py-2.5 text-sm ${cls}`}>{children}</div>
-  );
+  return <div className={tone === "amber" ? "alert-warn" : "alert-error"}>{children}</div>;
 }
 
 function TrackRow({ track, onToggle, onDelete }) {
@@ -40,14 +37,14 @@ function TrackRow({ track, onToggle, onDelete }) {
         type="checkbox"
         checked={track.load_to_device}
         onChange={(e) => onToggle(track.id, e.target.checked)}
-        className="h-4 w-4 shrink-0 rounded border-slate-300 text-accent-600 focus:ring-accent-500"
+        className="shrink-0"
         aria-label={`Carry ${track.title} on the watch`}
       />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <span className="truncate font-medium text-slate-800 dark:text-slate-100">{track.title}</span>
           {track.on_watch && (
-            <span className="shrink-0 rounded-full bg-accent-50 px-1.5 py-0.5 text-xs font-medium text-accent-700 dark:bg-accent-900/20 dark:text-accent-400">
+            <span className="badge shrink-0 bg-accent-50 text-accent-700 dark:bg-accent-900/20 dark:text-accent-400">
               On watch
             </span>
           )}
@@ -61,7 +58,7 @@ function TrackRow({ track, onToggle, onDelete }) {
       <button
         type="button"
         onClick={() => onDelete(track)}
-        className="shrink-0 text-slate-300 transition-colors hover:text-red-500 dark:text-slate-600"
+        className="icon-btn icon-btn-sm icon-btn-danger shrink-0"
         aria-label={`Delete ${track.title}`}
       >
         ×
@@ -170,10 +167,10 @@ export default function Music() {
     !plan || (plan.add.length === 0 && plan.remove.length === 0 && plan.playlists.length === 0);
 
   return (
-    <div className="mx-auto max-w-4xl space-y-4 p-4">
+    <div className="p-5 max-w-4xl mx-auto space-y-6">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900 dark:text-white">Music</h1>
+          <h1 className="text-xl font-bold text-slate-900 dark:text-white">Music</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400">
             {tracks === null
               ? "Loading…"
@@ -228,7 +225,7 @@ export default function Music() {
       )}
 
       {uploadNote && (
-        <div className="rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+        <div className="card text-sm text-slate-600 dark:text-slate-300">
           <p>{uploadNote.text}</p>
           {uploadNote.failures.map((f, i) => (
             <p key={i} className="text-xs text-red-500">{f.filename}: {f.error}</p>
@@ -241,66 +238,59 @@ export default function Music() {
       <WatchAppPanel />
 
       {/* Playlists */}
-      <div className="rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
-        <div className="flex items-center justify-between border-b border-slate-100 px-3.5 py-2.5 dark:border-slate-800">
-          <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Playlists</h2>
-          <button
-            type="button"
-            onClick={addPlaylist}
-            className="btn btn-tonal"
-          >
-            New
-          </button>
+      <Section
+        title="Playlists"
+        action={<button type="button" onClick={addPlaylist} className="btn btn-tonal btn-sm"><PlusIcon />New</button>}
+      >
+        <div className="card p-0">
+          {playlists.length === 0 ? (
+            <p className="px-3.5 py-3 text-sm text-slate-400 dark:text-slate-500">
+              No playlists yet. A playlist is written to the watch as an .m3u, and
+              carrying one carries its tracks too.
+            </p>
+          ) : (
+            playlists.map((pl) => (
+              <div key={pl.id} className="flex items-center gap-3 border-b border-slate-100 px-3.5 py-2.5 last:border-0 dark:border-slate-800">
+                <input
+                  type="checkbox"
+                  checked={pl.load_to_device}
+                  onChange={(e) => togglePlaylist(pl, e.target.checked)}
+                  aria-label={`Carry ${pl.name} on the watch`}
+                />
+                <span className="flex-1 truncate text-sm font-medium text-slate-800 dark:text-slate-100">{pl.name}</span>
+                <span className="text-xs text-slate-400">
+                  {pl.track_ids.length} track{pl.track_ids.length !== 1 ? "s" : ""}
+                </span>
+              </div>
+            ))
+          )}
         </div>
-        {playlists.length === 0 ? (
-          <p className="px-3.5 py-3 text-sm text-slate-400 dark:text-slate-500">
-            No playlists yet. A playlist is written to the watch as an .m3u, and
-            carrying one carries its tracks too.
-          </p>
-        ) : (
-          playlists.map((pl) => (
-            <div key={pl.id} className="flex items-center gap-3 border-b border-slate-100 px-3.5 py-2.5 last:border-0 dark:border-slate-800">
-              <input
-                type="checkbox"
-                checked={pl.load_to_device}
-                onChange={(e) => togglePlaylist(pl, e.target.checked)}
-                className="h-4 w-4 rounded border-slate-300 text-accent-600 focus:ring-accent-500"
-                aria-label={`Carry ${pl.name} on the watch`}
-              />
-              <span className="flex-1 truncate text-sm font-medium text-slate-800 dark:text-slate-100">{pl.name}</span>
-              <span className="text-xs text-slate-400">
-                {pl.track_ids.length} track{pl.track_ids.length !== 1 ? "s" : ""}
-              </span>
-            </div>
-          ))
-        )}
-      </div>
+      </Section>
 
       {/* Tracks */}
-      <div className="rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
-        <div className="border-b border-slate-100 px-3.5 py-2.5 dark:border-slate-800">
-          <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-            Tracks
-            {plan && (
-              <span className="ml-2 font-normal text-slate-400">
-                {projected} of {FILE_LIMIT} files on watch after sending
-              </span>
-            )}
-          </h2>
+      <Section
+        title="Tracks"
+        action={plan && (
+          <span className="text-xs text-slate-400 dark:text-slate-500">
+              {projected} of {FILE_LIMIT} files on watch after sending
+            </span>
+          )}
+        >
+        <div className="card p-0">
+          {tracks === null ? (
+            <p className="px-3.5 py-3 text-sm text-slate-400">Loading…</p>
+          ) : tracks.length === 0 ? (
+            <p className="px-3.5 py-3 text-sm text-slate-400 dark:text-slate-500">
+              Nothing here yet. Add mp3, m4a, flac or wav files — anything that is
+              not already a watch-friendly mp3 is converted on upload.
+            </p>
+          ) : (
+            tracks.map((t) => (
+              <TrackRow key={t.id} track={t} onToggle={toggleTrack} onDelete={deleteTrack} />
+            ))
+          )}
         </div>
-        {tracks === null ? (
-          <p className="px-3.5 py-3 text-sm text-slate-400">Loading…</p>
-        ) : tracks.length === 0 ? (
-          <p className="px-3.5 py-3 text-sm text-slate-400 dark:text-slate-500">
-            Nothing here yet. Add mp3, m4a, flac or wav files — anything that is
-            not already a watch-friendly mp3 is converted on upload.
-          </p>
-        ) : (
-          tracks.map((t) => (
-            <TrackRow key={t.id} track={t} onToggle={toggleTrack} onDelete={deleteTrack} />
-          ))
-        )}
-      </div>
+      </Section>
 
       <WatchSyncModal
         open={syncOpen}

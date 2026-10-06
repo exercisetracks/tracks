@@ -15,7 +15,7 @@ import { api } from "../../api/client";
 import AnchoredPopover from "../ui/AnchoredPopover";
 import Button, { PlusIcon } from "../ui/Button";
 
-const INPUT = "w-full px-2.5 py-1.5 text-sm rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900";
+const INPUT = "field";
 const KINDS = ["gel", "drink", "chew", "bar", "other"];
 const PANEL = "w-72 p-4 space-y-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg";
 const TARGET_FIELDS = [

@@ -73,7 +73,7 @@ export default function RouteDetailPanel({ routeId, sectionId, imperial, onClose
             {detail?.distance_m != null && (
               <span className="text-slate-400" title="full trail length">· {km(detail.distance_m)} total</span>
             )}
-            <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-lg leading-none px-1">×</button>
+            <button onClick={onClose} className="icon-btn">×</button>
           </div>
         </div>
 
@@ -89,11 +89,8 @@ export default function RouteDetailPanel({ routeId, sectionId, imperial, onClose
         {sections.length > 1 && (
           <div className="mt-1.5 flex gap-1 overflow-x-auto pb-1 -mx-1 px-1">
             {sections.map((s) => (
-              <button key={s.id} onClick={() => setActiveSection(s.id)}
-                className={`shrink-0 px-1.5 py-0.5 rounded text-[11px] whitespace-nowrap transition-colors ${
-                  s.id === activeSection
-                    ? "bg-accent-500 text-white"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"}`}>
+              <button key={s.id} type="button" aria-pressed={s.id === activeSection}
+                onClick={() => setActiveSection(s.id)} className="bar-pill shrink-0">
                 {s.name} <span className="opacity-60">{km(s.distance_m)}</span>
               </button>
             ))}

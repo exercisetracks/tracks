@@ -70,7 +70,7 @@ function PointInfoPanel({ point, trails, pois, activities = [], land, info, load
           </svg>
           <span className="truncate">{copied ? "Copied!" : latlng}</span>
         </button>
-        <button onClick={onClose} className="shrink-0 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+        <button onClick={onClose} className="icon-btn shrink-0">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
           </svg>

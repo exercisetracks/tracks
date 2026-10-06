@@ -34,15 +34,15 @@ export default function Login() {
           <p className="mt-2 text-slate-500 dark:text-slate-400 text-sm">Sign in to your training log</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-5 space-y-4">
+        <form onSubmit={handleSubmit} className="card p-5 shadow-sm space-y-4">
           {error && (
-            <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg px-2.5 py-1.5">
+            <p className="alert-error">
               {error}
             </p>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+            <label className="field-label">
               Username
             </label>
             <input
@@ -52,13 +52,13 @@ export default function Login() {
               autoFocus
               required
               autoComplete="username"
-              className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent-500"
+              className="field"
               placeholder="your username"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+            <label className="field-label">
               Password
             </label>
             <input
@@ -67,7 +67,7 @@ export default function Login() {
               onChange={(e) => setPassword(e.target.value)}
               required
               autoComplete="current-password"
-              className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent-500"
+              className="field"
               placeholder="Enter your password"
             />
           </div>

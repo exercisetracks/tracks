@@ -80,7 +80,7 @@ export default function SportBreakdown({ data = [], selectedSport = "", onSportS
 
   return (
     <div className="space-y-2">
-      <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+      <p className="section-title">
         Activity Types
       </p>
 

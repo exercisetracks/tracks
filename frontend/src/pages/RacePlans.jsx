@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api/client";
+import PageHeader from "../components/ui/PageHeader";
 
 function SyncBadge({ status }) {
   if (!status) return null;
@@ -39,7 +40,7 @@ function GoalCard({ goal, imperial }) {
     : "no_plan";
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 flex items-start justify-between gap-4">
+    <div className="card flex items-start justify-between gap-4">
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap mb-1">
           <span className="font-semibold text-slate-900 dark:text-white">{goal.event_name || "Unnamed event"}</span>
@@ -83,31 +84,30 @@ export default function RacePlans() {
   const imperial = settings?.units === "imperial";
 
   return (
-    <div className="max-w-3xl mx-auto px-3.5 py-7 space-y-6">
-      <div data-tour="raceplans-intro">
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Race Plans</h1>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          Pacing guides generated from your VDOT, freshness, course profile, and race-day weather.
-        </p>
-      </div>
+    <div className="p-5 max-w-3xl mx-auto space-y-6">
+      <PageHeader
+        dataTour="raceplans-intro"
+        title="Race Plans"
+        subtitle="Pacing guides generated from your VDOT, freshness, course profile, and race-day weather."
+      />
 
       {error && (
-        <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg px-3.5 py-2.5">
+        <div className="alert-error">
           {error}
         </div>
       )}
 
       {goals === null && !error && (
         <div className="flex justify-center py-11">
-          <div className="w-6 h-6 border-2 border-accent-500 border-t-transparent rounded-full animate-spin" />
+          <div className="spinner w-6 h-6" />
         </div>
       )}
 
       {goals?.length === 0 && (
-        <div className="text-center py-11 text-slate-500 dark:text-slate-400">
+        <div className="card py-11 text-center text-sm text-slate-500 dark:text-slate-400">
           <p className="mb-3">No event goals found.</p>
-          <Link to="/goals" className="text-accent-600 dark:text-accent-400 hover:underline text-sm">
-            Create an event goal in Training →
+          <Link to="/goals" className="btn btn-tonal">
+            Create an event goal in Training
           </Link>
         </div>
       )}

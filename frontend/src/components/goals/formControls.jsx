@@ -22,7 +22,7 @@ import {
   SPORT_VARIANTS,
   sportChip,
 } from "./constants";
-import { InfoTooltip } from "../Charts/fitness/FitnessChartParts";
+import InfoTooltip from "../ui/InfoTooltip";
 import { EXPERIENCE_OPTIONS } from "../../lib/experienceLevels";
 import { fmtDistance, intensityColor, intensityLabel, rampColor, rampLabel, rampWord, strengthColor } from "./helpers";
 
@@ -33,13 +33,9 @@ export function ExperienceChooser({ value, onChange }) {
     <div className="grid sm:grid-cols-2 gap-2">
       {EXPERIENCE_OPTIONS.map(o => (
         <button key={o.value} type="button" onClick={() => onChange(o.value)}
-          className={`text-left px-2.5 py-1.5 rounded-lg border text-sm transition-colors ${
-            value === o.value
-              ? "bg-accent-500 border-accent-500 text-white"
-              : "border-slate-300 dark:border-slate-700 hover:border-accent-400 dark:hover:border-accent-500 text-slate-700 dark:text-slate-200"
-          }`}>
-          <div className="font-semibold">{o.label}</div>
-          <div className={`text-xs ${value === o.value ? "text-white/80" : "text-slate-500 dark:text-slate-400"}`}>{o.blurb}</div>
+          aria-pressed={value === o.value} className="choice">
+          <div className="text-sm font-semibold text-slate-800 dark:text-slate-100">{o.label}</div>
+          <div className="text-xs text-slate-500 dark:text-slate-400">{o.blurb}</div>
         </button>
       ))}
     </div>
@@ -52,19 +48,13 @@ export function GoalTypeChooser({ value, onChange }) {
     <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
       {GOAL_TYPES.map(g => (
         <button key={g.id} type="button" onClick={() => onChange(g.id)}
-          className={`text-left rounded-xl border-2 p-2.5 transition-colors ${
-            value === g.id
-              ? "border-accent-500 bg-accent-50 dark:bg-accent-900/20"
-              : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"
-          }`}>
+          aria-pressed={value === g.id} className="choice">
           <div className={`mb-2 inline-flex p-1 rounded-lg ${
             value === g.id ? "text-accent-600 dark:text-accent-400" : "text-slate-500 dark:text-slate-400"
           }`}>
             {g.icon}
           </div>
-          <p className={`text-sm font-semibold ${
-            value === g.id ? "text-accent-700 dark:text-accent-300" : "text-slate-700 dark:text-slate-200"
-          }`}>{g.title}</p>
+          <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{g.title}</p>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">{g.description}</p>
         </button>
       ))}
@@ -78,12 +68,8 @@ export function SportChooser({ value, onChange }) {
     <div className="flex flex-wrap gap-2">
       {Object.keys(EVENT_PRESETS).map(s => (
         <button key={s} type="button" onClick={() => onChange(s)}
-          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-sm transition-colors ${
-            sportChip(value) === s
-              ? "bg-accent-500 border-accent-500 text-white"
-              : "border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-accent-400 dark:hover:border-accent-500"
-          }`}>
-          <span>{SPORT_LABEL[s]}</span>
+          aria-pressed={sportChip(value) === s} className="chip">
+          {SPORT_LABEL[s]}
         </button>
       ))}
     </div>
@@ -100,11 +86,7 @@ export function SportVariantChooser({ sport, onChange }) {
     <div className="flex items-center gap-2 flex-wrap">
       {variants.options.map(o => (
         <button key={o.key} type="button" onClick={() => onChange(o.key)}
-          className={`px-2.5 py-1 rounded-full border text-sm transition-colors ${
-            selected === o.key
-              ? "bg-accent-500 border-accent-500 text-white"
-              : "border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-accent-400 dark:hover:border-accent-500"
-          }`}>
+          aria-pressed={selected === o.key} className="chip">
           {o.label}
         </button>
       ))}
@@ -140,13 +122,8 @@ export function MultiSportChooser({ values, onChange }) {
         {FITNESS_SPORTS.map(({ key, label }) => {
           const on = values.includes(key);
           return (
-            <button key={key} type="button" aria-pressed={on} onClick={() => toggle(key)}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-sm transition-colors ${
-                on
-                  ? "bg-accent-500 border-accent-500 text-white"
-                  : "border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-accent-400 dark:hover:border-accent-500"
-              }`}>
-              <span>{label}</span>
+            <button key={key} type="button" aria-pressed={on} onClick={() => toggle(key)} className="chip">
+              {label}
             </button>
           );
         })}
@@ -163,14 +140,10 @@ export function PresetChooser({ sport, value, onChange, imperial }) {
     <div className="flex flex-wrap gap-2">
       {presets.map(p => (
         <button key={p.id} type="button" onClick={() => onChange(p)}
-          className={`text-left px-2.5 py-1.5 rounded-lg border transition-colors ${
-            value?.id === p.id
-              ? "bg-accent-500 border-accent-500 text-white"
-              : "border-slate-300 dark:border-slate-700 hover:border-accent-400 dark:hover:border-accent-500 text-slate-700 dark:text-slate-200"
-          }`}>
-          <p className="text-sm font-medium">{p.label}</p>
+          aria-pressed={value?.id === p.id} className="choice w-auto">
+          <p className="text-sm font-medium text-slate-800 dark:text-slate-100">{p.label}</p>
           {p.distance != null && (
-            <p className={`text-xs mt-0.5 ${value?.id === p.id ? "text-accent-100" : "text-slate-500 dark:text-slate-400"}`}>
+            <p className="text-xs mt-0.5 text-slate-500 dark:text-slate-400">
               {fmtDistance(p.distance, imperial)}
             </p>
           )}
@@ -300,11 +273,8 @@ export function DaysPerWeekPicker({ value, onChange }) {
           key={n}
           type="button"
           onClick={() => onChange(n)}
-          className={`w-9 h-9 rounded-lg text-sm font-semibold transition-colors ${
-            value === n
-              ? "bg-accent-500 text-white"
-              : "border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-accent-400 dark:hover:border-accent-500"
-          }`}
+          aria-pressed={value === n}
+          className="chip w-9 px-0 tabular-nums"
         >
           {n}
         </button>
@@ -320,13 +290,9 @@ export function DisciplineChooser({ options, value, onChange }) {
     <div className="grid sm:grid-cols-2 gap-2">
       {options.map(d => (
         <button key={d.key} type="button" onClick={() => onChange(d.key)}
-          className={`text-left px-2.5 py-1.5 rounded-lg border text-sm transition-colors ${
-            value === d.key
-              ? "bg-accent-500 border-accent-500 text-white"
-              : "border-slate-300 dark:border-slate-700 hover:border-accent-400 dark:hover:border-accent-500 text-slate-700 dark:text-slate-200"
-          }`}>
-          <div className="font-semibold">{d.label}</div>
-          <div className={`text-xs ${value === d.key ? "text-white/80" : "text-slate-500 dark:text-slate-400"}`}>{d.blurb}</div>
+          aria-pressed={value === d.key} className="choice">
+          <div className="text-sm font-semibold text-slate-800 dark:text-slate-100">{d.label}</div>
+          <div className="text-xs text-slate-500 dark:text-slate-400">{d.blurb}</div>
         </button>
       ))}
     </div>

@@ -178,7 +178,7 @@ export function FallbackLayout({
         </div>
       ) : (
         <div className="mt-4">
-          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3.5">
+          <div className="card">
             <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-5">
               No chart data available for this activity.
             </p>

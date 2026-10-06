@@ -27,7 +27,7 @@ export default function PaceTable({ laps, hasCourse, imperial, hrMode, maxHr, sp
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+          <tr className="section-title border-b border-slate-200 dark:border-slate-700">
             <th className="pb-1.5 text-left">{lapLabel}</th>
             {isCycling ? (
               <>

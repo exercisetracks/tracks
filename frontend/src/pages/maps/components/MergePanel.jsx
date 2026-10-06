@@ -52,7 +52,7 @@ function SortableRow({ s, i, imperial, onReverse, onRemove }) {
           s.reverse ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300" : "text-slate-400 hover:text-slate-600"}`}>
         ⇄
       </button>
-      <button onClick={() => onRemove(s.key)} title="Remove" className="shrink-0 text-slate-300 hover:text-rose-500 px-0.5">×</button>
+      <button onClick={() => onRemove(s.key)} title="Remove" className="icon-btn icon-btn-sm icon-btn-danger shrink-0">×</button>
     </div>
   );
 }
@@ -88,7 +88,7 @@ export default function MergePanel({
         <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
           Merge tracks {sources.length > 0 && <span className="text-accent-600 dark:text-accent-400">({sources.length})</span>}
         </h3>
-        <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+        <button onClick={onClose} className="icon-btn">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
         </button>
       </div>
@@ -119,7 +119,7 @@ export default function MergePanel({
       {/* Options + actions */}
       <div className="border-t border-slate-100 dark:border-slate-800 px-2.5 py-2 space-y-2">
         <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Merged track name"
-          className="w-full px-1.5 py-1 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-700 dark:text-slate-200 outline-none focus:border-accent-400" />
+          className="field field-sm" />
         <div className="flex flex-col gap-1.5 text-[11px] text-slate-600 dark:text-slate-300">
           <Check on={createActivity} onClick={() => setCreateActivity((v) => !v)} label="Also create a trip activity" />
           <Check on={hideSources} onClick={() => setHideSources((v) => !v)} label="Hide original tracks" />

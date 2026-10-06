@@ -10,7 +10,8 @@ import { MuscleMapPicker } from "./activity/charts/MuscleMap";
 import { muscleLabel } from "../utils/muscleGroups";
 import StretchDetailModal from "./StretchDetailModal";
 import BlockStructure from "./workouts/BlockStructure";
-import { InfoTooltip } from "./Charts/fitness/FitnessChartParts";
+import InfoTooltip from "./ui/InfoTooltip";
+import Checkbox from "./ui/Checkbox";
 import { remove as removeRow, toEditor, fromEditor, isMarker } from "../lib/blocks";
 import { PlusIcon } from "./ui/Button";
 
@@ -186,7 +187,7 @@ export default function FlowsTab() {
 
   if (loading) return (
     <div className="flex justify-center py-11">
-      <div className="w-5 h-5 border-2 border-accent-500 border-t-transparent rounded-full animate-spin" />
+      <div className="spinner" />
     </div>
   );
 
@@ -203,7 +204,7 @@ export default function FlowsTab() {
           <div className="flex items-center gap-2 mb-2">
             <input type="search" placeholder="Search by name or muscle…" value={search}
               onChange={e => setSearch(e.target.value)}
-              className="flex-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-1.5 py-1 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent-500/40" />
+              className="field field-sm flex-1" />
           </div>
           <div className="space-y-1">
             {filtered.slice(0, 60).map(s => (
@@ -255,7 +256,7 @@ export default function FlowsTab() {
                     </div>
                     {(flow.tags || []).length > 0 && (
                       <div className="flex gap-1 mb-2 flex-wrap">
-                        {flow.tags.map(t => <span key={t} className="text-[10px] px-1.5 py-0.5 rounded-full bg-accent-50 dark:bg-accent-900/20 text-accent-700 dark:text-accent-400 font-medium">{TAG_LABELS[t] || t}</span>)}
+                        {flow.tags.map(t => <span key={t} className="badge bg-accent-50 dark:bg-accent-900/20 text-accent-700 dark:text-accent-400">{TAG_LABELS[t] || t}</span>)}
                       </div>
                     )}
                     <div className="text-[11px] text-slate-500 dark:text-slate-400">
@@ -286,16 +287,16 @@ export default function FlowsTab() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-medium text-slate-600 dark:text-slate-400 block mb-1">Flow Name *</label>
+                <label className="field-label">Flow Name *</label>
                 <input type="text" value={flowName} onChange={e => setFlowName(e.target.value)}
                   placeholder="e.g. Post-Run Recovery"
-                  className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-sm text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent-500/40" />
+                  className="field" />
               </div>
               <div>
-                <label className="text-xs font-medium text-slate-600 dark:text-slate-400 block mb-1">Description</label>
+                <label className="field-label">Description</label>
                 <input type="text" value={flowDesc} onChange={e => setFlowDesc(e.target.value)}
                   placeholder="Optional notes…"
-                  className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-sm text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent-500/40" />
+                  className="field" />
               </div>
             </div>
 
@@ -303,31 +304,21 @@ export default function FlowsTab() {
                 training plans" / "sync to watch" said little to a new user.
                 The "?" beside each is outside its label so it does not tick it. */}
             <div className="flex items-center gap-2">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" checked={includeInPlan} onChange={e => setIncludeInPlan(e.target.checked)}
-                className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-accent-600 focus:ring-accent-500" />
-              <span className="text-xs text-slate-600 dark:text-slate-400">Schedule in my plan</span>
-            </label>
+            <Checkbox checked={includeInPlan} onChange={setIncludeInPlan}>Schedule in my plan</Checkbox>
             <InfoTooltip><p>The plan generator may put this flow into your training plan.</p></InfoTooltip>
             </div>
 
             <div className="flex items-center gap-2">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" checked={syncToWatch} onChange={e => setSyncToWatch(e.target.checked)}
-                className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-sky-600 focus:ring-sky-500" />
-              <span className="text-xs text-slate-600 dark:text-slate-400">Save to my watch</span>
-            </label>
+            <Checkbox checked={syncToWatch} onChange={setSyncToWatch}>Save to my watch</Checkbox>
             <InfoTooltip><p>Saved onto your watch as a workout, to start from there. The watch holds up to 25.</p></InfoTooltip>
             </div>
 
             <div>
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-400 block mb-1">Tags</label>
+              <label className="field-label">Tags</label>
               <div className="flex gap-1.5 flex-wrap">
                 {VALID_TAGS.map(tag => (
-                  <button key={tag} onClick={() => toggleTag(tag)}
-                    className={`text-[11px] px-2.5 py-1 rounded-full font-medium transition-colors ${
-                      flowTags.includes(tag) ? "bg-accent-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600"
-                    }`}>{TAG_LABELS[tag]}</button>
+                  <button key={tag} type="button" aria-pressed={flowTags.includes(tag)}
+                    onClick={() => toggleTag(tag)} className="chip chip-sm">{TAG_LABELS[tag]}</button>
                 ))}
               </div>
             </div>
@@ -350,19 +341,19 @@ export default function FlowsTab() {
                           <label className="text-slate-400 block">Seconds</label>
                           <input type="number" min={5} max={600} value={s.duration_seconds || 60}
                             onChange={e => updateStretch(s._id, "duration_seconds", parseInt(e.target.value) || 60)}
-                            className="w-full rounded bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-1 py-0.5 text-slate-800 dark:text-slate-200" />
+                            className="field field-sm" />
                         </div>
                         <div className={s.group_uid ? "invisible" : ""}>
                           <label className="text-slate-400 block">Sets</label>
                           <input type="number" min={1} max={10} value={s.sets || 1}
                             onChange={e => updateStretch(s._id, "sets", parseInt(e.target.value) || 1)}
-                            className="w-full rounded bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-1 py-0.5 text-slate-800 dark:text-slate-200" />
+                            className="field field-sm" />
                         </div>
                         <div>
                           <label className="text-slate-400 block">Rest</label>
                           <input type="number" min={0} max={120} value={s.rest_seconds || 0}
                             onChange={e => updateStretch(s._id, "rest_seconds", parseInt(e.target.value) || 0)}
-                            className="w-full rounded bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-1 py-0.5 text-slate-800 dark:text-slate-200" />
+                            className="field field-sm" />
                         </div>
                       </div>
                     </div>

@@ -146,7 +146,7 @@ export default function ColorPicker({
                 setHexText(e.target.value);
                 if (/^#[0-9a-fA-F]{6}$/.test(e.target.value)) { touchedRef.current = true; setHsv(hexToHsv(e.target.value)); commit(e.target.value); }
               }}
-              className="flex-1 min-w-0 px-1.5 py-1 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[11px] font-mono text-slate-700 dark:text-slate-200 outline-none focus:border-accent-400"
+              className="field field-sm flex-1 min-w-0 font-mono"
             />
           </div>
 

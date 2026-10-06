@@ -35,7 +35,7 @@ export default function RecoveryKeyReveal({ recoveryKey, onContinue }) {
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg px-2.5 py-2">
+      <p className="alert-error">
         Your activity data is encrypted with a key only your password can unlock.
         If you forget your password, these 12 words are the <strong>only</strong> other
         way in — not even the server admin can reset it for you. They won't be shown again.

@@ -115,6 +115,24 @@ open-mode window before setup — is documented at the code that makes it, with
 the reasoning and the mitigation. Keep that up. An undocumented security
 decision reads as an oversight to the next person, and gets "fixed".
 
+**The desktop is styled from a kit, like the phone.** The phone's look lives
+in its shared components (`PillButtons.kt`, `BarPill`, `TracksSwitch`); the
+web's lives in `frontend/src/design/kit.js` (classes: `card`, `section-title`,
+`bar-pill`, `chip`, `choice`, `segmented`, `switch`, `field`, `field-label`,
+`modal`, `icon-btn`, `badge`, `spinner`, `alert-error`) beside the `.btn`
+family in `tailwind.config.js`, and `frontend/src/components/ui/` (`Section`,
+`Card`, `PageHeader`, `BarPills`, `Tabs`, `Switch`, `Checkbox`,
+`Modal`, `InfoTooltip`, `DatePicker`). Checkboxes and radios are styled
+globally in `index.css`. Use these rather than spelling out Tailwind for a
+control the kit already has: each hand-written copy drifts a shade from the
+last, which is how pages came to look subtly different. Picking a piece: a
+window that governs a whole page (Dashboard period, Health range) is
+`BarPills` beside the title; one-of-a-few inside a page or form is `Tabs`;
+picks among peers in a form are `chip`; an option with a title and a line
+under it is `choice`; a setting that applies at once is `Switch`, one that is
+submitted with a form is `Checkbox`. `src/test/StyleKit.test.js` fails when a
+copy of a kit piece reappears.
+
 **Every file carries SPDX headers.** `REUSE.toml` covers the exceptions.
 
 ```

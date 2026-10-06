@@ -81,7 +81,7 @@ function TrackRow({ t, folders, imperial, onSelect, onToggleLoad, onToggleHidden
           onClick={(e) => e.stopPropagation()}
           onChange={(e) => { e.stopPropagation(); onMove(t, e.target.value ? Number(e.target.value) : null); }}
           title="Move to folder"
-          className="shrink-0 max-w-[78px] text-[10px] rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-300 px-1 py-0.5 outline-none"
+          className="field field-sm shrink-0 max-w-[78px]"
         >
           <option value="">No folder</option>
           {folders.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
@@ -170,7 +170,7 @@ export default function CustomTrackManager({ open, onClose, tracks, folders = []
         <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-slate-100 dark:border-slate-800">
           <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-100">My Tracks</h2>
           <button onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl leading-none">×</button>
+            className="icon-btn">×</button>
         </div>
 
         {error && <div className="px-3.5 py-1.5 text-xs text-rose-600 bg-rose-50 dark:bg-rose-900/20">{error}</div>}
@@ -206,10 +206,10 @@ export default function CustomTrackManager({ open, onClose, tracks, folders = []
                   <input autoFocus value={newFolder} onChange={(e) => setNewFolder(e.target.value)}
                     onKeyDown={(e) => { if (e.key === "Enter") createFolder(newFolder.trim()); if (e.key === "Escape") setNewFolder(null); }}
                     placeholder="Folder name"
-                    className="flex-1 px-1.5 py-1 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-700 dark:text-slate-200 outline-none focus:border-accent-400" />
+                    className="field field-sm flex-1" />
                   <button onClick={() => createFolder(newFolder.trim())}
                     className="btn btn-primary btn-sm">Add</button>
-                  <button onClick={() => setNewFolder(null)} className="text-slate-400 hover:text-slate-600 px-1">×</button>
+                  <button onClick={() => setNewFolder(null)} className="icon-btn icon-btn-sm">×</button>
                 </div>
               )}
             </div>
@@ -247,7 +247,7 @@ export default function CustomTrackManager({ open, onClose, tracks, folders = []
                         </button>
                         <WatchToggle on={f.load_to_device} onClick={() => toggleFolder(f)} title="Sync this whole folder to the watch" />
                         <button onClick={() => removeFolder(f)} title="Delete folder (tracks are kept)"
-                          className="shrink-0 text-slate-300 dark:text-slate-600 hover:text-rose-500">
+                          className="icon-btn icon-btn-sm icon-btn-danger shrink-0">
                           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                         </button>
                       </div>

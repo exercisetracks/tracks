@@ -99,7 +99,7 @@ export default function MedicationSection() {
       {activeTab === "today" && (
         <div className="space-y-2">
           {dueMeds.length === 0 ? (
-            <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-7 text-center">
+            <div className="card p-7 text-center">
               <p className="text-sm text-slate-400">No medications scheduled for today.</p>
               <p className="text-xs text-slate-400 mt-1">Add medications in the Medications tab.</p>
             </div>
@@ -117,7 +117,7 @@ export default function MedicationSection() {
 
           {/* As-needed button */}
           {meds.filter(m => m.is_active && m.schedules.some(s => s.is_as_needed)).length > 0 && (
-            <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3.5">
+            <div className="card">
               <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">As-needed</p>
               <div className="flex flex-wrap gap-2">
                 {meds
@@ -145,20 +145,20 @@ export default function MedicationSection() {
           </button>
 
           {showAdd && !editMed && (
-            <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3.5">
+            <div className="card">
               <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">New medication</p>
               <MedForm onSave={handleSaveMed} onCancel={() => setShowAdd(false)} loading={saving} />
             </div>
           )}
 
           {meds.length === 0 && !showAdd ? (
-            <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-7 text-center">
+            <div className="card p-7 text-center">
               <p className="text-sm text-slate-400">No medications added yet.</p>
             </div>
           ) : (
             <div className="space-y-2">
               {meds.map(m => (
-                <div key={m.id} className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3.5">
+                <div key={m.id} className="card">
                   {editMed?.id === m.id ? (
                     <>
                       <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">Edit medication</p>
@@ -172,7 +172,7 @@ export default function MedicationSection() {
                           {m.dose && <span className="text-xs text-slate-400">{m.dose} {m.dose_unit ?? ""}</span>}
                           {m.form && <span className="text-xs text-slate-400 italic">{m.form}</span>}
                           {!m.is_active && (
-                            <span className="text-[10px] font-semibold rounded-full px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-400">
+                            <span className="badge bg-slate-100 dark:bg-slate-800 text-slate-400">
                               Inactive
                             </span>
                           )}
@@ -210,7 +210,7 @@ export default function MedicationSection() {
 
       {/* History tab */}
       {activeTab === "history" && (
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3.5">
+        <div className="card">
           <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-3">Last 30 days</p>
           {log.length === 0 ? (
             <p className="text-xs text-slate-400 text-center py-3.5">No medication history yet.</p>

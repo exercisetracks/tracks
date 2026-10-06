@@ -23,7 +23,7 @@ export default function WorkoutDetail({ workout, onClose, onMarkComplete, imperi
             {new Date(workout.scheduled_date + "T00:00:00").toLocaleDateString(undefined, {weekday:"short", month:"short", day:"numeric"})}
           </span>
         </div>
-        <button onClick={onClose} className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400">
+        <button onClick={onClose} className="icon-btn">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
           </svg>
@@ -41,7 +41,7 @@ export default function WorkoutDetail({ workout, onClose, onMarkComplete, imperi
 
         {steps.length > 0 && (
           <div>
-            <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Workout Structure</p>
+            <p className="section-title mb-1">Workout Structure</p>
             <div className="divide-y divide-slate-100 dark:divide-slate-800">
               {steps.map((s, i) => <StepRow key={i} step={s} imperial={imperial} />)}
             </div>

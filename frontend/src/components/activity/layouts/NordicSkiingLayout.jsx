@@ -210,8 +210,8 @@ export function NordicSkiingLayout({
           )}
 
           {lapTableData.length > 0 && (
-            <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3.5">
-              <h3 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
+            <div className="card">
+              <h3 className="section-title mb-3">
                 Lap Summary
               </h3>
               <ActivityTable

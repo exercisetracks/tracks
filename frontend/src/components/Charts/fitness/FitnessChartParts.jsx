@@ -16,7 +16,6 @@
 // Behaviour is a verbatim lift-out from FitnessChart.jsx.
 // ───────────────────────────────────────────────────────────────────────────
 
-import { useState, useRef } from "react";
 import { ZONES, BOUNDARIES, zoneFor, fmt, fmtTooltipDate } from "../fitnessChartData";
 
 // Renders zone background rectangles as raw SVG using the live axis scale.
@@ -106,39 +105,9 @@ export function ZoneColoredLine({ xAxisMap, yAxisMap, formData }) {
   );
 }
 
-// A small "?" button that reveals an explanatory popover on hover. Flips to the
-// left when it sits in the right half of the viewport so it never clips off-edge.
-export function InfoTooltip({ children }) {
-  const [open, setOpen]         = useState(false);
-  const [openLeft, setOpenLeft] = useState(false);
-  const btnRef                  = useRef(null);
-
-  function handleEnter() {
-    if (btnRef.current) {
-      const rect = btnRef.current.getBoundingClientRect();
-      setOpenLeft(rect.left > window.innerWidth / 2);
-    }
-    setOpen(true);
-  }
-
-  return (
-    <span className="relative inline-flex shrink-0">
-      <button
-        ref={btnRef}
-        onMouseEnter={handleEnter}
-        onMouseLeave={() => setOpen(false)}
-        className="w-4 h-4 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 text-[10px] font-bold flex items-center justify-center hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
-      >
-        ?
-      </button>
-      {open && (
-        <div className={`absolute top-6 ${openLeft ? "right-0" : "left-0"} w-72 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 shadow-xl z-20 text-xs text-slate-600 dark:text-slate-300 space-y-2 pointer-events-none`}>
-          {children}
-        </div>
-      )}
-    </span>
-  );
-}
+// The "?" explainer is the app's shared one; re-exported for the charts that
+// import it from here.
+export { default as InfoTooltip } from "../../ui/InfoTooltip";
 
 // Shared hover tooltip for both sub-charts: shows the date plus CTL / ATL / TSB
 // (coloured by the hovered day's Form zone) and the raw TSS when present.

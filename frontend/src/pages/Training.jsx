@@ -8,6 +8,7 @@ import ExercisesTab          from "../components/ExercisesTab";
 import WorkoutsTab          from "../components/WorkoutsTab";
 import CustomExerciseModal   from "../components/CustomExerciseModal";
 import Tabs from "../components/ui/Tabs";
+import PageHeader from "../components/ui/PageHeader";
 
 const TABS = [
   { key: "Exercises", label: "Exercises" },
@@ -33,8 +34,9 @@ export default function Training() {
   }, [customModalReload]);
 
   return (
-    <div className="max-w-7xl mx-auto px-5 pt-5 pb-1.5">
-      <Tabs dataTour="strength-tabs" tabs={TABS} value={tab} onChange={setTab} stretch className="mb-6" />
+    <div className="p-5 max-w-7xl mx-auto space-y-6">
+      <PageHeader title="Strength" />
+      <Tabs dataTour="strength-tabs" tabs={TABS} value={tab} onChange={setTab} stretch />
 
       <div data-tour="strength-content">
         {tab === "Exercises" && <ExercisesTab onOpenCustomModal={handleOpenCustomModal} />}

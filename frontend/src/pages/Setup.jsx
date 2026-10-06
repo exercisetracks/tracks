@@ -169,7 +169,7 @@ export default function Setup() {
           <p className="mt-0.5 text-slate-500 dark:text-slate-400 text-sm">Your personal fitness tracker</p>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-4">
+        <div className="card p-5 shadow-sm">
           {recoveryKey ? (
             <>
               <div className="mb-4">

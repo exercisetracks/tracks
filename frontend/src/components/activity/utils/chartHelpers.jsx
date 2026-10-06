@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Chart utilities and helpers - moved from chartComponents.jsx
 
-import React, { useState, useRef } from "react";
+import React from "react";
 import { fmtElapsed, hrColor } from "../../../utils/formatUtils";
 
 /**
@@ -52,9 +52,9 @@ export function TimeTooltip({ active, payload, label, format }) {
  */
 export function ChartCard({ title, action, children }) {
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3.5">
+    <div className="card">
       <div className="flex items-center gap-1.5 mb-3">
-        <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{title}</p>
+        <p className="section-title">{title}</p>
         {action}
       </div>
       {children}
@@ -62,40 +62,9 @@ export function ChartCard({ title, action, children }) {
   );
 }
 
-/**
- * InfoTooltip - Hover-reveal info popover
- */
-export function InfoTooltip({ children }) {
-  const [open, setOpen] = useState(false);
-  const [openLeft, setOpenLeft] = useState(false);
-  const btnRef = useRef(null);
-
-  function handleEnter() {
-    if (btnRef.current) {
-      const rect = btnRef.current.getBoundingClientRect();
-      setOpenLeft(rect.left > window.innerWidth / 2);
-    }
-    setOpen(true);
-  }
-
-  return (
-    <span className="relative inline-flex shrink-0">
-      <button
-        ref={btnRef}
-        onMouseEnter={handleEnter}
-        onMouseLeave={() => setOpen(false)}
-        className="w-4 h-4 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 text-[10px] font-bold flex items-center justify-center hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
-      >
-        ?
-      </button>
-      {open && (
-        <div className={`absolute top-6 ${openLeft ? "right-0" : "left-0"} w-72 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 shadow-xl z-20 text-xs text-slate-600 dark:text-slate-300 space-y-2 pointer-events-none`}>
-          {children}
-        </div>
-      )}
-    </span>
-  );
-}
+// The "?" explainer is the app's shared one; re-exported for the charts that
+// import it from here.
+export { default as InfoTooltip } from "../../ui/InfoTooltip";
 
 // Chart common props
 export const xAxisProps = {

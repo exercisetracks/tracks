@@ -3,6 +3,7 @@
 import React from "react";
 import { ComposedChart, Area, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ReferenceLine } from "recharts";
 import { xAxisProps, yAxisProps, gridProps, TimeTooltip } from "../utils/chartHelpers.jsx";
+import InfoTooltip from "../../ui/InfoTooltip";
 
 /**
  * GritFlowGraph - Displays MTB Grit (terrain difficulty) and Flow (smoothness) over time
@@ -20,10 +21,10 @@ export const GritFlowGraph = React.memo(function GritFlowGraph({ data, onHover, 
     ));
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3.5">
+    <div className="card">
       <div className="flex items-center gap-1.5 mb-3">
-        <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Grit & Flow</p>
-        <InfoTooltip />
+        <p className="section-title">Grit & Flow</p>
+        <GritFlowInfo />
       </div>
       <ResponsiveContainer width="100%" height={120}>
         <ComposedChart data={data} syncId="activity-time" onMouseMove={onHover} onMouseLeave={onLeave}>
@@ -49,37 +50,14 @@ export const GritFlowGraph = React.memo(function GritFlowGraph({ data, onHover, 
   );
 });
 
-function InfoTooltip() {
-  const [open, setOpen] = React.useState(false);
-  const [openLeft, setOpenLeft] = React.useState(false);
-  const btnRef = React.useRef(null);
-
-  function handleEnter() {
-    if (btnRef.current) {
-      const rect = btnRef.current.getBoundingClientRect();
-      setOpenLeft(rect.left > window.innerWidth / 2);
-    }
-    setOpen(true);
-  }
-
+// The explainer for the two scores, in the app's shared "?".
+function GritFlowInfo() {
   return (
-    <span className="relative inline-flex shrink-0">
-      <button
-        ref={btnRef}
-        onMouseEnter={handleEnter}
-        onMouseLeave={() => setOpen(false)}
-        className="w-4 h-4 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 text-[10px] font-bold flex items-center justify-center hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
-      >
-        ?
-      </button>
-      {open && (
-        <div className={`absolute top-6 ${openLeft ? "right-0" : "left-0"} w-72 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 shadow-xl z-20 text-xs text-slate-600 dark:text-slate-300 space-y-2 pointer-events-none`}>
-          <p><strong className="text-slate-800 dark:text-slate-100">Grit</strong> — terrain difficulty score. Measures how rough and demanding a descent is based on acceleration data.</p>
-          <p><strong className="text-slate-800 dark:text-slate-100">Flow</strong> — descent smoothness score. Higher = smoother lines, less braking, better momentum.</p>
-          <p className="text-slate-400 dark:text-slate-500">Both metrics are Garmin MTB-specific, recorded per second.</p>
-        </div>
-      )}
-    </span>
+    <InfoTooltip>
+      <p><strong className="text-slate-800 dark:text-slate-100">Grit</strong> — terrain difficulty score. Measures how rough and demanding a descent is based on acceleration data.</p>
+      <p><strong className="text-slate-800 dark:text-slate-100">Flow</strong> — descent smoothness score. Higher = smoother lines, less braking, better momentum.</p>
+      <p className="text-slate-400 dark:text-slate-500">Both metrics are Garmin MTB-specific, recorded per second.</p>
+    </InfoTooltip>
   );
 }
 

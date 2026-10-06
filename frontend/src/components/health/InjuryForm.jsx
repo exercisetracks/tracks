@@ -6,6 +6,9 @@
 
 import { useState } from "react";
 import { EMPTY_FORM, BODY_PARTS, INJURY_TYPES } from "./constants";
+import { isoToday } from "./helpers";
+import DatePicker from "../ui/DatePicker";
+import ConfirmDialog from "../ConfirmDialog";
 
 export default function InjuryForm({ initial = EMPTY_FORM, onSave, onCancel, onDelete, loading }) {
   const [form, setForm] = useState({ ...EMPTY_FORM, ...initial, end_date: initial.end_date ?? "" });
@@ -28,75 +31,67 @@ export default function InjuryForm({ initial = EMPTY_FORM, onSave, onCancel, onD
     });
   }
 
-  const inputCls = "w-full text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-accent-500";
+  const inputCls = "field";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Body Part</label>
+          <label className="field-label">Body Part</label>
           <select className={inputCls} {...field("body_part")}>
             {BODY_PARTS.map(p => <option key={p}>{p}</option>)}
           </select>
         </div>
         <div>
-          <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Type</label>
+          <label className="field-label">Type</label>
           <select className={inputCls} {...field("injury_type")}>
             {INJURY_TYPES.map(t => <option key={t}>{t}</option>)}
           </select>
         </div>
       </div>
       <div>
-        <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">
+        <label className="field-label">
           Severity: <strong>{form.severity}/10</strong>
         </label>
         <input type="range" min={1} max={10} step={1} className="w-full accent-accent-500" {...field("severity")} />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Start date</label>
-          <input type="date" required className={inputCls} {...field("start_date")} />
+          <label className="field-label">Start date</label>
+          <DatePicker className="w-full" value={form.start_date}
+            onChange={v => setForm(f => ({ ...f, start_date: v || isoToday() }))} />
         </div>
         <div>
-          <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">End date (optional)</label>
-          <input type="date" className={inputCls} {...field("end_date")} />
+          <label className="field-label">End date (optional)</label>
+          <DatePicker className="w-full" value={form.end_date} min={form.start_date} placeholder="Still ongoing"
+            onChange={v => setForm(f => ({ ...f, end_date: v }))} />
         </div>
       </div>
       <div>
-        <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Notes</label>
+        <label className="field-label">Notes</label>
         <textarea rows={2} className={`${inputCls} resize-none`} placeholder="Optional notes…" {...field("notes")} />
       </div>
 
       <div className="flex items-center gap-2 justify-between pt-1">
         {/* Delete (only when editing) */}
         {onDelete && (
-          confirmDelete ? (
-            <div className="flex items-center gap-2 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg px-2.5 py-1.5">
-              <span className="text-xs text-red-700 dark:text-red-300">Delete permanently?</span>
-              <button
-                type="button"
-                onClick={onDelete}
-                className="btn btn-danger btn-sm"
-              >
-                Yes, delete
-              </button>
-              <button
-                type="button"
-                onClick={() => setConfirmDelete(false)}
-                className="btn btn-neutral btn-sm"
-              >
-                Cancel
-              </button>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setConfirmDelete(true)}
-              className="btn btn-danger btn-sm"
-            >
-              Delete
-            </button>
-          )
+          <button
+            type="button"
+            onClick={() => setConfirmDelete(true)}
+            className="btn btn-danger btn-sm"
+          >
+            Delete
+          </button>
+        )}
+        {confirmDelete && (
+          <ConfirmDialog
+            title="Delete this injury?"
+            message="It is removed permanently, with its notes."
+            confirmLabel="Delete"
+            danger
+            onConfirm={onDelete}
+            onCancel={() => setConfirmDelete(false)}
+          />
         )}
 
         <div className="flex gap-2 ml-auto">

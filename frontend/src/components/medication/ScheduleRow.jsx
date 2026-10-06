@@ -21,7 +21,7 @@ export default function ScheduleRow({ sched, onChange, onRemove }) {
     <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-2.5 space-y-2 border border-slate-200 dark:border-slate-700">
       <div className="flex items-center gap-2">
         <div className="flex-1">
-          <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Time</label>
+          <label className="field-label">Time</label>
           <input
             type="time"
             className={INPUT}
@@ -30,7 +30,7 @@ export default function ScheduleRow({ sched, onChange, onRemove }) {
           />
         </div>
         <div className="flex-1">
-          <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Start date</label>
+          <label className="field-label">Start date</label>
           <DatePicker
             className="w-full"
             value={sched.start_date ?? ""}
@@ -38,14 +38,14 @@ export default function ScheduleRow({ sched, onChange, onRemove }) {
           />
         </div>
         <div className="flex-1">
-          <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">End date</label>
+          <label className="field-label">End date</label>
           <DatePicker
             className="w-full"
             value={sched.end_date ?? ""}
             onChange={v => onChange({ ...sched, end_date: v || null })}
           />
         </div>
-        <button type="button" onClick={onRemove} className="mt-5 text-slate-400 hover:text-red-400 transition-colors text-xl leading-none">×</button>
+        <button type="button" onClick={onRemove} className="icon-btn icon-btn-sm icon-btn-danger mt-5">×</button>
       </div>
 
       <div className="flex flex-wrap gap-1">
@@ -53,7 +53,7 @@ export default function ScheduleRow({ sched, onChange, onRemove }) {
         <button
           type="button"
           onClick={() => onChange({ ...sched, days_of_week: null })}
-          className={`text-[10px] px-1.5 py-0.5 rounded-full border transition-colors ${everydayMode ? "bg-accent-500 border-accent-500 text-white" : "border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400"}`}
+          aria-pressed={everydayMode} className="chip chip-sm"
         >
           Every day
         </button>
@@ -67,7 +67,7 @@ export default function ScheduleRow({ sched, onChange, onRemove }) {
                 if (everydayMode) onChange({ ...sched, days_of_week: [i] });
                 else toggleDay(i);
               }}
-              className={`text-[10px] px-1.5 py-0.5 rounded-full border transition-colors ${selected ? "bg-accent-500 border-accent-500 text-white" : "border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400"}`}
+              aria-pressed={selected} className="chip chip-sm"
             >
               {d}
             </button>
@@ -79,7 +79,6 @@ export default function ScheduleRow({ sched, onChange, onRemove }) {
         <label className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 cursor-pointer">
           <input
             type="checkbox"
-            className="rounded border-slate-300 text-accent-500"
             checked={sched.notify}
             onChange={e => onChange({ ...sched, notify: e.target.checked })}
           />
@@ -88,7 +87,6 @@ export default function ScheduleRow({ sched, onChange, onRemove }) {
         <label className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 cursor-pointer">
           <input
             type="checkbox"
-            className="rounded border-slate-300 text-accent-500"
             checked={sched.is_as_needed}
             onChange={e => onChange({ ...sched, is_as_needed: e.target.checked })}
           />
