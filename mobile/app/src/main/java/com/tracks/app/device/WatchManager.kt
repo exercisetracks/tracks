@@ -1133,11 +1133,10 @@ class WatchManager(
      * was configured to broadcast, with nothing on either screen to say why;
      * the watch asks about once a minute and every one of those was dropped.
      *
-     * So Tracks' own forecast is the fallback, not the primary. It is located at
-     * the user's most recent activity with GPS, which needs no location
-     * permission and is very nearly the right answer for "where does this
-     * person train", and asked of Open-Meteo directly — or, when the phone
-     * holds no such activity, of the server — see [directForecast].
+     * So Tracks' own forecast is the fallback, not the primary. It is for where
+     * the phone last was (WeatherLocationSync), asked of Open-Meteo directly —
+     * or, when the phone has never known its position, of the server — see
+     * [directForecast].
      */
     private fun sendLatestWeather() {
         WeatherReceiver.latest?.let { report ->
@@ -1158,11 +1157,11 @@ class WatchManager(
      * A forecast fetched from Open-Meteo by the phone, cached for [WEATHER_TTL_MS].
      *
      * Direct rather than through the server, which used to make this request
-     * on the phone's behalf: the location comes from the phone's own activity
-     * files and the forecast from the internet, so the server added nothing but
-     * a second thing that had to be reachable. Now a watch on a trip, out of
+     * on the phone's behalf: the location comes from the phone itself and the
+     * forecast from the internet, so the server added nothing but a second
+     * thing that had to be reachable. Now a watch on a trip, out of
      * reach of a home server, still gets a forecast. The server's forecast is
-     * kept as the fallback for a phone with no GPS activity of its own.
+     * kept as the fallback for a phone that has never known where it is.
      *
      * The watch asks every minute and the weather does not change that fast, so
      * without a cache this would be a network round trip per minute for the
@@ -1183,19 +1182,22 @@ class WatchManager(
         if (cached != null && SystemClock.elapsedRealtime() - cachedForecastAt < WEATHER_TTL_MS) {
             return cached
         }
-        val point = runCatching { container.sources.recentStartPoint() }.getOrNull()
+        // Where the phone is — refreshed now if Android will say (it usually
+        // will not, from this background service), else where it last was
+        // while the app was open. See WeatherLocationSync.
+        val point = container.syncWeatherLocation()
         val fetched = if (point != null) {
-            container.openMeteo.watch(point.first, point.second, System.currentTimeMillis() / 1000)
+            container.openMeteo.watch(point.lat, point.lon, System.currentTimeMillis() / 1000)
                 ?.toReport()
         } else {
-            // Nothing on this phone says where the user trains — their outdoor
-            // activities reached the server from another device, or this phone
-            // was set up recently. The server can still locate them, so ask it
-            // for its forecast rather than leaving the glance empty. This is
-            // the one forecast that still goes through the server, and only
-            // when the phone cannot do the job itself; the server applies the
-            // same Weather switch before it asks Open-Meteo.
-            Log.i(TAG, "no activity with GPS on this phone; asking the server for its forecast")
+            // This phone has never known where it is: no location grant, or
+            // never opened since it was granted. The server may still know —
+            // another phone's synced position, or failing that its activity
+            // history — so ask it rather than leaving the glance empty. The
+            // one forecast that still goes through the server, and only when
+            // the phone cannot do the job; the server applies the same Weather
+            // switch before it asks Open-Meteo.
+            Log.i(TAG, "no stored phone location; asking the server for its forecast")
             runCatching { container.client().watchWeather().toReport() }
                 .onFailure { Log.w(TAG, "the server had no forecast either", it) }
                 .getOrNull()

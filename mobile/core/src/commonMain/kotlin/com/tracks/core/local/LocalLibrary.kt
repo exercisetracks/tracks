@@ -134,24 +134,6 @@ class LocalLibrary(
      */
     fun activityRows(): List<com.tracks.core.db.SelectActivities> = q.selectActivities().executeAsList()
 
-    /**
-     * Where an activity started — its first point with a position — or null
-     * for one without GPS. Decodes the whole detail: SQLDelight's dialect has
-     * no `json_each` to stop at the first fix in SQL. Its one caller, the watch
-     * forecast, asks at most every half hour and nearly always finds a fix in
-     * the first activity it reads.
-     */
-    fun startPoint(uid: String): Pair<Double, Double>? {
-        val points = detailJson(uid)?.get("data_points") as? JsonArray ?: return null
-        for (p in points) {
-            val o = p as? JsonObject ?: continue
-            val lat = (o["lat"] as? JsonPrimitive)?.doubleOrNull ?: continue
-            val lng = (o["lng"] as? JsonPrimitive)?.doubleOrNull ?: continue
-            return lat to lng
-        }
-        return null
-    }
-
     /** The parser's `activity` dict for one activity, as JSON. */
     fun summaryJson(uid: String): JsonObject? =
         activity(uid)?.let { TracksJson.parseToJsonElement(it.summary).jsonObject }

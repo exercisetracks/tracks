@@ -115,8 +115,9 @@ export default function PrivacySummarySection({ settings, onSaved }) {
             <p className="text-xs text-sky-600 dark:text-sky-500 mt-0.5 leading-relaxed">
               Your server asks Open-Meteo (free, no account) for weather at three
               kinds of place: a race plan's location, for weather-adjusted pacing;
-              a point you tap on the map; and where you last trained, for your
-              watch's forecast. Each request sends <span className="font-medium">those coordinates</span>,
+              a point you tap on the map; and where your phone last was, for your
+              watch's forecast. That last one is stored on your server, rounded
+              to about a kilometre, and cleared when this is off. Each request sends <span className="font-medium">those coordinates</span>,
               nothing else. Turning this off stops all three — race plans pace
               without a weather adjustment and the map panel shows no forecast.
             </p>

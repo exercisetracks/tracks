@@ -528,6 +528,7 @@ class AppContainer(private val context: Context) {
         // Runs at startup and after every pull — the second is what writes the
         // zone on a phone whose settings row only arrived with its first pull.
         syncTimezone()
+        syncWeatherLocation()
     }
 
     /**
@@ -545,6 +546,38 @@ class AppContainer(private val context: Context) {
     /** [syncTimezone] from a callback that cannot suspend: a broadcast, a resume. */
     fun syncTimezoneSoon() {
         signalScope.launch { syncTimezone() }
+    }
+
+    /**
+     * Store where the phone is in the synced `weather_location`, or clear it
+     * when Weather is off — see [WeatherLocationSync]. Returns the position to
+     * forecast for afterwards: the stored one, freshly updated if the phone
+     * had a newer fix. Null when Weather is off or nothing is known.
+     */
+    internal suspend fun syncWeatherLocation(): WeatherLocationSync.Fix? = runCatching {
+        val row = sources.settingValues()
+        val enabled = when (val v = row["weather_enabled"]) {
+            is Boolean -> v
+            is String -> v.toBooleanStrictOrNull() ?: true
+            else -> true
+        }
+        val stored = WeatherLocationSync.stored(row["weather_location"])
+        val phone = if (enabled) WeatherLocationSync.phone(context) else null
+        when (val change = WeatherLocationSync.change(stored, phone, enabled, rowExists = row.isNotEmpty())) {
+            is WeatherLocationSync.Change.Set -> sources.writeSetting("weather_location", change.value)
+            WeatherLocationSync.Change.Clear -> sources.writeSetting("weather_location", null)
+            null -> Unit
+        }
+        when {
+            !enabled -> null
+            phone != null && (stored == null || phone.at.isAfter(stored.at)) -> phone
+            else -> stored
+        }
+    }.getOrNull()
+
+    /** [syncWeatherLocation] from a resume, which cannot suspend. */
+    fun syncWeatherLocationSoon() {
+        signalScope.launch { syncWeatherLocation() }
     }
 
     /**

@@ -12,7 +12,7 @@ import android.net.Uri
  * A weather app on the phone is the preferred source: it sends its forecast in
  * Gadgetbridge's broadcast format, [WeatherReceiver] takes it, and the watch
  * gets it from there. When nothing has sent one, Tracks asks Open-Meteo itself
- * for where the user last trained (see `WatchManager.sendLatestWeather`) —
+ * for where the phone last was (see `WatchManager.sendLatestWeather`) —
  * the "server" names below predate that request moving onto the phone, and
  * the preference key keeps its name so existing history survives. This holds the
  * apps that speak that format, the steps to switch it on in each, and a
@@ -161,7 +161,7 @@ object WeatherSources {
             )
             history.serverAt != null && nowMs - history.serverAt < FRESH_MS -> Status(
                 State.SERVER_ONLY, null,
-                "No weather app is installed, so the watch gets Tracks' own forecast for where you last trained " +
+                "No weather app is installed, so the watch gets Tracks' own forecast for where your phone last was " +
                     "(last at ${timeLabel(history.serverAt)}). Install Breezy Weather for forecasts where you are.",
             )
             else -> Status(

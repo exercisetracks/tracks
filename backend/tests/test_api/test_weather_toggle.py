@@ -99,3 +99,43 @@ def test_the_watch_forecast_sends_no_location_while_weather_is_off(client, user,
 
     assert resp.status_code == 403
     assert provider == []
+
+
+def _watch_token(client):
+    return client.post("/auth/setup", json={
+        "username": "admin", "name": "Admin", "password": "testpass123",
+    }).json()["access_token"]
+
+
+def test_the_watch_forecast_is_for_where_the_phone_last_was(client, user, db, provider):
+    """The phone syncs its own position; the server's fallback forecast must use
+    it rather than an activity start that may be weeks and a trip out of date."""
+    token = _watch_token(client)
+    us = db.query(UserSettings).filter_by(user_id=user.id).first()
+    us.weather_location = {"lat": 46.87, "lon": -113.99, "at": "2026-10-06T12:00:00Z"}
+    db.commit()
+
+    resp = client.get("/device-sync/weather", headers={"Authorization": f"Bearer {token}"})
+
+    assert resp.status_code == 200, resp.text
+    assert provider == [(46.87, -113.99)]
+
+
+@pytest.mark.parametrize("bad", [
+    {"lat": "46.87", "lon": -113.99},
+    {"lat": 95.0, "lon": 10.0},
+    {"lat": True, "lon": 10.0},
+    ["46.87", "-113.99"],
+])
+def test_a_malformed_synced_location_is_not_trusted(client, user, db, provider, bad):
+    """The value arrives through sync from a client. With no activity to fall
+    back to, a bad one means no forecast — never a request for nonsense."""
+    token = _watch_token(client)
+    us = db.query(UserSettings).filter_by(user_id=user.id).first()
+    us.weather_location = bad
+    db.commit()
+
+    resp = client.get("/device-sync/weather", headers={"Authorization": f"Bearer {token}"})
+
+    assert resp.status_code == 404
+    assert provider == []

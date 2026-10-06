@@ -103,12 +103,12 @@ def watch_weather(
     — an arrangement that is invisible when it is not set up, since the watch
     simply shows an empty glance forever.
 
-    Location comes from the user's most recent activity rather than from the
-    phone. That is deliberate: it needs no new runtime permission, works when
-    the phone's own location is off, and is very nearly the right answer for the
-    thing being asked — a forecast for where this person trains. It is wrong
-    only on the first day of a trip, and a stale-by-one-trip forecast still beats
-    the empty glance it replaces.
+    Location is where the phone last was, as it synced it into the settings
+    row — the same position the phone forecasts for when it asks Open-Meteo
+    itself. Failing that (no phone has been opened with location permission
+    yet), the start of the most recent activity with GPS: very nearly the
+    right answer for "where does this person train", and a stale-by-one-trip
+    forecast still beats an empty glance.
 
     404 rather than an empty body when there is nothing to say, so the client can
     tell "no forecast for you" from "a forecast of nothing".
@@ -127,7 +127,7 @@ def watch_weather(
         raise HTTPException(
             status_code=403, detail="Weather is disabled — enable it in Settings")
 
-    point = _latest_activity_point(user, db)
+    point = _synced_phone_point(us) or _latest_activity_point(user, db)
     if point is None:
         raise HTTPException(
             status_code=404,
@@ -223,6 +223,27 @@ def _hourly_rows(forecast: dict, limit: int) -> list[dict]:
 # Half a day. The glance scrolls a short strip, and every extra hour is another
 # FIT record on a link that is also carrying activity files.
 _HOURLY_HOURS = 12
+
+
+def _synced_phone_point(us: UserSettings | None) -> tuple[float, float] | None:
+    """Where the phone last was, as it synced it (settings.weather_location).
+
+    Preferred over the activity history: it is where the user is now rather
+    than where they last recorded something, and it is what the phone itself
+    forecasts for, so the fallback and the phone agree. Anything malformed is
+    ignored rather than trusted — the value arrives through sync from a client.
+    """
+    loc = us.weather_location if us is not None else None
+    if not isinstance(loc, dict):
+        return None
+    lat, lon = loc.get("lat"), loc.get("lon")
+    if isinstance(lat, bool) or isinstance(lon, bool):
+        return None
+    if not isinstance(lat, (int, float)) or not isinstance(lon, (int, float)):
+        return None
+    if not (-90 <= lat <= 90 and -180 <= lon <= 180):
+        return None
+    return float(lat), float(lon)
 
 
 def _latest_activity_point(user: User, db: Session) -> tuple[float, float] | None:

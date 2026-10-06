@@ -133,11 +133,15 @@ class MainActivity : ComponentActivity() {
 
     /**
      * Back in the foreground: the phone may have crossed a time zone while the
-     * process was gone, when no broadcast could reach it (TimezoneSync).
+     * process was gone, when no broadcast could reach it (TimezoneSync), and
+     * may be somewhere else — the one moment Android lets this app read where
+     * it is, since it asks for no background location (WeatherLocationSync).
      */
     override fun onResume() {
         super.onResume()
-        (application as TracksApplication).container.syncTimezoneSoon()
+        val container = (application as TracksApplication).container
+        container.syncTimezoneSoon()
+        container.syncWeatherLocationSoon()
     }
 }
 

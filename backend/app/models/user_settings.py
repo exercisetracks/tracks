@@ -131,6 +131,14 @@ class UserSettings(Base, Synced):
     # to false to keep location data fully local.
     weather_enabled      = Column(Boolean, nullable=False, default=True)
 
+    # Where the phone last was, for forecasts that are not about a point the
+    # user picked — today, the watch glance. {lat, lon, at}: rounded by the
+    # phone to two decimals (~1 km), which is all a forecast resolves and
+    # keeps a synced, stored coordinate from pinpointing a home. Written only
+    # while weather_enabled is on, and cleared by the phone when it is turned
+    # off. Null until a phone with location permission has been opened.
+    weather_location     = Column(PJson, nullable=True)
+
     # Map tiles — downloads global basemap and DEM tiles from third-party tile
     # servers (Protomaps / Mapterhorn). Off by default — the app is fully offline
     # until the user explicitly opts in.

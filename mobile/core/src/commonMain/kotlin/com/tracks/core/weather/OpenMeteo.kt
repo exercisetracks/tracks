@@ -39,7 +39,8 @@ import kotlin.math.roundToInt
  * one request away. Asking directly also means a coordinate only ever travels
  * phone → Open-Meteo, rather than phone → server → Open-Meteo.
  *
- * Privacy: each request sends the latitude and longitude being asked about,
+ * Privacy: each request sends the latitude and longitude being asked about —
+ * a tapped point, or the phone's own rounded position for the watch —
  * rounded to four places (~11 m), and the phone's IP address rather than the
  * server's — the same disclosure the server made, from a different address.
  * Open-Meteo is keyless, so nothing identifies the account. Callers must check
