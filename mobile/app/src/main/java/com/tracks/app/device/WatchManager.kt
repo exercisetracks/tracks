@@ -1136,7 +1136,8 @@ class WatchManager(
      * So Tracks' own forecast is the fallback, not the primary. It is located at
      * the user's most recent activity with GPS, which needs no location
      * permission and is very nearly the right answer for "where does this
-     * person train", and asked of Open-Meteo directly — see [directForecast].
+     * person train", and asked of Open-Meteo directly — or, when the phone
+     * holds no such activity, of the server — see [directForecast].
      */
     private fun sendLatestWeather() {
         WeatherReceiver.latest?.let { report ->
@@ -1160,7 +1161,8 @@ class WatchManager(
      * on the phone's behalf: the location comes from the phone's own activity
      * files and the forecast from the internet, so the server added nothing but
      * a second thing that had to be reachable. Now a watch on a trip, out of
-     * reach of a home server, still gets a forecast.
+     * reach of a home server, still gets a forecast. The server's forecast is
+     * kept as the fallback for a phone with no GPS activity of its own.
      *
      * The watch asks every minute and the weather does not change that fast, so
      * without a cache this would be a network round trip per minute for the
@@ -1182,14 +1184,24 @@ class WatchManager(
             return cached
         }
         val point = runCatching { container.sources.recentStartPoint() }.getOrNull()
-        if (point == null) {
-            Log.i(TAG, "no activity with GPS on this phone, so there is nowhere to forecast for")
-            return cached
+        val fetched = if (point != null) {
+            container.openMeteo.watch(point.first, point.second, System.currentTimeMillis() / 1000)
+                ?.toReport()
+        } else {
+            // Nothing on this phone says where the user trains — their outdoor
+            // activities reached the server from another device, or this phone
+            // was set up recently. The server can still locate them, so ask it
+            // for its forecast rather than leaving the glance empty. This is
+            // the one forecast that still goes through the server, and only
+            // when the phone cannot do the job itself; the server applies the
+            // same Weather switch before it asks Open-Meteo.
+            Log.i(TAG, "no activity with GPS on this phone; asking the server for its forecast")
+            runCatching { container.client().watchWeather().toReport() }
+                .onFailure { Log.w(TAG, "the server had no forecast either", it) }
+                .getOrNull()
         }
-        val fetched = container.openMeteo.watch(point.first, point.second, System.currentTimeMillis() / 1000)
-            ?.toReport()
         if (fetched == null) {
-            Log.w(TAG, "could not fetch a forecast from Open-Meteo")
+            Log.w(TAG, "could not fetch a forecast")
             // The stale copy beats nothing: a forecast an hour old is still
             // roughly today's weather, and the alternative is an empty glance.
             return cached

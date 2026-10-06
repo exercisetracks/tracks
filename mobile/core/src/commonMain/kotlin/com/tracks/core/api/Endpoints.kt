@@ -66,9 +66,9 @@ object Endpoints {
     // Inspecting a point, finding a place, and snapping a line to real trails.
     const val MAP_POINT = "/maps/point"
 
-    // No forecast endpoints: the phone asks Open-Meteo itself
-    // (core/weather/OpenMeteo.kt). The server keeps /maps/point/weather,
-    // /maps/point/hourly and /device-sync/weather for phones on older releases.
+    // No map forecast endpoints: the phone asks Open-Meteo itself
+    // (core/weather/OpenMeteo.kt). The server keeps /maps/point/weather and
+    // /maps/point/hourly for phones on older releases.
     const val POI_SEARCH = "/maps/poi/search"
 
     /**
@@ -242,6 +242,12 @@ object Endpoints {
      */
     const val SCHEDULE_FIT = "/device-sync/schedule-fit"
     const val SCHEDULE_BUNDLE = "/device-sync/schedule-bundle"
+    /**
+     * The server's forecast for the watch — the fallback for a phone whose own
+     * files hold no activity with GPS to locate a forecast by. See
+     * `WatchManager.directForecast`.
+     */
+    const val WATCH_WEATHER = "/device-sync/weather"
     const val DELETE_LIST = "/device-sync/delete-list"
     const val AGPS = "/device-sync/agps"
     const val WATCH_SYNCED = "/device-sync/synced"
@@ -291,7 +297,7 @@ object Endpoints {
         MEDICATIONS, MEDICATION_BY_ID, MEDICATION_LOG, MEDICATION_LOG_ENTRY,
         MEALS, MEAL_LOG, PLAN_WORKOUT,
         GOALS, GOAL_PLAN, GOAL_PLAN_GENERATE, PLAN_WORKOUTS,
-        PUSH_LIST, MARK_UPLOADED, SCHEDULE_FIT, DELETE_LIST, AGPS,
+        PUSH_LIST, MARK_UPLOADED, SCHEDULE_FIT, WATCH_WEATHER, DELETE_LIST, AGPS,
         WATCH_SYNCED,
         SYNC_AGENTS, SYNC_PUBKEY, SYNC_INGEST, COURSE_INGEST, WAYPOINT_INGEST,
         STRETCHES, CUSTOM_STRETCHES, FLOWS, FLOW_BY_ID,

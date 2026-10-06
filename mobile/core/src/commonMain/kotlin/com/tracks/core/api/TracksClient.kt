@@ -1112,6 +1112,19 @@ class TracksClient(
         http.get(url(Endpoints.SCHEDULE_BUNDLE)) { bearer(token) }
     }
 
+    /**
+     * The server's own forecast for the watch, located at the newest activity
+     * with GPS *it* holds.
+     *
+     * Only the fallback: the phone normally asks Open-Meteo itself, and calls
+     * this when none of its own files has a position — an account whose
+     * outdoor activities reached the server from somewhere else. The server
+     * 404s when it has no such activity either, and 403s when Weather is off.
+     */
+    suspend fun watchWeather(): WatchWeather = request { token ->
+        http.get(url(Endpoints.WATCH_WEATHER)) { bearer(token) }
+    }
+
     // ── Offline map regions ──────────────────────────────────────────────
     //
     // The phone never extracts tiles itself; it asks the server for an area and
