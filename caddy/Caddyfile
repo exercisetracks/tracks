@@ -146,7 +146,14 @@
 		# A day of freshness + a week of stale-while-revalidate keeps zoom-outs
 		# instant; the Etag still gives cheap 304s after expiry. z13-15 detail
 		# (@bm_detail above) stays deliberately uncached — see @other_tiles note.
-		header Cache-Control "public, max-age=86400, stale-while-revalidate=604800"
+		#
+		# Successful tiles only. While the planet file is still downloading
+		# every tile here is a 404, and a cached 404 outlives the download: the
+		# map opened during setup came back blank in exactly the view it was
+		# first opened at, for days, while everywhere panned to later was fine.
+		header Cache-Control "public, max-age=86400, stale-while-revalidate=604800" {
+			match status 2xx
+		}
 		uri replace /api/tiles/basemap/ /planet_basemap/
 		reverse_proxy {$TRACKS_TILES:go-pmtiles:8080}
 	}
@@ -163,7 +170,14 @@
 		# /api/tiles/basemap/* (handled above): that source has NO version
 		# param, and relies on going uncached so freshly-downloaded z13-15
 		# detail is "fetched fresh on the next zoom-in" (see sources.js).
-		header Cache-Control "public, max-age=31536000, immutable"
+		#
+		# Successful tiles only, for the reason under @bm_over: not every URL
+		# here is versioned (planet_dem_z7 is not, nor an archive whose
+		# version is still 0 because it has not been built), and a 404 for one
+		# of those cached as immutable would outlast the file appearing.
+		header Cache-Control "public, max-age=31536000, immutable" {
+			match status 2xx
+		}
 		uri strip_prefix /api/tiles
 		reverse_proxy {$TRACKS_TILES:go-pmtiles:8080}
 	}
