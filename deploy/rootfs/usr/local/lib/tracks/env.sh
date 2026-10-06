@@ -26,9 +26,8 @@ fi
 export DATABASE_URL
 
 # The switches an operator is expected to touch are plain true/false, because
-# "set this URL to an empty string" and "count your proxies" were what people
-# got wrong. A value that is neither stops the container: a typo in
-# MAP_DOWNLOADS silently read as true is a 16 GB download nobody asked for.
+# "count your proxies" was what people got wrong. A value that is neither
+# stops the container rather than being read as one or the other.
 # Normalises the variable in place rather than echoing it, because an exit
 # inside $(…) would only leave the subshell and the typo would read as false.
 flag() {
@@ -42,18 +41,13 @@ flag() {
 
 # The basemap and terrain sources, so maps work without configuration. The
 # dated Protomaps build expires within a week, which is fine: the backend
-# rolls a stale date forward to the newest build (pmtiles_extract).
-# MAP_DOWNLOADS / TERRAIN_DOWNLOADS=false keep the multi-GB downloads off by
-# emptying the URL, which is what the backend reads as "not configured"; the
-# URLs themselves stay settable for anyone pointing at a mirror.
+# rolls a stale date forward to the newest build (pmtiles_extract). Nothing
+# is downloaded until the admin turns maps on in setup or Settings, so there
+# is no container switch for it; the URLs stay settable for a mirror.
 : "${PMTILES_SOURCE_URL=https://build.protomaps.com/20261001.pmtiles}"
 : "${DEM_SOURCE_URL=https://download.mapterhorn.com/planet.pmtiles}"
-flag MAP_DOWNLOADS true
-flag TERRAIN_DOWNLOADS true
-flag BEHIND_PROXY false
-[ "$MAP_DOWNLOADS" = true ] || PMTILES_SOURCE_URL=
-[ "$TERRAIN_DOWNLOADS" = true ] || DEM_SOURCE_URL=
 export PMTILES_SOURCE_URL DEM_SOURCE_URL
+flag BEHIND_PROXY false
 
 # How many proxies' X-Forwarded-For entries login rate limiting may trust:
 # Tracks' own web server, plus the operator's when BEHIND_PROXY says there is

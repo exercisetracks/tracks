@@ -227,9 +227,9 @@ Images are built with Docker's legacy builder, for amd64 only (there is no
      (`curl -s https://hub.docker.com/v2/repositories/exercisetracks/tracks/tags`).
    - A fresh install works, pulled from Docker Hub rather than a local image:
      remove the local `:X` tag, then start it under **its own container name,
-     port and volume names** with map downloads off
-     (`-e MAP_DOWNLOADS=false -e TERRAIN_DOWNLOADS=false`), create an admin through
-     `/api/auth/setup`, and check `/api/capabilities` reports the new version.
+     port and volume names**, create an admin through `/api/auth/setup`, and
+     check `/api/capabilities` reports the new version. Leave maps off: nothing
+     downloads until `map_enabled` is set, and setup alone does not set it.
 
 ### When something goes wrong
 

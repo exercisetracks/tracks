@@ -105,10 +105,16 @@ docker run -d --name tracks --restart unless-stopped \
   exercisetracks/tracks:latest
 ```
 
-Or with Docker Compose: save [`compose.yaml`](deploy/compose.yaml) in a
-folder of its own, then run `docker compose up -d` there. To change any
-setting, also save [`.env.example`](deploy/.env.example) beside it as `.env`
-and edit that; it lists every setting with its default.
+Or with Docker Compose, using [`compose.yaml`](deploy/compose.yaml) and,
+optionally, [`.env.example`](deploy/.env.example) for settings:
+
+1. Save `compose.yaml` in a folder of its own.
+2. To change a setting (the port, or where data and maps are kept), save
+   `.env.example` in the same folder **renamed to `.env`**, and edit the
+   values in it. Every line is optional and shows its default; leave out the
+   file entirely to run with the defaults.
+3. Run `docker compose up -d` in that folder. After editing `.env` later,
+   run it again to apply the change.
 
 Open **http://localhost:4080** (or `http://<server-ip>:4080`) and create
 your admin account. There's nothing to configure first. On its first start,
@@ -121,14 +127,15 @@ Tracks generates its own secrets and database, and keeps them in the
 **Storage:**
 - `tracks-data` holds your database and the original files from your watch.
   It stays small (megabytes per year).
-- `tracks-maps` holds offline maps, which grow as you use them:
-  - On first start, Tracks downloads a global basemap (about 16 GB) and
-    terrain overview (about 3 GB).
+- `tracks-maps` holds offline maps. **Allow at least 20 GB** if you turn maps
+  on:
+  - When you turn maps on (during setup, or later in Settings), Tracks
+    downloads a global basemap (about 16 GB) and terrain overview (about
+    3 GB). With maps off, nothing is downloaded.
   - Detailed regions add more as you download them.
 
 To keep maps on a bigger disk, use a folder instead of the volume, e.g.
-`-v /mnt/storage/tracks-maps:/map-data` (`TRACKS_MAPS` in `.env`). To skip
-the downloads, set `MAP_DOWNLOADS=false` and `TERRAIN_DOWNLOADS=false`.
+`-v /mnt/storage/tracks-maps:/map-data` (`TRACKS_MAPS` in `.env`).
 
 ### Putting it behind HTTPS
 
@@ -297,8 +304,6 @@ them as `-e NAME=value`.
 | Variable | Description |
 |---|---|
 | `HOST_UID` / `HOST_GID` | Owner of the files Tracks writes, if you bind-mount folders (default `1000`). |
-| `MAP_DOWNLOADS` | `false` turns the basemap download off (default `true`). |
-| `TERRAIN_DOWNLOADS` | `false` turns terrain downloads, for hillshade, 3D terrain and contours, off (default `true`). |
 | `BEHIND_PROXY` | `true` when your own reverse proxy sits in front of Tracks (default `false`). |
 | `PMTILES_SOURCE_URL` / `DEM_SOURCE_URL` | Where the basemap and terrain are downloaded from, to use a mirror. |
 | `TRUSTED_PROXY_HOPS` | For more than one proxy in front: how many, counting Tracks' own web server. Overrides `BEHIND_PROXY`. |
