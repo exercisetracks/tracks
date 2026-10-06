@@ -12,6 +12,7 @@ indeterminate spinner. Shared by the basemap (global_overview) and DEM
 
 from __future__ import annotations
 
+import itertools
 import logging
 import os
 import re
@@ -21,6 +22,7 @@ import time
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Callable
+from urllib.parse import urlparse
 
 import httpx
 
@@ -35,12 +37,19 @@ _PROTOMAPS_HOST = "build.protomaps.com"
 _DATED = re.compile(r"/(\d{8})\.pmtiles$")
 
 
-def _reachable(url: str) -> bool:
-    """Is the pmtiles archive fetchable? (range request for the first byte)."""
+def _reachable(url: str) -> bool | None:
+    """Is the pmtiles archive fetchable? (range request for the first byte).
+
+    None means the server could not be reached at all, as opposed to False, it
+    answered and the file is not there: only the second is a reason to go
+    looking for another build.
+    """
     try:
         r = httpx.get(url, headers={"Range": "bytes=0-0"}, timeout=30,
                       follow_redirects=True)
         return r.status_code in (200, 206)
+    except httpx.TransportError:
+        return None
     except Exception:
         return False
 
@@ -57,7 +66,14 @@ def resolve_source_url(url: str) -> str:
     """
     if _PROTOMAPS_HOST not in url or not _DATED.search(url):
         return url
-    if _reachable(url):
+    reachable = _reachable(url)
+    if reachable is None:
+        # The host itself is unreachable (DNS blocked, offline). Every dated
+        # candidate is on the same host, and walking 21 of them through a DNS
+        # timeout each is ten minutes spent learning nothing. The extract
+        # fails with SourceUnreachable, which says what to do about it.
+        return url
+    if reachable:
         return url
     logger.warning("Configured basemap build is unavailable (%s) — resolving latest", url)
     base = url[: _DATED.search(url).start() + 1]  # ".../"
@@ -69,6 +85,60 @@ def resolve_source_url(url: str) -> str:
             return candidate
     logger.error("No available Protomaps build found in the last 21 days")
     return url  # let extract fail with a clear error
+
+class SourceUnreachable(RuntimeError):
+    """go-pmtiles could not connect to the tile server at all.
+
+    Distinct from a failure partway through a download: nothing about the
+    archive or this install is wrong, something between here and ``host`` is
+    refusing the connection, and it will work as soon as that stops. The
+    message is written for the person who has to stop it, because the raw Go
+    error ("dial tcp 0.0.0.0:443: connect: connection refused") tells them
+    nothing — it is what a network-wide ad blocker such as AdGuard Home or
+    Pi-hole looks like from inside the container, and that is the most common
+    cause seen so far.
+    """
+
+    def __init__(self, host: str, raw: str, blocked: bool):
+        self.host, self.raw, self.blocked = host, raw, blocked
+        if blocked:
+            msg = (f"Couldn't download from {host}: this network's DNS answered "
+                   f"with a null address, which is how ad blockers and DNS filters "
+                   f"(AdGuard Home, Pi-hole, NextDNS) block a site. "
+                   f"Allow {host} in that filter.")
+        else:
+            msg = (f"Couldn't connect to {host}. Check this machine's internet "
+                   f"connection, and whether an ad blocker or DNS filter (AdGuard "
+                   f"Home, Pi-hole), a VPN or a firewall is blocking it — if so, "
+                   f"allow {host}.")
+        super().__init__(msg)
+
+
+# Go's wording for a connection that never got as far as HTTP: a refused or
+# unroutable dial, a failed DNS lookup, or a TLS handshake broken by something
+# intercepting it. A failure *after* connecting (a reset stream, a stall) is a
+# flaky download, not a blocked one, and keeps its own message.
+_UNREACHABLE = re.compile(
+    r"dial tcp|lookup \S+( on \S+)?: |no such host|server misbehaving"
+    r"|network is unreachable|no route to host|tls: |x509: ")
+# The address a DNS filter answers with for a blocked name. A real server is
+# never at any of these.
+_NULL_DIAL = re.compile(r"dial tcp (0\.0\.0\.0|127\.\d+\.\d+\.\d+|\[::1?\]):\d+")
+_GET_HOST = re.compile(r'Get "https?://([^/":]+)')
+
+
+def _unreachable_error(cmd: list[str], lines: list[str]) -> SourceUnreachable | None:
+    """The SourceUnreachable that go-pmtiles' output describes, if it does."""
+    text = "\n".join(lines)
+    if not _UNREACHABLE.search(text):
+        return None
+    m = _GET_HOST.search(text)
+    host = m.group(1) if m else next(
+        (urlparse(a).hostname for a in cmd if a.startswith(("http://", "https://"))),
+        "the tile server")
+    raw = next((ln for ln in reversed(lines) if _UNREACHABLE.search(ln)), text)
+    return SourceUnreachable(host, raw, blocked=bool(_NULL_DIAL.search(text)))
+
 
 # Large multi-range extracts (the ~3 GB DEM / basemap overviews) intermittently
 # get their HTTP/2 stream reset by the origin/CDN ("stream error … INTERNAL_ERROR;
@@ -95,7 +165,8 @@ def run_pmtiles_with_progress(cmd: list[str], on_progress: ProgressCb,
     HTTP/1.1 (see ``_GODEBUG_HTTP1``) and retries transient network failures up to
     ``retries`` times — go-pmtiles extract is not resumable, so ``output_path`` (if
     given) is removed before each retry to restart clean. Raises RuntimeError with
-    the captured output tail on a stall or non-zero exit after the final attempt.
+    the captured output tail on a stall or non-zero exit after the final attempt,
+    or SourceUnreachable when the server could not be connected to at all.
 
     ``timeout`` is **silence**, not duration: the watchdog measures how long the
     subprocess has gone without saying anything, and every progress tick resets
@@ -208,6 +279,11 @@ def _run_pmtiles_once(cmd: list[str], on_progress: ProgressCb, timeout: int,
     if timed_out["v"]:
         raise RuntimeError(f"stalled — no output for {timeout}s")
     if proc.returncode != 0:
+        unreachable = _unreachable_error(cmd, err_tail)
+        if unreachable is not None:
+            logger.warning("go-pmtiles could not reach %s: %s",
+                           unreachable.host, unreachable.raw)
+            raise unreachable
         tail = "\n".join(err_tail[-5:]) or f"exit code {proc.returncode}"
         raise RuntimeError(tail)
 
@@ -222,3 +298,40 @@ def extract_with_progress(source: str, output: str | Path, maxzoom: int,
         timeout=timeout,
         output_path=output,
     )
+
+
+# How long a global download waits before trying an unreachable server again:
+# soon at first, because the usual cause is someone who has just allowed the
+# host in their DNS filter and is watching the map page, then every quarter
+# hour. One failed connection is all a retry costs, so it never gives up — the
+# alternative was a download that stayed failed until the container restarted.
+_UNREACHABLE_BACKOFF = (60, 120, 300, 600, 900)
+
+
+def _in_words(seconds: int) -> str:
+    minutes = round(seconds / 60)
+    return "1 minute" if minutes == 1 else f"{minutes} minutes"
+
+
+def extract_global(resolve_source: Callable[[], str], output: str | Path,
+                   maxzoom: int, download_id: DownloadId, timeout: int = 7200,
+                   sleep: Callable[[float], None] = time.sleep) -> None:
+    """Extract a global archive, waiting out an unreachable server for as long as it takes.
+
+    ``resolve_source`` is called before every attempt rather than once, so a
+    basemap build that could not be resolved while the network was blocked is
+    resolved properly once it is not. Any other failure is raised as before.
+    """
+    for attempt in itertools.count():
+        source = resolve_source()
+        global_download_tracker.start(download_id)
+        try:
+            extract_with_progress(source, output, maxzoom, download_id, timeout=timeout)
+            return
+        except SourceUnreachable as e:
+            Path(output).unlink(missing_ok=True)
+            wait = _UNREACHABLE_BACKOFF[min(attempt, len(_UNREACHABLE_BACKOFF) - 1)]
+            logger.warning("%s — retrying in %ds", e, wait)
+            global_download_tracker.fail(
+                download_id, f"{e} The download will retry by itself in {_in_words(wait)}.")
+            sleep(wait)

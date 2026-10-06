@@ -23,12 +23,13 @@ expired.
 from __future__ import annotations
 
 import logging
+import threading
 from pathlib import Path
 
 from app.config import settings
 from app.services import region_merger
 from app.services.global_download_tracker import global_download_tracker
-from app.services.pmtiles_extract import extract_with_progress, resolve_source_url
+from app.services.pmtiles_extract import extract_global, resolve_source_url
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +38,9 @@ OVERVIEW_NAME = "planet_basemap"
 OVERVIEW_MAXZOOM = 12
 
 global_download_tracker.register("overview", "Global basemap tiles", "~16 GB")
+
+# Held by the thread that is downloading the overview — see start_map_download.
+_running = threading.Lock()
 
 
 def ensure_global_overview() -> bool:
@@ -50,14 +54,12 @@ def ensure_global_overview() -> bool:
         global_download_tracker.fail("overview", "PMTILES_SOURCE_URL not configured")
         return False
 
-    source = resolve_source_url(settings.pmtiles_source_url)
-
     logger.info("Downloading global basemap overview: z0-%d (~8-18 GB) from %s…",
-                OVERVIEW_MAXZOOM, source)
-    global_download_tracker.start("overview")
+                OVERVIEW_MAXZOOM, settings.pmtiles_source_url)
 
     try:
-        extract_with_progress(source, output, OVERVIEW_MAXZOOM, "overview", timeout=7200)
+        extract_global(lambda: resolve_source_url(settings.pmtiles_source_url),
+                       output, OVERVIEW_MAXZOOM, "overview", timeout=7200)
         logger.info("Global overview downloaded: %.1f GB", output.stat().st_size / 1e9)
         global_download_tracker.complete("overview")
         return True
@@ -73,11 +75,16 @@ def ensure_global_overview() -> bool:
 def start_map_download() -> None:
     """Download basemap overview and rebuild master tiles in a background thread.
 
-    Safe to call multiple times — download skips if the file already exists.
+    Safe to call multiple times — download skips if the file already exists,
+    and a call while one is already running (it may be waiting out a blocked
+    network for hours) leaves that one to it rather than starting a second
+    extract into the same file.
     """
     import threading
 
     def _run():
+        if not _running.acquire(blocking=False):
+            return
         try:
             if ensure_global_overview():
                 # The z0-12 basemap is served directly (Caddy routes z0-12 →
@@ -85,5 +92,7 @@ def start_map_download() -> None:
                 region_merger.write_reload_trigger()
         except Exception:
             logger.exception("Map tile download failed")
+        finally:
+            _running.release()
 
     threading.Thread(target=_run, daemon=True, name="map-download").start()

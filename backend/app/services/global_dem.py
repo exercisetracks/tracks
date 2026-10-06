@@ -9,13 +9,17 @@ from pathlib import Path
 from app.config import settings
 from app.services import region_merger
 from app.services.global_download_tracker import global_download_tracker
-from app.services.pmtiles_extract import extract_with_progress
+from app.services.pmtiles_extract import extract_global
 
 logger = logging.getLogger(__name__)
 
 PLANET_DEM_Z7 = "planet_dem_z7"
 
 global_download_tracker.register("dem", "Global terrain tiles", "~3.1 GB")
+
+# Held by the thread that is downloading the DEM, so a second call while it
+# waits out a blocked network does not start another extract into the same file.
+_running = threading.Lock()
 
 
 def ensure_global_dem() -> bool:
@@ -29,10 +33,8 @@ def ensure_global_dem() -> bool:
         return False
 
     logger.info("Downloading global DEM overview: z0-7 (~3.1 GB)…")
-    global_download_tracker.start("dem")
-
     try:
-        extract_with_progress(settings.dem_source_url, output, 7, "dem", timeout=7200)
+        extract_global(lambda: settings.dem_source_url, output, 7, "dem", timeout=7200)
         logger.info("Global DEM downloaded: %.1f MB", output.stat().st_size / 1e6)
         global_download_tracker.complete("dem")
         return True
@@ -46,6 +48,8 @@ def ensure_global_dem() -> bool:
 
 def start_dem_download() -> None:
     def _run():
+        if not _running.acquire(blocking=False):
+            return
         try:
             if ensure_global_dem():
                 # planet_dem_z7 is served directly as the dem_overview source;
@@ -53,5 +57,7 @@ def start_dem_download() -> None:
                 region_merger.write_reload_trigger()
         except Exception:
             logger.exception("Map tile download failed")
+        finally:
+            _running.release()
 
     threading.Thread(target=_run, daemon=True, name="dem-download").start()
