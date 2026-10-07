@@ -458,8 +458,6 @@ export const api = {
   deleteWorkout:           (id)        => { _cacheDel("GET", "/workouts"); return del(`/workouts/${id}`); },
   // Progressive overload
   getProgression:          (d)         => post("/workouts/progression", d),
-  // Session logging
-  logWorkoutSession:       (d)         => post("/workouts/sessions", d),
   getWorkoutSessions:      (p = {})    => get(`/workouts/sessions${qs(p)}`),
 
   // Music library. Uploads are normalised server-side with ffmpeg into a form

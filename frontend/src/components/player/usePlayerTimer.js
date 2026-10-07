@@ -8,15 +8,25 @@ import { useEffect, useReducer, useRef } from "react";
 // Turn a list of `mobility_exercise` steps into a flat list of timed phases.
 // Each stretch becomes one phase, or two ("left"/"right") when `each_side`,
 // and repeats per `sets`. A phase carries everything the player UI needs.
+//
+// A step may carry `rest_seconds` (after each of its holds) and
+// `rest_after_seconds` (once more after its last) — a saved flow's rests, see
+// lib/sessionPlan.js planFlow. Each becomes a `rest` phase; a rest at the very
+// end is dropped, since nothing follows it. `hold` numbers the holds alone, so
+// "Pose 3 of 8" does not count the rests between them.
 export function buildFlowPhases(steps) {
   const phases = [];
+  let hold = 0;
+  const rest = (seconds) => {
+    if (seconds > 0) phases.push({ rest: true, name: "Rest", seconds, side: null, cues: [], muscles: [], hold });
+  };
   (steps || []).forEach((step, stepIndex) => {
     if (step?.type && step.type !== "mobility_exercise") return;
     const sets = Math.max(1, step.sets || 1);
     const dur = step.duration_seconds || step.duration_per_side_sec || 45;
     const sides = step.each_side ? ["left", "right"] : [null];
     for (let set = 0; set < sets; set++) {
-      for (const side of sides) {
+      for (const [si, side] of sides.entries()) {
         phases.push({
           stepIndex,
           name: step.name,
@@ -28,10 +38,14 @@ export function buildFlowPhases(steps) {
           cues: step.cues || [],
           position: step.position || null,
           muscles: step.muscles || step.primary_muscles || [],
+          hold: hold++,
         });
+        const lastHold = set === sets - 1 && si === sides.length - 1;
+        rest((step.rest_seconds || 0) + (lastHold ? step.rest_after_seconds || 0 : 0));
       }
     }
   });
+  while (phases.length && phases[phases.length - 1].rest) phases.pop();
   return phases;
 }
 

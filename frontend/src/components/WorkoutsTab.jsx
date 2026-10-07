@@ -5,6 +5,10 @@
 // MuscleMapPicker, and a drag-and-drop (@dnd-kit) ordered list of exercises.
 // Presentational pieces live in ./workouts/ (SortableExercise, ExercisePickRow,
 // constants); this file owns the tab's data loading and edit state.
+//
+// Any workout can be started here, saved or still in the editor, and runs in
+// the same guided runner as a planned session — a strength session is done at
+// a desk as readily as on the phone, whose Strength screen has the same Start.
 import { PlusIcon } from "./ui/Button";
 import { useState, useEffect, useCallback } from "react";
 import { api } from "../api/client";
@@ -18,6 +22,8 @@ import InfoTooltip from "./ui/InfoTooltip";
 import Checkbox from "./ui/Checkbox";
 import { remove as removeRow, toEditor, fromEditor, isMarker } from "../lib/blocks";
 import ExercisePickRow from "./workouts/ExercisePickRow";
+import StrengthRunner from "./player/StrengthRunner";
+import { planStrength } from "../lib/sessionPlan";
 
 // ── Main Workouts Tab ───────────────────────────────────────────────────────
 
@@ -45,14 +51,23 @@ export default function WorkoutsTab() {
   // Exercise detail popup
   const [detailExercise, setDetailExercise] = useState(undefined);
 
+  // The guided runner, when a workout is being done: { title, exercises, workoutId }.
+  const [running, setRunning] = useState(null);
+  const [progress, setProgress] = useState({});
+  const [imperial, setImperial] = useState(false);
+
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [exData, wos] = await Promise.all([
+      const [exData, wos, prog, settings] = await Promise.all([
         api.getExercises().catch(() => []),
         api.getWorkouts().catch(() => []),
+        api.getStrengthProgress().catch(() => []),
+        api.getSettings().catch(() => null),
       ]);
+      setProgress(Object.fromEntries((prog || []).map(p => [p.exercise_name, p])));
+      setImperial(settings?.units === "imperial");
       const all = (exData || []).map(e => ({ ...e, searchName: (e.name || "").toLowerCase() }));
       setExercises(all);
       setWorkouts(Array.isArray(wos) ? wos : []);
@@ -174,6 +189,23 @@ export default function WorkoutsTab() {
     try { await api.deleteWorkout(id); await load(); } catch {}
   };
 
+  // After a logged session, so the next run prefills from it. Not load():
+  // that swaps the tab for a spinner, which would unmount the open runner.
+  const refreshProgress = () => api.getStrengthProgress()
+    .then(prog => setProgress(Object.fromEntries((prog || []).map(p => [p.exercise_name, p]))))
+    .catch(() => {});
+
+  // Run a workout's rows, prefilled from the template and the last session.
+  const startRun = (title, rows, workoutId = null) => {
+    const library = Object.fromEntries(exercises.map(e => [e.name, e]));
+    const planned = planStrength(rows, { library, progress });
+    if (planned.length === 0) {
+      alert("None of this workout's exercises are in the library any more.");
+      return;
+    }
+    setRunning({ title, exercises: planned, workoutId });
+  };
+
   // Open detail popup for a library exercise or a configured exercise
   const viewExerciseDetail = (ex) => {
     const libEx = exercises.find(e => e.name === ex.exercise_name);
@@ -244,6 +276,7 @@ export default function WorkoutsTab() {
                         {wo.description && <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{wo.description}</p>}
                       </div>
                       <div className="flex gap-1">
+                        <button onClick={() => startRun(wo.name, wo.exercises, wo.id)} className="btn btn-primary btn-sm">Start</button>
                         <button onClick={() => startEdit(wo)} className="btn btn-neutral btn-sm">Edit</button>
                         <button onClick={() => deleteWorkout(wo.id)} className="btn btn-danger btn-sm">Delete</button>
                       </div>
@@ -272,6 +305,12 @@ export default function WorkoutsTab() {
               <div className="flex gap-2">
                 <button onClick={() => { setEditMode(false); setEditingId(null); }}
                   className="btn btn-neutral btn-sm">Cancel</button>
+                {/* Run what is in the editor without saving it, as the phone
+                    runs a picked set of exercises: a one-off session is often
+                    not a routine worth keeping. */}
+                <button onClick={() => startRun(workoutName.trim() || "Quick session", fromEditor(workoutExercises))}
+                  disabled={fromEditor(workoutExercises).length === 0}
+                  className="btn btn-tonal btn-sm">Start now</button>
                 <button onClick={saveWorkout} disabled={saving || !workoutName.trim() || fromEditor(workoutExercises).length === 0}
                   className="btn btn-primary btn-sm">
                   {saving ? "Saving…" : "Save Workout"}
@@ -331,6 +370,17 @@ export default function WorkoutsTab() {
           </div>
         )}
       </div>
+
+      {running && (
+        <StrengthRunner
+          title={running.title}
+          exercises={running.exercises}
+          workoutId={running.workoutId}
+          imperial={imperial}
+          onClose={() => setRunning(null)}
+          onLogged={refreshProgress}
+        />
+      )}
 
       {/* Exercise detail popup */}
       {detailExercise !== undefined && (

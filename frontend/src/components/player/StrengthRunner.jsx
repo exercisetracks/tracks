@@ -1,17 +1,25 @@
 // SPDX-FileCopyrightText: 2026 Hawk Fugagli
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Guided strength session runner: walks the user through each exercise of a
-// generated strength workout, one at a time, with the animation slot, coaching
-// cues, a set checklist prefilled from the prescription, an auto rest timer,
-// and an end-of-session RPE capture. Logging feeds the progression loop via
-// POST /workouts/sessions with the planned_workout_id.
-import { useMemo, useState } from "react";
+// strength workout, one at a time, with the animation slot, coaching cues, a
+// set checklist prefilled from the prescription, an auto rest timer, and an
+// end-of-session RPE capture. Logging feeds the progression loop via
+// POST /workouts/sessions.
+//
+// `exercises` comes from lib/sessionPlan.js planStrength, from either a
+// generated plan session (pass `plannedWorkoutId`, which the log completes) or
+// a saved workout run from the library (pass `workoutId`, or neither for an
+// unsaved draft). Circuits and supersets move from member to member as each
+// set is ticked, as on the phone (afterSetDone).
+import { useState } from "react";
 import { api } from "../../api/client";
 import { kgToDisplay, displayToKg, weightUnit } from "../../lib/weight";
 import MovementSlot from "./MovementSlot";
 import { useCountdown } from "./usePlayerTimer";
 import { CompletionScreen } from "./FlowPlayer";
 import { useWakeLock } from "./useWakeLock";
+import { RpeChips } from "./FlowPlayer";
+import { afterSetDone } from "../../lib/sessionPlan";
 
 // Build the initial editable set-grid from the workout's strength steps.
 function initSets(exercises, imperial) {
@@ -25,11 +33,9 @@ function initSets(exercises, imperial) {
   );
 }
 
-export default function StrengthRunner({ workout, imperial, onClose, onLogged }) {
-  const exercises = useMemo(
-    () => (workout.steps || []).filter((s) => s.type === "strength_exercise"),
-    [workout.steps],
-  );
+const GROUP_LABEL = { superset: "Superset", circuit: "Circuit", repeat: "Repeat" };
+
+export default function StrengthRunner({ title, exercises, plannedWorkoutId = null, workoutId = null, imperial, onClose, onLogged }) {
   const [exIdx, setExIdx] = useState(0);
   const [grid, setGrid] = useState(() => initSets(exercises, imperial));
   const [phase, setPhase] = useState("run"); // run | summary | done
@@ -46,7 +52,7 @@ export default function StrengthRunner({ workout, imperial, onClose, onLogged })
 
   if (exercises.length === 0) {
     return (
-      <Overlay title={workout.title} onClose={onClose}>
+      <Overlay title={title} onClose={onClose}>
         <div className="flex-1 flex items-center justify-center text-slate-500">
           This workout has no strength exercises to run.
         </div>
@@ -63,7 +69,21 @@ export default function StrengthRunner({ workout, imperial, onClose, onLogged })
   function toggleDone(si) {
     const nowDone = !sets[si].done;
     patchSet(si, { done: nowDone });
-    if (nowDone && ex.rest_seconds) rest.start(ex.rest_seconds);
+    if (!nowDone) return;
+    // The grid as it is once this set counts as done; state has not caught up.
+    const done = (i, s) => (i === exIdx && s === si) || !!grid[i]?.[s]?.done;
+    const { moveTo, rest: seconds } = afterSetDone(exercises, exIdx, si, done);
+    if (seconds > 0) rest.start(seconds);
+    if (moveTo != null) setExIdx(moveTo);
+  }
+
+  const anyDone = grid.some((exSets) => exSets.some((s) => s.done && Number(s.reps) > 0));
+
+  // Work ticked off but not yet logged is lost on close, so ask first. A
+  // session with nothing done is just a preview being shut.
+  function close() {
+    if (phase !== "done" && anyDone && !confirm("Leave without logging this session?")) return;
+    onClose?.();
   }
 
   async function submit() {
@@ -71,7 +91,8 @@ export default function StrengthRunner({ workout, imperial, onClose, onLogged })
     setError(null);
     try {
       const payload = {
-        planned_workout_id: workout.id,
+        planned_workout_id: plannedWorkoutId,
+        workout_id: workoutId,
         session_rpe: sessionRpe,
         exercises: exercises.map((e, i) => ({
           exercise_name: e.name,
@@ -96,7 +117,7 @@ export default function StrengthRunner({ workout, imperial, onClose, onLogged })
 
   if (phase === "done") {
     return (
-      <Overlay title={workout.title} onClose={onClose}>
+      <Overlay title={title} onClose={close}>
         <CompletionScreen onClose={onClose} label="Session logged — great work." />
       </Overlay>
     );
@@ -104,16 +125,11 @@ export default function StrengthRunner({ workout, imperial, onClose, onLogged })
 
   if (phase === "summary") {
     return (
-      <Overlay title={workout.title} onClose={onClose}>
+      <Overlay title={title} onClose={close}>
         <div className="flex-1 flex flex-col items-center justify-center gap-5 px-5 max-w-sm mx-auto w-full text-center">
           <h2 className="text-lg font-bold text-slate-800 dark:text-white">How hard was that session?</h2>
           <p className="text-sm text-slate-500 dark:text-slate-400">Rate your overall effort (RPE).</p>
-          <div className="grid grid-cols-5 gap-2 w-full">
-            {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
-              <button key={n} type="button" aria-pressed={sessionRpe === n} onClick={() => setSessionRpe(n)}
-                className="chip h-11 font-semibold tabular-nums">{n}</button>
-            ))}
-          </div>
+          <RpeChips value={sessionRpe} onChange={setSessionRpe} />
           {error && <p className="text-sm text-red-500">{error}</p>}
           <div className="flex gap-3 w-full mt-2">
             <button onClick={() => setPhase("run")}
@@ -134,9 +150,9 @@ export default function StrengthRunner({ workout, imperial, onClose, onLogged })
 
   return (
     <Overlay
-      title={workout.title}
+      title={title}
       subtitle={`Exercise ${exIdx + 1} of ${exercises.length}`}
-      onClose={onClose}
+      onClose={close}
     >
       <div className="flex-1 overflow-y-auto px-4 py-3.5 max-w-md mx-auto w-full space-y-4">
         <div className="max-w-xs mx-auto w-full">
@@ -146,7 +162,7 @@ export default function StrengthRunner({ workout, imperial, onClose, onLogged })
         <div className="text-center">
           <h2 className="text-xl font-bold text-slate-800 dark:text-white">{ex.name}</h2>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-            {ex.sets}×{ex.reps}
+            {ex.group ? `${GROUP_LABEL[ex.group.kind] || "Group"} · ${ex.sets} rounds` : `${ex.sets}×${ex.reps}`}
             {ex.target_rpe ? ` · RPE ${ex.target_rpe}` : ""}
           </p>
         </div>
@@ -211,6 +227,7 @@ export default function StrengthRunner({ workout, imperial, onClose, onLogged })
           </button>
         ) : (
           <button onClick={() => { rest.stop(); setPhase("summary"); }}
+            disabled={!anyDone} title={anyDone ? undefined : "Tick off at least one set first"}
             className="btn btn-primary flex-1">
             Finish session
           </button>

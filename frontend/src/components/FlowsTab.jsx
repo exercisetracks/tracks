@@ -4,6 +4,11 @@
 // "flows" (ordered sequences of stretches) with tag filtering, and provides the
 // create/edit form — name, tag chips, and a MuscleMapPicker to record which
 // muscle groups a flow targets. Opens individual entries in StretchDetailModal.
+//
+// Any flow can be played here, saved or still in the editor, in the same
+// guided player as a planned one. Finishing logs a workout session naming the
+// flow — the phone's record of a flow done (FlexibilityViewModel), so both
+// clients see the same history.
 import { useState, useEffect, useCallback } from "react";
 import { api } from "../api/client";
 import { MuscleMapPicker } from "./activity/charts/MuscleMap";
@@ -14,6 +19,8 @@ import InfoTooltip from "./ui/InfoTooltip";
 import Checkbox from "./ui/Checkbox";
 import { remove as removeRow, toEditor, fromEditor, isMarker } from "../lib/blocks";
 import { PlusIcon } from "./ui/Button";
+import FlowPlayer from "./player/FlowPlayer";
+import { planFlow } from "../lib/sessionPlan";
 
 const VALID_TAGS = [
   "upper_body", "lower_body", "full_body", "mobility", "recovery",
@@ -80,6 +87,9 @@ export default function FlowsTab() {
   const [editingId, setEditingId] = useState(null);
 
   const [detailStretch, setDetailStretch] = useState(undefined);
+
+  // The guided player, when a flow is being done: { name, steps }.
+  const [playing, setPlaying] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -180,6 +190,16 @@ export default function FlowsTab() {
     setSaving(false);
   };
 
+  const startFlow = (name, rows) => {
+    const steps = planFlow(rows, Object.fromEntries(stretches.map(s => [s.name, s])));
+    if (steps.length === 0) return;
+    setPlaying({ name, steps });
+  };
+
+  // No exercises on the log: a stretch has no weight or reps, and the session
+  // endpoint's progression machinery is for lifts. The name is the record.
+  const logFlow = (rpe) => api.logWorkoutSession({ session_rpe: rpe, notes: `Mobility: ${playing.name}` });
+
   const deleteFlow = async (id) => {
     if (!confirm("Delete this flow?")) return;
     try { await api.deleteFlow(id); await load(); } catch {}
@@ -250,6 +270,7 @@ export default function FlowsTab() {
                         {flow.description && <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{flow.description}</p>}
                       </div>
                       <div className="flex gap-1">
+                        <button onClick={() => startFlow(flow.name, flow.stretches)} className="btn btn-primary btn-sm">Start</button>
                         <button onClick={() => startEdit(flow)} className="btn btn-neutral btn-sm">Edit</button>
                         <button onClick={() => deleteFlow(flow.id)} className="btn btn-danger btn-sm">Delete</button>
                       </div>
@@ -278,6 +299,11 @@ export default function FlowsTab() {
               <div className="flex gap-2">
                 <button onClick={() => { setEditMode(false); setEditingId(null); }}
                   className="btn btn-neutral btn-sm">Cancel</button>
+                {/* Play what is in the editor without saving it, as the phone
+                    plays a picked set of stretches as a "Quick flow". */}
+                <button onClick={() => startFlow(flowName.trim() || "Quick flow", fromEditor(flowStretches))}
+                  disabled={fromEditor(flowStretches).filter(s => s.item_kind !== "rest").length === 0}
+                  className="btn btn-tonal btn-sm">Start now</button>
                 <button onClick={saveFlow} disabled={saving || !flowName.trim() || fromEditor(flowStretches).length === 0}
                   className="btn btn-primary btn-sm">
                   {saving ? "Saving…" : "Save Flow"}
@@ -362,6 +388,15 @@ export default function FlowsTab() {
           </div>
         )}
       </div>
+
+      {playing && (
+        <FlowPlayer
+          title={playing.name}
+          steps={playing.steps}
+          onClose={() => setPlaying(null)}
+          onLog={logFlow}
+        />
+      )}
 
       {detailStretch !== undefined && (
         <StretchDetailModal

@@ -5,18 +5,19 @@
 // complete" action (hidden for races). Presentational — the parent owns the
 // selected workout and the complete/close callbacks.
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { workoutColor, fmtDur, fmtDist } from "./constants";
 import StepRow from "./StepRow";
 import FlowPlayer from "../player/FlowPlayer";
 import StrengthRunner from "../player/StrengthRunner";
+import { planStrength } from "../../lib/sessionPlan";
 
 const PHASE_ORDER = ["warmup", "main", "finisher"];
 const PHASE_LABEL = { warmup: "Warm-up", main: "Main", finisher: "Finisher" };
 
 export default function WorkoutDetail({ workout, onClose, onMarkComplete, onSessionLogged, imperial = false }) {
   const colorClass = workoutColor(workout);
-  const steps = workout.steps ?? [];
+  const steps = useMemo(() => workout.steps ?? [], [workout.steps]);
   const isStrength = workout.workout_type === "strength" || workout.workout_type === "mobility";
   // Which guided player is open, if any.
   const [player, setPlayer] = useState(null); // null | "strength" | "flow"
@@ -25,6 +26,8 @@ export default function WorkoutDetail({ workout, onClose, onMarkComplete, onSess
   const hasStrengthSteps = steps.some((s) => s.type === "strength_exercise");
   const hasMobilitySteps = steps.some((s) => s.type === "mobility_exercise");
   const runnable = hasStrengthSteps || hasMobilitySteps;
+  // Stable across renders: the flow player restarts when its steps change.
+  const flowSteps = useMemo(() => steps.filter((s) => s.type === "mobility_exercise"), [steps]);
 
   // Archetype sessions tag each step with a phase — group them for display.
   const hasPhases = steps.some((s) => s.phase && s.phase !== "main");
@@ -37,7 +40,9 @@ export default function WorkoutDetail({ workout, onClose, onMarkComplete, onSess
   if (player === "strength") {
     return (
       <StrengthRunner
-        workout={workout}
+        title={workout.title}
+        exercises={planStrength(steps)}
+        plannedWorkoutId={workout.id}
         imperial={imperial}
         onClose={() => setPlayer(null)}
         onLogged={() => { setPlayer(null); onSessionLogged?.(); }}
@@ -48,7 +53,7 @@ export default function WorkoutDetail({ workout, onClose, onMarkComplete, onSess
     return (
       <FlowPlayer
         title={workout.title}
-        steps={steps.filter((s) => s.type === "mobility_exercise")}
+        steps={flowSteps}
         onClose={() => setPlayer(null)}
         onComplete={() => { if (!workout.is_complete) onMarkComplete?.(workout); }}
       />
