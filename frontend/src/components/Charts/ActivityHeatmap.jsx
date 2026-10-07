@@ -35,7 +35,8 @@ function Legend({ mode }) {
   const stops  = isGrad ? ["#10b981","#ffffff","#8b5cf6"] : ["#2962ff","#10b981","#fbbf24","#ef4444"];
 
   return (
-    <div className="absolute bottom-6 right-2 z-[1000] pointer-events-none" style={{ minWidth: 130 }}>
+    // bottom-12: clear of the map credits' "i" button in the corner below.
+    <div className="absolute bottom-12 right-2 z-[1000] pointer-events-none" style={{ minWidth: 130 }}>
       <div className="bg-slate-900/80 backdrop-blur rounded-lg px-2.5 py-1.5 text-xs text-white">
         <div className="h-2 rounded-full mb-1" style={{ background: `linear-gradient(to right, ${stops.join(", ")})` }} />
         <div className="flex justify-between gap-3">{labels.map(l => <span key={l}>{l}</span>)}</div>

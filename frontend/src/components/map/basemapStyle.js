@@ -26,7 +26,10 @@ const PALETTES = {
     scrub: "#dee6c0", rock: "#e7e1d2", glacier: "#eef3f5", wetland: "#d3e3da",
     sand: "#efe7cd", urban: "#e9e5dd", park: "#cfe6bf",
     roadMajor: "#ffffff", roadCasing: "#d9d3c4", roadMinor: "#efeae0",
-    trail: "#6b5b47", trailCasing: "rgba(255,255,255,0.65)",
+    // Trails sit under the heatmap, and a heatmap is mostly trails: a dark,
+    // thick dashed line here competed with the activity drawn along it. Kept
+    // legible as a trail, taken back toward the ground colour.
+    trail: "#a49a88", trailCasing: "rgba(255,255,255,0.4)",
     boundary: "#8b8472", label: "#454545", labelHalo: "#f4f1ea",
     hsShadow: "#8a7a5c", hsHighlight: "#fffdf7", hsAccent: "#9a8a6a", hsExag: 0.32,
   },
@@ -36,7 +39,7 @@ const PALETTES = {
     scrub: "#1d2519", rock: "#26262a", glacier: "#28343f", wetland: "#16241f",
     sand: "#2a2820", urban: "#20242b", park: "#18281a",
     roadMajor: "#434956", roadCasing: "#262b33", roadMinor: "#2b313a",
-    trail: "#9aa3b2", trailCasing: "rgba(0,0,0,0.4)",
+    trail: "#626b79", trailCasing: "rgba(0,0,0,0.25)",
     boundary: "#566072", label: "#c4cad4", labelHalo: "#0c0f13",
     hsShadow: "#000000", hsHighlight: "#3a4250", hsAccent: "#000000", hsExag: 0.3,
   },
@@ -217,7 +220,7 @@ export function buildBasemapStyle(theme = "light") {
         layout: { "line-cap": "round", "line-join": "round" },
         paint: {
           "line-color": c.trailCasing,
-          "line-width": ["interpolate", ["exponential", 1.5], ["zoom"], 12, 2.0, 14, 3.4, 16, 6],
+          "line-width": ["interpolate", ["exponential", 1.5], ["zoom"], 12, 1.2, 14, 2.0, 16, 3.6],
           "line-opacity": ["interpolate", ["linear"], ["zoom"], 12, 0, 12.5, 1],
         },
       },
@@ -227,9 +230,9 @@ export function buildBasemapStyle(theme = "light") {
         layout: { "line-cap": "round", "line-join": "round" },
         paint: {
           "line-color": c.trail,
-          "line-width": ["interpolate", ["exponential", 1.5], ["zoom"], 12, 1.0, 14, 1.9, 16, 3.2],
+          "line-width": ["interpolate", ["exponential", 1.5], ["zoom"], 12, 0.6, 14, 1.1, 16, 1.9],
           "line-dasharray": [2.2, 1.6],
-          "line-opacity": ["interpolate", ["linear"], ["zoom"], 12, 0, 12.5, 0.95],
+          "line-opacity": ["interpolate", ["linear"], ["zoom"], 12, 0, 12.5, 0.8],
         },
       },
 
@@ -242,8 +245,8 @@ export function buildBasemapStyle(theme = "light") {
         layout: { "line-cap": "round", "line-join": "round" },
         paint: {
           "line-color": c.trailCasing,
-          "line-width": ["interpolate", ["exponential", 1.5], ["zoom"], 11, 1.6, 14, 3.2, 16, 5],
-          "line-opacity": ["interpolate", ["linear"], ["zoom"], 10, 0, 11, 0.6, 16, 0.7],
+          "line-width": ["interpolate", ["exponential", 1.5], ["zoom"], 11, 1.0, 14, 1.9, 16, 3],
+          "line-opacity": ["interpolate", ["linear"], ["zoom"], 10, 0, 11, 0.5, 16, 0.6],
         },
       },
       {
@@ -253,9 +256,9 @@ export function buildBasemapStyle(theme = "light") {
         layout: { "line-cap": "round", "line-join": "round" },
         paint: {
           "line-color": c.trail,
-          "line-width": ["interpolate", ["exponential", 1.5], ["zoom"], 10, 0.7, 13, 1.7, 16, 3.2],
+          "line-width": ["interpolate", ["exponential", 1.5], ["zoom"], 10, 0.45, 13, 1.0, 16, 1.9],
           "line-dasharray": [3, 2],
-          "line-opacity": ["interpolate", ["linear"], ["zoom"], 9.5, 0, 10, 0.6, 13, 0.92, 16, 1],
+          "line-opacity": ["interpolate", ["linear"], ["zoom"], 9.5, 0, 10, 0.5, 13, 0.75, 16, 0.85],
         },
       },
 

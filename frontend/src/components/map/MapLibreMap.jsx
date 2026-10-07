@@ -28,7 +28,7 @@ export default function MapLibreMap({
   // top-3 right-3 (ActivityHeatmap's mode/sport/date box, ActivityRoute's colour
   // picker), which rendered on top of them. Top-left is free on all three.
   // Attribution stays bottom-right on purpose — the legends already clear it by
-  // sitting at bottom-6, and ActivityRoute's legend is itself bottom-LEFT, so
+  // sitting at bottom-12, and ActivityRoute's legend is itself bottom-LEFT, so
   // moving attribution there would just trade one overlap for another.
   // Both overridable for callers whose chrome lives elsewhere.
   navPosition = "top-left",
@@ -70,6 +70,7 @@ export default function MapLibreMap({
       map.addControl(new maplibregl.NavigationControl({ showCompass: false }), navPosition);
     }
     map.addControl(new maplibregl.AttributionControl({ compact: true }), attributionPosition);
+    startAttributionCollapsed(map);
     // These maps often mount inside a tab / a flex/grid card whose height settles
     // a tick after init. Defer onReady until the container actually has a size,
     // otherwise an early fitBounds computes the wrong zoom (and the map renders a
@@ -98,5 +99,32 @@ export default function MapLibreMap({
     map.once("styledata", () => onReadyRef.current?.(map));
   }, [theme]);
 
-  return <div ref={containerRef} className={className} style={style} />;
+  // The theme on the container too, for the controls MapLibre draws itself
+  // (index.css): the map's theme, not the page's, decides how they look.
+  const themed = `${className} ${theme === "dark" ? "map-theme-dark" : "map-theme-light"}`.trim();
+  return <div ref={containerRef} className={themed} style={style} />;
+}
+
+/**
+ * Collapse the credits to their "i" button the first time MapLibre opens them.
+ *
+ * A compact attribution control opens itself as soon as the first source
+ * reports its credits, and stays open until the map is dragged — a strip of
+ * text over the corner of every small map. It is collapsed exactly the way
+ * MapLibre's own button does it (the class, plus `open` on the <details>), so
+ * a click on "i" still expands it.
+ */
+function startAttributionCollapsed(map) {
+  const el = map.getContainer().querySelector(".maplibregl-ctrl-attrib");
+  if (!el) return;
+  const collapse = () => {
+    if (!el.classList.contains("maplibregl-compact-show")) return false;
+    el.classList.remove("maplibregl-compact-show");
+    el.setAttribute("open", "");
+    return true;
+  };
+  if (collapse()) return;
+  const observer = new MutationObserver(() => { if (collapse()) observer.disconnect(); });
+  observer.observe(el, { attributes: true, attributeFilter: ["class"] });
+  map.once("remove", () => observer.disconnect());
 }

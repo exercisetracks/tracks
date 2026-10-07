@@ -151,6 +151,26 @@ input[type="range"].appearance-none::-moz-range-thumb {
   position: absolute;
 }
 
+/* The credits ("i") on a dark map: MapLibre draws a white pill with a black
+   glyph whatever the basemap, which on a dark map was a white box of pale,
+   unreadable links. `map-theme-dark` is set by MapLibreMap from the map's own
+   theme. */
+.map-theme-dark .maplibregl-ctrl.maplibregl-ctrl-attrib {
+  background-color: rgb(15 23 42 / 0.8);
+  color: rgb(203 213 225);
+}
+.map-theme-dark .maplibregl-ctrl-attrib.maplibregl-compact {
+  background-color: rgb(15 23 42 / 0.85);
+}
+.map-theme-dark .maplibregl-ctrl-attrib a {
+  color: rgb(203 213 225);
+}
+.map-theme-dark .maplibregl-ctrl-attrib-button {
+  /* The glyph is a black SVG background; inverted it is white on slate. */
+  filter: invert(1);
+  background-color: transparent;
+}
+
 /* ── MapLibre Geocoder width + dark mode overrides ──────────────────────── */
 .maplibregl-ctrl-geocoder {
   min-width: 600px;
