@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 package com.tracks.core.backup
 
+import com.tracks.core.replica.Change
 import com.tracks.core.replica.LinkResult
 import com.tracks.core.replica.ServerIdentity
 import com.tracks.core.replica.newReplica
@@ -17,28 +18,84 @@ class BackupTest {
     private var clock = 1_000_000L
     private val now = { clock }
 
+    /** Collects what a backup writes, in order. */
+    private class Collected : ByteSink {
+        val chunks = mutableListOf<ByteArray>()
+        override fun write(bytes: ByteArray, offset: Int, length: Int) {
+            chunks += bytes.copyOfRange(offset, offset + length)
+        }
+        fun bytes(): ByteArray = chunks.fold(ByteArray(0)) { a, b -> a + b }
+    }
+
+    private suspend fun encode(files: Map<String, ByteArray?>, rows: List<Change> = emptyList(), at: Long = 0) =
+        Collected().also { BackupFormat.write(it, null, rows, files.keys.toList(), at) { name -> files[name] } }.bytes()
+
+    private suspend fun readAll(bytes: ByteArray): Pair<BackupReader, List<Pair<String, ByteArray>>> {
+        val reader = BackupReader(ByteArraySource(bytes))
+        val files = mutableListOf<Pair<String, ByteArray>>()
+        reader.forEachFile { name, b -> files += name to b }
+        return reader to files
+    }
+
     @Test
-    fun a_payload_survives_a_round_trip_byte_for_byte() = runTest {
+    fun a_backup_survives_a_round_trip_byte_for_byte() = runTest {
         val (source, _) = newReplica(now, 1)
         source.create("waypoint", mapOf("name" to str("Camp 2")))
-        val payload = BackupPayload(
-            binding = null,
-            rows = source.allRows().map { it.asChange() },
-            files = listOf("aa" to byteArrayOf(1, 2, 3), "bb" to ByteArray(0)),
-            createdAtMs = 42,
-        )
-        val back = BackupPayload.decode(payload.encode())
-        assertEquals(payload.rows, back.rows)
-        assertEquals(listOf("aa", "bb"), back.files.map { it.first })
-        assertContentEquals(byteArrayOf(1, 2, 3), back.files[0].second)
+        val rows = source.allRows().map { it.asChange() }
+        val (back, files) = readAll(encode(mapOf("aa" to byteArrayOf(1, 2, 3), "bb" to ByteArray(0)), rows, at = 42))
+        assertEquals(rows, back.rows)
+        assertEquals(listOf("aa", "bb"), files.map { it.first })
+        assertContentEquals(byteArrayOf(1, 2, 3), files[0].second)
         assertEquals(42, back.createdAtMs)
+    }
+
+    /**
+     * Each file reaches the sink before the next is read. Holding them all
+     * first is what ran a phone with a 134 MB history out of memory.
+     */
+    @Test
+    fun a_backup_is_written_one_file_at_a_time() = runTest {
+        val out = Collected()
+        val written = mutableListOf<Int>()
+        BackupFormat.write(out, null, emptyList(), listOf("a", "b", "c"), 0) {
+            written += out.chunks.size
+            ByteArray(10)
+        }
+        // manifest length + manifest, then a length and a body per file.
+        assertEquals(listOf(2, 4, 6), written)
+    }
+
+    /** A blob this phone cannot decrypt is written empty, and skipped rather than failing a restore. */
+    @Test
+    fun an_unreadable_file_is_written_empty() = runTest {
+        val (_, files) = readAll(encode(mapOf("aa" to null, "bb" to byteArrayOf(7))))
+        assertEquals(0, files[0].second.size)
+        assertContentEquals(byteArrayOf(7), files[1].second)
     }
 
     /** A cut-off file must say so, not restore half a history as if it were whole. */
     @Test
-    fun a_truncated_payload_is_refused() {
-        val bytes = BackupPayload(null, emptyList(), listOf("aa" to ByteArray(100)), 0).encode()
-        assertFailsWith<BackupFormatException> { BackupPayload.decode(bytes.copyOf(bytes.size - 10)) }
+    fun a_truncated_backup_is_refused() = runTest {
+        val bytes = encode(mapOf("aa" to ByteArray(100)))
+        assertFailsWith<BackupFormatException> { readAll(bytes.copyOf(bytes.size - 10)) }
+    }
+
+    @Test
+    fun trailing_data_is_refused() = runTest {
+        val bytes = encode(mapOf("aa" to ByteArray(100)))
+        assertFailsWith<BackupFormatException> { readAll(bytes + byteArrayOf(0)) }
+    }
+
+    /** A source that hands back a few bytes at a time, as a stream may, reads the same. */
+    @Test
+    fun short_reads_are_reassembled() = runTest {
+        val bytes = encode(mapOf("aa" to ByteArray(1000) { it.toByte() }))
+        val whole = ByteArraySource(bytes)
+        val trickle = ByteSource { into, off, len -> whole.read(into, off, minOf(len, 3)) }
+        val reader = BackupReader(trickle)
+        var got: ByteArray? = null
+        reader.forEachFile { _, b -> got = b }
+        assertContentEquals(ByteArray(1000) { it.toByte() }, got)
     }
 
     @Test

@@ -88,7 +88,11 @@ fun BackupSection(container: AppContainer, linked: Boolean, onRestored: () -> Un
     pending?.let { p ->
         PassphraseDialog(
             restoring = p.restoring,
-            onDismiss = { pending = null },
+            onDismiss = {
+                pending = null
+                // The picker already created the file; cancelling must not leave it behind.
+                if (!p.restoring) scope.launch { container.discardBackup(p.uri) }
+            },
             onConfirm = { pass ->
                 pending = null
                 working = true

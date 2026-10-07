@@ -260,20 +260,65 @@ class AppContainer(private val context: Context) {
      * Write a passphrase-sealed backup to [uri] (a document the user picked
      * through the Storage Access Framework, so it can live on a USB stick or a
      * cloud folder of their choosing — never somewhere this app decides).
+     *
+     * Streamed: one FIT file in memory at a time, however long the history.
+     * On any failure the document is removed (see [com.tracks.app.backup.writeOrDiscard]).
      */
     suspend fun writeBackup(uri: android.net.Uri, passphrase: CharArray) = withContext(Dispatchers.IO) {
-        val sealed = com.tracks.app.backup.BackupCrypto.seal(backup.snapshot().encode(), passphrase)
-        context.contentResolver.openOutputStream(uri, "wt")!!.use { it.write(sealed) }
+        com.tracks.app.backup.writeOrDiscard(
+            open = { context.contentResolver.openOutputStream(uri, "wt") ?: error("Could not open the file.") },
+            // Blocking, not discardBackup: after a cancellation a suspending
+            // call would throw before deleting anything.
+            discard = { discardBackupNow(uri) },
+        ) { file ->
+            val sealed = com.tracks.app.backup.BackupCrypto.sealing(file, passphrase)
+            backup.write { bytes, offset, length -> sealed.write(bytes, offset, length) }
+            sealed.finish()
+        }
+        markBackedUp()
+    }
+
+    /**
+     * Remove a backup document that never got its backup: the picker created
+     * it, and then the write failed or the passphrase was cancelled. Not every
+     * provider can delete; one that cannot is at least emptied, so what stays
+     * is plainly not a backup rather than a cut-off one that looks whole.
+     */
+    suspend fun discardBackup(uri: android.net.Uri) = withContext(Dispatchers.IO) { discardBackupNow(uri) }
+
+    private fun discardBackupNow(uri: android.net.Uri) {
+        val deleted = runCatching { android.provider.DocumentsContract.deleteDocument(context.contentResolver, uri) }
+            .getOrDefault(false)
+        if (!deleted) runCatching { context.contentResolver.openOutputStream(uri, "wt")?.close() }
+    }
+
+    /**
+     * Restore a backup from [uri]; returns how many FIT files were restored.
+     * Throws on a wrong passphrase or a damaged file — before changing anything,
+     * because the file is read through once to check it before it is applied
+     * (see [com.tracks.core.backup.BackupService.verify]).
+     */
+    suspend fun restoreBackup(uri: android.net.Uri, passphrase: CharArray): Int = withContext(Dispatchers.IO) {
+        suspend fun <T> reading(block: suspend (com.tracks.core.backup.ByteSource) -> T): T {
+            val file = context.contentResolver.openInputStream(uri) ?: error("Could not open the file.")
+            return com.tracks.app.backup.BackupCrypto.opening(file.buffered(), passphrase).use { plain ->
+                block { into, offset, length -> plain.read(into, offset, length) }
+            }
+        }
+        reading { backup.verify(it) }
+        val restored = reading { backup.restore(it) }
+        refreshPreferences()
+        // The phone now holds exactly what that file holds, so the file is a
+        // current backup of it: without this, a fresh install restored from a
+        // backup is told at once that it has none and should make one.
+        markBackedUp()
+        restored
+    }
+
+    private fun markBackedUp() {
         val at = System.currentTimeMillis()
         prefs().edit().putLong(KEY_LAST_BACKUP, at).apply()
         lastBackupAt.value = at
-    }
-
-    /** Restore a backup from [uri]; returns how many FIT files were restored. Throws on a wrong passphrase. */
-    suspend fun restoreBackup(uri: android.net.Uri, passphrase: CharArray): Int = withContext(Dispatchers.IO) {
-        val sealed = context.contentResolver.openInputStream(uri)!!.use { it.readBytes() }
-        val payload = com.tracks.core.backup.BackupPayload.decode(com.tracks.app.backup.BackupCrypto.open(sealed, passphrase))
-        backup.restore(payload).also { refreshPreferences() }
     }
 
     /** Ticks off the planned workout each imported activity satisfies. */
