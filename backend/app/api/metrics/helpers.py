@@ -15,7 +15,7 @@ from datetime import date, timedelta
 
 from sqlalchemy.orm import Session
 
-from app.calculators.local_day import activity_local_date, local_day_start
+from app.calculators.local_day import activity_local_date, local_day_start, local_today
 from app.calculators.training_load import calculate_ctl_atl_tsb, estimate_tss, load_calibration
 from app.models.activity import Activity, UserDevice
 from app.models.user_settings import UserSettings
@@ -99,12 +99,20 @@ def _full_calibration(db: Session, user_id: int, us, threshold_hr, mtb_disciplin
 
 def _compute_tload_points(rows, threshold_hr, mtb_discipline: str | None = None,
                           calibration: dict[str, float] | None = None,
-                          tz_name: str | None = None) -> list[dict]:
+                          tz_name: str | None = None,
+                          before: date | None = None,
+                          today: date | None = None) -> list[dict]:
     """Shared computation: TSS bucketing → CTL/ATL/TSB → 7-day ctl_ramp.
 
     ``calibration`` defaults to the one ``rows`` give, which is right only
     when ``rows`` is the whole history; a windowed caller passes the full one.
     Each activity's load falls on its day in ``tz_name``, the account's zone.
+
+    The series runs through today (or ``before``, if that is earlier), not just
+    to the last activity: fitness and fatigue keep decaying on rest days, and
+    a series that stopped at the last workout left a gap at the right of the
+    chart and reported a stale form until the next one was recorded.
+    ``today`` defaults to the account's; the spec fixtures pin it.
     """
     if not rows:
         return []
@@ -114,7 +122,11 @@ def _compute_tload_points(rows, threshold_hr, mtb_discipline: str | None = None,
     for r in rows:
         d = activity_local_date(r.started_at, tz_name)
         tss_by_date[d] = tss_by_date.get(d, 0.0) + estimate_tss(r, threshold_hr, mtb_discipline, calibration)
-    daily_loads = [{"date": d, "tss": tss} for d, tss in sorted(tss_by_date.items())]
+    end = today or local_today(tz_name)
+    if before is not None and before < end:
+        end = before
+    tss_by_date.setdefault(end, 0.0)
+    daily_loads = [{"date": d, "tss": tss} for d, tss in sorted(tss_by_date.items()) if d <= end]
     points = calculate_ctl_atl_tsb(daily_loads)
     ctl_by_date = {p["date"]: p["ctl"] for p in points}
     for p in points:

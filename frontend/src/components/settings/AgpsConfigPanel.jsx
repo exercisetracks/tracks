@@ -3,6 +3,7 @@
 // AGPS configuration fields (source / custom URL / watch path / refresh
 // interval), expanded inline under the AGPS row of Privacy & Connectivity.
 // The enable toggle lives in that row; these fields only matter while it's on.
+import InfoTooltip from "../ui/InfoTooltip";
 import { useEffect, useState } from "react";
 import { api } from "../../api/client";
 import { SaveStatusText, useSaveStatus } from "./primitives";
@@ -53,8 +54,13 @@ export default function AgpsConfigPanel({ settings, onSaved }) {
   return (
     <div className="px-2.5 py-2.5 space-y-3 bg-slate-50/70 dark:bg-slate-800/30">
       <div>
-        <label className="field-label">
+        <label className="field-label inline-flex items-center gap-1.5">
           Data source
+          {source === "garmin" && (
+            <InfoTooltip label="About Garmin's EPO data">
+              Downloads from Garmin's EPO server (Sony chipset, covers GPS/GLONASS/Galileo/QZSS, 7-day window).
+            </InfoTooltip>
+          )}
         </label>
         <select
           value={source}
@@ -65,11 +71,6 @@ export default function AgpsConfigPanel({ settings, onSaved }) {
             <option key={s.value} value={s.value}>{s.label}</option>
           ))}
         </select>
-        {source === "garmin" && (
-          <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
-            Downloads from Garmin's EPO server (Sony chipset, covers GPS/GLONASS/Galileo/QZSS, 7-day window).
-          </p>
-        )}
       </div>
 
       {source === "custom" && (
@@ -89,8 +90,11 @@ export default function AgpsConfigPanel({ settings, onSaved }) {
       )}
 
       <div>
-        <label className="field-label">
+        <label className="field-label inline-flex items-center gap-1.5">
           Watch file path
+          <InfoTooltip label="About the watch file path">
+            Default works for most modern Garmin watches. Change only if your model uses a different path.
+          </InfoTooltip>
         </label>
         <input
           type="text"
@@ -99,14 +103,12 @@ export default function AgpsConfigPanel({ settings, onSaved }) {
           onBlur={() => save({ agps_epo_path: epoPath })}
           className={inputCls + " font-mono"}
         />
-        <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
-          Default works for most modern Garmin watches. Change only if your model uses a different path.
-        </p>
       </div>
 
       <div>
-        <label className="field-label">
+        <label className="field-label inline-flex items-center gap-1.5">
           Refresh interval (hours)
+          <InfoTooltip label="About the refresh interval">CPE data is valid for ~7 days. 24 h is a good default.</InfoTooltip>
         </label>
         <input
           type="number"
@@ -117,9 +119,6 @@ export default function AgpsConfigPanel({ settings, onSaved }) {
           onBlur={() => save({ agps_max_age_hours: maxAge })}
           className={inputCls + " w-32"}
         />
-        <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
-          CPE data is valid for ~7 days. 24 h is a good default.
-        </p>
       </div>
 
       <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">

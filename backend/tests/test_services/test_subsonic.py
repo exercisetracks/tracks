@@ -390,3 +390,31 @@ def test_recently_played_is_unknown_on_a_server_without_navidromes_api(monkeypat
     _navidrome(monkeypatch, [], login_status=404)
 
     assert client.recently_played_count() is None
+
+
+# ── Discovery from a partial address ──────────────────────────────────────────
+
+def test_a_bare_lan_address_gets_both_schemes_and_the_default_ports():
+    c = subsonic.candidates_for("10.0.0.5")
+    assert c[:2] == ["https://10.0.0.5", "https://10.0.0.5:4533"]
+    assert "http://10.0.0.5:4533" in c
+
+
+def test_an_address_with_a_scheme_and_port_is_tried_as_typed():
+    assert subsonic.candidates_for("http://box:4533/") == ["http://box:4533"]
+
+
+def test_discovery_finds_navidrome_on_its_default_port(monkeypatch):
+    """The case the form exists for: someone types the box's IP and nothing else."""
+    def handler(request):
+        if request.url.host == "10.0.0.5" and request.url.port == 4533 and request.url.scheme == "http":
+            return httpx.Response(200, json={"subsonic-response": {"status": "failed"}})
+        raise httpx.ConnectError("refused")
+    monkeypatch.setattr(subsonic, "_transport", httpx.MockTransport(handler))
+    assert subsonic.discover("10.0.0.5") == "http://10.0.0.5:4533"
+
+
+def test_a_web_page_is_not_mistaken_for_a_music_server(monkeypatch):
+    monkeypatch.setattr(subsonic, "_transport",
+                        httpx.MockTransport(lambda r: httpx.Response(200, text="<html>hi</html>")))
+    assert subsonic.discover("example.com") is None

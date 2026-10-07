@@ -100,5 +100,3 @@ export const xAxisProps = {
 export const yAxisProps = {
   tick: { fontSize: 10, fill: "#94a3b8" }, axisLine: false, tickLine: false, width: 42,
 };
-
-export const gridProps = { stroke: "#1e293b", strokeDasharray: "3 3" };

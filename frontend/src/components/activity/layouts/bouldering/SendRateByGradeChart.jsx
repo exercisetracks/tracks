@@ -37,7 +37,8 @@ import {
   ResponsiveContainer,
   Cell,
 } from "recharts";
-import { ChartCard, gridProps } from "../../utils/chartHelpers.jsx";
+import { ChartCard } from "../../utils/chartHelpers.jsx";
+import { CHART_GRID } from "../../../../design/chartGrid";
 
 export function SendRateByGradeChart({ data }) {
   if (!data?.length) return null;
@@ -46,7 +47,7 @@ export function SendRateByGradeChart({ data }) {
     <ChartCard title="Send Rate by Grade">
       <ResponsiveContainer width="100%" height={200}>
         <BarChart data={data} margin={{ top: 4, right: 16, bottom: 0, left: 0 }}>
-          <CartesianGrid {...gridProps} vertical={false} />
+          <CartesianGrid {...CHART_GRID} />
           <XAxis dataKey="label" tick={{ fontSize: 10, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
           <YAxis
             tick={{ fontSize: 10, fill: "#94a3b8" }}

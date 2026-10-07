@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import React, { useMemo } from "react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
-import { xAxisProps, yAxisProps, gridProps, TimeTooltip } from "../utils/chartHelpers.jsx";
+import { xAxisProps, yAxisProps, TimeTooltip } from "../utils/chartHelpers.jsx";
+import { CHART_GRID } from "../../../design/chartGrid";
 
 export const ElevationGraph = React.memo(function ElevationGraph({ data, imperial = false, onHover, onLeave, lapTimes = [] }) {
   const unit = imperial ? "ft" : "m";
@@ -47,7 +48,7 @@ export const ElevationGraph = React.memo(function ElevationGraph({ data, imperia
               <stop offset="95%" stopColor="#f97316" stopOpacity={0.05} />
             </linearGradient>
           </defs>
-          <CartesianGrid {...gridProps} />
+          <CartesianGrid {...CHART_GRID} />
           <XAxis {...xAxisProps} />
           <YAxis {...yAxisProps}
             domain={yDomain}

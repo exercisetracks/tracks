@@ -8,7 +8,7 @@ and DELETE `/{id}`. These own the dynamic `/{activity_id}` path, so this router
 is included LAST in the package so static paths (/sports, /heatmap, …) win.
 """
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Response
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -45,6 +45,38 @@ def get_activity(
 ):
     activity = _owned_or_404(activity_id, user, db)
     return _activity_detail(activity, db)
+
+
+@router.get("/{activity_id}/outline")
+def get_outline(
+    activity_id: int,
+    response: Response,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_auth),
+    _key=Depends(require_crypto_session),
+):
+    """The route's shape for the activity list's thumbnail, or null without GPS.
+
+    One small request per row rather than every track at once
+    (``/tracks-geojson``): the list asks for a row's outline only when the row
+    is on screen, a few at a time, so thumbnails fill in one by one and never
+    hold up the table. Only the normalised shape leaves the server — see
+    calculators/track_outline.py for why that matters to where it is cached.
+    """
+    from app.calculators.track_outline import normalise
+
+    _owned_or_404(activity_id, user, db)
+    rows = (
+        db.query(DataPoint.lng, DataPoint.lat)
+        .filter(DataPoint.activity_id == activity_id,
+                DataPoint.lat.isnot(None), DataPoint.lng.isnot(None))
+        .order_by(DataPoint.recorded_at)
+        .all()
+    )
+    # A track does not change once recorded; a day lets an edit (a trim, a
+    # merge) show up without the browser ever asking twice in one session.
+    response.headers["Cache-Control"] = "private, max-age=86400"
+    return normalise([(r.lng, r.lat) for r in rows])
 
 
 @router.get("/{activity_id}/track", response_model=list[TrackPoint])

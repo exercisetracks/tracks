@@ -13,18 +13,8 @@ import { isoOfDay } from "../../lib/today";
 // Colour palette per workout type
 // ─────────────────────────────────────────
 
-export const WORKOUT_COLORS = {
-  easy:          "bg-accent-100 dark:bg-accent-900/40 text-accent-700 dark:text-accent-300 border-accent-200 dark:border-accent-800",
-  long_run:      "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800",
-  tempo:         "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800",
-  intervals:     "bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800",
-  race_pace:     "bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-800",
-  fartlek:       "bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800",
-  short_quality: "bg-pink-100 dark:bg-pink-900/40 text-pink-700 dark:text-pink-300 border-pink-200 dark:border-pink-800",
-  race:          "bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-slate-700 dark:border-slate-300",
-};
-
-export const WORKOUT_DEFAULT = "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700";
+// Workout chip colours come from lib/workoutColors.js (spec/workout_colors.yaml).
+export { workoutChip } from "../../lib/workoutColors";
 
 // Human-readable labels for pace zones used in run/warmup/cooldown step rows.
 export const PACE_LABELS = {

@@ -1,6 +1,6 @@
 # Watch sync (one button, three connection methods)
 
-The **Sync watch** button in the sidebar (above Settings) runs a full
+The **Sync device over USB** button in the sidebar (above Settings) runs a full
 two-way sync — import new activities/wellness data, push pending workouts,
 race plans, courses and the training calendar, and delete watch files marked
 for cleanup — over whichever connection is available, tried in this order:
@@ -92,7 +92,7 @@ the method-chooser.
 - If **"Could not claim the device's USB interface"**: your desktop's GVFS has
   the watch open — eject/unmount it in the file manager and retry. If the
   Tracks server runs on this same computer, its cable sync may have the
-  watch (sidebar shows "Syncing watch…"); wait for it to finish and retry.
+  watch (sidebar shows "Watch syncing over USB…"); wait for it to finish and retry.
 - If the device never appears in the browser's picker or opening fails with a
   permission error, add a udev rule:
 

@@ -17,7 +17,10 @@ import com.tracks.core.api.VaultLockedException
 import com.tracks.core.api.WeeklyVolumePoint
 import com.tracks.core.time.ZoneOffsets
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.drop
+import com.tracks.core.local.ScreenSnapshots
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -113,17 +116,88 @@ data class DashboardUiState(
  * The independent-widgets rule holds throughout: a slice with no answer is an
  * absent card, not a failed screen.
  */
+@OptIn(FlowPreview::class)
 class DashboardViewModel(private val container: AppContainer) : ViewModel() {
 
     private val _state = MutableStateFlow(DashboardUiState())
     val state: StateFlow<DashboardUiState> = _state.asStateFlow()
 
     init {
+        restoreSnapshot()
         loadAllTime()
         loadWindowed()
         loadFiltered()
         loadLocations()
         watchLocalImports()
+        keepSnapshot()
+    }
+
+    /**
+     * Show what the dashboard last showed, before anything is computed.
+     *
+     * A cold start used to draw every chart and figure empty for the moment
+     * the computation took. The last state comes back from the sealed snapshot
+     * (com.tracks.core.local.ScreenSnapshots) on the first frame, and each
+     * slice is replaced as its fresh value arrives — the loads below keep a
+     * slice's old value until they have a new one, so nothing blinks out.
+     * Synchronous when the store has finished reading ahead, which it nearly
+     * always has; otherwise moments later, and only onto a state still empty.
+     */
+    private fun restoreSnapshot() {
+        fun apply(raw: String?) {
+            val snap = ScreenSnapshots.decodeDashboard(raw) ?: return
+            _state.update { st ->
+                if (st.summary != null || st.trainingLoad.isNotEmpty()) return@update st
+                val sameWindow = snap.period == st.period.name && st.selectedSport == null
+                st.copy(
+                    loading = !sameWindow,
+                    trainingLoad = snap.trainingLoad,
+                    coaching = snap.coaching,
+                    upcoming = snap.upcoming,
+                    summary = if (sameWindow) snap.summary else null,
+                    extras = if (sameWindow) snap.extras.toExtras() else st.extras,
+                    bySport = if (sameWindow) snap.bySport else emptyList(),
+                    calendar = if (sameWindow) snap.calendar else emptyList(),
+                    vo2max = if (sameWindow) snap.vo2max else emptyList(),
+                    readiness = if (sameWindow) snap.readiness else emptyList(),
+                    weeklyVolume = if (sameWindow) snap.weeklyVolume else emptyList(),
+                )
+            }
+        }
+        val ready = container.snapshots.peek(SNAPSHOT)
+        if (ready != null) apply(ready)
+        else viewModelScope.launch { apply(withContext(Dispatchers.IO) { container.snapshots.await(SNAPSHOT) }) }
+    }
+
+    /**
+     * Save the state as it settles, for the next cold start. Only the default
+     * window with no sport picked, since that is what a cold start opens on.
+     */
+    private fun keepSnapshot() {
+        viewModelScope.launch {
+            _state.debounce(SNAPSHOT_SETTLE_MS).collect { st ->
+                if (st.loading || st.period != Period.default || st.selectedSport != null) return@collect
+                if (st.summary == null && st.trainingLoad.isEmpty()) return@collect
+                val text = withContext(Dispatchers.Default) {
+                    ScreenSnapshots.encode(
+                        ScreenSnapshots.Dashboard(
+                            period = st.period.name,
+                            summary = st.summary,
+                            extras = st.extras.toSnapshot(),
+                            bySport = st.bySport,
+                            calendar = st.calendar,
+                            vo2max = st.vo2max,
+                            readiness = st.readiness,
+                            weeklyVolume = st.weeklyVolume,
+                            trainingLoad = st.trainingLoad,
+                            coaching = st.coaching,
+                            upcoming = st.upcoming,
+                        ),
+                    )
+                }
+                container.snapshots.write(SNAPSHOT, text)
+            }
+        }
     }
 
     /**
@@ -199,7 +273,7 @@ class DashboardViewModel(private val container: AppContainer) : ViewModel() {
             val threshold = container.importThresholds().thresholdHr
             val today = LocalDate.now()
             val load = withContext(Dispatchers.Default) {
-                runCatching { container.metrics.trainingLoad(threshold) }.getOrNull()
+                runCatching { container.metrics.trainingLoad(today(), threshold) }.getOrNull()
             }
             val upcoming = runCatching {
                 container.sources.plannedWorkouts(today.toString(), today.plusDays(UPCOMING_DAYS.toLong()).toString())
@@ -329,3 +403,15 @@ class DashboardViewModel(private val container: AppContainer) : ViewModel() {
         const val READINESS_MAX_DAYS = 365
     }
 }
+
+private const val SNAPSHOT = "dashboard"
+/** Long enough that a burst of slices arriving is one write, not nine. */
+private const val SNAPSHOT_SETTLE_MS = 1500L
+
+private fun ScreenSnapshots.Extras.toExtras() = DashboardExtras(
+    totalAscentM, totalCalories, longestDistanceM, longestDurationSec, activeDays, avgHeartRate, busiestSport,
+)
+
+private fun DashboardExtras.toSnapshot() = ScreenSnapshots.Extras(
+    totalAscentM, totalCalories, longestDistanceM, longestDurationSec, activeDays, avgHeartRate, busiestSport,
+)

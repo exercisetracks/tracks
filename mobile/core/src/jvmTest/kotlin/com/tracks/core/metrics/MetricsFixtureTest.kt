@@ -194,7 +194,7 @@ class MetricsFixtureTest {
         for ((h, acts) in histories()) {
             for ((key, series) in h.jsonObject("tload")) {
                 val expected = series.jsonArray.map { load(it.jsonObject) }
-                assertEquals(expected, TrainingLoad.trainingLoad(acts, thr(key)), "seed ${h.s("seed")} thr $key")
+                assertEquals(expected, TrainingLoad.trainingLoad(acts, thr(key), today = date(h.s("today")!!)), "seed ${h.s("seed")} thr $key")
             }
         }
     }

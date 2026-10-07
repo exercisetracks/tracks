@@ -43,6 +43,14 @@ data class GuidedStep(
     val seconds: Int? = null,
     /** Distance target, for a step a GPS recording can measure itself. */
     val metres: Double? = null,
+    /**
+     * A race leg's end, as a position on the course (RaceGuide): the step
+     * changes where the terrain does rather than after [metres] of running,
+     * whenever the runner is on the course line.
+     */
+    val courseEndM: Double? = null,
+    /** What to say as it begins, when the step has its own words (a race leg). */
+    val spoken: String? = null,
     val kind: StepKind = StepKind.Work,
     /** "3 of 6", "Set 2 of 4 · Left" — where this sits inside a repeat. */
     val position: String? = null,
@@ -254,6 +262,7 @@ private fun expandRepeats(step: WorkoutStep, into: MutableList<GuidedStep>, labe
  * units are spelled out ("400 metres", "8 minutes").
  */
 fun spokenStep(step: GuidedStep): String {
+    step.spoken?.let { return it }
     if (step.kind == StepKind.Rest) {
         val secs = step.seconds ?: return "Rest"
         return "${spokenSeconds(secs)} rest"

@@ -31,6 +31,9 @@ data class RunUiState(
     val fixCount: Int = 0,
     /** Metres of uncertainty on the last fix; null before the first one. */
     val accuracyM: Double? = null,
+    /** The last fix — where a guided race is on its course (RaceGuide.CourseProgress). */
+    val lat: Double? = null,
+    val lng: Double? = null,
     /** (kilometre, elapsed ms) for every split so far. */
     val splits: List<Pair<Int, Long>> = emptyList(),
     val uploading: Boolean = false,
@@ -172,7 +175,7 @@ object RunRecorder {
                 speedMps = speedMps,
             )
         )
-        _state.update { it.copy(accuracyM = accuracyM) }
+        _state.update { it.copy(accuracyM = accuracyM, lat = lat, lng = lng) }
         tick()
         announceNewSplits()
     }

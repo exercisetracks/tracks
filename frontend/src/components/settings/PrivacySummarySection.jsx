@@ -141,14 +141,12 @@ export default function PrivacySummarySection({ settings, onSaved }) {
   };
 
   return (
-    <Section title="Privacy &amp; Connectivity">
-      <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-        Tracks is self-hosted and privacy-first. All data stays on your server unless you turn on
-        one of the opt-in features below. Tracks itself never sends telemetry, analytics, or usage
-        data anywhere — no cookies, no tracking.
-      </p>
-
-      <div className="mt-3 rounded-lg border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-800">
+    <Section title="Privacy & Connectivity" info={<>
+      Tracks is self-hosted and privacy-first. All data stays on your server unless you turn on
+      one of the opt-in features below. Tracks itself never sends telemetry, analytics, or usage
+      data anywhere — no cookies, no tracking.
+    </>}>
+      <div className="rounded-lg border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-800">
         {rows.map((r) => (
           <div key={r.key}>
             <div className="flex items-center justify-between gap-4 px-2.5 py-2">

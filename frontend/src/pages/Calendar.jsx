@@ -15,7 +15,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { api } from "../api/client";
 import {
-  WORKOUT_COLORS, WORKOUT_DEFAULT, MONTH_NAMES, DOW,
+  workoutChip, MONTH_NAMES, DOW,
   isoDate, monthDates,
 } from "../components/calendar/constants";
 import GoalSelector from "../components/calendar/GoalSelector";
@@ -194,7 +194,7 @@ export default function CalendarPage() {
                         onClick={() => setSelected(w)}
                         title={w.title}
                         className={`w-full text-left px-1 py-0.5 rounded text-xs font-medium border truncate leading-tight transition-opacity hover:opacity-80 ${
-                          WORKOUT_COLORS[w.workout_type] ?? WORKOUT_DEFAULT
+                          workoutChip(w)
                         } ${w.is_complete ? "opacity-50 line-through" : ""}`}
                       >
                         {w.title.replace(/ — .*/, "")}

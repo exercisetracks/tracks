@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // The music library, and choosing what of it rides on the watch.
 //
-// Sending is a separate button from the sidebar's "Sync watch" on purpose:
+// Sending is a separate button from the sidebar's "Sync device over USB" on purpose:
 // everything that sync moves is kilobytes and can ride along every time, while
 // a music push is megabytes per track and can run for minutes.
 import { useCallback, useEffect, useRef, useState } from "react";

@@ -242,6 +242,21 @@ class LocalRacePlans(private val sources: LocalSources) {
     /** Max HR for the per-lap ceilings: manual, else auto from history, as race_helpers.py reads it. */
     suspend fun maxHr(): Int? = sources.importThresholds().maxHr?.toInt()
 
+    /**
+     * A running event's plan as the Race Plans screen works it out, with the
+     * course path it was built from — what the guided race on race day runs
+     * (RaceGuide). Null for any goal the screen would show no pacing for.
+     */
+    suspend fun runningPlan(goal: TrainingGoal, imperial: Boolean, today: CivilDate): Pair<Prediction, Strategy>? {
+        if ((goal.eventSport ?: "running") != "running") return null
+        val dist = goal.eventDistanceMeters?.takeIf { it > 0 } ?: return null
+        val vdot = vdot(goal) ?: return null
+        val s = strategy(goal)
+        val pred = running(vdot, dist, s.courseType, s.splitSpread, imperial, null, s.segments, s.useGpxDistance,
+            runCatching { trainingIndices(today) }.getOrNull())
+        return pred to s
+    }
+
     private suspend fun row(goal: TrainingGoal): SyncedRow? =
         sources.replica.rows("race_plan").firstOrNull { it.str("goal_uid") == goal.uid }
 
@@ -282,6 +297,9 @@ class LocalRacePlans(private val sources: LocalSources) {
                 lapKm = if (imperial) 1.60934 else 1.0,
                 segments = segments.ifEmpty { null },
                 maxHr = maxHr,
+                // A course is paced by its terrain, not by the kilometre —
+                // the server's terrain=True; see com.tracks.core.race.Terrain.
+                terrain = true,
             )
             return Prediction(actual, laps)
         }

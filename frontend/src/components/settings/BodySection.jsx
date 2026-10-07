@@ -90,7 +90,8 @@ export default function BodySection({ settings, onSaved }) {
   }
 
   return (
-    <Section title="Body Stats" status={status}>
+    <Section title="Body Stats" status={status}
+      info="Until you have runs recorded, these set the paces a running plan starts from. After that, your runs do.">
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <FieldRow label="Weight" hint={imperial ? "(lbs)" : "(kg)"}>
           <input className={INPUT} type="number" step="0.1" min={0}
@@ -118,9 +119,6 @@ export default function BodySection({ settings, onSaved }) {
         </FieldRow>
       </div>
       <InlineError msg={ageError} />
-      <p className="text-xs text-slate-400 mt-2">
-        Until you have runs recorded, these set the paces a running plan starts from. After that, your runs do.
-      </p>
       {/* Two buttons rather than a dropdown, as in setup and on the phone:
           both choices are visible without opening anything. */}
       <FieldRow label={<span className="inline-flex items-center gap-1.5">Biological sex

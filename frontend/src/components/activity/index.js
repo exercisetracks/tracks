@@ -63,7 +63,7 @@ export { ExerciseCard } from "./cards/ExerciseCard";
 export { ExerciseCardGroup } from "./cards/ExerciseCardGroup";
 
 // Utils
-export { HRColorLine, TimeTooltip, ChartCard, InfoTooltip, xAxisProps, yAxisProps, gridProps } from "./utils/chartHelpers.jsx";
+export { HRColorLine, TimeTooltip, ChartCard, InfoTooltip, xAxisProps, yAxisProps } from "./utils/chartHelpers.jsx";
 
 // Sport utilities
 export {

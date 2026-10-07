@@ -3,7 +3,8 @@
 import React from "react";
 import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { hrColor } from "../../../utils/formatUtils";
-import { ChartCard, InfoTooltip, gridProps } from "../utils/chartHelpers.jsx";
+import { ChartCard, InfoTooltip } from "../utils/chartHelpers.jsx";
+import { CHART_GRID } from "../../../design/chartGrid";
 
 /**
  * ClimbEffortChart - Displays effort/grade per climb with optional heart rate overlay
@@ -33,7 +34,7 @@ export function ClimbEffortChart({ activeSplits, imperial }) {
       }>
         <ResponsiveContainer width="100%" height={200}>
           <ComposedChart data={data} margin={{ top: 4, right: 40, bottom: 0, left: 0 }}>
-            <CartesianGrid {...gridProps} vertical={false} />
+            <CartesianGrid {...CHART_GRID} />
             <XAxis dataKey="idx" tick={{ fontSize: 10, fill: "#94a3b8" }} axisLine={false} tickLine={false}
               label={{ value: "Climb #", position: "insideBottom", fill: "#94a3b8", fontSize: 9, dy: 6 }} />
             <YAxis tick={{ fontSize: 10, fill: "#94a3b8" }} axisLine={false} tickLine={false} width={42}
@@ -81,7 +82,7 @@ export function ClimbEffortChart({ activeSplits, imperial }) {
       <ChartCard title="Grade per Problem">
         <ResponsiveContainer width="100%" height={200}>
           <ComposedChart data={data} margin={{ top: 4, right: 40, bottom: 16, left: 0 }}>
-            <CartesianGrid {...gridProps} vertical={false} />
+            <CartesianGrid {...CHART_GRID} />
             <XAxis dataKey="idx" tick={{ fontSize: 10, fill: "#94a3b8" }} axisLine={false} tickLine={false}
               label={{ value: "Problem #", position: "insideBottom", fill: "#94a3b8", fontSize: 9, dy: 6 }} />
             <YAxis tick={{ fontSize: 10, fill: "#94a3b8" }} axisLine={false} tickLine={false} width={42}
@@ -149,7 +150,7 @@ export function ClimbEffortChart({ activeSplits, imperial }) {
     }>
       <ResponsiveContainer width="100%" height={200}>
         <ComposedChart data={data} margin={{ top: 4, right: 40, bottom: 0, left: 0 }}>
-          <CartesianGrid {...gridProps} vertical={false} />
+          <CartesianGrid {...CHART_GRID} />
           <XAxis dataKey="idx" tick={{ fontSize: 10, fill: "#94a3b8" }} axisLine={false} tickLine={false}
             label={{ value: "Problem #", position: "insideBottom", fill: "#94a3b8", fontSize: 9, dy: 6 }} />
           <YAxis tick={{ fontSize: 10, fill: "#94a3b8" }} axisLine={false} tickLine={false} width={42}

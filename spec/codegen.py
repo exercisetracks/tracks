@@ -811,6 +811,96 @@ def gen_design_kotlin(spec: dict) -> tuple[Path, str]:
     return ROOT / "mobile/app/src/main/java/com/tracks/app/ui/theme/TokensData.kt", "\n".join(out)
 
 
+
+# ── workout_colors.yaml ───────────────────────────────────────────────────────
+
+def _workout_colors_banner(comment: str) -> str:
+    return _banner(comment).replace("spec/sport_taxonomy.yaml", "spec/workout_colors.yaml")
+
+
+def _level_of(spec: dict) -> dict:
+    return {t: int(lvl) for lvl, types in spec["levels"].items() for t in types}
+
+
+def gen_workout_colors_js(spec: dict) -> tuple[Path, str]:
+    """Literal Tailwind classes per hue and shade — Tailwind only generates
+    classes it can find spelled out in the source, so they are written here
+    in full rather than assembled at runtime."""
+    chips, dots = {}, {}
+    for hue in spec["palette"]:
+        chips[hue], dots[hue] = {}, {}
+        for lvl, sh in spec["shades"].items():
+            a = round(sh["dark_fill_alpha"] * 100)
+            chips[hue][int(lvl)] = (
+                f"bg-{hue}-{sh['fill']} text-{hue}-{sh['text']} border-{hue}-{sh['border']} "
+                f"dark:bg-{hue}-{sh['dark_fill']}/{a} dark:text-{hue}-{sh['dark_text']} "
+                f"dark:border-{hue}-{sh['dark_border']}"
+            )
+            dots[hue][int(lvl)] = f"bg-{hue}-{sh['dot']}"
+    lines = [
+        _workout_colors_banner("//"),
+        f"export const FAMILY_HUE = {json.dumps(spec['families'], indent=2)};",
+        "",
+        f"export const STRETCHING_TYPES = {json.dumps(spec['stretching_types'])};",
+        "",
+        f"export const LEVEL_OF = {json.dumps(_level_of(spec), indent=2)};",
+        "",
+        f"export const CHIP_CLASSES = {json.dumps(chips, indent=2)};",
+        "",
+        f"export const DOT_CLASSES = {json.dumps(dots, indent=2)};",
+        "",
+    ]
+    return ROOT / "frontend/src/spec/workoutColors.js", "\n".join(lines)
+
+
+def gen_workout_colors_kotlin(spec: dict) -> tuple[Path, str]:
+    def kmap(d: dict, val) -> str:
+        return ",\n".join(f"        {_kstr(k)} to {val(v)}" for k, v in d.items())
+
+    palette = ",\n".join(
+        f"        {_kstr(h)} to longArrayOf({', '.join(f'0xFF{c.upper()}' for c in steps)})"
+        for h, steps in spec["palette"].items()
+    )
+    shades = ",\n".join(
+        f"        Shade({sh['fill']}, {sh['text']}, {sh['border']}, {sh['dot']}, "
+        f"{sh['dark_fill']}, {sh['dark_fill_alpha']}f, {sh['dark_text']}, {sh['dark_border']})"
+        for _, sh in sorted(spec["shades"].items(), key=lambda kv: int(kv[0]))
+    )
+    stretching = ", ".join(_kstr(t) for t in spec["stretching_types"])
+    src = f"""{_workout_colors_banner("//")}
+package com.tracks.core.spec
+
+/** Palette steps for one shade; see spec/workout_colors.yaml. */
+data class Shade(
+    val fill: Int, val text: Int, val border: Int, val dot: Int,
+    val darkFill: Int, val darkFillAlpha: Float, val darkText: Int, val darkBorder: Int,
+)
+
+object WorkoutColorsData {{
+    val familyHue: Map<String, String> = mapOf(
+{kmap(spec["families"], _kstr)},
+    )
+
+    val stretchingTypes: Set<String> = setOf({stretching})
+
+    val levelOf: Map<String, Int> = mapOf(
+{kmap(_level_of(spec), str)},
+    )
+
+    /** Tailwind steps 100..900, as ARGB. */
+    val palette: Map<String, LongArray> = mapOf(
+{palette},
+    )
+
+    /** Index 0 is shade 1. */
+    val shades: List<Shade> = listOf(
+{shades},
+    )
+}}
+"""
+    return ROOT / "mobile/core/src/commonMain/kotlin/com/tracks/core/spec/WorkoutColorsData.kt", src
+
+
 GENERATORS = {
     "sport_taxonomy": [
         gen_sport_taxonomy_python,
@@ -844,6 +934,10 @@ GENERATORS = {
     "design": [
         gen_design_js,
         gen_design_kotlin,
+    ],
+    "workout_colors": [
+        gen_workout_colors_js,
+        gen_workout_colors_kotlin,
     ],
 }
 

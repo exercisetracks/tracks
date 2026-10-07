@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import React, { useMemo } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
-import { xAxisProps, yAxisProps, gridProps, TimeTooltip } from "../utils/chartHelpers.jsx";
+import { xAxisProps, yAxisProps, TimeTooltip } from "../utils/chartHelpers.jsx";
+import { CHART_GRID } from "../../../design/chartGrid";
 
 export const PowerGraph = React.memo(function PowerGraph({ data, onHover, onLeave, lapTimes = [] }) {
   const maxElapsed = useMemo(() =>
@@ -27,7 +28,7 @@ export const PowerGraph = React.memo(function PowerGraph({ data, onHover, onLeav
       </div>
       <ResponsiveContainer width="100%" height={160}>
         <LineChart data={data} syncId="activity-time" onMouseMove={onHover} onMouseLeave={onLeave}>
-          <CartesianGrid {...gridProps} />
+          <CartesianGrid {...CHART_GRID} />
           <XAxis {...xAxisProps} />
           <YAxis {...yAxisProps}
             label={{ value: "W", angle: -90, position: "insideLeft", fill: "#94a3b8", fontSize: 10, dy: 10 }} />

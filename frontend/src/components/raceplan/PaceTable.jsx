@@ -20,7 +20,10 @@ export default function PaceTable({ laps, hasCourse, imperial, hrMode, maxHr, sp
     ? laps.reduce((b, l) => (l.target_watts ?? 0) < (b.target_watts ?? 0) ? l : b, laps[0]).lap
     : laps.reduce((b, l) => l.target_sec_per_km > b.target_sec_per_km ? l : b, laps[0]).lap;
 
-  const lapLabel = imperial ? "Mile" : "Km";
+  // Terrain splits (a GPX course) are stretches of ground, not kilometres:
+  // the first column says where each starts and what it is.
+  const terrain  = laps.some(l => l.kind);
+  const lapLabel = terrain ? "From" : imperial ? "Mile" : "Km";
   const showHr   = hrMode === "pace_hr" && maxHr;
 
   return (
@@ -49,8 +52,19 @@ export default function PaceTable({ laps, hasCourse, imperial, hrMode, maxHr, sp
               i % 2 === 0 ? "" : "bg-slate-50/50 dark:bg-slate-800/20"
             }`}>
               <td className="py-1 pr-2.5">
-                <span className="font-mono text-slate-700 dark:text-slate-300">{lap.lap}</span>
-                {lap.distance_m < (imperial ? 1500 : 900) && (
+                {terrain ? (
+                  <span className="whitespace-nowrap">
+                    <span className="font-mono text-slate-700 dark:text-slate-300">
+                      {fmtDist((lap.start_km ?? 0) * 1000, imperial)}
+                    </span>
+                    <span className="ml-2 text-xs text-slate-500 dark:text-slate-400">
+                      {lap.label} · {fmtDist(lap.distance_m, imperial)}
+                    </span>
+                  </span>
+                ) : (
+                  <span className="font-mono text-slate-700 dark:text-slate-300">{lap.lap}</span>
+                )}
+                {!terrain && lap.distance_m < (imperial ? 1500 : 900) && (
                   <span className="ml-1 text-[10px] text-slate-400">
                     ({fmtDist(lap.distance_m, imperial)})
                   </span>

@@ -17,7 +17,7 @@ import Button, { PlusIcon } from "../ui/Button";
 
 const INPUT = "field";
 const KINDS = ["gel", "drink", "chew", "bar", "other"];
-const PANEL = "w-72 p-4 space-y-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg";
+const PANEL = "w-72 p-4 space-y-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg text-slate-800 dark:text-slate-100";
 const TARGET_FIELDS = [
   ["fuel_carbs_per_hour", "Carbs", "g/h", "carbs_g_per_h"],
   ["fuel_fluid_ml_per_hour", "Fluid", "ml/h", "fluid_ml_per_h"],
@@ -61,7 +61,7 @@ function Target({ label, unit, value, fallback, onSave }) {
 function TargetsEditor({ plan, calculated, onPatch, onClose }) {
   return (
     <div className={PANEL}>
-      <h4 className="text-sm font-semibold">Fuelling targets</h4>
+      <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Fuelling targets</h4>
       <div className="grid grid-cols-2 gap-3">
         {TARGET_FIELDS.map(([field, label, unit, key]) => (
           <Target key={field} label={label} unit={unit} value={plan[field]} fallback={calculated[key]}
@@ -82,7 +82,7 @@ function ProductForm({ onAdd, onCancel }) {
   const [draft, setDraft] = useState({ name: "", kind: "gel", carbs_g: 25, sodium_mg: 0, caffeine_mg: 0, fluid_ml: 0 });
   return (
     <div className={PANEL}>
-      <h4 className="text-sm font-semibold">New product</h4>
+      <h4 className="text-sm font-semibold text-slate-900 dark:text-white">New product</h4>
       <input className={INPUT} placeholder="Name" value={draft.name} autoFocus
         onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
       <select className={INPUT} value={draft.kind} onChange={(e) => setDraft({ ...draft, kind: e.target.value })}>
@@ -136,17 +136,19 @@ export default function FuelSection({ goalId, plan, onPatch }) {
   const gut = Object.values(fuel.gut_training || {});
 
   return (
-    <div className="space-y-4">
+    // Every line coloured from the theme: the figures used to take the
+    // inherited default — black, on the dark theme's near-black card.
+    <div className="space-y-4 text-slate-700 dark:text-slate-200">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-base font-medium tabular-nums">
+          <p className="text-base font-medium tabular-nums text-slate-900 dark:text-white">
             {t.carbs_g_per_h} g carbs · {t.fluid_ml_per_h} ml · {t.sodium_mg_per_h} mg Na / h
           </p>
           <p className="text-sm text-slate-500 dark:text-slate-400">every {t.interval_min} min</p>
         </div>
         <button ref={editRef} onClick={() => setOpen(open === "targets" ? null : "targets")}
           aria-label="Edit fuelling targets"
-          className="shrink-0 w-9 h-9 grid place-items-center rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700">
+          className="shrink-0 icon-btn">
           <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M12 20h9M16.5 3.5a2.1 2.1 0 1 1 3 3L7 19l-4 1 1-4Z" />
           </svg>
@@ -162,7 +164,7 @@ export default function FuelSection({ goalId, plan, onPatch }) {
           return (
             <button key={p.id} onClick={() => toggleProduct(p.uid)} aria-pressed={on}
               className={`inline-flex items-center gap-1 h-8 px-3 text-sm rounded-full border transition-colors ${on
-                ? "border-transparent bg-accent-600/[.12] text-accent-700"
+                ? "border-transparent bg-accent-600/[.12] text-accent-700 dark:bg-accent-400/[.15] dark:text-accent-300"
                 : "border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"}`}>
               {on && <span aria-hidden="true">✓</span>}
               {p.name} {Number(p.carbs_g)}g

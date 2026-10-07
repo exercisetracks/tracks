@@ -814,7 +814,7 @@ internal fun WorkoutChip(workout: PlannedWorkout, full: Boolean, modifier: Modif
     // From the theme actually applied, not the system setting: the user's
     // theme mode can override the system either way.
     val dark = MaterialTheme.colorScheme.surface.luminanceBelowHalf()
-    val tone = tone(toneKey(workout.workoutType, workout.title), dark, MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.surfaceVariant)
+    val tone = workoutTone(workout.workoutType, workout.sport, dark, MaterialTheme.colorScheme.surfaceVariant)
     val shape = RoundedCornerShape(if (full) Tokens.Radius.lg else Tokens.Chip.radius)
     Row(
         modifier
@@ -852,12 +852,12 @@ internal fun WorkoutChip(workout: PlannedWorkout, full: Boolean, modifier: Modif
 /** The strong colour of a workout's tone, for a dot or a stripe. */
 @Composable
 internal fun workoutDotColor(workout: PlannedWorkout): Color =
-    tone(
-        toneKey(workout.workoutType, workout.title),
+    workoutTone(
+        workout.workoutType,
+        workout.sport,
         MaterialTheme.colorScheme.surface.luminanceBelowHalf(),
-        MaterialTheme.colorScheme.primary,
         MaterialTheme.colorScheme.surfaceVariant,
-    ).text
+    ).dot
 
 private fun Color.luminanceBelowHalf(): Boolean = (0.299f * red + 0.587f * green + 0.114f * blue) < 0.5f
 

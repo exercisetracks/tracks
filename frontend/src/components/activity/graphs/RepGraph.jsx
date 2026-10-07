@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import React from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
-import { xAxisProps, yAxisProps, gridProps, TimeTooltip } from "../utils/chartHelpers.jsx";
+import { xAxisProps, yAxisProps, TimeTooltip } from "../utils/chartHelpers.jsx";
+import { CHART_GRID } from "../../../design/chartGrid";
 
 /**
  * RepGraph - Displays repetitions per set over time
@@ -24,7 +25,7 @@ export function RepGraph({ data, onHover, onLeave, lapTimes = [] }) {
       </div>
       <ResponsiveContainer width="100%" height={180}>
         <LineChart data={data} onMouseMove={onHover} onMouseLeave={onLeave}>
-          <CartesianGrid {...gridProps} />
+          <CartesianGrid {...CHART_GRID} />
           <XAxis {...xAxisProps} />
           <YAxis {...yAxisProps} label={{ value: "reps", angle: -90, position: "insideLeft", fill: "#94a3b8", fontSize: 10, dy: 15 }} domain={[0, "auto"]} />
           <Tooltip content={<TimeTooltip format={(v) => v != null ? `${v} reps` : "—" } />} />

@@ -190,6 +190,34 @@ class LocalLibrary(
     }
 
     /**
+     * The activities that may have a route thumbnail, newest first, as
+     * (list id, uid) — the ones with a distance, so an indoor session is never
+     * decoded just to find it has no track.
+     */
+    fun shapeCandidates(): List<Pair<Int, String>> =
+        q.selectActivities().executeAsList()
+            .filter { (it.distance_meters ?: 0.0) > 0.0 }
+            .map { alias(it.uid) to it.uid }
+
+    /**
+     * One activity's route outline, from its own parsed file.
+     *
+     * One at a time rather than [routesGeoJson] for everything: decoding a
+     * detail file is the expensive part, and the list can show each outline
+     * as soon as its own file is read instead of after all of them are.
+     */
+    fun trackShape(uid: String): com.tracks.core.api.TrackShape? {
+        val points = detailJson(uid)?.get("data_points") as? JsonArray ?: return null
+        val coords = points.mapNotNull { p ->
+            val o = p as? JsonObject ?: return@mapNotNull null
+            val lat = (o["lat"] as? JsonPrimitive)?.doubleOrNull
+            val lng = (o["lng"] as? JsonPrimitive)?.doubleOrNull
+            if (lat == null || lng == null) null else lng to lat
+        }
+        return com.tracks.core.api.TrackShapes.normalise(coords)
+    }
+
+    /**
      * Every activity's track as one GeoJSON FeatureCollection of LineStrings —
      * what `/activities/tracks-geojson` returns — for the dashboard's map of
      * where you train. [uids] limits it to some activities (a sport filter);

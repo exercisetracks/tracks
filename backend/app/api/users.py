@@ -292,20 +292,15 @@ def recalculate_settings(
     return _get_or_create_settings(db, user.id)
 
 
-@router.delete("/me/data", status_code=204)
-def clear_user_data(
-    user: User = Depends(require_auth),
-    db: Session = Depends(get_db),
-):
-    """Delete all activity/training data, ingested FIT blobs, and devices for
-    the current user."""
+def _clear_data_for(db: Session, uid: int) -> None:
+    """Delete one account's activity/training data, ingested FIT blobs and
+    devices, keeping the account and its settings. Does not commit — shared by
+    "clear my data" and the admin wipes, which commit once for every account."""
     from sqlalchemy import text
     from app.models.imports import PendingImport
     from app.models.sync import FitFile
     from app.services import object_storage
     from app.sync import store as sync_store
-
-    uid = user.id
 
     # 0. Delete ciphertext blobs before the rows that reference them —
     # unlike the old plaintext-folder-per-user layout, these aren't cleaned
@@ -332,8 +327,13 @@ def clear_user_data(
 
     # 2. Unclaim all devices, then remove device records with no remaining claims
     db.execute(text("DELETE FROM user_devices WHERE user_id = :uid"), {"uid": uid})
+    # Not a device something still points at: another account's activities
+    # or days can reference a watch this account no longer claims (a shared
+    # family watch), and deleting it under them failed the whole clear.
     db.execute(text(
         "DELETE FROM devices WHERE id NOT IN (SELECT device_id FROM user_devices)"
+        " AND id NOT IN (SELECT device_id FROM activities WHERE device_id IS NOT NULL)"
+        " AND id NOT IN (SELECT device_id FROM daily_metrics WHERE device_id IS NOT NULL)"
     ))
 
     # 3. Tell phones their copy is void. The deletes above are raw SQL, so no
@@ -343,6 +343,15 @@ def clear_user_data(
     # refuses pushes from any that has not yet.
     sync_store.record_wipe(db, uid)
 
+
+@router.delete("/me/data", status_code=204)
+def clear_user_data(
+    user: User = Depends(require_auth),
+    db: Session = Depends(get_db),
+):
+    """Delete all activity/training data, ingested FIT blobs, and devices for
+    the current user — only theirs; the admin wipes below reach everyone's."""
+    _clear_data_for(db, user.id)
     db.commit()
 
 
@@ -400,6 +409,189 @@ def create_user(
         **UserOut.model_validate(new_user).model_dump(),
         recovery_key=user_crypto.format_recovery_key(generated.recovery_key),
     )
+
+
+# ── Admin: other people's passwords, and the instance-wide wipes ─────────────
+
+
+class AdminPasswordReset(BaseModel):
+    new_password: str
+    # The user's recovery key (shown once, when their account was made). With
+    # it their data survives the reset; without it, it cannot — see below.
+    recovery_key: str | None = None
+    # Required, and true, when there is no recovery key: the admin has been
+    # told the account's data goes with the old password, and agreed.
+    discard_data: bool = False
+
+    @field_validator("new_password")
+    @classmethod
+    def password_min_length(cls, v: str) -> str:
+        if len(v) < 8:
+            raise ValueError("Password must be at least 8 characters")
+        return v
+
+
+def _end_every_session(db: Session, user: User) -> None:
+    """Sign an account out everywhere: device keys, refresh tokens, every
+    access token already issued, and the cached keys behind open sessions."""
+    device_keys.revoke_all_for_user(db, user.id)
+    (db.query(RefreshToken)
+       .filter(RefreshToken.user_id == user.id, RefreshToken.revoked_at.is_(None))
+       .update({RefreshToken.revoked_at: datetime.now(timezone.utc)}, synchronize_session=False))
+    user.tokens_valid_after = datetime.now(timezone.utc)
+
+
+@router.post("/{user_id}/password")
+def admin_reset_password(
+    user_id: int,
+    body: AdminPasswordReset,
+    current_user: User = Depends(require_auth),
+    db: Session = Depends(get_db),
+):
+    """Admin only: set another account's password.
+
+    ## Why this can cost the account its data
+
+    Each account's data is encrypted under a key that only its own password
+    (or its recovery key) unwraps — by design, an admin cannot read anyone
+    else's GPS tracks, files or injury notes. So an admin who does not know the
+    old password cannot carry that key over to a new one. Two ways out:
+
+    * **With the recovery key**, the key is unwrapped with it and re-wrapped
+      under the new password. Nothing is lost.
+    * **Without it** (``discard_data``), the account gets new keys, and the
+      data under the old ones is deleted: kept, it would be ciphertext nobody
+      can ever open, and every page reading it would fail. The account and
+      its settings stay. The response carries the new recovery key, to hand
+      to the user.
+
+    Either way the account is signed out everywhere, as a self-service change
+    signs out every other session. Your own password is changed under
+    Security, with your current one.
+    """
+    _require_admin(current_user)
+    if user_id == current_user.id:
+        raise HTTPException(status_code=400, detail="Change your own password with your current one")
+    target = db.get(User, user_id)
+    if target is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    us = _get_or_create_settings(db, user_id)
+    uk = db.query(UserKey).filter_by(user_id=user_id).first()
+
+    new_recovery = None
+    if uk is not None and body.recovery_key:
+        try:
+            material = user_crypto.unwrap_with_recovery_key(
+                user_crypto.parse_recovery_key(body.recovery_key), uk)
+        except Exception:
+            raise HTTPException(status_code=403, detail="That recovery key does not unlock this account")
+        salt, wrapped_dek, wrapped_privkey, kdf_params = user_crypto.rewrap_on_password_change(
+            body.new_password, material)
+        uk.salt, uk.wrapped_dek, uk.wrapped_privkey, uk.kdf_params = salt, wrapped_dek, wrapped_privkey, kdf_params
+        uk.rewrapped_at = datetime.now(timezone.utc)
+        kept = True
+    elif uk is not None:
+        if not body.discard_data:
+            raise HTTPException(
+                status_code=409,
+                detail="Without the user's recovery key their data cannot be kept. "
+                       "Confirm that it may be deleted, or enter the recovery key.")
+        _clear_data_for(db, user_id)
+        generated = user_crypto.generate_user_keys(body.new_password)
+        for field in ("public_key", "salt", "kdf_params", "wrapped_dek", "wrapped_privkey",
+                      "recovery_salt", "recovery_wrapped_dek", "recovery_wrapped_privkey"):
+            setattr(uk, field, getattr(generated, field))
+        uk.rewrapped_at = datetime.now(timezone.utc)
+        new_recovery = user_crypto.format_recovery_key(generated.recovery_key)
+        kept = False
+    else:
+        kept = True  # no keys yet: nothing encrypted to lose
+
+    us.password_hash = hash_password(body.new_password)
+    _end_every_session(db, target)
+    db.commit()
+    crypto_context.drop_user_sessions(user_id)
+    return {"ok": True, "data_kept": kept, "recovery_key": new_recovery}
+
+
+class WipeConfirm(BaseModel):
+    # The phrase the dialog made the admin type, checked here too, so a stray
+    # request (or a bug in the page) cannot run a wipe nobody typed.
+    confirm: str
+
+
+_WIPE_PHRASES = {
+    "data": "delete everyone's data",
+    "accounts": "delete all other accounts",
+    "factory": "factory reset",
+}
+
+
+def _check_phrase(body: WipeConfirm, kind: str) -> None:
+    if body.confirm.strip().lower() != _WIPE_PHRASES[kind]:
+        raise HTTPException(status_code=400, detail=f'Type "{_WIPE_PHRASES[kind]}" to confirm')
+
+
+@router.post("/admin/wipe-data")
+def admin_wipe_all_data(
+    body: WipeConfirm,
+    current_user: User = Depends(require_auth),
+    db: Session = Depends(get_db),
+):
+    """Admin only: every account's data, as "clear my data" does for one.
+    Accounts, settings and the instance's map data stay."""
+    _require_admin(current_user)
+    _check_phrase(body, "data")
+    users = db.query(User).all()
+    for u in users:
+        _clear_data_for(db, u.id)
+    db.commit()
+    return {"ok": True, "accounts": len(users)}
+
+
+@router.post("/admin/wipe-accounts")
+def admin_wipe_accounts(
+    body: WipeConfirm,
+    current_user: User = Depends(require_auth),
+    db: Session = Depends(get_db),
+):
+    """Admin only: every account's data, and every account but the caller's."""
+    _require_admin(current_user)
+    _check_phrase(body, "accounts")
+    users = db.query(User).all()
+    for u in users:
+        _clear_data_for(db, u.id)
+    others = [u for u in users if u.id != current_user.id]
+    for u in others:
+        crypto_context.drop_user_sessions(u.id)
+        db.delete(u)
+    db.commit()
+    return {"ok": True, "deleted_accounts": len(others)}
+
+
+@router.post("/admin/factory-reset")
+def admin_factory_reset(
+    body: WipeConfirm,
+    current_user: User = Depends(require_auth),
+    db: Session = Depends(get_db),
+):
+    """Admin only: every account and its data, the caller's included. The
+    server is back at first-run setup afterwards — the setup-complete flag is
+    cleared, and the next visitor creates the admin. Map tiles are not
+    personal and are kept (Settings has its own button for them)."""
+    from app.auth import _reset_setup_cache
+
+    _require_admin(current_user)
+    _check_phrase(body, "factory")
+    users = db.query(User).all()
+    for u in users:
+        _clear_data_for(db, u.id)
+    for u in users:
+        crypto_context.drop_user_sessions(u.id)
+        db.delete(u)
+    db.commit()
+    _reset_setup_cache()
+    return {"ok": True, "deleted_accounts": len(users)}
 
 
 @router.delete("/{user_id}", status_code=204)

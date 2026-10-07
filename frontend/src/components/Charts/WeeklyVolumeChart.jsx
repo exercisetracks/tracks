@@ -14,6 +14,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import { CHART_GRID } from "../../design/chartGrid";
 
 function fmtTooltipDate(ms) {
   return new Date(ms).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
@@ -95,7 +96,7 @@ export default function WeeklyVolumeChart({ data = [], imperial = false, xAxis }
         syncMethod={snapToNearestWeek}
         margin={{ top: 4, right: 16, left: 0, bottom: 0 }}
       >
-        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" strokeOpacity={0.5} />
+        <CartesianGrid {...CHART_GRID} />
         <XAxis
           dataKey="weekMs"
           type="number"

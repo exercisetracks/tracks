@@ -30,14 +30,15 @@ import {
   ResponsiveContainer,
   Cell,
 } from "recharts";
-import { ChartCard, gridProps } from "../../utils/chartHelpers.jsx";
+import { ChartCard } from "../../utils/chartHelpers.jsx";
+import { CHART_GRID } from "../../../../design/chartGrid";
 
 export function AscentVertSpeedChart({ ascentPerClimb, imperial, hasResults }) {
   return (
     <ChartCard title={`Ascent & Vert Speed per Route`}>
       <ResponsiveContainer width="100%" height={200}>
         <ComposedChart data={ascentPerClimb} margin={{ top: 4, right: 40, bottom: 0, left: 0 }}>
-          <CartesianGrid {...gridProps} vertical={false} />
+          <CartesianGrid {...CHART_GRID} />
           <XAxis
             dataKey="idx"
             tick={{ fontSize: 10, fill: "#94a3b8" }}

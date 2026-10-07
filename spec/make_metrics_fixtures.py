@@ -390,8 +390,12 @@ def history_cases() -> dict:
                                   (4, date(2026, 3, 1), 120, "Australia/Sydney")):
         acts = _history(seed, start, days)
         tl_rows = [a for a in acts]
-        case = {"seed": seed, "timezone": tz, "activities": [_act_json(a) for a in acts]}
-        case["tload"] = {str(thr): _plain(_compute_tload_points(tl_rows, thr, tz_name=tz))
+        # The fitness series runs to "today", pinned here a fortnight past the
+        # last day so the rest-day decay tail is part of what is compared.
+        tl_today = start + timedelta(days=days + 14)
+        case = {"seed": seed, "timezone": tz, "today": tl_today.isoformat(),
+                "activities": [_act_json(a) for a in acts]}
+        case["tload"] = {str(thr): _plain(_compute_tload_points(tl_rows, thr, tz_name=tz, today=tl_today))
                          for thr in (None, 160.0)}
         case["summary"] = dashboard_stats.summary(acts, 3)
         case["by_sport"] = dashboard_stats.by_sport(acts)

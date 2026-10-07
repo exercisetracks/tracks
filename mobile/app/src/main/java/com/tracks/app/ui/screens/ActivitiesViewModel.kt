@@ -7,7 +7,6 @@ import androidx.lifecycle.viewModelScope
 import com.tracks.app.AppContainer
 import com.tracks.core.api.ActivitySummary
 import com.tracks.core.api.TrackShape
-import com.tracks.core.api.TrackShapes
 import com.tracks.core.spec.sportType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -81,12 +80,10 @@ fun sportTypeCounts(activities: List<ActivitySummary>): List<SportTypeCount> =
 /**
  * The activity list's own state: how it is sorted, and the route thumbnails.
  *
- * ## Why the thumbnails are one request, not one per row
+ * ## Why the thumbnails come one at a time
  *
- * `/activities/tracks-geojson` returns every track as a FeatureCollection with
- * the activity id on each line. One request fills the whole list. Fetching a
- * track per row would be dozens of requests on a screen the user is flinging
- * through, most of them for rows that scroll past before they land.
+ * Each is worked out from that activity's own parsed file, newest first, and
+ * shown the moment it is ready, then kept between launches — see [load].
  *
  * ## And why they are drawn, not mapped
  *
@@ -97,9 +94,8 @@ fun sportTypeCounts(activities: List<ActivitySummary>): List<SportTypeCount> =
  * battery. The shape is what makes a row recognisable anyway — nobody
  * identifies a ride by the colour of the fields it went past.
  *
- * The list itself still comes from the local mirror and renders with no network
- * at all — the thumbnails are the one thing here that needs a server, and their
- * absence costs a thumbnail rather than a screen.
+ * The list and its thumbnails both come from the local mirror and render with
+ * no network at all.
  */
 class ActivitiesViewModel(private val container: AppContainer) : ViewModel() {
 
@@ -160,19 +156,16 @@ class ActivitiesViewModel(private val container: AppContainer) : ViewModel() {
     }
 
     /**
-     * Cache first, then the network.
+     * Cached outlines at once, then the rest one by one, newest first.
      *
-     * The order is the point. Route geometry does not change — an activity's
-     * track is fixed the moment it is recorded — so the copy on disk is as good
-     * as a fresh one for everything already in it, and reading it puts
-     * thumbnails on screen in the time it takes to parse a file rather than the
-     * time it takes to fetch a megabyte of coordinates. The refetch then runs
-     * quietly behind it and only matters for activities recorded since.
-     *
-     * It lives in the encrypted mirror rather than a cache file, because it is
-     * a list of everywhere the user has been. The server goes to some length
-     * never to hold that in the clear, and it would be a strange thing to undo
-     * on the device that is actually likely to be lost.
+     * An outline means decoding that activity's detail file, and it used to be
+     * all of them in one pass ([com.tracks.core.local.LocalLibrary.routesGeoJson])
+     * before any thumbnail appeared — seconds on a long history, during which
+     * the list had no pictures at all. Now each outline is published the
+     * moment its own file is read, so they fill in down the list as the user
+     * looks at it, and each is kept ([com.tracks.app.local.TrackShapeCache]) so
+     * the next visit draws them all straight away: a track never changes once
+     * recorded. The list itself never waits on any of this.
      */
     fun load() {
         viewModelScope.launch { loadShapes() }
@@ -180,20 +173,30 @@ class ActivitiesViewModel(private val container: AppContainer) : ViewModel() {
 
     private suspend fun loadShapes() {
         _state.update { it.copy(trips = container.sources.trips()) }
-        // Thumbnails drawn from the tracks the phone parsed itself.
         _state.update { it.copy(loadingShapes = true) }
-        val raw = withContext(Dispatchers.Default) {
-            runCatching { container.library.routesGeoJson(null) }.getOrNull()
+        val cache = container.trackShapes
+        val candidates = withContext(Dispatchers.IO) {
+            runCatching { container.library.shapeCandidates() }.getOrDefault(emptyList())
         }
-        if (raw != null) applyTracks(raw)
+        val known = withContext(Dispatchers.IO) { cache.snapshot() }
+        _state.update { st ->
+            st.copy(shapes = candidates.mapNotNull { (id, uid) -> known[uid]?.let { id to it } }.toMap())
+        }
+        var fresh = 0
+        for ((id, uid) in candidates) {
+            if (uid in known) continue
+            val shape = withContext(Dispatchers.Default) {
+                runCatching { container.library.trackShape(uid) }.getOrNull()
+            }
+            cache.put(uid, shape)
+            fresh++
+            if (shape != null) _state.update { it.copy(shapes = it.shapes + (id to shape)) }
+            // Written every so often rather than at the end, so a first visit
+            // cut short still saves what it worked out.
+            if (fresh % 25 == 0) withContext(Dispatchers.IO) { cache.flush() }
+        }
+        if (fresh > 0) withContext(Dispatchers.IO) { cache.flush() }
         _state.update { it.copy(loadingShapes = false) }
-    }
-
-    /** Parsed off the main thread — a few hundred polylines reduced to outlines. */
-    private suspend fun applyTracks(raw: String) {
-        val shapes = withContext(Dispatchers.Default) { TrackShapes.parse(raw) }
-        if (shapes.isEmpty()) return
-        _state.update { it.copy(shapes = shapes) }
     }
 
     /**
@@ -223,16 +226,5 @@ class ActivitiesViewModel(private val container: AppContainer) : ViewModel() {
                 )
             )
         }
-    }
-
-    private companion object {
-        /**
-         * How many tracks to ask for.
-         *
-         * The endpoint's own default. Beyond this the payload is megabytes of
-         * coordinates for rows nobody has scrolled to, and a list that long is
-         * navigated by sorting rather than by scrolling to the bottom.
-         */
-        const val TRACK_LIMIT = 400
     }
 }

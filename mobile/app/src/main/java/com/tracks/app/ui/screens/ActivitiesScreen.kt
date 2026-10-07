@@ -102,8 +102,8 @@ import java.time.format.DateTimeFormatter
  *
  * Reads only from the local mirror, which is the whole point of the mirror. A
  * cold start in a tent with no signal shows the user's history rather than a
- * spinner; the thumbnails are the one thing that needs a server, and when they
- * cannot be fetched the rows lose a picture, not their contents.
+ * spinner, and the thumbnails fill in one by one from the phone's own files
+ * (cached between launches) without ever holding the list up.
  */
 @Composable
 fun ActivitiesScreen(

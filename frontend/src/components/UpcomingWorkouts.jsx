@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import { todayDate } from "../lib/today";
+import { workoutDot } from "../lib/workoutColors";
 
 function makeFmtDist(imperial) {
   return function fmtDist(m) {
@@ -16,28 +17,6 @@ function makeFmtDist(imperial) {
   };
 }
 
-const WORKOUT_DOT = {
-  easy:            "bg-accent-500",
-  long_run:        "bg-blue-500",
-  long:            "bg-blue-500",
-  tempo:           "bg-amber-500",
-  intervals:       "bg-red-500",
-  race_pace:       "bg-orange-500",
-  fartlek:         "bg-purple-500",
-  short_quality:   "bg-pink-500",
-  race:            "bg-slate-900 dark:bg-white",
-  // MTB-specific dot colors
-  endurance:       "bg-accent-500",
-  easy_spin:       "bg-accent-400",
-  sweet_spot:      "bg-amber-500",
-  threshold:       "bg-rose-500",
-  micro_bursts:    "bg-red-600",
-  over_unders:     "bg-amber-600",
-  matchbook:       "bg-red-700",
-  standing_starts: "bg-fuchsia-600",
-  descent_repeats: "bg-cyan-600",
-  skills:          "bg-teal-500",
-};
 
 function workoutBadge(type) {
   if (!type) return null;
@@ -97,7 +76,7 @@ export default function UpcomingWorkouts({ imperial = false } = {}) {
             className="flex items-center gap-3 py-1 cursor-pointer hover:opacity-80"
             onClick={() => navigate("/calendar")}
           >
-            <div className={`w-2 h-2 rounded-full shrink-0 ${WORKOUT_DOT[(w.workout_type || "").split(":")[0]] ?? "bg-slate-400"}`} />
+            <div className={`w-2 h-2 rounded-full shrink-0 ${workoutDot(w)}`} />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">
                 {w.title}

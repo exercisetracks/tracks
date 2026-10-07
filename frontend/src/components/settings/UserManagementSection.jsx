@@ -1,197 +1,186 @@
 // SPDX-FileCopyrightText: 2026 Hawk Fugagli
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// User management section (admin only): list users, create accounts, toggle
-// admin, and remove users. The current user can't act on their own row.
+// User management: the accounts on this server, and each one's actions.
+//
+// Everyone sees their own row, with Change password — that used to be a whole
+// Security section of three fields, for something done once a year. An admin
+// sees every account too: set another's password (PasswordDialogs.jsx says
+// why that is a different operation from changing your own), make or revoke
+// admin, remove; and Add user, a dialog rather than a form left open under
+// the list.
 import { useEffect, useState } from "react";
 import { api } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
-import { INPUT, Section } from "./primitives";
+import { Section } from "./primitives";
+import Modal from "../ui/Modal";
+import ConfirmDialog from "../ConfirmDialog";
+import { AdminSetPasswordDialog, ChangeOwnPasswordDialog } from "./PasswordDialogs";
 
-export default function UserManagementSection() {
-  const { user: currentUser } = useAuth();
-  const [users,    setUsers]   = useState([]);
-  const [loading,  setLoading] = useState(true);
-  const [creating, setCreating] = useState(false);
-  const [error,    setError]   = useState("");
-  const [form,     setForm]    = useState({ username: "", name: "", password: "" });
-  // Set right after a successful create — the API returns the new
-  // account's recovery key exactly once (see backend app/api/users.py).
-  // The admin already knows the password they just chose, so this is
-  // nothing new to them, but it's the only chance to hand the key itself
-  // to the new user — it's never retrievable again after this response.
-  const [newAccountKey, setNewAccountKey] = useState(null);
+function RecoveryKeyNotice({ account, onDone }) {
   const [copied, setCopied] = useState(false);
+  return (
+    <div className="rounded-lg border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-3">
+      <p className="text-sm text-amber-800 dark:text-amber-300">
+        Recovery key for <strong>{account.username}</strong> — hand this to them along with
+        their password. It won't be shown again, and without it their data cannot be kept
+        if their password is ever reset.
+      </p>
+      <div className="mt-2 font-mono text-xs leading-relaxed break-words bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-800 rounded px-2 py-1.5 text-slate-900 dark:text-white select-all">
+        {account.key}
+      </div>
+      <div className="mt-2 flex gap-2">
+        <button type="button" className="btn btn-tonal btn-sm"
+          onClick={() => navigator.clipboard?.writeText(account.key).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); })}>
+          {copied ? "Copied!" : "Copy"}
+        </button>
+        <button type="button" onClick={onDone} className="btn btn-neutral btn-sm ml-auto">Done</button>
+      </div>
+    </div>
+  );
+}
 
-  async function loadUsers() {
-    try {
-      const list = await api.listUsers();
-      setUsers(list);
-    } catch { /* ignore */ }
-    finally { setLoading(false); }
-  }
+function AddUserDialog({ onClose, onCreated }) {
+  const [form, setForm] = useState({ username: "", name: "", password: "" });
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [created, setCreated] = useState(null);
 
-  useEffect(() => { loadUsers(); }, []);
-
-  async function handleCreate(e) {
+  async function submit(e) {
     e.preventDefault();
-    setError("");
-    setCreating(true);
+    setBusy(true); setError("");
     try {
-      const created = await api.createUser(form);
-      setNewAccountKey({ username: created.username, key: created.recovery_key });
-      setForm({ username: "", name: "", password: "" });
-      await loadUsers();
+      const c = await api.createUser(form);
+      setCreated({ username: c.username, key: c.recovery_key });
+      onCreated();
     } catch (err) {
       setError(err.message ?? "Failed to create user");
     } finally {
-      setCreating(false);
-    }
-  }
-
-  async function handleDelete(id, username) {
-    if (!confirm(`Delete user "${username}"? This cannot be undone.`)) return;
-    try {
-      await api.deleteUser(id);
-      await loadUsers();
-    } catch (err) {
-      alert(err.message ?? "Failed to delete user");
-    }
-  }
-
-  async function handleToggleAdmin(id, username, currentlyAdmin) {
-    const action = currentlyAdmin ? "revoke admin from" : "make admin";
-    if (!confirm(`Are you sure you want to ${action} "${username}"?`)) return;
-    try {
-      await api.toggleAdmin(id);
-      await loadUsers();
-    } catch (err) {
-      alert(err.message ?? "Failed to update admin status");
+      setBusy(false);
     }
   }
 
   return (
-    <Section title="User Management">
-      {newAccountKey && (
-        <div className="mb-3.5 rounded-lg border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-3">
-          <p className="text-sm text-amber-800 dark:text-amber-300">
-            Recovery key for <strong>{newAccountKey.username}</strong> — hand this to them along with
-            their password. It won't be shown again, and without it you can't recover their data if
-            they forget their password.
-          </p>
-          <div className="mt-2 font-mono text-xs leading-relaxed break-words bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-800 rounded px-2 py-1.5 text-slate-900 dark:text-white select-all">
-            {newAccountKey.key}
-          </div>
-          <div className="mt-2 flex gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                navigator.clipboard?.writeText(newAccountKey.key).then(() => {
-                  setCopied(true);
-                  setTimeout(() => setCopied(false), 2000);
-                });
-              }}
-              className="btn btn-tonal btn-sm"
-            >
-              {copied ? "Copied!" : "Copy"}
-            </button>
-            <button
-              type="button"
-              onClick={() => setNewAccountKey(null)}
-              className="btn btn-neutral btn-sm ml-auto"
-            >
-              Done
-            </button>
-          </div>
-        </div>
-      )}
-      {loading ? (
-        <div className="flex justify-center py-3.5">
-          <div className="spinner" />
-        </div>
+    <Modal title="Add user" onClose={busy ? undefined : onClose} width="max-w-md">
+      {created ? (
+        <RecoveryKeyNotice account={created} onDone={onClose} />
       ) : (
-        <div className="space-y-3">
-          {users.map(u => (
-            <div key={u.id} className="flex items-center justify-between rounded-lg bg-slate-50 dark:bg-slate-800 px-2.5 py-1.5">
-              <div>
-                <span className="text-sm font-medium text-slate-800 dark:text-slate-200">{u.username}</span>
-                <span className="ml-2 text-xs text-slate-400">{u.name}</span>
-                {u.is_admin && (
-                  <span className="ml-2 text-xs font-semibold text-accent-600 dark:text-accent-400 bg-accent-50 dark:bg-accent-900/30 rounded px-1 py-0.5">admin</span>
-                )}
-              </div>
-              {u.id !== currentUser?.id && (
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => handleToggleAdmin(u.id, u.username, u.is_admin)}
-                    className="btn btn-tonal btn-sm"
-                  >
-                    {u.is_admin ? "Revoke admin" : "Make admin"}
-                  </button>
-                  <button
-                    onClick={() => handleDelete(u.id, u.username)}
-                    className="btn btn-danger btn-sm"
-                  >
-                    Remove
-                  </button>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-
-      <div className="border-t border-slate-100 dark:border-slate-800 pt-3.5">
-        <p className="section-title mb-3">Add user</p>
-        {error && (
-          <p className="alert-error mb-3">{error}</p>
-        )}
-        <form onSubmit={handleCreate} className="space-y-3">
+        <form onSubmit={submit} className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="field-label">Username</label>
-              <input
-                className={INPUT}
-                type="text"
-                placeholder="e.g. jane"
-                value={form.username}
-                onChange={e => setForm(f => ({ ...f, username: e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, "") }))}
-                required
-                minLength={3}
-              />
+              <input className="field" type="text" placeholder="e.g. jane" value={form.username} autoFocus required minLength={3}
+                onChange={(e) => setForm((f) => ({ ...f, username: e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, "") }))} />
             </div>
             <div>
               <label className="field-label">Display name</label>
-              <input
-                className={INPUT}
-                type="text"
-                placeholder="e.g. Jane"
-                value={form.name}
-                onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                required
-              />
+              <input className="field" type="text" placeholder="e.g. Jane" value={form.name} required
+                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
             </div>
           </div>
           <div>
             <label className="field-label">Password</label>
-            <input
-              className={INPUT}
-              type="password"
-              placeholder="Minimum 8 characters"
-              value={form.password}
-              onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
-              required
-              minLength={8}
-            />
+            <input className="field" type="password" placeholder="Minimum 8 characters" value={form.password} required minLength={8}
+              onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))} />
           </div>
-          <button
-            type="submit"
-            disabled={creating}
-            className="btn btn-primary w-full"
-          >
-            {creating ? "Creating…" : "Create account"}
-          </button>
+          {error && <p className="alert-error">{error}</p>}
+          <div className="flex justify-end gap-2">
+            <button type="button" className="btn btn-neutral" onClick={onClose} disabled={busy}>Cancel</button>
+            <button type="submit" className="btn btn-primary" disabled={busy}>{busy ? "Creating…" : "Create account"}</button>
+          </div>
         </form>
-      </div>
+      )}
+    </Modal>
+  );
+}
+
+export default function UserManagementSection() {
+  const { user: me } = useAuth();
+  const admin = Boolean(me?.is_admin);
+  const [users, setUsers] = useState(null);
+  const [dialog, setDialog] = useState(null); // { kind, user? }
+  const [error, setError] = useState("");
+
+  async function loadUsers() {
+    if (!admin) { setUsers(me ? [me] : []); return; }
+    try { setUsers(await api.listUsers()); } catch { setUsers(me ? [me] : []); }
+  }
+
+  useEffect(() => { loadUsers(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [admin, me?.id]);
+
+  async function act(fn) {
+    setError("");
+    try { await fn(); await loadUsers(); } catch (err) { setError(err.message ?? "That did not work."); }
+    setDialog(null);
+  }
+
+  return (
+    <Section title="User management">
+      {users === null ? (
+        <div className="flex justify-center py-3.5"><div className="spinner" /></div>
+      ) : (
+        <div className="space-y-2">
+          {users.map((u) => {
+            const self = u.id === me?.id;
+            return (
+              <div key={u.id} className="flex flex-wrap items-center gap-2 rounded-lg bg-slate-50 dark:bg-slate-800 px-2.5 py-1.5">
+                <div className="min-w-0 flex-1">
+                  <span className="text-sm font-medium text-slate-800 dark:text-slate-200">{u.username}</span>
+                  <span className="ml-2 text-xs text-slate-400">{u.name}</span>
+                  {u.is_admin && <span className="ml-2 badge">admin</span>}
+                  {self && <span className="ml-2 text-xs text-slate-400">(you)</span>}
+                </div>
+                {self ? (
+                  <button type="button" className="btn btn-tonal btn-sm" onClick={() => setDialog({ kind: "own" })}>
+                    Change password
+                  </button>
+                ) : admin && (
+                  <>
+                    <button type="button" className="btn btn-tonal btn-sm" onClick={() => setDialog({ kind: "set", user: u })}>
+                      Set password
+                    </button>
+                    <button type="button" className="btn btn-tonal btn-sm" onClick={() => setDialog({ kind: "admin", user: u })}>
+                      {u.is_admin ? "Revoke admin" : "Make admin"}
+                    </button>
+                    <button type="button" className="btn btn-danger btn-sm" onClick={() => setDialog({ kind: "remove", user: u })}>
+                      Remove
+                    </button>
+                  </>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+      {error && <p className="alert-error">{error}</p>}
+      {admin && (
+        <div className="flex justify-end">
+          <button type="button" className="btn btn-primary btn-sm" onClick={() => setDialog({ kind: "add" })}>
+            Add user
+          </button>
+        </div>
+      )}
+
+      {dialog?.kind === "own" && <ChangeOwnPasswordDialog onClose={() => setDialog(null)} />}
+      {dialog?.kind === "set" && <AdminSetPasswordDialog user={dialog.user} onClose={() => setDialog(null)} />}
+      {dialog?.kind === "add" && <AddUserDialog onClose={() => setDialog(null)} onCreated={loadUsers} />}
+      {dialog?.kind === "admin" && (
+        <ConfirmDialog
+          title={dialog.user.is_admin ? "Revoke admin" : "Make admin"}
+          message={`${dialog.user.is_admin ? "Revoke admin from" : "Make"} ${dialog.user.username}${dialog.user.is_admin ? "" : " an admin"}?`}
+          onConfirm={() => act(() => api.toggleAdmin(dialog.user.id))}
+          onCancel={() => setDialog(null)}
+        />
+      )}
+      {dialog?.kind === "remove" && (
+        <ConfirmDialog
+          title="Remove user"
+          danger
+          confirmLabel="Remove"
+          message={`Delete ${dialog.user.username}'s account and everything in it? This cannot be undone.`}
+          onConfirm={() => act(() => api.deleteUser(dialog.user.id))}
+          onCancel={() => setDialog(null)}
+        />
+      )}
     </Section>
   );
 }

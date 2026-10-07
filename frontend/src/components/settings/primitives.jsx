@@ -6,6 +6,7 @@
 // particular section's state — every Settings section imports from here so the
 // "card with save status", field layout, and zone table look identical
 // everywhere. Kept in one file because they are tiny and always used together.
+import InfoTooltip from "../ui/InfoTooltip";
 import { useEffect, useRef, useState } from "react";
 import { Section as SharedSection } from "../ui/Section";
 import Tabs from "../ui/Tabs";
@@ -53,9 +54,15 @@ export function SaveStatusText({ status }) {
 // A settings group: title above the card with the save status at its right,
 // as the phone's SettingsCard — the shared Section, with the settings card's
 // own spacing between rows.
-export function Section({ title, status, children, dataTour }) {
+// `info` is the section's explanation, behind a "?" beside the title rather
+// than a paragraph at the top of the card: Settings had grown a line of help
+// text over nearly every card, and read as a manual instead of a form.
+export function Section({ title, status, children, dataTour, info }) {
+  const heading = info
+    ? <span className="inline-flex items-center gap-1.5">{title}<InfoTooltip label={`About ${typeof title === "string" ? title : "this"}`}>{info}</InfoTooltip></span>
+    : title;
   return (
-    <SharedSection title={title} action={<SaveStatusText status={status} />} dataTour={dataTour}>
+    <SharedSection title={heading} action={<SaveStatusText status={status} />} dataTour={dataTour}>
       <div className="card space-y-4">{children}</div>
     </SharedSection>
   );

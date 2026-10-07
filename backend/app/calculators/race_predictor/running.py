@@ -154,6 +154,7 @@ def compute_lap_paces(
     lap_km: float = 1.0,
     course_segments: list[dict] | None = None,
     max_hr: int | None = None,
+    terrain: bool = False,
 ) -> tuple[list[dict], float]:
     """
     Compute per-lap target paces for a race, correctly adjusting for grade.
@@ -167,22 +168,40 @@ def compute_lap_paces(
       - The total predicted time is adjusted by the course's mean cost multiplier
         relative to flat (so a hilly course predicts a longer finish time).
 
+    With ``terrain`` and a course, the splits are the course's terrain
+    (calculators/race_predictor/terrain.py) rather than one per ``lap_km``:
+    each lap is a stretch of one kind of ground and carries ``kind``,
+    ``label`` and ``start_km``, and the split ramp runs over distance rather
+    than lap count, since the laps are no longer equal.
+
     Returns (laps, actual_total_sec).
       actual_total_sec includes weather + grade adjustments (not just VDOT flat prediction).
     """
-    n_full = int(distance_m / (lap_km * 1000))
-    last_m = distance_m - n_full * lap_km * 1000
-    n_laps = n_full + (1 if last_m > 10 else 0)
+    kinds: list[str] | None = None
+    if terrain and course_segments:
+        from .terrain import terrain_segments
+        segs = terrain_segments(course_segments, distance_m)
+        lap_dists = [s["distance_m"] for s in segs]
+        n_laps = len(lap_dists)
+        kinds = [s["kind"] for s in segs]
+    else:
+        n_full = int(distance_m / (lap_km * 1000))
+        last_m = distance_m - n_full * lap_km * 1000
+        n_laps = n_full + (1 if last_m > 10 else 0)
 
-    lap_dists = [
-        (last_m if (i == n_full and last_m > 10) else lap_km * 1000)
-        for i in range(n_laps)
-    ]
+        lap_dists = [
+            (last_m if (i == n_full and last_m > 10) else lap_km * 1000)
+            for i in range(n_laps)
+        ]
 
     # ── Per-lap grade multiplier from GPX segments ────────────────────────────
     lap_multipliers: list[float] = [1.0] * n_laps
     lap_gradients:   list[float] = [0.0] * n_laps
-    if course_segments:
+    if kinds is not None:
+        for lap_i, s in enumerate(segs):
+            lap_gradients[lap_i]   = s["gradient"]
+            lap_multipliers[lap_i] = grade_cost_multiplier(s["gradient"])
+    elif course_segments:
         for lap_i, grad in enumerate(_lap_gradients(lap_dists, course_segments)):
             lap_gradients[lap_i]   = grad
             lap_multipliers[lap_i] = grade_cost_multiplier(grad)
@@ -197,7 +216,8 @@ def compute_lap_paces(
     # ── Split ramp (applied to equal-effort base) ─────────────────────────────
     # slope < 0 → pace decreases over laps → negative split (faster finish)
     # split_spread > 0 → negative split → slope < 0 ✓
-    ramp = _split_ramp(n_laps, split_spread)
+    ramp = (_split_ramp_by_distance(lap_dists, split_spread) if kinds is not None
+            else _split_ramp(n_laps, split_spread))
 
     # ── Base flat pace so that sum(d_i * m_i * ramp_i) == actual_total_sec ───
     # target_pace_i = base_flat * m_i * ramp_i
@@ -215,8 +235,20 @@ def compute_lap_paces(
     ):
         target_pace = base_flat * mult * r          # actual sec/km on this slope
         gap_pace    = base_flat * r                  # flat-equivalent effort (GAP)
+        start_km    = cum_km
         cum_km     += lap_dist / 1000.0
+        if kinds is not None and i == n_laps - 1:
+            # Terrain pieces are fractions of the course, so their sum can sit
+            # a hair either side of it; the finish is the distance, exactly
+            # (the phone's port rounds the same value the same way).
+            cum_km = distance_m / 1000.0
+        extra = {}
+        if kinds is not None:
+            from .terrain import label as _terrain_label
+            extra = {"kind": kinds[i], "label": _terrain_label(kinds[i], grad),
+                     "start_km": round(start_km, 3)}
         laps.append({
+            **extra,
             "lap":               i + 1,
             "distance_m":        round(lap_dist),
             "target_sec_per_km": round(target_pace, 1),
@@ -242,6 +274,21 @@ def _split_ramp(n_laps: int, split_spread: float) -> list[float]:
     mid   = (n_laps - 1) / 2.0
     slope = -split_spread * _MAX_SPLIT_SPREAD * 2.0 / max(n_laps - 1, 1)
     return [1.0 + slope * (i - mid) for i in range(n_laps)]
+
+
+def _split_ramp_by_distance(lap_dists: list[float], split_spread: float) -> list[float]:
+    """``_split_ramp`` for unequal laps: the same first-to-last spread, but
+    placed by where each lap's middle falls on the course, so a long flat and
+    a short climb next to each other get nearly the same factor."""
+    total = sum(lap_dists)
+    if total <= 0:
+        return [1.0] * len(lap_dists)
+    slope = -split_spread * _MAX_SPLIT_SPREAD * 2.0
+    out, start = [], 0.0
+    for d in lap_dists:
+        out.append(1.0 + slope * ((start + d / 2) / total - 0.5))
+        start += d
+    return out
 
 
 def _lap_gradients(lap_dists: list[float], course_segments: list[dict]) -> list[float]:

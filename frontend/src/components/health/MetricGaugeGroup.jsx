@@ -33,7 +33,7 @@ const COLUMNS = {
   6: "grid-cols-3 sm:grid-cols-6",
 };
 
-export default function MetricGaugeGroup({ title, info, metrics, start, missingHint, footer, dataTour, columns = 3 }) {
+export default function MetricGaugeGroup({ title, info, metrics, start, missingHint, aside, dataTour, columns = 3 }) {
   const [open, setOpen] = useState(null);
   const [showInfo, setShowInfo] = useState(false);
   const anyData = metrics.some(m => m.trend.values.length > 0);
@@ -41,7 +41,7 @@ export default function MetricGaugeGroup({ title, info, metrics, start, missingH
 
   return (
     // A column that fills its grid cell, so groups side by side end level
-    // whatever each one holds — Body carries a button that Activity does not.
+    // whatever each one holds.
     <section data-tour={dataTour} className="flex flex-col h-full">
       <div className="flex items-center gap-2 mb-3">
         <h2 className="section-title">
@@ -51,22 +51,27 @@ export default function MetricGaugeGroup({ title, info, metrics, start, missingH
           <InfoButton open={showInfo} onToggle={() => setShowInfo(s => !s)} label={`About ${title}`} />
         )}
       </div>
-      <div className="card flex-1 flex flex-col">
-        {showInfo && info && <InfoPanel body={info.body} className="mb-3" />}
-        {/* Centred when there is no footer, so a group stretched to match a
-            taller neighbour keeps its dials in the middle rather than
-            leaving all the spare height underneath them. */}
-        <div className={`grid ${COLUMNS[columns] ?? COLUMNS[3]} gap-1 ${footer ? "" : "my-auto"}`}>
-          {metrics.map(m => (
-            <GaugeTile key={m.key} metric={m} start={start} onOpen={() => setOpen(m.key)} />
-          ))}
+      {/* The aside (Body's Log today) is a strip down the card's right edge
+          rather than a row under the dials: as a row it made Body taller than
+          Activity beside it, and the two groups' dials sat at different
+          heights. Down the side, both cards are only as tall as their dials. */}
+      <div className="card flex-1 flex gap-3">
+        <div className="flex-1 min-w-0 flex flex-col">
+          {showInfo && info && <InfoPanel body={info.body} className="mb-3" />}
+          {/* Top-aligned, not centred: a group with a hint line under its
+              dials (Body, before anything is logged) would otherwise centre
+              them higher than its neighbour's, and side-by-side groups are
+              meant to read as one row of dials. */}
+          <div className={`grid ${COLUMNS[columns] ?? COLUMNS[3]} gap-1`}>
+            {metrics.map(m => (
+              <GaugeTile key={m.key} metric={m} start={start} onOpen={() => setOpen(m.key)} />
+            ))}
+          </div>
+          {!anyData && missingHint && (
+            <p className="mt-2 text-xs text-center text-slate-400 dark:text-slate-500">{missingHint}</p>
+          )}
         </div>
-        {!anyData && missingHint && (
-          <p className="mt-2 text-xs text-center text-slate-400 dark:text-slate-500">{missingHint}</p>
-        )}
-        {/* Pinned to the bottom, so a taller neighbour stretches the space
-            above the button rather than leaving a gap below it. */}
-        {footer && <div className="mt-auto pt-3">{footer}</div>}
+        {aside && <div className="shrink-0 flex">{aside}</div>}
       </div>
 
       {openMetric && (

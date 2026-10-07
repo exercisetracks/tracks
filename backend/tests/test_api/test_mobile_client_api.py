@@ -209,22 +209,25 @@ class TestSyncSignallingIsShared:
     is the part a second worker would actually be able to see."""
 
     def test_start_and_clear_round_trip(self):
-        from app.api.training_plan import sync as sync_mod
+        """Per user now (app.services.activity_status), not one flag for the
+        instance — a watch docked for one account spun every account's sidebar."""
+        from app.services import activity_status
 
-        sync_mod._mark_sync_active()
-        assert sync_mod._is_sync_active() is True
-        sync_mod._clear_sync_active()
-        assert sync_mod._is_sync_active() is False
+        activity_status.mark(7, "watch")
+        assert activity_status.snapshot(7)["watch"] is not None
+        assert activity_status.snapshot(8)["watch"] is None
+        activity_status.clear(7, "watch")
+        assert activity_status.snapshot(7)["watch"] is None
 
     def test_active_flag_expires_rather_than_latching(self):
         """A worker that dies mid-sync used to take its in-memory flag with it,
         leaving the sidebar stuck on "Syncing watch…" forever. The TTL is what
         replaces the old timestamp-staleness comparison."""
+        from app.services import activity_status
         from app.services.redis_client import get_redis
-        from app.api.training_plan import sync as sync_mod
 
-        sync_mod._mark_sync_active()
-        assert get_redis().ttl(sync_mod._SYNC_ACTIVE_KEY) > 0
+        activity_status.mark(7, "watch")
+        assert get_redis().ttl(activity_status._key(7, "watch")) > 0
 
     def test_trigger_is_consumed_exactly_once(self, client, user, db):
         """Two agents polling at the same instant must not both believe they
@@ -251,11 +254,14 @@ class TestSyncSignallingIsShared:
         def boom():
             raise redis_lib.RedisError("down")
 
+        from app.services import activity_status
+
         monkeypatch.setattr(sync_mod, "get_redis", boom)
-        assert sync_mod._is_sync_active() is False
+        monkeypatch.setattr(activity_status, "get_redis", boom)
+        assert activity_status.snapshot(7)["watch"] is None
         assert sync_mod.should_trigger_sync() == {"trigger": False}
-        sync_mod._mark_sync_active()   # must not raise
-        sync_mod._clear_sync_active()  # must not raise
+        activity_status.mark(7, "watch")   # must not raise
+        activity_status.clear(7, "watch")  # must not raise
 
 
 class TestClientIpBehindProxy:

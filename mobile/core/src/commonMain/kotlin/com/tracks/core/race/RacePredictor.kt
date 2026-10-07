@@ -43,6 +43,10 @@ data class RaceLap(
     val hrCeiling: Int?,
     val targetWatts: Int? = null,
     val targetWattsPctFtp: Int? = null,
+    /** Terrain splits only (see [Terrain]): the ground's band, its name, where it starts. */
+    val kind: String? = null,
+    val label: String? = null,
+    val startKm: Double? = null,
 )
 
 data class WindExposure(val netHeadwindMps: Double, val courseNote: String?, val windFactor: Double)
@@ -223,6 +227,15 @@ object RacePredictor {
         return List(n) { i -> 1.0 + slope * (i - mid) }
     }
 
+    /** [splitRamp] for unequal laps, placed by each lap's middle — the server's _split_ramp_by_distance. */
+    internal fun splitRampByDistance(dists: List<Double>, spread: Double): List<Double> {
+        val total = dists.sum()
+        if (total <= 0) return List(dists.size) { 1.0 }
+        val slope = -spread * MAX_SPLIT_SPREAD * 2.0
+        var start = 0.0
+        return dists.map { d -> (1.0 + slope * ((start + d / 2) / total - 0.5)).also { start += d } }
+    }
+
     internal fun lapGradients(lapDists: List<Double>, segments: List<Segment>): List<Double> {
         val out = ArrayList<Double>(lapDists.size)
         var cursor = 0
@@ -346,18 +359,25 @@ object RacePredictor {
         lapKm: Double = 1.0,
         segments: List<Segment>? = null,
         maxHr: Int? = null,
+        terrain: Boolean = false,
     ): Pair<List<RaceLap>, Double> {
-        val dists = lapDists(distanceM, lapKm)
+        // With a course and [terrain], the splits are the course's ground
+        // rather than kilometres — the server's compute_lap_paces(terrain=True).
+        val pieces = if (terrain && !segments.isNullOrEmpty()) Terrain.segments(segments, distanceM) else null
+        val dists = pieces?.map { it.distanceM } ?: lapDists(distanceM, lapKm)
         val n = dists.size
         var grads = List(n) { 0.0 }
         var mults = List(n) { 1.0 }
-        if (!segments.isNullOrEmpty()) {
+        if (pieces != null) {
+            grads = pieces.map { it.gradient }
+            mults = grads.map(::gradeCostMultiplier)
+        } else if (!segments.isNullOrEmpty()) {
             grads = lapGradients(dists, segments)
             mults = grads.map(::gradeCostMultiplier)
         }
         val weighted = PyMath.sum(List(n) { dists[it] * mults[it] })
         val actualTotal = predictedSec * (weighted / distanceM)
-        val ramp = splitRamp(n, splitSpread)
+        val ramp = if (pieces != null) splitRampByDistance(dists, splitSpread) else splitRamp(n, splitSpread)
         val denominator = PyMath.sum(List(n) { dists[it] * mults[it] * ramp[it] })
         val baseFlat = actualTotal * 1000.0 / denominator
         val hr = if (maxHr != null && maxHr != 0) hrCeilings(maxHr, distanceM, n, ramp) else null
@@ -365,8 +385,14 @@ object RacePredictor {
         val laps = List(n) { i ->
             val target = baseFlat * mults[i] * ramp[i]
             val gap = baseFlat * ramp[i]
+            val startKm = cum
             cum += dists[i] / 1000.0
+            // The finish is the distance exactly — see the server's compute_lap_paces.
+            if (pieces != null && i == n - 1) cum = distanceM / 1000.0
             RaceLap(
+                kind = pieces?.get(i)?.kind,
+                label = pieces?.get(i)?.let { Terrain.label(it.kind, grads[i]) },
+                startKm = if (pieces != null) PyMath.round(startKm, 3) else null,
                 lap = i + 1,
                 distanceM = PyMath.roundToLong(dists[i]),
                 targetSecPerKm = PyMath.round(target, 1),

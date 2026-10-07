@@ -175,15 +175,23 @@ export default function Health() {
   // ── Render ───────────────────────────────────────────────────────────────────
 
   // The one button for everything a watch cannot know, inside the card whose
-  // dials it fills in rather than floating loose on the page.
-  const logFooter = (
+  // dials it fills in rather than floating loose on the page — upright down
+  // its right edge, so the Body card is no taller than Activity's beside it
+  // (see MetricGaugeGroup's aside).
+  const logAside = (
     <button
       type="button"
       onClick={() => setLogOpen(true)}
       data-tour="health-log"
-      className="btn btn-tonal w-full"
+      // Stretched to the card's height by the flex row it sits in, never
+      // `h-full`: text set vertically is an orthogonal flow, and a percentage
+      // height on one resolves against the viewport — the button came out
+      // 900px tall and took both cards with it. Only the label turns, reading
+      // bottom to top as a book spine and a chart's y-axis title do.
+      className="btn btn-tonal !h-auto self-stretch !px-2.5 !py-4 flex-col"
     >
-      <PlusIcon />Log today
+      <PlusIcon />
+      <span className="[writing-mode:vertical-rl] rotate-180">Log today</span>
     </button>
   );
 
@@ -205,13 +213,13 @@ export default function Health() {
         <>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <MetricGaugeGroup {...groups.activity} start={start} />
-            <MetricGaugeGroup {...groups.body} start={start} footer={logFooter} />
+            <MetricGaugeGroup {...groups.body} start={start} aside={logAside} />
           </div>
           <MetricGaugeGroup {...groups.vitals} start={start} columns={6} />
           <SleepPanel nights={nights} start={start} />
         </>
       ) : (
-        <MetricGaugeGroup {...groups.body} start={start} footer={logFooter} />
+        <MetricGaugeGroup {...groups.body} start={start} aside={logAside} />
       )}
 
       {/* Injuries */}

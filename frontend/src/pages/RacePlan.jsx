@@ -49,11 +49,21 @@ export default function RacePlan() {
   const imperial = plan?.units === "imperial";
   const maxHr    = plan?.max_hr ?? null;
 
+  // The plan is always generated, never asked for: on opening the page, and
+  // again after every change to what it is built from (split, course type,
+  // GPX, pin, units of target). There used to be a Generate button, and a
+  // plan that silently described yesterday's fitness until it was pressed.
+  // Generation is quick enough for this now (weather is cached by place and
+  // day on the server), and only the latest request's answer is shown, so a
+  // burst of changes cannot land out of order.
+  const genSeq = useRef(0);
+
   useEffect(() => {
     Promise.all([api.getGoal(goalId), api.getRacePlan(goalId)])
-      .then(([g, p]) => { setGoal(g); setPlan(p); setSplitDraft(p.split_spread ?? 0); })
+      .then(([g, p]) => { setGoal(g); setPlan(p); setSplitDraft(p.split_spread ?? 0); generate(); })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [goalId]);
 
   async function patchPlan(updates) {
@@ -61,6 +71,7 @@ export default function RacePlan() {
       const updated = await api.updateRacePlan(goalId, updates);
       setPlan(updated);
       if (updates.split_spread !== undefined) setSplitDraft(updates.split_spread);
+      generate();
     } catch (e) {
       setError(e.message);
     }
@@ -76,9 +87,7 @@ export default function RacePlan() {
   function handlePin(lat, lon) { patchPlan({ pin_lat: lat, pin_lon: lon }); }
 
   async function handleCourseTypeChange(v) {
-    const hadPlan = !!plan?.generated_at;
     await patchPlan({ course_type: v });
-    if (hadPlan && !hasCourse) generate();
   }
 
   async function handleGpxUpload(e) {
@@ -90,6 +99,7 @@ export default function RacePlan() {
       const updated = await api.uploadCoursGpx(goalId, file);
       setPlan(updated);
       setSplitDraft(updated.split_spread ?? 0);
+      generate();
     } catch (ex) {
       setError(ex.message || "Failed to upload GPX");
     } finally {
@@ -102,19 +112,22 @@ export default function RacePlan() {
     await api.deleteCourseGpx(goalId);
     const updated = await api.getRacePlan(goalId);
     setPlan(updated);
+    generate();
   }
 
   async function generate() {
+    const seq = ++genSeq.current;
     setGenerating(true);
-    setError(null);
     try {
       const updated = await api.generateRacePlan(goalId);
+      if (seq !== genSeq.current) return;
       setPlan(updated);
       setSplitDraft(updated.split_spread ?? 0);
+      setError(null);
     } catch (ex) {
-      setError(ex.message || "Failed to generate plan");
+      if (seq === genSeq.current) setError(ex.message || "The plan could not be worked out");
     } finally {
-      setGenerating(false);
+      if (seq === genSeq.current) setGenerating(false);
     }
   }
 
@@ -395,26 +408,13 @@ export default function RacePlan() {
         </Section>
       )}
 
-      {/* Generate */}
+      {/* Kept up to date by itself — see generate(). */}
       <div className="flex items-center gap-4 flex-wrap">
-        <button
-          onClick={generate} disabled={generating}
-          className="btn btn-primary"
-        >
-          {generating ? (
-            <>
-              <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-              Generating…
-            </>
-          ) : (
-            <>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-              Generate Race Plan
-            </>
-          )}
-        </button>
+        {generating && (
+          <span className="inline-flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400" role="status">
+            <span className="spinner !w-3.5 !h-3.5" />Updating the plan…
+          </span>
+        )}
         <SyncStatus watchUploadedAt={plan?.watch_uploaded_at} hasLaps={hasLaps} />
       </div>
 
@@ -478,7 +478,9 @@ export default function RacePlan() {
             <Section title={
               isCycling
                 ? `${imperial ? "Mile" : "Km"}-by-${imperial ? "mile" : "km"} power targets${hasCourse ? " (grade-adjusted)" : ""}`
-                : `${imperial ? "Mile" : "Km"}-by-${imperial ? "mile" : "km"} targets${hasCourse ? " (grade-adjusted)" : ""}`
+                : displayLaps.some(l => l.kind)
+                  ? "Targets by terrain"
+                  : `${imperial ? "Mile" : "Km"}-by-${imperial ? "mile" : "km"} targets${hasCourse ? " (grade-adjusted)" : ""}`
             }>
               <PaceResults
                 plan={plan}

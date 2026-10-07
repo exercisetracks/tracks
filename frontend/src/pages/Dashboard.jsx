@@ -32,7 +32,7 @@ import PageHeader from "../components/ui/PageHeader";
 import RecapBanner from "../components/dashboard/RecapBanner";
 
 export default function Dashboard() {
-  const [period,    setPeriod]    = useState("yearly");
+  const [period,    setPeriod]    = useState("monthly");
   const [me,        setMe]        = useState(null);
   const [summary,   setSummary]   = useState(null);
   const [settings,  setSettings]  = useState(null);

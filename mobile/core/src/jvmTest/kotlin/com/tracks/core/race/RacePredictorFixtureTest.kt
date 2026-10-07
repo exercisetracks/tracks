@@ -162,6 +162,21 @@ class RacePredictorFixtureTest {
         }
     }
 
+    /** Terrain splits: the course cut by its ground, as the server cuts it. */
+    @Test
+    fun terrain_laps_match_segment_for_segment() {
+        for (c in fx.cases("terrain_laps")) {
+            val (laps, total) = RacePredictor.lapPaces(
+                c["pred"].dbl()!!, c["d"].dbl()!!, c["spread"].dbl()!!, 1.0,
+                course(c["course"].str()), c["hr"].int(), terrain = true,
+            )
+            val want = c["laps"]!!.jsonArray.map { lap(it.jsonObject) }
+            assertEquals(want.size, laps.size, "segment count, ${c["course"]} ${c["d"]} ${c["spread"]}")
+            want.zip(laps).forEachIndexed { i, (w, g) -> assertEquals(w, g, "segment $i of ${c["course"]} ${c["d"]} ${c["spread"]}") }
+            assertEquals(c["total"].dbl(), total, "$c")
+        }
+    }
+
     @Test
     fun cycling_laps_match_lap_for_lap() {
         for (c in fx.cases("bike_laps")) {
@@ -187,5 +202,8 @@ class RacePredictorFixtureTest {
         hrCeiling = o["hr_ceiling"].int(),
         targetWatts = o["target_watts"].int(),
         targetWattsPctFtp = o["target_watts_pct_ftp"].int(),
+        kind = o["kind"].str(),
+        label = o["label"].str(),
+        startKm = o["start_km"].dbl(),
     )
 }

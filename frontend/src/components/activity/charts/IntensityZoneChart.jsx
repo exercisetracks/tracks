@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import React from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import { CHART_GRID } from "../../../design/chartGrid";
 
 /**
  * IntensityZoneChart - Shows time distribution across heart rate zones
@@ -49,7 +50,7 @@ export function IntensityZoneChart({ data, maxHR = 200, imperial = false }) {
       </div>
       <ResponsiveContainer width="100%" height={200}>
         <BarChart data={zoneData} margin={{ top: 10, right: 20, bottom: 30, left: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
+          <CartesianGrid {...CHART_GRID} />
           <XAxis 
             dataKey="name" 
             tick={{ fontSize: 10, fill: "#94a3b8" }} 

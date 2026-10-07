@@ -2,8 +2,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import React from "react";
 import { ComposedChart, Area, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ReferenceLine } from "recharts";
-import { xAxisProps, yAxisProps, gridProps, TimeTooltip } from "../utils/chartHelpers.jsx";
+import { xAxisProps, yAxisProps, TimeTooltip } from "../utils/chartHelpers.jsx";
 import InfoTooltip from "../../ui/InfoTooltip";
+import { CHART_GRID } from "../../../design/chartGrid";
 
 /**
  * GritFlowGraph - Displays MTB Grit (terrain difficulty) and Flow (smoothness) over time
@@ -28,7 +29,7 @@ export const GritFlowGraph = React.memo(function GritFlowGraph({ data, onHover, 
       </div>
       <ResponsiveContainer width="100%" height={120}>
         <ComposedChart data={data} syncId="activity-time" onMouseMove={onHover} onMouseLeave={onLeave}>
-          <CartesianGrid {...gridProps} />
+          <CartesianGrid {...CHART_GRID} />
           <XAxis {...xAxisProps} />
           <YAxis yAxisId="grit" orientation="left" tick={{ fontSize: 10, fill: "#f97316" }} axisLine={false} tickLine={false} width={32} />
           <YAxis yAxisId="flow" orientation="right" tick={{ fontSize: 10, fill: "#22d3ee" }} axisLine={false} tickLine={false} width={32} />

@@ -3,8 +3,12 @@
 package com.tracks.core.api
 
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.doubleOrNull
+import kotlinx.serialization.json.float
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -141,4 +145,34 @@ object TrackShapes {
             insetY = ((span - spanY) / span / 2).toFloat(),
         )
     }
+
+    /**
+     * Outlines by key as one JSON document — the app's thumbnail cache file.
+     * A null value means "known to have no track". Shapes only: see
+     * TrackShapeCache in `:app` for why that is what makes a plain file fine.
+     */
+    fun encodeCache(shapes: Map<String, TrackShape?>): String =
+        JsonObject(shapes.mapValues { (_, s) ->
+            s?.let {
+                JsonObject(mapOf(
+                    "x" to JsonPrimitive(it.insetX),
+                    "y" to JsonPrimitive(it.insetY),
+                    "p" to JsonArray(it.points.flatMap { (a, b) -> listOf(JsonPrimitive(a), JsonPrimitive(b)) }),
+                ))
+            } ?: JsonNull
+        }).toString()
+
+    /** The inverse of [encodeCache]; an unreadable document is an empty cache. */
+    fun decodeCache(raw: String): MutableMap<String, TrackShape?> = runCatching {
+        json.parseToJsonElement(raw).jsonObject.mapValuesTo(HashMap()) { (_, v) ->
+            if (v is JsonNull) null else {
+                val o = v.jsonObject
+                TrackShape(
+                    points = o.getValue("p").jsonArray.map { it.jsonPrimitive.float }.chunked(2).map { it[0] to it[1] },
+                    insetX = o.getValue("x").jsonPrimitive.float,
+                    insetY = o.getValue("y").jsonPrimitive.float,
+                )
+            }
+        }
+    }.getOrElse { HashMap() }
 }

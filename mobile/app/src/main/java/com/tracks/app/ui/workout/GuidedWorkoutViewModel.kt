@@ -119,6 +119,9 @@ class GuidedWorkoutViewModel(
     private var stepStartMovingMs = 0L
     private var stepStartDistanceM = 0.0
 
+    /** A race's course, for changing legs by position (RaceGuide.CourseProgress). */
+    private var course: com.tracks.core.race.RaceGuide.CourseProgress? = null
+
     init {
         load()
         watchRecording()
@@ -132,6 +135,7 @@ class GuidedWorkoutViewModel(
             val workout = runCatching { container.sources.get("planned_workout", workoutId, PlannedWorkout.serializer()) }.getOrNull()
             if (workout != null) apply(listOf(workout), stillLoading = false)
             else _state.update { it.copy(loading = false) }
+            if (workout != null && workout.workoutType == "race") raceLegs(workout)
         }
         // The paces the watch would be given for this plan, regardless of the
         // watch's pace-coaching switch: that switch is about the wrist
@@ -161,6 +165,44 @@ class GuidedWorkoutViewModel(
                 },
             )
         }
+    }
+
+    /**
+     * Race day: the race plan's terrain legs instead of the workout's one block.
+     *
+     * The race is the event goal on this date; its plan is worked out the way
+     * the Race Plans screen does it, so what is paced is what was shown. Each
+     * leg changes where the terrain does — by position on the course when one
+     * is loaded, by distance run otherwise — and is announced with a buzz and
+     * the words for the change ("Climb ahead…", "Top of the climb…").
+     * Swapped in only before the race begins.
+     */
+    private suspend fun raceLegs(workout: PlannedWorkout) {
+        val imperial = com.tracks.core.format.Units.imperial
+        val plans = com.tracks.core.local.LocalRacePlans(container.sources)
+        val today = java.time.LocalDate.now().let { com.tracks.core.fit.decode.CivilDate(it.year, it.monthValue, it.dayOfMonth) }
+        val goal = runCatching {
+            container.sources.goals().firstOrNull {
+                it.goalType == "event" && it.eventDate == workout.scheduledDate &&
+                    sportType(it.eventSport ?: "running") == sportType(workout.sport)
+            }
+        }.getOrNull() ?: return
+        val (pred, strategy) = runCatching { plans.runningPlan(goal, imperial, today) }.getOrNull() ?: return
+        val legs = com.tracks.core.race.RaceGuide.legs(pred.laps, imperial)
+        if (legs.isEmpty()) return
+        val progress = com.tracks.core.race.RaceGuide.CourseProgress(strategy.path, legs.last().courseEndM)
+        course = progress.takeIf { it.usable }
+        val steps = legs.mapIndexed { i, leg ->
+            GuidedStep(
+                title = leg.title,
+                detail = leg.detail,
+                metres = leg.distanceM,
+                courseEndM = if (course != null) leg.courseEndM else null,
+                spoken = leg.spoken,
+                position = "${i + 1} of ${legs.size}",
+            )
+        }
+        _state.update { if (it.begun) it else it.copy(steps = steps, index = 0, remaining = 0) }
     }
 
     // ── The step cursor ──────────────────────────────────────────────────────
@@ -273,8 +315,20 @@ class GuidedWorkoutViewModel(
                 val covered = run.distanceM - stepStartDistanceM
                 _state.update { it.copy(stepCoveredM = covered, stepMs = run.movingMs - stepStartMovingMs) }
 
+                // A race leg on a known course ends where the course says,
+                // whatever the GPS distance has drifted to; off the line, or
+                // with no course, the distance run is what is left.
+                val onCourse = step.courseEndM?.let { end ->
+                    val lat = run.lat
+                    val lng = run.lng
+                    if (lat == null || lng == null) null else course?.update(lat, lng)?.let { it >= end }
+                }
+                if (onCourse == true) {
+                    advance()
+                    return@collect
+                }
                 val metres = step.metres
-                if (metres != null && covered >= metres) {
+                if (onCourse == null && metres != null && covered >= metres) {
                     advance()
                     return@collect
                 }

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Connecting a self-hosted music server, and letting it decide what the watch
 // carries. Split out of Music.jsx so that page stays about the library itself.
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "../api/client";
 import { Section } from "../components/ui/Section";
 
@@ -27,12 +27,18 @@ export default function MusicServerPanel({ onLibraryChanged }) {
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState(null);
   const [error, setError] = useState(null);
+  // Where the typed address led: null before anything is typed, "probing",
+  // { url } once a music server answered there, or "none".
+  const [found, setFound] = useState(null);
+  const probeSeq = useRef(0);
 
   const refresh = async () => {
     try {
       const s = await api.getMusicServer();
       setServer(s);
       setUrl(s.url || "");
+      // A saved server is one that was reached, so its login fields show.
+      if (s.url) setFound({ url: s.url });
       setUsername(s.username || "");
       if (s.configured) {
         api.getRemotePlaylists().then((r) => setPlaylists(r.playlists)).catch(() => setPlaylists([]));
@@ -60,9 +66,44 @@ export default function MusicServerPanel({ onLibraryChanged }) {
     }
   };
 
+  // The address is checked as it is typed, and the login fields appear only
+  // once a music server has answered at it. The server fills in what people
+  // leave out — `10.0.0.5` becomes http://10.0.0.5:4533 if that is where
+  // Navidrome is (services/subsonic.discover) — and the form shows the address
+  // it settled on, so what is saved is what was found rather than a guess.
+  const probe = (text) => {
+    const seq = ++probeSeq.current;
+    if (!text.trim()) { setFound(null); return; }
+    setFound("probing");
+    api.probeMusicServer(text)
+      .then((r) => {
+        if (seq !== probeSeq.current) return;
+        setFound({ url: r.url });
+        // Into the field itself, so the scheme and port it was missing are
+        // visible and editable rather than applied behind the user's back.
+        setUrl(r.url);
+      })
+      .catch(() => { if (seq === probeSeq.current) setFound("none"); });
+  };
+
+  useEffect(() => {
+    if (server === null) return;
+    if (found?.url && found.url === url.trim().replace(/\/+$/, "")) return;
+    // Edited away from the address that answered: hide the login until the
+    // new one does too.
+    probeSeq.current++;
+    setFound(url.trim() ? "probing" : null);
+    const t = setTimeout(() => probe(url), 600);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [url, server === null]);
+
+  const reached = found && typeof found === "object";
+  const target = reached ? found.url : url;
+
   const connect = () =>
     run(
-      () => api.setMusicServer({ url, username, ...(password ? { password } : {}) }),
+      () => api.setMusicServer({ url: target, username, ...(password ? { password } : {}) }),
       (r) => `Connected to ${r.server || "the music server"}`,
     );
 
@@ -86,16 +127,26 @@ export default function MusicServerPanel({ onLibraryChanged }) {
 
         <div className="space-y-3 px-3.5 py-3">
           <div className="grid gap-2 sm:grid-cols-3">
-            <Field label="Server URL" value={url} onChange={(e) => setUrl(e.target.value)}
-                   placeholder="https://music.example.com" />
-            <Field label="Username" value={username} onChange={(e) => setUsername(e.target.value)} />
-            <Field label={server.configured ? "Password (leave blank to keep)" : "Password"}
-                   type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+            <div>
+              <Field label="Server address" value={url} onChange={(e) => setUrl(e.target.value)}
+                     placeholder="10.0.0.5 or music.example.com" />
+              <p className="mt-1 text-xs text-slate-400 dark:text-slate-500" aria-live="polite">
+                {found === "probing" && "Looking for a music server…"}
+                {found === "none" && "No music server answered there."}
+              </p>
+            </div>
+            {reached && (
+              <>
+                <Field label="Username" value={username} onChange={(e) => setUsername(e.target.value)} />
+                <Field label={server.configured ? "Password (leave blank to keep)" : "Password"}
+                       type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+              </>
+            )}
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
             <button
-              type="button" onClick={connect} disabled={busy || !url || !username}
+              type="button" onClick={connect} disabled={busy || !reached || !username}
               className="btn btn-primary"
             >
               {server.configured ? "Update" : "Connect"}

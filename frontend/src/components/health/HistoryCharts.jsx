@@ -25,6 +25,7 @@ import {
 import { localIso, SLEEP_COLOR, SCORE_COLOR, SLEEP_GOAL_HOURS, verdictFor } from "./scales";
 import { gaugeFigure } from "../RadialGauge";
 import { hoursMinutes } from "./sleepClock";
+import { CHART_GRID } from "../../design/chartGrid";
 
 const DAY_MS = 86_400_000;
 
@@ -152,7 +153,7 @@ export function MetricHistoryChart({ trend, start, color, zones, unit, decimals,
             <stop offset="100%" stopColor={color} stopOpacity={0.02} />
           </linearGradient>
         </defs>
-        <CartesianGrid stroke="#94a3b8" strokeOpacity={0.2} strokeDasharray="3 3" vertical={false} />
+        <CartesianGrid {...CHART_GRID} />
         {dayMarks(rows)}
         <XAxis dataKey="dateMs" type="number" scale="time"
           domain={[rows[0].dateMs, rows[rows.length - 1].dateMs]}
@@ -202,7 +203,7 @@ export function SleepTrendChart({ hours, score, start }) {
     <div>
       <ResponsiveContainer width="100%" height={260}>
         <ComposedChart data={rows} margin={{ top: 8, right: 0, bottom: 0, left: 0 }}>
-          <CartesianGrid stroke="#94a3b8" strokeOpacity={0.2} strokeDasharray="3 3" vertical={false} />
+          <CartesianGrid {...CHART_GRID} />
           {dayMarks(rows, "h")}
           <XAxis dataKey="dateMs" type="number" scale="time"
             domain={[rows[0].dateMs, rows[rows.length - 1].dateMs]}

@@ -41,6 +41,7 @@ from app.models.coaching import RacePlan, TrainingGoal
 from app.models.sync_agents import SyncAgent
 from app.models.training_plan import PlannedWorkout, TrainingPlan, WatchPendingDelete
 from app.models.user_settings import UserSettings
+from app.services import activity_status
 from app.services.redis_client import get_redis
 from app.services.sync_agent_auth import require_sync_agent, resolve_sync_user_id
 
@@ -61,46 +62,14 @@ NEWFILES = "GARMIN/NewFiles"
 
 
 # ── Cross-worker sync signalling ─────────────────────────────────────────────
-# Two short-lived instance-wide flags: "a watch sync is in progress" and "the
-# user pressed Sync now". Both used to be module globals, which meant they only
-# existed in whichever of UVICORN_WORKERS processes happened to serve the write
-# — POST /trigger could land in worker A while the agent's GET /should-trigger
-# hit worker B and saw nothing. Redis is the only state every worker shares.
-#
-# The TTL does the staleness work that an explicit timestamp comparison used to:
-# a key that outlives its window simply isn't there any more. That also fixes
-# the crash case, where a worker holding "syncing" in memory took its flag to
-# the grave and left the spinner latched.
-#
-# Fail-OPEN on any Redis error, meaning "nothing happening" — a missing spinner
-# or a missed trigger is a far better failure than a stuck one.
-_SYNC_ACTIVE_KEY = "tracks:sync:active"
-_SYNC_ACTIVE_TTL = 300  # a sync that hasn't reported in 5 min is presumed dead
+# "The user pressed Sync now" is a short-lived instance-wide Redis flag, since
+# Redis is the only state every UVICORN worker shares (a module global only
+# existed in whichever worker served the write). "A watch sync is in progress"
+# used to be one too, and it spun every account's sidebar whenever any watch
+# was docked; it is now per user, in app.services.activity_status.
 
 _TRIGGER_KEY = "tracks:sync:trigger"
 _TRIGGER_WINDOW_SECONDS = 300  # how long a trigger request stays "pending"
-
-
-def _mark_sync_active() -> None:
-    try:
-        get_redis().set(_SYNC_ACTIVE_KEY, "1", ex=_SYNC_ACTIVE_TTL)
-    except redis.RedisError:
-        _log.warning("Could not record sync start — the UI spinner will not show")
-
-
-def _clear_sync_active() -> None:
-    try:
-        get_redis().delete(_SYNC_ACTIVE_KEY)
-    except redis.RedisError:
-        _log.warning("Could not clear sync state — it will expire on its own in %ss",
-                     _SYNC_ACTIVE_TTL)
-
-
-def _is_sync_active() -> bool:
-    try:
-        return bool(get_redis().exists(_SYNC_ACTIVE_KEY))
-    except redis.RedisError:
-        return False
 
 
 def _get_sync_user(db: Session, agent: SyncAgent, device_serial: str | None = None) -> int | None:
@@ -642,20 +611,28 @@ def get_import_status(
     return {"importing": importing}
 
 
-@sync_router.post("/start", dependencies=[Depends(require_sync_agent)])
-def record_sync_start():
-    """Called by garmin-sync the moment a watch is detected. Shows the spinner in the UI."""
-    _mark_sync_active()
+@sync_router.post("/start")
+def record_sync_start(
+    db: Session = Depends(get_db),
+    x_garmin_device_serial: str = Header(default=""),
+    agent: SyncAgent = Depends(require_sync_agent),
+):
+    """Called by garmin-sync the moment a watch is detected: the owner's
+    sidebar shows the watch syncing (activity_status, 5-minute heartbeat)."""
+    activity_status.mark(_get_sync_user(db, agent, x_garmin_device_serial or None), "watch")
     return {"ok": True}
 
 
-@sync_router.post("/abort", dependencies=[Depends(require_sync_agent)])
-def record_sync_abort():
+@sync_router.post("/abort")
+def record_sync_abort(
+    db: Session = Depends(get_db),
+    x_garmin_device_serial: str = Header(default=""),
+    agent: SyncAgent = Depends(require_sync_agent),
+):
     """Called by garmin-sync when a sync attempt dies (watch unplugged
-    mid-sync, worker crash) so is_syncing doesn't stay latched for the
-    5-minute staleness window — that left the sidebar stuck on
-    "Syncing watch…" after an unplug."""
-    _clear_sync_active()
+    mid-sync, worker crash) so the status does not wait out its 5-minute
+    heartbeat — that left the sidebar stuck on "Syncing watch…" after an unplug."""
+    activity_status.clear(_get_sync_user(db, agent, x_garmin_device_serial or None), "watch")
     return {"ok": True}
 
 
@@ -666,8 +643,8 @@ def record_watch_synced(
     agent: SyncAgent = Depends(require_sync_agent),
 ):
     """Called by garmin-sync after the workout upload/delete/schedule cycle completes."""
-    _clear_sync_active()
     user_id = _get_sync_user(db, agent, x_garmin_device_serial or None)
+    activity_status.clear(user_id, "watch")
     us = db.query(UserSettings).filter_by(user_id=user_id).first() if user_id else None
     if us:
         us.watch_last_synced_at = datetime.now(timezone.utc)
@@ -676,10 +653,32 @@ def record_watch_synced(
 
 
 @sync_router.get("/status")
-def get_sync_status(user: User = Depends(require_auth), db: Session = Depends(get_db)):
-    """Return the last watch sync timestamp, pending upload count, live sync state,
-    and current import activity."""
+def get_sync_status(
+    user: User = Depends(require_auth),
+    db: Session = Depends(get_db),
+    authorization: str = Header(default=""),
+):
+    """What the sidebar shows: what is actually under way for this user.
+
+    ``activity`` is the whole answer (see app.services.activity_status for why
+    it replaced a queue count and a global flag). Imports are split three
+    ways, because only one of them is work happening:
+
+    * ``importing`` — the worker is on it, ``{done, total}``;
+    * ``waiting``   — queued files this session cannot open, because the
+      vault is shut. They wait for the next sign-in; no spinner;
+    * ``failed``    — files that were tried and could not be parsed.
+
+    A queue with the vault open and no worker on it is started from here (at
+    most once a minute), so it drains in seconds rather than at the next
+    90-second poll — and is then reported as importing, which it is.
+
+    The older top-level fields stay for the phone and anything else reading them.
+    """
     from app.models.imports import PendingImport
+    from app.auth import decode_token
+    from app.services.crypto_context import session_unlocked
+
     us = db.query(UserSettings).filter_by(user_id=user.id).first()
     pending = (
         db.query(func.count(PlannedWorkout.id))
@@ -691,13 +690,51 @@ def get_sync_status(user: User = Depends(require_auth), db: Session = Depends(ge
         )
         .scalar()
     )
-    is_syncing = _is_sync_active()
-    importing = db.query(PendingImport).filter_by(user_id=user.id, processed_at=None).first() is not None
+    queued = (
+        db.query(func.count(PendingImport.id))
+        .filter(PendingImport.user_id == user.id, PendingImport.processed_at.is_(None),
+                PendingImport.error.is_(None))
+        .scalar()
+    )
+    failed = (
+        db.query(func.count(PendingImport.id))
+        .filter(PendingImport.user_id == user.id, PendingImport.processed_at.is_(None),
+                PendingImport.error.isnot(None))
+        .scalar()
+    )
+    live = activity_status.snapshot(user.id)
+
+    sid = None
+    try:
+        sid = decode_token(authorization.removeprefix("Bearer ").strip()).get("sid")
+    except Exception:
+        pass
+    unlocked = bool(sid) and session_unlocked(sid)
+
+    importing = live["import"]
+    if importing is None and queued and unlocked and activity_status.claim_import_kick(user.id):
+        from app.tasks.imports import process_pending_imports
+        try:
+            process_pending_imports.delay(user.id, sid)
+            importing = {"done": 0, "total": queued}
+        except Exception:
+            _log.warning("Could not queue pending imports for user %s", user.id)
+
+    activity = {
+        "importing": importing,
+        "waiting": queued if (queued and importing is None and not unlocked) else 0,
+        "failed": failed,
+        "watch": live["watch"] is not None,
+        "phone": live["phone"] is not None,
+        "phone_last_at": (datetime.fromtimestamp(live["phone_last"], timezone.utc).isoformat()
+                          if live["phone_last"] else None),
+    }
     return {
         "last_synced_at": us.watch_last_synced_at.isoformat() if us and us.watch_last_synced_at else None,
         "pending_count": pending,
-        "is_syncing": is_syncing,
-        "importing": importing,
+        "is_syncing": activity["watch"],
+        "importing": importing is not None,
+        "activity": activity,
     }
 
 

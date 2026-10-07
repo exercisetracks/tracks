@@ -84,6 +84,23 @@ def get_server(user: User = Depends(require_auth), db: Session = Depends(get_db)
     }
 
 
+class ProbeBody(BaseModel):
+    url: str
+
+
+@router.post("/probe")
+async def probe_server(body: ProbeBody, user: User = Depends(require_auth)):
+    """Find a music server from a partial address — scheme and default port
+    filled in (services/subsonic.discover, which says why this is safe to
+    offer). The form shows the login fields only once this has found one."""
+    from app.services.subsonic import discover
+
+    found = await anyio.to_thread.run_sync(lambda: discover(body.url))
+    if found is None:
+        raise HTTPException(404, "No music server answered at that address")
+    return {"url": found}
+
+
 @router.put("")
 async def set_server(
     body: ServerBody,

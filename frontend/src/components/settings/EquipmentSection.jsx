@@ -39,11 +39,8 @@ export default function EquipmentSection({ settings, onSaved }) {
   }
 
   return (
-    <Section title="Strength Equipment" status={status}>
-      <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
-        Select all equipment you have access to. This determines which exercises
-        appear in your generated strength plans.
-      </p>
+    <Section title="Strength Equipment" status={status}
+      info="Select all equipment you have access to. This determines which exercises appear in your generated strength plans.">
       <div className="grid sm:grid-cols-2 gap-2">
         {EQUIPMENT_OPTIONS.map(({ value, label, description }) => {
           const checked  = selected.includes(value);

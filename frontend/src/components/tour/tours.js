@@ -67,8 +67,8 @@ export const TOURS = {
     },
     {
       anchor: '[data-tour="sync"]',
-      title: "Sync your watch",
-      body: "Plug in your Garmin and hit Sync to pull in new activities, sleep, and readiness — then everything here updates automatically.",
+      title: "Sync over USB",
+      body: "Plug your Garmin in with its cable and hit Sync device over USB to pull in new activities, sleep, and readiness. The phone app syncs with the watch over Bluetooth by itself; the rows above this button show when it, a watch, or an import is busy.",
       placement: "right",
     },
     {
@@ -189,8 +189,8 @@ export const TOURS = {
     },
     {
       anchor: '[data-tour="raceplans-card"]',
-      title: "Generate & sync",
-      body: "Each event goal gets a plan you can generate, review split-by-split, and sync to your watch. No events yet? Create one under Training.",
+      title: "Plans that keep up",
+      body: "Each event goal gets a race plan that works itself out from your latest fitness, the course and the weather every time you open it — review it split by split and sync it to your watch. No events yet? Create one under Training.",
       placement: "top",
     },
     {

@@ -162,6 +162,20 @@ def load_session_key(sid: str) -> UserKeyMaterial | None:
         return None
 
 
+def session_unlocked(sid: str) -> bool:
+    """Whether ``sid``'s key is still cached — without renewing it.
+
+    For the sidebar's status poll, which runs every few seconds for as long as
+    a tab is open. Asking through load_session_key would slide the TTL on every
+    poll, so an idle tab left open would keep the vault unlocked indefinitely;
+    the TTL is meant to measure use, not an open window.
+    """
+    try:
+        return bool(get_redis().exists(_cache_key(sid)))
+    except Exception:
+        return False
+
+
 def drop_session_key(sid: str) -> None:
     get_redis().delete(_cache_key(sid))
 

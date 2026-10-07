@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import React, { useMemo } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
-import { xAxisProps, yAxisProps, gridProps, TimeTooltip } from "../utils/chartHelpers.jsx";
+import { xAxisProps, yAxisProps, TimeTooltip } from "../utils/chartHelpers.jsx";
+import { CHART_GRID } from "../../../design/chartGrid";
 
 export const SpeedGraph = React.memo(function SpeedGraph({ data, imperial = false, label, onHover, onLeave, lapTimes = [] }) {
   const unit = imperial ? "mph" : "km/h";
@@ -29,7 +30,7 @@ export const SpeedGraph = React.memo(function SpeedGraph({ data, imperial = fals
       </div>
       <ResponsiveContainer width="100%" height={160}>
         <LineChart data={data} syncId="activity-time" onMouseMove={onHover} onMouseLeave={onLeave}>
-          <CartesianGrid {...gridProps} />
+          <CartesianGrid {...CHART_GRID} />
           <XAxis {...xAxisProps} />
           <YAxis {...yAxisProps}
             label={{ value: unit, angle: -90, position: "insideLeft", fill: "#94a3b8", fontSize: 10 }} />

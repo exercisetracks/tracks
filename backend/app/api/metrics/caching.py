@@ -25,6 +25,7 @@ worker), but now populate the one shared Redis cache every process reads
 from, instead of a cache only that one process could ever see.
 """
 
+from datetime import datetime, timezone
 import json
 import logging
 import threading
@@ -92,7 +93,12 @@ def _invalidate_prefix(prefix: str) -> None:
 # ── Training-load (all-time) cache ─────────────────────────────────────────────
 
 def _tload_key(user_id: int) -> str:
-    return f"{_TLOAD_PREFIX}{user_id}:all_time"
+    # The series runs through today, so a copy cached yesterday ends a day
+    # short: the UTC date in the key retires it at the next day's first read.
+    # (UTC rather than the account's zone keeps this a pure key lookup; a
+    # zone ahead of UTC sees yesterday's series for at most its offset, and
+    # the windowed path, which the dashboard's periods use, has no cache.)
+    return f"{_TLOAD_PREFIX}{user_id}:all_time:{datetime.now(timezone.utc).date().isoformat()}"
 
 
 def get_cached_tload(user_id: int) -> bytes | None:

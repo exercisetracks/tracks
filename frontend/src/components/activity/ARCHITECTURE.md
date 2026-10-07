@@ -72,7 +72,7 @@ frontend/src/components/activity/
 │   └── ResultBadge.jsx
 │
 └── utils/
-    └── chartHelpers.jsx           # ChartCard, InfoTooltip, gridProps, axis helpers
+    └── chartHelpers.jsx           # ChartCard, InfoTooltip, axis helpers
 ```
 
 ## Component Hierarchy & Data Flow

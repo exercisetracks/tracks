@@ -64,9 +64,26 @@ class TestTrainingLoad:
         _make_activity(db, user, training_stress_score=80.0)
         # Pass after date to bypass startup cache
         data = client.get("/metrics/training-load", params={"after": "2024-01-01"}).json()
-        assert len(data) == 1
         assert data[0]["tss"] == 80.0
         assert data[0]["ctl"] > 0
+
+    def test_the_series_runs_through_today_not_the_last_activity(self, client, user, db):
+        """It used to stop at the last workout, which left a gap at the right of
+        the chart and a form that did not decay until the next one."""
+        from datetime import date
+        last = datetime.now() - timedelta(days=10)
+        _make_activity(db, user, started_at=last, training_stress_score=80.0)
+        data = client.get("/metrics/training-load", params={"after": "2000-01-01"}).json()
+        assert data[-1]["date"] == date.today().isoformat()
+        assert data[-1]["tss"] == 0
+        assert data[-1]["ctl"] < data[0]["ctl"]
+
+    def test_a_window_that_ends_in_the_past_ends_there(self, client, user, db):
+        _make_activity(db, user, started_at=datetime.now() - timedelta(days=30), training_stress_score=80.0)
+        before = (datetime.now() - timedelta(days=20)).date()
+        data = client.get("/metrics/training-load",
+                          params={"after": "2000-01-01", "before": before.isoformat()}).json()
+        assert data[-1]["date"] == before.isoformat()
 
     def test_tsb_equals_ctl_minus_atl(self, client, user, db):
         for i in range(5):

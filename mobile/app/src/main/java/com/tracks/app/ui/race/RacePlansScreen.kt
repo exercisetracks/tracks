@@ -482,10 +482,13 @@ private fun Detail(
     }
 
     c.prediction?.let { p ->
-        Section("Lap targets") {
+        // Terrain splits (a course loaded) name their ground in the first
+        // column — "Climb 6%" — where kilometre splits number themselves.
+        val terrain = p.laps.any { it.kind != null }
+        Section(if (terrain) "Targets by terrain" else "Lap targets") {
             val unit = if (Units.imperial) "mi" else "km"
             Row {
-                Head("Lap", Modifier.width(40.dp))
+                Head(if (terrain) "Ground" else "Lap", Modifier.width(if (terrain) 112.dp else 40.dp))
                 Head("Pace /$unit", Modifier.weight(1f))
                 Head("Distance", Modifier.weight(1f))
                 if (p.laps.any { it.hrCeiling != null }) Head("HR ≤", Modifier.width(56.dp))
@@ -493,7 +496,12 @@ private fun Detail(
             p.laps.forEach { lap ->
                 HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
                 Row(Modifier.padding(vertical = 2.dp)) {
-                    Text("${lap.lap}", style = MaterialTheme.typography.bodySmall, modifier = Modifier.width(40.dp))
+                    Text(
+                        lap.label ?: "${lap.lap}",
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.width(if (terrain) 112.dp else 40.dp),
+                        maxLines = 1,
+                    )
                     Text(
                         RacePredictor.formatTime(lap.targetSecPerKm * if (Units.imperial) 1.60934 else 1.0),
                         style = MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = "tnum"),

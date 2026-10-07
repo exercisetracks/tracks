@@ -1,23 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Hawk Fugagli
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { todayDate } from "../lib/today";
-
-const WORKOUT_BADGE = {
-  easy:          "bg-accent-100 text-accent-700 dark:bg-accent-900/40 dark:text-accent-300",
-  long_run:      "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
-  tempo:         "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
-  intervals:     "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300",
-  race_pace:     "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300",
-  fartlek:       "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300",
-  short_quality: "bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300",
-  race:          "bg-slate-800 text-white dark:bg-white dark:text-slate-900",
-};
-
-const SPORT_BADGE = {
-  running:  "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
-  cycling:  "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
-  swimming: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300",
-};
+import { workoutChip } from "../lib/workoutColors";
 
 const PACE_LABELS = {
   easy: "Easy", z2: "Zone 2", marathon: "Marathon pace",
@@ -131,8 +115,11 @@ function StepLine({ step, imperial = false }) {
 }
 
 function WorkoutDetail({ w, imperial = false }) {
-  const badgeClass = WORKOUT_BADGE[w.workout_type] ?? "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300";
-  const sportClass = SPORT_BADGE[w.sport?.toLowerCase()] ?? "bg-accent-100 text-accent-700 dark:bg-accent-900/40 dark:text-accent-300";
+  // One colour for both chips, the workout's own (lib/workoutColors.js): the
+  // sport chip used to have a palette of three sports and the type chip one
+  // of eight types, so most sessions got a grey type beside an accent sport.
+  const badgeClass = workoutChip(w);
+  const sportClass = badgeClass;
   const day = relDay(w.scheduled_date);
   const isToday = day === "Today";
 
@@ -171,12 +158,29 @@ function WorkoutDetail({ w, imperial = false }) {
 }
 
 
+// The next few planned sessions, side by side: one alone said what today is
+// but not what the week around it looks like. The columns fill at a minimum
+// width rather than at a breakpoint, because this card shares its row with
+// the gauge rail and its width depends on the sidebar as much as the window;
+// on a narrow screen the later ones wrap underneath instead of squeezing.
+const UPCOMING_SHOWN = 3;
+
 export default function PlannedWorkoutCard({ workouts, imperial = false }) {
-  const [first] = workouts;
+  const shown = workouts.slice(0, UPCOMING_SHOWN);
 
   return (
-    <div className="card flex flex-col h-full min-w-0">
-      <WorkoutDetail w={first} imperial={imperial} />
+    <div
+      className="card h-full min-w-0 grid gap-x-5 gap-y-4"
+      style={{ gridTemplateColumns: "repeat(auto-fit, minmax(13rem, 1fr))" }}
+    >
+      {shown.map((w, i) => (
+        <div
+          key={w.id ?? i}
+          className={`min-w-0 ${i > 0 ? "border-t pt-4 border-slate-100 dark:border-slate-800 sm:border-t-0 sm:pt-0 sm:border-l sm:pl-5" : ""}`}
+        >
+          <WorkoutDetail w={w} imperial={imperial} />
+        </div>
+      ))}
     </div>
   );
 }

@@ -63,6 +63,8 @@ class TracksApplication : Application() {
         GBApplication.init(this)
         raiseMapTileConcurrency()
         container = AppContainer(this)
+        // Read the screens' last figures now, so the first screen has them.
+        container.snapshots
         // Enqueued unconditionally: the worker itself decides whether there is
         // anything to do, and KEEP means re-running this on every launch does
         // not reset the schedule (which would stop it ever firing).
@@ -191,6 +193,13 @@ class AppContainer(private val context: Context) {
     }
 
     /** What this phone derived from its FIT files, and the ids screens use. See `Local.sq`. */
+    /** The screens' last figures, sealed — see the class. Read ahead at startup. */
+    val snapshots: com.tracks.app.local.SealedSnapshots by lazy {
+        com.tracks.app.local.SealedSnapshots(context).also { it.preload() }
+    }
+
+    /** Route thumbnails between launches — shapes only, see the class. */
+    val trackShapes: com.tracks.app.local.TrackShapeCache by lazy { com.tracks.app.local.TrackShapeCache(context) }
     val library: com.tracks.core.local.LocalLibrary by lazy { com.tracks.core.local.LocalLibrary(database, com.tracks.core.time.ZoneOffsets::of) }
 
     /** What a person said, as the API's models, read and written through the replica. */
@@ -422,7 +431,7 @@ class AppContainer(private val context: Context) {
             // A recreated server has none of this phone's files either;
             // uploadFiles sees its new server id and re-sends them.
             sources.changed()
-            if (report.wiped) library.clear()
+            if (report.wiped) { library.clear(); snapshots.clear() }
             uploadFiles()
             return report
         } finally {
@@ -1029,6 +1038,7 @@ class AppContainer(private val context: Context) {
         client().logout()
         replica.erase()
         files.clear()
+        snapshots.clear()
     }
 
     private fun prefs() = context.getSharedPreferences("tracks_app", Context.MODE_PRIVATE)

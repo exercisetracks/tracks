@@ -22,7 +22,6 @@ import DevicesSection from "../components/settings/DevicesSection";
 import GarminCoachingSection from "../components/settings/GarminCoachingSection";
 import PrivacySummarySection from "../components/settings/PrivacySummarySection";
 import EquipmentSection from "../components/settings/EquipmentSection";
-import SecuritySection from "../components/settings/SecuritySection";
 import UserManagementSection from "../components/settings/UserManagementSection";
 import DangerZoneSection from "../components/settings/DangerZoneSection";
 import VersionSection from "../components/settings/VersionSection";
@@ -77,9 +76,8 @@ export default function Settings() {
       <GarminCoachingSection           settings={settings} onSaved={handleSaved} />
       <PrivacySummarySection          settings={settings} onSaved={handleSaved} />
       <EquipmentSection                settings={settings} onSaved={handleSaved} />
-      <SecuritySection />
       <BackupSection />
-      {user?.is_admin && <UserManagementSection />}
+      <UserManagementSection />
       <VersionSection />
       <DangerZoneSection />
     </div>

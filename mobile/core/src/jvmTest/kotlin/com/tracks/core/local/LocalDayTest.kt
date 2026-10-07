@@ -62,7 +62,7 @@ class LocalDayTest {
         val p = Phone("America/Los_Angeles")
         val m = p.metrics
         p.run("evening", "2026-10-01 01:04:12+00:00")
-        val load = m.trainingLoad(thresholdHr = null)
+        val load = m.trainingLoad(CivilDate(2026, 9, 30), thresholdHr = null)
         assertEquals("2026-09-30", load.single { it.tss > 0 }.date)
         // So the 30th's form already carries it, rather than tomorrow's.
         val (ctl, _) = m.ctlAtl(CivilDate(2026, 9, 30), thresholdHr = null)
@@ -76,7 +76,7 @@ class LocalDayTest {
         val m = p.metrics
         p.run("morning", "2026-10-01T21:30:00+00:00")
         assertEquals(listOf("2026-10-02"), m.calendar(null, null).map { it.date })
-        assertEquals("2026-10-02", m.trainingLoad(null).single { it.tss > 0 }.date)
+        assertEquals("2026-10-02", m.trainingLoad(CivilDate(2026, 10, 2), null).single { it.tss > 0 }.date)
     }
 
     @Test

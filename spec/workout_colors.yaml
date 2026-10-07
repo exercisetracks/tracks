@@ -1,0 +1,80 @@
+# SPDX-FileCopyrightText: 2026 Hawk Fugagli
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# How a planned workout is coloured, on the web and on the phone.
+#
+# Hue says what kind of session it is; shade says how hard. Both apps used to
+# colour by workout type alone, from two hand-kept tables, so an easy run and
+# an easy spin were the same green, a strength session's colour depended on a
+# word in its title, and every type either table had not heard of — `long`,
+# `easy_recovery`, `flexibility`, which are what the plan generators actually
+# emit — fell through to grey.
+#
+# A family is a sport type from sport_taxonomy.yaml, plus two that are about the
+# session rather than the sport: `stretching` (flexibility and mobility work,
+# whatever sport it is filed under) and `race`, which keeps its inverted chip.
+# Families nearby in a week get hues far apart on the wheel; none uses the
+# green the default accent is drawn in, so a plan never reads as "selected".
+#
+# Regenerate with `python3 spec/codegen.py`; the resolver that reads these
+# tables is lib/workoutColors.js on the web and core spec/WorkoutColors.kt on
+# the phone, rule for rule.
+
+families:
+  running: blue
+  hiking: lime
+  cycling: amber
+  indoor_cycling: amber
+  mtb: orange
+  swimming: cyan
+  rowing: indigo
+  paddling: yellow
+  skiing: sky
+  nordic_skiing: teal
+  climbing: rose
+  bouldering: rose
+  triathlon: fuchsia
+  strength: violet
+  stretching: pink
+  mind_body: pink
+  other: slate
+
+# Workout types that make a session `stretching` whatever its sport says.
+stretching_types: [flexibility, mobility, stretch, yoga]
+
+# Shade: 1 easy, 2 steady or long, 3 hard. Unlisted types are 2, the middle,
+# so a new type is visibly in its family and never mistaken for easy or hard.
+levels:
+  1: [easy, easy_recovery, recovery, easy_spin, aerobic, technique, ut2, skills,
+      pole_hike, arc, flexibility, mobility, stretch, yoga, drills]
+  2: [long, long_run, endurance, ut1, back_to_back, vert, descent, eccentric,
+      agility, strength]
+  3: [tempo, threshold, css, sweet_spot, intervals, vo2, vo2max, race_pace,
+      fartlek, short_quality, sprint, plyometrics, hangboard, limit_bouldering,
+      incline_intervals, bounding, ski_intervals, power_endurance, micro_bursts,
+      over_unders, matchbook, standing_starts, descent_repeats, field_test]
+
+# Tailwind v3's palette for the hues above, so the phone draws the web's
+# colours exactly. Steps 100–900.
+palette:
+  slate:   ["f1f5f9", "e2e8f0", "cbd5e1", "94a3b8", "64748b", "475569", "334155", "1e293b", "0f172a"]
+  blue:    ["dbeafe", "bfdbfe", "93c5fd", "60a5fa", "3b82f6", "2563eb", "1d4ed8", "1e40af", "1e3a8a"]
+  lime:    ["ecfccb", "d9f99d", "bef264", "a3e635", "84cc16", "65a30d", "4d7c0f", "3f6212", "365314"]
+  amber:   ["fef3c7", "fde68a", "fcd34d", "fbbf24", "f59e0b", "d97706", "b45309", "92400e", "78350f"]
+  orange:  ["ffedd5", "fed7aa", "fdba74", "fb923c", "f97316", "ea580c", "c2410c", "9a3412", "7c2d12"]
+  cyan:    ["cffafe", "a5f3fc", "67e8f9", "22d3ee", "06b6d4", "0891b2", "0e7490", "155e75", "164e63"]
+  indigo:  ["e0e7ff", "c7d2fe", "a5b4fc", "818cf8", "6366f1", "4f46e5", "4338ca", "3730a3", "312e81"]
+  yellow:  ["fef9c3", "fef08a", "fde047", "facc15", "eab308", "ca8a04", "a16207", "854d0e", "713f12"]
+  sky:     ["e0f2fe", "bae6fd", "7dd3fc", "38bdf8", "0ea5e9", "0284c7", "0369a1", "075985", "0c4a6e"]
+  teal:    ["ccfbf1", "99f6e4", "5eead4", "2dd4bf", "14b8a6", "0d9488", "0f766e", "115e59", "134e4a"]
+  rose:    ["ffe4e6", "fecdd3", "fda4af", "fb7185", "f43f5e", "e11d48", "be123c", "9f1239", "881337"]
+  fuchsia: ["fae8ff", "f5d0fe", "f0abfc", "e879f9", "d946ef", "c026d3", "a21caf", "86198f", "701a75"]
+  violet:  ["ede9fe", "ddd6fe", "c4b5fd", "a78bfa", "8b5cf6", "7c3aed", "6d28d9", "5b21b6", "4c1d95"]
+  pink:    ["fce7f3", "fbcfe8", "f9a8d4", "f472b6", "ec4899", "db2777", "be185d", "9d174d", "831843"]
+
+# Which palette steps a chip uses at each shade: fill, text, border, and the
+# dot's. Dark mode draws the fill at `dark_fill_alpha` over the card.
+shades:
+  1: {fill: 100, text: 700, border: 200, dot: 400, dark_fill: 900, dark_fill_alpha: 0.40, dark_text: 300, dark_border: 800}
+  2: {fill: 200, text: 800, border: 300, dot: 500, dark_fill: 800, dark_fill_alpha: 0.55, dark_text: 200, dark_border: 700}
+  3: {fill: 300, text: 900, border: 400, dot: 700, dark_fill: 700, dark_fill_alpha: 0.70, dark_text: 100, dark_border: 600}

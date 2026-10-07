@@ -2,9 +2,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import React, { useMemo } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ReferenceLine } from "recharts";
-import { yAxisProps, gridProps, useZoneMaxHR } from "../utils/chartHelpers.jsx";
+import { yAxisProps, useZoneMaxHR } from "../utils/chartHelpers.jsx";
 import { hrColor } from "../../../utils/formatUtils";
 import { HR_MODELS } from "../../../spec/zones";
+import { CHART_GRID } from "../../../design/chartGrid";
 
 // The five-zone %HRmax *display* model from the shared spec (spec/zones.yaml).
 // Deliberately not the Friel LTHR zones the backend uses for training load:
@@ -72,7 +73,7 @@ export const HRHistogram = React.memo(function HRHistogram({ data, maxHR: activi
 
       <ResponsiveContainer width="100%" height={160}>
         <BarChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
-          <CartesianGrid {...gridProps} vertical={false} />
+          <CartesianGrid {...CHART_GRID} />
           <XAxis
             dataKey="range"
             tick={{ fontSize: 8, fill: "#94a3b8" }}

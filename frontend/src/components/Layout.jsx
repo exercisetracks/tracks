@@ -6,9 +6,9 @@
 // that stays put while pages swap underneath it.
 import { Outlet, NavLink } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
-import { useState, useEffect, useRef } from "react";
-import { api } from "../api/client";
+import { useState, useEffect } from "react";
 import WatchSyncModal from "./sync/WatchSyncModal";
+import SidebarStatus, { useServerActivity } from "./sync/SidebarStatus";
 import ServerUpdateBanner from "./ServerUpdateBanner";
 import BackupProgressPill from "./BackupProgressPill";
 import { GARMIN_VENDOR_ID } from "../lib/mtp";
@@ -122,11 +122,8 @@ const linkClass = ({ isActive }) =>
 
 export default function Layout() {
   const { logout } = useAuth();
-  const [isImporting, setIsImporting] = useState(false);
-  // Watch sync indicator state
-  const [syncState, setSyncState] = useState("idle"); // "idle" | "syncing" | "done"
-  const lastSyncedAtRef = useRef(null);
-  const doneTimerRef    = useRef(null);
+  // What the server is doing for this user — see sync/SidebarStatus.jsx.
+  const status = useServerActivity();
   // One-button watch sync modal; autoDevice is set when a previously
   // authorised watch is plugged into this computer while the app is open.
   const [syncModalOpen, setSyncModalOpen] = useState(false);
@@ -148,43 +145,6 @@ export default function Layout() {
     return () => navigator.usb.removeEventListener("connect", onConnect);
   }, []);
 
-  // One poll drives both indicators (import spinner + sync-button state)
-  // from /training-plan/sync/status. State machine:
-  //   is_syncing            → "syncing" (spinner)
-  //   last_synced_at bumped → "done"    (checkmark for 15 s)
-  //   neither               → "idle"    (also recovers from a sync attempt
-  //                            that died without completing, e.g. watch
-  //                            unplugged mid-cable-sync)
-  // localStorage persists the last-seen timestamp so "Watch synced" doesn't
-  // replay on page reload.
-  useEffect(() => {
-    let cancelled = false;
-    const stored = localStorage.getItem("tracks_last_synced_at");
-    if (stored) lastSyncedAtRef.current = stored;
-
-    async function poll() {
-      try {
-        const s = await api.getSyncStatus();
-        if (cancelled) return;
-        setIsImporting(s.importing === true);
-        if (s.is_syncing) {
-          setSyncState("syncing");
-        } else if (s.last_synced_at && s.last_synced_at !== lastSyncedAtRef.current) {
-          lastSyncedAtRef.current = s.last_synced_at;
-          localStorage.setItem("tracks_last_synced_at", s.last_synced_at);
-          setSyncState("done");
-          clearTimeout(doneTimerRef.current);
-          doneTimerRef.current = setTimeout(() => setSyncState("idle"), 15_000);
-        } else {
-          setSyncState((cur) => (cur === "syncing" ? "idle" : cur));
-        }
-      } catch { /* ignore */ }
-    }
-    poll();
-    const interval = setInterval(poll, 2_000);
-    return () => { cancelled = true; clearInterval(interval); clearTimeout(doneTimerRef.current); };
-  }, []);
-
   return (
     <TourProvider>
     <div className="flex h-screen bg-slate-100 dark:bg-slate-950">
@@ -204,47 +164,24 @@ export default function Layout() {
         </div>
 
         <div className="p-1 space-y-0.5 border-t border-slate-200 dark:border-slate-800">
-          {/* Import progress indicator */}
-          {isImporting && (
-            <div className="flex items-center gap-2 px-2.5 py-1.5 mb-1 bg-accent-50 dark:bg-accent-900/20 rounded-lg">
-              <svg className="animate-spin h-4 w-4 text-accent-600 dark:text-accent-400" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-90" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              <span className="text-xs font-medium text-accent-700 dark:text-accent-300">Importing...</span>
-            </div>
-          )}
+          <SidebarStatus status={status} onUnlock={logout} />
 
-          {/* Watch sync: one button, all connection methods */}
+          {/* Device sync over a cable: the watch's USB connection (WebUSB or
+              the garmin-sync agent). Named for the cable because the phone
+              syncs with the watch over Bluetooth by itself, and "Sync watch"
+              read as though this did that too. */}
           <button
             type="button"
             data-tour="sync"
             onClick={() => { setAutoDevice(null); setSyncModalOpen(true); }}
-            className={`w-full flex items-center gap-3 px-2.5 py-1.5 mb-1 rounded-lg text-sm font-medium transition-colors ${
-              syncState === "syncing"
-                ? "bg-sky-50 dark:bg-sky-900/20 text-sky-700 dark:text-sky-300"
-                : syncState === "done"
-                ? "bg-accent-50 dark:bg-accent-900/20 text-accent-700 dark:text-accent-300"
-                : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white"
-            }`}
+            className="w-full flex items-center gap-3 px-2.5 py-1.5 mb-1 rounded-lg text-sm font-medium text-left whitespace-nowrap transition-colors text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white"
           >
-            {syncState === "syncing" ? (
-              <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                <path className="opacity-90" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
-              </svg>
-            ) : syncState === "done" ? (
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/>
-              </svg>
-            ) : (
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-              </svg>
-            )}
-            {syncState === "syncing" ? "Syncing watch…" : syncState === "done" ? "Watch synced" : "Sync watch"}
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v12m0 0l-3-3m3 3l3-3M8 21h8M10 17h4v4h-4z" />
+            </svg>
+            Sync device over USB
           </button>
-          
+
           <NavLink to="/settings" data-tour="settings-link" className={linkClass}>
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />

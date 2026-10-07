@@ -67,9 +67,23 @@ export function fmtAdjSec(sec) {
 export function recomputeLaps(baseLaps, predictedSec, splitSpread, imperial) {
   if (!baseLaps?.length || !predictedSec) return baseLaps ?? [];
   const n   = baseLaps.length;
-  const mid = (n - 1) / 2;
-  const slope = -splitSpread * MAX_SPREAD * 2 / Math.max(n - 1, 1);
-  const ramp  = baseLaps.map((_, i) => 1 + slope * (i - mid));
+  let ramp;
+  if (baseLaps.some(l => l.kind)) {
+    // Terrain splits are unequal, so the ramp runs over distance — the
+    // server's _split_ramp_by_distance.
+    const total = baseLaps.reduce((s, l) => s + l.distance_m, 0) || 1;
+    const slope = -splitSpread * MAX_SPREAD * 2;
+    let start = 0;
+    ramp = baseLaps.map(l => {
+      const r = 1 + slope * ((start + l.distance_m / 2) / total - 0.5);
+      start += l.distance_m;
+      return r;
+    });
+  } else {
+    const mid = (n - 1) / 2;
+    const slope = -splitSpread * MAX_SPREAD * 2 / Math.max(n - 1, 1);
+    ramp = baseLaps.map((_, i) => 1 + slope * (i - mid));
+  }
 
   const denom = baseLaps.reduce((s, l, i) =>
     s + l.distance_m * (l.grade_multiplier ?? 1) * ramp[i], 0) / 1000;

@@ -6,6 +6,7 @@ import com.tracks.core.api.PlannedWorkout
 import java.time.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
 
 class AgendaTest {
 
@@ -43,21 +44,13 @@ class AgendaTest {
         assertEquals(listOf(3, 4, 2, 1), day.workouts.map { it.id })
     }
 
-    /** The web tells strength sessions apart by title; the phone must colour them the same. */
+    /** Long runs used to fall through to the grey chip. */
     @Test
-    fun strength_sessions_take_the_webs_colour_from_their_title() {
-        assertEquals("strength_lower", toneKey("strength", "Lower Body"))
-        assertEquals("strength_core", toneKey("strength", "Upper Body & Core"))
-        assertEquals("strength_upper", toneKey("strength", "Upper Body"))
-        assertEquals("strength_legs", toneKey("strength", "Leg Day"))
-        assertEquals("strength_push", toneKey("strength", "Push Day"))
-        assertEquals("strength", toneKey("strength", "Posterior Chain"))
-    }
-
-    @Test
-    fun an_unknown_type_falls_back_to_the_neutral_chip() {
-        assertEquals("default", toneKey("field_test", "FTP test"))
-        assertEquals("tempo", toneKey("tempo", "Tempo"))
-        assertEquals("mobility", toneKey("mobility", "Lower-Body Flush"))
+    fun a_long_run_is_coloured_like_a_run_and_not_like_an_easy_one() {
+        val surface = androidx.compose.ui.graphics.Color.White
+        val easy = workoutTone("easy", "running", dark = false, surface = surface)
+        val long = workoutTone("long", "running", dark = false, surface = surface)
+        assertNotEquals(easy.fill, long.fill)
+        assertNotEquals(workoutTone("long", "running", false, surface).fill, workoutTone("long", "cycling", false, surface).fill)
     }
 }

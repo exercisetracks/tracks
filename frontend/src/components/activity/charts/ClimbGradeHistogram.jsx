@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import React from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from "recharts";
-import { ChartCard, gridProps } from "../utils/chartHelpers.jsx";
+import { ChartCard } from "../utils/chartHelpers.jsx";
+import { CHART_GRID } from "../../../design/chartGrid";
 
 export function ClimbGradeHistogram({ activeSplits }) {
   if (!activeSplits?.length) return null;
@@ -31,7 +32,7 @@ export function ClimbGradeHistogram({ activeSplits }) {
     <ChartCard title="Grade Distribution">
       <ResponsiveContainer width="100%" height={200}>
         <BarChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: 0 }} barSize={18} barGap={2}>
-          <CartesianGrid {...gridProps} vertical={false} />
+          <CartesianGrid {...CHART_GRID} />
           <XAxis dataKey="grade" tick={{ fontSize: 10, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
           <YAxis tick={{ fontSize: 10, fill: "#94a3b8" }} axisLine={false} tickLine={false} width={28} allowDecimals={false} />
           <Tooltip

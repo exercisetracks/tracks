@@ -96,7 +96,6 @@ export function niceYTicks(min, max, targetCount = 4) {
 export const CURSOR = { stroke: "#64748b60", strokeWidth: 1, strokeDasharray: "3 3" };
 export const TICK   = { fontSize: 10, fill: "var(--chart-text)" };
 export const AXIS   = { tick: TICK, tickLine: false, axisLine: false };
-export const GRID   = { strokeDasharray: "3 3", stroke: "var(--chart-grid)" };
 
 // Right margin of 52 matches WeeklyVolumeChart's right axis (16 outer + 36 axis)
 // so the two charts' plot areas align horizontally on the page.

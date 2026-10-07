@@ -37,7 +37,8 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { ChartCard, gridProps } from "../../utils/chartHelpers.jsx";
+import { ChartCard } from "../../utils/chartHelpers.jsx";
+import { CHART_GRID } from "../../../../design/chartGrid";
 
 export function EffortVsRecoveryChart({ data }) {
   if (!data?.length) return null;
@@ -46,7 +47,7 @@ export function EffortVsRecoveryChart({ data }) {
     <ChartCard title="Effort vs Recovery">
       <ResponsiveContainer width="100%" height={220}>
         <ScatterChart margin={{ top: 8, right: 16, bottom: 24, left: 8 }}>
-          <CartesianGrid {...gridProps} />
+          <CartesianGrid {...CHART_GRID} />
           <XAxis
             type="number"
             dataKey="duration"

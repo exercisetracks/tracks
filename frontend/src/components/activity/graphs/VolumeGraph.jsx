@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import React from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ReferenceLine } from "recharts";
-import { xAxisProps, yAxisProps, gridProps, TimeTooltip } from "../utils/chartHelpers.jsx";
+import { xAxisProps, yAxisProps, TimeTooltip } from "../utils/chartHelpers.jsx";
+import { CHART_GRID } from "../../../design/chartGrid";
 
 /**
  * VolumeGraph - Displays volume (weight × reps) per set
@@ -24,7 +25,7 @@ export function VolumeGraph({ data, onHover, onLeave, lapTimes = [] }) {
       </div>
       <ResponsiveContainer width="100%" height={180}>
         <BarChart data={data} onMouseMove={onHover} onMouseLeave={onLeave}>
-          <CartesianGrid {...gridProps} vertical={false} />
+          <CartesianGrid {...CHART_GRID} />
           <XAxis {...xAxisProps} />
           <YAxis {...yAxisProps} label={{ value: "kg-reps", angle: -90, position: "insideLeft", fill: "#94a3b8", fontSize: 10, dy: 15 }} />
           <Tooltip content={<TimeTooltip format={(v) => v != null ? `${v} kg·reps` : "—" } />} />

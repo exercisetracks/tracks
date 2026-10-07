@@ -210,21 +210,9 @@ def _do_generate_race_plan(goal_id: int, db: Session, user: User):
     if tsb is not None:
         freshness_factor = 1.0 - max(-0.03, min(0.03, tsb * 0.001))
 
-    # ── Weather (15-minute cache) ─────────────────────────────────────────────
-    now       = datetime.now(timezone.utc)
-    cache_age = (now - rp.generated_at).total_seconds() / 60 if rp.generated_at else 999
+    # ── Weather (cached by place and day — see race_helpers._fetch_weather) ──
     lat       = rp.pin_lat
     lon       = rp.pin_lon
-
-    def _weather_factor_from_snap(snap: dict) -> float:
-        if "heat_penalty_pct" in snap and "wind_penalty_pct" in snap:
-            return (1.0 + snap["heat_penalty_pct"] / 100) * (1.0 + snap["wind_penalty_pct"] / 100)
-        return weather_slowdown_factor(
-            temp_c         = snap.get("temperature_c") or 15.0,
-            humidity_pct   = snap.get("humidity_pct")  or 50.0,
-            wind_mps       = snap.get("wind_mps")       or 0.0,
-            wind_angle_deg = snap.get("wind_direction") or 0.0,
-        )
 
     def _annotate_weather(snap: dict, base_seconds: float, is_cycling: bool = False) -> tuple[float, float]:
         """Decompose snap into heat and wind penalties; annotate snap in-place.
@@ -273,10 +261,6 @@ def _do_generate_race_plan(goal_id: int, db: Session, user: User):
         weather_snap   = None
         weather_factor = 1.0
         net_wind_mps   = 0.0
-    elif rp.weather_snapshot and cache_age < 15 and lat is not None:
-        weather_snap   = rp.weather_snapshot
-        weather_factor = _weather_factor_from_snap(weather_snap)
-        net_wind_mps   = weather_snap.get("net_headwind_mps", 0.0)
     elif lat is not None and lon is not None and goal.event_date:
         weather_snap = _fetch_weather(lat, lon, goal.event_date)
         if weather_snap:
@@ -335,6 +319,8 @@ def _do_generate_race_plan(goal_id: int, db: Session, user: User):
             lap_km          = lap_km,
             course_segments = rp.course_segments,
             max_hr          = max_hr_val if rp.pace_hr_mode == "pace_hr" else None,
+            # A course gets terrain splits, not kilometres — race_predictor/terrain.py.
+            terrain         = True,
         )
 
     # ══════════════════════════════════════════════════════════════════════════
@@ -655,19 +641,21 @@ def _do_generate_race_plan(goal_id: int, db: Session, user: User):
             max_hr        = max_hr_val if rp.pace_hr_mode == "pace_hr" else None,
         )
 
-    # ── Queue old watch file for deletion on regeneration ─────────────────────
-    if rp.watch_filename and rp.watch_uploaded_at:
-        from app.models.training_plan import WatchPendingDelete
-        if not db.query(WatchPendingDelete).filter_by(
-                user_id=rp.user_id, filename=rp.watch_filename).first():
-            db.add(WatchPendingDelete(user_id=rp.user_id, filename=rp.watch_filename))
-        rp.watch_filename    = None
-        rp.watch_uploaded_at = None
-
     # ── Generate FIT (running + cycling only — swim/tri use per-leg legs) ──────
+    #
+    # Plans regenerate on every visit now, so a regeneration that changes
+    # nothing must not look like a new plan to the watch: that re-queued the
+    # file for deletion and upload each time the page was opened. The file is
+    # compared by a fingerprint of its content with the creation time pinned
+    # (the real one is "now", so the bytes always differ); only a plan whose
+    # content actually changed replaces what is on the watch.
+    import hashlib
+
+    old_sig = (rp.weather_snapshot or {}).get("fit_sig") if rp.fit_b64 else None
+    new_fit, new_sig = None, None
     if family not in ("swimming", "triathlon") and laps:
         try:
-            fit_bytes = generate_race_fit(
+            fit_args = dict(
                 name          = goal.event_name or "Race",
                 sport         = (goal.event_sport or "running").lower(),
                 lap_paces     = laps,
@@ -676,19 +664,35 @@ def _do_generate_race_plan(goal_id: int, db: Session, user: User):
                 max_hr        = max_hr_val,
                 fuel_items    = _fuel_items(db, rp, goal, laps, actual_sec),
             )
-            rp.fit_b64        = base64.b64encode(fit_bytes).decode()
-            rp.watch_filename = f"RACE_{goal.id}_{goal.event_date or 'undated'}.fit"
+            new_sig = hashlib.sha256(generate_race_fit(**fit_args, time_created_ms=0)).hexdigest()
+            new_fit = generate_race_fit(**fit_args) if new_sig != old_sig else None
         except Exception:
+            new_sig = None
+
+    unchanged = new_sig is not None and new_sig == old_sig
+    if not unchanged:
+        # Queue the old watch file for deletion: it describes another plan.
+        if rp.watch_filename and rp.watch_uploaded_at:
+            from app.models.training_plan import WatchPendingDelete
+            if not db.query(WatchPendingDelete).filter_by(
+                    user_id=rp.user_id, filename=rp.watch_filename).first():
+                db.add(WatchPendingDelete(user_id=rp.user_id, filename=rp.watch_filename))
+            rp.watch_uploaded_at = None
+        if new_fit is not None:
+            rp.fit_b64        = base64.b64encode(new_fit).decode()
+            rp.watch_filename = f"RACE_{goal.id}_{goal.event_date or 'undated'}.fit"
+        else:
             rp.fit_b64        = None
             rp.watch_filename = None
-    else:
-        rp.fit_b64        = None
-        rp.watch_filename = None
+    if weather_snap is not None or new_sig is not None:
+        # Carried in the snapshot blob, which already holds non-weather
+        # extras (triathlon_legs), rather than a column of its own.
+        weather_snap = {**(weather_snap or {}), "fit_sig": new_sig}
 
     rp.predicted_seconds  = actual_sec
     rp.weather_snapshot   = weather_snap
     rp.lap_paces          = laps
-    rp.generated_at       = now
+    rp.generated_at       = datetime.now(timezone.utc)
     db.commit()
     db.refresh(rp)
     return _race_plan_out(rp, us, goal)

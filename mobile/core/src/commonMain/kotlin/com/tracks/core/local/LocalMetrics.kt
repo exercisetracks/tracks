@@ -105,8 +105,8 @@ class LocalMetrics(private val library: LocalLibrary, private val sources: Local
     }
 
     /** All-time CTL/ATL/TSB, as `/metrics/training-load`. */
-    suspend fun trainingLoad(thresholdHr: Double?): List<TrainingLoadPoint> = cpu {
-        TrainingLoad.trainingLoad(rows(), thresholdHr, sources.mtbDiscipline()).map {
+    suspend fun trainingLoad(today: CivilDate, thresholdHr: Double?): List<TrainingLoadPoint> = cpu {
+        TrainingLoad.trainingLoad(rows(), thresholdHr, sources.mtbDiscipline(), today).map {
             TrainingLoadPoint(it.date.isoformat(), it.tss, it.ctl, it.atl, it.tsb, it.ctlRamp)
         }
     }

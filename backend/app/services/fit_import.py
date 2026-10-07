@@ -866,9 +866,14 @@ def process_pending_imports_for_user(user_id: int, material: UserKeyMaterial,
         if not pending:
             return
 
+        from app.services import activity_status
+
         settings = _load_import_settings(db, user_id)
         ok = fail = 0
-        for item in pending:
+        for n, item in enumerate(pending):
+            # The sidebar's "Importing n of m" — a heartbeat, so a worker that
+            # dies mid-backlog stops showing within its TTL.
+            activity_status.mark(user_id, "import", done=n, total=len(pending))
             try:
                 sealed = object_storage.load_blob(item.blob_id)
                 raw = user_crypto.unseal(material, sealed)
@@ -892,3 +897,5 @@ def process_pending_imports_for_user(user_id: int, material: UserKeyMaterial,
         log.info("Processed pending imports for user %s: %d ok, %d failed", user_id, ok, fail)
     finally:
         db.close()
+        from app.services import activity_status
+        activity_status.clear(user_id, "import")

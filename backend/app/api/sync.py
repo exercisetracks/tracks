@@ -23,7 +23,7 @@ from sqlalchemy.orm import Session
 from app.auth import require_auth
 from app.database import get_db
 from app.models.activity import User
-from app.services import fit_import
+from app.services import activity_status, fit_import
 from app.services.crypto_context import UserKeyMaterial, require_crypto_session
 from app.api.metrics.caching import invalidate_dashboard_cache, invalidate_training_load_cache
 from app.sync import store
@@ -43,6 +43,10 @@ def sync_push(
 ):
     if not isinstance(body.get("changes", []), list):
         raise HTTPException(status_code=422, detail="changes must be a list")
+    # The phone's sync, on the sidebar (activity_status): every push, pull and
+    # file download is a heartbeat, so it shows while the phone is talking to
+    # the server and stops within seconds of it finishing.
+    activity_status.mark(user.id, "phone")
     result = store.push(db, user.id, body)
     # The cached load and dashboard series are computed from these entities
     # (goals choose the MTB multiplier, settings the thresholds). A web edit
@@ -64,6 +68,7 @@ def sync_pull(
     _key: UserKeyMaterial = Depends(require_crypto_session),
     db: Session = Depends(get_db),
 ):
+    activity_status.mark(user.id, "phone")
     return store.pull(db, user.id, since, limit)
 
 
@@ -79,6 +84,7 @@ def blob_download(
     Looked up by (user, hash), never by hash alone: two family members can
     hold the same file, and each must reach only their own copy.
     """
+    activity_status.mark(user.id, "phone")
     raw = _plaintext(db, user.id, sha256.lower(), key)
     if raw is None:
         raise HTTPException(status_code=404, detail="No such file")

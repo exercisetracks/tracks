@@ -50,4 +50,4 @@ def training_load(
     rows = _slim_activity_rows(db, user.id, us, after, before)
     return _compute_tload_points(rows, threshold_hr, discipline,
                                  _full_calibration(db, user.id, us, threshold_hr, discipline),
-                                 tz_name=_account_zone(us))
+                                 tz_name=_account_zone(us), before=before)

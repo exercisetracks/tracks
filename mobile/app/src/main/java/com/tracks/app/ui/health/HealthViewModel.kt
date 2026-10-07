@@ -26,7 +26,10 @@ import com.tracks.core.api.MedicationLog
 import com.tracks.core.api.MedicationLogCreate
 import android.util.Log
 import com.tracks.app.device.WeightFit
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.drop
+import com.tracks.core.local.ScreenSnapshots
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -314,14 +317,76 @@ data class HealthUiState(
         ((existing.minOrNull() ?: 0).coerceAtMost(0)) - 1
 }
 
+@OptIn(FlowPreview::class)
 class HealthViewModel(private val container: AppContainer) : ViewModel() {
 
     private val _state = MutableStateFlow(HealthUiState())
     val state: StateFlow<HealthUiState> = _state.asStateFlow()
 
+    /** The selected night came from the snapshot rather than from a tap. */
+    private var nightFromSnapshot = false
+
     init {
+        restoreSnapshot()
         load()
         watchLocalReadings()
+        keepSnapshot()
+    }
+
+    /**
+     * What the page last showed, on the first frame — see the dashboard's
+     * restoreSnapshot, which this mirrors. The loads replace each part as it
+     * arrives, so the dials and charts never draw empty on a cold start.
+     */
+    private fun restoreSnapshot() {
+        fun apply(raw: String?) {
+            val snap = ScreenSnapshots.decodeHealth(raw) ?: return
+            _state.update { st ->
+                if (st.days.isNotEmpty() || snap.range != st.range.name) return@update st
+                nightFromSnapshot = st.selectedNight == null && snap.selectedNight != null
+                st.copy(
+                    loading = false,
+                    days = snap.days,
+                    selectedNight = st.selectedNight ?: snap.selectedNight,
+                    night = st.night ?: snap.night,
+                    stress = snap.stress,
+                    injuries = st.injuries.ifEmpty { snap.injuries },
+                    medications = st.medications.ifEmpty { snap.medications },
+                    medicationLog = st.medicationLog.ifEmpty { snap.medicationLog },
+                    meals = st.meals.ifEmpty { snap.meals },
+                    mealLog = st.mealLog.ifEmpty { snap.mealLog },
+                )
+            }
+        }
+        val ready = container.snapshots.peek(SNAPSHOT)
+        if (ready != null) apply(ready)
+        else viewModelScope.launch { apply(withContext(Dispatchers.IO) { container.snapshots.await(SNAPSHOT) }) }
+    }
+
+    /** Save the page as it settles, on the default range a cold start opens on. */
+    private fun keepSnapshot() {
+        viewModelScope.launch {
+            _state.debounce(SNAPSHOT_SETTLE_MS).collect { st ->
+                if (st.loading || st.range != HealthRange.default || st.days.isEmpty()) return@collect
+                val text = withContext(Dispatchers.Default) {
+                    ScreenSnapshots.encode(
+                        ScreenSnapshots.Health(
+                            range = st.range.name,
+                            days = st.days,
+                            selectedNight = st.selectedNight,
+                            night = st.night,
+                            stress = st.stress,
+                            injuries = st.injuries,
+                            medications = st.medications,
+                            medicationLog = st.medicationLog,
+                            meals = st.meals,
+                            mealLog = st.mealLog,
+                        ),
+                    )
+                }
+                container.snapshots.write(SNAPSHOT, text)
+            }
+        }
     }
 
     /**
@@ -449,7 +514,10 @@ class HealthViewModel(private val container: AppContainer) : ViewModel() {
         // The newest night, unless the user has already picked one. Done here
         // rather than in the screen so the fetch starts with the data instead
         // of one composition later.
-        if (_state.value.selectedNight == null) {
+        // A night restored from the snapshot is not the user's pick, so it
+        // gives way to the newest night once the fresh days are in.
+        if (_state.value.selectedNight == null || nightFromSnapshot) {
+            if (!stillLoading) nightFromSnapshot = false
             _state.value.nights.lastOrNull()?.let { selectNight(it.date) }
         }
     }
@@ -714,3 +782,6 @@ class HealthViewModel(private val container: AppContainer) : ViewModel() {
         fun nowIso(): String = java.time.OffsetDateTime.now(java.time.ZoneOffset.UTC).toString()
     }
 }
+
+private const val SNAPSHOT = "health"
+private const val SNAPSHOT_SETTLE_MS = 1500L

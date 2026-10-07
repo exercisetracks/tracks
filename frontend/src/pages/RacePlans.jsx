@@ -10,7 +10,7 @@ function SyncBadge({ status }) {
   const cfg = {
     synced:   { label: "Synced to watch",          cls: "bg-accent-50 text-accent-700 dark:bg-accent-900/20 dark:text-accent-400" },
     pending:  { label: "Will sync on next connect", cls: "bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400" },
-    no_plan:  { label: "No plan generated",         cls: "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400" },
+    no_plan:  { label: "Not opened yet",         cls: "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400" },
   }[status] ?? { label: status, cls: "bg-slate-100 text-slate-500" };
   return (
     <span className={`inline-flex items-center text-xs font-medium px-1.5 py-0.5 rounded-full ${cfg.cls}`}>
@@ -63,7 +63,7 @@ function GoalCard({ goal, imperial }) {
         to={`/race-plans/${goal.id}`}
         className="btn btn-tonal btn-sm"
       >
-        {plan?.generated_at ? "View plan" : "Create plan"}
+        View plan
       </Link>
     </div>
   );

@@ -102,7 +102,10 @@ def generate_race_fit(
     lap_start_m = 0.0
     for lap in lap_paces:
         dist_cm = int(round(lap["distance_m"] * 100))          # FIT distance = cm
-        label   = f"Km {lap.get('lap', idx)}"
+        # A terrain split is named for its ground ("Climb 6%"): the step's
+        # name is what the watch shows as it begins, so the watch says when
+        # to ease up and when the top is reached. A kilometre split is "Km n".
+        label   = lap.get("label") or f"Km {lap.get('lap', idx)}"
         lap_end_m = lap_start_m + float(lap["distance_m"])
         fuel = [
             f.get("name") or f"{int(math.floor(float(f['carbs_g']) + 0.5))}g carbs"

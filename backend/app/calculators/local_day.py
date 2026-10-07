@@ -48,6 +48,11 @@ def activity_local_date(started_at: datetime, tz_name: str | None) -> date:
     return started_at.astimezone(_zone(tz_name)).date()
 
 
+def local_today(tz_name: str | None) -> date:
+    """Today's date in the account's zone — the day a series "up to now" ends on."""
+    return datetime.now(_zone(tz_name)).date()
+
+
 def local_day_start(day: date, tz_name: str | None) -> datetime:
     """The instant ``day`` begins in the account's zone, for a range filter.
 

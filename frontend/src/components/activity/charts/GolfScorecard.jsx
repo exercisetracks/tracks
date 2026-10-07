@@ -3,6 +3,7 @@
 import React from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, ResponsiveContainer, Cell } from "recharts";
 import { ChartCard } from "../utils/chartHelpers.jsx";
+import { CHART_GRID } from "../../../design/chartGrid";
 
 function strokeColor(strokes) {
   if (strokes <= 1) return "#10b981"; // ace / hole-in-one
@@ -30,7 +31,7 @@ export function GolfScorecard({ holes, imperial }) {
     <ChartCard title="Strokes per Hole">
       <ResponsiveContainer width="100%" height={220}>
         <BarChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: 0 }} barSize={18}>
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.12)" vertical={false} />
+          <CartesianGrid {...CHART_GRID} />
           <XAxis
             dataKey="hole"
             tick={{ fontSize: 10, fill: "#94a3b8" }}

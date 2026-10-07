@@ -85,7 +85,7 @@ class PageLoadBenchmark {
             timed("strength: history(all lifts)") { library.strengthHistory("2000-01-01", null).size }.also { println("PERF   history entries: $it") }
             timed("flexibility: stretches") { training.stretches() }
             timed("dashboard: summary") { metrics.summary(null) }
-            timed("dashboard: trainingLoad") { metrics.trainingLoad(null) }
+            timed("dashboard: trainingLoad") { metrics.trainingLoad(today, null) }
             timed("dashboard: coaching") { metrics.coaching(today, null) }
             timed("activities: list") { sources.activities() }
         }

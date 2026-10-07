@@ -316,12 +316,25 @@ object TrainingLoad {
         return sums.toSortedMap()
     }
 
-    /** `/metrics/training-load`: the fitness series with its 7-day CTL ramp. */
+    /**
+     * `/metrics/training-load`: the fitness series with its 7-day CTL ramp.
+     *
+     * The series runs through [today], not just to the last activity, as the
+     * server's `_compute_tload_points` does: rest days keep decaying fitness
+     * and fatigue, and a series that stopped at the last workout left a gap
+     * at the right of the chart until the next one was recorded.
+     */
     fun trainingLoad(
         activities: List<MetricActivity>, thresholdHr: Double?, mtbDiscipline: String? = null,
+        today: CivilDate? = null,
     ): List<LoadPoint> {
         if (activities.isEmpty()) return emptyList()
-        val loads = tssByDate(activities, thresholdHr, mtbDiscipline).map { (d, t) -> CivilDate.fromEpochDay(d) to t }
+        val sums = tssByDate(activities, thresholdHr, mtbDiscipline).toMutableMap()
+        if (today != null) {
+            sums.putIfAbsent(today.epochDay, 0.0)
+            sums.keys.removeAll { it > today.epochDay }
+        }
+        val loads = sums.toSortedMap().map { (d, t) -> CivilDate.fromEpochDay(d) to t }
         val points = calculateCtlAtlTsb(loads)
         val ctlByDay = points.associate { it.date.epochDay to it.ctl }
         return points.map { p ->

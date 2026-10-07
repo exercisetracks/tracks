@@ -12,7 +12,9 @@ import logging
 import threading
 from concurrent.futures import ThreadPoolExecutor
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
+
+from app.auth import require_auth
 
 from app.config import settings
 from app.services import (
@@ -234,3 +236,96 @@ def global_downloads():
     downloaded in the background.
     """
     return {"downloads": global_download_tracker.get_all()}
+
+
+# ── Start the basemap over ────────────────────────────────────────────────────
+
+# The tile archives that make up the basemap: the global overviews and the
+# masters merged from the regions. Fonts, sprites and trail logos are seeded
+# assets the style needs, and routing segments and POI extracts are not the
+# basemap; none of those are touched.
+_BASEMAP_FILES = (
+    "planet_basemap.pmtiles", "planet_z7.pmtiles", "planet_dem_z7.pmtiles",
+    "master_basemap_detail.pmtiles", "master_dem.pmtiles", "master_overlay.pmtiles",
+    "master_contours.pmtiles", "master_routes.pmtiles",
+)
+
+
+@router.post("/basemap/reset")
+def reset_basemap(user=Depends(require_auth)):
+    """Delete every basemap tile on this server, and fetch it again if map
+    downloads are on.
+
+    For a basemap that has gone wrong — a truncated archive, a region whose
+    tiles no longer match its record — where deleting areas one by one does not
+    reach the files that are broken. Admin-only, because the tiles are the
+    instance's, shared by every account on it.
+
+    Refused while anything is downloading: the pipelines write these files as
+    they go, and deleting underneath one would leave it writing into a file
+    that no longer exists. Each region keeps its record and is rebuilt from
+    its own bounding box, so the areas come back as they were; with downloads
+    off they are marked for re-download instead, which is what startup
+    recovery does for a region whose files are missing.
+    """
+    from pathlib import Path
+
+    from app.database import SessionLocal
+    from app.models.user_settings import UserSettings
+    from app.services import region_merger
+    from app.services.global_dem import start_dem_download
+    from app.services.global_overview import start_map_download
+
+    if not getattr(user, "is_admin", False):
+        raise HTTPException(403, "Only an admin can delete the map data")
+
+    active = region_registry.list_active()
+    busy = [r for r in active if r["status"] in _IN_PROGRESS_STATUSES | {"cancelling", "deleting"}
+            and not r.get("stale")]
+    busy_global = [d for d in global_download_tracker.get_all() if d.get("status") == "downloading"]
+    if busy or busy_global:
+        raise HTTPException(409, "A map download is still running — wait for it to finish or cancel it first")
+
+    data_dir = Path(settings.map_data_dir)
+    removed = 0
+    for name in _BASEMAP_FILES:
+        f = data_dir / name
+        if f.exists():
+            f.unlink()
+            removed += 1
+    for r in active:
+        region_registry.delete_region_files(r["id"])
+
+    db = SessionLocal()
+    try:
+        us = db.query(UserSettings).first()
+        enabled = bool(us and us.map_enabled)
+    finally:
+        db.close()
+
+    if enabled:
+        start_map_download()
+        if settings.dem_source_url:
+            start_dem_download()
+        for r in active:
+            region_registry.update_status(r["id"], "downloading", progress=0.0, detail="Waiting to download again…")
+
+        def _again():
+            # One area at a time: each is a multi-gigabyte extract, and the
+            # whole set at once would be every one of them at once.
+            for r in active:
+                try:
+                    download_and_merge(r["id"], r["bbox"])
+                except Exception:
+                    logger.exception("Re-download of region %s failed", r["id"])
+
+        threading.Thread(target=_again, daemon=True, name="basemap-redownload").start()
+    else:
+        for r in active:
+            region_registry.update_status(
+                r["id"], "error", error="Map data was deleted — re-download this area")
+    # Let go-pmtiles drop its handles on the files that are gone.
+    region_merger.write_reload_trigger()
+    logger.warning("Basemap reset by user %s: %d archive(s), %d region(s); re-download=%s",
+                   user.id, removed, len(active), enabled)
+    return {"removed_files": removed, "regions": len(active), "redownloading": enabled}

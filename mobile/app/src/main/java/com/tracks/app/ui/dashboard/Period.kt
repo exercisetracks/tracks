@@ -45,6 +45,6 @@ enum class Period(val label: String, val short: String, val days: Int?) {
 
     companion object {
         /** Matches the web app's initial selection. */
-        val default = Yearly
+        val default = Monthly
     }
 }

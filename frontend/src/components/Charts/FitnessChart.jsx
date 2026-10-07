@@ -42,7 +42,6 @@ import {
   niceYTicks,
   CURSOR,
   AXIS,
-  GRID,
   MARGIN,
   Y_WIDTH,
 } from "./fitnessChartData";
@@ -52,6 +51,7 @@ import {
   InfoTooltip,
   LoadTooltip,
 } from "./fitness/FitnessChartParts";
+import { CHART_GRID } from "../../design/chartGrid";
 
 export default function FitnessChart({ data, xAxis }) {
   // Pre-filter clearly impossible values, then convert ISO date strings to ms
@@ -168,7 +168,7 @@ export default function FitnessChart({ data, xAxis }) {
       <div key={`tl-${animKey}`} style={{ animation: "chartReveal 300ms ease-out both" }}>
         <ResponsiveContainer width="100%" height={190}>
           <ComposedChart data={chartData} syncId="fitness" syncMethod={snapToNearestDay} margin={MARGIN}>
-            <CartesianGrid {...GRID} />
+            <CartesianGrid {...CHART_GRID} />
             <XAxis {...xAxisProps} hide />
             <YAxis {...AXIS} width={Y_WIDTH} ticks={loadAxis.ticks} domain={loadAxis.domain} />
             <Tooltip content={<LoadTooltip />} cursor={CURSOR} />
@@ -208,7 +208,7 @@ export default function FitnessChart({ data, xAxis }) {
       <div key={`form-${animKey}`} style={{ animation: "chartReveal 300ms 50ms ease-out both" }}>
         <ResponsiveContainer width="100%" height={170}>
           <ComposedChart data={chartData} syncId="fitness" syncMethod={snapToNearestDay} margin={{ ...MARGIN, bottom: 4 }}>
-            <CartesianGrid {...GRID} vertical={false} />
+            <CartesianGrid {...CHART_GRID} />
             <XAxis {...xAxisProps} {...AXIS} />
             <YAxis
               {...AXIS}

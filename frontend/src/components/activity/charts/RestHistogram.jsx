@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import React from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
-import { yAxisProps, gridProps } from "../utils/chartHelpers.jsx";
+import { yAxisProps } from "../utils/chartHelpers.jsx";
+import { CHART_GRID } from "../../../design/chartGrid";
 
 /**
  * RestHistogram - Displays distribution of rest periods between sets
@@ -17,7 +18,7 @@ export function RestHistogram({ data }) {
       </div>
       <ResponsiveContainer width="100%" height={180}>
         <BarChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
-          <CartesianGrid {...gridProps} vertical={false} />
+          <CartesianGrid {...CHART_GRID} />
           <XAxis dataKey="range" tick={{ fontSize: 9, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
           <YAxis {...yAxisProps} label={{ value: "count", angle: -90, position: "insideLeft", fill: "#94a3b8", fontSize: 10 }} />
           <Tooltip 

@@ -5,8 +5,9 @@ import {
   ComposedChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, ReferenceLine,
 } from "recharts";
-import { xAxisProps, yAxisProps, gridProps } from "../utils/chartHelpers.jsx";
+import { xAxisProps, yAxisProps } from "../utils/chartHelpers.jsx";
 import { fmtElapsed } from "../../../utils/formatUtils";
+import { CHART_GRID } from "../../../design/chartGrid";
 
 function fmtPaceTick(v) {
   if (!v || !isFinite(v)) return "";
@@ -99,7 +100,7 @@ export const PaceSpeedGraph = React.memo(function PaceSpeedGraph({ data, imperia
 
       <ResponsiveContainer width="100%" height={180}>
         <ComposedChart data={chartData} syncId="activity-time" onMouseMove={onHover} onMouseLeave={onLeave}>
-          <CartesianGrid {...gridProps} />
+          <CartesianGrid {...CHART_GRID} />
           <XAxis {...xAxisProps} />
           <YAxis
             {...yAxisProps}

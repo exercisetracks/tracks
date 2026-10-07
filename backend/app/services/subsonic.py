@@ -443,3 +443,67 @@ def rotation_songs(client: SubsonicClient, limit: int) -> list[SubsonicSong]:
         raise last_error or SubsonicError("The music server answered nothing")
 
     return out
+
+
+# ── Finding a server from what was typed ──────────────────────────────────────
+#
+# The phone's com.tracks.core.api.MusicServerDiscovery, ported so the desktop's
+# form can take `10.0.0.5` or `music.example.com` and work out the rest. A
+# Navidrome address is "the box in the cupboard on port 4533": the scheme is a
+# guess and the port a default nobody chose.
+#
+# Safe to expose for the same reason the form itself is: a signed-in user can
+# already point the server at any URL by saving it. What this adds is only the
+# unauthenticated `ping`, at a handful of URLs derived from what they typed,
+# with short timeouts and redirects held to the same origin — and the caller
+# learns only which one answered as a Subsonic server, never a response body.
+
+#: Navidrome, then Airsonic/Subsonic, then Gonic.
+DEFAULT_PORTS = (4533, 4040, 4747)
+_PROBE_TIMEOUT = 2.0
+
+
+def candidates_for(text: str) -> list[str]:
+    """Every base worth trying for what was typed, most likely first.
+
+    With a scheme, as typed. Without, https before http. A host with no port
+    and no path also gets each default port, after the bare form: a public
+    name is usually behind a proxy on 443, a LAN address usually is not.
+    """
+    t = text.strip().rstrip("/")
+    if not t:
+        return []
+    bases = [t] if "://" in t else [f"https://{t}", f"http://{t}"]
+    out: list[str] = []
+    for base in bases:
+        after = base.split("://", 1)[1]
+        has_port = ":" in after.split("/", 1)[0]
+        has_path = "/" in after
+        for c in [base] if (has_port or has_path) else [base] + [f"{base}:{p}" for p in DEFAULT_PORTS]:
+            if c not in out:
+                out.append(c)
+    return out
+
+
+def identifies_as_subsonic(base: str) -> bool:
+    """True when ``base`` answers the Subsonic ping in the Subsonic envelope —
+    a failure, since no credentials are sent, but one only a music server gives."""
+    try:
+        with _client(_PROBE_TIMEOUT) as http:
+            resp = http.get(f"{base}/rest/ping.view", params={"v": "1.16.1", "c": "Tracks", "f": "json"})
+            _check_redirects(base, resp)
+            return "subsonic-response" in resp.json()
+    except (httpx.HTTPError, ValueError, SubsonicError, TypeError):
+        return False
+
+
+def discover(text: str) -> str | None:
+    """The first candidate (in order, not in arrival) that is a music server."""
+    from concurrent.futures import ThreadPoolExecutor
+
+    cands = candidates_for(text)
+    if not cands:
+        return None
+    with ThreadPoolExecutor(max_workers=len(cands)) as pool:
+        hits = list(pool.map(identifies_as_subsonic, cands))
+    return next((c for c, ok in zip(cands, hits) if ok), None)

@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import React, { useMemo, useCallback } from "react";
 import { ComposedChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Customized, ReferenceLine } from "recharts";
-import { HRColorLine, xAxisProps, yAxisProps, gridProps, TimeTooltip } from "../utils/chartHelpers.jsx";
+import { HRColorLine, xAxisProps, yAxisProps, TimeTooltip } from "../utils/chartHelpers.jsx";
+import { CHART_GRID } from "../../../design/chartGrid";
 
 export const HeartRateGraph = React.memo(function HeartRateGraph({
   data,
@@ -39,7 +40,7 @@ export const HeartRateGraph = React.memo(function HeartRateGraph({
       </div>
       <ResponsiveContainer width="100%" height={180}>
         <ComposedChart data={data} syncId="activity-time" onMouseMove={onHover} onMouseLeave={onLeave}>
-          <CartesianGrid {...gridProps} />
+          <CartesianGrid {...CHART_GRID} />
           <XAxis {...xAxisProps} />
           <YAxis {...yAxisProps} domain={[hrYMin, "auto"]}
             label={{ value: "bpm", angle: -90, position: "insideLeft", fill: "#94a3b8", fontSize: 10, dy: 15 }} />

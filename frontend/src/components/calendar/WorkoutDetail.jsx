@@ -5,11 +5,11 @@
 // "mark complete" action (hidden for races). Presentational — the parent owns
 // the selected workout and supplies the close / mark-complete callbacks.
 
-import { WORKOUT_COLORS, WORKOUT_DEFAULT, fmtDur, fmtDist } from "./constants";
+import { workoutChip, fmtDur, fmtDist } from "./constants";
 import StepRow from "./StepRow";
 
 export default function WorkoutDetail({ workout, onClose, onMarkComplete, imperial = false }) {
-  const colorClass = WORKOUT_COLORS[workout.workout_type] ?? WORKOUT_DEFAULT;
+  const colorClass = workoutChip(workout);
   const steps = workout.steps ?? [];
 
   return (

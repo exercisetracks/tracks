@@ -4,7 +4,7 @@
 // ACTIVITY TABLE ROW  (presentational)
 // ============================================================
 // One <tr> in the Activities table. Renders every column for a
-// single activity: name + sport icon (+ MERGED badge + map-
+// single activity: route thumbnail, name + sport (+ MERGED badge + map-
 // preview button), date, duration, distance, pace/speed, avg HR,
 // elevation and calories.
 //
@@ -18,6 +18,7 @@
 // ============================================================
 
 import { fmtDate, fmtDist, fmtDuration, fmtSpeed } from "./format";
+import TrackThumbnail from "./TrackThumbnail";
 
 export default function ActivityRow({ activity: a, imperial, onOpen, onPreview }) {
   return (
@@ -27,7 +28,10 @@ export default function ActivityRow({ activity: a, imperial, onOpen, onPreview }
     >
       {/* Activity name, MERGED badge and map-preview button */}
       <td className="px-3.5 py-2.5">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          {/* The route's shape, as on the phone's list: what tells two rides
+              from the same trailhead apart at a glance. */}
+          {a.distance_meters > 0 && !a.is_merged && <TrackThumbnail activity={a} />}
           <div className="min-w-0">
             <p className="font-medium text-slate-800 dark:text-slate-100 leading-tight flex items-center gap-1.5">
               <span className="truncate">{a.name || "Untitled Activity"}</span>

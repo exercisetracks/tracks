@@ -51,6 +51,13 @@ describe("the desktop style kit", () => {
     expect(copies).toEqual([]);
   });
 
+  it("draws every chart grid from design/chartGrid, as the phone does", () => {
+    const copies = files
+      .filter(({ text }) => [...text.matchAll(/<CartesianGrid([^>]*)\/>/g)].some((m) => m[1].trim() !== "{...CHART_GRID}"))
+      .map(({ path }) => path);
+    expect(copies).toEqual([]);
+  });
+
   it("dims the page behind a dialog with .modal-backdrop, not a private overlay", () => {
     // The two workout players are full-screen pages, not dialogs.
     const copies = offenders(/fixed inset-0[^"`]*bg-(black|slate-900)\//, ["components/player/"]);

@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import React from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Customized } from "recharts";
-import { HRColorLine, xAxisProps, yAxisProps, gridProps, TimeTooltip } from "../utils/chartHelpers.jsx";
+import { HRColorLine, xAxisProps, yAxisProps, TimeTooltip } from "../utils/chartHelpers.jsx";
+import { CHART_GRID } from "../../../design/chartGrid";
 
 /**
  * StrengthHRGraph - Displays heart rate during strength training workout
@@ -26,7 +27,7 @@ export function StrengthHRGraph({ data, maxHR = 200, onHover, onLeave, lapTimes 
       </div>
       <ResponsiveContainer width="100%" height={180}>
         <LineChart data={data} onMouseMove={onHover} onMouseLeave={onLeave}>
-          <CartesianGrid {...gridProps} />
+          <CartesianGrid {...CHART_GRID} />
           <XAxis {...xAxisProps} />
           <YAxis {...yAxisProps} domain={[40, "auto"]} label={{ value: "bpm", angle: -90, position: "insideLeft", fill: "#94a3b8", fontSize: 10, dy: 15 }} />
           <Tooltip cursor={{ stroke: "#3b82f6", strokeWidth: 1, strokeDasharray: "3 3" }} content={<TimeTooltip format={(v) => v != null ? `${Math.round(v)} bpm` : "—" } />} />

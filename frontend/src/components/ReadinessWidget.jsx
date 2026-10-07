@@ -11,6 +11,7 @@ import {
   ReferenceLine, ResponsiveContainer,
 } from "recharts";
 import RadialGauge, { zoneFor } from "./RadialGauge";
+import { CHART_GRID } from "../design/chartGrid";
 
 // ── Classification scale ──────────────────────────────────────────────────────
 // Segment edges at 60 and 80 mirror the backend's own thresholds
@@ -104,7 +105,7 @@ function HistoryPopup({ history, onClose }) {
         ) : (
           <ResponsiveContainer width="100%" height={260}>
             <LineChart data={history} margin={{ top: 8, right: 16, bottom: 0, left: 0 }}>
-              <CartesianGrid stroke="#1e293b" strokeDasharray="3 3" />
+              <CartesianGrid {...CHART_GRID} />
               <XAxis
                 dataKey="date"
                 tick={{ fontSize: 10, fill: "#94a3b8" }}

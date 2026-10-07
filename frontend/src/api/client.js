@@ -129,6 +129,11 @@ export const api = {
   createUser:  (data) => { _cacheDel("GET", "/users/"); return post("/users/", data); },
   deleteUser:  (id)   => { _cacheDel("GET", "/users/"); return del(`/users/${id}`); },
   toggleAdmin: (id)   => { _cacheDel("GET", "/users/"); return patch(`/users/${id}/admin`); },
+  adminSetPassword: (id, data) => post(`/users/${id}/password`, data),
+  adminWipeData:     (confirm) => post("/users/admin/wipe-data", { confirm }),
+  adminWipeAccounts: (confirm) => { _cacheDel("GET", "/users/"); return post("/users/admin/wipe-accounts", { confirm }); },
+  adminFactoryReset: (confirm) => post("/users/admin/factory-reset", { confirm }),
+  resetBasemap:      ()        => post("/maps/basemap/reset"),
 
   // Devices
   getDevices:    ()   => get("/devices/"),
@@ -157,6 +162,8 @@ export const api = {
   backfillClimbGrades: () => { _cacheDelPrefix("GET", "/activities/"); return post("/activities/backfill-climb-grades"); },
   getSports:      ()       => get("/activities/sports"),
   getHeatmap:     (p = {}) => get(`/activities/heatmap${qs(p)}`),
+  // Shape only, no coordinates — cached by lib/trackOutlines.js, not here.
+  getActivityOutline: (id) => get(`/activities/${id}/outline`, { noCache: true }),
   getActivityTracks: (p = {}) => get(`/activities/tracks-geojson${qs(p)}`, { noCache: true }),
   backfill:       ()       => { _cacheDelPrefix("GET", "/activities/"); _cacheDelPrefix("GET", "/metrics/"); return post("/activities/backfill-metrics"); },
   backfillLaps:   ()       => { _cacheDelPrefix("GET", "/activities/"); return post("/activities/backfill-laps"); },
@@ -477,6 +484,7 @@ export const api = {
   // Music server (Subsonic API — Navidrome, Gonic, Airsonic…). Remote tracks
   // are references: no audio moves until something asks for it.
   getMusicServer:         ()          => get("/music/server", { noCache: true }),
+  probeMusicServer: (url) => post("/music/server/probe", { url }),
   setMusicServer:         (d)         => put("/music/server", d),
   clearMusicServer:       ()          => del("/music/server"),
   setMusicServerOptions:  (d)         => patch("/music/server", d),

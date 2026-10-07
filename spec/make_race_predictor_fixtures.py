@@ -130,6 +130,20 @@ def main() -> None:
                 laps, total = rp.compute_lap_paces(pred, d, spread, lap_km, COURSES[course], hr)
                 fx["run_laps"].append({"course": course, "spread": spread, "d": d, "pred": pred, "lap_km": lap_km,
                                        "hr": hr, "laps": _laps(laps), "total": total})
+    # Terrain splits (race_predictor/terrain.py): the course cut by its ground.
+    # "wall" is the case they exist for — a short steep hill in a flat course.
+    wall = ([{"distance_m": 100.0, "elevation_gain_m": 0.0, "gradient": 0.0}] * 20
+            + [{"distance_m": 100.0, "elevation_gain_m": 9.0, "gradient": 0.09}] * 3
+            + [{"distance_m": 100.0, "elevation_gain_m": 0.0, "gradient": 0.0}] * 27)
+    fx["courses"]["wall"] = wall
+    terrain_courses = {**COURSES, "wall": wall}
+    fx["terrain_laps"] = []
+    for course in ("wall", "rolling", "hilly", "steep"):
+        for spread in (-1.0, 0.0, 0.5):
+            for d, pred, hr in ((5000.0, 1500.0, 190), (21097.5, 6600.0, None), (42195.0, 13000.0, 185)):
+                laps, total = rp.compute_lap_paces(pred, d, spread, 1.0, terrain_courses[course], hr, terrain=True)
+                fx["terrain_laps"].append({"course": course, "spread": spread, "d": d, "pred": pred,
+                                           "hr": hr, "laps": _laps(laps), "total": total})
     fx["bike_predict"] = [{"ftp": f, "d": d, "course": c, "wind": w,
                            "expected": rp.predict_cycling_time_sec(f, d, COURSES[c], w)}
                           for f in (150.0, 260.0) for d in (20000.0, 90000.0)

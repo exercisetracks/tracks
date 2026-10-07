@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Watch coaching section: a single toggle for VDOT-derived pace alerts that get
 // embedded into each workout step uploaded to a Garmin watch.
+import InfoTooltip from "../ui/InfoTooltip";
 import { useState } from "react";
 import { api } from "../../api/client";
 import { Section } from "./primitives";
@@ -24,11 +25,14 @@ export default function GarminCoachingSection({ settings, onSaved }) {
     <Section title="Watch Coaching">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <p className="text-sm font-medium text-slate-800 dark:text-slate-200">Pace coaching</p>
-          <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
-            When enabled, each workout step uploaded to your Garmin watch includes a
-            ±10 sec/km pace alert zone derived from your VDOT. The watch will alert
-            you when you drift outside the target range.
+          <p className="text-sm font-medium text-slate-800 dark:text-slate-200 inline-flex items-center gap-1.5">
+            Pace coaching
+            <InfoTooltip label="About pace coaching">
+              When enabled, each workout step uploaded to your Garmin watch includes a
+              ±10 sec/km pace alert zone derived from your VDOT. The watch will alert
+              you when you drift outside the target range. Re-sync your watch after
+              changing this to push updated workout files.
+            </InfoTooltip>
           </p>
         </div>
         <button
@@ -44,9 +48,6 @@ export default function GarminCoachingSection({ settings, onSaved }) {
           {saving ? "…" : enabled ? "On" : "Off"}
         </button>
       </div>
-      <p className="text-xs text-slate-400 dark:text-slate-500">
-        Re-sync your watch after changing this setting to push updated workout files.
-      </p>
     </Section>
   );
 }

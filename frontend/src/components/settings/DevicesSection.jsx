@@ -71,13 +71,12 @@ export default function DevicesSection() {
   }
 
   return (
-    <Section title="Devices" dataTour="settings-devices">
-      <p className="text-xs text-slate-400 dark:text-slate-500">
-        Only activities from claimed devices are included in metrics, charts, and coaching.
-        Mark one as <span className="font-semibold">Primary</span> to record which animations
-        play on it — the planner will skip movements you've marked as not animating on your
-        primary watch.
-      </p>
+    <Section title="Devices" dataTour="settings-devices" info={<>
+      Only activities from claimed devices are included in metrics, charts, and coaching.
+      Mark one as <span className="font-semibold">Primary</span> to record which animations
+      play on it — the planner will skip movements you've marked as not animating on your
+      primary watch.
+    </>}>
 
       {devices === null ? (
         <div className="flex items-center gap-2 text-xs text-slate-400">

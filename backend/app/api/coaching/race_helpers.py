@@ -127,66 +127,104 @@ def _parse_hourly_midday(data: dict) -> dict | None:
     }
 
 
+# Race-day weather is cached in Redis by place and day, shared by every plan
+# that asks: a forecast for an hour (Open-Meteo updates hourly at best), a
+# five-year average for a week (it is history; it does not change). Plans now
+# regenerate every time their page opens, and the weather was most of a
+# generation's time — five HTTPS round trips, one after another — so without
+# this every visit would have waited seconds on the network.
+_WEATHER_CACHE_PREFIX = "tracks:race_weather:"
+_FORECAST_TTL = 3600
+_HISTORICAL_TTL = 7 * 24 * 3600
+
+
 def _fetch_weather(lat: float, lon: float, target_date: date) -> dict | None:
+    """Race-day weather, from the shared cache when it has it. Returns a copy
+    the caller may annotate. None on any network/parse failure (not cached,
+    so the next generation tries again)."""
+    import json
+
+    import redis
+
+    from app.services.redis_client import get_redis
+
+    key = f"{_WEATHER_CACHE_PREFIX}{lat:.2f}:{lon:.2f}:{target_date.isoformat()}"
+    try:
+        cached = get_redis().get(key)
+        if cached:
+            return json.loads(cached)
+    except (redis.RedisError, ValueError):
+        pass
+    snap = _fetch_weather_uncached(lat, lon, target_date)
+    if snap:
+        ttl = _FORECAST_TTL if snap.get("source") == "forecast" else _HISTORICAL_TTL
+        try:
+            get_redis().set(key, json.dumps(snap), ex=ttl)
+        except redis.RedisError:
+            pass
+    return snap
+
+
+def _fetch_weather_uncached(lat: float, lon: float, target_date: date) -> dict | None:
     """Fetch race-day weather from Open-Meteo (free, no key required).
 
     Strategy:
     - Within 15 days: use the forecast API (actual predicted conditions).
     - Beyond 15 days: average the archive API over the same calendar date
-      for the previous 5 years (historical climate normals).
+      for the previous 5 years (historical climate normals), the five
+      fetched at once over one connection rather than one after another.
 
     Returns a dict with temperature_c, humidity_pct, wind_mps, wind_direction,
     source ("forecast" | "historical_avg"), and fetched_at.
     Returns None on any network/parse failure.
     """
+    import datetime as _dt
+    from concurrent.futures import ThreadPoolExecutor
+
     # The forecast service's own day, not the account's: this only decides
     # whether target_date is in its 16-day forecast range.
     today = date.today()
     days_out = (target_date - today).days
 
-    try:
-        if days_out <= _FORECAST_HORIZON_DAYS:
-            url = (
-                "https://api.open-meteo.com/v1/forecast"
-                f"?latitude={lat:.2f}&longitude={lon:.2f}"  # ~1 km; see weather.fetch_point_forecast
-                f"&hourly={_WEATHER_FIELDS}"
-                f"&start_date={target_date}&end_date={target_date}"
-                "&timezone=auto&wind_speed_unit=ms"
-            )
-            r = httpx.get(url, timeout=_WEATHER_TIMEOUT, follow_redirects=True)
-            if r.is_success:
-                vals = _parse_hourly_midday(r.json())
-                if vals:
-                    return {**vals, "source": "forecast",
-                            "fetched_at": datetime.now(timezone.utc).isoformat()}
+    def _url(base: str, day) -> str:
+        return (
+            f"{base}?latitude={lat:.2f}&longitude={lon:.2f}"  # ~1 km; see weather.fetch_point_forecast
+            f"&hourly={_WEATHER_FIELDS}"
+            f"&start_date={day}&end_date={day}"
+            "&timezone=auto&wind_speed_unit=ms"
+        )
 
-        # Historical average: same calendar date across the previous 5 years.
-        import datetime as _dt
-        samples: list[dict] = []
-        for yr_offset in range(1, 6):
-            try:
+    try:
+        with httpx.Client(timeout=_WEATHER_TIMEOUT, follow_redirects=True) as http:
+            if days_out <= _FORECAST_HORIZON_DAYS:
+                r = http.get(_url("https://api.open-meteo.com/v1/forecast", target_date))
+                if r.is_success:
+                    vals = _parse_hourly_midday(r.json())
+                    if vals:
+                        return {**vals, "source": "forecast",
+                                "fetched_at": datetime.now(timezone.utc).isoformat()}
+
+            # Historical average: same calendar date across the previous 5 years.
+            days = []
+            for yr_offset in range(1, 6):
                 hist_year = target_date.year - yr_offset
                 # Clamp Feb 29 down to Feb 28 in non-leap years.
                 hist_date = _dt.date(hist_year, target_date.month, min(target_date.day, 28
                     if target_date.month == 2 and not _dt.date(hist_year, 1, 1).year % 4 == 0
                     else target_date.day))
                 # Archive only goes back to 1940 and up to yesterday.
-                if hist_date >= today:
-                    continue
-                url = (
-                    "https://archive-api.open-meteo.com/v1/archive"
-                    f"?latitude={lat:.2f}&longitude={lon:.2f}"  # ~1 km; see weather.fetch_point_forecast
-                    f"&hourly={_WEATHER_FIELDS}"
-                    f"&start_date={hist_date}&end_date={hist_date}"
-                    "&timezone=auto&wind_speed_unit=ms"
-                )
-                r = httpx.get(url, timeout=_WEATHER_TIMEOUT, follow_redirects=True)
-                if r.is_success:
-                    vals = _parse_hourly_midday(r.json())
-                    if vals:
-                        samples.append(vals)
-            except Exception:
-                continue
+                if hist_date < today:
+                    days.append(hist_date)
+
+            def _one(day):
+                try:
+                    r = http.get(_url("https://archive-api.open-meteo.com/v1/archive", day))
+                    return _parse_hourly_midday(r.json()) if r.is_success else None
+                except Exception:
+                    return None
+
+            with ThreadPoolExecutor(max_workers=max(1, len(days))) as pool:
+                samples = [v for v in pool.map(_one, days) if v]
 
         if not samples:
             return None
@@ -243,7 +281,10 @@ def _race_plan_out(rp: RacePlan, us: UserSettings | None = None,
         "course_path":       rp.course_path,
         "predicted_seconds": rp.predicted_seconds,
         "predicted_time":    format_time(rp.predicted_seconds) if rp.predicted_seconds else None,
-        "weather_snapshot":  rp.weather_snapshot,
+        # The blob carries the watch file's fingerprint too (race_plan.py);
+        # the page reads it as weather, so that stays server-side.
+        "weather_snapshot":  ({k: v for k, v in rp.weather_snapshot.items() if k != "fit_sig"} or None)
+                             if rp.weather_snapshot else None,
         "lap_paces":         rp.lap_paces,
         "watch_uploaded_at": rp.watch_uploaded_at,
         "generated_at":      rp.generated_at,
