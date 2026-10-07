@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 package com.tracks.app
 
+import kotlinx.coroutines.flow.debounce
 import android.app.Application
 import android.content.Context
 import androidx.core.content.pm.PackageInfoCompat
@@ -762,13 +763,13 @@ class AppContainer(private val context: Context) {
         // so an offline phone simply waits and sends them when it is back.
         signalScope.launch {
             @OptIn(kotlinx.coroutines.FlowPreview::class)
-            sources.version
+            val edits = sources.version
                 .debounce(PUSH_EDITS_AFTER_MS)
-                .collect {
-                    if (isLinked() && runCatching { replica.pendingCount() }.getOrDefault(0L).toLong() > 0) {
-                        SyncWorker.syncSoon(context)
-                    }
+            edits.collect {
+                if (isLinked() && runCatching { replica.pendingCount() }.getOrDefault(0L) > 0) {
+                    SyncWorker.syncSoon(context)
                 }
+            }
         }
         signalScope.launch {
             // At most one refresh per SIGNAL_INTERVAL_MS, the last change

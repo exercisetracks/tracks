@@ -2,6 +2,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 package com.tracks.app.ui.health
 
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
+import com.tracks.app.ui.components.drawInspection
+import com.tracks.app.ui.components.holdToInspect
 import com.tracks.app.ui.theme.Tokens
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
@@ -201,11 +206,17 @@ fun StressHistoryPanel(
         }
     }
 
+    // Press and hold to read a moment (com.tracks.app.ui.components.holdToInspect).
+    var inspectX by remember { mutableStateOf<Float?>(null) }
+    val pill = MaterialTheme.colorScheme.inverseSurface
+    val onPill = MaterialTheme.colorScheme.inverseOnSurface
+
     Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Canvas(
             Modifier
                 .fillMaxWidth()
-                .height(CHART_HEIGHT + DATE_AXIS_HEIGHT),
+                .height(CHART_HEIGHT + DATE_AXIS_HEIGHT)
+                .holdToInspect { inspectX = it },
         ) {
             val plotHeight = size.height - DATE_AXIS_HEIGHT.toPx()
             fun y(level: Double) = plotHeight * (1f - scale.fraction(level))
@@ -353,6 +364,30 @@ fun StressHistoryPanel(
                 pathEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 6f)),
             )
 
+            inspectX?.let { held ->
+                // The nearest column with readings, and the band its level is in.
+                val target = ((held - gutter) / plotWidth * columns).toInt().coerceIn(0, columns - 1)
+                val column = (0 until columns).filter { count[it] > 0 }.minByOrNull { kotlin.math.abs(it - target) }
+                if (column != null) {
+                    val level = total[column] / count[column]
+                    val at = (column + 0.5f) / columns
+                    val day = dayAxis.dateAt(at)
+                    val whenText = if (intraday) {
+                        val hours = (at * dayAxis.days - java.time.temporal.ChronoUnit.DAYS.between(dayAxis.start, day)) * 24
+                        "%s %02d:%02d".format(day.format(INSPECT_DAY), hours.toInt().coerceIn(0, 23), ((hours % 1) * 60).toInt())
+                    } else {
+                        day.format(INSPECT_DAY)
+                    }
+                    val band = STRESS_ZONES.firstOrNull { level >= it.min && level <= it.max } ?: STRESS_ZONES.last()
+                    drawInspection(
+                        measurer, labelStyle,
+                        x = columnX(column), y = y(level), plotHeight = plotHeight,
+                        text = "$whenText · stress ${level.roundToInt()}",
+                        dot = band.color, pill = pill, onPill = onPill,
+                    )
+                }
+            }
+
             drawDateAxis(
                 axis = dayAxis,
                 measurer = measurer,
@@ -398,6 +433,8 @@ fun StressHistoryPanel(
 
 /** One reading: where it sits along the window, and how high. */
 private data class Sample(val at: Float, val level: Double)
+
+private val INSPECT_DAY = java.time.format.DateTimeFormatter.ofPattern("EEE d MMM")
 
 private fun shortDay(iso: String): String =
     runCatching { LocalDate.parse(iso).format(DAY) }.getOrDefault(iso)

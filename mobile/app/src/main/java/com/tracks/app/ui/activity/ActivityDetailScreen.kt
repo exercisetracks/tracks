@@ -193,7 +193,7 @@ private fun DetailBody(data: ActivityDetailData, mapStyleJson: String?) {
         RecordingCard(data.track, data.detail)
         HeartRateZonesCard(data.track, data.hrZones)
         HeartRateDistributionCard(data.track, data.hrZones)
-        StreamsCard(data.track)
+        StreamsCard(data.track, hrZones = data.hrZones)
         ClimbsCard(data.climbs)
         StrengthSetsCard(data.sets)
         MuscleActivationCard(data.sets)

@@ -35,6 +35,11 @@ import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLineCartesianLa
 import com.patrykandpatrick.vico.compose.cartesian.rememberCartesianChart
 import com.patrykandpatrick.vico.compose.common.ProvideVicoTheme
 import com.patrykandpatrick.vico.compose.common.fill
+import com.patrykandpatrick.vico.compose.common.shader.verticalGradient
+import com.patrykandpatrick.vico.core.cartesian.data.CartesianLayerRangeProvider
+import com.patrykandpatrick.vico.core.common.shader.ShaderProvider
+import com.tracks.app.ui.components.rememberChartMarker
+import com.tracks.app.ui.components.wholeOrOneDecimal
 import com.patrykandpatrick.vico.compose.m3.common.rememberM3VicoTheme
 import com.patrykandpatrick.vico.core.cartesian.axis.VerticalAxis
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModelProducer
@@ -80,7 +85,7 @@ import kotlin.math.roundToInt
  * timestamps instead.
  */
 @Composable
-fun StreamsCard(track: List<TrackPoint>, modifier: Modifier = Modifier) {
+fun StreamsCard(track: List<TrackPoint>, modifier: Modifier = Modifier, hrZones: List<ZoneRange> = emptyList()) {
     val hr = track.mapNotNull { it.heartRate?.toDouble() }
     val altitude = track.mapNotNull { it.altitude }
     val speed = track.mapNotNull { it.speed }
@@ -92,7 +97,7 @@ fun StreamsCard(track: List<TrackPoint>, modifier: Modifier = Modifier) {
 
     Column(modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
         SectionHeader("Streams")
-        StreamChart("Heart rate", hr, MaterialTheme.colorScheme.error, "bpm")
+        StreamChart("Heart rate", hr, MaterialTheme.colorScheme.error, "bpm", zones = hrZones)
         StreamChart("Elevation", altitude, MaterialTheme.colorScheme.primary, "m", filled = true)
         StreamChart("Speed", speed, MaterialTheme.colorScheme.secondary, "m/s")
         StreamChart("Power", power, MaterialTheme.colorScheme.tertiary, "W")
@@ -113,8 +118,30 @@ private fun StreamChart(
     color: Color,
     unit: String,
     filled: Boolean = false,
+    /**
+     * Heart-rate zones: when given, the line takes each zone's colour as it
+     * crosses into it, as the stress chart's line does — the same zones and
+     * colours as the zone card above, so the two read as one.
+     */
+    zones: List<ZoneRange> = emptyList(),
 ) {
     if (values.size < MIN_STREAM) return
+    // The gradient is laid over the plot area, so the y range is pinned to
+    // the data (with a little air) rather than left to Vico's rounding.
+    val yMin = remember(values) { values.min() - 3 }
+    val yMax = remember(values) { values.max() + 3 }
+    val line = if (zones.isNotEmpty()) {
+        rememberZoneLine(yMin, yMax, zones)
+    } else {
+        LineCartesianLayer.rememberLine(
+            fill = LineCartesianLayer.LineFill.single(fill(color)),
+            areaFill = if (filled) {
+                LineCartesianLayer.AreaFill.single(fill(color.copy(alpha = 0.20f)))
+            } else {
+                null
+            },
+        )
+    }
 
     val producer = remember { CartesianChartModelProducer() }
     LaunchedEffect(values) {
@@ -161,20 +188,18 @@ private fun StreamChart(
                 CartesianChartHost(
                     chart = rememberCartesianChart(
                         rememberLineCartesianLayer(
-                            lineProvider = LineCartesianLayer.LineProvider.series(
-                                LineCartesianLayer.rememberLine(
-                                    fill = LineCartesianLayer.LineFill.single(fill(color)),
-                                    areaFill = if (filled) {
-                                        LineCartesianLayer.AreaFill.single(
-                                            fill(color.copy(alpha = 0.20f)),
-                                        )
-                                    } else {
-                                        null
-                                    },
-                                ),
-                            ),
+                            lineProvider = LineCartesianLayer.LineProvider.series(line),
+                            rangeProvider = if (zones.isNotEmpty()) {
+                                CartesianLayerRangeProvider.fixed(minY = yMin, maxY = yMax)
+                            } else {
+                                CartesianLayerRangeProvider.auto()
+                            },
                         ),
                         startAxis = VerticalAxis.rememberStart(),
+                        marker = rememberChartMarker(
+                            listOf(label),
+                            format = { v -> wholeOrOneDecimal(v) + if (unit.isEmpty()) "" else " $unit" },
+                        ),
                         // No bottom axis: see the note on StreamsCard.
                     ),
                     modelProducer = producer,
@@ -187,6 +212,38 @@ private fun StreamChart(
             }
         }
     }
+}
+
+/**
+ * A line coloured by heart-rate zone: a hard-stopped vertical gradient over
+ * the pinned range [yMin]..[yMax], one flat band per zone, so the colour
+ * changes exactly where the value crosses a zone boundary. Below zone 1 takes
+ * zone 1's colour.
+ */
+@Composable
+internal fun rememberZoneLine(yMin: Double, yMax: Double, zones: List<ZoneRange>): LineCartesianLayer.Line {
+    val span = (yMax - yMin).takeIf { it > 0 } ?: 1.0
+    val colors = mutableListOf<Color>()
+    val stops = mutableListOf<Float>()
+    // Top of the plot first: a vertical gradient runs top to bottom.
+    zones.withIndex().reversed().forEach { (i, z) ->
+        val top = (if (i == zones.lastIndex) yMax else (z.max?.toDouble() ?: yMax)).coerceAtMost(yMax)
+        val bottom = (if (i == 0) yMin else z.min.toDouble()).coerceAtLeast(yMin)
+        if (bottom >= top) return@forEach
+        val c = zoneColor(z, i)
+        colors += c; stops += ((yMax - top) / span).toFloat().coerceIn(0f, 1f)
+        colors += c; stops += ((yMax - bottom) / span).toFloat().coerceIn(0f, 1f)
+    }
+    if (colors.size < 2) {
+        return LineCartesianLayer.rememberLine(
+            fill = LineCartesianLayer.LineFill.single(fill(colors.firstOrNull() ?: MaterialTheme.colorScheme.error)),
+        )
+    }
+    return LineCartesianLayer.rememberLine(
+        fill = LineCartesianLayer.LineFill.single(
+            fill(ShaderProvider.verticalGradient(colors.toTypedArray(), stops.toFloatArray())),
+        ),
+    )
 }
 
 // ── Heart-rate zones ─────────────────────────────────────────────────────────

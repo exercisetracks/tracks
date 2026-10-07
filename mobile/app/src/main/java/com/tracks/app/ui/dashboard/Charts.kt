@@ -45,6 +45,7 @@ import com.patrykandpatrick.vico.compose.cartesian.layer.rememberColumnCartesian
 import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLine
 import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLineCartesianLayer
 import com.patrykandpatrick.vico.compose.cartesian.rememberCartesianChart
+import com.tracks.app.ui.components.rememberChartMarker
 import com.patrykandpatrick.vico.compose.common.ProvideVicoTheme
 import com.patrykandpatrick.vico.compose.common.component.rememberLineComponent
 import com.patrykandpatrick.vico.compose.common.fill
@@ -242,6 +243,7 @@ private fun TrainingLoadChart(points: List<TrainingLoadPoint>) {
                         rangeProvider = dataRange(axis),
                     ),
                     startAxis = sharedStartAxis(axis.ticks),
+                    marker = rememberChartMarker(listOf("Fitness", "Fatigue")),
                     // No date axis here: the form chart below carries it for
                     // both, which is what keeps the two plot areas aligned —
                     // together with the pinned gutter, without which the two
@@ -309,6 +311,7 @@ private fun FormChart(points: List<TrainingLoadPoint>) {
                             CartesianLayerRangeProvider.fixed(minY = axisMin, maxY = axisMax)
                         },
                     ),
+                    marker = rememberChartMarker(listOf("Form")),
                     startAxis = sharedStartAxis(axis.ticks),
                     bottomAxis = HorizontalAxis.rememberBottom(
                         valueFormatter = DateAxisFormatter,
@@ -776,6 +779,7 @@ fun WeeklyVolumeChart(points: List<WeeklyVolumePoint>, modifier: Modifier = Modi
                     } else {
                         emptyArray()
                     },
+                    marker = rememberChartMarker(listOf("Distance", "Hours")),
                     startAxis = sharedStartAxis(
                         ticks = leftAxis.ticks,
                         formatter = if (byDistance) KilometreFormatter else HourFormatter,

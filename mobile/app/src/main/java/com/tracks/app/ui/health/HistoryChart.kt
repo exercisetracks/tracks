@@ -2,6 +2,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 package com.tracks.app.ui.health
 
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
+import com.tracks.app.ui.components.drawInspection
+import com.tracks.app.ui.components.holdToInspect
+import com.tracks.app.ui.components.wholeOrOneDecimal
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -123,11 +129,17 @@ fun HistoryChart(
     val markDays = DayMarks.wanted(dayAxis.days)
     val markColor = outline.copy(alpha = DayMarks.alpha(dayAxis.days))
 
+    // Press and hold to read a day (com.tracks.app.ui.components.holdToInspect).
+    var inspectX by remember { mutableStateOf<Float?>(null) }
+    val pill = MaterialTheme.colorScheme.inverseSurface
+    val onPill = MaterialTheme.colorScheme.inverseOnSurface
+
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Canvas(
             modifier
                 .fillMaxWidth()
-                .height(CHART_HEIGHT + DATE_AXIS_HEIGHT),
+                .height(CHART_HEIGHT + DATE_AXIS_HEIGHT)
+                .holdToInspect { inspectX = it },
         ) {
             val plotHeight = size.height - DATE_AXIS_HEIGHT.toPx()
             drawYAxis(
@@ -221,6 +233,16 @@ fun HistoryChart(
                 center = Offset(x(latest), y(latest.value)),
             )
 
+            inspectX?.let { held ->
+                val nearest = placed.minBy { kotlin.math.abs(x(it) - held) }
+                drawInspection(
+                    measurer, labelStyle,
+                    x = x(nearest), y = y(nearest.value), plotHeight = plotHeight,
+                    text = "${nearest.day.format(INSPECT_DAY)} · ${wholeOrOneDecimal(nearest.value)}",
+                    dot = color, pill = pill, onPill = onPill,
+                )
+            }
+
             // The dates, in the strip held back for them. Several of them, so
             // the middle of the chart has a scale rather than an interpolation
             // between two ends — see [drawDateAxis].
@@ -236,6 +258,8 @@ fun HistoryChart(
         }
     }
 }
+
+private val INSPECT_DAY = java.time.format.DateTimeFormatter.ofPattern("EEE d MMM")
 
 /** A reading, its day, and where that day lands on the axis. */
 private data class Reading(val day: LocalDate, val fraction: Float, val value: Double)
