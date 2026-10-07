@@ -58,12 +58,14 @@ import com.tracks.core.spec.computeFuelingParams
 import com.tracks.core.spec.defaultCarbsPerHour
 import com.tracks.app.ui.plan.civil
 import java.time.LocalDate
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Race Plans — the web's /race-plans list and /race-plans/:id page.
@@ -94,6 +96,8 @@ data class RacePlansState(
     val tracks: List<Pair<String, String>> = emptyList(),
     /** Drawing a course needs the map, and the map needs a server. */
     val linked: Boolean = false,
+    /** The basemap the course preview draws on; null draws the shape alone (ActivityTrackMap). */
+    val mapStyleJson: String? = null,
 ) {
     val open: RacePlanCard? get() = cards.firstOrNull { it.goal.id == openGoalId }
 }
@@ -106,6 +110,17 @@ class RacePlansViewModel(private val container: AppContainer) : ViewModel() {
     init {
         load()
         viewModelScope.launch { container.localData.revision.drop(1).collect { load() } }
+        // The course preview's basemap: the cached style at once, then a
+        // refresh — as the activity screen does (ActivityDetailViewModel).
+        viewModelScope.launch {
+            val cached = withContext(Dispatchers.IO) { container.mapStyleCache().read() }
+            if (cached != null) _state.update { it.copy(mapStyleJson = cached) }
+            runCatching { container.client().mapStyleJson() }.onSuccess { fresh ->
+                if (fresh == cached) return@onSuccess
+                withContext(Dispatchers.IO) { container.mapStyleCache().write(fresh) }
+                _state.update { it.copy(mapStyleJson = fresh) }
+            }
+        }
     }
 
     fun load() {
@@ -280,6 +295,7 @@ fun RacePlansContent(
             Detail(
                 open, state.maxHr, onBack = { onOpen(null) }, onSet = { f, v -> onSet(open.goal, f, v) },
                 courseError = state.courseError,
+                mapStyleJson = state.mapStyleJson,
                 onImportCourse = onImportCourse, onRemoveCourse = { onRemoveCourse(open.goal) },
                 tracks = state.tracks, linked = state.linked,
                 onUseTrack = { course.onUseTrack(open.goal, it) },
@@ -355,6 +371,7 @@ private fun Detail(
     onBack: () -> Unit,
     onSet: (String, Any?) -> Unit,
     courseError: String? = null,
+    mapStyleJson: String? = null,
     onImportCourse: () -> Unit = {},
     onRemoveCourse: () -> Unit = {},
     tracks: List<Pair<String, String>> = emptyList(),
@@ -403,6 +420,11 @@ private fun Detail(
                     ?: "GPX course loaded.",
                 style = MaterialTheme.typography.bodySmall,
             )
+            // The course itself, on the map, as the web's race plan shows it.
+            val preview = remember(c.strategy.path) {
+                c.strategy.path.map { (lat, lon) -> com.tracks.core.api.TrackPoint(lat = lat, lng = lon) }
+            }
+            com.tracks.app.ui.map.ActivityTrackMap(track = preview, styleJson = mapStyleJson)
             ButtonRow {
                 TonalButton("Replace course", onClick = onImportCourse)
                 DangerButton("Remove course", onClick = onRemoveCourse)

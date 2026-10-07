@@ -47,6 +47,8 @@ class LocalRacePlans(private val sources: LocalSources) {
         val watchUploadedAt: String? = null,
         /** The loaded course's ~100 m segments; empty when none is loaded. */
         val segments: List<Segment> = emptyList(),
+        /** The loaded course's sampled path as (lat, lon), for its map preview; empty when none. */
+        val path: List<Pair<Double, Double>> = emptyList(),
         val useGpxDistance: Boolean = false,
         /** The user's fuelling overrides; null = the calculated default. */
         val fuelCarbs: Int? = null,
@@ -83,6 +85,12 @@ class LocalRacePlans(private val sources: LocalSources) {
                     gradient = (o["gradient"] as? JsonPrimitive)?.doubleOrNull ?: 0.0,
                     elevationGainM = (o["elevation_gain_m"] as? JsonPrimitive)?.doubleOrNull ?: 0.0,
                 )
+            },
+            path = (row.fields["course_path"] as? JsonArray).orEmpty().mapNotNull { e ->
+                val p = e as? JsonArray ?: return@mapNotNull null
+                val lat = (p.getOrNull(0) as? JsonPrimitive)?.doubleOrNull ?: return@mapNotNull null
+                val lon = (p.getOrNull(1) as? JsonPrimitive)?.doubleOrNull ?: return@mapNotNull null
+                lat to lon
             },
             useGpxDistance = (row.fields["use_gpx_distance"] as? JsonPrimitive)?.booleanOrNull == true,
             fuelCarbs = row.int("fuel_carbs_per_hour"),
