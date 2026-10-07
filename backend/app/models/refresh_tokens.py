@@ -145,3 +145,48 @@ def revoke_family(db, family_id: str) -> int:
         .filter(RefreshToken.family_id == family_id, RefreshToken.revoked_at.is_(None))
         .update({RefreshToken.revoked_at: now}, synchronize_session=False)
     )
+
+
+class RevokedSession(Base):
+    """An access-token session (`sid`) that has been signed out.
+
+    Access JWTs are stateless and last 30 days, so dropping a session's cached
+    decryption key (logout, "sign this device out") only ever closed the
+    encrypted half of the API: the token went on authenticating everything
+    that touches no encrypted column — medications, meals, injuries, settings —
+    until it expired. require_auth now refuses any token whose `sid` is listed
+    here.
+
+    In Postgres rather than Redis because Redis here runs without persistence
+    (see crypto_context): a revocation that a container restart forgets would
+    quietly re-admit every token it was meant to stop. One primary-key lookup
+    per authenticated request is the price; it is the same order as the User
+    lookup require_auth already makes.
+
+    Rows are only needed until every token carrying the sid has expired, so
+    `expires_at` is the latest such moment and `revoke_sid` prunes past ones.
+    """
+    __tablename__ = "revoked_sessions"
+
+    sid        = Column(String, primary_key=True)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+
+
+def revoke_sid(db, sid: str, *, lifetime_days: int) -> None:
+    """Record `sid` as signed out until no token carrying it can still be
+    valid. `lifetime_days` is the longest a token minted now could live — the
+    access-token lifetime, or the refresh-token lifetime when a refresh chain
+    could otherwise keep minting tokens for it. The caller commits."""
+    now = datetime.now(timezone.utc)
+    db.query(RevokedSession).filter(RevokedSession.expires_at < now).delete(
+        synchronize_session=False)
+    expires = now + timedelta(days=lifetime_days)
+    row = db.get(RevokedSession, sid)
+    if row is None:
+        db.add(RevokedSession(sid=sid, expires_at=expires))
+    elif row.expires_at < expires:
+        row.expires_at = expires
+
+
+def is_sid_revoked(db, sid: str) -> bool:
+    return db.get(RevokedSession, sid) is not None

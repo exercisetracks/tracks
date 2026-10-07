@@ -111,7 +111,7 @@ class TestChangePassword:
         resp = client.post("/users/me/password", json={
             "current_password": "wrongpass1", "new_password": "brandnewpass1",
         }, headers=auth_headers)
-        assert resp.status_code == 401
+        assert resp.status_code == 403
 
 
 class TestGetMe:

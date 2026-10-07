@@ -148,7 +148,7 @@ def _fetch_weather(lat: float, lon: float, target_date: date) -> dict | None:
         if days_out <= _FORECAST_HORIZON_DAYS:
             url = (
                 "https://api.open-meteo.com/v1/forecast"
-                f"?latitude={lat:.4f}&longitude={lon:.4f}"
+                f"?latitude={lat:.2f}&longitude={lon:.2f}"  # ~1 km; see weather.fetch_point_forecast
                 f"&hourly={_WEATHER_FIELDS}"
                 f"&start_date={target_date}&end_date={target_date}"
                 "&timezone=auto&wind_speed_unit=ms"
@@ -175,7 +175,7 @@ def _fetch_weather(lat: float, lon: float, target_date: date) -> dict | None:
                     continue
                 url = (
                     "https://archive-api.open-meteo.com/v1/archive"
-                    f"?latitude={lat:.4f}&longitude={lon:.4f}"
+                    f"?latitude={lat:.2f}&longitude={lon:.2f}"  # ~1 km; see weather.fetch_point_forecast
                     f"&hourly={_WEATHER_FIELDS}"
                     f"&start_date={hist_date}&end_date={hist_date}"
                     "&timezone=auto&wind_speed_unit=ms"

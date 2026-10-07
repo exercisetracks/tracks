@@ -25,6 +25,32 @@
 # (deploy/Dockerfile) runs every service in one container and points these at
 # 127.0.0.1 through TRACKS_BACKEND / TRACKS_TILES instead.
 
+# Content-Security-Policy, one per way of serving the app.
+#
+# The released image serves the built bundle (TRACKS_FRONTEND=static), and that
+# is the policy that has to hold: no inline script but the one theme snippet
+# in index.html, allowed by its hash; no eval; and connections to this origin
+# only, so an injected script could not send a token anywhere else. The hash
+# is of that snippet's exact text — edit it and the browser refuses it until
+# the hash here is updated; frontend/src/test/Csp.test.js fails first, saying
+# so. Releases up to 1.2.1 shipped the development policy below, which
+# weakened script-src to roughly nothing on every install.
+#
+# Development keeps 'unsafe-inline'/'unsafe-eval' and ws:/wss:, which Vite's
+# dev server needs (HMR injects inline scripts, evaluates modules and talks
+# over a websocket). That policy leans on the rest of its directives instead:
+# object-src, base-uri and form-action each close an injection route on their
+# own, and frame-ancestors cannot be reached from script at all.
+#
+# Both: blob: workers are MapLibre's, and data: images are the sprite sheet.
+(csp-static) {
+	header Content-Security-Policy "default-src 'self'; script-src 'self' 'sha256-w6osdISs3YGGQ/KseUxGO7FG6sRcDEapByNFMEMne9U='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; worker-src 'self' blob:; child-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+}
+
+(csp-proxy) {
+	header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ws: wss: blob: data:; worker-src 'self' blob:; child-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+}
+
 (frontend-proxy) {
 	reverse_proxy frontend:3000
 }
@@ -53,11 +79,11 @@
 	# API and app alike, so there is no second path that can quietly miss them.
 	#
 	# Why these matter more here than they would elsewhere: the access token
-	# lives in localStorage (see frontend/src/auth/AuthContext.jsx), it is valid
-	# for 30 days, and nothing server-side can revoke it early. So a single
-	# injected script would be able to read a user's entire health history and
-	# keep reading it for a month. These headers are the layer that keeps that
-	# from being one bug away.
+	# lives in localStorage (see frontend/src/auth/AuthContext.jsx) and is valid
+	# for 30 days. Signing out or changing the password revokes it, but only
+	# once the user knows to — a single injected script could read their health
+	# history and send the token elsewhere before then. These headers are the
+	# layer that keeps that from being one bug away.
 	header {
 		# Stop the browser second-guessing Content-Type. A tile or an uploaded
 		# blob that sniffs as HTML would otherwise run on this origin.
@@ -87,22 +113,9 @@
 	}
 
 	# CSP is separate from the block above because it is the one header here
-	# whose value depends on how the frontend is being served.
-	#
-	# 'unsafe-inline'/'unsafe-eval' in script-src are what the Vite dev server
-	# needs (HMR injects inline scripts and evaluates modules), and dev mode is
-	# this compose file's default — see docker-compose.yml. They weaken
-	# script-src to roughly nothing, which is exactly why the rest of this
-	# policy is written not to depend on it: object-src, base-uri and
-	# form-action each close an injection route on their own, and
-	# frame-ancestors cannot be reached from script at all.
-	#
-	# PRODUCTION: when you switch the frontend to the built bundle (`npm run
-	# preview`), drop 'unsafe-inline' and 'unsafe-eval' from script-src. The
-	# built bundle needs neither, and that is the change that turns this from
-	# defence-in-depth into an actual XSS control. Verified against the running
-	# app — blob: workers are MapLibre's, and data: images are the sprite sheet.
-	header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ws: wss: blob: data:; worker-src 'self' blob:; child-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+	# whose value depends on how the frontend is being served — see the
+	# csp-* snippets, picked the same way as the frontend-* ones.
+	import csp-{$TRACKS_FRONTEND:proxy}
 
 	@staticAssets path *.js *.css *.woff2 *.png *.jpg *.svg *.ico
 	header @staticAssets Cache-Control "public, max-age=31536000, immutable"

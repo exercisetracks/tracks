@@ -3,7 +3,7 @@
 // Security section: change password (current + new + confirm) with show/hide
 // toggles and client-side validation before calling the API.
 import { useState } from "react";
-import { api } from "../../api/client";
+import { api, TOKEN_KEY } from "../../api/client";
 import { INPUT, Section, FieldRow, InlineError } from "./primitives";
 
 export default function SecuritySection() {
@@ -21,7 +21,10 @@ export default function SecuritySection() {
     if (newPass !== confirm) { setError("Passwords do not match."); return; }
     setSaving(true); setError(""); setSaved(false);
     try {
-      await api.changePassword({ current_password: current, new_password: newPass });
+      const res = await api.changePassword({ current_password: current, new_password: newPass });
+      // A password change refuses every token issued before it, this one
+      // included; the server hands back a replacement for the same session.
+      if (res?.access_token) localStorage.setItem(TOKEN_KEY, res.access_token);
       setCurrent(""); setNewPass(""); setConfirm("");
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);

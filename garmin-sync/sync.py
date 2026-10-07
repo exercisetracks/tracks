@@ -114,15 +114,13 @@ PGID = _env_int("PGID", -1)
 # Agents, not a fixed secret baked into .env). Sent as a bearer token on
 # every call, replacing the old shared X-Garmin-Sync-Secret header.
 #
-# NOTE: only *personal* agents (paired to a single account) are supported by
-# this script right now — it never extracts the watch's own serial number
-# over MTP, which is what a *household* agent (shared dock, multiple family
-# members) needs to resolve which user a given plugged-in watch belongs to.
-# A single-user dock is today's realistic default anyway (this container
-# needs direct physical/USB access to the machine it runs on). Extending
-# this to household mode is a clean, self-contained follow-up: extract the
-# device serial via libmtp and send it as X-Garmin-Device-Serial on every
-# backend call below.
+# Which watch is docked: its unit id, read from GARMIN/GarminDevice.xml once
+# per plug-in (see _read_unit_id) and sent as X-Garmin-Device-Serial on every
+# backend call. The server dock is shared — anyone can plug a watch into the
+# machine — so the server files each watch's data under whoever claimed it,
+# and needs to know which watch this is to do that (see the backend's
+# sync_agent_auth.is_shared_dock). Before this, every docked watch's files
+# went to the admin's account.
 BACKEND_URL = _env("TRACKS_API_URL", "").rstrip("/")
 SYNC_TOKEN = _env("TRACKS_SYNC_TOKEN", "")
 # Local cache directory for the downloaded CPE.bin (avoids re-downloading on every plug-in)
@@ -166,6 +164,12 @@ def warn(msg: str) -> None:  _log("WARN", msg)
 def error(msg: str) -> None: _log("ERROR", msg)
 
 
+def _state_key(name: str) -> str:
+    """Synced files are recorded per watch: the dock is shared, and two
+    watches can each have a file of the same name."""
+    return f"{_DEVICE_SERIAL}/{name}" if _DEVICE_SERIAL else name
+
+
 # ---------------------------------------------------------------------------
 # State (which files we've already synced)
 # ---------------------------------------------------------------------------
@@ -198,8 +202,13 @@ class State:
         except OSError as exc:
             error(f"could not write state file {self.path}: {exc}")
 
+    def has(self, name: str) -> bool:
+        # A bare name is from before entries were kept per watch; honour it
+        # for any watch rather than re-upload everything once.
+        return _state_key(name) in self.synced or name in self.synced
+
     def mark(self, name: str) -> None:
-        self.synced.add(name)
+        self.synced.add(_state_key(name))
         # Save after each file so a crash mid-sync doesn't lose progress.
         self.save()
 
@@ -584,8 +593,17 @@ def _mtp_write_file(device, storage_id: int, folder_id: int, filename: str, loca
 # AGPS: fetch config, download CPE.bin, push to watch
 # ---------------------------------------------------------------------------
 
+# The docked watch's unit id, set by _worker_main once the device is open.
+# One worker process handles one plug-in of one watch, so a module global is
+# the whole lifetime it needs.
+_DEVICE_SERIAL: Optional[str] = None
+
+
 def _auth_header() -> dict:
-    return {"Authorization": f"Bearer {SYNC_TOKEN}"}
+    headers = {"Authorization": f"Bearer {SYNC_TOKEN}"}
+    if _DEVICE_SERIAL:
+        headers["X-Garmin-Device-Serial"] = _DEVICE_SERIAL
+    return headers
 
 
 def _backend_get(path: str) -> Optional[dict]:
@@ -668,8 +686,10 @@ def _fetch_pubkey() -> Optional[bytes]:
     import base64
     resp = _backend_get("/sync/pubkey")
     if not resp or not resp.get("public_key"):
-        warn("could not fetch ingestion public key from backend; "
-             "downloaded files will be retried on the next sync")
+        warn("could not fetch ingestion public key from backend — if this "
+             f"watch ({_DEVICE_SERIAL or 'unit id unknown'}) is not claimed yet, "
+             "claim it under Devices; its files stay on the watch and are "
+             "retried on the next sync")
         return None
     try:
         return base64.b64decode(resp["public_key"])
@@ -705,6 +725,7 @@ def _seal_and_ingest(pubkey: bytes, path: Path, filename: str) -> bool:
             pass
 
     resp = _backend_post_json("/sync/ingest", {
+        "device_serial": _DEVICE_SERIAL,
         "filename": filename,
         "content_hash": content_hash,
         "sealed_b64": base64.b64encode(sealed).decode(),
@@ -1369,6 +1390,50 @@ def _find_folder_id(device, storage_id: int, folder_path: str) -> Optional[int]:
     return parent
 
 
+def _read_unit_id(device) -> tuple[Optional[str], Optional[str]]:
+    """The watch's unit id and model name, from GARMIN/GarminDevice.xml.
+
+    The unit id is the number the watch writes as `serial_number` in every
+    FIT file it records, which is what the server keys a watch's claim on —
+    the USB/MTP serial string is a different identifier, so it is not used.
+    Returns (None, None) when the file is missing or unreadable; the server
+    then only accepts the files if the instance has a single account.
+
+    Unverified on hardware at the time of writing: GarminDevice.xml is where
+    Garmin Express reads the unit id, and the fenix 6X Pro's FIT serial is a
+    ten-digit unit id, but the two have not yet been compared on a docked
+    watch. If they differ, every watch reads as unclaimed and nothing is
+    misfiled — files simply wait on the watch.
+    """
+    import xml.etree.ElementTree as ET
+
+    storage_id = _find_storage_id(device)
+    folder_id = _find_folder_id(device, storage_id, "GARMIN") if storage_id is not None else None
+    if folder_id is None:
+        return None, None
+    item = next((item_id for item_id, name, is_folder in _mtp_list(device, storage_id, folder_id)
+                 if not is_folder and name.lower() == "garmindevice.xml"), None)
+    if item is None:
+        debug("GARMIN/GarminDevice.xml not found")
+        return None, None
+    dest = DEST / ".garmindevice.xml"
+    try:
+        if _mtp_download(device, item, str(dest).encode("utf-8")) != 0:
+            return None, None
+        root = ET.fromstring(dest.read_bytes())
+    except (OSError, ET.ParseError) as exc:
+        warn(f"could not read GarminDevice.xml: {exc}")
+        return None, None
+    finally:
+        try:
+            dest.unlink()
+        except OSError:
+            pass
+    unit_id = (root.findtext("{*}Id") or "").strip()
+    model = (root.findtext("{*}Model/{*}Description") or "").strip() or None
+    return (unit_id if unit_id.isdigit() else None), model
+
+
 def _list_target_files(device, storage_id: int, folder_id: int) -> list[tuple[int, str]]:
     out: list[tuple[int, str]] = []
     for item_id, name, is_folder in _mtp_list(device, storage_id, folder_id):
@@ -1447,7 +1512,7 @@ def _sync_folder(device, state: State, storage_id: int, folder_path: str,
     files = _list_target_files(device, storage_id, folder_id)
     info(f"found {len(files)} {FILE_EXT} file(s) in {STORAGE_NAME}/{folder_path}")
 
-    new = [(fid, name) for fid, name in files if name not in state.synced]
+    new = [(fid, name) for fid, name in files if not state.has(name)]
     if not new:
         info(f"nothing new in {folder_path}")
         return 0
@@ -1678,11 +1743,8 @@ def _worker_main() -> int:
         sys.stdout.flush()
         return 0
 
+    global _DEVICE_SERIAL
     state = State.load(DEST / STATE_FILENAME)
-    pubkey = _fetch_pubkey()
-    if pubkey is None:
-        warn("proceeding without an ingestion key this cycle — FIT downloads "
-             "will be skipped and retried once the backend/token is reachable")
 
     device = _mtp_open_garmin()
     if device is None:
@@ -1692,6 +1754,25 @@ def _worker_main() -> int:
 
     try:
         info(f"connected to {_mtp_friendlyname(device)}")
+        # Which watch, before anything is asked of the server: the answer
+        # decides whose key files are sealed to and whose workouts go on it.
+        _DEVICE_SERIAL, model = _read_unit_id(device)
+        if _DEVICE_SERIAL:
+            info(f"watch unit id {_DEVICE_SERIAL}")
+            # So a watch the server has never seen shows up under Devices,
+            # ready to be claimed.
+            _backend_post_json("/sync/register-device", {
+                "serial_number": _DEVICE_SERIAL, "manufacturer": "garmin",
+                "manufacturer_id": 1, "product_name": model,
+            })
+        else:
+            warn("could not read the watch's unit id; the server will accept "
+                 "its files only if it has a single account")
+        pubkey = _fetch_pubkey()
+        if pubkey is None:
+            warn("proceeding without an ingestion key this cycle — FIT downloads "
+                 "will be skipped and retried once the watch is claimed and the "
+                 "backend/token is reachable")
         _backend_post("/training-plan/sync/start")   # show spinner in the web UI
         result = sync_cycle(device, state, pubkey)
 

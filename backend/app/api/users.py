@@ -2,18 +2,18 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials
 from pydantic import BaseModel, field_validator
 from sqlalchemy.orm import Session
 
 from app.calculators.local_day import user_today
-from app.auth import _BEARER, decode_token, hash_password, require_auth, verify_password
+from app.auth import _BEARER, create_token, decode_token, hash_password, require_auth, verify_password
 from app.calculators.user_stats import recalculate_auto_values
 from app.database import get_db
 from app.models.activity import User
 from app.models.metrics import DailyMetric
-from app.models import device_keys
+from app.models import device_keys, refresh_tokens
 from app.models.refresh_tokens import RefreshToken
 from app.models.user_keys import UserKey
 from app.models.user_settings import UserSettings
@@ -80,6 +80,12 @@ class UserUpdate(BaseModel):
 class PasswordChangeRequest(BaseModel):
     current_password: str
     new_password: str
+    # A native client asks for a refresh token here as at login: the change
+    # revokes every refresh token, the caller's own included, and without a
+    # replacement the phone making the change would be signed out the next
+    # time its access token needed renewing.
+    issue_refresh_token: bool = False
+    device_label: str | None = None
 
     @field_validator("new_password")
     @classmethod
@@ -112,10 +118,14 @@ def change_password(
     user: User = Depends(require_auth),
     db: Session = Depends(get_db),
     credentials: HTTPAuthorizationCredentials | None = Depends(_BEARER),
+    x_tracks_client: str | None = Header(None),
 ):
     us = _get_or_create_settings(db, user.id)
     if us.password_hash is None or not verify_password(body.current_password, us.password_hash):
-        raise HTTPException(status_code=401, detail="Current password is incorrect")
+        # 403, not 401: the caller is authenticated, and a 401 reads to the
+        # phone's client as an expired token — it would refresh, retry, and
+        # end up reporting the user as signed out over a typo.
+        raise HTTPException(status_code=403, detail="Current password is incorrect")
     us.password_hash = hash_password(body.new_password)
 
     # Re-wrap the existing DEK/privkey under the new password — the DEK
@@ -146,6 +156,11 @@ def change_password(
                 synchronize_session=False)
     )
 
+    # And every access token already issued, including ones whose sessions
+    # have gone idle and so are in no index — see User.tokens_valid_after.
+    # The replacement for this session's token, minted below, is newer.
+    user.tokens_valid_after = datetime.now(timezone.utc)
+
     db.commit()
 
     # And the sessions already open. Revoking refresh tokens stops a device
@@ -159,8 +174,21 @@ def change_password(
         current_sid = None
     crypto_context.drop_user_sessions(user.id, keep=current_sid)
 
+    refresh = None
+    if body.issue_refresh_token and current_sid:
+        refresh, _ = refresh_tokens.issue(
+            db, user.id, current_sid, device_label=body.device_label,
+            client_version=x_tracks_client,
+        )
+        db.commit()
+
     return {
         "ok": True,
+        # The cutoff above refused this session's own token too. Its
+        # replacement keeps the same `sid`, so the vault stays unlocked; a
+        # client that ignores it is simply asked to log in again.
+        "access_token": create_token(user.id, sid=current_sid),
+        "refresh_token": refresh,
         # Surfaced so the UI can say "your 2 devices were signed out" rather
         # than leaving the user to discover it on their phone later.
         "revoked_device_keys": revoked_devices,

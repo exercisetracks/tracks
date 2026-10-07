@@ -34,10 +34,15 @@ def fetch_point_forecast(
 
     Returns {current:{…}, daily:[{…}], units:{…}} or None on failure. Units are
     metric (°C, m/s, mm); the frontend converts for display.
+
+    The point goes to a third party, so it is rounded to two places (~1 km):
+    finer than the forecast model's grid, so the answer is the same, and
+    coarse enough that the start of someone's latest run — what the watch
+    forecast falls back to — is not their front door.
     """
     url = (
         "https://api.open-meteo.com/v1/forecast"
-        f"?latitude={lat:.4f}&longitude={lon:.4f}"
+        f"?latitude={lat:.2f}&longitude={lon:.2f}"
         f"&current={_CURRENT}"
         f"&daily={_DAILY}"
         f"&forecast_days={max(1, min(days, 16))}"

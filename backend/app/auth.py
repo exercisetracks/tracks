@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.database import get_db
 from app.models.activity import User
+from app.models.refresh_tokens import is_sid_revoked
 from app.models.user_settings import UserSettings
 from app.services.redis_client import get_redis
 
@@ -45,8 +46,12 @@ def create_token(user_id: int, sid: str | None = None) -> str:
     much sooner, on its own sliding TTL. Every login/setup call should pass
     one; it's optional only so existing tests/tools that mint a bare
     identity token still work."""
-    expire = datetime.now(timezone.utc) + timedelta(days=_TOKEN_EXPIRE_DAYS)
-    payload = {"sub": str(user_id), "exp": expire}
+    now = datetime.now(timezone.utc)
+    expire = now + timedelta(days=_TOKEN_EXPIRE_DAYS)
+    # `iat` is what User.tokens_valid_after is compared against, kept to the
+    # microsecond (NumericDate allows fractions): in whole seconds, a token
+    # minted in the same second as a password change would survive it.
+    payload = {"sub": str(user_id), "exp": expire, "iat": now.timestamp()}
     if sid is not None:
         payload["sid"] = sid
     return jwt.encode(payload, settings.jwt_secret, algorithm=_ALGORITHM)
@@ -137,4 +142,27 @@ def require_auth(
     user = db.get(User, user_id)
     if user is None:
         raise HTTPException(status_code=401, detail="User not found")
+    if not token_is_live(db, user, payload):
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
     return user
+
+
+def token_is_live(db: Session, user: User, payload: dict) -> bool:
+    """Whether a correctly signed, unexpired token has since been revoked.
+
+    A signature only proves the server issued the token once. Signing out
+    (logout, revoking a device) lists the token's `sid` as revoked, and a
+    password change refuses every token issued before it — without these a
+    stolen token kept reading everything unencrypted for its full 30 days,
+    whatever the owner did. See RevokedSession for why this is in Postgres.
+
+    A token with no `iat` predates this check; it passes until a password
+    change sets a cutoff, and then it is refused like any other old token.
+    """
+    cutoff = user.tokens_valid_after
+    if cutoff is not None:
+        issued = payload.get("iat")
+        if not isinstance(issued, (int, float)) or issued < cutoff.timestamp():
+            return False
+    sid = payload.get("sid")
+    return not (sid and is_sid_revoked(db, sid))

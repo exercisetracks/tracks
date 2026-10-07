@@ -21,7 +21,7 @@ from fastapi import Depends, Header, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models.activity import Device, UserDevice
+from app.models.activity import Device, User, UserDevice
 from app.models.sync_agents import SyncAgent
 
 
@@ -58,27 +58,73 @@ def require_sync_agent(
     return agent
 
 
+def is_shared_dock(agent: SyncAgent) -> bool:
+    """Whether this agent syncs watches that may belong to anyone.
+
+    A household agent obviously does. So does the host's USB bridge
+    ("garmin-usb"), even though it is provisioned for the admin: it is a port
+    on the server, and whoever plugs a watch into it is not necessarily the
+    admin. Treating it as the admin's personal agent filed every docked watch's
+    health data into the admin's account, whoever had claimed the watch. A
+    phone's agent is personal in fact — the watch it syncs is paired to that
+    phone — and keeps resolving to the phone's own account.
+    """
+    return agent.user_id is None or agent.kind == "garmin-usb"
+
+
+def _sole_account(db: Session, agent: SyncAgent) -> int | None:
+    """The admin behind a host dock, when the instance has no other account.
+
+    With one account there is no one else a docked watch could belong to, so
+    the dock claims it on that account's behalf rather than asking the only
+    user to claim their own watch. With more than one, a watch only ever seen
+    by the server is claimed first-come from the Devices page.
+    """
+    if agent.user_id is None:
+        return None
+    return agent.user_id if db.query(User.id).limit(2).count() == 1 else None
+
+
 def resolve_sync_user_id(db: Session, agent: SyncAgent, device_serial: str | None) -> int | None:
     """Resolve which user's data this agent call should act on.
 
-    - Personal agent (agent.user_id set): always that user, no lookup.
-    - Household agent (agent.user_id is None): resolved via device_serial ->
-      UserDevice claim. Returns None if unresolvable (no serial given, the
-      device isn't claimed by anyone yet, or more than one account claims it)
-      — callers should surface a clear "not claimed yet" response, not
-      silently guess. A watch claimed by two people is refused rather than
-      filed under whichever claim the database happened to return first:
-      that would put one person's health data in another's account.
+    - Personal agent (a phone's): always that user, no lookup.
+    - Shared dock (household agent, or the host USB bridge — see
+      is_shared_dock): the device_serial's UserDevice claim. With no claim
+      yet, a host dock on a one-account instance acts for that account;
+      otherwise None. Returns None if unresolvable (the device isn't claimed
+      by anyone yet, or more than one account claims it) — callers should
+      surface a clear "not claimed yet" response, not silently guess. A watch
+      claimed by two people is refused rather than filed under whichever claim
+      the database happened to return first: that would put one person's
+      health data in another's account.
     """
-    if agent.user_id is not None:
+    if not is_shared_dock(agent):
         return agent.user_id
     if not device_serial:
-        return None
+        # A bridge that cannot say which watch this is: only safe when there
+        # is one account it could belong to.
+        return _sole_account(db, agent)
     device = db.query(Device).filter_by(serial_number=device_serial).first()
-    if device is None:
+    claims = (
+        db.query(UserDevice.user_id).filter_by(device_id=device.id).limit(2).all()
+        if device is not None else []
+    )
+    if len(claims) == 1:
+        return claims[0][0]
+    if claims:
         return None
-    claims = db.query(UserDevice.user_id).filter_by(device_id=device.id).limit(2).all()
-    return claims[0][0] if len(claims) == 1 else None
+    return _sole_account(db, agent)
+
+
+def auto_claimant(db: Session, agent: SyncAgent) -> int | None:
+    """Who a newly registered watch is claimed for, without asking anyone:
+    the phone's owner for a phone's agent, the only account for a host dock
+    on a one-account instance, and nobody otherwise (first-come, from the
+    Devices page)."""
+    if not is_shared_dock(agent):
+        return agent.user_id
+    return _sole_account(db, agent)
 
 
 _HOST_GARMIN_LABEL = "Host USB sync"

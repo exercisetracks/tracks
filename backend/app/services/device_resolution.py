@@ -22,7 +22,8 @@ log = logging.getLogger(__name__)
 def get_or_create_device(db, device_info: dict, user_id: int | None) -> int | None:
     """Look up a device by serial+manufacturer, creating it if new. Uses a
     SAVEPOINT so concurrent callers don't crash on a UniqueViolation race.
-    If user_id is given, also claims the device for that user (idempotent)."""
+    If user_id is given, also claims the device for that user — unless another
+    account already holds it (see claim_if_unclaimed)."""
     serial = device_info.get("serial_number")
     if not serial:
         return None
@@ -70,7 +71,28 @@ def get_or_create_device(db, device_info: dict, user_id: int | None) -> int | No
                 .first()
             )
 
-    if user_id and device and not db.query(UserDevice).filter_by(user_id=user_id, device_id=device.id).first():
-        db.add(UserDevice(user_id=user_id, device_id=device.id))
+    if user_id and device:
+        claim_if_unclaimed(db, user_id, device.id)
 
     return device.id if device else None
+
+
+def claim_if_unclaimed(db, user_id: int, device_id: int) -> bool:
+    """Claim a watch for `user_id` unless another account already holds it.
+    Returns whether `user_id` holds it afterwards.
+
+    A watch belongs to one person. Importing a file from it, or a phone
+    reporting it, used to add a claim for the importer regardless — and a
+    second claim makes the watch unresolvable for a shared dock, while each
+    claimant sees it as theirs. The first claim stands; a later one is
+    refused here as POST /devices/{id}/claim refuses it.
+    """
+    holders = {uid for (uid,) in db.query(UserDevice.user_id).filter_by(device_id=device_id)}
+    if user_id in holders:
+        return True
+    if holders:
+        log.info("Device %s is held by another account; not claiming it for user %s",
+                 device_id, user_id)
+        return False
+    db.add(UserDevice(user_id=user_id, device_id=device_id))
+    return True

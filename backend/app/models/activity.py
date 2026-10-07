@@ -51,6 +51,13 @@ class User(Base):
     # Bumped by "Delete my data". A phone whose epoch is older wipes its copy,
     # and its pushes are refused — see app.sync.store.push.
     sync_epoch = Column(Integer, nullable=False, default=0, server_default="0")
+    # Access tokens issued before this moment are refused (app.auth). Set by a
+    # password change — "I think I am compromised" — which has to shut every
+    # session out, including ones it cannot name: a token's `sid` is only
+    # recorded while its decryption key is cached, so an index of sids would
+    # miss exactly the idle sessions a thief is most likely holding. The
+    # session making the change is handed a fresh token.
+    tokens_valid_after = Column(DateTime(timezone=True), nullable=True)
 
 
 class Device(Base):

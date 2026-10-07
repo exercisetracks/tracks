@@ -3,6 +3,7 @@
 """Route snapping API — delegates to BRouter for trail-aware routing."""
 
 import json
+import logging
 import math
 import re
 from datetime import date as _date
@@ -21,6 +22,7 @@ from app.routes.regions.bbox import parse_bbox
 from app.services import brouter_client, brouter_downloader, elevation_sampler, weather, wildfire
 from app.services.route_profile import build_profile
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/maps", tags=["maps"])
 
 
@@ -41,8 +43,11 @@ async def snap_route(data: dict):
     try:
         result = await brouter_client.snap_route(coordinates, profile)
         return result
-    except Exception as e:
-        raise HTTPException(500, f"BRouter routing failed: {e}")
+    except Exception:
+        # Logged rather than returned: the cause names the internal routing
+        # service's address and whatever it said back.
+        logger.error("BRouter routing failed", exc_info=True)
+        raise HTTPException(500, "Routing failed")
 
 
 # ── Offline routing data ─────────────────────────────────────────────────────

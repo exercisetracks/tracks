@@ -45,6 +45,7 @@ from app.models.training_plan import PlannedWorkout, TrainingPlan
 from app.models.user_settings import UserSettings
 from app.models.waypoint import Waypoint
 from app.models.workout import UserWorkout, UserWorkoutExercise, UserWorkoutSession
+from app.sync.merge import REJ_INVALID, Rejected
 from app.spec.sync import ENTITIES
 from app.sync import uids
 
@@ -304,6 +305,15 @@ class DeviceAdapter(Adapter):
             if fields.get(f) is not None:
                 setattr(device, f, fields[f])
         db.flush()
+        # A phone reporting the watch it is paired with claims it — but never
+        # over someone else's claim; see device_resolution.claim_if_unclaimed.
+        # Refused for good: sending it again cannot change who holds it.
+        held_elsewhere = db.execute(
+            select(UserDevice.user_id).where(UserDevice.device_id == device.id,
+                                        UserDevice.user_id != user_id)
+        ).first()
+        if held_elsewhere is not None:
+            raise Rejected(REJ_INVALID, "this watch is claimed by another account")
         claim = UserDevice(user_id=user_id, device_id=device.id, uid=uid)
         for f in ("label", "is_primary"):
             if f in fields:

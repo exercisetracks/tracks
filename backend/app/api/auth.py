@@ -12,7 +12,8 @@ from pydantic import BaseModel, field_validator
 from sqlalchemy.orm import Session
 
 from app.auth import (
-    _BEARER, create_token, decode_token, hash_password, require_auth, verify_password,
+    _BEARER, _TOKEN_EXPIRE_DAYS, create_token, decode_token, hash_password, require_auth,
+    verify_password,
 )
 from app.config import settings
 from app.database import get_db
@@ -641,12 +642,10 @@ def revoke_session(
     that token could keep decrypting health data. A user pressing "sign out" on
     a phone they have lost means "stop reading my data", not "stop renewing".
 
-    Residual, stated so it is not mistaken for closed: the access token itself
-    is stateless and stays valid until it expires, so the signed-out device can
-    still reach endpoints that touch no encrypted data (see require_auth vs
-    require_crypto_session). Closing that too would mean a revocation check on
-    every authenticated request; the encrypted data is the part worth the
-    round trip, and it is already covered by the session lookup.
+    And it lists the `sid` as revoked, which is what ends the access token the
+    device already holds: on its own, a stateless JWT stays valid until it
+    expires and kept reaching every endpoint that touches no encrypted data —
+    medications, meals, settings. See app.auth.token_is_live.
     """
     row = (
         db.query(RefreshToken)
@@ -656,26 +655,42 @@ def revoke_session(
     if row is None:
         raise HTTPException(status_code=404, detail="Session not found")
     refresh_tokens.revoke_family(db, row.family_id)
+    if row.sid:
+        refresh_tokens.revoke_sid(db, row.sid, lifetime_days=_TOKEN_EXPIRE_DAYS)
     db.commit()
     if row.sid:
         crypto_context.drop_session_key(row.sid)
 
 
 @router.post("/logout", status_code=204)
-def logout(credentials: HTTPAuthorizationCredentials | None = Depends(_BEARER)):
-    """Drops this session's cached decryption key from Redis so it can't be
-    used again even within its TTL. The JWT itself stays stateless/valid
-    until it expires — but without a cached key behind its `sid`, it only
-    authenticates for endpoints that don't touch encrypted data (see
-    require_crypto_session). Best-effort: an invalid/missing/already-expired
-    token is not an error, there's simply nothing left to drop."""
-    if credentials is not None:
-        try:
-            sid = decode_token(credentials.credentials).get("sid")
-            if sid:
-                crypto_context.drop_session_key(sid)
-        except Exception:
-            pass
+def logout(
+    credentials: HTTPAuthorizationCredentials | None = Depends(_BEARER),
+    db: Session = Depends(get_db),
+):
+    """Ends this session: drops its cached decryption key from Redis, lists
+    its `sid` as revoked so the access token stops authenticating anywhere
+    (app.auth.token_is_live), and revokes any refresh chain pinned to it —
+    otherwise that chain could mint fresh tokens for the sid once its
+    revocation row has aged out. Best-effort: an invalid/missing/
+    already-expired token is not an error, there's simply nothing to end."""
+    if credentials is None:
+        return
+    try:
+        payload = decode_token(credentials.credentials)
+    except Exception:
+        return
+    sid = payload.get("sid")
+    if not sid:
+        return
+    families = {
+        family for (family,) in
+        db.query(RefreshToken.family_id).filter(RefreshToken.sid == sid).distinct()
+    }
+    for family in families:
+        refresh_tokens.revoke_family(db, family)
+    refresh_tokens.revoke_sid(db, sid, lifetime_days=_TOKEN_EXPIRE_DAYS)
+    db.commit()
+    crypto_context.drop_session_key(sid)
 
 
 @router.post("/sync-pending-imports", status_code=202)

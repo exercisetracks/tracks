@@ -659,7 +659,16 @@ def _settle(db: Session, user_id: int, arrived: list[tuple[str, str]]) -> None:
             if adapter is None or s.entity == "activity":
                 continue
             row = {"fields": dict(s.fields), "clock": dict(s.clock), "deleted": None}
-            if _materialize(db, user_id, adapter, s.uid, row):
+            try:
+                created = _materialize(db, user_id, adapter, s.uid, row)
+            except merge.Rejected as exc:
+                # Refused for good now that it can be judged (a watch someone
+                # else claimed meanwhile). This runs outside any one change's
+                # outcome, so the row is dropped rather than failing the push.
+                log.info("dropping staged %s %s: %s", s.entity, s.uid, exc.detail or exc.reason)
+                db.delete(s)
+                continue
+            if created:
                 db.delete(s)
                 arrived.append((s.entity, s.uid))
                 progress = True

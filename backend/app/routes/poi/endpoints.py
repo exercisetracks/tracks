@@ -166,8 +166,10 @@ def search_poi(
         return _collection(_name_search(db, subject or raw, anchor, limit))
 
     except Exception as exc:
-        logger.error("POI search failed: %s", exc)
-        raise HTTPException(500, f"Search failed: {exc}")
+        # The cause goes to the log, not the client: it can be a database
+        # error carrying the SQL and schema behind this endpoint.
+        logger.error("POI search failed: %s", exc, exc_info=True)
+        raise HTTPException(500, "Search failed")
     finally:
         db.close()
 
@@ -548,8 +550,10 @@ def poi_features(
         return {"type": "FeatureCollection", "features": features}
 
     except Exception as exc:
-        logger.error("POI features failed: %s", exc)
-        raise HTTPException(500, f"Features failed: {exc}")
+        # The cause goes to the log, not the client: it can be a database
+        # error carrying the SQL and schema behind this endpoint.
+        logger.error("POI features failed: %s", exc, exc_info=True)
+        raise HTTPException(500, "Features failed")
     finally:
         db.close()
 
@@ -616,8 +620,10 @@ def offline_poi(bbox: str = Query(..., description="w,s,e,n")):
             ],
         }
     except Exception as exc:
-        logger.error("offline POI export failed: %s", exc)
-        raise HTTPException(500, f"Export failed: {exc}")
+        # The cause goes to the log, not the client: it can be a database
+        # error carrying the SQL and schema behind this endpoint.
+        logger.error("offline POI export failed: %s", exc, exc_info=True)
+        raise HTTPException(500, "Export failed")
     finally:
         db.close()
 

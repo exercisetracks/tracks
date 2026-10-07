@@ -21,7 +21,12 @@ class SyncAgent(Base):
 
     user_id set means a personal agent (e.g. a phone syncing its own user's
     watch): always scoped to exactly that user, no device-serial lookup
-    needed. A future mobile app pairs this way.
+    needed. The phone app pairs this way.
+
+    One exception: kind "garmin-usb" is the server's own USB port, which
+    anyone can plug a watch into, so it resolves by claim like a household
+    agent even when provisioned for the admin — see
+    app.services.sync_agent_auth.is_shared_dock.
     """
 
     __tablename__ = "sync_agents"

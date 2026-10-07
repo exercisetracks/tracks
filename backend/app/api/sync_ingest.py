@@ -28,7 +28,7 @@ from app.models.sync_agents import SyncAgent
 from app.models.user_keys import UserKey
 from app.services import object_storage
 from app.services.device_resolution import get_or_create_device
-from app.services.sync_agent_auth import require_sync_agent, resolve_sync_user_id
+from app.services.sync_agent_auth import auto_claimant, require_sync_agent, resolve_sync_user_id
 
 router = APIRouter(prefix="/sync", tags=["sync-ingest"])
 log = logging.getLogger(__name__)
@@ -77,10 +77,12 @@ def register_device(
     not-yet-claimed device shows up in the Devices UI for the user to claim.
     Mirrors the old filesystem watcher's auto-register-on-first-import
     behavior without needing to parse (and therefore decrypt) anything
-    first. Personal agents auto-claim on their own owner's behalf; household
-    agents leave the device unclaimed for a human to sort out."""
-    user_id = agent.user_id  # None for household agents — left unclaimed
-    device_id = get_or_create_device(db, body.model_dump(), user_id)
+    first. A phone's agent claims the watch for the phone's owner — it is
+    paired to that phone, and claiming it the moment it appears leaves no
+    window for anyone else to. A shared dock leaves it unclaimed for the
+    first person to claim it, unless the instance has only one account (see
+    sync_agent_auth.auto_claimant). Never a second claim on a held watch."""
+    device_id = get_or_create_device(db, body.model_dump(), auto_claimant(db, agent))
     db.commit()
     return {"device_id": device_id}
 
