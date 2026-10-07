@@ -55,7 +55,10 @@ class ProfileViewModel(private val container: AppContainer) : ViewModel() {
             "theme_mode" -> container.setThemeMode(ThemeMode.of(value as String?))
             "accent_color" -> container.setAccent(Accent.of(value as String?))
             "units" -> container.setImperial(value == "imperial")
-            else -> container.sources.writeSetting(field, value)
+            else -> {
+                container.sources.writeSetting(field, value)
+                if (field == "sex") container.bodyFemale.value = value == "female"
+            }
         }
         // Units, thresholds, equipment, experience, frequency: the plan is
         // built from them, so it is rebuilt — as the server does for the same

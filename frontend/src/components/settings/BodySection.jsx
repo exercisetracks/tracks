@@ -12,6 +12,7 @@ import { api } from "../../api/client";
 import { ageFromBirthYear, birthYearFromAge, MAX_AGE, MIN_AGE } from "../../lib/age";
 import { INPUT, Section, FieldRow, InlineError, useSaveStatus } from "./primitives";
 import Tabs from "../ui/Tabs";
+import InfoTooltip from "../ui/InfoTooltip";
 
 export default function BodySection({ settings, onSaved }) {
   const imperial = settings?.units === "imperial";
@@ -122,7 +123,8 @@ export default function BodySection({ settings, onSaved }) {
       </p>
       {/* Two buttons rather than a dropdown, as in setup and on the phone:
           both choices are visible without opening anything. */}
-      <FieldRow label="Biological sex" hint="— muscle anatomy model and starting paces">
+      <FieldRow label={<span className="inline-flex items-center gap-1.5">Biological sex
+        <InfoTooltip label="What biological sex is used for">Chooses which anatomy model the muscle diagrams draw, and sets starting run paces. Sorry — there are only male and female models for now; a more androgynous one isn't available yet.</InfoTooltip></span>}>
         <Tabs stretch tabs={[{ key: "male", label: "Male" }, { key: "female", label: "Female" }]} value={sex} onChange={saveSex} />
       </FieldRow>
     </Section>

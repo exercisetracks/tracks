@@ -123,6 +123,7 @@ fun TracksNavHost(
     val backupProgress by container.backupProgress.collectAsStateWithLifecycle()
     val accent by container.accent.collectAsStateWithLifecycle()
     val imperial by container.imperial.collectAsStateWithLifecycle()
+    val bodyFemale by container.bodyFemale.collectAsStateWithLifecycle()
     val snackbars = remember { SnackbarHostState() }
     val pendingRoute by container.pendingRoute.collectAsStateWithLifecycle()
 
@@ -270,6 +271,8 @@ fun TracksNavHost(
     androidx.compose.runtime.CompositionLocalProvider(
         com.tracks.app.ui.components.LocalHasDevice provides hasDevice,
         com.tracks.app.ui.tour.LocalTourAnchors provides tourAnchors,
+        com.tracks.app.ui.body.LocalBodyGender provides
+            if (bodyFemale) com.tracks.app.ui.body.BodyGender.Female else com.tracks.app.ui.body.BodyGender.Male,
     ) {
     androidx.compose.foundation.layout.Box {
     ModalNavigationDrawer(

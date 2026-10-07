@@ -47,7 +47,7 @@ fun MusclePicker(
     selected: Set<String>,
     onSelectedChange: (Set<String>) -> Unit,
     modifier: Modifier = Modifier,
-    gender: BodyGender = BodyGender.Male,
+    gender: BodyGender = LocalBodyGender.current,
 ) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(
@@ -94,7 +94,7 @@ fun StackedMusclePicker(
     selected: Set<String>,
     onSelectedChange: (Set<String>) -> Unit,
     modifier: Modifier = Modifier,
-    gender: BodyGender = BodyGender.Male,
+    gender: BodyGender = LocalBodyGender.current,
 ) {
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         for (view in listOf(BodyView.Front, BodyView.Back)) {

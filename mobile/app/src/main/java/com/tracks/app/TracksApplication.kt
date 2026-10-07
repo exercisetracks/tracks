@@ -617,6 +617,14 @@ class AppContainer(private val context: Context) {
         .also { com.tracks.core.format.Units.imperial = it.value }
 
     /**
+     * Whether the muscle diagrams draw the female model — the synced `sex`
+     * setting, provided app-wide as LocalBodyGender. Every diagram used to
+     * take a gender parameter that no screen passed, so everyone saw the
+     * male model whatever they had chosen.
+     */
+    val bodyFemale = MutableStateFlow(false)
+
+    /**
      * Theme mode, accent and units are account settings (spec/sync.yaml,
      * `settings`), so a choice made on the web reaches the phone and the other
      * way round. SharedPreferences keeps a copy only so the first frame after a
@@ -668,6 +676,7 @@ class AppContainer(private val context: Context) {
             imperial.value = imp
             com.tracks.core.format.Units.imperial = imp
         }
+        bodyFemale.value = str("sex") == "female"
         // Runs at startup and after every pull — the second is what writes the
         // zone on a phone whose settings row only arrived with its first pull.
         syncTimezone()

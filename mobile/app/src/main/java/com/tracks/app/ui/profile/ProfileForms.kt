@@ -94,7 +94,7 @@ fun BodyForm(state: ProfileState, set: SetField) {
                     },
                 )
             } }
-            val sex = @Composable { mod: Modifier -> Labelled("Biological sex", "Chooses the muscle anatomy model, and sets starting run paces.", mod) {
+            val sex = @Composable { mod: Modifier -> Labelled("Biological sex", SEX_NOTE, mod) {
                 SegmentedChoice(
                     options = listOf("male" to "Male", "female" to "Female"),
                     selected = state.str("sex"),
@@ -144,6 +144,12 @@ fun BodyForm(state: ProfileState, set: SetField) {
         }
     }
 }
+
+/** What biological sex is used for — the web's BodySection says the same. */
+internal const val SEX_NOTE =
+    "Chooses which anatomy model the muscle diagrams draw, and sets starting run paces. " +
+        "Sorry — there are only male and female models for now; a more androgynous one " +
+        "isn't available yet."
 
 /** Below this a form keeps one field per row; see [BodyForm]. */
 private val WIDE_FORM = 300.dp

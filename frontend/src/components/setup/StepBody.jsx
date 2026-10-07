@@ -89,7 +89,9 @@ export default function StepBody({ data, onChange, onNext, onBack }) {
 
       <FieldRow label="Biological sex">
         <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-2">
-          Used for the muscle anatomy model and starting run paces.
+          Chooses which anatomy model the muscle diagrams draw, and sets starting run paces.
+          Sorry — there are only male and female models for now; a more androgynous one isn't
+          available yet.
         </p>
         <Tabs stretch tabs={[{ key: "male", label: "Male" }, { key: "female", label: "Female" }]}
           value={data.sex} onChange={v => onChange("sex", v)} />

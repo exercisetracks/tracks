@@ -35,6 +35,14 @@ enum class BodyView { Front, Back }
 enum class BodyGender { Male, Female }
 
 /**
+ * The model every diagram draws unless told otherwise — the user's biological
+ * sex from Settings, provided at the root (TracksNavHost). A local rather than
+ * a parameter, because the diagrams sit three or four calls deep in screens
+ * that otherwise know nothing about the profile.
+ */
+val LocalBodyGender = androidx.compose.runtime.compositionLocalOf { BodyGender.Male }
+
+/**
  * The anatomical body diagram, shaded by how hard each muscle worked.
  *
  * ## The artwork is not ours and not hand-drawn
@@ -63,7 +71,7 @@ fun BodyDiagram(
     activation: Map<String, Float>,
     view: BodyView,
     modifier: Modifier = Modifier,
-    gender: BodyGender = BodyGender.Male,
+    gender: BodyGender = LocalBodyGender.current,
     /** Highlighted regardless of activation — the picker's selection. */
     selected: Set<String> = emptySet(),
     /** Non-null makes the diagram tappable, reporting the muscle key tapped. */
