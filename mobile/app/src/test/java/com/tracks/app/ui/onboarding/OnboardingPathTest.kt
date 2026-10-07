@@ -32,7 +32,18 @@ class OnboardingPathTest {
     fun the_server_path_skips_the_profile_and_offers_music() {
         val path = onboardingPath(standalone = false, restored = false, hasDevice = true)
         assertFalse(S.Body in path)
-        assertTrue(S.SignIn in path && S.Music in path)
+        assertTrue(S.Server in path && S.Music in path)
+    }
+
+    /**
+     * An account an admin made has no profile; signing in to it on the phone
+     * first used to leave age and how often you train unasked for good.
+     */
+    @Test
+    fun a_server_account_that_never_finished_setup_is_asked_the_profile() {
+        val path = onboardingPath(standalone = false, restored = false, hasDevice = true, askProfile = true)
+        assertTrue(S.Body in path && S.Habits in path)
+        assertTrue(path.indexOf(S.Server) < path.indexOf(S.Body))
     }
 
     /**

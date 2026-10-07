@@ -989,7 +989,7 @@
           "activities"
         ],
         "summary": "Backfill Summaries",
-        "description": "Fill feel and perceived effort into activities imported before the\nparser read them (app.services.fit_import.backfill_activity_summaries_for_user).\n\nLogin queues this already; the endpoint is for running it again without\none, as /health/daily/reparse is for daily metrics. Only null columns are\nfilled and nothing else on an activity changes, so it is safe to repeat,\nand a repeat with nothing left to read is one query. Queued rather than\nrun inline, because the first run unseals a file per older activity \u2014 and\nby session id, never key material, as every such task is.",
+        "description": "Fill feel and perceived effort into activities imported before the\nparser read them (app.services.fit_import.backfill_activity_summaries_for_user).\n\nLogin queues this already; the endpoint is for running it again without\none. Only null columns are\nfilled and nothing else on an activity changes, so it is safe to repeat,\nand a repeat with nothing left to read is one query. Queued rather than\nrun inline, because the first run unseals a file per older activity \u2014 and\nby session id, never key material, as every such task is.",
         "operationId": "backfill_summaries_activities_summaries_backfill_post",
         "responses": {
           "202": {
@@ -5076,31 +5076,6 @@
             }
           }
         }
-      }
-    },
-    "/health/daily/reparse": {
-      "post": {
-        "tags": [
-          "health"
-        ],
-        "summary": "Reparse Daily Metrics",
-        "description": "Re-read the files already ingested and fill in what the parser missed.\n\nEvery file a sync agent has ever sent is retained sealed, so a parser that\nlearns to read a field it used to walk past can go back over the history\nrather than only improving from today. That is not hypothetical: steps,\nactive calories, stress and respiration were all being dropped on the floor\nby a reader looking in the wrong message.\n\nActivities are untouched and running it twice reaches the same answer, but\nit is *not* read-only: the watch-derived columns are cleared and rebuilt.\nThey have to be. The merge rules only ever widen \u2014 high-water for counters,\nfirst-wins for summaries \u2014 so a stored figure that is too large survives\nevery correction that does not start from empty, which is exactly the case\na day filed under the wrong local date creates. See\n[app.services.fit_import.reparse_daily_metrics_for_user].\n\nQueued rather than done inline, because a year of monitoring files is\nhundreds of blobs to unseal.",
-        "operationId": "reparse_daily_metrics_health_daily_reparse_post",
-        "responses": {
-          "202": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
       }
     },
     "/health/sleep/{metric_date}": {

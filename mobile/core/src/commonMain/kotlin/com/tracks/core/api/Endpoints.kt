@@ -157,13 +157,6 @@ object Endpoints {
     const val HEALTH_DAILY_PATCH = "/health/daily/{metric_date}"
 
     /**
-     * Re-read the files already ingested, for the metrics the parser used to
-     * miss. Queued server-side; see the endpoint's own note for why nothing is
-     * deleted to make it work.
-     */
-    const val HEALTH_DAILY_REPARSE = "/health/daily/reparse"
-
-    /**
      * One night's sleep stages.
      *
      * Per night rather than folded into the daily list: the totals are seven
@@ -299,7 +292,7 @@ object Endpoints {
         METRICS_VO2MAX_HISTORY, METRICS_WEEKLY_VOLUME, METRICS_TRAINING_LOAD,
         METRICS_READINESS_HISTORY, COACHING_TODAY, UPCOMING_WORKOUTS,
         ACTIVITY_CLIMBS, ACTIVITY_SETS, DAILY_METRICS, WEEKLY_PLAN, USER_ICS_TOKEN, USER_ME, USER_SETTINGS,
-        INJURIES, INJURY_BY_ID, INJURY_ACTIVITIES, HEALTH_DAILY_PATCH, HEALTH_DAILY_REPARSE, SLEEP_NIGHT,
+        INJURIES, INJURY_BY_ID, INJURY_ACTIVITIES, HEALTH_DAILY_PATCH, SLEEP_NIGHT,
         STRESS_DETAIL,
         MEDICATIONS, MEDICATION_BY_ID, MEDICATION_LOG, MEDICATION_LOG_ENTRY,
         MEALS, MEAL_LOG, PLAN_WORKOUT,

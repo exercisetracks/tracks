@@ -886,6 +886,14 @@ data class UserSettings(
     @SerialName("ai_model") val aiModel: String? = null,
     @SerialName("ai_endpoint") val aiEndpoint: String? = null,
     @SerialName("ai_configured") val aiConfigured: Boolean = false,
+    /**
+     * Whether the account has been through setup (the web's wizard, or this
+     * phone's onboarding). An account an admin created has not, so a phone
+     * signing in to it asks the profile questions — age and how often you
+     * train among them — rather than leaving them unanswered. Absent reads as
+     * done, so an older server never sends anyone back through them.
+     */
+    @SerialName("setup_complete") val setupComplete: Boolean = true,
 ) {
     val imperial: Boolean get() = units.equals("imperial", ignoreCase = true)
 

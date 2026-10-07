@@ -37,26 +37,6 @@ def process_pending_imports(user_id: int, sid: str) -> None:
     fit_import.process_pending_imports_for_user(user_id, material, sid=sid)
 
 
-@celery_app.task(name="tracks.reparse_daily_metrics")
-def reparse_daily_metrics(user_id: int, sid: str) -> None:
-    """Re-read every retained file for its daily metrics.
-
-    Same session-id indirection as the task above and for the same reason: raw
-    key material must never become a task argument sitting in Redis. Long
-    enough to be worth a worker rather than a request — a year of monitoring
-    files is hundreds of blobs to unseal — which is the other reason it is a
-    task and not an endpoint that does the work inline.
-    """
-    material = crypto_context.load_session_key(sid)
-    if material is None:
-        log.warning(
-            "reparse_daily_metrics: session %s expired before the task ran "
-            "for user %s", sid[:8], user_id,
-        )
-        return
-    fit_import.reparse_daily_metrics_for_user(user_id, material, sid=sid)
-
-
 @celery_app.task(name="tracks.backfill_activity_summaries")
 def backfill_activity_summaries(user_id: int, sid: str) -> None:
     """Fill feel and perceived effort into activities imported before the

@@ -312,13 +312,6 @@ _DAILY_METRIC_MIN = {"body_battery_low"}
 # first-wins pinned it there. The settled reading is the last one.
 _DAILY_METRIC_LATEST = {"body_battery_last", "resting_hr"}
 
-# Everything above that a *health file* is the source of.
-#
-# `training_load` is the exception and the reason this set exists separately:
-# it lives on the same row and in the same allow-list, and it is the activity
-# importer's own arithmetic rather than anything a monitoring file carries. A
-# re-parse that cleared it would take out the input to the fitness model.
-_DAILY_METRIC_FROM_FILES = _DAILY_METRIC_FIELDS - {"training_load"}
 
 
 def _merge_daily_value(field: str, current, incoming):
@@ -782,8 +775,7 @@ def backfill_activity_summaries_for_user(user_id: int, material: UserKeyMaterial
 
     Only those columns, and only where they are null: a value already stored —
     by this build's import, or by anything else — is never replaced, and no
-    other field of the activity is touched. Like reparse_daily_metrics_for_user
-    it reads the retained file directly rather than going through
+    other field of the activity is touched. It reads the retained file directly rather than going through
     _insert_parsed, whose "already imported" check is right for imports and
     exactly wrong here.
 
@@ -846,96 +838,6 @@ def backfill_activity_summaries_for_user(user_id: int, material: UserKeyMaterial
             log.info("Backfilled activity summaries for user %s: %d files read, %d filled, %d failed",
                      user_id, read, filled, failed)
         return {"files": read, "filled": filled, "failed": failed}
-    finally:
-        db.close()
-
-
-def reparse_daily_metrics_for_user(user_id: int, material: UserKeyMaterial,
-                                   sid: str | None = None) -> dict:
-    """Re-read every retained file and fold its daily metrics in again.
-
-    ## Why this exists
-
-    A parser improves, and every file already imported keeps whatever the old
-    one managed to extract. That happened here on a scale worth a function:
-    stress and respiration were being looked for as *fields* of the per-epoch
-    monitoring record when the watch writes them as messages of their own, and
-    steps were read as a single value when they are a counter per activity type
-    — so three columns stayed null across a year of perfectly good files.
-    Waiting for new syncs would have fixed the future and left the history
-    empty.
-
-    ## Why it does not go through the import path
-
-    [_insert_parsed] returns early when a file's content hash already has an
-    Import row, which is exactly right for imports and exactly wrong here: the
-    point is to re-read files that *are* already imported. Making that path
-    re-run would mean deleting Import rows — throwing away the record of what
-    was ingested to work around a check that is doing its job.
-
-    So this skips it entirely and calls [_write_daily_metrics] directly. No
-    activity is touched, and no Import or PendingImport row changes.
-
-    ## Why the watch-derived columns are cleared first
-
-    Because the merge rules only ever *widen*. High-water for the counters,
-    first-wins for the summaries — which is right when two files describe one
-    day and useless when the stored figure is the thing being corrected. A day
-    holding 3,333 steps because a file that crossed local midnight was filed
-    under tomorrow will still hold 3,333 after a re-parse says 22, since 3,333
-    is the larger. Correcting history means starting it empty.
-
-    Only the columns a health file writes. `training_load` is in the same
-    allow-list and comes from the activity importer's own arithmetic, so
-    clearing it would take out the input to the fitness model; the entered
-    figures — weight, hydration, calories in — were never in the list at all.
-
-    Nothing is lost by it: every file is retained, and a run that fails partway
-    can simply be run again.
-    """
-    db = SessionLocal()
-    try:
-        # Device-measured columns are derived on every device, so clearing them
-        # is not an edit anyone else needs to hear about.
-        with sync_store.derived(db):
-            db.query(DailyMetric).filter_by(user_id=user_id).update(
-                {field: None for field in _DAILY_METRIC_FROM_FILES},
-                synchronize_session=False,
-            )
-            db.commit()
-
-        items = (
-            db.query(PendingImport)
-            .filter_by(user_id=user_id)
-            .order_by(PendingImport.created_at)
-            .all()
-        )
-        seen = days = failed = 0
-        for item in items:
-            try:
-                sealed = object_storage.load_blob(item.blob_id)
-                raw = user_crypto.unseal(material, sealed)
-                parsed = _parse_bytes(raw, item.filename or "unknown.fit")
-                seen += 1
-                if parsed and parsed.get("type") == "daily":
-                    _write_daily_metrics(db, parsed, None, user_id)
-                    db.commit()
-                    days += 1
-            except Exception:
-                db.rollback()
-                # One unreadable blob is not a reason to abandon the other nine
-                # hundred; the error is already recorded on its own import row.
-                log.exception("Re-parse failed for pending import %s", item.id)
-                failed += 1
-            finally:
-                if sid is not None:
-                    crypto_context.renew_session_key(sid)
-
-        log.info(
-            "Re-parsed daily metrics for user %s: %d files read, %d days written, %d failed",
-            user_id, seen, days, failed,
-        )
-        return {"files": seen, "days": days, "failed": failed}
     finally:
         db.close()
 

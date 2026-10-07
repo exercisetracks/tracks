@@ -1058,17 +1058,6 @@ class TracksClient(
         http.delete(url(Endpoints.injury(injuryId))) { bearer(token) }
     }
 
-    /**
-     * Ask the server to re-read its retained files for the daily metrics.
-     *
-     * Returns as soon as the work is queued — it is hundreds of sealed files to
-     * unseal and parse, and holding a phone's request open for that would time
-     * out long before it finished. The new figures appear on the next load.
-     */
-    suspend fun reparseDailyMetrics(): Unit = request { token ->
-        http.post(url(Endpoints.HEALTH_DAILY_REPARSE)) { bearer(token) }
-    }
-
     suspend fun medications(): List<Medication> = request { token ->
         http.get(url(Endpoints.MEDICATIONS)) { bearer(token) }
     }

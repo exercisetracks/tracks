@@ -11,7 +11,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from app.services import crypto_context, user_crypto
-from app.tasks.imports import process_pending_imports, reparse_daily_metrics
+from app.tasks.imports import process_pending_imports
 
 
 def _store_session(sid: str):
@@ -47,28 +47,3 @@ class TestProcessPendingImportsTask:
         assert called_user_id == user.id
         assert called_material.dek == material.dek
         assert mock_process.call_args.kwargs == {"sid": sid}
-
-
-class TestReparseDailyMetricsTask:
-    """The sibling task: re-read files already imported, for the metrics an
-    older parser walked past. Same session-id indirection and so the same two
-    ways it can go — the interesting one being that an expired session must not
-    turn into a stuck retry."""
-
-    def test_missing_session_is_a_no_op_not_a_crash(self):
-        with patch("app.tasks.imports.fit_import.reparse_daily_metrics_for_user") as mock:
-            reparse_daily_metrics(user_id=1, sid="does-not-exist")
-        mock.assert_not_called()
-
-    def test_valid_session_delegates_with_material_and_sid(self, user):
-        sid = "another-real-session-id"
-        material = _store_session(sid)
-
-        with patch("app.tasks.imports.fit_import.reparse_daily_metrics_for_user") as mock:
-            reparse_daily_metrics(user_id=user.id, sid=sid)
-
-        mock.assert_called_once()
-        called_user_id, called_material = mock.call_args.args
-        assert called_user_id == user.id
-        assert called_material.dek == material.dek
-        assert mock.call_args.kwargs == {"sid": sid}

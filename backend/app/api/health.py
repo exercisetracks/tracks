@@ -3,10 +3,9 @@
 from datetime import date, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.security import HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 
-from app.auth import _BEARER, decode_token, require_auth
+from app.auth import require_auth
 from app.calculators.local_day import activity_local_date, local_day_start, user_today
 from app.database import get_db
 from app.models.activity import Activity, User, UserDevice
@@ -19,7 +18,6 @@ from app.schemas.health import (
 )
 from app.schemas.metrics import DailyMetricOut
 from app.services.crypto_context import require_crypto_session
-from app.tasks.imports import reparse_daily_metrics as reparse_daily_metrics_task
 
 router = APIRouter(prefix="/health", tags=["health"])
 
@@ -204,41 +202,6 @@ def patch_daily(metric_date: date, body: DailyMetricPatch, db: Session = Depends
 # ─────────────────────────────────────────
 # Sleep detail (one night's stage timeline)
 # ─────────────────────────────────────────
-
-@router.post("/daily/reparse", status_code=202)
-def reparse_daily_metrics(
-    credentials: HTTPAuthorizationCredentials | None = Depends(_BEARER),
-):
-    """Re-read the files already ingested and fill in what the parser missed.
-
-    Every file a sync agent has ever sent is retained sealed, so a parser that
-    learns to read a field it used to walk past can go back over the history
-    rather than only improving from today. That is not hypothetical: steps,
-    active calories, stress and respiration were all being dropped on the floor
-    by a reader looking in the wrong message.
-
-    Activities are untouched and running it twice reaches the same answer, but
-    it is *not* read-only: the watch-derived columns are cleared and rebuilt.
-    They have to be. The merge rules only ever widen — high-water for counters,
-    first-wins for summaries — so a stored figure that is too large survives
-    every correction that does not start from empty, which is exactly the case
-    a day filed under the wrong local date creates. See
-    [app.services.fit_import.reparse_daily_metrics_for_user].
-
-    Queued rather than done inline, because a year of monitoring files is
-    hundreds of blobs to unseal.
-    """
-    if credentials is None:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-    try:
-        payload = decode_token(credentials.credentials)
-        user_id = int(payload["sub"])
-        sid = payload["sid"]
-    except Exception:
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
-    reparse_daily_metrics_task.delay(user_id, sid)
-    return {"queued": True}
-
 
 @router.get("/sleep/{metric_date}", response_model=SleepNightOut)
 def sleep_night(

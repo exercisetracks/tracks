@@ -380,7 +380,9 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
      */
     fun setServerUrl(url: String) {
         container.setServerUrl(url)
-        _state.update { current -> current.copy(serverUrl = container.serverUrl.value) }
+        // A new address has not answered yet: the old one's capabilities
+        // would show sign-in (ServerConnectForm) for a server never reached.
+        _state.update { current -> current.copy(serverUrl = container.serverUrl.value, capabilities = null) }
         if (url.isNotBlank()) checkServer()
     }
 
@@ -624,26 +626,6 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
                 if (result?.wiped == true) append(" — your data was deleted on the server, and here too")
                 if (result?.truncated == true) append(" — more to come, sync again")
             },
-        ) }
-    }
-
-    /**
-     * Ask the server to re-read what it already has.
-     *
-     * A watch sync only ever brings *new* files, so a parser that learns to
-     * read a field it used to walk past improves the future and leaves the
-     * history blank — which is exactly what happened to steps, active calories,
-     * stress and respiration. This is the button that goes back over it.
-     *
-     * Deliberately manual. It is hundreds of files to unseal on the server, and
-     * it is worth doing roughly once per parser improvement rather than on
-     * every launch.
-     */
-    fun reparseHealth() = run("Re-reading health files") {
-        container.client().reparseDailyMetrics()
-        _state.update { current -> current.copy(
-            message = "Re-reading your synced files. New readings appear on the " +
-                "Health page in a minute or two.",
         ) }
     }
 

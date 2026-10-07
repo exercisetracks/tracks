@@ -114,7 +114,7 @@ def backfill_summaries(credentials: HTTPAuthorizationCredentials | None = Depend
     parser read them (app.services.fit_import.backfill_activity_summaries_for_user).
 
     Login queues this already; the endpoint is for running it again without
-    one, as /health/daily/reparse is for daily metrics. Only null columns are
+    one. Only null columns are
     filled and nothing else on an activity changes, so it is safe to repeat,
     and a repeat with nothing left to read is one query. Queued rather than
     run inline, because the first run unseals a file per older activity — and

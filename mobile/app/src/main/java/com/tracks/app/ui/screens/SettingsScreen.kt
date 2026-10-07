@@ -17,6 +17,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -27,6 +28,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.tracks.app.ui.components.ButtonRow
 import com.tracks.app.AppContainer
 import com.tracks.app.UiState
@@ -93,7 +96,7 @@ fun SettingsScreen(
     linked: Boolean,
     feeds: List<FeedStatus>,
     onServerUrlChange: (String) -> Unit,
-    onCheck: () -> Unit,
+    onSearchServer: () -> Unit,
     onLogin: (String, String) -> Unit,
     onSync: () -> Unit,
     onWatchPair: () -> Unit,
@@ -105,7 +108,6 @@ fun SettingsScreen(
     /** Current password, then the new one. */
     onChangePassword: (String, String) -> Unit,
     onErase: () -> Unit,
-    onReparseHealth: () -> Unit,
     onRestored: () -> Unit,
     /** The tutorial's switch — see [com.tracks.app.ui.tour.TourViewModel]. */
     tutorialEnabled: Boolean,
@@ -169,13 +171,12 @@ fun SettingsScreen(
         ServerSection(
             state = state,
             linked = linked,
-            onServerUrlChange = onServerUrlChange,
-            onCheck = onCheck,
+            onConnect = onServerUrlChange,
+            onSearch = onSearchServer,
             onLogin = onLogin,
             onSync = onSync,
             onLogout = onLogout,
             onChangePassword = onChangePassword,
-            onReparseHealth = onReparseHealth,
         )
         }
 
@@ -249,45 +250,44 @@ private fun WatchSection(
 }
 
 /**
- * The server: where this phone syncs to, the account on it, and what only the
- * web edits — one card, because each part only means something with the
- * others (an address with no account syncs nothing).
+ * The server: where this phone syncs to and the account on it, kept to a few
+ * lines. Not signed in, it is one "Connect server" button that walks through
+ * the address and then the sign-in ([ServerConnectForm], the same steps as
+ * onboarding); signed in, it is the address, Sync now and Sign out, with the
+ * password and the web-only settings a row below.
  */
 @Composable
 private fun ServerSection(
     state: UiState,
     linked: Boolean,
-    onServerUrlChange: (String) -> Unit,
-    onCheck: () -> Unit,
+    onConnect: (String) -> Unit,
+    onSearch: () -> Unit,
     onLogin: (String, String) -> Unit,
     onSync: () -> Unit,
     onLogout: () -> Unit,
     onChangePassword: (String, String) -> Unit,
-    onReparseHealth: () -> Unit,
 ) {
-    val signedIn = state.session !is SessionState.LoggedOut && state.session !is SessionState.VaultLocked
+    var connecting by remember { mutableStateOf(false) }
     SettingsCard(
-        if (linked) "Server" else "Link a server",
-        if (linked) {
-            MetricInfo(
-                "Server",
-                "Unlocks on its own: this phone holds a device key, so you are not asked for your " +
-                    "password when the server's session lapses. Signing out keeps this phone's data.",
-                "Re-read health files: re-reads the files your watch has already sent, so history an " +
-                    "older reader dropped (steps, stress, respiration) fills in.",
-            )
-        } else {
-            MetricInfo(
-                "Link a server",
-                "A self-hosted Tracks server keeps a second copy on hardware you control, adds map " +
-                    "basemaps and AI coaching, and lets you use Tracks on the web. This phone's data merges into it.",
-            )
-        },
+        "Server",
+        MetricInfo(
+            "Server",
+            "A self-hosted Tracks server keeps a second copy on hardware you control, adds map " +
+                "basemaps and AI coaching, and lets you use Tracks on the web. This phone's data merges into it.",
+            "Once signed in, this phone holds a device key, so it unlocks on its own and is not asked for your " +
+                "password when the server's session lapses. Signing out keeps this phone's data. The password, " +
+                "other accounts, the music server, sync agents and map regions are managed in Tracks on the web.",
+        ),
     ) {
-        ServerAddress(state, onServerUrlChange, onCheck, linked)
-        SectionDivider()
         when (state.session) {
-            is SessionState.LoggedOut -> SignIn(prompt = null, busy = state.busy, onLogin = onLogin)
+            is SessionState.LoggedOut -> {
+                Text(
+                    if (linked) "Signed out of ${state.serverUrl}." else "Not connected — everything stays on this phone.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                PrimaryButton("Connect server", onClick = { connecting = true }, enabled = !state.busy)
+            }
             is SessionState.VaultLocked -> SignIn(
                 // Not a logout, and it must not read like one — the session is
                 // fine, only the decryption key lapsed, and everything already
@@ -296,39 +296,38 @@ private fun ServerSection(
                 busy = state.busy,
                 onLogin = onLogin,
             )
-            else -> SignedIn(state, onSync, onLogout, onChangePassword, onReparseHealth)
-        }
-        if (linked && signedIn) {
-            SectionDivider()
-            WebOnly(state.serverUrl)
+            else -> SignedIn(state, onSync, onLogout, onChangePassword)
         }
     }
-}
-
-/**
- * What only the web edits: other accounts, the music server, sync agents, map
- * regions and the password. Each is a server-side service or secret, so the
- * phone links out to where it lives rather than growing a second copy of an
- * admin panel it could only half-drive.
- *
- * The password especially: changing it revokes every device key and refresh
- * token (backend users.py `change_password`), this phone's included, so done
- * from here it would sign the phone out mid-change and need a sign-in flow
- * built around that. On the web it costs nothing.
- */
-@Composable
-private fun WebOnly(serverUrl: String) {
-    val uriHandler = LocalUriHandler.current
-    Text(
-        "Password, accounts, the music server, sync agents and map regions are managed in Tracks on the web.",
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
-    TonalButton(
-        "Open web settings",
-        onClick = { runCatching { uriHandler.openUri(serverUrl.trimEnd('/') + "/settings") } },
-        enabled = serverUrl.isNotBlank(),
-    )
+    // Closes itself the moment the session goes live.
+    if (connecting && state.session !is SessionState.LoggedOut) connecting = false
+    if (connecting) {
+        Dialog(onDismissRequest = { connecting = false }, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+            Surface(
+                Modifier.fillMaxWidth().padding(Tokens.Space.s4),
+                shape = MaterialTheme.shapes.large,
+                color = MaterialTheme.colorScheme.surface,
+            ) {
+                Column(
+                    Modifier.verticalScroll(rememberScrollState()).padding(Tokens.Space.s5),
+                    verticalArrangement = Arrangement.spacedBy(Tokens.Space.s3),
+                ) {
+                    Text("Connect server", style = MaterialTheme.typography.titleLarge)
+                    ServerConnectForm(
+                        serverUrl = state.serverUrl,
+                        busy = state.busy,
+                        scan = state.scan,
+                        connectedTo = state.capabilities?.let { "${it.app} ${it.serverVersion}" },
+                        message = state.message,
+                        onConnect = onConnect,
+                        onSearch = onSearch,
+                        onLogin = onLogin,
+                    )
+                    NeutralButton("Cancel", onClick = { connecting = false })
+                }
+            }
+        }
+    }
 }
 
 /**
@@ -390,54 +389,6 @@ private fun DangerZone(busy: Boolean, linked: Boolean, onErase: () -> Unit) {
 }
 
 @Composable
-private fun ServerAddress(
-    state: UiState,
-    onServerUrlChange: (String) -> Unit,
-    onCheck: () -> Unit,
-    linked: Boolean,
-) {
-    var draft by remember(state.serverUrl) { mutableStateOf(state.serverUrl) }
-    // A linked phone shows where it syncs to and nothing else; the address
-    // is rarely changed, so its editor waits behind "Change".
-    var editing by remember { mutableStateOf(!linked) }
-    if (!editing) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text(state.serverUrl, style = MaterialTheme.typography.bodyMedium)
-                state.capabilities?.let { caps ->
-                    Text(
-                        "${caps.app} ${caps.serverVersion} · API v${caps.apiVersion}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-            NeutralButton("Change", onClick = { editing = true })
-        }
-        return
-    }
-    OutlinedTextField(
-        value = draft,
-        onValueChange = { draft = it },
-        label = { Text("Server URL") },
-        placeholder = { Text("https://tracks.example.com") },
-        singleLine = true,
-        modifier = Modifier.fillMaxWidth(),
-    )
-    ButtonRow {
-        PrimaryButton("Save", onClick = { onServerUrlChange(draft) }, enabled = !state.busy)
-        TonalButton("Check", onClick = onCheck, enabled = !state.busy && state.serverUrl.isNotBlank())
-    }
-    state.capabilities?.let { caps ->
-        Text(
-            "${caps.app} ${caps.serverVersion} · API v${caps.apiVersion}",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-}
-
-@Composable
 private fun SignIn(
     prompt: String?,
     busy: Boolean,
@@ -469,20 +420,35 @@ private fun SignedIn(
     onSync: () -> Unit,
     onLogout: () -> Unit,
     onChangePassword: (String, String) -> Unit,
-    onReparseHealth: () -> Unit,
 ) {
+    val uriHandler = LocalUriHandler.current
     var changingPassword by remember { mutableStateOf(false) }
-    Text(
-        if (state.deviceKeyEnrolled) "Signed in · unlocks on its own" else "Signed in · may ask for your password again",
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
-    ButtonRow {
-        PrimaryButton("Sync now", onClick = onSync, enabled = !state.busy)
-        NeutralButton("Sign out", onClick = onLogout, enabled = !state.busy)
+    Column {
+        Text(state.serverUrl, style = MaterialTheme.typography.bodyMedium)
+        Text(
+            listOfNotNull(
+                state.capabilities?.let { "${it.app} ${it.serverVersion}" },
+                if (state.deviceKeyEnrolled) "signed in · unlocks on its own" else "signed in",
+            ).joinToString(" · "),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
-    TonalButton("Change password", onClick = { changingPassword = true }, enabled = !state.busy, modifier = Modifier.fillMaxWidth())
-    TonalButton("Re-read health files", onClick = onReparseHealth, enabled = !state.busy, modifier = Modifier.fillMaxWidth())
+    ButtonRow {
+        PrimaryButton("Sync now", onClick = onSync, enabled = !state.busy, small = true)
+        NeutralButton("Sign out", onClick = onLogout, enabled = !state.busy, small = true)
+    }
+    ButtonRow {
+        TonalButton("Change password", onClick = { changingPassword = true }, enabled = !state.busy, small = true)
+        // Accounts, music, sync agents and map regions live on the web; the
+        // phone links out rather than growing half an admin panel.
+        TonalButton(
+            "Web settings",
+            onClick = { runCatching { uriHandler.openUri(state.serverUrl.trimEnd('/') + "/settings") } },
+            enabled = state.serverUrl.isNotBlank(),
+            small = true,
+        )
+    }
     if (changingPassword) {
         ChangePasswordDialog(
             onDismiss = { changingPassword = false },

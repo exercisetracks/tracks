@@ -68,6 +68,7 @@ import com.tracks.app.ui.profile.LookForm
 import com.tracks.app.ui.profile.ProfileViewModel
 import com.tracks.app.ui.profile.SetField
 import com.tracks.app.ui.profile.StrengthForm
+import com.tracks.app.ui.screens.ServerConnectForm
 import com.tracks.app.ui.profile.ZonesForm
 import com.tracks.app.ui.theme.Tokens
 import com.tracks.core.api.SessionState
@@ -139,6 +140,10 @@ fun OnboardingScreen(
     var standalone by rememberSaveable { mutableStateOf(saved?.standalone ?: false) }
     // A restored backup already holds the profile, so its steps are skipped.
     var restored by rememberSaveable { mutableStateOf(saved?.restored ?: false) }
+    // A server account that has not been through setup gets the profile steps
+    // after sign-in (UserSettings.setupComplete). Not persisted: a reopened
+    // app resuming at one of those steps keeps them by being on one.
+    var askProfile by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(step, standalone, restored, hasDevice) {
         container.saveOnboardingProgress(
             OnboardingProgress(step.name, standalone = standalone, restored = restored, hasDevice = hasDevice),
@@ -154,16 +159,21 @@ fun OnboardingScreen(
         step = OnboardingStep.Device
     }
 
-    val path = onboardingPath(standalone = standalone, restored = restored, hasDevice = hasDevice)
-    fun next() { path.getOrNull(path.indexOf(step) + 1)?.let { step = it } }
-    fun back() { path.getOrNull(path.indexOf(step) - 1)?.let { step = it } }
-
+    val path = onboardingPath(
+        standalone = standalone, restored = restored, hasDevice = hasDevice,
+        askProfile = askProfile || step in PROFILE_STEPS,
+    )
     // Back walks the path rather than leaving the app. Not back into sign-in
     // once the session is live, though: that would offer a second sign-in over
     // one that has already bound this phone to an account.
-    BackHandler(enabled = step != OnboardingStep.Welcome && !(step == OnboardingStep.Device && !standalone)) {
-        back()
-    }
+    val previous = path.getOrNull(path.indexOf(step) - 1)
+    val canGoBack = previous != null &&
+        !(!standalone && previous in setOf(OnboardingStep.Welcome, OnboardingStep.Server) &&
+            state.session is SessionState.Active)
+    fun next() { path.getOrNull(path.indexOf(step) + 1)?.let { step = it } }
+    fun back() { if (canGoBack) step = previous!! }
+
+    BackHandler(enabled = canGoBack) { back() }
 
     // Advance out of sign-in the moment the session goes live, rather than on
     // the button press: login also enrols a device key and registers a sync
@@ -174,12 +184,21 @@ fun OnboardingScreen(
     // live a moment before the account check runs — and that check may sign
     // straight back out, refusing a phone that holds another account's data.
     LaunchedEffect(state.session, state.busy) {
-        if (step == OnboardingStep.SignIn && state.session is SessionState.Active &&
+        if (step == OnboardingStep.Server && state.session is SessionState.Active &&
             !state.busy && state.accountConflict == null && state.serverRestore == null
         ) {
             // The account's own settings arrive with the first sync.
             profileVm.reload()
-            step = OnboardingStep.Device
+            // Asked of the server directly: the first pull may not have
+            // landed yet, and an unreachable answer reads as done.
+            val done = runCatching { container.client().userSettings().setupComplete }.getOrDefault(true)
+            if (!done) {
+                askProfile = true
+                profileVm.set("timezone", ZoneId.systemDefault().id)
+                step = OnboardingStep.Body
+            } else {
+                step = OnboardingStep.Device
+            }
         }
     }
 
@@ -250,18 +269,10 @@ fun OnboardingScreen(
                         serverUrl = state.serverUrl,
                         busy = state.busy,
                         scan = state.scan,
-                        capabilities = state.capabilities?.let {
-                            "${it.app} ${it.serverVersion} · API v${it.apiVersion}"
-                        },
+                        connectedTo = state.capabilities?.let { "${it.app} ${it.serverVersion}" },
                         message = state.message,
-                        onSave = vm::setServerUrl,
-                        onCheck = vm::checkServer,
+                        onConnect = vm::setServerUrl,
                         onSearch = vm::searchLan,
-                        onNext = ::next,
-                    )
-                    OnboardingStep.SignIn -> SignInStep(
-                        busy = state.busy,
-                        message = state.message,
                         onLogin = vm::login,
                         onBack = ::back,
                     )
@@ -327,16 +338,18 @@ fun OnboardingScreen(
  * back button here already refuses to do.
  */
 internal fun resumeStep(saved: String?, signedIn: Boolean): OnboardingStep {
-    val step = saved?.let { name -> OnboardingStep.entries.firstOrNull { it.name == name } }
+    // "SignIn" was its own step until it joined the server's.
+    val name = if (saved == "SignIn") OnboardingStep.Server.name else saved
+    val step = name?.let { n -> OnboardingStep.entries.firstOrNull { it.name == n } }
         ?: OnboardingStep.Welcome
-    return if (signedIn && step in setOf(OnboardingStep.Welcome, OnboardingStep.Server, OnboardingStep.SignIn)) {
+    return if (signedIn && step in setOf(OnboardingStep.Welcome, OnboardingStep.Server)) {
         OnboardingStep.Device
     } else {
         step
     }
 }
 
-internal enum class OnboardingStep { Welcome, Body, Zones, Strength, Habits, Look, Privacy, Server, SignIn, Device, Permissions, Watch, Uploads, Weather, Music, Done }
+internal enum class OnboardingStep { Welcome, Body, Zones, Strength, Habits, Look, Privacy, Server, Device, Permissions, Watch, Uploads, Weather, Music, Done }
 
 /**
  * The steps this person will walk, in order — the progress bar's denominator
@@ -344,8 +357,10 @@ internal enum class OnboardingStep { Welcome, Body, Zones, Strength, Habits, Loo
  *
  * Standalone asks what the desktop's Setup asks, because on this path the
  * phone is the only place those answers can come from. The server path skips
- * all of it: the account already has a profile, and asking again would offer a
- * second place to set the same value differently. Music needs a music server
+ * it when the account already has a profile — asking again would offer a
+ * second place to set the same value differently — and asks it ([askProfile])
+ * for an account that never went through setup, so age and how often you
+ * train are never left unasked. Music needs a music server
  * behind the watch app, so only the server path has it (docs/offline-first.md).
  * A restored backup carries its profile, so it skips the profile steps too.
  *
@@ -353,14 +368,17 @@ internal enum class OnboardingStep { Welcome, Body, Zones, Strength, Habits, Loo
  * Bluetooth, the calendar and notification access are only for a watch, and
  * asking a phone-only user for them is asking for access to nothing.
  */
-internal fun onboardingPath(standalone: Boolean, restored: Boolean, hasDevice: Boolean): List<OnboardingStep> {
+internal fun onboardingPath(
+    standalone: Boolean,
+    restored: Boolean,
+    hasDevice: Boolean,
+    askProfile: Boolean = false,
+): List<OnboardingStep> {
     val start = when {
-        !standalone -> listOf(OnboardingStep.Welcome, OnboardingStep.Server, OnboardingStep.SignIn)
+        !standalone -> listOf(OnboardingStep.Welcome, OnboardingStep.Server) +
+            if (askProfile) PROFILE_STEPS else emptyList()
         restored -> listOf(OnboardingStep.Welcome)
-        else -> listOf(
-            OnboardingStep.Welcome, OnboardingStep.Body, OnboardingStep.Zones,
-            OnboardingStep.Strength, OnboardingStep.Habits, OnboardingStep.Look, OnboardingStep.Privacy,
-        )
+        else -> listOf(OnboardingStep.Welcome) + PROFILE_STEPS + OnboardingStep.Privacy
     }
     val watch = when {
         !hasDevice -> emptyList()
@@ -370,6 +388,11 @@ internal fun onboardingPath(standalone: Boolean, restored: Boolean, hasDevice: B
     return start + listOf(OnboardingStep.Device, OnboardingStep.Permissions) + watch + OnboardingStep.Done
 }
 
+/** The profile questions, in order — what the web's Setup asks. */
+internal val PROFILE_STEPS = listOf(
+    OnboardingStep.Body, OnboardingStep.Zones, OnboardingStep.Strength,
+    OnboardingStep.Habits, OnboardingStep.Look,
+)
 
 // ── Steps ────────────────────────────────────────────────────────────────────
 
@@ -469,96 +492,40 @@ internal fun PrivacyStep(onBack: () -> Unit, onNext: () -> Unit) {
     }
 }
 
+/**
+ * The server and the sign-in, as one step: the address first, and the
+ * username and password only once it has answered ([ServerConnectForm], the
+ * same flow as Settings' "Connect server"). Sign-in moves on by itself when
+ * the session goes live (the LaunchedEffect above).
+ */
 @Composable
 private fun ServerStep(
     serverUrl: String,
     busy: Boolean,
     scan: String?,
-    capabilities: String?,
+    connectedTo: String?,
     message: String?,
-    onSave: (String) -> Unit,
-    onCheck: () -> Unit,
+    onConnect: (String) -> Unit,
     onSearch: () -> Unit,
-    onNext: () -> Unit,
-) {
-    var draft by remember(serverUrl) { mutableStateOf(serverUrl) }
-
-    StepHeading(
-        "Your server",
-        "Tracks is self-hosted. If it is running on this network the app can " +
-            "find it; otherwise enter the address you use in a browser.",
-    )
-    // Offered before the text field, because when it works it is the whole
-    // step — somebody who runs the server on a box in their house has no
-    // reason to know its address, and asking them to go and find out is the
-    // worst moment of setting this up.
-    TonalButton(if (scan != null) "Stop searching" else "Find it on my network", onClick = onSearch, modifier = Modifier.fillMaxWidth(), enabled = !busy)
-    scan?.let {
-        Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-    }
-    OutlinedTextField(
-        value = draft,
-        onValueChange = { draft = it },
-        label = { Text("Server URL") },
-        placeholder = { Text("https://tracks.example.com") },
-        singleLine = true,
-        modifier = Modifier.fillMaxWidth(),
-    )
-    Text(
-        // Discovery exists because the API sits at /api behind the bundled
-        // Caddy on most deployments and at the origin on some. Saying so beats
-        // making the user find out by failing.
-        "The app finds the API itself, whether it lives at the address you " +
-            "typed or behind /api.",
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
-    PrimaryButton(if (busy) "Checking…" else "Connect", onClick = { onSave(draft); onCheck() }, modifier = Modifier.fillMaxWidth(), enabled = !busy && draft.isNotBlank())
-
-    // The search fills the field in on success, so a found server can still be
-    // reviewed and corrected rather than silently adopted.
-
-    if (capabilities != null) {
-        StatusCard(good = true, text = "Connected to $capabilities")
-        PrimaryButton("Continue", onClick = onNext, modifier = Modifier.fillMaxWidth())
-    } else if (message != null && !busy) {
-        StatusCard(good = false, text = message)
-    }
-}
-
-@Composable
-private fun SignInStep(
-    busy: Boolean,
-    message: String?,
     onLogin: (String, String) -> Unit,
     onBack: () -> Unit,
 ) {
-    var username by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-
     StepHeading(
-        "Sign in",
-        "Once. Tracks enrols this phone while you are signed in, so it can keep " +
-            "syncing your watch for weeks without asking again — including with " +
-            "no signal.",
+        "Your server",
+        "Tracks is self-hosted. If it is running on this network the app can find it; " +
+            "otherwise enter the address you use in a browser.",
     )
-    OutlinedTextField(
-        value = username,
-        onValueChange = { username = it },
-        label = { Text("Username") },
-        singleLine = true,
-        modifier = Modifier.fillMaxWidth(),
+    ServerConnectForm(
+        serverUrl = serverUrl,
+        busy = busy,
+        scan = scan,
+        connectedTo = connectedTo,
+        message = message,
+        onConnect = onConnect,
+        onSearch = onSearch,
+        onLogin = onLogin,
     )
-    PasswordField(
-        value = password,
-        onValueChange = { password = it },
-        modifier = Modifier.fillMaxWidth(),
-    )
-    PrimaryButton(if (busy) "Signing in…" else "Sign in", onClick = { onLogin(username, password) }, modifier = Modifier.fillMaxWidth(), enabled = !busy && username.isNotBlank() && password.isNotBlank())
-
-    if (message != null && !busy) StatusCard(good = false, text = message)
-
-    NeutralButton("Change server", onClick = onBack)
+    NeutralButton("Back", onClick = onBack)
 }
 
 /**

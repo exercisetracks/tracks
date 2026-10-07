@@ -34,7 +34,6 @@ from app.parsers.daily_health import (
 )
 from app.services.fit_import import (
     _DAILY_METRIC_FIELDS,
-    _DAILY_METRIC_FROM_FILES,
     _merge_daily_value,
     _merge_stress_series,
 )
@@ -61,20 +60,6 @@ class TestAllowList:
     def test_the_allow_list_does_not_name_columns_that_do_not_exist(self):
         columns = {c.name for c in DailyMetric.__table__.columns}
         assert not (_DAILY_METRIC_FIELDS - columns)
-
-    def test_a_re_parse_never_clears_training_load(self):
-        # A re-parse empties the watch-derived columns first, because the merge
-        # rules only ever widen and a figure that is too large survives every
-        # correction that does not start from empty. `training_load` sits on the
-        # same row and in the same allow-list, and is the *activity* importer's
-        # own arithmetic — clearing it would take out the fitness model's input
-        # and nothing in a monitoring file would ever put it back.
-        assert "training_load" in _DAILY_METRIC_FIELDS
-        assert "training_load" not in _DAILY_METRIC_FROM_FILES
-        assert _DAILY_METRIC_FROM_FILES < _DAILY_METRIC_FIELDS
-
-    def test_everything_else_is_rebuilt_by_a_re_parse(self):
-        assert _DAILY_METRIC_FIELDS - _DAILY_METRIC_FROM_FILES == {"training_load"}
 
 
 class TestMergingASecondFileForTheSameDay:

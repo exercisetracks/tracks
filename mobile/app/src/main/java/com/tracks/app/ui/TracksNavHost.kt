@@ -600,7 +600,7 @@ fun TracksNavHost(
                     linked = linked,
                     feeds = feeds,
                     onServerUrlChange = vm::setServerUrl,
-                    onCheck = vm::checkServer,
+                    onSearchServer = vm::searchLan,
                     onLogin = vm::login,
                     // Two different syncs, and they are not interchangeable:
                     // `vm::sync` syncs with the server, `onSync` pulls files
@@ -613,7 +613,6 @@ fun TracksNavHost(
                     onLogout = vm::logout,
                     onChangePassword = vm::changePassword,
                     onErase = { vm.eraseLocalData(); profileVm.reload() },
-                    onReparseHealth = vm::reparseHealth,
                     onRestored = { profileVm.reload(); container.localData.changed() },
                     tutorialEnabled = tour.enabled,
                     onTutorialEnabled = tourVm::setEnabled,
