@@ -72,6 +72,28 @@ class LocalPlanningTest {
         assertEquals(1, rows.map { it.str("generation") }.toSet().size)
     }
 
+    /**
+     * The exercise and stretch picks were salted with the clock, so a plan
+     * built here and one built by the server (or here an hour later) from the
+     * same data chose different sessions, and each sync rewrote the other's
+     * calendar. They are salted with the goal's uid on both sides now.
+     */
+    @Test
+    fun a_plan_rebuilt_later_the_same_day_picks_the_same_exercises_and_stretches() = runBlocking {
+        val (sources, planning) = setup()
+        val id = sources.goal()
+        sources.setValues("goal", id, mapOf("include_strength" to true, "strength_tier" to 3))
+        val goal = sources.goals().single()
+        suspend fun content() = sources.replica.rows("planned_workout").filter { !it.isTombstone }
+            .map { r -> listOf("scheduled_date", "workout_type", "title", "description", "steps").map { r.fields[it] } }
+            .sortedBy { it.toString() }
+        planning.regenerate(goal, today, now).getOrThrow()
+        val first = content()
+        planning.regenerate(goal, today, now + 3_600_000L).getOrThrow()
+        assertTrue(first.any { it[1].toString() == "\"strength\"" } && first.any { it[1].toString() == "\"flexibility\"" })
+        assertEquals(first, content())
+    }
+
     /** Without include_strength the plan still gets its post-workout stretch flows, as on the server. */
     @Test
     fun a_goal_without_strength_still_gets_stretch_flows_but_no_strength() = runBlocking {

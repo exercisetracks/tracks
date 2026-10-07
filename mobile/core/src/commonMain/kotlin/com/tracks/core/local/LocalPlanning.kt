@@ -55,16 +55,18 @@ import kotlinx.serialization.json.doubleOrNull
  * user moved stay on their day and join the new generation, refreshed from
  * their counterpart session ([MovedWorkouts], the same rule as the server).
  *
- * ## What is not here yet
+ * ## Why the phone's plan and the server's agree
  *
- * The server's generation also injects strength sessions and stretch flows
- * (`_inject_strength_workouts`, `_inject_stretch_flows`). Both are ported as
- * calculators but need the library, strength records and injuries assembled
- * the server's way; until that glue exists a phone-built plan carries the
- * endurance sessions and field tests only. The fitness fingerprint
- * (`base_effective_weeks`) is also not yet tracked on the phone, which the
- * generator treats as "no history of this sport", as the server does for a
- * new account.
+ * Either one's rebuild replaces the other's on the next sync, so the two must
+ * build the same plan from the same data — or every sync rewrites one
+ * calendar with the other. The generators are held to each other by
+ * spec/fixtures; what each reads besides the data is pinned too: the
+ * strength and stretch picks are salted with the goal's uid (not the clock),
+ * strength blocks count from the goal's first stamp ([planStart], not the
+ * server's `created_at`), thresholds are derived afresh on both, and the
+ * server reads injuries with the session's key as this phone always can.
+ * What still differs is when each rebuilds: a plan built on another day
+ * reads another week's training, and that is meant.
  */
 class LocalPlanning(
     private val sources: LocalSources,
@@ -154,14 +156,16 @@ class LocalPlanning(
         if (goal.scheduleTests == true) workouts = PlanAssembly.injectFieldTests(workouts, goal.eventSport)
         // Then what the server injects, in its order: strength and mobility
         // sessions (with the user's own workouts), then a stretch flow after
-        // each training day. Salted per regeneration, as the server does, so
-        // exercise and stretch picks rotate each time the plan is rebuilt.
+        // each training day. Salted with the goal's uid, as the server is
+        // (generation.py), so a plan rebuilt here and one rebuilt there pick
+        // the same exercises and stretches. It was the clock, and the two
+        // never agreed; the picks still rotate by week and by day.
         workouts = PlanInjection.inject(
             workouts,
             strength = if (goal.includeStrength == true) strengthInputs(goal, today) else null,
             stretchCandidates = stretchCandidates(),
             today = today,
-            regenSalt = (nowMs / 1000).toString(),
+            regenSalt = goalUid,
         )
         if (fitness) {
             // Strength for a goal with no date spans twelve weeks; a rolling

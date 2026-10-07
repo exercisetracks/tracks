@@ -34,6 +34,8 @@ from app.models.user_settings import UserSettings
 from app.models.workout import UserWorkout, UserWorkoutExercise, UserWorkoutSession
 from app.services.crypto_context import MissingDecryptionKey
 
+from .helpers import _goal_anchor
+
 log = logging.getLogger(__name__)
 
 
@@ -302,7 +304,10 @@ def _inject_strength_workouts(
         confirmed_no_exercises=confirmed_no_exercises or None,
         stretch_candidates=stretch_candidates,
         experience=experience,
-        anchor_date=(goal.created_at.date() if getattr(goal, "created_at", None) else None),
+        # The goal's first stamp, as the phone anchors it (LocalPlanning.planStart);
+        # `created_at` is when this server first saw the row, so a goal made on
+        # a phone put its strength blocks in different weeks here and there.
+        anchor_date=_goal_anchor(goal),
     )
 
     # ── Inject user's custom workouts into the plan ──────────────────────

@@ -182,6 +182,9 @@ def update_settings(
     update: UserSettingsUpdate,
     user: User = Depends(require_auth),
     db: Session = Depends(get_db),
+    # For the plan rebuild below: injuries are encrypted
+    # (crypto_context.optional_crypto_session).
+    _key=Depends(crypto_context.optional_crypto_session),
 ):
     us = _get_or_create_settings(db, user.id)
     data = update.model_dump(exclude_none=True)

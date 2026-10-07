@@ -18,7 +18,6 @@ ICS router in __init__ to keep registration order deterministic.
 """
 
 import logging
-import time
 from datetime import date, datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -28,6 +27,7 @@ from sqlalchemy.orm import Session
 
 from app.calculators.local_day import user_today
 from app.auth import require_auth
+from app.services.crypto_context import optional_crypto_session
 from app.calculators.plan.moved import keep_completed, keep_moved
 from app.calculators.plan.starting import frequency_for
 from app.calculators.training_plan import (
@@ -49,7 +49,6 @@ from app.schemas.training_plan import (
 )
 
 from app.sync import store as sync_store
-from app.sync.hlc import ClockError, Hlc
 from app.sync.uids import uuid7
 
 from .helpers import (
@@ -57,6 +56,7 @@ from .helpers import (
     _effective_max_hr,
     _effective_threshold_hr,
     _get_activity_history,
+    _goal_anchor,
     _get_fingerprint_ew,
     _get_goal_or_404,
     _get_pace_bests,
@@ -85,6 +85,9 @@ def generate_plan(
     schedule_tests: bool | None = None,
     user: User = Depends(require_auth),
     db: Session = Depends(get_db),
+    # The key, when the vault is open, so strength plans around injuries
+    # (crypto_context.optional_crypto_session).
+    _key=Depends(optional_crypto_session),
 ):
     """
     Generate (or regenerate) a full training plan for the given goal.
@@ -250,26 +253,6 @@ def _carry_moved(db: Session, plan: TrainingPlan, workout_dicts: list[dict],
     return remaining
 
 
-def _goal_anchor(goal: TrainingGoal) -> date | None:
-    """The day the goal was first written: its earliest sync stamp.
-
-    What a fitness plan counts its light weeks from. Not `created_at`: that is
-    when *this server* inserted the row, which for a goal made on a phone is
-    whenever the phone next synced — and the phone, counting from its own
-    stamp (LocalPlanning.planStart), would put the light week somewhere else.
-    The stamps travel with the row, so every device reads the same day.
-    """
-    walls = []
-    for stamp in (goal.clock or {}).values():
-        try:
-            walls.append(Hlc.parse(stamp).wall_ms)
-        except ClockError:
-            continue
-    if not walls:
-        return None
-    return datetime.fromtimestamp(min(walls) / 1000, tz=timezone.utc).date()
-
-
 def _plan_workout_dicts(db: Session, goal: TrainingGoal, user_id: int,
                         today: date) -> tuple[float | None, list[dict]]:
     """Everything a goal's plan holds, before it is written: the endurance
@@ -334,11 +317,15 @@ def _plan_workout_dicts(db: Session, goal: TrainingGoal, user_id: int,
     if goal.schedule_tests:
         workout_dicts = _inject_field_tests(workout_dicts, goal, today)
 
-    # Per-regeneration salt: changes on every plan generate, so the strength
-    # exercise picks + stretch picks rotate even when no other inputs change.
-    # Format: epoch seconds. Doesn't need to be unique across users — the salt
-    # is concatenated with sport/split/muscle/week so collisions are harmless.
-    regen_salt = str(int(time.time()))
+    # The salt for the strength and stretch picks is the goal's uid, which
+    # every device reads the same. It was the clock (epoch seconds), so that
+    # a rebuild reshuffled the picks — but the phone rebuilds too
+    # (LocalPlanning.regenerate), and two builds of the same plan from the
+    # same data then disagreed on every exercise and stretch; whichever
+    # synced last rewrote the other's calendar. Rebuilds are automatic now,
+    # so reshuffling on each one only churned the plan an import at a time.
+    # The picks still rotate: every seed also carries the week or the day.
+    regen_salt = goal.uid or ""
     workout_dicts = _inject_strength_workouts(db, goal, user_id, workout_dicts,
                                               regen_salt=regen_salt)
     workout_dicts = _inject_stretch_flows(db, workout_dicts, user_id,

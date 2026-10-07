@@ -13,7 +13,7 @@ sub-modules:
 """
 
 import statistics
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 
 from fastapi import HTTPException
 from sqlalchemy import func
@@ -28,6 +28,7 @@ from app.models.training_plan import (
     WatchPendingDelete,
 )
 from app.models.user_settings import UserSettings
+from app.sync.hlc import ClockError, Hlc
 
 
 def _get_goal_or_404(db: Session, goal_id: int, user: User) -> TrainingGoal:
@@ -35,6 +36,27 @@ def _get_goal_or_404(db: Session, goal_id: int, user: User) -> TrainingGoal:
     if goal is None:
         raise HTTPException(status_code=404, detail="Goal not found")
     return goal
+
+
+def _goal_anchor(goal: TrainingGoal) -> date | None:
+    """The day the goal was first written: its earliest sync stamp.
+
+    What a fitness plan counts its light weeks from, and a strength block its
+    weeks. Not `created_at`: that is when *this server* inserted the row,
+    which for a goal made on a phone is whenever the phone next synced — and
+    the phone, counting from its own stamp (LocalPlanning.planStart), would put
+    the light week somewhere else. The stamps travel with the row, so every
+    device reads the same day.
+    """
+    walls = []
+    for stamp in (goal.clock or {}).values():
+        try:
+            walls.append(Hlc.parse(stamp).wall_ms)
+        except ClockError:
+            continue
+    if not walls:
+        return None
+    return datetime.fromtimestamp(min(walls) / 1000, tz=timezone.utc).date()
 
 
 def _get_pace_bests(db: Session, user_id: int) -> list[tuple[int, float]]:

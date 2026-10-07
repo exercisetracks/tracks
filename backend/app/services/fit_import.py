@@ -185,24 +185,50 @@ def _schedule_workout_match(activity_id: int, user_id: int | None) -> None:
     threading.Thread(target=_run, daemon=True).start()
 
 
-def _schedule_plan_refresh(user_id: int | None) -> None:
+def _schedule_plan_refresh(user_id: int | None, material: UserKeyMaterial | None = None) -> None:
+    """Rebuild the user's plans shortly after their last import.
+
+    ``material`` is the key the import ran under. The rebuild runs on a timer
+    thread, which inherits no decryption key (crypto_context), and without
+    one it cannot read the person's injuries and plans strength as if they
+    had none — while their phone, which always can, plans around them. The
+    key is held only until the timer fires, in this process's memory, which
+    is where the import already held it.
+    """
     if user_id is None:
         return
     with _refresh_lock:
         existing = _refresh_timers.get(user_id)
         if existing is not None:
             existing.cancel()
-        t = threading.Timer(10.0, _do_plan_refresh, args=(user_id,))
+        t = threading.Timer(10.0, _do_plan_refresh, args=(user_id, material))
         t.daemon = True
         _refresh_timers[user_id] = t
         t.start()
 
 
-def _do_plan_refresh(user_id: int) -> None:
+def _do_plan_refresh(user_id: int, material: UserKeyMaterial | None = None) -> None:
     with _refresh_lock:
         _refresh_timers.pop(user_id, None)
     from app.api.training_plan import refresh_plans_for_user
-    refresh_plans_for_user(user_id)
+    from app.calculators.user_stats import recalculate_auto_values
+
+    # The auto thresholds first, from the history as it now stands. They were
+    # only recomputed at startup, so a plan rebuilt after an import read the
+    # max and threshold HR of the last restart — and the phone, which derives
+    # them afresh at every rebuild (LocalSources.importThresholds), built its
+    # paces and zones from different numbers.
+    db = SessionLocal()
+    try:
+        recalculate_auto_values(db, user_id)
+    except Exception:
+        log.exception("Auto-value recalculation failed for user %d", user_id)
+    finally:
+        db.close()
+    if material is None:
+        refresh_plans_for_user(user_id)
+    else:
+        crypto_context.run_with_key(material, refresh_plans_for_user, user_id)
 
 
 # ── Parse + insert ───────────────────────────────────────────────────────────
@@ -657,7 +683,7 @@ def _insert_parsed(db, parsed: dict | None, content_hash: str, filename: str,
 
     _schedule_cache_warm()
     _schedule_workout_match(activity.id, user_id)
-    _schedule_plan_refresh(user_id)
+    _schedule_plan_refresh(user_id, material)
 
 
 def _sync_device_claim(db, user_id: int, device_id: int) -> None:

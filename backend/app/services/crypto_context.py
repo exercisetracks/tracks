@@ -282,3 +282,35 @@ async def require_crypto_session(
         yield material
     finally:
         reset_current_key(token)
+
+
+async def optional_crypto_session(
+    credentials: HTTPAuthorizationCredentials | None = Depends(_BEARER),
+):
+    """`require_crypto_session` for an endpoint that can do without the key:
+    the session's key is made current when it is cached, and the endpoint
+    runs either way (yielding None when it is not).
+
+    For plan generation, which reads one encrypted thing — the person's
+    injuries, to keep strength off an injured part — and must not refuse to
+    rebuild a plan over a locked vault. Without the key it plans as if there
+    were no injuries (injectors._get_active_injuries says so in the log);
+    with it, it plans as their phone does, which always holds the key. Same
+    source and same lifetime as the required form: the key cached for this
+    token's own session, set for this request only. Must be `async def` for
+    the reason given above `require_crypto_session`.
+    """
+    material = None
+    if credentials is not None:
+        from app.auth import decode_token  # see the _BEARER comment above
+        try:
+            sid = decode_token(credentials.credentials)["sid"]
+        except Exception:
+            sid = None
+        if sid:
+            material = await anyio.to_thread.run_sync(load_session_key, sid)
+    token = set_current_key(material)
+    try:
+        yield material
+    finally:
+        reset_current_key(token)

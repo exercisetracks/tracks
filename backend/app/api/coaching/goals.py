@@ -26,6 +26,7 @@ from sqlalchemy.orm import Session
 from app.calculators.local_day import user_today
 from app.api.coaching.helpers import _event_load
 from app.auth import require_auth
+from app.services.crypto_context import optional_crypto_session, run_with_key
 from app.calculators.event_date import counts_toward, recommend_event_date
 from app.calculators.plan.staleness import goal_edit_stales_plan
 from app.database import get_db
@@ -58,7 +59,8 @@ def list_goals(user: User = Depends(require_auth), db: Session = Depends(get_db)
 
 
 @router.post("/goals", response_model=TrainingGoalOut, status_code=201)
-def create_goal(body: TrainingGoalCreate, user: User = Depends(require_auth), db: Session = Depends(get_db)):
+def create_goal(body: TrainingGoalCreate, user: User = Depends(require_auth), db: Session = Depends(get_db),
+                material=Depends(optional_crypto_session)):
     """Create a new training goal. Only one goal can be active at a time, so any
     currently-active goals are deactivated first."""
     for other in db.query(TrainingGoal).filter_by(user_id=user.id, is_active=True).all():
@@ -76,7 +78,13 @@ def create_goal(body: TrainingGoalCreate, user: User = Depends(require_auth), db
     if (goal.goal_type == "fitness"
             or goal.goal_type == "event" and goal.event_date and goal.event_date > user_today(db, user.id)):
         from app.api.training_plan import refresh_plans_for_user
-        threading.Thread(target=refresh_plans_for_user, args=(user.id,), daemon=True).start()
+        # A new thread starts with no key (crypto_context); hand it this
+        # session's, or the plan ignores injuries the phone plans around.
+        if material is None:
+            threading.Thread(target=refresh_plans_for_user, args=(user.id,), daemon=True).start()
+        else:
+            threading.Thread(target=run_with_key, args=(material, refresh_plans_for_user, user.id),
+                             daemon=True).start()
 
     return goal
 
@@ -112,7 +120,8 @@ def get_goal(goal_id: int, user: User = Depends(require_auth), db: Session = Dep
 
 
 @router.patch("/goals/{goal_id}", response_model=TrainingGoalOut)
-def update_goal(goal_id: int, body: TrainingGoalUpdate, user: User = Depends(require_auth), db: Session = Depends(get_db)):
+def update_goal(goal_id: int, body: TrainingGoalUpdate, user: User = Depends(require_auth), db: Session = Depends(get_db),
+                _key=Depends(optional_crypto_session)):
     """Partial update of a goal. Use is_active=true/false to toggle focus."""
     goal = db.query(TrainingGoal).filter_by(id=goal_id, user_id=user.id).first()
     if goal is None:
