@@ -71,6 +71,13 @@ class RefreshToken(Base):
     # used to decide anything. Kept up to date by every login, refresh and
     # GET /version, and carried across rotation.
     client_version = Column(String, nullable=True)
+    # The device key this family belongs to, once the device has enrolled one
+    # (stamped at enrolment, and set by every device-key unlock). It is what
+    # lets an unlock end the device's previous family: each unlock mints a new
+    # sid and so a new family, and without the link the old one stayed live —
+    # listed under Signed-in devices, at whatever app version it last saw,
+    # beside the device's current entry, until it expired.
+    device_key_id = Column(Integer, ForeignKey("device_keys.id", ondelete="SET NULL"), nullable=True)
     created_at   = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     last_used_at = Column(DateTime(timezone=True), nullable=True)
     expires_at   = Column(DateTime(timezone=True), nullable=False)
@@ -116,6 +123,7 @@ def issue(
     device_label: str | None = None,
     family_id: str | None = None,
     client_version: str | None = None,
+    device_key_id: int | None = None,
 ) -> tuple[str, RefreshToken]:
     """Mint a refresh token. Returns (plaintext, row) — the plaintext is the
     only copy that will ever exist, so the caller must return it to the client.
@@ -131,6 +139,7 @@ def issue(
         family_id=family_id or uuid.uuid4().hex,
         device_label=(device_label or "").strip()[:100] or None,
         client_version=clean_client_version(client_version),
+        device_key_id=device_key_id,
         expires_at=datetime.now(timezone.utc) + timedelta(days=REFRESH_TOKEN_TTL_DAYS),
     )
     db.add(row)
@@ -145,6 +154,19 @@ def revoke_family(db, family_id: str) -> int:
         .filter(RefreshToken.family_id == family_id, RefreshToken.revoked_at.is_(None))
         .update({RefreshToken.revoked_at: now}, synchronize_session=False)
     )
+
+
+def revoke_device_families(db, device_key_id: int) -> int:
+    """Revoke every live family belonging to one device key — the device's
+    earlier sign-ins, which a fresh device-key unlock replaces. Returns the
+    number of tokens revoked."""
+    families = {
+        f for (f,) in db.query(RefreshToken.family_id).filter(
+            RefreshToken.device_key_id == device_key_id,
+            RefreshToken.revoked_at.is_(None),
+        )
+    }
+    return sum(revoke_family(db, f) for f in families)
 
 
 class RevokedSession(Base):

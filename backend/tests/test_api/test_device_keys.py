@@ -284,3 +284,44 @@ class TestCrypto:
         headers = _setup(client)
         enrolled = _enrol(client, headers)
         assert len(user_crypto.parse_device_secret(enrolled["device_secret"])) == 32
+
+
+class TestSignedInDevicesAfterUnlock:
+    def test_a_device_key_unlock_replaces_the_devices_entry_rather_than_adding_one(self, client, user, db):
+        """Every unlock mints a new session and so a new refresh family. The
+        old one used to stay live, so an updated phone was listed twice in
+        Signed-in devices — once at its old app version — until it expired."""
+        _setup(client)
+        login = client.post("/auth/login", json={
+            "username": "admin", "password": PASSWORD,
+            "issue_refresh_token": True, "device_label": "Pixel 9",
+        }, headers={"X-Tracks-Client": "android/1.2.0 (10200)"})
+        assert login.status_code == 200, login.text
+        headers = {"Authorization": f"Bearer {login.json()['access_token']}"}
+        enrolled = _enrol(client, headers)
+
+        for version in ("android/1.3.0 (10300)", "android/1.3.1 (10301)"):
+            resp = client.post("/auth/device-unlock", json={
+                "device_key_id": enrolled["id"], "device_secret": enrolled["device_secret"],
+                "issue_refresh_token": True,
+            }, headers={"X-Tracks-Client": version})
+            assert resp.status_code == 200, resp.text
+        latest = {"Authorization": f"Bearer {resp.json()['access_token']}"}
+
+        sessions = client.get("/auth/sessions", headers=latest).json()
+        assert [s["client_version"] for s in sessions] == ["android/1.3.1 (10301)"]
+
+    def test_an_unlock_leaves_other_devices_signed_in(self, client, user, db):
+        """Only the unlocking device's own families end."""
+        headers = _setup(client)
+        other = client.post("/auth/login", json={
+            "username": "admin", "password": PASSWORD,
+            "issue_refresh_token": True, "device_label": "Tablet",
+        })
+        assert other.status_code == 200
+        enrolled = _enrol(client, headers)
+        _unlock(client, enrolled, issue_refresh_token=True)
+        live = db.query(RefreshToken).filter(
+            RefreshToken.device_label == "Tablet", RefreshToken.revoked_at.is_(None),
+        ).count()
+        assert live == 1

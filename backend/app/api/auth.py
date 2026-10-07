@@ -397,6 +397,7 @@ async def enrol_device_key(
     user: User = Depends(require_auth),
     material=Depends(require_crypto_session),
     db: Session = Depends(get_db),
+    credentials: HTTPAuthorizationCredentials | None = Depends(_BEARER),
 ):
     """Wrap this user's DEK under a fresh device secret, returned exactly once.
 
@@ -417,6 +418,19 @@ async def enrol_device_key(
         wrapped_privkey=generated.wrapped_privkey,
     )
     db.add(row)
+    db.flush()
+    # The enrolling session's own family is this device's: link it, so the
+    # device's first device-key unlock ends it rather than leaving it listed
+    # (RefreshToken.device_key_id).
+    try:
+        sid = decode_token(credentials.credentials).get("sid") if credentials else None
+    except Exception:
+        sid = None
+    if sid:
+        db.query(RefreshToken).filter(
+            RefreshToken.user_id == user.id, RefreshToken.sid == sid,
+            RefreshToken.revoked_at.is_(None),
+        ).update({RefreshToken.device_key_id: row.id}, synchronize_session=False)
     db.commit()
     db.refresh(row)
 
@@ -517,9 +531,13 @@ def device_unlock(
         # call minted a new one — the caller's existing token now points at a
         # dead session. Issuing a replacement here is what keeps the two
         # mechanisms coherent; the client must store this one.
+        # The device's previous family is dead weight now — pinned to a sid
+        # that has lapsed, and the client stores this one in its place. Left
+        # live, it is a second entry for the same phone in Signed-in devices.
+        refresh_tokens.revoke_device_families(db, row.id)
         refresh, _ = refresh_tokens.issue(
             db, user.id, sid, device_label=row.label,
-            client_version=x_tracks_client,
+            client_version=x_tracks_client, device_key_id=row.id,
         )
     db.commit()
 
@@ -585,6 +603,7 @@ def refresh(
         # The app may have been updated since the last rotation; a client
         # that sends nothing keeps what was last recorded.
         client_version=x_tracks_client or row.client_version,
+        device_key_id=row.device_key_id,
     )
     db.commit()
 
