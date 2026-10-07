@@ -71,10 +71,8 @@ fun AiCoachingRow(container: AppContainer, linked: Boolean) {
         provider != null -> "Sends training summaries to ${PROVIDERS[provider] ?: provider}" to Tone.Warn
         else -> "Off" to Tone.Off
     }
-    ConnectivityRow("AI coaching", detail, tone, checked = null)
-    if (s == null) return
-
-    Column(Modifier.padding(start = Tokens.Space.s3), verticalArrangement = Arrangement.spacedBy(Tokens.Space.s2)) {
+    // The provider and its settings fold under the row, as on the web.
+    ConnectivityRow("AI coaching", detail, tone, checked = null, panel = if (s == null) null else ({
         SegmentedChoice(
             options = listOf("off" to "Off", "anthropic" to "Claude", "openai" to "OpenAI", "ollama" to "Ollama"),
             selected = provider ?: "off",
@@ -92,7 +90,7 @@ fun AiCoachingRow(container: AppContainer, linked: Boolean) {
             }
         }
         error?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
-    }
+    }))
 }
 
 private val PROVIDERS = mapOf("anthropic" to "Anthropic", "openai" to "OpenAI")

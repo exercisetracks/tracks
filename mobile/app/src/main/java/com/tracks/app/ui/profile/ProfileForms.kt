@@ -21,6 +21,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -31,6 +34,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
@@ -382,10 +386,15 @@ fun TrainingPrefsForm(state: ProfileState, set: SetField) {
 
 /**
  * Privacy & connectivity: every opt-in that reaches a service beyond your own
- * hardware, as the web's section of the same name lists them. Each row says
- * where its data goes, coloured by how far — green for nowhere new, blue for
- * a location, amber for anything about you or a third party's servers — so
- * the page answers "what leaves" without opening anything.
+ * hardware, as the web's section of the same name lists them — one compact
+ * row each (name, where its data goes, a switch), with what it sends and any
+ * configuration folded behind a chevron. Spelled out under every row, the
+ * card was a screen and a half tall; folded, it is scanned at a glance and
+ * the detail is one tap away, which is how the web lays it out.
+ *
+ * Each row's line is coloured by how far its data goes — green for nowhere
+ * new, blue for a location, amber for anything about you or a third party's
+ * servers — so the card answers "what leaves" without opening anything.
  *
  * These run on the Tracks server, not the phone; a phone with no server
  * stores the choice, and it applies once one is linked.
@@ -395,7 +404,7 @@ fun TrainingPrefsForm(state: ProfileState, set: SetField) {
  */
 @Composable
 fun PrivacyForm(state: ProfileState, set: SetField, hasDevice: Boolean, aiRow: @Composable () -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(Tokens.Space.s3)) {
+    Column(verticalArrangement = Arrangement.spacedBy(Tokens.Space.s2)) {
         Text(
             "Nothing leaves your hardware unless it is turned on here. Tracks sends no telemetry or analytics.",
             style = MaterialTheme.typography.bodySmall,
@@ -406,40 +415,72 @@ fun PrivacyForm(state: ProfileState, set: SetField, hasDevice: Boolean, aiRow: @
             val agps = state.bool("agps_enabled", false)
             ConnectivityRow(
                 "Satellite pre-fetch",
-                if (agps) "Downloads GPS predictions from Garmin for faster locks after the watch syncs" else "No outside requests",
+                if (agps) "GPS predictions from Garmin, written to the watch" else "No outside requests",
                 if (agps) Tone.Warn else Tone.Off,
                 agps,
-            ) { set("agps_enabled", it) }
-            if (agps) AgpsOptions(state, set)
+                onChange = { set("agps_enabled", it) },
+                panel = if (agps) ({ AgpsOptions(state, set) }) else null,
+            )
         }
         val map = state.bool("map_enabled", false)
         ConnectivityRow(
             "Map tiles",
-            if (map) "Basemap downloaded to your server once, then served from it" else "No outside requests (turning on downloads ~3.5 GB once)",
+            if (map) "Downloaded to your server once, then served from it" else "No outside requests",
             if (map) Tone.Ok else Tone.Off,
             map,
-        ) { set("map_enabled", it) }
+            onChange = { set("map_enabled", it) },
+            panel = {
+                PanelNote(
+                    "Turning this on downloads the worldwide basemap and elevation data from Protomaps " +
+                        "and Mapterhorn to your server, once (about 3.5 GB). After that every tile is served " +
+                        "from your own server — your location and map view never leave your network.",
+                )
+            },
+        )
         val weather = state.bool("weather_enabled", true)
         ConnectivityRow(
             "Weather",
-            if (weather) "Sends race, map and watch locations to Open-Meteo for forecasts" else "Locations stay on your server",
+            if (weather) "Sends locations to Open-Meteo for forecasts" else "Locations stay on your server",
             if (weather) Tone.Info else Tone.Off,
             weather,
-        ) { set("weather_enabled", it) }
+            onChange = { set("weather_enabled", it) },
+            panel = {
+                PanelNote(
+                    "Your server asks Open-Meteo (free, no account) for weather at a race plan's location, " +
+                        "a point you tap on the map, and where this phone last was, for your watch's forecast. " +
+                        "Each request sends those coordinates and nothing else. Off, race plans pace without a " +
+                        "weather adjustment and the map shows no forecast.",
+                )
+            },
+        )
         val fire = state.bool("wildfire_enabled", false)
         ConnectivityRow(
             "Live wildfire & smoke",
-            if (fire) "Fetches US/Canada fire and NOAA smoke feeds while the layer is on — no location sent" else "No outside requests",
+            if (fire) "US/Canada fire and NOAA smoke feeds — no location sent" else "No outside requests",
             if (fire) Tone.Warn else Tone.Off,
             fire,
-        ) { set("wildfire_enabled", it) }
+            onChange = { set("wildfire_enabled", it) },
+            panel = {
+                PanelNote(
+                    "While the map's Wildfires & Smoke layer is on, your server fetches the country-wide " +
+                        "fire feeds from NIFC and NRCan and the smoke analysis from NOAA every few minutes. " +
+                        "Your location and map view are never sent.",
+                )
+            },
+        )
     }
+}
+
+/** The explanation inside an opened [ConnectivityRow]. */
+@Composable
+private fun PanelNote(text: String) {
+    Text(text, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
 }
 
 /** Satellite pre-fetch's source and refresh, shown under its row while it is on. */
 @Composable
 private fun AgpsOptions(state: ProfileState, set: SetField) {
-    Column(Modifier.padding(start = Tokens.Space.s3), verticalArrangement = Arrangement.spacedBy(Tokens.Space.s2)) {
+    Column(verticalArrangement = Arrangement.spacedBy(Tokens.Space.s2)) {
         SegmentedChoice(
             options = listOf("garmin" to "Garmin EPO", "custom" to "Custom URL"),
             selected = state.str("agps_source") ?: "garmin",
@@ -469,7 +510,12 @@ fun toneColor(tone: Tone): Color {
     }
 }
 
-/** A connectivity row: name, where its data goes (tinted by [tone]), and either a switch or [trailing]. */
+/**
+ * A connectivity row: name, where its data goes (tinted by [tone]), and either
+ * a switch or [trailing]. With a [panel], a chevron folds it open beneath the
+ * row — the web's ExpandButton. A row without one keeps the chevron's width,
+ * so every switch lines up in one column.
+ */
 @Composable
 fun ConnectivityRow(
     title: String,
@@ -478,21 +524,45 @@ fun ConnectivityRow(
     checked: Boolean?,
     trailing: (@Composable () -> Unit)? = null,
     onChange: (Boolean) -> Unit = {},
+    panel: (@Composable () -> Unit)? = null,
 ) {
-    Row(
-        Modifier.fillMaxWidth().then(if (checked != null) Modifier.clickable { onChange(!checked) } else Modifier),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(Modifier.weight(1f).padding(end = Tokens.Space.s3)) {
-            Text(title, style = MaterialTheme.typography.bodyLarge)
-            Text(detail, style = MaterialTheme.typography.bodySmall, color = toneColor(tone))
+    var open by remember { mutableStateOf(false) }
+    Column {
+        Row(
+            Modifier.fillMaxWidth().then(
+                when {
+                    panel != null -> Modifier.clickable { open = !open }
+                    checked != null -> Modifier.clickable { onChange(!checked) }
+                    else -> Modifier
+                },
+            ).padding(vertical = Tokens.Space.s1),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f).padding(end = Tokens.Space.s2)) {
+                Text(title, style = MaterialTheme.typography.bodyMedium)
+                Text(detail, style = MaterialTheme.typography.bodySmall, color = toneColor(tone))
+            }
+            if (checked != null) TracksSwitch(checked = checked, onCheckedChange = onChange)
+            trailing?.invoke()
+            Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) {
+                if (panel != null) {
+                    Icon(
+                        Icons.Default.KeyboardArrowDown,
+                        contentDescription = if (open) "Hide details for $title" else "Show details for $title",
+                        modifier = Modifier.rotate(if (open) 180f else 0f),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
         }
-        if (checked != null) TracksSwitch(checked = checked, onCheckedChange = onChange)
-        trailing?.invoke()
+        if (panel != null && open) {
+            Column(
+                Modifier.fillMaxWidth().padding(top = Tokens.Space.s1, bottom = Tokens.Space.s2),
+                verticalArrangement = Arrangement.spacedBy(Tokens.Space.s2),
+            ) { panel() }
+        }
     }
 }
-
-// ── Primitives ───────────────────────────────────────────────────────────────
 
 @Composable
 fun Labelled(label: String, note: String? = null, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
