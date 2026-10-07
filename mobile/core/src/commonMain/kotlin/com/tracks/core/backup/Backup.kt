@@ -70,6 +70,9 @@ object BackupFormat {
      * rather than left out, because the names are committed in the manifest
      * before any file is read — reading every file twice to filter first would
      * double the time a backup takes. An empty file is skipped on restore.
+     *
+     * [onProgress] hears (files written, files in all) once before the first
+     * file and after each one.
      */
     suspend fun write(
         out: ByteSink,
@@ -78,6 +81,7 @@ object BackupFormat {
         names: List<String>,
         createdAtMs: Long,
         read: suspend (String) -> ByteArray?,
+        onProgress: (done: Int, total: Int) -> Unit = { _, _ -> },
     ) {
         val manifest = buildJsonObject {
             put("format", FORMAT)
@@ -91,10 +95,12 @@ object BackupFormat {
         }.toString().encodeToByteArray()
         out.int(manifest.size)
         out.write(manifest, 0, manifest.size)
-        for (name in names) {
+        onProgress(0, names.size)
+        for ((i, name) in names.withIndex()) {
             val bytes = read(name) ?: ByteArray(0)
             out.int(bytes.size)
             out.write(bytes, 0, bytes.size)
+            onProgress(i + 1, names.size)
         }
     }
 }
@@ -183,13 +189,14 @@ class BackupService(
     private val files: LocalFiles,
     private val now: () -> Long,
 ) {
-    suspend fun write(out: ByteSink) = BackupFormat.write(
+    suspend fun write(out: ByteSink, onProgress: (done: Int, total: Int) -> Unit = { _, _ -> }) = BackupFormat.write(
         out,
         binding = replica.boundAccount(),
         rows = replica.allRows().map { it.asChange() },
         names = raw.list().sorted(),
         createdAtMs = now(),
         read = raw::get,
+        onProgress = onProgress,
     )
 
     /**

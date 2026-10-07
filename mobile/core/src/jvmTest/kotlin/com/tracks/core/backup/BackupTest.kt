@@ -28,7 +28,7 @@ class BackupTest {
     }
 
     private suspend fun encode(files: Map<String, ByteArray?>, rows: List<Change> = emptyList(), at: Long = 0) =
-        Collected().also { BackupFormat.write(it, null, rows, files.keys.toList(), at) { name -> files[name] } }.bytes()
+        Collected().also { BackupFormat.write(it, null, rows, files.keys.toList(), at, read = { name -> files[name] }) }.bytes()
 
     private suspend fun readAll(bytes: ByteArray): Pair<BackupReader, List<Pair<String, ByteArray>>> {
         val reader = BackupReader(ByteArraySource(bytes))
@@ -57,12 +57,22 @@ class BackupTest {
     fun a_backup_is_written_one_file_at_a_time() = runTest {
         val out = Collected()
         val written = mutableListOf<Int>()
-        BackupFormat.write(out, null, emptyList(), listOf("a", "b", "c"), 0) {
+        BackupFormat.write(out, null, emptyList(), listOf("a", "b", "c"), 0, read = {
             written += out.chunks.size
             ByteArray(10)
-        }
+        })
         // manifest length + manifest, then a length and a body per file.
         assertEquals(listOf(2, 4, 6), written)
+    }
+
+    /** What the progress pill and notification count: every file, from none to all. */
+    @Test
+    fun progress_counts_every_file_from_none_to_all() = runTest {
+        val seen = mutableListOf<Pair<Int, Int>>()
+        BackupFormat.write(Collected(), null, emptyList(), listOf("a", "b"), 0, { ByteArray(1) }) { done, total ->
+            seen += done to total
+        }
+        assertEquals(listOf(0 to 2, 1 to 2, 2 to 2), seen)
     }
 
     /** A blob this phone cannot decrypt is written empty, and skipped rather than failing a restore. */

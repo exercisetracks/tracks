@@ -41,9 +41,18 @@ import kotlin.math.roundToInt
  * moment [progress] goes back to null.
  */
 @Composable
-fun SyncProgressPopup(progress: SyncProgress?, modifier: Modifier = Modifier) {
+fun SyncProgressPopup(progress: SyncProgress?, modifier: Modifier = Modifier) =
+    ProgressPill(label = progress?.let(::syncLabel), fraction = progress?.fraction, modifier = modifier)
+
+/**
+ * The pill itself: shown while [label] is non-null, with a ring that fills
+ * by [fraction] and a percentage, or spins when there is no fraction yet.
+ * Shared by sync and backup so the two long jobs look like one family.
+ */
+@Composable
+fun ProgressPill(label: String?, fraction: Float?, modifier: Modifier = Modifier) {
     var visible by remember { mutableStateOf(false) }
-    val running = progress != null
+    val running = label != null
     LaunchedEffect(running) {
         if (running) {
             delay(SHOW_AFTER_MS)
@@ -53,8 +62,12 @@ fun SyncProgressPopup(progress: SyncProgress?, modifier: Modifier = Modifier) {
         }
     }
     // Held so the pill keeps its last words while it animates away.
-    var last by remember { mutableStateOf(progress) }
-    if (progress != null) last = progress
+    var lastLabel by remember { mutableStateOf(label) }
+    var lastFraction by remember { mutableStateOf(fraction) }
+    if (label != null) {
+        lastLabel = label
+        lastFraction = fraction
+    }
 
     AnimatedVisibility(
         visible = visible && running,
@@ -62,7 +75,8 @@ fun SyncProgressPopup(progress: SyncProgress?, modifier: Modifier = Modifier) {
         exit = fadeOut() + slideOutVertically { it / 2 },
         modifier = modifier,
     ) {
-        val p = last ?: return@AnimatedVisibility
+        val text = lastLabel ?: return@AnimatedVisibility
+        val shown = lastFraction
         Surface(
             shape = RoundedCornerShape(Tokens.Radius.full),
             color = MaterialTheme.colorScheme.inverseSurface,
@@ -75,20 +89,19 @@ fun SyncProgressPopup(progress: SyncProgress?, modifier: Modifier = Modifier) {
                 horizontalArrangement = Arrangement.spacedBy(Tokens.Space.s3),
                 modifier = Modifier.padding(horizontal = Tokens.Space.s4, vertical = Tokens.Space.s2_5),
             ) {
-                val fraction = p.fraction
                 val indicator = MaterialTheme.colorScheme.inversePrimary
-                if (fraction != null) {
+                if (shown != null) {
                     CircularProgressIndicator(
-                        progress = { fraction }, color = indicator, strokeWidth = 2.5.dp,
+                        progress = { shown }, color = indicator, strokeWidth = 2.5.dp,
                         modifier = Modifier.size(18.dp),
                     )
                 } else {
                     CircularProgressIndicator(color = indicator, strokeWidth = 2.5.dp, modifier = Modifier.size(18.dp))
                 }
-                Text(syncLabel(p), style = MaterialTheme.typography.bodyMedium)
-                if (fraction != null) {
+                Text(text, style = MaterialTheme.typography.bodyMedium)
+                if (shown != null) {
                     Text(
-                        "${(fraction * 100).roundToInt()}%",
+                        "${(shown * 100).roundToInt()}%",
                         style = MaterialTheme.typography.bodyMedium,
                         color = indicator,
                     )

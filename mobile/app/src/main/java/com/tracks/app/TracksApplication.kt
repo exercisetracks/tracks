@@ -256,6 +256,51 @@ class AppContainer(private val context: Context) {
     /** When this phone last wrote a backup, or null — drives the reminder. */
     val lastBackupAt = MutableStateFlow(prefs().getLong(KEY_LAST_BACKUP, 0L).takeIf { it > 0 })
 
+    private val _backupProgress = MutableStateFlow<com.tracks.app.backup.BackupProgress?>(null)
+
+    /** The backup being written, or null — the pill, the notification and Settings all watch it. */
+    val backupProgress: kotlinx.coroutines.flow.StateFlow<com.tracks.app.backup.BackupProgress?> = _backupProgress
+
+    private val _backupResult = MutableStateFlow<String?>(null)
+
+    /** How the last backup this run of the app wrote ended, in words for Settings. */
+    val backupResult: kotlinx.coroutines.flow.StateFlow<String?> = _backupResult
+
+    /**
+     * Owns a backup while it runs. Not the screen's scope: leaving Settings,
+     * or the app, used to cancel the coroutine and with it the backup. This
+     * one lives as long as the process, which [com.tracks.app.backup.BackupWriteService]
+     * keeps alive until the backup is done.
+     */
+    private val backupScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + Dispatchers.IO)
+
+    /**
+     * Start writing a backup to [uri] and return at once; [backupProgress]
+     * and [backupResult] report it. Takes ownership of [passphrase] and wipes
+     * it when done. A second start while one runs is refused (false).
+     */
+    fun startBackup(uri: android.net.Uri, passphrase: CharArray): Boolean {
+        if (!_backupProgress.compareAndSet(null, com.tracks.app.backup.BackupProgress(0, null))) {
+            passphrase.fill(' ')
+            return false
+        }
+        _backupResult.value = null
+        com.tracks.app.backup.BackupWriteService.start(context)
+        backupScope.launch {
+            _backupResult.value = try {
+                writeBackup(uri, passphrase)
+                "Backup written."
+            } catch (e: Throwable) {
+                android.util.Log.w("TracksBackup", "backup failed", e)
+                "Could not write the backup: ${e.message ?: e.javaClass.simpleName}"
+            } finally {
+                passphrase.fill(' ')
+                _backupProgress.value = null
+            }
+        }
+        return true
+    }
+
     /**
      * Write a passphrase-sealed backup to [uri] (a document the user picked
      * through the Storage Access Framework, so it can live on a USB stick or a
@@ -264,7 +309,7 @@ class AppContainer(private val context: Context) {
      * Streamed: one FIT file in memory at a time, however long the history.
      * On any failure the document is removed (see [com.tracks.app.backup.writeOrDiscard]).
      */
-    suspend fun writeBackup(uri: android.net.Uri, passphrase: CharArray) = withContext(Dispatchers.IO) {
+    private suspend fun writeBackup(uri: android.net.Uri, passphrase: CharArray) = withContext(Dispatchers.IO) {
         com.tracks.app.backup.writeOrDiscard(
             open = { context.contentResolver.openOutputStream(uri, "wt") ?: error("Could not open the file.") },
             // Blocking, not discardBackup: after a cancellation a suspending
@@ -272,7 +317,9 @@ class AppContainer(private val context: Context) {
             discard = { discardBackupNow(uri) },
         ) { file ->
             val sealed = com.tracks.app.backup.BackupCrypto.sealing(file, passphrase)
-            backup.write { bytes, offset, length -> sealed.write(bytes, offset, length) }
+            backup.write({ bytes, offset, length -> sealed.write(bytes, offset, length) }) { done, total ->
+                _backupProgress.value = com.tracks.app.backup.BackupProgress(done, total)
+            }
             sealed.finish()
         }
         markBackedUp()

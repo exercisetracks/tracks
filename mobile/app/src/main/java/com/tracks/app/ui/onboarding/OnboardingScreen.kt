@@ -60,7 +60,7 @@ import com.tracks.app.ui.components.NeutralButton
 import com.tracks.app.ui.components.PasswordField
 import com.tracks.app.ui.components.PrimaryButton
 import com.tracks.app.ui.components.TonalButton
-import com.tracks.app.ui.profile.BackupSection
+import com.tracks.app.ui.profile.rememberRestoreFlow
 import com.tracks.app.ui.profile.BodyForm
 import com.tracks.app.ui.profile.ChoiceCard
 import com.tracks.app.ui.profile.FrequencyForm
@@ -144,7 +144,15 @@ fun OnboardingScreen(
             OnboardingProgress(step.name, standalone = standalone, restored = restored, hasDevice = hasDevice),
         )
     }
-    var restoring by rememberSaveable { mutableStateOf(false) }
+    // "Restore from a backup" goes straight to the file picker. It once opened
+    // a dialog holding the whole Settings backup section — Back up now,
+    // Restore, Close — which only added a step before the same button.
+    val restore = rememberRestoreFlow(container) {
+        standalone = true
+        restored = true
+        profileVm.reload()
+        step = OnboardingStep.Device
+    }
 
     val path = onboardingPath(standalone = standalone, restored = restored, hasDevice = hasDevice)
     fun next() { path.getOrNull(path.indexOf(step) + 1)?.let { step = it } }
@@ -202,7 +210,9 @@ fun OnboardingScreen(
                             profileVm.set("timezone", ZoneId.systemDefault().id)
                             step = OnboardingStep.Body
                         },
-                        onRestore = { restoring = true },
+                        onRestore = restore.start,
+                        restoring = restore.working,
+                        restoreStatus = restore.status,
                     )
                     OnboardingStep.Body -> ProfileStep(
                         "About you",
@@ -308,20 +318,6 @@ fun OnboardingScreen(
             }
         }
     }
-
-    if (restoring) {
-        RestoreDialog(
-            container = container,
-            onDismiss = { restoring = false },
-            onRestored = {
-                restoring = false
-                standalone = true
-                restored = true
-                profileVm.reload()
-                step = OnboardingStep.Device
-            },
-        )
-    }
 }
 
 /**
@@ -390,7 +386,13 @@ internal fun onboardingPath(standalone: Boolean, restored: Boolean, hasDevice: B
  * This is groundwork; the onboarding redesign replaces this screen.
  */
 @Composable
-internal fun WelcomeStep(onServer: () -> Unit, onStandalone: () -> Unit, onRestore: () -> Unit) {
+internal fun WelcomeStep(
+    onServer: () -> Unit,
+    onStandalone: () -> Unit,
+    onRestore: () -> Unit,
+    restoring: Boolean = false,
+    restoreStatus: String? = null,
+) {
     StepHeading(
         "Welcome to Tracks",
         "Your training, health and plans — on this phone, and on your own server if you run one.",
@@ -408,7 +410,8 @@ internal fun WelcomeStep(onServer: () -> Unit, onStandalone: () -> Unit, onResto
         selected = false,
         onClick = onServer,
     )
-    TonalButton("Restore from a backup", onClick = onRestore)
+    TonalButton("Restore from a backup", onClick = onRestore, enabled = !restoring)
+    restoreStatus?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
 }
 
 /**
@@ -464,17 +467,6 @@ internal fun PrivacyStep(onBack: () -> Unit, onNext: () -> Unit) {
         NeutralButton("Back", onClick = onBack, modifier = Modifier.weight(1f))
         PrimaryButton("Continue", onClick = onNext, modifier = Modifier.weight(1f))
     }
-}
-
-/** Restore at first launch: pick the file, give its passphrase, and skip the profile steps. */
-@Composable
-private fun RestoreDialog(container: AppContainer, onDismiss: () -> Unit, onRestored: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Restore from a backup") },
-        text = { BackupSection(container, linked = false, onRestored = onRestored) },
-        confirmButton = { NeutralButton("Close", onClick = onDismiss) },
-    )
 }
 
 @Composable

@@ -57,22 +57,24 @@ fun backupOverdue(linked: Boolean, lastBackupAtMs: Long?, nowMs: Long, days: Int
  * outlive this phone, so it has to land somewhere the person chose — a USB
  * stick, a cloud folder, a computer — and the Storage Access Framework is the
  * one place Android lets them choose any of those.
+ *
+ * Writing is handed to the app container and runs on after this screen, or
+ * the app, is left; see `AppContainer.startBackup`.
  */
 @Composable
 fun BackupSection(container: AppContainer, linked: Boolean, onRestored: () -> Unit) {
     val scope = rememberCoroutineScope()
     val last by container.lastBackupAt.collectAsState()
-    var pending by remember { mutableStateOf<Pending?>(null) }
-    var status by remember { mutableStateOf<String?>(null) }
-    var working by remember { mutableStateOf(false) }
+    val progress by container.backupProgress.collectAsState()
+    val result by container.backupResult.collectAsState()
+    var target by remember { mutableStateOf<Uri?>(null) }
+    val restore = rememberRestoreFlow(container, onRestored)
 
     val create = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/octet-stream"),
-    ) { uri -> uri?.let { pending = Pending(it, restoring = false) } }
-    val open = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        uri?.let { pending = Pending(it, restoring = true) }
-    }
+    ) { uri -> target = uri }
 
+    val working = progress != null || restore.working
     Column(verticalArrangement = Arrangement.spacedBy(Tokens.Space.s3)) {
         Text(
             last?.let { "Last backup: ${formatDay(it)}" } ?: "No backup yet",
@@ -80,50 +82,86 @@ fun BackupSection(container: AppContainer, linked: Boolean, onRestored: () -> Un
         )
         ButtonRow {
             PrimaryButton("Back up now", onClick = { create.launch("tracks-${LocalDate.now()}.tracksbackup") }, enabled = !working)
-            TonalButton("Restore", onClick = { open.launch(arrayOf("*/*")) }, enabled = !working)
+            TonalButton("Restore", onClick = restore.start, enabled = !working)
+        }
+        val status = when {
+            progress != null -> "Writing backup… it carries on if you leave the app."
+            restore.status != null -> restore.status
+            else -> result
         }
         status?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
     }
 
-    pending?.let { p ->
+    target?.let { uri ->
         PassphraseDialog(
-            restoring = p.restoring,
+            restoring = false,
             onDismiss = {
-                pending = null
+                target = null
                 // The picker already created the file; cancelling must not leave it behind.
-                if (!p.restoring) scope.launch { container.discardBackup(p.uri) }
+                scope.launch { container.discardBackup(uri) }
             },
             onConfirm = { pass ->
-                pending = null
-                working = true
-                status = if (p.restoring) "Restoring…" else "Writing backup…"
-                scope.launch {
-                    status = runCatching {
-                        if (p.restoring) {
-                            val n = container.restoreBackup(p.uri, pass)
-                            onRestored()
-                            "Restored, with $n activity and health files."
-                        } else {
-                            container.writeBackup(p.uri, pass)
-                            "Backup written."
-                        }
-                    }.getOrElse { e ->
-                        when (e) {
-                            is BackupCrypto.WrongPassphraseOrDamaged ->
-                                "That passphrase does not open this backup, or the file is damaged."
-                            is BackupCrypto.NotABackup, is BackupFormatException -> e.message
-                            else -> "Could not ${if (p.restoring) "restore" else "write"} the backup: ${e.message}"
-                        }
-                    }
-                    pass.fill(' ')
-                    working = false
-                }
+                target = null
+                container.startBackup(uri, pass)
             },
         )
     }
 }
 
-private data class Pending(val uri: Uri, val restoring: Boolean)
+/** A restore in progress or just finished, and how to begin one. See [rememberRestoreFlow]. */
+class RestoreFlow internal constructor() {
+    var working by mutableStateOf(false)
+        internal set
+    var status by mutableStateOf<String?>(null)
+        internal set
+    /** Opens the file picker; the passphrase is asked once a file is chosen. */
+    var start: () -> Unit = {}
+        internal set
+}
+
+/**
+ * Restoring, on its own: the picker, the passphrase, the restore and its
+ * outcome. Settings puts it beside "Back up now"; onboarding's "Restore from
+ * a backup" calls [RestoreFlow.start] directly, so the button goes straight
+ * to the files rather than to a dialog offering the same button again.
+ */
+@Composable
+fun rememberRestoreFlow(container: AppContainer, onRestored: () -> Unit): RestoreFlow {
+    val scope = rememberCoroutineScope()
+    val flow = remember { RestoreFlow() }
+    var source by remember { mutableStateOf<Uri?>(null) }
+    val open = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> source = uri }
+    flow.start = { open.launch(arrayOf("*/*")) }
+
+    source?.let { uri ->
+        PassphraseDialog(
+            restoring = true,
+            onDismiss = { source = null },
+            onConfirm = { pass ->
+                source = null
+                flow.working = true
+                flow.status = "Restoring…"
+                scope.launch {
+                    flow.status = runCatching {
+                        val n = container.restoreBackup(uri, pass)
+                        onRestored()
+                        "Restored, with $n activity and health files."
+                    }.getOrElse { e ->
+                        when (e) {
+                            is BackupCrypto.WrongPassphraseOrDamaged ->
+                                "That passphrase does not open this backup, or the file is damaged."
+                            is BackupCrypto.NotABackup, is BackupFormatException -> e.message
+                            else -> "Could not restore the backup: ${e.message}"
+                        }
+                    }
+                    pass.fill(' ')
+                    flow.working = false
+                }
+            },
+        )
+    }
+    return flow
+}
 
 @Composable
 private fun PassphraseDialog(restoring: Boolean, onDismiss: () -> Unit, onConfirm: (CharArray) -> Unit) {

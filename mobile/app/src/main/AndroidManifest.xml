@@ -97,9 +97,16 @@
       tens of minutes, which nobody watches — so it happens with the screen off,
       and a backgrounded app with no foreground component is the first thing
       Android kills. dataSync is the type Android provides for exactly this
-      shape of work. See MapDownloadService.
+      shape of work. See MapDownloadService. Writing a backup is the same shape,
+      and runs under the same type: see BackupWriteService.
     -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+
+    <!--
+      Held only while a backup is written, so the CPU does not sleep under it
+      once the screen locks; time-limited. See BackupWriteService.
+    -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <!--
       FlowPlayerService: a stretching flow's timer and spoken cues, kept running
@@ -329,6 +336,15 @@
         -->
         <service
             android:name=".map.MapDownloadService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+
+        <!--
+          Keeps a backup running after the person leaves the app, with its
+          progress in the notification. See BackupWriteService.
+        -->
+        <service
+            android:name=".backup.BackupWriteService"
             android:exported="false"
             android:foregroundServiceType="dataSync" />
 
