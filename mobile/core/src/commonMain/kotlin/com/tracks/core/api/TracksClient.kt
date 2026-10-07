@@ -8,6 +8,7 @@ import io.ktor.client.call.body
 import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.delete
 import io.ktor.client.request.forms.MultiPartFormDataContent
@@ -55,6 +56,9 @@ val TracksJson: Json = Json {
  */
 const val CLIENT_API_VERSION: Int = 2
 
+/** See [TracksClient]'s `clientVersion`. */
+const val CLIENT_VERSION_HEADER = "X-Tracks-Client"
+
 /**
  * The Tracks HTTP client.
  *
@@ -76,6 +80,13 @@ class TracksClient(
     private val tokens: TokenStore,
     engine: HttpClientEngine? = null,
     private val onSessionState: (SessionState) -> Unit = {},
+    /**
+     * What this app is, e.g. `android/1.2.0 (10200)`, sent on every request
+     * as `X-Tracks-Client`. The server records it against this device's
+     * session so the web can list each phone with the version it runs. Purely
+     * informational: the server decides nothing from it.
+     */
+    private val clientVersion: String? = null,
     configure: HttpClientConfig<*>.() -> Unit = {},
 ) {
     private val http: HttpClient = run {
@@ -110,6 +121,7 @@ class TracksClient(
             // decide how to recover, and an exception would erase the detail
             // string that says which kind of 401 it is.
             expectSuccess = false
+            clientVersion?.let { v -> defaultRequest { header(CLIENT_VERSION_HEADER, v) } }
             configure()
         }
         if (engine != null) HttpClient(engine, config) else HttpClient(config)
@@ -128,6 +140,15 @@ class TracksClient(
     /** Public; safe to call before login. */
     suspend fun capabilities(): Capabilities =
         http.get(url(Endpoints.CAPABILITIES)).body()
+
+    /**
+     * This server's version and the newest published release. Also how the
+     * server learns this app's version (the header on every request), so the
+     * sync loop calls it as well as the settings screen.
+     */
+    suspend fun versionStatus(): VersionStatus = request { token ->
+        http.get(url(Endpoints.VERSION)) { bearer(token) }
+    }
 
     /**
      * Fetch capabilities and throw if this client and the server cannot work

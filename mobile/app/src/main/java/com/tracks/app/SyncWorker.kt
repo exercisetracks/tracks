@@ -77,6 +77,11 @@ class SyncWorker(
                         (if (report.wiped) ", account wiped" else ""),
                 )
             }
+            // Tells the server which version this phone runs (the client sends
+            // it on every request; /version is where it is recorded), so the
+            // web's version panel is as current as the last sync. Best effort:
+            // a server too old to have /version must not fail the sync.
+            runCatching { container.client().versionStatus() }
             // A truncated walk means the page limit stopped it, not that
             // anything went wrong — succeed and let the next run continue from
             // the stored cursor.

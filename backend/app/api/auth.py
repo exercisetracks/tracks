@@ -6,7 +6,7 @@ import time
 from datetime import datetime, timezone
 
 import redis
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials
 from pydantic import BaseModel, field_validator
 from sqlalchemy.orm import Session
@@ -186,6 +186,7 @@ class RefreshRequest(BaseModel):
 class SessionOut(BaseModel):
     id: int
     device_label: str | None
+    client_version: str | None = None
     created_at: datetime | None
     last_used_at: datetime | None
     expires_at: datetime | None
@@ -276,7 +277,12 @@ def _create_authenticated_token(db: Session, user: User, password: str) -> tuple
 
 
 @router.post("/login", response_model=TokenResponse)
-def login(body: LoginRequest, request: Request, db: Session = Depends(get_db)):
+def login(
+    body: LoginRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+    x_tracks_client: str | None = Header(None),
+):
     ip = _client_ip(request)
     _check_rate_limit(ip)
 
@@ -305,7 +311,8 @@ def login(body: LoginRequest, request: Request, db: Session = Depends(get_db)):
     refresh = None
     if body.issue_refresh_token:
         refresh, _ = refresh_tokens.issue(
-            db, user.id, sid, device_label=body.device_label
+            db, user.id, sid, device_label=body.device_label,
+            client_version=x_tracks_client,
         )
         db.commit()
 
@@ -454,7 +461,12 @@ def revoke_device_key(
 
 
 @router.post("/device-unlock", response_model=TokenResponse)
-def device_unlock(body: DeviceUnlockRequest, request: Request, db: Session = Depends(get_db)):
+def device_unlock(
+    body: DeviceUnlockRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+    x_tracks_client: str | None = Header(None),
+):
     """Open a fresh crypto session using an enrolled device secret.
 
     Equivalent to logging in with a password, minus the password. A client whose
@@ -505,7 +517,8 @@ def device_unlock(body: DeviceUnlockRequest, request: Request, db: Session = Dep
         # dead session. Issuing a replacement here is what keeps the two
         # mechanisms coherent; the client must store this one.
         refresh, _ = refresh_tokens.issue(
-            db, user.id, sid, device_label=row.label
+            db, user.id, sid, device_label=row.label,
+            client_version=x_tracks_client,
         )
     db.commit()
 
@@ -514,7 +527,11 @@ def device_unlock(body: DeviceUnlockRequest, request: Request, db: Session = Dep
 
 
 @router.post("/refresh", response_model=TokenResponse)
-def refresh(body: RefreshRequest, db: Session = Depends(get_db)):
+def refresh(
+    body: RefreshRequest,
+    db: Session = Depends(get_db),
+    x_tracks_client: str | None = Header(None),
+):
     """Exchange a refresh token for a fresh access token and a new refresh token.
 
     Rotation is mandatory: the presented token is consumed. Presenting an
@@ -564,6 +581,9 @@ def refresh(body: RefreshRequest, db: Session = Depends(get_db)):
         db, row.user_id, row.sid,
         device_label=row.device_label,
         family_id=row.family_id,
+        # The app may have been updated since the last rotation; a client
+        # that sends nothing keeps what was last recorded.
+        client_version=x_tracks_client or row.client_version,
     )
     db.commit()
 
@@ -597,7 +617,8 @@ def list_sessions(
     )
     return [
         SessionOut(
-            id=r.id, device_label=r.device_label, created_at=r.created_at,
+            id=r.id, device_label=r.device_label, client_version=r.client_version,
+            created_at=r.created_at,
             last_used_at=r.last_used_at, expires_at=r.expires_at,
         )
         for r in rows

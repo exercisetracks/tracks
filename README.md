@@ -262,6 +262,14 @@ exact release
 To update the Android app, install the newer APK over the old one, or let
 Obtainium do it. Your data stays.
 
+**Settings › Version**, on the web and on the phone, shows which version the
+server, the app and each signed-in phone runs, and the newest release. When
+the server is behind, admins also get a banner on the web with the commands
+to update it. To learn of new releases, the server asks GitHub every few
+hours. That request is anonymous and sends nothing about you. Set
+`UPDATE_CHECK=false` in `.env` (or pass `-e UPDATE_CHECK=false` to
+`docker run`) to turn it off.
+
 ---
 
 ## Backups

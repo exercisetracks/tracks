@@ -15,6 +15,7 @@ package com.tracks.core.api
  */
 object Endpoints {
     const val CAPABILITIES = "/capabilities"
+    const val VERSION = "/version"
 
     const val LOGIN = "/auth/login"
     const val REFRESH = "/auth/refresh"

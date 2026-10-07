@@ -163,6 +163,13 @@ fun SettingsScreen(
             onReparseHealth = onReparseHealth,
         )
 
+        VersionCard(
+            container = container,
+            serverVersion = state.capabilities?.serverVersion,
+            // Vault-locked still counts: /version needs a token, not the vault.
+            signedIn = linked && state.session !is SessionState.LoggedOut,
+        )
+
         SettingsCard(
             "Backup",
             MetricInfo(

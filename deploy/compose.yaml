@@ -41,6 +41,7 @@ services:
       HOST_UID: ${HOST_UID:-1000}
       HOST_GID: ${HOST_GID:-1000}
       BEHIND_PROXY: ${BEHIND_PROXY:-false}
+      UPDATE_CHECK: ${UPDATE_CHECK:-true}
 
 volumes:
   tracks-data:

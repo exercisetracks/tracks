@@ -65,6 +65,12 @@ class RefreshToken(Base):
     sid          = Column(String, nullable=False)
     family_id    = Column(String, nullable=False)
     device_label = Column(String, nullable=True)
+    # What the client says it is, from its X-Tracks-Client header — e.g.
+    # `android/1.2.0 (10200)`. Self-reported and unauthenticated beyond the
+    # token itself, so it is only ever *shown* (the version panels), never
+    # used to decide anything. Kept up to date by every login, refresh and
+    # GET /version, and carried across rotation.
+    client_version = Column(String, nullable=True)
     created_at   = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     last_used_at = Column(DateTime(timezone=True), nullable=True)
     expires_at   = Column(DateTime(timezone=True), nullable=False)
@@ -88,6 +94,16 @@ class RefreshToken(Base):
         return expires > datetime.now(timezone.utc)
 
 
+def clean_client_version(value: str | None) -> str | None:
+    """A client's self-description, trimmed to something safe to store and
+    show: printable ASCII, 64 characters. Anything else is dropped rather than
+    stored, since nothing depends on it being present."""
+    value = (value or "").strip()[:64]
+    if not value or not all(32 <= ord(c) < 127 for c in value):
+        return None
+    return value
+
+
 def hash_token(token: str) -> str:
     return hashlib.sha256(token.encode()).hexdigest()
 
@@ -99,6 +115,7 @@ def issue(
     *,
     device_label: str | None = None,
     family_id: str | None = None,
+    client_version: str | None = None,
 ) -> tuple[str, RefreshToken]:
     """Mint a refresh token. Returns (plaintext, row) — the plaintext is the
     only copy that will ever exist, so the caller must return it to the client.
@@ -113,6 +130,7 @@ def issue(
         sid=sid,
         family_id=family_id or uuid.uuid4().hex,
         device_label=(device_label or "").strip()[:100] or None,
+        client_version=clean_client_version(client_version),
         expires_at=datetime.now(timezone.utc) + timedelta(days=REFRESH_TOKEN_TTL_DAYS),
     )
     db.add(row)

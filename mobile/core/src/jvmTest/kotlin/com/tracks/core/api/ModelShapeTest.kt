@@ -90,6 +90,7 @@ class ModelShapeTest {
         Triple(Endpoints.ACTIVITY_SETS, serializer<StrengthSet>().descriptor, "StrengthSet"),
         Triple(Endpoints.ACTIVITY_TRACK, serializer<TrackPoint>().descriptor, "TrackPoint"),
         Triple(Endpoints.CAPABILITIES, serializer<Capabilities>().descriptor, "Capabilities"),
+        Triple(Endpoints.VERSION, serializer<VersionStatus>().descriptor, "VersionStatusOut"),
         Triple(Endpoints.DAILY_METRICS, serializer<DailyMetricFull>().descriptor, "DailyMetricFull"),
         Triple(Endpoints.INJURIES, serializer<Injury>().descriptor, "Injury"),
         Triple(Endpoints.MEDICATIONS, serializer<Medication>().descriptor, "Medication"),

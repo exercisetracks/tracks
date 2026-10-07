@@ -26,6 +26,7 @@ import EquipmentSection from "../components/settings/EquipmentSection";
 import SecuritySection from "../components/settings/SecuritySection";
 import UserManagementSection from "../components/settings/UserManagementSection";
 import DangerZoneSection from "../components/settings/DangerZoneSection";
+import VersionSection from "../components/settings/VersionSection";
 import PageHeader from "../components/ui/PageHeader";
 
 export default function Settings() {
@@ -79,6 +80,7 @@ export default function Settings() {
       <EquipmentSection                settings={settings} onSaved={handleSaved} />
       <SecuritySection />
       {user?.is_admin && <UserManagementSection />}
+      <VersionSection />
       <DangerZoneSection />
     </div>
   );

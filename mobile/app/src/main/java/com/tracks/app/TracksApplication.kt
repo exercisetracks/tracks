@@ -4,6 +4,7 @@ package com.tracks.app
 
 import android.app.Application
 import android.content.Context
+import androidx.core.content.pm.PackageInfoCompat
 import com.tracks.core.api.SessionState
 import com.tracks.core.api.TracksClient
 import com.tracks.core.api.UserSettingsUpdate
@@ -135,6 +136,15 @@ class AppContainer(private val context: Context) {
 
     /** For the few callers that need a Context (WorkManager, mostly). */
     val appContext: Context get() = context.applicationContext
+
+    /**
+     * This build's `versionName` and `versionCode`, read from the installed
+     * package rather than BuildConfig (which this module does not generate).
+     */
+    val appVersion: Pair<String, Long> by lazy {
+        val info = context.packageManager.getPackageInfo(context.packageName, 0)
+        (info.versionName ?: "unknown") to PackageInfoCompat.getLongVersionCode(info)
+    }
 
     /**
      * Surfaced so the UI can react to the session going stale without every
@@ -802,6 +812,7 @@ class AppContainer(private val context: Context) {
             baseUrl = url,
             tokens = tokens,
             onSessionState = { sessionState.value = it },
+            clientVersion = appVersion.let { (name, code) -> "android/$name ($code)" },
         )
         cachedClient = url to fresh
         return fresh

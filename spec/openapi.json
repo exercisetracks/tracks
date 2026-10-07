@@ -26,6 +26,60 @@
         }
       }
     },
+    "/version": {
+      "get": {
+        "tags": [
+          "capabilities"
+        ],
+        "summary": "Version Status",
+        "operationId": "version_status_version_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "x-tracks-client",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Tracks-Client"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionStatusOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/auth/status": {
       "get": {
         "tags": [
@@ -55,15 +109,33 @@
         ],
         "summary": "Login",
         "operationId": "login_auth_login_post",
+        "parameters": [
+          {
+            "name": "x-tracks-client",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Tracks-Client"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/LoginRequest"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -255,15 +327,33 @@
         "summary": "Device Unlock",
         "description": "Open a fresh crypto session using an enrolled device secret.\n\nEquivalent to logging in with a password, minus the password. A client whose\nvault has locked (401 `session_expired`) calls this and retries, so the user\nsees nothing.\n\nRate-limited on the same counter as password login: this endpoint accepts a\ncredential that decrypts data, so it gets the same brute-force treatment\neven though guessing 32 random bytes is not a realistic attack.",
         "operationId": "device_unlock_auth_device_unlock_post",
+        "parameters": [
+          {
+            "name": "x-tracks-client",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Tracks-Client"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/DeviceUnlockRequest"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -297,15 +387,33 @@
         "summary": "Refresh",
         "description": "Exchange a refresh token for a fresh access token and a new refresh token.\n\nRotation is mandatory: the presented token is consumed. Presenting an\nalready-consumed one is treated as a replay and revokes the whole family\n(see app.models.refresh_tokens) \u2014 there is no way from here to distinguish\na stolen token from a duplicated request, and only one of those is safe to\nguess wrong about.\n\nNote what this does NOT do: it does not unlock the vault. The new access\ntoken carries the original `sid`, so if that crypto session is still cached\nthe client keeps decrypting seamlessly; if it has lapsed, encrypted\nendpoints keep returning `session_expired` until the user enters their\npassword. Refreshing an access token cannot re-derive a DEK, because that\nrequires the password itself.",
         "operationId": "refresh_auth_refresh_post",
+        "parameters": [
+          {
+            "name": "x-tracks-client",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Tracks-Client"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/RefreshRequest"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -2394,7 +2502,7 @@
           "devices"
         ],
         "summary": "Claim Device",
-        "description": "Link this device to the current user.",
+        "description": "Link this device to the current user.\n\nRefused while another account holds the device. A watch belongs to one\nperson; the sync agents file its data by that one claim (two claims make\nthe watch unsyncable rather than guessing), so a second claim would only\never be a mistake \u2014 or someone reaching for another person's data. The\nholder releases it first.",
         "operationId": "claim_device_devices__device_id__claim_post",
         "security": [
           {
@@ -5303,6 +5411,16 @@
         "operationId": "mark_uploaded_training_plan_sync_mark_uploaded_post",
         "parameters": [
           {
+            "name": "x-garmin-device-serial",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "X-Garmin-Device-Serial"
+            }
+          },
+          {
             "name": "authorization",
             "in": "header",
             "required": false,
@@ -5410,6 +5528,16 @@
         "description": "Record that workout FIT files were removed from the watch.",
         "operationId": "mark_deleted_training_plan_sync_mark_deleted_post",
         "parameters": [
+          {
+            "name": "x-garmin-device-serial",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "X-Garmin-Device-Serial"
+            }
+          },
           {
             "name": "authorization",
             "in": "header",
@@ -6366,7 +6494,7 @@
           "device-sync"
         ],
         "summary": "Watch Weather",
-        "description": "The forecast to push to the watch, for a phone that has no other source.\n\nThe watch asks for weather roughly once a minute and Tracks had nothing to\nanswer with unless a separate weather app was configured to broadcast to it\n\u2014 an arrangement that is invisible when it is not set up, since the watch\nsimply shows an empty glance forever.\n\nLocation comes from the user's most recent activity rather than from the\nphone. That is deliberate: it needs no new runtime permission, works when\nthe phone's own location is off, and is very nearly the right answer for the\nthing being asked \u2014 a forecast for where this person trains. It is wrong\nonly on the first day of a trip, and a stale-by-one-trip forecast still beats\nthe empty glance it replaces.\n\n404 rather than an empty body when there is nothing to say, so the client can\ntell \"no forecast for you\" from \"a forecast of nothing\".",
+        "description": "The forecast to push to the watch, for a phone that has no other source.\n\nThe watch asks for weather roughly once a minute and Tracks had nothing to\nanswer with unless a separate weather app was configured to broadcast to it\n\u2014 an arrangement that is invisible when it is not set up, since the watch\nsimply shows an empty glance forever.\n\nLocation is where the phone last was, as it synced it into the settings\nrow \u2014 the same position the phone forecasts for when it asks Open-Meteo\nitself. Failing that (no phone has been opened with location permission\nyet), the start of the most recent activity with GPS: very nearly the\nright answer for \"where does this person train\", and a stale-by-one-trip\nforecast still beats an empty glance.\n\n404 rather than an empty body when there is nothing to say, so the client can\ntell \"no forecast for you\" from \"a forecast of nothing\".\n\nCurrent phones locate and fetch this forecast themselves (mobile\ncore/weather/OpenMeteo.kt), so it works where the phone has signal but no\nroute to this server. They call this only as a fallback, when none of the\nphone's own files has a position; older releases call it every time.",
         "operationId": "watch_weather_device_sync_weather_get",
         "responses": {
           "200": {
@@ -11851,7 +11979,7 @@
           "maps"
         ],
         "summary": "Point Hourly",
-        "description": "The hour-by-hour forecast for one day at one point.\n\nSplit from ``/point`` rather than folded into it because the two are asked\nat very different rates: every tap on the map fetches point info, and almost\nnone of those taps go on to open a day. Carrying 168 hourly readings in that\nresponse would multiply the cost of the common case several times over to\npre-answer a question usually never asked.\n\n``forecast_days`` is stretched to reach the requested date because\nOpen-Meteo counts days forward from today rather than taking a range, and\nthe daily strip this is opened from runs a week out.",
+        "description": "The hour-by-hour forecast for one day at one point.\n\nSplit from ``/point`` rather than folded into it because the two are asked\nat very different rates: every tap on the map fetches point info, and almost\nnone of those taps go on to open a day. Carrying 168 hourly readings in that\nresponse would multiply the cost of the common case several times over to\npre-answer a question usually never asked.\n\n``forecast_days`` is stretched to reach the requested date because\nOpen-Meteo counts days forward from today rather than taking a range, and\nthe daily strip this is opened from runs a week out.\n\nThe phone now asks Open-Meteo itself (mobile core/weather/OpenMeteo.kt);\nthis stays for phones on releases from before that.",
         "operationId": "point_hourly_maps_point_hourly_get",
         "security": [
           {
@@ -11920,7 +12048,7 @@
           "maps"
         ],
         "summary": "Point Weather",
-        "description": "Just the forecast for a point.\n\nSeparate from ``/point`` so a client can put a panel on screen before this\nhas answered. The forecast is the one part of point info that leaves the\nbuilding \u2014 Open-Meteo, over the internet, from a server that may itself be\non a slow link \u2014 and bundling it meant the elevation and the place name,\nboth of which are local lookups measured in milliseconds, arrived at the\nspeed of the slowest thing in the response.",
+        "description": "Just the forecast for a point.\n\nSeparate from ``/point`` so a client can put a panel on screen before this\nhas answered. The forecast is the one part of point info that leaves the\nbuilding \u2014 Open-Meteo, over the internet, from a server that may itself be\non a slow link \u2014 and bundling it meant the elevation and the place name,\nboth of which are local lookups measured in milliseconds, arrived at the\nspeed of the slowest thing in the response.\n\nOnly phones on older releases call this; current ones ask Open-Meteo\ndirectly.",
         "operationId": "point_weather_maps_point_weather_get",
         "security": [
           {
@@ -12712,6 +12840,16 @@
         "operationId": "mark_course_uploaded_maps_sync_mark_course_uploaded_post",
         "parameters": [
           {
+            "name": "x-garmin-device-serial",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "X-Garmin-Device-Serial"
+            }
+          },
+          {
             "name": "authorization",
             "in": "header",
             "required": false,
@@ -12818,6 +12956,16 @@
         "summary": "Mark Course Deleted",
         "operationId": "mark_course_deleted_maps_sync_mark_course_deleted_post",
         "parameters": [
+          {
+            "name": "x-garmin-device-serial",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "X-Garmin-Device-Serial"
+            }
+          },
           {
             "name": "authorization",
             "in": "header",
@@ -19205,6 +19353,35 @@
         ],
         "title": "RefreshRequest"
       },
+      "ReleaseOut": {
+        "properties": {
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "version",
+          "url"
+        ],
+        "title": "ReleaseOut"
+      },
       "RotateBody": {
         "properties": {
           "limit": {
@@ -19393,6 +19570,17 @@
               }
             ],
             "title": "Device Label"
+          },
+          "client_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Client Version"
           },
           "created_at": {
             "anyOf": [
@@ -22122,6 +22310,72 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "VersionStatusOut": {
+        "properties": {
+          "server_version": {
+            "type": "string",
+            "title": "Server Version"
+          },
+          "api_version": {
+            "type": "integer",
+            "title": "Api Version"
+          },
+          "update_check": {
+            "type": "boolean",
+            "title": "Update Check"
+          },
+          "latest": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReleaseOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "checked_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checked At"
+          },
+          "check_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Check Error"
+          },
+          "server_update_available": {
+            "type": "boolean",
+            "title": "Server Update Available"
+          },
+          "releases_url": {
+            "type": "string",
+            "title": "Releases Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "server_version",
+          "api_version",
+          "update_check",
+          "latest",
+          "server_update_available",
+          "releases_url"
+        ],
+        "title": "VersionStatusOut"
       },
       "Vo2MaxPoint": {
         "properties": {

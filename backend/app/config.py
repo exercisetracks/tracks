@@ -75,6 +75,13 @@ class Settings(BaseSettings):
     # device just leave it unset. See app.services.sync_agent_auth.
     garmin_sync_bootstrap_token: str = ""
 
+    # Ask GitHub every few hours for the newest Tracks release, so the version
+    # panels can say an update exists. On by default because nothing else
+    # would tell a household without an app store; the request is an
+    # anonymous GET of a public endpoint. False sends nothing. See
+    # app.services.update_check.
+    update_check: bool = True
+
     @field_validator("database_url")
     @classmethod
     def _pin_postgres_driver(cls, v: str) -> str:

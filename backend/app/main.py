@@ -32,7 +32,7 @@ from app.calculators.user_stats import recalculate_auto_values
 from app.config import settings
 from app.database import SessionLocal, engine
 from app.middleware.caching import CacheControlMiddleware
-from app.routes import capabilities, contours, fonts, sprite, map_style, regions, routes_api, tiles, poi as poi_routes, gnis as gnis_routes, trail_logos, courses_api
+from app.routes import capabilities, contours, fonts, sprite, map_style, regions, routes_api, tiles, poi as poi_routes, gnis as gnis_routes, trail_logos, courses_api, version as version_routes
 from app.models.activity import User
 from app.models.user_settings import UserSettings
 from app.seed import seed_all
@@ -543,6 +543,7 @@ app.add_middleware(
 _auth_dep = [Depends(require_auth)]
 
 app.include_router(capabilities.router)      # public, polled before login for version skew
+app.include_router(version_routes.router)    # authed; the version panels, and records the app's version
 app.include_router(auth_router.router)
 app.include_router(activities.router,        dependencies=_auth_dep)
 app.include_router(coaching.router,          dependencies=_auth_dep)

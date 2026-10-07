@@ -9,6 +9,7 @@ import { useAuth } from "../auth/AuthContext";
 import { useState, useEffect, useRef } from "react";
 import { api } from "../api/client";
 import WatchSyncModal from "./sync/WatchSyncModal";
+import ServerUpdateBanner from "./ServerUpdateBanner";
 import { GARMIN_VENDOR_ID } from "../lib/mtp";
 import { isWindows } from "../lib/deviceSync";
 import { TourProvider } from "./tour/TourContext";
@@ -257,6 +258,7 @@ export default function Layout() {
 
       {/* Page content */}
       <main className="flex-1 overflow-y-auto bg-slate-100 dark:bg-slate-950">
+        <ServerUpdateBanner />
         <Outlet />
       </main>
 

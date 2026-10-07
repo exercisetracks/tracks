@@ -51,6 +51,33 @@ data class Capabilities(
 
 enum class Compatibility { OK, CLIENT_TOO_OLD, SERVER_TOO_OLD }
 
+/**
+ * `GET /version`: this server, and the newest Tracks release GitHub knows of.
+ *
+ * The server asks GitHub, not the phone, so a phone that only ever reaches its
+ * server over a LAN or VPN still hears of updates. [latest] is null when the
+ * check is off ([updateCheck] false) or GitHub could not be reached
+ * ([checkError] set) — "not known", never "up to date".
+ */
+@Serializable
+data class VersionStatus(
+    @SerialName("server_version") val serverVersion: String,
+    @SerialName("api_version") val apiVersion: Int,
+    @SerialName("update_check") val updateCheck: Boolean = false,
+    val latest: Release? = null,
+    @SerialName("checked_at") val checkedAt: String? = null,
+    @SerialName("check_error") val checkError: String? = null,
+    @SerialName("server_update_available") val serverUpdateAvailable: Boolean = false,
+    @SerialName("releases_url") val releasesUrl: String = "https://github.com/exercisetracks/tracks/releases",
+)
+
+@Serializable
+data class Release(
+    val version: String,
+    val url: String,
+    @SerialName("published_at") val publishedAt: String? = null,
+)
+
 @Serializable
 data class Limits(
     @SerialName("track_max_points") val trackMaxPoints: Int = 50_000,
