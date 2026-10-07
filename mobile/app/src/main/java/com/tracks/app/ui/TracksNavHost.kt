@@ -86,6 +86,11 @@ import com.tracks.app.ui.screens.SettingsScreen
 import com.tracks.app.ui.strength.StrengthScreen
 import com.tracks.app.ui.strength.StrengthViewModel
 import com.tracks.app.ui.theme.Tokens
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
+import com.tracks.app.ui.workout.ActiveWorkout
+import com.tracks.app.ui.workout.ActiveWorkoutBar
 import com.tracks.app.ui.workout.GuidedWorkoutScreen
 import com.tracks.app.ui.workout.GuidedWorkoutViewModel
 import kotlinx.coroutines.launch
@@ -191,6 +196,21 @@ fun TracksNavHost(
         },
     )
 
+    // The Activity's own store, captured here because inside the NavHost the
+    // ambient owner is the navigation entry. A workout session's ViewModel lives
+    // here — see [ActiveWorkout] for why it must outlive the screen.
+    val activityOwner = checkNotNull(androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner.current)
+    fun guidedViewModel(workoutId: Int, key: String): GuidedWorkoutViewModel =
+        ViewModelProvider(
+            activityOwner,
+            object : ViewModelProvider.Factory {
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : ViewModel> create(modelClass: Class<T>): T =
+                    GuidedWorkoutViewModel(container, workoutId, key) as T
+            },
+        )[key, GuidedWorkoutViewModel::class.java]
+    val activeWorkout by ActiveWorkout.current.collectAsStateWithLifecycle()
+
     val drawer = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val backStack by navController.currentBackStackEntryAsState()
@@ -266,6 +286,7 @@ fun TracksNavHost(
                 // empty, because a detail route is not one of the nine pages
                 // and has no label — which is the "massive header" it looked
                 // like.
+                Column {
                 if (here != null && here != Destination.Map) {
                     TopAppBar(
                         title = { Text(here.label) },
@@ -294,6 +315,29 @@ fun TracksNavHost(
                             containerColor = MaterialTheme.colorScheme.surface,
                         ),
                     )
+                }
+                // The way back to a workout in progress, under the page's bar
+                // on every page but the map (no chrome there — its own button
+                // and the run's notification stand in) and the workout itself.
+                val session = activeWorkout
+                val onWorkout = route == "workout/{workoutId}" &&
+                    backStack?.arguments?.getInt("workoutId") == session?.workoutId
+                if (session != null && here != Destination.Map && !onWorkout) {
+                    val guided by guidedViewModel(session.workoutId, session.key).state.collectAsStateWithLifecycle()
+                    ActiveWorkoutBar(
+                        session = session,
+                        state = guided,
+                        onOpen = { navController.navigate("workout/${session.workoutId}") { launchSingleTop = true } },
+                        // A detail page brings its own bar and the shell
+                        // draws none, so here this is the topmost thing and
+                        // has to keep clear of the status bar itself.
+                        modifier = if (here == null) {
+                            Modifier.windowInsetsPadding(WindowInsets.statusBars)
+                        } else {
+                            Modifier
+                        },
+                    )
+                }
                 }
             },
         ) { padding ->
@@ -362,17 +406,23 @@ fun TracksNavHost(
                 arguments = listOf(navArgument("workoutId") { type = NavType.IntType }),
             ) { entry ->
                 val workoutId = entry.arguments?.getInt("workoutId") ?: return@composable
-                // Keyed on the id, like the activity detail: opening a second
-                // workout must not inherit the first one's step cursor.
-                val guidedVm: GuidedWorkoutViewModel = viewModel(
-                    key = "workout-$workoutId",
-                    factory = object : ViewModelProvider.Factory {
-                        @Suppress("UNCHECKED_CAST")
-                        override fun <T : ViewModel> create(modelClass: Class<T>): T =
-                            GuidedWorkoutViewModel(container, workoutId) as T
+                // Held by the Activity rather than this entry, under a key
+                // [ActiveWorkout] hands out: the session in progress when this
+                // is the workout in progress, a fresh one otherwise — so going
+                // back mid-run keeps the step cursor, and a finished session
+                // is never shown as the start of the next one. Saveable, so the
+                // entry keeps its key across leaving and returning.
+                val key = androidx.compose.runtime.saveable.rememberSaveable { ActiveWorkout.keyFor(workoutId) }
+                val guidedVm = remember(key) { guidedViewModel(workoutId, key) }
+                GuidedWorkoutScreen(
+                    vm = guidedVm,
+                    onBack = { navController.popBackStack() },
+                    onOpenWorkout = { id ->
+                        navController.navigate("workout/$id") {
+                            popUpTo("workout/{workoutId}") { inclusive = true }
+                        }
                     },
                 )
-                GuidedWorkoutScreen(vm = guidedVm, onBack = { navController.popBackStack() })
             }
             composable(Destination.Music.route) {
                 MusicScreen(vm)

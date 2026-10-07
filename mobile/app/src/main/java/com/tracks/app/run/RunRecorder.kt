@@ -15,6 +15,7 @@ data class RunUiState(
     val phase: RunPhase = RunPhase.Idle,
     val distanceM: Double = 0.0,
     val ascentM: Double = 0.0,
+    val descentM: Double = 0.0,
     /** Wall time since the start button, including pauses. */
     val elapsedMs: Long = 0,
     /** Time the clock was actually running. */
@@ -189,6 +190,7 @@ object RunRecorder {
             it.copy(
                 distanceM = track.distanceM,
                 ascentM = track.ascentM,
+                descentM = track.descentM,
                 elapsedMs = elapsedMs(),
                 movingMs = movingMs(),
                 runningMs = runningMs(),

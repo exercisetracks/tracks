@@ -13,6 +13,8 @@ import com.tracks.core.api.LoggedExercise
 import com.tracks.core.api.LoggedSet
 import com.tracks.core.api.PlannedWorkout
 import com.tracks.core.api.WorkoutSessionIn
+import com.tracks.core.fit.vdotToPaces
+import com.tracks.core.sync.localCoachingContext
 import com.tracks.core.spec.sportType
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -32,6 +34,19 @@ data class GuidedUiState(
     val remaining: Int = 0,
     /** Metres covered inside the step on screen. Only a recording fills this. */
     val stepCoveredM: Double = 0.0,
+    /** Moving time inside the step on screen, for its own pace. Only a recording fills this. */
+    val stepMs: Long = 0,
+    /**
+     * The run's counted distance where each step reached so far began, by step
+     * index — what lets the distance dial draw a finished section at its real
+     * length rather than its planned one.
+     */
+    val stepStartsM: List<Double> = emptyList(),
+    /**
+     * Seconds per kilometre for each pace zone, from the plan's VDOT; null with
+     * no running plan. The pace dial's targets.
+     */
+    val paces: Map<String, Double>? = null,
     /** Paused is a timer that is not running, not a fourth phase. */
     val running: Boolean = false,
     /** Whether the first step has ever been started — a pause is not a start. */
@@ -93,6 +108,8 @@ data class GuidedUiState(
 class GuidedWorkoutViewModel(
     private val container: AppContainer,
     private val workoutId: Int,
+    /** This session's key in the Activity's store — see [ActiveWorkout]. */
+    val key: String,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(GuidedUiState())
@@ -115,6 +132,13 @@ class GuidedWorkoutViewModel(
             val workout = runCatching { container.sources.get("planned_workout", workoutId, PlannedWorkout.serializer()) }.getOrNull()
             if (workout != null) apply(listOf(workout), stillLoading = false)
             else _state.update { it.copy(loading = false) }
+        }
+        // The paces the watch would be given for this plan, regardless of the
+        // watch's pace-coaching switch: that switch is about the wrist
+        // buzzing, and a dial showing a target nags nobody.
+        viewModelScope.launch {
+            val vdot = runCatching { localCoachingContext(container.sources).vdot }.getOrNull()
+            if (vdot != null) _state.update { it.copy(paces = vdotToPaces(vdot)) }
         }
     }
 
@@ -152,6 +176,13 @@ class GuidedWorkoutViewModel(
     fun begin() {
         markStepStart()
         _state.update { it.copy(running = true, begun = true, error = null) }
+        ActiveWorkout.begin(
+            ActiveWorkout.Session(
+                workoutId = workoutId,
+                title = _state.value.workout?.title?.takeIf { it.isNotBlank() } ?: "Workout",
+                key = key,
+            )
+        )
         if (!_state.value.isRecorded) tick()
     }
 
@@ -232,10 +263,15 @@ class GuidedWorkoutViewModel(
                 val state = _state.value
                 if (!state.isRecorded || !state.running || state.done) return@collect
                 if (run.phase != RunPhase.Recording) return@collect
+                // Only the live session steers the recording. The Activity
+                // keeps finished sessions' ViewModels until it goes, and one of
+                // those reacting to the next run would advance its own plan and
+                // switch that run's distance counting on and off.
+                if (ActiveWorkout.current.value?.key != key) return@collect
                 val step = state.step ?: return@collect
 
                 val covered = run.distanceM - stepStartDistanceM
-                _state.update { it.copy(stepCoveredM = covered) }
+                _state.update { it.copy(stepCoveredM = covered, stepMs = run.movingMs - stepStartMovingMs) }
 
                 val metres = step.metres
                 if (metres != null && covered >= metres) {
@@ -259,7 +295,15 @@ class GuidedWorkoutViewModel(
         val run = RunRecorder.state.value
         stepStartMovingMs = run.movingMs
         stepStartDistanceM = run.distanceM
-        _state.update { it.copy(stepCoveredM = 0.0) }
+        // Truncated to the cursor first, so stepping back re-measures the step
+        // rather than keeping the start of the attempt that was abandoned.
+        _state.update {
+            it.copy(
+                stepCoveredM = 0.0,
+                stepMs = 0,
+                stepStartsM = it.stepStartsM.take(it.index) + run.distanceM,
+            )
+        }
     }
 
     /** Said out loud, because the phone is in a pocket. Silent if the step runner. */
@@ -299,6 +343,7 @@ class GuidedWorkoutViewModel(
             }.onFailure { Log.w(TAG, "session not logged", it) }
             markCompleteLocally(workout)
             _state.update { it.copy(saving = false, saved = true, queued = false) }
+            ActiveWorkout.end(key)
         }
     }
 
@@ -391,11 +436,33 @@ class GuidedWorkoutViewModel(
                     error = if (uploaded) null else UPLOAD_PENDING,
                 )
             }
+            // Saved is over: the run is in the activity list now, and a
+            // recorder still holding it would offer to save it again the next
+            // time any run screen opened.
+            RunRecorder.reset()
+            ActiveWorkout.end(key)
         }
     }
 
     /** Done with a finished run, so the recorder is free for the next one. */
-    fun clearRun() = RunRecorder.reset()
+    fun clearRun() {
+        RunRecorder.reset()
+        ActiveWorkout.end(key)
+    }
+
+    /**
+     * Delete everything done so far and leave — the paused screen's "delete
+     * and quit", confirmed there.
+     *
+     * Nothing is written: no FIT, no session log, the workout stays unticked
+     * on the plan so it can be started again. A recording is thrown away by
+     * the service (`ACTION_DISCARD`), which owns the GPS; the caller sends that.
+     */
+    fun discard() {
+        timer?.cancel()
+        _state.update { it.copy(running = false) }
+        ActiveWorkout.end(key)
+    }
 
     /** Tick the workout off — a one-field local edit that syncs by field. */
     private suspend fun markCompleteLocally(workout: PlannedWorkout) {

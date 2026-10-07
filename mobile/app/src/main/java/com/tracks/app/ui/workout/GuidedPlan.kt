@@ -53,6 +53,12 @@ data class GuidedStep(
      * used to finish reading 5.5 km with its first split 500 m early.
      */
     val countsDistance: Boolean = true,
+    /**
+     * The plan's pace zone for this step — `easy`, `threshold` — which the run
+     * screen's pace dial turns into a target. Null for a step the plan gives no
+     * pace (a recovery, a walk, anything but running).
+     */
+    val paceZone: String? = null,
 ) {
     /** A step with neither target runs until the user advances it. */
     val isOpen: Boolean get() = seconds == null && metres == null
@@ -123,6 +129,7 @@ private fun expand(step: WorkoutStep, into: MutableList<GuidedStep>) {
                 else -> StepKind.Work
             },
             countsDistance = step.type != "walk",
+            paceZone = step.pace,
         )
     }
 }
@@ -231,6 +238,7 @@ private fun expandRepeats(step: WorkoutStep, into: MutableList<GuidedStep>, labe
             seconds = work,
             metres = distance,
             position = "$rep of $reps",
+            paceZone = step.pace,
         )
         if (rest > 0 && rep < reps) into += recovery(rest)
     }

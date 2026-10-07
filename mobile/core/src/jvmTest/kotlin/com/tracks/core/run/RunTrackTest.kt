@@ -97,6 +97,28 @@ class RunTrackTest {
         assertTrue(abs(track.ascentM - 40.0) < 1.0, "was ${track.ascentM}")
     }
 
+    /** The run screen's climb dial sets the two side by side, so they must be filtered alike. */
+    @Test
+    fun `a hill up and back down counts both ways, equally`() {
+        val track = RunTrack()
+        for (second in 0..40) {
+            val height = if (second <= 20) second * 2.0 else (40 - second) * 2.0
+            track.add(northOf(second * 5.0, second * 1000L).copy(altitudeM = 100.0 + height))
+        }
+        assertTrue(abs(track.ascentM - 40.0) < 1.0, "up was ${track.ascentM}")
+        assertTrue(abs(track.descentM - 40.0) < 1.0, "down was ${track.descentM}")
+    }
+
+    @Test
+    fun `altitude dither is not descending either`() {
+        val track = RunTrack()
+        for (second in 0..60) {
+            val wobble = if (second % 2 == 0) 1.5 else 0.0
+            track.add(northOf(second * 5.0, second * 1000L).copy(altitudeM = 100.0 - wobble))
+        }
+        assertEquals(0.0, track.descentM)
+    }
+
     @Test
     fun `splits land on the kilometre, not on the fix after it`() {
         val track = RunTrack()

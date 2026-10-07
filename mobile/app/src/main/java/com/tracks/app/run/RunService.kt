@@ -110,6 +110,10 @@ class RunService : Service() {
                 finishRun()
                 return START_NOT_STICKY
             }
+            ACTION_DISCARD -> {
+                discardRun()
+                return START_NOT_STICKY
+            }
         }
 
         if (!hasLocationPermission()) {
@@ -140,6 +144,20 @@ class RunService : Service() {
         // The upload is the screen's job, not the service's: it needs the API
         // client and a place to show a failure, and a run that failed to upload
         // must stay on the phone rather than vanish with the notification.
+        ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
+        stopSelf()
+    }
+
+    /**
+     * Throw the run away: the screen's "delete and quit", confirmed there.
+     *
+     * Silent, unlike [finishRun]. "Run finished, four kilometres" spoken over a
+     * run the user has just deleted would sound like it had been kept.
+     */
+    private fun discardRun() {
+        RunRecorder.reset()
+        stopListening()
+        ticker?.cancel()
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
         stopSelf()
     }
@@ -259,6 +277,7 @@ class RunService : Service() {
         const val ACTION_PAUSE = "com.tracks.app.run.PAUSE"
         const val ACTION_RESUME = "com.tracks.app.run.RESUME"
         const val ACTION_STOP = "com.tracks.app.run.STOP"
+        const val ACTION_DISCARD = "com.tracks.app.run.DISCARD"
 
         /**
          * One fix a second.

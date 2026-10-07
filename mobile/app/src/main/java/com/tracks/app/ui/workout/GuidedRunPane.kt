@@ -22,6 +22,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -35,6 +38,7 @@ import com.tracks.app.ui.components.PrimaryButton
 import com.tracks.app.ui.components.TonalButton
 import com.tracks.app.ui.theme.Tokens
 import com.tracks.core.format.distance
+import kotlinx.coroutines.delay
 
 /**
  * A planned run, while it is being run.
@@ -52,12 +56,12 @@ import com.tracks.core.format.distance
  * a glance from the other by someone forty minutes into an effort.
  *
  * They are dials rather than a grid of figures — the Health page's instrument,
- * with distance and the current section large at the top ([RunGauges]).
+ * with distance and pace large at the top ([RunGauges]).
  *
  * ## The current section
  *
  * A structured run — a warm-up, six intervals, a cool-down — shows the step it
- * is on as the second large dial and counts it down in whatever the step is
+ * is on as the first of the small dials and counts it down in whatever the step is
  * measured in. The counting is the ViewModel's, from the run's own moving time
  * and distance, so it advances itself: that is the difference between a
  * workout on a screen and a workout on a watch.
@@ -70,7 +74,7 @@ import com.tracks.core.format.distance
  * work without a second implementation of any of them.
  */
 @Composable
-fun GuidedRunPane(state: GuidedUiState, vm: GuidedWorkoutViewModel) {
+fun GuidedRunPane(state: GuidedUiState, vm: GuidedWorkoutViewModel, onQuit: () -> Unit) {
     val run by RunRecorder.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
@@ -112,19 +116,13 @@ fun GuidedRunPane(state: GuidedUiState, vm: GuidedWorkoutViewModel) {
             .padding(horizontal = 20.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        // Distance and the current section large, everything else as the
-        // Health page's small dials — see [RunGauges].
+        // Distance and pace large, everything else as the Health page's small
+        // dials — see [RunGauges].
         RunGauges(state, run)
 
-        // The whole session, but only before it starts. Deciding whether you
-        // have time for this — and whether to take a jacket for the twelve
-        // minutes of standing around between reps — is a question you ask at
-        // the trailhead, not at rep four; and mid-run the same list would push
-        // the step you are actually on off the screen. Once it is running,
-        // the section dial and its "Next" line answer "now and next", which is all a moving runner can
-        // read anyway.
-        if (run.phase == RunPhase.Idle && state.steps.isNotEmpty()) PlanList(state)
-
+        // The controls straight under the dials rather than at the foot of the
+        // page: before the start the session list below can be long, and the
+        // button that starts it was a scroll away from the screen it starts.
         when (run.phase) {
             RunPhase.Idle -> PrimaryButton("Start workout", onClick = {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -147,18 +145,64 @@ fun GuidedRunPane(state: GuidedUiState, vm: GuidedWorkoutViewModel) {
                 PrimaryButton("Finish", onClick = { RunService.send(context, RunService.ACTION_STOP) }, modifier = Modifier.weight(1f))
             }
 
-            RunPhase.Paused -> Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                PrimaryButton("Resume", onClick = { RunService.send(context, RunService.ACTION_RESUME) }, modifier = Modifier.weight(1f))
-                TonalButton("Finish", onClick = { RunService.send(context, RunService.ACTION_STOP) }, modifier = Modifier.weight(1f))
+            RunPhase.Paused -> Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    PrimaryButton("Resume", onClick = { RunService.send(context, RunService.ACTION_RESUME) }, modifier = Modifier.weight(1f))
+                    TonalButton("Finish", onClick = { RunService.send(context, RunService.ACTION_STOP) }, modifier = Modifier.weight(1f))
+                }
+                // Only while paused: a running runner's thumb is not one that
+                // should be one tap from losing the run, and pausing first is
+                // the natural first half of "I'm abandoning this".
+                ConfirmingDangerButton("Delete run and quit") {
+                    RunService.send(context, RunService.ACTION_DISCARD)
+                    vm.discard()
+                    onQuit()
+                }
             }
 
             RunPhase.Finished -> FinishedRun(state, vm, run.fixCount)
         }
+
+        // The whole session, but only before it starts. Deciding whether you
+        // have time for this — and whether to take a jacket for the twelve
+        // minutes of standing around between reps — is a question you ask at
+        // the trailhead, not at rep four; and mid-run the same list would push
+        // the step you are actually on off the screen. Once it is running,
+        // the distance dial's sections and the "Next" line answer "now and
+        // next", which is all a moving runner can read anyway.
+        if (run.phase == RunPhase.Idle && state.steps.isNotEmpty()) PlanList(state)
     }
 }
+
+/**
+ * A destructive button that asks before it acts: the first tap turns it into
+ * "Are you sure?", the second does it. Left alone, it settles back after a few
+ * seconds, so a stray tap in a pocket cannot arm it for a later one.
+ *
+ * In place rather than a dialog, because a dialog's buttons land somewhere new
+ * and this is pressed by someone out of breath; here the confirming tap is on
+ * the spot the first one already found.
+ */
+@Composable
+internal fun ConfirmingDangerButton(text: String, onConfirm: () -> Unit) {
+    var armed by remember { mutableStateOf(false) }
+    LaunchedEffect(armed) {
+        if (armed) {
+            delay(CONFIRM_WINDOW_MS)
+            armed = false
+        }
+    }
+    DangerButton(
+        if (armed) "Are you sure? Tap to delete" else text,
+        onClick = { if (armed) onConfirm() else armed = true },
+        modifier = Modifier.fillMaxWidth(),
+    )
+}
+
+private const val CONFIRM_WINDOW_MS = 4_000L
 
 /**
  * Every step of the session, in order, before any of it has happened.

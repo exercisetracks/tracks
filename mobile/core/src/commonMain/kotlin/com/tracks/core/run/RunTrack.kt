@@ -83,6 +83,14 @@ class RunTrack {
     var ascentM: Double = 0.0
         private set
 
+    /**
+     * Metres descended, by the same rule as [ascentM] mirrored — so a loop
+     * that starts and ends at the door reads as much down as up, rather than
+     * the descent drifting from the climb because it was filtered differently.
+     */
+    var descentM: Double = 0.0
+        private set
+
     private var lastKept: RunFix? = null
     private var lastKeptAltitude: Double? = null
 
@@ -125,6 +133,7 @@ class RunTrack {
                 ascentM += altitude - reference
                 lastKeptAltitude = altitude
             } else if (reference - altitude >= MIN_CLIMB_M) {
+                descentM += reference - altitude
                 lastKeptAltitude = altitude
             }
         }

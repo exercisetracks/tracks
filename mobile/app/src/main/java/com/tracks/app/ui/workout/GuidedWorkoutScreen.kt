@@ -71,8 +71,14 @@ import com.tracks.app.ui.theme.Tokens
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun GuidedWorkoutScreen(vm: GuidedWorkoutViewModel, onBack: () -> Unit) {
+fun GuidedWorkoutScreen(
+    vm: GuidedWorkoutViewModel,
+    onBack: () -> Unit,
+    /** Opens another workout — the one already in progress, from [OtherSessionPane]. */
+    onOpenWorkout: (Int) -> Unit,
+) {
     val state by vm.state.collectAsStateWithLifecycle()
+    val active by ActiveWorkout.current.collectAsStateWithLifecycle()
 
     KeepScreenOn(active = state.begun && !state.saved)
 
@@ -115,8 +121,12 @@ fun GuidedWorkoutScreen(vm: GuidedWorkoutViewModel, onBack: () -> Unit) {
                 )
 
                 state.saved -> SavedPane(state, vm, onBack)
-                state.isRecorded -> GuidedRunPane(state, vm)
-                else -> StepPane(state, vm)
+                // One session at a time. The phone has one GPS recording and
+                // one bar saying what is running, and a second workout begun
+                // on top of the first would steer the first one's recording.
+                active != null && active?.key != vm.key -> OtherSessionPane(active!!, onOpenWorkout)
+                state.isRecorded -> GuidedRunPane(state, vm, onQuit = onBack)
+                else -> StepPane(state, vm, onQuit = onBack)
             }
         }
     }
@@ -130,7 +140,7 @@ fun GuidedWorkoutScreen(vm: GuidedWorkoutViewModel, onBack: () -> Unit) {
  * controls where a thumb already is.
  */
 @Composable
-private fun StepPane(state: GuidedUiState, vm: GuidedWorkoutViewModel) {
+private fun StepPane(state: GuidedUiState, vm: GuidedWorkoutViewModel, onQuit: () -> Unit) {
     val step = state.step
     if (step == null || state.done) {
         FinishPane(state, vm)
@@ -230,6 +240,46 @@ private fun StepPane(state: GuidedUiState, vm: GuidedWorkoutViewModel) {
         }
 
         Controls(state, vm)
+
+        // The same "delete and quit" as a paused run, and on the same terms:
+        // only while paused, and only on the second tap.
+        if (state.begun && !state.running) {
+            Box(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)) {
+                ConfirmingDangerButton("Delete progress and quit") {
+                    vm.discard()
+                    onQuit()
+                }
+            }
+        }
+    }
+}
+
+/**
+ * A workout opened while a different one is in progress.
+ *
+ * Says so and offers the way back, rather than offering to start this one: the
+ * other is still recording or counting down, and there is one of each of those.
+ */
+@Composable
+private fun OtherSessionPane(active: ActiveWorkout.Session, onOpenWorkout: (Int) -> Unit) {
+    Box(Modifier.fillMaxSize().padding(24.dp), Alignment.Center) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Text(
+                "${active.title} is in progress",
+                style = MaterialTheme.typography.headlineSmall,
+                textAlign = TextAlign.Center,
+            )
+            Text(
+                "Finish or delete it before starting another workout.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+            PrimaryButton("Back to it", onClick = { onOpenWorkout(active.workoutId) })
+        }
     }
 }
 

@@ -1013,6 +1013,17 @@ fun RadialGauge(
     figure: String? = null,
     /** The figure's size; the run screen's two headline dials want it larger. */
     figureStyle: androidx.compose.ui.text.TextStyle? = null,
+    /**
+     * A pointer rather than a fill: the band under the value lights up and the
+     * dot marks the spot, and nothing fills from the left.
+     *
+     * For a reading that is a position on a scale rather than an amount of it —
+     * the run screen's pace against its target, where the left is "slow" and
+     * the right "fast" and a fill from the slow end would read as "this much
+     * slowness". Garmin's pace gauge works this way. No lap ring: a needle
+     * pins at the end of its scale.
+     */
+    needle: Boolean = false,
 ) {
     val scaleMin = zones.first().min
     val scaleMax = zones.last().max
@@ -1030,7 +1041,7 @@ fun RadialGauge(
 
     val filledTo = value?.let(::degreeFor)
 
-    val overflowTo = overflowOf(value, scaleMin, scaleMax)?.let { degreeFor(scaleMin + it) }
+    val overflowTo = if (needle) null else overflowOf(value, scaleMin, scaleMax)?.let { degreeFor(scaleMin + it) }
 
     Column(
         // The whole dial is the target, label included — a 100dp arc is a
@@ -1091,8 +1102,13 @@ fun RadialGauge(
                     )
 
                     // The same band at full strength, clipped to the value —
-                    // or filled outright once the value has lapped past it.
-                    val filledEnd = if (overflowTo != null) end else filledTo?.coerceAtMost(end)
+                    // or filled outright once the value has lapped past it. A
+                    // needle lights only the band it points into.
+                    val filledEnd = when {
+                        needle -> if (value != null && band == zone) end else null
+                        overflowTo != null -> end
+                        else -> filledTo?.coerceAtMost(end)
+                    }
                     if (filledEnd == null || filledEnd <= start) return@forEach
                     drawArc(
                         color = band.color,
