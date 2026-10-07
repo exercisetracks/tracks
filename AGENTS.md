@@ -34,18 +34,21 @@ outboxes instead of direct writes, sealed blobs instead of trusted uploads.
 ## Running it
 
 ```bash
-./setup.sh          # generates .env with fresh secrets, first time only
+cp .env.example .env    # first time only — then fill in the secrets
 docker compose up -d
 ```
 
-`docker-compose.yml` is in **developer mode** by default: backend and frontend
-source are bind-mounted live, Vite runs with HMR, and debug ports are published
-on `127.0.0.1` only. The app is at `http://localhost:4080`.
+`docker-compose.yml` is the **development** stack, and only that: backend and
+frontend source are bind-mounted live, Vite runs with HMR, and debug ports are
+published on `127.0.0.1` only. The app is at `http://localhost:4080`. Installs
+never run it — they run the all-in-one image from `deploy/` (see Releasing).
 
 The backend **refuses to start** without `JWT_SECRET`, `ENCRYPTION_KEY` and
 `SESSION_CACHE_KEY` set (see `backend/app/config.py`). That is deliberate — the
-alternative is an instance running on a secret that is public in this repo. Run
-`./setup.sh` rather than hand-writing `.env`.
+alternative is an instance running on a secret that is public in this repo.
+Each value in `.env.example` has the one-liner that generates it. A script
+that writes `.env` for you is welcome, but keep it out of git: `/setup.sh`
+is ignored for exactly that.
 
 | Change | What it takes |
 |---|---|
@@ -60,7 +63,7 @@ alternative is an instance running on a secret that is public in this repo. Run
 ## Testing
 
 ```bash
-docker exec backend pytest             # ~1735 tests, several minutes
+docker exec backend pytest             # ~1825 tests, several minutes
 cd frontend && npm test                # vitest
 cd mobile && ./gradlew :core:jvmTest   # shared core, no emulator
 cd mobile && ./gradlew testDebugUnitTest   # device layer too
@@ -84,7 +87,8 @@ leave nothing behind and never need to clean up. Two consequences worth knowing:
 
 - Identity sequences are reset per test, so the first row of a table is id 1.
 - Code that manages its own `SAVEPOINT` does not nest inside that, and such a
-  test needs `@pytest.mark.real_transaction` (one does today).
+  test needs `@pytest.mark.real_transaction` (the migration test and device
+  registration need it today).
 
 `watchapp/` has no test suite. Connect IQ has no practical unit-testing story,
 so it is verified in the simulator (`./build.sh fenix6xpro --dev`) and then on
@@ -121,8 +125,8 @@ web's lives in `frontend/src/design/kit.js` (classes: `card`, `section-title`,
 `bar-pill`, `chip`, `choice`, `segmented`, `switch`, `field`, `field-label`,
 `modal`, `icon-btn`, `badge`, `spinner`, `alert-error`) beside the `.btn`
 family in `tailwind.config.js`, and `frontend/src/components/ui/` (`Section`,
-`Card`, `PageHeader`, `BarPills`, `Tabs`, `Switch`, `Checkbox`,
-`Modal`, `InfoTooltip`, `DatePicker`). Checkboxes and radios are styled
+`Card`, `PageHeader`, `BarPills`, `Tabs`, `Switch`, `Checkbox`, `Button`,
+`Modal`, `InfoTooltip`, `DatePicker`, `AnchoredPopover`). Checkboxes and radios are styled
 globally in `index.css`. Use these rather than spelling out Tailwind for a
 control the kit already has: each hand-written copy drifts a shade from the
 last, which is how pages came to look subtly different. Picking a piece: a
@@ -162,8 +166,14 @@ worth more than the code they explain:
 - [docs/music.md](docs/music.md) and
   [watchapp/README.md](watchapp/README.md) — why music cannot be pushed over
   BLE on any Garmin, and the two transports that work instead.
+- [docs/music-testing.md](docs/music-testing.md) — testing the watch music
+  app end to end, stage by stage, so a failure points at the layer that owns
+  it.
 - [docs/browser-device-sync.md](docs/browser-device-sync.md) — the WebUSB/MTP
   path.
+- [docs/offline-first.md](docs/offline-first.md) — the design for a phone
+  that never needs a server, and for several writers syncing through one.
+  Its decisions were made deliberately; ask before departing from them.
 - [docs/map-screenshot-testing.md](docs/map-screenshot-testing.md) — driving
   the map headlessly, which is the only way to see what a tile change did.
 - [mobile/README.md](mobile/README.md) — module layout and what is verified on
@@ -172,6 +182,9 @@ worth more than the code they explain:
   one running-fitness number every pace comes from is estimated, the
   literature behind it, which coefficients are still unverified, and how it
   relates to the other fitness numbers (CTL, watch VO2max, auto thresholds).
+- [docs/training-intensity-distribution-research.md](docs/training-intensity-distribution-research.md)
+  — a summary of the research on how endurance training should split across
+  intensity zones, for designing training plans.
 
 ---
 
@@ -226,11 +239,13 @@ Images are built with Docker's legacy builder, for amd64 only (there is no
    (both covered in the table under Running it). The suites fail without them
    — that is their purpose.
 4. **Bump the version in all three places** and commit it on `main`:
-   `backend/app/version.py`, `frontend/package.json` (and the two matching
+   `SERVER_VERSION` in `backend/app/version.py`, `frontend/package.json` (and the two matching
    lines at the top of `package-lock.json`), and `versionName`/`versionCode`
    in `mobile/app/build.gradle.kts`, where `versionCode` is
    major × 10000 + minor × 100 + patch. `release.sh` checks these rather than
-   editing them, so the bump is an ordinary reviewed commit.
+   editing them, so the bump is an ordinary reviewed commit. `API_VERSION`
+   in the same file is separate: it moves only when the REST surface changes
+   in a way a client can observe (its docstring says when).
 5. **Watch app changed?** Run `watchapp/build.sh all`, which rebuilds the
    bundle the APK carries. `release.sh` refuses a bundle older than the
    watch app's source.

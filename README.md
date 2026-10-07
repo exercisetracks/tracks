@@ -362,18 +362,17 @@ rather than a public issue.
 ```bash
 git clone https://github.com/exercisetracks/tracks.git
 cd tracks
-./setup.sh
+cp .env.example .env      # then fill in the secrets, as its comments say
 docker compose up -d --build
 ```
 
 The root `docker-compose.yml` runs in **developer mode**: source is
 bind-mounted live, Vite serves the frontend with hot reload, and debug ports
-are published on `127.0.0.1` only. To run your own build in production,
-add the hardening overlay:
-
-```bash
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
-```
+are published on `127.0.0.1` only. It is for working on Tracks, not for
+running it: to run your own build, build the images the way
+[scripts/release.sh](scripts/release.sh) does, with `REGISTRY` set to a name
+of your own, and point [deploy/compose.yaml](deploy/compose.yaml) at the
+result.
 
 **[AGENTS.md](AGENTS.md) is the guide to working on Tracks**: how the five
 codebases fit together, running the test suites, conventions, and releasing.

@@ -66,7 +66,7 @@ class Settings(BaseSettings):
     # Bootstraps the host's garmin-sync container (USB dock, always
     # co-located on this same machine — see garmin-sync/sync.py) as a
     # pre-authorized personal sync agent for the admin account during
-    # onboarding, with no manual pairing step. Generated once by setup.sh
+    # onboarding, with no manual pairing step. Generated once per install
     # and shared via .env with both containers, same pattern as
     # JWT_SECRET/ENCRYPTION_KEY — garmin-sync never runs anywhere but this
     # host, so there's no separate-device trust boundary a manually-copied
@@ -108,9 +108,9 @@ def _missing_secret(name: str) -> str:
 
 # Values that are not secrets: the built-in default, nothing at all (HS256
 # with an empty key signs tokens anyone can forge), and the placeholder
-# .env.example once shipped — a .env copied from it by hand, rather than
-# written by setup.sh, would otherwise have started on a secret that is
-# public in this repository.
+# .env.example once shipped — a .env copied from it without its secrets
+# filled in would otherwise have started on a secret that is public in this
+# repository.
 _NOT_SECRETS = {_INSECURE_DEFAULT, "", "changeme"}
 
 if settings.jwt_secret.strip() in _NOT_SECRETS:

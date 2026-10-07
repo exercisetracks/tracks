@@ -1,6 +1,8 @@
 # Environment
 .env
 *.env
+# Each developer's own helper for writing .env (see .env.example)
+/setup.sh
 
 # Python
 __pycache__/
@@ -40,9 +42,6 @@ Thumbs.db
 
 # Logs
 *.log
-
-# Distribution build artifacts (produced by the beta packaging tooling)
-/tracks-*.zip
 
 # Android release signing — the key and its passwords never enter the repo.
 keystore.properties

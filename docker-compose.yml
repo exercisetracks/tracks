@@ -1,15 +1,13 @@
-# ── Tracks stack ──────────────────────────────────────────────────────────────
-# Single compose file. Defaults to DEVELOPER mode (live source bind-mounts, Vite
-# HMR). The only port reachable from the LAN/internet is the Caddy entry point
-# (${TRACKS_PORT}); every internal service's debug port is bound to 127.0.0.1.
+# ── Tracks development stack ──────────────────────────────────────────────────
+# For working on Tracks, not for running it: backend and frontend source are
+# bind-mounted live and Vite serves the frontend with HMR. The only port
+# reachable from the LAN/internet is the Caddy entry point (${TRACKS_PORT});
+# every internal service's debug port, tagged `# DEV`, is bound to 127.0.0.1.
 #
-# ── To harden for PRODUCTION ─────────────────────────────────────────────────
-#   1. backend:   remove the "- ./backend:/app" bind-mount (use the baked image)
-#   2. frontend:  swap `command` to the "preview" line below (built bundle, no HMR)
-#                 and remove the source bind-mounts under it
-#   3. Optionally delete the `ports:` blocks marked "debug only" (Caddy reaches
-#      every service over the internal network regardless).
-# Each spot is tagged `# DEV` below.
+# Installs run the all-in-one image instead (deploy/compose.yaml, built from
+# deploy/Dockerfile out of these same services' images by scripts/release.sh).
+# There used to be a production overlay for this file; it was dropped because
+# nothing documented runs this stack in production any more.
 services:
 
   db:
@@ -20,7 +18,7 @@ services:
       # Scoped credentials only — the DB container has no business seeing the
       # rest of .env (JWT_SECRET, ENCRYPTION_KEY, …).
       POSTGRES_USER: ${POSTGRES_USER:-tracks}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env (run ./setup.sh)}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env (see .env.example)}
       POSTGRES_DB: ${POSTGRES_DB:-tracks}
     volumes:
       - pgdata:/var/lib/postgresql/data
@@ -62,7 +60,7 @@ services:
       redis:
         condition: service_healthy
     volumes:
-      - ./backend:/app          # DEV: live source — drop for production
+      - ./backend:/app          # DEV: live source
       - ./spec:/spec:ro         # shared golden fixtures for the test suite
       - ${HOST_FIT_DIR:-./fit-files}:/fit-files
       - ${HOST_MAPDATA_DIR:-./map-data}:/map-data
@@ -102,7 +100,7 @@ services:
       redis:
         condition: service_healthy
     volumes:
-      - ./backend:/app          # DEV: live source — drop for production
+      - ./backend:/app          # DEV: live source
       - ./spec:/spec:ro         # shared golden fixtures for the test suite
       - ${HOST_FIT_DIR:-./fit-files}:/fit-files
     environment:
@@ -150,12 +148,9 @@ services:
     # DEV: Vite HMR dev server with source mounted live. Use http://localhost:3000
     # directly for HMR (the websocket needs a direct connection, not via Caddy).
     # The /api proxy in vite.config.js forwards API calls to backend:8000.
-    # PRODUCTION: replace the command with the built-bundle preview server and
-    # delete the two source bind-mounts below:
-    #   command: ["npm", "run", "preview", "--", "--host", "0.0.0.0", "--port", "3000"]
     command: ["npm", "run", "dev"]
     volumes:
-      - ./frontend:/app         # DEV: live source — drop for production
+      - ./frontend:/app         # DEV: live source
       - ./spec:/spec:ro         # shared golden fixtures for the test suite
       # Preserve the image's node_modules — prevents the host bind-mount from
       # shadowing the container-built packages (different OS/arch).
@@ -220,7 +215,7 @@ services:
     device_cgroup_rules:
       - "c 189:* rwm"
     environment:
-      # Generated once by setup.sh (GARMIN_SYNC_BOOTSTRAP_TOKEN in .env) and
+      # Generated once per checkout (GARMIN_SYNC_BOOTSTRAP_TOKEN in .env) and
       # shared with the backend, which pre-authorizes it for the admin
       # account during onboarding — no manual pairing step, since this
       # container only ever runs on this same host. See app.config's
