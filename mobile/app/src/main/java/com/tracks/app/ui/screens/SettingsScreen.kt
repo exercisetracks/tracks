@@ -199,6 +199,8 @@ fun SettingsScreen(
         }
 
         DangerZone(busy = state.busy, linked = linked, onErase = onErase)
+
+        com.tracks.app.donate.DonateSection()
     }
 }
 

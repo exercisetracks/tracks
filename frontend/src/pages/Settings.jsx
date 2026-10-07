@@ -26,6 +26,7 @@ import UserManagementSection from "../components/settings/UserManagementSection"
 import DangerZoneSection from "../components/settings/DangerZoneSection";
 import VersionSection from "../components/settings/VersionSection";
 import BackupSection from "../components/settings/BackupSection";
+import DonateSection from "../components/settings/DonateSection";
 import PageHeader from "../components/ui/PageHeader";
 
 export default function Settings() {
@@ -80,6 +81,7 @@ export default function Settings() {
       <UserManagementSection />
       <VersionSection />
       <DangerZoneSection />
+      <DonateSection />
     </div>
   );
 }

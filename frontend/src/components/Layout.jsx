@@ -10,6 +10,7 @@ import { useState, useEffect } from "react";
 import WatchSyncModal from "./sync/WatchSyncModal";
 import SidebarStatus, { useServerActivity } from "./sync/SidebarStatus";
 import ServerUpdateBanner from "./ServerUpdateBanner";
+import DonateBanner from "./DonateBanner";
 import BackupProgressPill from "./BackupProgressPill";
 import { GARMIN_VENDOR_ID } from "../lib/mtp";
 import { isWindows } from "../lib/deviceSync";
@@ -204,6 +205,7 @@ export default function Layout() {
       {/* Page content */}
       <main className="flex-1 overflow-y-auto bg-slate-100 dark:bg-slate-950">
         <ServerUpdateBanner />
+        <DonateBanner />
         <Outlet />
       </main>
 

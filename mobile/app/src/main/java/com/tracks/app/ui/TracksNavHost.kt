@@ -425,8 +425,11 @@ fun TracksNavHost(
                         vm = dashboardVm,
                         onOpenWorkout = { id -> navController.navigate("workout/$id") },
                         banner = {
-                            com.tracks.app.ui.profile.BackupReminder(container, state.session) {
-                                navController.navigate(Destination.Settings.route)
+                            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                                com.tracks.app.ui.profile.BackupReminder(container, state.session) {
+                                    navController.navigate(Destination.Settings.route)
+                                }
+                                com.tracks.app.donate.DonateBanner()
                             }
                         },
                     )
