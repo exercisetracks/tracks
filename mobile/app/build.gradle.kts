@@ -220,6 +220,8 @@ dependencies {
 
     testImplementation(libs.kotlin.test)
     testImplementation(libs.kotlinx.coroutines.test)
+    // BackupFixtureTest reads spec/fixtures/backup.json; core has it, but as `implementation`.
+    testImplementation(libs.kotlinx.serialization.json)
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.robolectric)
     // Screenshot tests (ui/*ScreenshotTest): Compose rendered by Robolectric's

@@ -27,6 +27,7 @@ import SecuritySection from "../components/settings/SecuritySection";
 import UserManagementSection from "../components/settings/UserManagementSection";
 import DangerZoneSection from "../components/settings/DangerZoneSection";
 import VersionSection from "../components/settings/VersionSection";
+import BackupSection from "../components/settings/BackupSection";
 import PageHeader from "../components/ui/PageHeader";
 
 export default function Settings() {
@@ -79,6 +80,7 @@ export default function Settings() {
       <PrivacySummarySection          settings={settings} onSaved={handleSaved} />
       <EquipmentSection                settings={settings} onSaved={handleSaved} />
       <SecuritySection />
+      <BackupSection />
       {user?.is_admin && <UserManagementSection />}
       <VersionSection />
       <DangerZoneSection />

@@ -60,6 +60,10 @@ import javax.crypto.spec.SecretKeySpec
  *
  * Files in the old one-message format still open — see [opening].
  *
+ * The web app reads and writes the same files (`frontend/src/lib/backup/`),
+ * and `spec/fixtures/backup.json` pins the bytes both must produce; change
+ * nothing here without regenerating it and seeing both suites agree.
+ *
  * ## Layout
  *
  * `TRKBAK02` · iterations (u32) · salt (16) · nonce prefix (7) · chunks, each
@@ -91,8 +95,22 @@ object BackupCrypto {
      */
     fun sealing(out: OutputStream, passphrase: CharArray, iterations: Int = ITERATIONS): SealingStream {
         val random = SecureRandom()
-        val salt = ByteArray(SALT_BYTES).also(random::nextBytes)
-        val prefix = ByteArray(PREFIX_BYTES).also(random::nextBytes)
+        return sealing(
+            out, passphrase, iterations,
+            salt = ByteArray(SALT_BYTES).also(random::nextBytes),
+            prefix = ByteArray(PREFIX_BYTES).also(random::nextBytes),
+        )
+    }
+
+    /** With the salt and nonce prefix given — only so the tests can reproduce spec/fixtures/backup.json. */
+    internal fun sealing(
+        out: OutputStream,
+        passphrase: CharArray,
+        iterations: Int,
+        salt: ByteArray,
+        prefix: ByteArray,
+    ): SealingStream {
+        require(salt.size == SALT_BYTES && prefix.size == PREFIX_BYTES)
         val header = ByteBuffer.allocate(HEADER_BYTES)
             .put(MAGIC).putInt(iterations).put(salt).put(prefix).array()
         out.write(header)
@@ -250,10 +268,13 @@ object BackupCrypto {
      * The first format's sealer, which held everything in memory. Nothing
      * writes it any more; it is kept so the tests can prove such files open.
      */
-    internal fun sealV1(plain: ByteArray, passphrase: CharArray, iterations: Int = ITERATIONS): ByteArray {
-        val random = SecureRandom()
-        val salt = ByteArray(SALT_BYTES).also(random::nextBytes)
-        val nonce = ByteArray(NONCE_BYTES).also(random::nextBytes)
+    internal fun sealV1(
+        plain: ByteArray,
+        passphrase: CharArray,
+        iterations: Int = ITERATIONS,
+        salt: ByteArray = ByteArray(SALT_BYTES).also(SecureRandom()::nextBytes),
+        nonce: ByteArray = ByteArray(NONCE_BYTES).also(SecureRandom()::nextBytes),
+    ): ByteArray {
         val header = ByteBuffer.allocate(HEADER_BYTES_V1)
             .put(MAGIC_V1).putInt(iterations).put(salt).put(nonce).array()
         val cipher = Cipher.getInstance(TRANSFORM)
@@ -279,7 +300,7 @@ object BackupCrypto {
         }
     }
 
-    private fun key(passphrase: CharArray, salt: ByteArray, iterations: Int): SecretKeySpec {
+    internal fun key(passphrase: CharArray, salt: ByteArray, iterations: Int): SecretKeySpec {
         val spec = PBEKeySpec(passphrase, salt, iterations, 256)
         try {
             val raw = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(spec).encoded

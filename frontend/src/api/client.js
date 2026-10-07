@@ -88,6 +88,24 @@ function qs(params) {
 }
 
 export const api = {
+  /** Forget every cached response — after a restore has changed everything at once. */
+  clearCache: () => _cache.clear(),
+
+  // Replica sync, as the phone speaks it (spec/sync.yaml) — used by backups.
+  syncPull: (since, limit) => get(`/sync/pull?since=${since}&limit=${limit}`, { noCache: true }),
+  syncPush: (body) => post("/sync/push", body),
+  /** A FIT file's bytes by hash, or null if the account has no such file. */
+  syncBlob: async (sha256) => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    const r = await fetch(`${BASE_URL}/sync/blobs/${sha256}`, { headers: { Authorization: `Bearer ${token}` } });
+    if (r.status === 404) return null;
+    if (!r.ok) {
+      const data = await r.json().catch(() => ({}));
+      throw Object.assign(new Error(data.detail ?? `HTTP ${r.status}`), { status: r.status });
+    }
+    return new Uint8Array(await r.arrayBuffer());
+  },
+
   // Auth
   getAuthStatus:  ()                         => get("/auth/status"),
   login:          (username, password)       => post("/auth/login",  { username, password }),
