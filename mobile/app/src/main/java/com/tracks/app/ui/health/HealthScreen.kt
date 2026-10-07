@@ -21,6 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.tracks.app.ui.tour.TourAnchor
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -83,168 +84,180 @@ fun HealthScreen(vm: HealthViewModel, modifier: Modifier = Modifier) {
         if (showMeasured) {
             // Activity first. It is the one group that changes hour to hour, and
             // it is what somebody opening this screen at lunchtime came to see.
-            MetricMeterGroup(
-                "Activity",
-                windowStart = state.range.startDate(),
-                metrics = listOf(
-                    HealthMetric(
-                        label = "Steps",
-                        trend = state.series { it.steps?.toDouble() },
-                        unit = "",
-                        scale = MetricScale.Goal(STEP_GOAL, STEP_COLOR),
-                        info = Explain.Steps,
-                    ),
-                    caloriesMetric(state),
-                    HealthMetric(
-                        label = "Body Battery",
-                        trend = state.series { it.bodyBatteryLast?.toDouble() },
-                        unit = "",
-                        scale = MetricScale.Bands(BODY_BATTERY_ZONES),
-                        info = Explain.BodyBattery,
-                        // The day's shape, kept behind the dial rather than in a
-                        // card of its own. Charge and drain do not reduce to high
-                        // minus low — a day can rise and fall several times — so
-                        // they are worth carrying even though the level is what
-                        // the dial shows.
-                        breakdown = listOfNotNull(
-                            state.latestOf { it.bodyBatteryHigh?.toDouble() }?.let { "High" to it },
-                            state.latestOf { it.bodyBatteryLow?.toDouble() }?.let { "Low" to it },
-                            state.latestOf { it.bodyBatteryCharged?.toDouble() }?.let { "Charged" to it },
-                            state.latestOf { it.bodyBatteryDrained?.toDouble() }?.let { "Drained" to it },
+            TourAnchor("health-dials") {
+                MetricMeterGroup(
+                    "Activity",
+                    windowStart = state.range.startDate(),
+                    metrics = listOf(
+                        HealthMetric(
+                            label = "Steps",
+                            trend = state.series { it.steps?.toDouble() },
+                            unit = "",
+                            scale = MetricScale.Goal(STEP_GOAL, STEP_COLOR),
+                            info = Explain.Steps,
+                        ),
+                        caloriesMetric(state),
+                        HealthMetric(
+                            label = "Body Battery",
+                            trend = state.series { it.bodyBatteryLast?.toDouble() },
+                            unit = "",
+                            scale = MetricScale.Bands(BODY_BATTERY_ZONES),
+                            info = Explain.BodyBattery,
+                            // The day's shape, kept behind the dial rather than in a
+                            // card of its own. Charge and drain do not reduce to high
+                            // minus low — a day can rise and fall several times — so
+                            // they are worth carrying even though the level is what
+                            // the dial shows.
+                            breakdown = listOfNotNull(
+                                state.latestOf { it.bodyBatteryHigh?.toDouble() }?.let { "High" to it },
+                                state.latestOf { it.bodyBatteryLow?.toDouble() }?.let { "Low" to it },
+                                state.latestOf { it.bodyBatteryCharged?.toDouble() }?.let { "Charged" to it },
+                                state.latestOf { it.bodyBatteryDrained?.toDouble() }?.let { "Drained" to it },
+                            ),
                         ),
                     ),
-                ),
-                missingHint = "These come from the watch's daily monitoring files, " +
-                    "which sync separately from activities.",
-            )
+                    missingHint = "These come from the watch's daily monitoring files, " +
+                        "which sync separately from activities.",
+                )
+            }
 
+            TourAnchor("health-vitals") {
+                MetricMeterGroup(
+                    "Vitals",
+                    windowStart = state.range.startDate(),
+                    metrics = listOf(
+                        sleepMetric(state, vm::selectNight),
+                        HealthMetric(
+                            label = "Resting HR",
+                            longLabel = "Resting heart rate",
+                            trend = state.series { it.restingHr },
+                            unit = "bpm",
+                            scale = MetricScale.Bands(RESTING_HR_ZONES),
+                            info = Explain.RestingHr,
+                        ),
+                        HealthMetric(
+                            label = "HRV",
+                            longLabel = "Heart rate variability",
+                            trend = state.series { it.hrv },
+                            unit = "ms",
+                            // Personal, deliberately. A "good" HRV is whatever is
+                            // normal for you — which is exactly how the watch's own
+                            // HRV status works — so the dial compares you to yourself.
+                            scale = MetricScale.Personal(HRV_COLOR),
+                            info = Explain.Hrv,
+                        ),
+                        HealthMetric(
+                            label = "SpO₂",
+                            longLabel = "Blood oxygen",
+                            trend = state.series { it.spo2 },
+                            unit = "%",
+                            scale = MetricScale.Bands(SPO2_ZONES),
+                            info = Explain.Spo2,
+                        ),
+                        HealthMetric(
+                            label = "Respiration",
+                            trend = state.series { it.avgRespirationRate },
+                            unit = "br/min",
+                            scale = MetricScale.Bands(RESPIRATION_ZONES),
+                            info = Explain.Respiration,
+                        ),
+                        HealthMetric(
+                            label = "Stress",
+                            trend = state.series { it.avgStressLevel },
+                            unit = "",
+                            scale = MetricScale.Bands(STRESS_ZONES),
+                            info = Explain.Stress,
+                            // Every reading the watch took, not one dot per day. A
+                            // day's average is a single number for something that
+                            // moves all day, and two very different days average to
+                            // the same figure — see [StressHistoryPanel], which also
+                            // explains why the long windows go back to the averages.
+                            chart = {
+                                StressHistoryPanel(
+                                    days = state.stress,
+                                    averages = state.series { it.avgStressLevel },
+                                    windowStart = state.range.startDate(),
+                                )
+                            },
+                        ),
+                    ),
+                    missingHint = "Worn overnight, the watch records these while you sleep.",
+                )
+            }
+        }
+
+        // The first tip points at the first dials on the page, which are
+        // these when there is no watch to fill the Activity group.
+        TourAnchor(if (showMeasured) "health-body" else "health-dials") {
             MetricMeterGroup(
-                "Vitals",
+                "Body",
                 windowStart = state.range.startDate(),
                 metrics = listOf(
-                    sleepMetric(state, vm::selectNight),
                     HealthMetric(
-                        label = "Resting HR",
-                        longLabel = "Resting heart rate",
-                        trend = state.series { it.restingHr },
-                        unit = "bpm",
-                        scale = MetricScale.Bands(RESTING_HR_ZONES),
-                        info = Explain.RestingHr,
+                        label = "Weight",
+                        trend = state.series { day -> day.weightKg?.let { kgToDisplay(it) } },
+                        unit = weightUnit(Units.imperial),
+                        // No bands, and there will not be any. A dial that told
+                        // somebody their body mass was red would be both medically
+                        // worthless and a nasty thing to open a health page to.
+                        scale = MetricScale.Personal(WEIGHT_COLOR),
+                        info = Explain.Weight,
+                        decimals = 1,
+                        // The one reading here that does not expire. A body mass
+                        // is a standing fact rather than an event, and blanking
+                        // the dial because nobody stood on the scales this morning
+                        // would be pedantry rather than honesty.
+                        freshDays = null,
                     ),
                     HealthMetric(
-                        label = "HRV",
-                        longLabel = "Heart rate variability",
-                        trend = state.series { it.hrv },
-                        unit = "ms",
-                        // Personal, deliberately. A "good" HRV is whatever is
-                        // normal for you — which is exactly how the watch's own
-                        // HRV status works — so the dial compares you to yourself.
-                        scale = MetricScale.Personal(HRV_COLOR),
-                        info = Explain.Hrv,
+                        label = "Water",
+                        longLabel = "Hydration",
+                        trend = state.series { it.hydrationMl },
+                        unit = "ml",
+                        scale = MetricScale.Goal(HYDRATION_GOAL_ML, HYDRATION_COLOR),
+                        info = Explain.Hydration,
                     ),
                     HealthMetric(
-                        label = "SpO₂",
-                        longLabel = "Blood oxygen",
-                        trend = state.series { it.spo2 },
-                        unit = "%",
-                        scale = MetricScale.Bands(SPO2_ZONES),
-                        info = Explain.Spo2,
-                    ),
-                    HealthMetric(
-                        label = "Respiration",
-                        trend = state.series { it.avgRespirationRate },
-                        unit = "br/min",
-                        scale = MetricScale.Bands(RESPIRATION_ZONES),
-                        info = Explain.Respiration,
-                    ),
-                    HealthMetric(
-                        label = "Stress",
-                        trend = state.series { it.avgStressLevel },
-                        unit = "",
-                        scale = MetricScale.Bands(STRESS_ZONES),
-                        info = Explain.Stress,
-                        // Every reading the watch took, not one dot per day. A
-                        // day's average is a single number for something that
-                        // moves all day, and two very different days average to
-                        // the same figure — see [StressHistoryPanel], which also
-                        // explains why the long windows go back to the averages.
-                        chart = {
-                            StressHistoryPanel(
-                                days = state.stress,
-                                averages = state.series { it.avgStressLevel },
-                                windowStart = state.range.startDate(),
-                            )
-                        },
+                        label = "Eaten",
+                        longLabel = "Calories eaten",
+                        // Food logged, added up per day — see [HealthUiState.eaten].
+                        trend = state.eaten,
+                        unit = "kcal",
+                        scale = MetricScale.Personal(CALORIE_COLOR),
+                        info = Explain.CaloriesIn,
                     ),
                 ),
-                missingHint = "Worn overnight, the watch records these while you sleep.",
+                missingHint = "Nothing here is measured — log a day and the dials " +
+                    "start from there.",
+                // The one button for everything a watch cannot know, inside the
+                // card whose dials it fills in. It replaced a permanently-expanded
+                // entry card and a nutrition card that between them took a third of
+                // the page to be used for ten seconds a day.
+                footer = { TourAnchor("health-log") { LogButton("Log today", onClick = { logging = true }) } },
             )
         }
 
-        MetricMeterGroup(
-            "Body",
-            windowStart = state.range.startDate(),
-            metrics = listOf(
-                HealthMetric(
-                    label = "Weight",
-                    trend = state.series { day -> day.weightKg?.let { kgToDisplay(it) } },
-                    unit = weightUnit(Units.imperial),
-                    // No bands, and there will not be any. A dial that told
-                    // somebody their body mass was red would be both medically
-                    // worthless and a nasty thing to open a health page to.
-                    scale = MetricScale.Personal(WEIGHT_COLOR),
-                    info = Explain.Weight,
-                    decimals = 1,
-                    // The one reading here that does not expire. A body mass
-                    // is a standing fact rather than an event, and blanking
-                    // the dial because nobody stood on the scales this morning
-                    // would be pedantry rather than honesty.
-                    freshDays = null,
-                ),
-                HealthMetric(
-                    label = "Water",
-                    longLabel = "Hydration",
-                    trend = state.series { it.hydrationMl },
-                    unit = "ml",
-                    scale = MetricScale.Goal(HYDRATION_GOAL_ML, HYDRATION_COLOR),
-                    info = Explain.Hydration,
-                ),
-                HealthMetric(
-                    label = "Eaten",
-                    longLabel = "Calories eaten",
-                    // Food logged, added up per day — see [HealthUiState.eaten].
-                    trend = state.eaten,
-                    unit = "kcal",
-                    scale = MetricScale.Personal(CALORIE_COLOR),
-                    info = Explain.CaloriesIn,
-                ),
-            ),
-            missingHint = "Nothing here is measured — log a day and the dials " +
-                "start from there.",
-            // The one button for everything a watch cannot know, inside the
-            // card whose dials it fills in. It replaced a permanently-expanded
-            // entry card and a nutrition card that between them took a third of
-            // the page to be used for ten seconds a day.
-            footer = { LogButton("Log today", onClick = { logging = true }) },
-        )
+        TourAnchor("health-meds") {
+            MedicationsSection(
+                medications = state.medications,
+                doses = state.dosesToday,
+                history = state.medicationLog,
+                onLog = vm::logDose,
+                onSave = vm::saveMedication,
+                onDelete = vm::deleteMedication,
+            )
+        }
 
-        MedicationsSection(
-            medications = state.medications,
-            doses = state.dosesToday,
-            history = state.medicationLog,
-            onLog = vm::logDose,
-            onSave = vm::saveMedication,
-            onDelete = vm::deleteMedication,
-        )
-
-        InjuriesSection(
-            injuries = state.injuries,
-            onLog = vm::logInjury,
-            onUpdate = vm::updateInjury,
-            onHeal = vm::healInjury,
-            onDelete = { vm.deleteInjury(it) },
-            loadActivities = vm::activitiesAround,
-        )
+        TourAnchor("health-injuries") {
+            InjuriesSection(
+                injuries = state.injuries,
+                onLog = vm::logInjury,
+                onUpdate = vm::updateInjury,
+                onHeal = vm::healInjury,
+                onDelete = { vm.deleteInjury(it) },
+                loadActivities = vm::activitiesAround,
+            )
+        }
     }
 
     if (logging) {

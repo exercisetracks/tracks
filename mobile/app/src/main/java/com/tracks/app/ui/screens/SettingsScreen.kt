@@ -3,6 +3,7 @@
 package com.tracks.app.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -49,6 +50,7 @@ import com.tracks.app.ui.profile.ToggleRow
 import com.tracks.app.ui.profile.TrainingPrefsForm
 import com.tracks.app.ui.profile.ZonesForm
 import com.tracks.app.ui.theme.Tokens
+import com.tracks.app.ui.tour.TourAnchor
 import com.tracks.core.api.SessionState
 
 /**
@@ -101,6 +103,10 @@ fun SettingsScreen(
     onReparseHealth: () -> Unit,
     onRestored: () -> Unit,
     sportLabel: (String) -> String,
+    /** The tutorial's switch — see [com.tracks.app.ui.tour.TourViewModel]. */
+    tutorialEnabled: Boolean,
+    onTutorialEnabled: (Boolean) -> Unit,
+    onRestartTutorial: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -116,6 +122,11 @@ fun SettingsScreen(
         if (profile.loaded) {
             SettingsCard("Profile") { BodyForm(profile, onSet) }
             SettingsCard("Appearance") { LookForm(profile, onSet) }
+            TourAnchor("settings-tutorial") {
+                SettingsCard("Tutorial") {
+                    TutorialForm(tutorialEnabled, onTutorialEnabled, onRestartTutorial)
+                }
+            }
             SettingsCard("Heart rate & power") { ZonesForm(profile, onSet) }
             SettingsCard("Training") {
                 TrainingPrefsForm(profile, onSet, sportLabel)
@@ -132,6 +143,7 @@ fun SettingsScreen(
             SettingsCard("Strength") { StrengthForm(profile, onSet) }
         }
 
+        TourAnchor("settings-watch") {
         WatchSection(
             state = state,
             profile = profile,
@@ -142,6 +154,7 @@ fun SettingsScreen(
             onPair = onWatchPair,
             onSync = onWatchSync,
         )
+        }
         // Its own card under the watch: which notifications reach the wrist
         // is a subject of its own, with its own sheets.
         if (hasDevice) NotificationRelayCard()
@@ -152,6 +165,7 @@ fun SettingsScreen(
             }
         }
 
+        TourAnchor("settings-server") {
         ServerSection(
             state = state,
             linked = linked,
@@ -162,6 +176,7 @@ fun SettingsScreen(
             onLogout = onLogout,
             onReparseHealth = onReparseHealth,
         )
+        }
 
         VersionCard(
             container = container,
@@ -170,6 +185,7 @@ fun SettingsScreen(
             signedIn = linked && state.session !is SessionState.LoggedOut,
         )
 
+        TourAnchor("settings-backup") {
         SettingsCard(
             "Backup",
             MetricInfo(
@@ -178,6 +194,7 @@ fun SettingsScreen(
                 else "This phone holds the only copy. Keep an encrypted backup somewhere else.",
             ),
         ) { BackupSection(container, linked, onRestored) }
+        }
 
         DangerZone(busy = state.busy, linked = linked, onErase = onErase)
     }
@@ -317,6 +334,33 @@ private fun WebOnly(serverUrl: String) {
  * use it. Behind a confirmation that says what is lost, because for a phone
  * that was never linked (or has unsent edits) it is the only copy.
  */
+/**
+ * The tutorial's two controls, the web's TutorialSection: tips on or off, and
+ * a replay. Both are account settings, so they follow the user to the browser.
+ */
+@Composable
+private fun TutorialForm(enabled: Boolean, onEnabled: (Boolean) -> Unit, onRestart: () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(Tokens.Space.s3)) {
+        ToggleRow(
+            "Show tutorial tips",
+            "Guided tips appear the first time you open each page.",
+            enabled,
+            onEnabled,
+        )
+        SectionDivider()
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.weight(1f).padding(end = Tokens.Space.s3)) {
+                com.tracks.app.ui.profile.LabelWithTip(
+                    "Replay the tutorial",
+                    "Start over from the Dashboard and see every page's tips again.",
+                    MaterialTheme.typography.bodyLarge,
+                )
+            }
+            PrimaryButton("Restart", onClick = onRestart, small = true)
+        }
+    }
+}
+
 @Composable
 private fun DangerZone(busy: Boolean, linked: Boolean, onErase: () -> Unit) {
     var confirming by remember { mutableStateOf(false) }

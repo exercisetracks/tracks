@@ -182,6 +182,7 @@ export default function Music() {
             type="button"
             onClick={() => fileRef.current?.click()}
             disabled={uploading}
+            data-tour="music-add"
             className="btn btn-tonal"
           >
             {uploading ? "Adding…" : "Add music"}
@@ -190,6 +191,7 @@ export default function Music() {
             type="button"
             onClick={() => setSyncOpen(true)}
             disabled={nothingToSend || overLimit}
+            data-tour="music-send"
             className="btn btn-primary"
           >
             Send to watch
@@ -233,13 +235,18 @@ export default function Music() {
         </div>
       )}
 
-      <MusicServerPanel onLibraryChanged={refresh} />
+      <div data-tour="music-server">
+        <MusicServerPanel onLibraryChanged={refresh} />
+      </div>
 
-      <WatchAppPanel />
+      <div data-tour="music-watchapp">
+        <WatchAppPanel />
+      </div>
 
       {/* Playlists */}
       <Section
         title="Playlists"
+        dataTour="music-playlists"
         action={<button type="button" onClick={addPlaylist} className="btn btn-tonal btn-sm"><PlusIcon />New</button>}
       >
         <div className="card p-0">
@@ -270,6 +277,7 @@ export default function Music() {
       {/* Tracks */}
       <Section
         title="Tracks"
+        dataTour="music-tracks"
         action={plan && (
           <span className="text-xs text-slate-400 dark:text-slate-500">
               {projected} of {FILE_LIMIT} files on watch after sending

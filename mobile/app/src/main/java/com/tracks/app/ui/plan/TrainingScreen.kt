@@ -49,6 +49,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.tracks.app.ui.tour.TourAnchor
+import com.tracks.app.ui.tour.tourAnchor
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
@@ -219,26 +221,28 @@ fun TrainingContent(
         state.error?.let { Notice(it, isError = true, onDismiss = actions.onDismissMessage) }
 
         val active = state.activeGoal
-        when {
-            active == null -> NoGoalCard(onNew = { editingGoal = GoalDraft() })
-            active.goalType == "event" -> EventGoalCard(
-                goal = active,
-                phase = state.phase,
-                predicted = state.predicted,
-                generating = state.generating,
-                actions = actions,
-                onEdit = { editingGoal = GoalDraft.of(active) },
-                today = today,
-            )
-            active.goalType == "fitness" -> FitnessGoalCard(
-                goal = active,
-                actions = actions,
-                onEdit = { editingGoal = GoalDraft.of(active) },
-            )
-            else -> TargetGoalCard(active, onEdit = { editingGoal = GoalDraft.of(active) })
+        TourAnchor("goals-active") {
+            when {
+                active == null -> NoGoalCard(onNew = { editingGoal = GoalDraft() })
+                active.goalType == "event" -> EventGoalCard(
+                    goal = active,
+                    phase = state.phase,
+                    predicted = state.predicted,
+                    generating = state.generating,
+                    actions = actions,
+                    onEdit = { editingGoal = GoalDraft.of(active) },
+                    today = today,
+                )
+                active.goalType == "fitness" -> FitnessGoalCard(
+                    goal = active,
+                    actions = actions,
+                    onEdit = { editingGoal = GoalDraft.of(active) },
+                )
+                else -> TargetGoalCard(active, onEdit = { editingGoal = GoalDraft.of(active) })
+            }
         }
 
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.tourAnchor("plan-view"), verticalAlignment = Alignment.CenterVertically) {
             Text(
                 "TRAINING PLAN",
                 style = Tokens.SectionHeader.style,
@@ -259,47 +263,51 @@ fun TrainingContent(
             )
         }
 
-        when (view) {
-            PlanView.Week -> WeekAgenda(
-                monday = LocalDate.parse(weekOf),
-                today = today,
-                workouts = state.workouts,
-                drag = drag,
-                onDrop = onDrop,
-                onWeek = { weekOf = it.toString() },
-                onOpenDay = { openDay = it },
-                onAdd = { editing = WorkoutDraft.blank(it.toString()) },
-            )
-            PlanView.Month -> MonthChips(
-                month = YearMonth.parse(month),
-                today = today,
-                selected = LocalDate.parse(selectedDay),
-                byDate = state.byDate,
-                drag = drag,
-                onDrop = onDrop,
-                onMonth = { month = it.toString() },
-                onSelect = { selectedDay = it.toString() },
-            ) {
-                DayDetails(
-                    workouts = state.byDate[selectedDay].orEmpty(),
-                    onToggle = actions.onToggle,
-                    gutTargets = state.gutTargets,
-                    onLogFuel = actions.onLogFuel,
-                    onOpen = actions.onOpenWorkout,
-                    onEdit = { editing = WorkoutDraft.of(it) },
-                    onAdd = { editing = WorkoutDraft.blank(selectedDay) },
+        TourAnchor("plan-calendar") {
+            when (view) {
+                PlanView.Week -> WeekAgenda(
+                    monday = LocalDate.parse(weekOf),
+                    today = today,
+                    workouts = state.workouts,
+                    drag = drag,
+                    onDrop = onDrop,
+                    onWeek = { weekOf = it.toString() },
+                    onOpenDay = { openDay = it },
+                    onAdd = { editing = WorkoutDraft.blank(it.toString()) },
                 )
+                PlanView.Month -> MonthChips(
+                    month = YearMonth.parse(month),
+                    today = today,
+                    selected = LocalDate.parse(selectedDay),
+                    byDate = state.byDate,
+                    drag = drag,
+                    onDrop = onDrop,
+                    onMonth = { month = it.toString() },
+                    onSelect = { selectedDay = it.toString() },
+                ) {
+                    DayDetails(
+                        workouts = state.byDate[selectedDay].orEmpty(),
+                        onToggle = actions.onToggle,
+                        gutTargets = state.gutTargets,
+                        onLogFuel = actions.onLogFuel,
+                        onOpen = actions.onOpenWorkout,
+                        onEdit = { editing = WorkoutDraft.of(it) },
+                        onAdd = { editing = WorkoutDraft.blank(selectedDay) },
+                    )
+                }
             }
         }
 
         // Below the plan: the page opens on this week, and the other goals
         // are what is looked at least.
-        GoalsList(
-            goals = state.goals,
-            onNew = { editingGoal = GoalDraft() },
-            onEdit = { editingGoal = GoalDraft.of(it) },
-            onActivate = actions.onActivate,
-        )
+        TourAnchor("goals-list") {
+            GoalsList(
+                goals = state.goals,
+                onNew = { editingGoal = GoalDraft() },
+                onEdit = { editingGoal = GoalDraft.of(it) },
+                onActivate = actions.onActivate,
+            )
+        }
 
         Spacer(Modifier.height(Tokens.Space.s4))
     }

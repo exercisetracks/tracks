@@ -277,7 +277,7 @@ export default function Health() {
       </Section>
 
       {/* Medications */}
-      <Section title="Medications">
+      <Section title="Medications" dataTour="health-meds">
         <MedicationSection />
       </Section>
 

@@ -53,9 +53,9 @@ export function SaveStatusText({ status }) {
 // A settings group: title above the card with the save status at its right,
 // as the phone's SettingsCard — the shared Section, with the settings card's
 // own spacing between rows.
-export function Section({ title, status, children }) {
+export function Section({ title, status, children, dataTour }) {
   return (
-    <SharedSection title={title} action={<SaveStatusText status={status} />}>
+    <SharedSection title={title} action={<SaveStatusText status={status} />} dataTour={dataTour}>
       <div className="card space-y-4">{children}</div>
     </SharedSection>
   );

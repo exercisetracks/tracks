@@ -139,7 +139,7 @@ export default function PlanCalendarSection({ goalId, refreshKey, imperial = fal
   };
 
   return (
-    <div className="card mt-3">
+    <div data-tour="goals-plan" className="card mt-3">
       {/* Header */}
       <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
         <div className="flex items-center gap-3 flex-wrap">

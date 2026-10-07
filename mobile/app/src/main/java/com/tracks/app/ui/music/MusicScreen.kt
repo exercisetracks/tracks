@@ -32,6 +32,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.tracks.app.ui.tour.TourAnchor
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -77,15 +78,15 @@ fun MusicScreen(vm: MainViewModel) {
         Modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        item { ServerSection(music, vm) }
-        item { WatchAppSection(music, vm) }
+        item { TourAnchor("music-server") { ServerSection(music, vm) } }
+        item { TourAnchor("music-watch") { WatchAppSection(music, vm) } }
         if (music.server?.configured == true && music.watchPlaylists.isNotEmpty()) {
             item { WatchPlaylistsSection(music, vm) }
         }
         if (music.server?.configured == true && music.smart.isNotEmpty()) {
             item { SmartSection(music, vm) }
         }
-        item { LibraryHeading(music) }
+        item { TourAnchor("music-library") { LibraryHeading(music) } }
 
         if (music.tracks.isEmpty()) {
             item {

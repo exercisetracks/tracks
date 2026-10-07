@@ -129,7 +129,7 @@ export function ActivityHeader({ activity, sportType = "other" }) {
   };
 
   return (
-    <div className="flex flex-col items-center text-center pt-3.5 mb-6">
+    <div data-tour="activity-header" className="flex flex-col items-center text-center pt-3.5 mb-6">
       {editing ? (
         <input
           autoFocus

@@ -48,7 +48,7 @@ export default function BackupSection() {
     : result?.message;
 
   return (
-    <Section title="Backup">
+    <Section title="Backup" dataTour="settings-backup">
       <div className="space-y-1">
         <p className="text-sm text-slate-700 dark:text-slate-300">
           {last ? `Last backup from this browser: ${new Date(last).toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short", year: "numeric" })}` : "No backup from this browser yet"}

@@ -40,6 +40,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.tracks.app.ui.tour.TourAnchor
+import com.tracks.app.ui.tour.tourAnchor
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -116,7 +118,7 @@ fun FlexibilityScreen(vm: FlexibilityViewModel, modifier: Modifier = Modifier) {
             item { PendingBanner(state.pending) }
 
             item {
-                InfoHeading("Your flows", Explain.MyFlows, Modifier.fillMaxWidth()) {
+                InfoHeading("Your flows", Explain.MyFlows, Modifier.fillMaxWidth().tourAnchor("flex-flows")) {
                     TonalButton("New", onClick = { builder = FlowEditor() })
                 }
             }
@@ -130,6 +132,7 @@ fun FlexibilityScreen(vm: FlexibilityViewModel, modifier: Modifier = Modifier) {
             }
 
             item {
+                TourAnchor("flex-library") {
                 LibraryFilters(
                     title = "Stretch library",
                     searchLabel = "Search stretches",
@@ -141,6 +144,7 @@ fun FlexibilityScreen(vm: FlexibilityViewModel, modifier: Modifier = Modifier) {
                     onFilter = vm::setFilter,
                     onCustom = { custom = CustomDraft() },
                 )
+                }
             }
 
             items(state.visibleStretches, key = { it.name }) { stretch ->

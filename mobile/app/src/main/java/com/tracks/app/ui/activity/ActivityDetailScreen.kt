@@ -34,6 +34,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.tracks.app.ui.tour.TourAnchor
+import com.tracks.app.ui.tour.tourAnchor
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -91,7 +93,7 @@ fun ActivityDetailScreen(
                 },
                 actions = {
                     if (state.data != null) {
-                        IconButton(onClick = { editing = true }) {
+                        IconButton(onClick = { editing = true }, modifier = Modifier.tourAnchor("activity-edit")) {
                             Icon(Icons.Filled.Edit, contentDescription = "Edit activity")
                         }
                     }
@@ -148,7 +150,7 @@ private fun DetailBody(data: ActivityDetailData, mapStyleJson: String?) {
     ) {
         // Before the map, because it says *which* activity this is: the app bar
         // shows a name that for most imports is the watch's own "Hike".
-        ActivityHeaderCard(data)
+        TourAnchor("activity-body") { ActivityHeaderCard(data) }
 
         data.detail.notes?.takeIf { it.isNotBlank() }?.let { notes ->
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {

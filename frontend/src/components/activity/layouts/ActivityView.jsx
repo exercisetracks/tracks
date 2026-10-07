@@ -117,6 +117,7 @@ export function ActivityView() {
   const deleteButton = (
     <button
       onClick={() => setShowDelete(true)}
+      data-tour="activity-delete"
       className="btn btn-danger btn-sm absolute top-4 right-4 z-10"
     >
       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">

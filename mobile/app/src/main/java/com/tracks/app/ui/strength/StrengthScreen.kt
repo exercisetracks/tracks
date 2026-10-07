@@ -39,6 +39,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.tracks.app.ui.tour.TourAnchor
+import com.tracks.app.ui.tour.tourAnchor
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -141,15 +143,18 @@ fun StrengthScreen(vm: StrengthViewModel, modifier: Modifier = Modifier) {
                 }
 
                 item {
-                    SavedWorkouts(
-                        workouts = state.savedWorkouts,
-                        onNew = { builder = Builder(null) },
-                        onEdit = { builder = Builder(workout = it) },
-                        onStart = vm::startSavedWorkout,
-                    )
+                    TourAnchor("strength-workouts") {
+                        SavedWorkouts(
+                            workouts = state.savedWorkouts,
+                            onNew = { builder = Builder(null) },
+                            onEdit = { builder = Builder(workout = it) },
+                            onStart = vm::startSavedWorkout,
+                        )
+                    }
                 }
 
                 item {
+                    TourAnchor("strength-library") {
                     LibraryFilters(
                         title = "Exercise library",
                         searchLabel = "Search exercises",
@@ -165,6 +170,7 @@ fun StrengthScreen(vm: StrengthViewModel, modifier: Modifier = Modifier) {
                         onToggleEquipment = vm::toggleOnlyMyEquipment,
                         onEquipment = vm::setEquipment,
                     )
+                    }
                 }
 
                 if (state.visible.isEmpty()) {
@@ -179,6 +185,8 @@ fun StrengthScreen(vm: StrengthViewModel, modifier: Modifier = Modifier) {
                 }
 
                 items(state.visible, key = { it.name }) { exercise ->
+                    val anchor = if (exercise === state.visible.first()) Modifier.tourAnchor("strength-exercise") else Modifier
+                    Box(anchor) {
                     ExerciseRow(
                         exercise = exercise,
                         standing = state.progress[exercise.name],
@@ -195,6 +203,7 @@ fun StrengthScreen(vm: StrengthViewModel, modifier: Modifier = Modifier) {
                         },
                         onPreference = { vm.setPreference(exercise.name, it) },
                     )
+                    }
                 }
             }
         }

@@ -86,6 +86,7 @@ import com.tracks.app.ui.screens.SettingsScreen
 import com.tracks.app.ui.strength.StrengthScreen
 import com.tracks.app.ui.strength.StrengthViewModel
 import com.tracks.app.ui.theme.Tokens
+import com.tracks.app.ui.tour.tourAnchor
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -212,17 +213,61 @@ fun TracksNavHost(
         )[key, GuidedWorkoutViewModel::class.java]
     val activeWorkout by ActiveWorkout.current.collectAsStateWithLifecycle()
 
+    // The tutorial: one per app, like the web's TourProvider in its Layout.
+    val tourVm: com.tracks.app.ui.tour.TourViewModel = viewModel(
+        key = "tour",
+        factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T =
+                com.tracks.app.ui.tour.TourViewModel(container) as T
+        },
+    )
+    val tour by tourVm.state.collectAsStateWithLifecycle()
+    val tourAnchors = remember { com.tracks.app.ui.tour.TourAnchors() }
+
     val drawer = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val backStack by navController.currentBackStackEntryAsState()
     val route = backStack?.destination?.route
     val here = Destination.forRoute(route)
 
+    // A page's tour, the first time it is opened — the web's useTourAutoStart.
+    // Leaving the page mid-tour drops it without marking it seen, so it shows
+    // again next time; the half-second is for the page to compose the things
+    // the tips point at.
+    val tourHere = com.tracks.app.ui.tour.Tours.idForRoute(route)
+    LaunchedEffect(tourHere, tour.hydrated, tour.enabled, tour.seen, tour.active) {
+        val active = tour.active
+        if (active != null) {
+            if (active != tourHere) tourVm.abort()
+            return@LaunchedEffect
+        }
+        if (!tour.shouldStart(tourHere)) return@LaunchedEffect
+        kotlinx.coroutines.delay(500)
+        tourHere?.let(tourVm::start)
+    }
+
+    fun navigateTo(destination: Destination) {
+        navController.navigate(destination.route) {
+            // One entry per page on the back stack, state kept when
+            // switching away and back, so a scrolled activity list
+            // stays where it was left. Same behaviour the bottom bar
+            // had; the bar is gone, the expectation is not.
+            popUpTo(navController.graph.findStartDestination().id) {
+                saveState = true
+            }
+            launchSingleTop = true
+            restoreState = true
+        }
+    }
+
     // Every watch-only control below reads this rather than a parameter —
     // see LocalHasDevice for why, and for why it only hides.
     androidx.compose.runtime.CompositionLocalProvider(
         com.tracks.app.ui.components.LocalHasDevice provides hasDevice,
+        com.tracks.app.ui.tour.LocalTourAnchors provides tourAnchors,
     ) {
+    androidx.compose.foundation.layout.Box {
     ModalNavigationDrawer(
         drawerState = drawer,
         // Swipe from the left edge, anywhere in the app but the map.
@@ -245,17 +290,7 @@ fun TracksNavHost(
                 hasDevice = hasDevice,
                 onNavigate = { destination ->
                     scope.launch { drawer.close() }
-                    navController.navigate(destination.route) {
-                        // One entry per page on the back stack, state kept when
-                        // switching away and back, so a scrolled activity list
-                        // stays where it was left. Same behaviour the bottom bar
-                        // had; the bar is gone, the expectation is not.
-                        popUpTo(navController.graph.findStartDestination().id) {
-                            saveState = true
-                        }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
+                    navigateTo(destination)
                 },
             )
         },
@@ -296,7 +331,10 @@ fun TracksNavHost(
                     TopAppBar(
                         title = { Text(here.label) },
                         navigationIcon = {
-                            IconButton(onClick = { scope.launch { drawer.open() } }) {
+                            IconButton(
+                                onClick = { scope.launch { drawer.open() } },
+                                modifier = Modifier.tourAnchor("nav"),
+                            ) {
                                 Icon(Icons.Filled.Menu, contentDescription = "Open navigation")
                             }
                         },
@@ -311,8 +349,14 @@ fun TracksNavHost(
                                     vm = activitiesVm,
                                     activities = state.activities,
                                 )
-                                Destination.Dashboard -> DashboardPeriodActions(dashboardVm)
-                                Destination.Health -> HealthRangeActions(healthVm)
+                                Destination.Dashboard -> DashboardPeriodActions(
+                                    dashboardVm,
+                                    Modifier.tourAnchor("dashboard-period"),
+                                )
+                                Destination.Health -> HealthRangeActions(
+                                    healthVm,
+                                    Modifier.tourAnchor("health-range"),
+                                )
                                 else -> Unit
                             }
                         },
@@ -567,11 +611,30 @@ fun TracksNavHost(
                     onReparseHealth = vm::reparseHealth,
                     onRestored = { profileVm.reload(); container.localData.changed() },
                     sportLabel = { com.tracks.app.ui.dashboard.sportLabel(it) },
+                    tutorialEnabled = tour.enabled,
+                    onTutorialEnabled = tourVm::setEnabled,
+                    // To the dashboard, so the first tour starts at once — as
+                    // the web's Restart tutorial does.
+                    onRestartTutorial = {
+                        tourVm.restart()
+                        navigateTo(Destination.Dashboard)
+                    },
                 )
             }
         }
         }
     }
+    }
+    // Over the drawer and every page, detail screens included, which bring
+    // their own Scaffold and would otherwise draw over a tip.
+    com.tracks.app.ui.tour.TourOverlay(
+        state = tour,
+        anchors = tourAnchors,
+        visible = drawer.isClosed && drawer.targetValue == DrawerValue.Closed,
+        onNext = tourVm::next,
+        onPrev = tourVm::prev,
+        onClose = tourVm::complete,
+    )
     }
 }
 }

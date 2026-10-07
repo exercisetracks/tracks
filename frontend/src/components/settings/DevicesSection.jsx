@@ -71,7 +71,7 @@ export default function DevicesSection() {
   }
 
   return (
-    <Section title="Devices">
+    <Section title="Devices" dataTour="settings-devices">
       <p className="text-xs text-slate-400 dark:text-slate-500">
         Only activities from claimed devices are included in metrics, charts, and coaching.
         Mark one as <span className="font-semibold">Primary</span> to record which animations

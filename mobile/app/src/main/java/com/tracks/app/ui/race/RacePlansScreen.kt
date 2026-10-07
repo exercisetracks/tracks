@@ -31,6 +31,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.tracks.app.ui.tour.TourAnchor
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -255,6 +256,7 @@ fun RacePlansContent(
     ) {
         val open = state.open
         if (open == null) {
+            TourAnchor("raceplans-intro") {
             com.tracks.app.ui.components.InfoHeading(
                 "Upcoming events",
                 com.tracks.app.ui.components.MetricInfo(
@@ -263,10 +265,17 @@ fun RacePlansContent(
                     "Add a Race / Event goal on the Training page to plan one.",
                 ),
             )
-            if (!state.loading && state.cards.isEmpty()) {
-                Card { Text("No upcoming events", style = MaterialTheme.typography.titleMedium) }
             }
-            state.cards.forEach { c -> GoalRow(c) { onOpen(c.goal.id) } }
+            // The first event, or the empty card, is what the second tip points at.
+            if (!state.loading && state.cards.isEmpty()) {
+                TourAnchor("raceplans-card") {
+                    Card { Text("No upcoming events", style = MaterialTheme.typography.titleMedium) }
+                }
+            }
+            state.cards.forEachIndexed { i, c ->
+                if (i == 0) TourAnchor("raceplans-card") { GoalRow(c) { onOpen(c.goal.id) } }
+                else GoalRow(c) { onOpen(c.goal.id) }
+            }
         } else {
             Detail(
                 open, state.maxHr, onBack = { onOpen(null) }, onSet = { f, v -> onSet(open.goal, f, v) },

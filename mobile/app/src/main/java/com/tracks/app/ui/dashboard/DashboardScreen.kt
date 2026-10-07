@@ -34,6 +34,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.tracks.app.ui.tour.TourAnchor
+import com.tracks.app.ui.tour.tourAnchor
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -97,11 +99,13 @@ fun DashboardScreen(
             )
         }
 
-        SectionCard("Overview") { OverviewGrid(state) }
+        SectionCard("Overview", modifier = Modifier.tourAnchor("dashboard-overview")) { OverviewGrid(state) }
 
-        UpcomingCard(state, onOpenWorkout)
+        TourAnchor("dashboard-upcoming") { UpcomingCard(state, onOpenWorkout) }
 
-        SectionCard("Fitness", info = Explain.Fitness) { FitnessChart(state.windowedLoad) }
+        SectionCard("Fitness", info = Explain.Fitness, modifier = Modifier.tourAnchor("dashboard-fitness")) {
+            FitnessChart(state.windowedLoad)
+        }
 
         SectionCard(
             title = "Weekly volume",
@@ -116,7 +120,11 @@ fun DashboardScreen(
             ActivityCalendar(state.calendar, days = state.period.days)
         }
 
-        SectionCard("Sports", subtitle = "Tap one to filter the charts above") {
+        SectionCard(
+            "Sports",
+            subtitle = "Tap one to filter the charts above",
+            modifier = Modifier.tourAnchor("dashboard-sports"),
+        ) {
             SportBreakdownList(
                 sports = state.bySport,
                 selected = state.selectedSport,
@@ -535,9 +543,10 @@ private fun SectionCard(
      * directly above the thing somebody opened the app to read.
      */
     dense: Boolean = false,
+    modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(
             Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,

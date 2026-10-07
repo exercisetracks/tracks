@@ -44,7 +44,25 @@ export const TOURS = {
     {
       anchor: '[data-tour="dashboard-fitness"]',
       title: "Your fitness trend",
-      body: "Fitness (CTL), Fatigue (ATL), and Form over time. It climbs as you train and dips when you rest.",
+      body: "Fitness (CTL), Fatigue (ATL), and Form over time. It climbs as you train and dips when you rest. Hover the ⓘ beside any title for what its number means.",
+      placement: "top",
+    },
+    {
+      anchor: '[data-tour="dashboard-volume"]',
+      title: "Week by week",
+      body: "How much you trained each week — distance and time side by side, so a slow week on the bike and a long week on foot read fairly.",
+      placement: "top",
+    },
+    {
+      anchor: '[data-tour="dashboard-history"]',
+      title: "Filter by sport",
+      body: "Every day you trained, and your mix of sports. Click a sport to narrow the volume chart and the map to just that one; click it again to see everything.",
+      placement: "top",
+    },
+    {
+      anchor: '[data-tour="dashboard-locations"]',
+      title: "Where you train",
+      body: "A heatmap of every route you've recorded. The full map, with route building and offline areas, is under Maps.",
       placement: "top",
     },
     {
@@ -98,6 +116,12 @@ export const TOURS = {
       anchor: '[data-tour="goals-active"]',
       title: "One active goal",
       body: "You keep one goal active at a time. Choose a race with a date and Tracks builds a full plan through Base, Build, Peak, and Taper phases.",
+      placement: "top",
+    },
+    {
+      anchor: '[data-tour="goals-plan"]',
+      title: "Your plan, day by day",
+      body: "Each workout sits on its day. Click one for its steps and targets, and send the plan to your watch with Sync to Watch. The plan rebuilds itself when your goal or settings change — there's nothing to regenerate.",
       placement: "top",
     },
   ],
@@ -178,6 +202,12 @@ export const TOURS = {
       body: "Log injuries onto a timeline and see the activities that may have contributed to each one.",
       placement: "top",
     },
+    {
+      anchor: '[data-tour="health-meds"]',
+      title: "Medications",
+      body: "Add what you take and tick off each dose. The phone app reminds you when one is due, and the history shows what was taken when.",
+      placement: "top",
+    },
   ],
 
   maps: [
@@ -201,6 +231,59 @@ export const TOURS = {
     },
   ],
 
+  activity: [
+    {
+      anchor: '[data-tour="activity-header"]',
+      title: "One activity, laid out for its sport",
+      body: "A run shows pace and splits, a ride power, a climb its routes — each sport gets the cards that matter for it. Click the name to rename it.",
+      placement: "bottom",
+    },
+    {
+      anchor: '[data-tour="activity-delete"]',
+      title: "Remove a recording",
+      body: "Delete an activity you don't want — a test recording, a duplicate. It leaves your stats and your fitness trend with it.",
+      placement: "left",
+    },
+  ],
+
+  music: [
+    {
+      title: "Music on your watch",
+      body: "Two ways to get music onto a Garmin: over the cable from a library kept here, or straight from your own music server through the Tracks Music watch app.",
+      placement: "center",
+    },
+    {
+      anchor: '[data-tour="music-server"]',
+      title: "Your music server",
+      body: "Connect Navidrome or any server speaking the Subsonic API. Tracks keeps references, not copies — audio is fetched only when a watch needs it.",
+      placement: "bottom",
+    },
+    {
+      anchor: '[data-tour="music-watchapp"]',
+      title: "No cable needed",
+      body: "Tracks Music on the watch downloads playlists from that server over the watch's own Wi-Fi, on the charger. The phone app installs it and signs it in.",
+      placement: "bottom",
+    },
+    {
+      anchor: '[data-tour="music-add"]',
+      title: "Add music",
+      body: "Upload mp3, m4a, flac or wav files. Anything that isn't already a watch-friendly mp3 is converted on upload.",
+      placement: "bottom",
+    },
+    {
+      anchor: '[data-tour="music-playlists"]',
+      title: "Choose what to carry",
+      body: "Tick the playlists and tracks the watch should hold. Carrying a playlist carries its tracks too.",
+      placement: "top",
+    },
+    {
+      anchor: '[data-tour="music-send"]',
+      title: "Send to watch",
+      body: "Plug the watch in and send: the files to add and remove are worked out for you.",
+      placement: "bottom",
+    },
+  ],
+
   settings: [
     {
       anchor: '[data-tour="settings-tutorial"]',
@@ -208,11 +291,25 @@ export const TOURS = {
       body: "Toggle the tips on or off, or replay the whole tutorial from the start. The rest of this page tunes your profile, zones, devices, and appearance.",
       placement: "top",
     },
+    {
+      anchor: '[data-tour="settings-devices"]',
+      title: "Your devices",
+      body: "Every watch that has sent Tracks a file. Claim the ones that are yours — only claimed devices feed your stats and coaching — and mark your main watch as primary.",
+      placement: "top",
+    },
+    {
+      anchor: '[data-tour="settings-backup"]',
+      title: "Keep a backup",
+      body: "Download an encrypted file of everything in your account. It is the same file the phone app makes, so either can restore the other's.",
+      placement: "top",
+    },
   ],
 };
 
-// Exact pathname → tourId. Detail routes (e.g. /activities/:id) are intentionally
-// omitted so tips only fire on the top-level section pages.
+// Exact pathname → tourId. Detail routes are left out, so tips fire on the
+// section pages — with one exception, the activity page (ACTIVITY_PATH): it is
+// where people spend the most time, and the one detail page whose controls
+// (rename by clicking the title) nobody finds unprompted.
 export const ROUTE_TOURS = {
   "/": "dashboard",
   "/activities": "activities",
@@ -222,12 +319,16 @@ export const ROUTE_TOURS = {
   "/race-plans": "race-plans",
   "/health": "health",
   "/maps": "maps",
+  "/music": "music",
   "/settings": "settings",
 };
+
+const ACTIVITY_PATH = /^\/activities\/\d+$/;
 
 // Resolve a pathname to its tourId (or null). Trailing slashes are tolerated.
 export function tourIdForPath(pathname) {
   if (!pathname) return null;
   const clean = pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;
+  if (ACTIVITY_PATH.test(clean)) return "activity";
   return ROUTE_TOURS[clean] ?? null;
 }

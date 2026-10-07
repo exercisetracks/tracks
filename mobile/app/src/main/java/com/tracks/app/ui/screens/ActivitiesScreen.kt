@@ -44,6 +44,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.tracks.app.ui.tour.tourAnchor
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -173,6 +174,9 @@ fun ActivitiesScreen(
                 }
             }
             items(visible, key = { it.id }) { activity ->
+                // The first row is what the list's tips point at.
+                val anchor = if (activity.id == visible.first().id) Modifier.tourAnchor("activities-list") else Modifier
+                Box(anchor) {
                 ActivityRow(
                     activity = activity,
                     shape = local.shapes[activity.id],
@@ -183,6 +187,7 @@ fun ActivitiesScreen(
                     },
                     onLongClick = { vm.toggleSelected(activity.id) },
                 )
+                }
             }
         }
     }
@@ -216,15 +221,21 @@ fun ActivityListActions(
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        ActivitySort.entries.forEach { option ->
-            BarPill(
-                text = option.label,
-                selected = option == state.sort,
-                onClick = { vm.setSort(option) },
-            )
+        Row(
+            Modifier.tourAnchor("activities-sort"),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            ActivitySort.entries.forEach { option ->
+                BarPill(
+                    text = option.label,
+                    selected = option == state.sort,
+                    onClick = { vm.setSort(option) },
+                )
+            }
         }
 
-        Box {
+        Box(Modifier.tourAnchor("activities-type")) {
             BarPill(
                 text = if (state.types.isEmpty()) "Type" else "Type · ${state.types.size}",
                 selected = state.types.isNotEmpty(),

@@ -38,6 +38,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.tracks.app.ui.tour.tourAnchor
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.composed
@@ -879,7 +880,7 @@ private fun MapControls(
     modifier: Modifier = Modifier,
 ) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        FilledTonalIconButton(onClick = onToggleFollow) {
+        FilledTonalIconButton(onClick = onToggleFollow, modifier = Modifier.tourAnchor("map-locate")) {
             Icon(
                 Icons.Filled.LocationOn,
                 contentDescription = when (follow) {
@@ -893,7 +894,7 @@ private fun MapControls(
                 },
             )
         }
-        FilledTonalIconButton(onClick = onSearch) {
+        FilledTonalIconButton(onClick = onSearch, modifier = Modifier.tourAnchor("map-search")) {
             Icon(Icons.Filled.Search, contentDescription = "Search places")
         }
         // Its own button rather than a line in the options sheet. What you have
@@ -908,13 +909,13 @@ private fun MapControls(
         // button never could: *where*. Arming a mode first and then aiming is
         // two steps for one intention, and the rail is not the place you were
         // looking when you decided a route starts here.
-        FilledTonalIconButton(onClick = onLibrary) {
+        FilledTonalIconButton(onClick = onLibrary, modifier = Modifier.tourAnchor("map-library")) {
             Icon(
                 Icons.Filled.Create,
                 contentDescription = "Tracks and waypoints",
             )
         }
-        FilledTonalIconButton(onClick = onMenu) {
+        FilledTonalIconButton(onClick = onMenu, modifier = Modifier.tourAnchor("map-menu")) {
             Icon(Icons.Filled.Menu, contentDescription = "Map options")
         }
     }

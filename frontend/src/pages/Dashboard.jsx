@@ -232,14 +232,14 @@ export default function Dashboard() {
       </Section>
 
       {/* Weekly volume chart — shares xAxisConfig with FitnessChart for alignment */}
-      <Section title={`Weekly Volume${selectedSport ? ` — ${selectedSport}` : ""}`}>
+      <Section title={`Weekly Volume${selectedSport ? ` — ${selectedSport}` : ""}`} dataTour="dashboard-volume">
         <Card>
           <WeeklyVolumeChart data={weeklyVolume} imperial={imperial} xAxis={xAxisConfig} />
         </Card>
       </Section>
 
       {/* Activity calendar + sport breakdown */}
-      <Section title="Activity History">
+      <Section title="Activity History" dataTour="dashboard-history">
         <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4 items-stretch">
           <Card className="flex flex-col">
             <ActivityCalendar
@@ -258,7 +258,7 @@ export default function Dashboard() {
       </Section>
 
       {/* Geographic heatmap */}
-      <Section title="Training Locations">
+      <Section title="Training Locations" dataTour="dashboard-locations">
         <div className="card p-0 overflow-hidden">
           <ActivityHeatmap sport={selectedSport} onSportChange={setSelectedSport} />
         </div>
