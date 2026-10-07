@@ -136,11 +136,12 @@ fun SettingsScreen(
                 // How often you train is not here: it is asked once in
                 // onboarding, as on the web, and history replaces it.
                 TrainingPrefsForm(profile, onSet)
+                SectionDivider()
+                // This phone's own switch, not the account's (WorkoutReminderRow).
+                WorkoutReminderRow(container)
             }
             SettingsCard("Strength") { StrengthForm(profile, onSet) }
         }
-        // Outside the profile gate: the reminder is this phone's, not the account's.
-        WorkoutReminderCard(container)
 
         TourAnchor("settings-watch") {
         WatchSection(
