@@ -75,6 +75,9 @@ class TracksApplication : Application() {
         // not cover: an app updated while the device was awake, and a process
         // killed hard enough to lose an alarm the system had not yet fired.
         com.tracks.app.meds.MedicationReminders.rearmAll(this)
+        // And from then on, whenever the medications change — including ones
+        // added on the web and brought down by a sync.
+        com.tracks.app.meds.MedicationReminders.follow(this, container.sources, container.localData.revision)
         // The phone's time zone is the account's; see TimezoneSync.
         TimezoneReceiver { container.syncTimezoneSoon() }.register(this)
         // Activities imported before the parser learned a field get it from

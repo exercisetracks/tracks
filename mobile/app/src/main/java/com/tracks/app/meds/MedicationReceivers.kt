@@ -12,11 +12,13 @@ import androidx.core.app.NotificationManagerCompat
 import com.tracks.app.MainActivity
 import com.tracks.app.R
 import com.tracks.app.TracksApplication
+import com.tracks.core.api.MedicationLog
 import com.tracks.core.api.MedicationLogCreate
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.ZoneId
@@ -35,13 +37,33 @@ class MedicationAlarmReceiver : BroadcastReceiver() {
             intent.getStringExtra(MedicationReminders.EXTRA_SPEC),
         ) ?: return
         val at = intent.getLongExtra(MedicationReminders.EXTRA_AT, System.currentTimeMillis())
-
-        notify(context, spec, at)
+        val due = Instant.ofEpochMilli(at).atZone(ZoneId.systemDefault()).toLocalDateTime()
 
         // From the moment it was due rather than from now, so a phone that woke
-        // late does not skip a same-day repeat.
-        val from = Instant.ofEpochMilli(at).atZone(ZoneId.systemDefault()).toLocalDateTime()
-        MedicationReminders.arm(context, spec, from)
+        // late does not skip a same-day repeat. Armed first, so nothing below
+        // can break the chain.
+        MedicationReminders.arm(context, spec, due)
+
+        // Quiet for a dose already recorded — taken early, or ticked off on the
+        // web. Fails open: if the log cannot be read in time, the reminder is
+        // shown, because a reminder too many is a nuisance and one too few is
+        // a missed dose.
+        val app = context.applicationContext as? TracksApplication
+        if (app == null) { notify(context, spec, at); return }
+        val pending = goAsync()
+        CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+            try {
+                val logged = withTimeoutOrNull(LOG_READ_TIMEOUT_MS) {
+                    val log = app.container.sources.list("medication_log", MedicationLog.serializer())
+                    MedicationReminders.alreadyLogged(spec.scheduleId, due.toLocalDate(), log)
+                } ?: false
+                if (!logged) notify(context, spec, at)
+            } catch (_: Exception) {
+                notify(context, spec, at)
+            } finally {
+                pending.finish()
+            }
+        }
     }
 
     private fun notify(context: Context, spec: MedicationReminders.Spec, at: Long) {
@@ -172,3 +194,6 @@ class MedicationBootReceiver : BroadcastReceiver() {
         MedicationReminders.rearmAll(context)
     }
 }
+
+/** Well inside a broadcast's ten seconds, so the system never kills the receiver first. */
+private const val LOG_READ_TIMEOUT_MS = 4_000L

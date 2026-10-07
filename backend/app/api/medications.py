@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from app.calculators.local_day import user_today
+from app.calculators.local_day import account_today, local_day_start, local_moment, user_today, user_zone
 from app.auth import require_auth
 from app.database import get_db
 from app.models.activity import User
@@ -236,8 +236,13 @@ def get_due_medications(
     Returns all scheduled doses for today with their log status.
     The frontend uses this to drive notification timing.
     """
-    today = user_today(db, user.id)
+    # Every time here is the account's wall clock: a schedule's "08:00" is
+    # eight in the morning where the user is. Read as UTC it was 01:00 in
+    # California — when the web's reminder fired and the dose showed overdue.
+    tz    = user_zone(db, user.id)
+    today = account_today(tz)
     now   = datetime.now(timezone.utc)
+    day_start = local_day_start(today, tz)
 
     meds = db.query(Medication).filter_by(user_id=user.id, is_active=True).all()
     result = []
@@ -256,12 +261,12 @@ def get_due_medications(
             if s.days_of_week and dow_sun not in s.days_of_week:
                 continue
 
-            scheduled_dt = datetime.combine(today, s.time_of_day, tzinfo=timezone.utc)
+            scheduled_dt = local_moment(today, s.time_of_day, tz)
             # Check if already logged today for this schedule
             logged = db.query(MedicationLog).filter(
                 MedicationLog.user_id == user.id,
                 MedicationLog.schedule_id == s.id,
-                MedicationLog.scheduled_for >= datetime.combine(today, time(0, 0), tzinfo=timezone.utc),
+                MedicationLog.scheduled_for >= day_start,
             ).first()
 
             result.append({

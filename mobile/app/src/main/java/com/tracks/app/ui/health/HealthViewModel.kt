@@ -462,10 +462,7 @@ class HealthViewModel(private val container: AppContainer) : ViewModel() {
         viewModelScope.launch {
             val src = container.sources
             val logFrom = LocalDate.now().minusDays(LOG_DAYS.toLong()).toString()
-            val medications = src.list("medication", Medication.serializer()).map { m ->
-                m.copy(schedules = src.children("medication_schedule", m.id)
-                    .mapNotNull { src.decode(it, MedicationSchedule.serializer()) })
-            }.sortedBy { it.name.lowercase() }
+            val medications = MedicationReminders.loadMedications(src).sortedBy { it.name.lowercase() }
             _state.update {
                 it.copy(
                     injuries = src.list("injury", Injury.serializer()).sortedByDescending { i -> i.startDate },
@@ -480,22 +477,6 @@ class HealthViewModel(private val container: AppContainer) : ViewModel() {
                     pending = container.replica.pendingCount().toInt(),
                 )
             }
-            syncReminders()
-        }
-    }
-
-    /**
-     * Re-arm the alarms from the medication list.
-     *
-     * Only ever from a *loaded* list, never from an optimistic one: a
-     * medication queued offline has no server-allocated schedule ids yet, and
-     * alarms keyed on placeholder ids would be orphaned the moment the real
-     * rows arrived. Reminders for a medication added with no signal start when
-     * the queue drains, which is the same moment the schedule becomes real.
-     */
-    private fun syncReminders() {
-        runCatching {
-            MedicationReminders.reschedule(container.appContext, _state.value.medications)
         }
     }
 

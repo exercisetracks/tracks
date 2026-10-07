@@ -10,6 +10,15 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import com.tracks.core.api.Medication
+import com.tracks.core.api.MedicationLog
+import com.tracks.core.api.MedicationSchedule
+import com.tracks.core.local.LocalSources
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -121,6 +130,46 @@ object MedicationReminders {
         saveSpecs(context, wanted)
         wanted.forEach { arm(context, it, LocalDateTime.now()) }
     }
+
+    /**
+     * Keep the alarms in step with the phone's medications, for as long as the
+     * process lives.
+     *
+     * They used to be re-armed only when the Health page loaded its list, so a
+     * medication added on the web — or a reminder switched off there — reached
+     * the phone's data at the next sync but its alarms only when someone next
+     * opened Health. [changes] is the app's data signal, which a sync fires.
+     * Re-arming only when the reminder list actually changed keeps a sync of a
+     * thousand activities from re-setting every alarm a thousand times.
+     */
+    fun follow(context: Context, sources: LocalSources, changes: StateFlow<Long>) {
+        CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
+            changes.collect {
+                runCatching {
+                    val medications = loadMedications(sources)
+                    if (specsFrom(medications).toSet() != loadSpecs(context).toSet()) {
+                        reschedule(context, medications)
+                    }
+                }
+                delay(FOLLOW_INTERVAL_MS)
+            }
+        }
+    }
+
+    /** The phone's medications with their schedules — what Health lists and the alarms are armed from. */
+    suspend fun loadMedications(sources: LocalSources): List<Medication> =
+        sources.list("medication", Medication.serializer()).map { m ->
+            m.copy(schedules = sources.children("medication_schedule", m.id)
+                .mapNotNull { sources.decode(it, MedicationSchedule.serializer()) })
+        }
+
+    /**
+     * Whether a dose has already been recorded for [date] — taken early, or
+     * ticked off on the web — in which case its alarm stays quiet. Same rule as
+     * the Health page's ([dosesOn]), so the two cannot disagree.
+     */
+    fun alreadyLogged(scheduleId: Int, date: LocalDate, log: List<MedicationLog>): Boolean =
+        statusOf(scheduleId, date, log, ZoneId.systemDefault()) != null
 
     /** After a reboot: the alarm table is empty, the intent list is not. */
     fun rearmAll(context: Context) {
@@ -279,6 +328,9 @@ object MedicationReminders {
             .putStringSet(KEY_SPECS, specs.map(::encodeSpec).toSet())
             .apply()
     }
+
+    /** At most one look at the medication list per this many ms, however busy a sync is. */
+    private const val FOLLOW_INTERVAL_MS = 2_000L
 
     /** Unit separator — a control character no medication name carries. */
     private const val FIELD = "\u001f"

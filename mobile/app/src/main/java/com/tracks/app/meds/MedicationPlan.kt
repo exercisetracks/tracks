@@ -116,7 +116,7 @@ fun occursOn(schedule: MedicationSchedule, date: LocalDate): Boolean {
  * at 9pm in Edmonton is stored as tomorrow in UTC, and comparing ISO prefixes
  * would file it under the wrong day and re-offer a dose already taken.
  */
-private fun statusOf(
+internal fun statusOf(
     scheduleId: Int,
     date: LocalDate,
     log: List<MedicationLog>,

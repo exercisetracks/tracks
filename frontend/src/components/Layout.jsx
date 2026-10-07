@@ -16,6 +16,7 @@ import { isWindows } from "../lib/deviceSync";
 import { TourProvider } from "./tour/TourContext";
 import TourTooltip from "./tour/TourTooltip";
 import { useTourAutoStart } from "./tour/useTourAutoStart";
+import { useMedicationReminders } from "./medication/useNotifications";
 
 // Mounted inside TourProvider (and the router): fires a section's first-visit
 // tour and renders the floating tip card. Split out so it can use the tour
@@ -23,6 +24,12 @@ import { useTourAutoStart } from "./tour/useTourAutoStart";
 function TourRuntime() {
   useTourAutoStart();
   return <TourTooltip />;
+}
+
+// Medication reminders on every page, not just Health — see useNotifications.
+function MedicationReminders() {
+  useMedicationReminders();
+  return null;
 }
 
 // Health sits second, next to the dashboard: the two are the pair opened
@@ -270,6 +277,7 @@ export default function Layout() {
       />
 
       <TourRuntime />
+      <MedicationReminders />
       <BackupProgressPill />
     </div>
     </TourProvider>

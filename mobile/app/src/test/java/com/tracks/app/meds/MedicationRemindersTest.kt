@@ -3,11 +3,15 @@
 package com.tracks.app.meds
 
 import com.tracks.core.api.Medication
+import com.tracks.core.api.MedicationLog
+import com.tracks.core.api.MedicationLogCreate
 import com.tracks.core.api.MedicationSchedule
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 /**
@@ -139,5 +143,25 @@ class MedicationRemindersTest {
         assertEquals(1, specs.size)
         assertEquals(1, specs.single().scheduleId)
         assertTrue(specs.single().name == "Metformin")
+    }
+
+    // ── An alarm for a dose already recorded ─────────────────────────────
+
+    private fun taken(scheduleId: Int, at: String) = MedicationLog(
+        id = 1, medicationId = 1, scheduleId = scheduleId,
+        status = MedicationLogCreate.STATUS_TAKEN, scheduledFor = at, loggedAt = at,
+    )
+
+    /** Taken early, or ticked off on the web: the alarm at eight stays quiet. */
+    @Test
+    fun `a dose already logged today silences its alarm`() {
+        val log = listOf(taken(1, "2026-08-17T07:40"))
+        assertTrue(MedicationReminders.alreadyLogged(1, LocalDate.of(2026, 8, 17), log))
+    }
+
+    @Test
+    fun `yesterday's dose or another schedule's does not`() {
+        val log = listOf(taken(1, "2026-08-16T08:00"), taken(2, "2026-08-17T08:00"))
+        assertFalse(MedicationReminders.alreadyLogged(1, LocalDate.of(2026, 8, 17), log))
     }
 }

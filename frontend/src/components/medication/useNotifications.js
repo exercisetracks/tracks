@@ -1,47 +1,96 @@
 // SPDX-FileCopyrightText: 2026 Hawk Fugagli
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Browser-notification engine for due medication doses. Runs only while the tab
-// is open: every 30s it fires a Notification for any due-but-unlogged dose whose
-// scheduled time just passed (0–2 min ago) and that opted into reminders.
-// Clicking the notification invokes `onLogged(med)`. Each dose is notified at
-// most once (tracked by schedule_id + day). No effect if notifications aren't
-// supported or permission is denied.
+// Browser notifications for due medication doses, app-wide.
+//
+// Mounted once in the app shell (Layout), not in the Medications section where
+// it used to live: there it only ran while the Health page was open, so a
+// reminder needed you to be looking at your medications already. It still
+// needs a Tracks tab open somewhere — a page cannot wake itself, and true push
+// (a service worker and a push service) is a separate decision this does not
+// make. The phone app's alarms are the reminder that works with nothing open;
+// see mobile/.../meds/MedicationReminders.kt.
+//
+// What is due comes from /medications/due, whose times are the account's wall
+// clock (backend api/medications.py), polled each minute so a tab left open
+// overnight sees the next day's doses.
+//
+// A click opens the Health page rather than logging the dose. It used to mark
+// the dose taken, which turned "show me" into a medical record.
 
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { api } from "../../api/client";
 
-export function useNotifications(dueMeds, onLogged) {
-  const notifiedRef = useRef(new Set());
-  const permissionRef = useRef(null);
+const POLL_MS = 60_000;
 
-  useEffect(() => {
-    if (!("Notification" in window)) return;
-    permissionRef.current = Notification.permission;
-    if (Notification.permission === "default") {
-      Notification.requestPermission().then(p => { permissionRef.current = p; });
-    }
-  }, []);
+/**
+ * How late a reminder may still be shown. A laptop asleep at eight still
+ * hears about the eight o'clock dose when it wakes at half past; one that
+ * wakes at noon does not get a stale alarm for breakfast.
+ */
+export const LATE_WINDOW_MIN = 60;
 
-  useEffect(() => {
-    if (!dueMeds?.length) return;
-    const interval = setInterval(() => {
-      const now = new Date();
-      dueMeds.forEach(med => {
-        if (med.status || !med.notify) return;
-        const key = `${med.schedule_id}-${new Date(med.scheduled_for).toDateString()}`;
-        if (notifiedRef.current.has(key)) return;
-        const diff = (now - new Date(med.scheduled_for)) / 60000;
-        if (diff >= 0 && diff < 2) {
-          notifiedRef.current.add(key);
-          if (permissionRef.current === "granted") {
-            const n = new Notification(`Time to take ${med.medication_name}`, {
-              body: med.dose ? `${med.dose} ${med.dose_unit ?? ""}`.trim() : "Tap to log",
-              tag:  key,
-            });
-            n.onclick = () => { n.close(); onLogged?.(med); };
-          }
-        }
+const STORE_KEY = "tracks_med_reminders_shown";
+
+/** The doses that should be announced now: due, unlogged, opted in, not yet shown. */
+export function dosesToAnnounce(due, now, shown) {
+  return (due ?? []).filter((d) => {
+    if (d.status || !d.notify) return false;
+    if (shown.has(reminderKey(d))) return false;
+    const late = (now - new Date(d.scheduled_for)) / 60_000;
+    return late >= 0 && late < LATE_WINDOW_MIN;
+  });
+}
+
+/** One dose on one day — so a reload, or a second tab, does not announce it again. */
+export function reminderKey(d) {
+  return `${d.schedule_id}@${d.scheduled_for}`;
+}
+
+function loadShown() {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(STORE_KEY) ?? "[]"));
+  } catch {
+    return new Set();
+  }
+}
+
+function saveShown(shown, due) {
+  // Only today's keys are worth keeping; older ones can never match again.
+  const live = new Set((due ?? []).map(reminderKey));
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify([...shown].filter((k) => live.has(k))));
+  } catch { /* private mode: the in-memory set still stops repeats in this tab */ }
+}
+
+export function useMedicationReminders() {
+  const navigate = useNavigate();
+  const shown = useRef(loadShown());
+
+  const check = useCallback(async () => {
+    if (!("Notification" in window) || Notification.permission !== "granted") return;
+    let due;
+    try { due = await api.getDueMedications(); } catch { return; }
+    for (const d of dosesToAnnounce(due, new Date(), shown.current)) {
+      const key = reminderKey(d);
+      shown.current.add(key);
+      const n = new Notification(`Time to take ${d.medication_name}`, {
+        body: d.dose ? `${d.dose} ${d.dose_unit ?? ""}`.trim() : "Open Tracks to log it",
+        tag: key,
+        requireInteraction: true,
       });
-    }, 30000);
-    return () => clearInterval(interval);
-  }, [dueMeds, onLogged]);
+      n.onclick = () => { window.focus(); navigate("/health"); n.close(); };
+    }
+    saveShown(shown.current, due);
+  }, [navigate]);
+
+  useEffect(() => {
+    check();
+    const t = setInterval(check, POLL_MS);
+    // A tab coming back from the background, or a laptop from sleep, checks at
+    // once rather than up to a minute later.
+    const onVisible = () => { if (document.visibilityState === "visible") check(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => { clearInterval(t); document.removeEventListener("visibilitychange", onVisible); };
+  }, [check]);
 }

@@ -3,14 +3,14 @@
 // Medication tracker with three tabs: Today (due doses + as-needed), Medications
 // (CRUD list with an inline add/edit form) and History (last 30 days of logged
 // doses). Owns all data loading and the log/save/delete mutations; the tab UI,
-// dose cards, form rows and log rows live in ./medication/*. A tab-open-only
-// notification engine (useNotifications) reminds about due doses.
+// dose cards, form rows and log rows live in ./medication/*. Reminders run
+// app-wide (medication/useNotifications, mounted in Layout); this section only
+// asks the browser for permission to show them.
 
 import { useState, useEffect, useCallback } from "react";
 import { api } from "../api/client";
 import { clsx, BTN_PRIMARY, BTN_GHOST, BTN_TONAL, BTN_DANGER, DAYS } from "./medication/constants";
 import { PlusIcon } from "./ui/Button";
-import { useNotifications } from "./medication/useNotifications";
 import MedForm from "./medication/MedForm";
 import DoseCard from "./medication/DoseCard";
 import LogRow from "./medication/LogRow";
@@ -87,13 +87,14 @@ export default function MedicationSection() {
     finally { setDeletingId(null); }
   }
 
-  useNotifications(dueMeds, med => logDose(med, "taken"));
 
   const medById = Object.fromEntries(meds.map(m => [m.id, m.name]));
 
   return (
     <div className="space-y-4">
       <Tabs tabs={TABS} value={activeTab} onChange={setActiveTab} size="sm" />
+
+      {meds.some(m => m.is_active && m.schedules.some(s => s.notify)) && <ReminderPermission />}
 
       {/* Today tab */}
       {activeTab === "today" && (
@@ -222,6 +223,36 @@ export default function MedicationSection() {
             </div>
           )}
         </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Asking the browser for notifications, from a click. Browsers ignore — or
+ * permanently block — a permission request that no gesture asked for, which
+ * is what the old ask-on-load did.
+ */
+function ReminderPermission() {
+  const supported = typeof window !== "undefined" && "Notification" in window;
+  const [permission, setPermission] = useState(supported ? Notification.permission : "unsupported");
+  if (permission === "granted") return null;
+  const note = permission === "denied"
+    ? "Reminders are blocked for this site. Allow notifications in the browser's site settings to get them."
+    : permission === "unsupported"
+      ? "This browser cannot show reminders. The phone app can."
+      : "Get a notification when a dose is due, while a Tracks tab is open.";
+  return (
+    <div className="card flex items-center justify-between gap-3">
+      <p className="text-xs text-slate-500 dark:text-slate-400">{note}</p>
+      {permission === "default" && (
+        <button
+          type="button"
+          className="btn btn-primary btn-sm shrink-0"
+          onClick={() => Notification.requestPermission().then(setPermission)}
+        >
+          Turn on reminders
+        </button>
       )}
     </div>
   );

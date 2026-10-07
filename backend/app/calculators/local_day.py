@@ -96,9 +96,22 @@ def account_today(tz_name: str | None, now: datetime | None = None) -> date:
     return (now or datetime.now(timezone.utc)).astimezone(_zone(tz_name)).date()
 
 
-def user_today(db, user_id: int) -> date:
-    """[account_today] for a user, reading their zone from their settings."""
+def user_zone(db, user_id: int) -> str | None:
+    """The account's zone name from its settings; None when never set."""
     from app.models.user_settings import UserSettings
 
-    tz = db.query(UserSettings.timezone).filter(UserSettings.user_id == user_id).scalar()
-    return account_today(tz)
+    return db.query(UserSettings.timezone).filter(UserSettings.user_id == user_id).scalar()
+
+
+def user_today(db, user_id: int) -> date:
+    """[account_today] for a user, reading their zone from their settings."""
+    return account_today(user_zone(db, user_id))
+
+
+def local_moment(day: date, wall: time, tz_name: str | None) -> datetime:
+    """The instant a wall-clock time on ``day`` happens in the account's zone.
+
+    For a schedule's "08:00": eight in the morning where the account is, not
+    08:00 UTC — which is 01:00 in California, when a dose reminder fired.
+    """
+    return datetime.combine(day, wall, tzinfo=_zone(tz_name))
