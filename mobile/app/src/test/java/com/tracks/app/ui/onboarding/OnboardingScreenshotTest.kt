@@ -51,10 +51,8 @@ class OnboardingScreenshotTest {
             "max_hr_mode" to "manual", "max_hr_manual" to 194.0,
             "equipment_available" to listOf("bodyweight", "dumbbell"),
             "strength_experience" to "regular", "theme_mode" to "system", "accent_color" to "emerald",
-            "hidden_sports" to listOf("golf"),
             "activity_frequency" to mapOf("running" to "3_4", "swimming" to "never"),
         ),
-        sports = listOf("running", "cycling", "golf", "hiking"),
         loaded = true,
         auto = mapOf("threshold_hr" to 168.0, "ftp" to 231.0),
     )
@@ -112,7 +110,7 @@ class OnboardingScreenshotTest {
     @Test fun settings_no_device_light() = shot("settings_no_device_light", ThemeMode.Light) {
         androidx.compose.runtime.CompositionLocalProvider(com.tracks.app.ui.components.LocalHasDevice provides false) {
             SettingsCard("Profile") { BodyForm(profile) { _, _ -> } }
-            SettingsCard("Training") { TrainingPrefsForm(profile, { _, _ -> }, { it.replaceFirstChar(Char::uppercase) }) }
+            SettingsCard("Training") { TrainingPrefsForm(profile, { _, _ -> }) }
             SettingsCard("Privacy & connectivity") { PrivacyForm(profile, { _, _ -> }, hasDevice = false) { noServerAi() } }
         }
     }

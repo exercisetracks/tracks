@@ -156,8 +156,6 @@ def _build_and_store_dash_cache(db, user_id: int, us) -> None:
     filtered endpoints and replayed by the phone's port; this only selects rows.
     """
     q = db.query(Activity).filter(Activity.started_at.isnot(None))
-    if us and us.hidden_sports:
-        q = q.filter(Activity.sport.notin_(us.hidden_sports))
     q = q.filter(Activity.device_id.in_(_claimed_device_ids(db, user_id)))
     rows = q.with_entities(
         Activity.started_at,

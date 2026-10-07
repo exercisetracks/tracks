@@ -615,7 +615,6 @@ fun TracksNavHost(
                     onErase = { vm.eraseLocalData(); profileVm.reload() },
                     onReparseHealth = vm::reparseHealth,
                     onRestored = { profileVm.reload(); container.localData.changed() },
-                    sportLabel = { com.tracks.app.ui.dashboard.sportLabel(it) },
                     tutorialEnabled = tour.enabled,
                     onTutorialEnabled = tourVm::setEnabled,
                     // To the dashboard, so the first tour starts at once — as

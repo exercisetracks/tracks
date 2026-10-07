@@ -99,7 +99,7 @@ def forced(monkeypatch):
 
 @pytest.mark.parametrize("field,value", [
     ("ftp_manual", 250), ("threshold_hr_mode", "manual"), ("equipment_available", ["barbell"]),
-    ("hidden_sports", ["walking"]), ("units", "imperial"),
+    ("units", "imperial"),
 ])
 def test_a_setting_the_plan_reads_rebuilds_it(client, forced, field, value):
     h = setup_admin(client)

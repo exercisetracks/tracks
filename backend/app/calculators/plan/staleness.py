@@ -29,8 +29,7 @@ NON_PLAN_GOAL_FIELDS = frozenset({
 
 # Settings the plan generator reads (api/training_plan/generation.py and
 # injectors.py): the unit its notes are written in, the thresholds its
-# targets come from, the strength inputs, the sports the fitness plan's
-# CTL leaves out, and how often each sport is done (where a plan with no
+# targets come from, the strength inputs, and how often each sport is done (where a plan with no
 # history starts — calculators/plan/starting.py).
 PLAN_SETTINGS = frozenset({
     "units",
@@ -38,7 +37,7 @@ PLAN_SETTINGS = frozenset({
     "threshold_hr_mode", "threshold_hr_manual",
     "max_hr_mode", "max_hr_manual",
     "equipment_available", "strength_experience",
-    "hidden_sports", "activity_frequency",
+    "activity_frequency",
 })
 
 

@@ -104,7 +104,6 @@ fun SettingsScreen(
     onErase: () -> Unit,
     onReparseHealth: () -> Unit,
     onRestored: () -> Unit,
-    sportLabel: (String) -> String,
     /** The tutorial's switch — see [com.tracks.app.ui.tour.TourViewModel]. */
     tutorialEnabled: Boolean,
     onTutorialEnabled: (Boolean) -> Unit,
@@ -131,7 +130,7 @@ fun SettingsScreen(
             }
             SettingsCard("Heart rate & power") { ZonesForm(profile, onSet) }
             SettingsCard("Training") {
-                TrainingPrefsForm(profile, onSet, sportLabel)
+                TrainingPrefsForm(profile, onSet)
                 SectionDivider()
                 SubHeading(
                     "How often you train",

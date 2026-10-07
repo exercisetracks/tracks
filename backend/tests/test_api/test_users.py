@@ -235,7 +235,3 @@ class TestUpdateSettings:
         # But ai_configured should now be True
         assert data["ai_configured"] is True
 
-    def test_hidden_sports_update(self, client, user):
-        resp = client.patch("/users/me/settings", json={"hidden_sports": ["swimming"]})
-        assert resp.status_code == 200
-        assert resp.json()["hidden_sports"] == ["swimming"]

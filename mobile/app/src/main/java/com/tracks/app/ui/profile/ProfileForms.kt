@@ -397,25 +397,14 @@ fun LookForm(state: ProfileState, set: SetField) {
     }
 }
 
-/** Sports to leave out of every chart and total, and chart detail. Pace coaching lives with the watch. */
-@OptIn(ExperimentalLayoutApi::class)
+/**
+ * How finely charts are drawn. Every sport always counts everywhere; there is
+ * no hiding one (that setting was removed). Pace coaching lives with the watch.
+ */
 @Composable
-fun TrainingPrefsForm(state: ProfileState, set: SetField, sportLabel: (String) -> String) {
+fun TrainingPrefsForm(state: ProfileState, set: SetField) {
     Column(verticalArrangement = Arrangement.spacedBy(Tokens.Space.s4)) {
-        Labelled("Hidden sports", "Left out of metrics, charts and training load.") {
-            if (state.sports.isEmpty()) {
-                Text("Nothing recorded yet.", style = MaterialTheme.typography.bodySmall)
-            } else {
-                val hidden = state.list("hidden_sports").toSet()
-                OptionGrid(
-                    state.sports.map { it to sportLabel(it) },
-                    isSelected = { it in hidden },
-                    onPick = { sport -> set("hidden_sports", (if (sport in hidden) hidden - sport else hidden + sport).sorted()) },
-                    multi = true,
-                )
-            }
-        }
-        Labelled("Chart detail") {
+        Labelled("Chart detail", CHART_DETAIL_NOTE) {
             SegmentedChoice(
                 options = listOf("low" to "Low", "medium" to "Medium", "high" to "High", "raw" to "Raw"),
                 selected = state.str("chart_resolution") ?: "high",
@@ -685,5 +674,15 @@ fun NumberSettingField(
 
 internal fun formatNumber(v: Double): String =
     if (v == Math.floor(v) && !v.isInfinite()) v.toLong().toString() else "%.1f".format(v)
+
+/**
+ * What Chart detail changes, for the "?" beside it — the same words as the
+ * web's ChartResolutionSection.
+ */
+internal const val CHART_DETAIL_NOTE =
+    "How many points an activity's graphs draw. Lower is faster to load but smooths over " +
+        "short peaks — a sprint, a surge on a climb. Raw draws every sample the watch recorded " +
+        "and can be slow on very long activities. Only the graphs change: summary numbers are " +
+        "always computed from every sample."
 
 internal fun round1(v: Double): Double = (v * 10).roundToInt() / 10.0

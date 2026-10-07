@@ -18,7 +18,7 @@ def _account(db, username, *, admin=False):
     u = User(name=username.title(), username=username, is_admin=admin)
     db.add(u)
     db.flush()
-    db.add(UserSettings(user_id=u.id, password_hash=hash_password("x" * 12), hidden_sports=[]))
+    db.add(UserSettings(user_id=u.id, password_hash=hash_password("x" * 12)))
     return u
 
 

@@ -17,7 +17,6 @@ import TutorialSection from "../components/settings/TutorialSection";
 import BodySection from "../components/settings/BodySection";
 import HRSection from "../components/settings/HRSection";
 import PowerSection from "../components/settings/PowerSection";
-import SportsSection from "../components/settings/SportsSection";
 import ChartResolutionSection from "../components/settings/ChartResolutionSection";
 import DevicesSection from "../components/settings/DevicesSection";
 import GarminCoachingSection from "../components/settings/GarminCoachingSection";
@@ -73,7 +72,6 @@ export default function Settings() {
       <BodySection                     settings={settings} onSaved={handleSaved} />
       <HRSection                       settings={settings} onSaved={handleSaved} />
       <PowerSection                    settings={settings} onSaved={handleSaved} />
-      <SportsSection                   settings={settings} onSaved={handleSaved} />
       <ChartResolutionSection          settings={settings} onSaved={handleSaved} />
       <DevicesSection />
       <GarminCoachingSection           settings={settings} onSaved={handleSaved} />

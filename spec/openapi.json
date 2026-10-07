@@ -476,7 +476,7 @@
           "auth"
         ],
         "summary": "Revoke Session",
-        "description": "Sign a device out. Revokes the whole rotation chain, not just the leaf \u2014\notherwise the device's next refresh would simply mint a replacement.\n\nAlso drops the crypto session the chain was pinned to, which is the half\nthat actually protects anything. Revoking refresh tokens alone only stops\nthe device minting a *new* access token; the one already in its hands stays\nvalid for up to _TOKEN_EXPIRE_DAYS, and while its `sid` was still cached\nthat token could keep decrypting health data. A user pressing \"sign out\" on\na phone they have lost means \"stop reading my data\", not \"stop renewing\".\n\nResidual, stated so it is not mistaken for closed: the access token itself\nis stateless and stays valid until it expires, so the signed-out device can\nstill reach endpoints that touch no encrypted data (see require_auth vs\nrequire_crypto_session). Closing that too would mean a revocation check on\nevery authenticated request; the encrypted data is the part worth the\nround trip, and it is already covered by the session lookup.",
+        "description": "Sign a device out. Revokes the whole rotation chain, not just the leaf \u2014\notherwise the device's next refresh would simply mint a replacement.\n\nAlso drops the crypto session the chain was pinned to, which is the half\nthat actually protects anything. Revoking refresh tokens alone only stops\nthe device minting a *new* access token; the one already in its hands stays\nvalid for up to _TOKEN_EXPIRE_DAYS, and while its `sid` was still cached\nthat token could keep decrypting health data. A user pressing \"sign out\" on\na phone they have lost means \"stop reading my data\", not \"stop renewing\".\n\nAnd it lists the `sid` as revoked, which is what ends the access token the\ndevice already holds: on its own, a stateless JWT stays valid until it\nexpires and kept reaching every endpoint that touches no encrypted data \u2014\nmedications, meals, settings. See app.auth.token_is_live.",
         "operationId": "revoke_session_auth_sessions__session_id__delete",
         "security": [
           {
@@ -517,7 +517,7 @@
           "auth"
         ],
         "summary": "Logout",
-        "description": "Drops this session's cached decryption key from Redis so it can't be\nused again even within its TTL. The JWT itself stays stateless/valid\nuntil it expires \u2014 but without a cached key behind its `sid`, it only\nauthenticates for endpoints that don't touch encrypted data (see\nrequire_crypto_session). Best-effort: an invalid/missing/already-expired\ntoken is not an error, there's simply nothing left to drop.",
+        "description": "Ends this session: drops its cached decryption key from Redis, lists\nits `sid` as revoked so the access token stops authenticating anywhere\n(app.auth.token_is_live), and revokes any refresh chain pinned to it \u2014\notherwise that chain could mint fresh tokens for the sid once its\nrevocation row has aged out. Best-effort: an invalid/missing/\nalready-expired token is not an error, there's simply nothing to end.",
         "operationId": "logout_auth_logout_post",
         "responses": {
           "204": {
@@ -3875,15 +3875,38 @@
         ],
         "summary": "Change Password",
         "operationId": "change_password_users_me_password_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "x-tracks-client",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Tracks-Client"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/PasswordChangeRequest"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -3904,12 +3927,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
+        }
       }
     },
     "/users/me/settings": {
@@ -6100,7 +6118,7 @@
           "sync-ingest"
         ],
         "summary": "Register Device",
-        "description": "Registers device metadata only \u2014 no activity data \u2014 so a brand-new,\nnot-yet-claimed device shows up in the Devices UI for the user to claim.\nMirrors the old filesystem watcher's auto-register-on-first-import\nbehavior without needing to parse (and therefore decrypt) anything\nfirst. Personal agents auto-claim on their own owner's behalf; household\nagents leave the device unclaimed for a human to sort out.",
+        "description": "Registers device metadata only \u2014 no activity data \u2014 so a brand-new,\nnot-yet-claimed device shows up in the Devices UI for the user to claim.\nMirrors the old filesystem watcher's auto-register-on-first-import\nbehavior without needing to parse (and therefore decrypt) anything\nfirst. A phone's agent claims the watch for the phone's owner \u2014 it is\npaired to that phone, and claiming it the moment it appears leaves no\nwindow for anyone else to. A shared dock leaves it unclaimed for the\nfirst person to claim it, unless the instance has only one account (see\nsync_agent_auth.auto_claimant). Never a second claim on a held watch.",
         "operationId": "register_device_sync_register_device_post",
         "parameters": [
           {
@@ -18187,6 +18205,22 @@
           "new_password": {
             "type": "string",
             "title": "New Password"
+          },
+          "issue_refresh_token": {
+            "type": "boolean",
+            "title": "Issue Refresh Token",
+            "default": false
+          },
+          "device_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Device Label"
           }
         },
         "type": "object",
@@ -21635,14 +21669,6 @@
             ],
             "title": "Ftp Auto"
           },
-          "hidden_sports": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Hidden Sports",
-            "default": []
-          },
           "updated_at": {
             "anyOf": [
               {
@@ -22146,20 +22172,6 @@
               }
             ],
             "title": "Ftp Manual"
-          },
-          "hidden_sports": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Hidden Sports"
           },
           "chart_resolution": {
             "anyOf": [

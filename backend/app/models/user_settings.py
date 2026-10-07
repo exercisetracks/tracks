@@ -43,7 +43,6 @@ class UserSettings(Base, Synced):
     ftp_mode            = Column(String, nullable=False, default="auto")
     ftp_manual          = Column(Integer)
     ftp_auto            = Column(Integer)
-    hidden_sports       = Column(PJson, nullable=False, default=lambda: [])
     css_mode            = Column(String, nullable=False, default="auto")   # critical swim speed
     css_manual          = Column(Float)   # sec / 100 m, user-entered
     css_auto            = Column(Float)   # sec / 100 m, auto-derived from swim history

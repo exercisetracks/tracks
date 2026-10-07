@@ -26,7 +26,7 @@ def _account(db, username):
     u = User(name=username.title(), username=username, is_admin=username == "alice")
     db.add(u)
     db.flush()
-    db.add(UserSettings(user_id=u.id, password_hash=hash_password("x" * 12), hidden_sports=[]))
+    db.add(UserSettings(user_id=u.id, password_hash=hash_password("x" * 12)))
     return u
 
 

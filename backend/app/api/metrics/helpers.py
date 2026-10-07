@@ -60,10 +60,8 @@ def _effective_threshold_hr(us: UserSettings | None) -> float | None:
 
 
 def _activity_query(db: Session, user_id: int, us: UserSettings | None, after: date | None, before: date | None):
-    """Base Activity query with date range, hidden_sports, and claimed-device filters applied."""
+    """Base Activity query with date range and claimed-device filters applied."""
     q = _started_in(db.query(Activity).filter(Activity.started_at.isnot(None)), us, after, before)
-    if us and us.hidden_sports:
-        q = q.filter(Activity.sport.notin_(us.hidden_sports))
     q = q.filter(Activity.device_id.in_(_claimed_device_ids(db, user_id)))
     return q
 
@@ -87,8 +85,6 @@ def _slim_activity_rows(db: Session, user_id: int, us, after: date | None = None
         .filter(Activity.started_at.isnot(None))
     )
     q = _started_in(q, us, after, before)
-    if us and us.hidden_sports:
-        q = q.filter(Activity.sport.notin_(us.hidden_sports))
     q = q.filter(Activity.device_id.in_(_claimed_device_ids(db, user_id)))
     return q.order_by(Activity.started_at).all()
 

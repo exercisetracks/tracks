@@ -4,7 +4,8 @@
 // graphs. Lower = faster but may miss peaks; only affects graphs, not summaries.
 import { useEffect, useState } from "react";
 import { api } from "../../api/client";
-import { SELECT, Section, FieldRow, useSaveStatus } from "./primitives";
+import { SELECT, Section, useSaveStatus } from "./primitives";
+import InfoTooltip from "../ui/InfoTooltip";
 
 const RESOLUTION_OPTIONS = [
   { value: "low",    label: "Low",    hint: "~500 pts — fastest, best for slow hardware" },
@@ -33,18 +34,22 @@ export default function ChartResolutionSection({ settings, onSaved }) {
 
   return (
     <Section title="Chart Resolution" status={status}>
-      <FieldRow label="Activity graphs">
+      <div>
+        <label className="field-label flex items-center gap-1.5">
+          Activity graphs
+          <InfoTooltip label="What chart detail changes">
+            How many points an activity's graphs draw. Lower is faster to load but
+            smooths over short peaks — a sprint, a surge on a climb. Raw draws every
+            sample the watch recorded and can be slow on very long activities. Only
+            the graphs change: summary numbers are always computed from every sample.
+          </InfoTooltip>
+        </label>
         <select className={SELECT} value={resolution} onChange={e => save(e.target.value)}>
           {RESOLUTION_OPTIONS.map(o => (
             <option key={o.value} value={o.value}>{o.label} — {o.hint}</option>
           ))}
         </select>
-      </FieldRow>
-      <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
-        Controls how many data points are sent from the server when viewing an activity.
-        Lower resolutions are faster but may miss short peaks. Only affects the graphs —
-        summary stats are always exact.
-      </p>
+      </div>
     </Section>
   );
 }

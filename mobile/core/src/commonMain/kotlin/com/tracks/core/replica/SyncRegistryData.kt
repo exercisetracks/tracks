@@ -26,7 +26,7 @@ internal val ENTITY_SPECS: List<EntitySpec> = listOf(
     EntitySpec(
         name = "settings",
         kind = EntityKind.SOURCE,
-        fields = listOf("name", "units", "theme_mode", "accent_color", "timezone", "weight_kg", "height_cm", "sex", "birth_year", "max_hr_mode", "max_hr_manual", "threshold_hr_mode", "threshold_hr_manual", "ftp_mode", "ftp_manual", "css_mode", "css_manual", "hidden_sports", "chart_resolution", "pace_coaching", "equipment_available", "strength_experience", "activity_frequency", "experience_suggestion_dismissed", "tour_seen", "tour_enabled", "weather_enabled", "weather_location", "map_enabled", "wildfire_enabled", "agps_enabled", "agps_source", "agps_custom_url", "agps_max_age_hours", "setup_complete"),
+        fields = listOf("name", "units", "theme_mode", "accent_color", "timezone", "weight_kg", "height_cm", "sex", "birth_year", "max_hr_mode", "max_hr_manual", "threshold_hr_mode", "threshold_hr_manual", "ftp_mode", "ftp_manual", "css_mode", "css_manual", "chart_resolution", "pace_coaching", "equipment_available", "strength_experience", "activity_frequency", "experience_suggestion_dismissed", "tour_seen", "tour_enabled", "weather_enabled", "weather_location", "map_enabled", "wildfire_enabled", "agps_enabled", "agps_source", "agps_custom_url", "agps_max_age_hours", "setup_complete"),
         refs = mapOf(),
         uidKey = "settings",
         uidKeyFallback = null,

@@ -75,7 +75,7 @@ def _active_goal(db: Session, user_id: int) -> TrainingGoal | None:
 
 
 def _build_tss_by_date(db: Session, user_id: int, us: UserSettings | None) -> dict[date, float]:
-    """Build a {date: tss} dict from claimed-device activities (respecting hidden_sports).
+    """Build a {date: tss} dict from claimed-device activities.
 
     Keyed by the day in the account's zone (calculators/local_day.py): an
     evening session in California is today's load, not tomorrow's.
@@ -83,8 +83,6 @@ def _build_tss_by_date(db: Session, user_id: int, us: UserSettings | None) -> di
     threshold_hr = _effective_threshold_hr(us)
     tz = us.timezone if us else None
     q = db.query(Activity).filter(Activity.started_at.isnot(None))
-    if us and us.hidden_sports:
-        q = q.filter(Activity.sport.notin_(us.hidden_sports))
     q = q.filter(Activity.device_id.in_(_claimed_device_ids(db, user_id)))
     activities = q.order_by(Activity.started_at).all()
     discipline = active_mtb_discipline(db, user_id)
@@ -132,8 +130,6 @@ def _event_load(db: Session, user_id: int, today: date, counts) -> tuple[float, 
     discipline = active_mtb_discipline(db, user_id)
     since = today - timedelta(days=HISTORY_DAYS)
     q = db.query(Activity).filter(Activity.started_at.isnot(None))
-    if us and us.hidden_sports:
-        q = q.filter(Activity.sport.notin_(us.hidden_sports))
     q = q.filter(Activity.device_id.in_(_claimed_device_ids(db, user_id)))
     activities = q.order_by(Activity.started_at).all()
     tz = us.timezone if us else None

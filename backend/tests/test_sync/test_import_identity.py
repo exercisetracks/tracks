@@ -37,7 +37,7 @@ class TestDedupe:
         other = User(name="Partner")
         db.add(other)
         db.flush()
-        db.add(UserSettings(user_id=other.id, hidden_sports=[]))
+        db.add(UserSettings(user_id=other.id))
         db.commit()
         material, pubkey = _key_material()
         _queue_pending_import(db, user, pubkey, plaintext=b"shared ride")

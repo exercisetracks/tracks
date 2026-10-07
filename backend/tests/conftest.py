@@ -376,7 +376,7 @@ def user(db):
     u = User(name="Test User")
     db.add(u)
     db.flush()
-    us = UserSettings(user_id=u.id, units="metric", timezone="UTC", hidden_sports=[])
+    us = UserSettings(user_id=u.id, units="metric", timezone="UTC")
     db.add(us)
     # Create a dummy device so activity queries work (list_activities
     # filters by claimed device IDs).

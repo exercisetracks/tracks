@@ -30,10 +30,7 @@ class ProfileViewModel(private val container: AppContainer) : ViewModel() {
 
     fun reload() = viewModelScope.launch {
         val values = runCatching { container.sources.settingValues() }.getOrDefault(emptyMap())
-        val sports = runCatching {
-            container.sources.activities().mapNotNull { it.sport }.distinct().sorted()
-        }.getOrDefault(emptyList())
-        _state.value = ProfileState(values, sports, loaded = true)
+        _state.value = ProfileState(values, loaded = true)
         // After the form is up, not before: this reads every activity, and
         // the values only fill in the "Auto · …" line under each threshold.
         val auto = runCatching { container.sources.autoThresholds() }.getOrNull() ?: return@launch
@@ -60,7 +57,7 @@ class ProfileViewModel(private val container: AppContainer) : ViewModel() {
             "units" -> container.setImperial(value == "imperial")
             else -> container.sources.writeSetting(field, value)
         }
-        // Units, thresholds, equipment, experience, hidden sports: the plan is
+        // Units, thresholds, equipment, experience, frequency: the plan is
         // built from them, so it is rebuilt — as the server does for the same
         // change — rather than left for a Regenerate button that no longer exists.
         if (PlanStaleness.settingStalesPlan(field) && before != value) container.planInputsChanged()
@@ -70,8 +67,6 @@ class ProfileViewModel(private val container: AppContainer) : ViewModel() {
 /** Plain values from the settings row, with the web's defaults where a field was never set. */
 data class ProfileState(
     val values: Map<String, Any?> = emptyMap(),
-    /** Sports this person has actually recorded — the only ones worth offering to hide. */
-    val sports: List<String> = emptyList(),
     val loaded: Boolean = false,
     /**
      * What Auto works out for each threshold (`max_hr`, `threshold_hr`,

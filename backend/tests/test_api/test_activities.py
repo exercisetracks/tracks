@@ -247,7 +247,7 @@ class TestBackfillMetrics:
         other = User(name="Other User")
         db.add(other)
         db.flush()
-        db.add(UserSettings(user_id=other.id, units="metric", timezone="UTC", hidden_sports=[]))
+        db.add(UserSettings(user_id=other.id, units="metric", timezone="UTC"))
         other_dev = Device(serial_number="other-serial", manufacturer="test", manufacturer_id=2)
         db.add(other_dev)
         db.flush()

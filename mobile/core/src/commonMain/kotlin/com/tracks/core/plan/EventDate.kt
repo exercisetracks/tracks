@@ -160,7 +160,7 @@ object PlanStaleness {
         "threshold_hr_mode", "threshold_hr_manual",
         "max_hr_mode", "max_hr_manual",
         "equipment_available", "strength_experience",
-        "hidden_sports", "activity_frequency",
+        "activity_frequency",
     )
 
     /** Deactivating is not a plan change; activating is (its plan is from whenever it was last active). */

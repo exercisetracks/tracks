@@ -55,9 +55,6 @@ class UserSettingsOut(BaseModel):
     ftp_manual: int | None = None
     ftp_auto: int | None = None
 
-    # Sports excluded from all metric views and charts
-    hidden_sports: list[str] = []
-
     updated_at: datetime | None = None
 
     # Chart resolution for activity detail graphs
@@ -195,7 +192,6 @@ class UserSettingsUpdate(BaseModel):
     threshold_hr_manual: int | None = Field(None, ge=80, le=250)
     ftp_mode: Literal["auto", "manual"] | None = None
     ftp_manual: int | None = Field(None, ge=1, le=2000)
-    hidden_sports: list[str] | None = None
     chart_resolution: Literal["low", "medium", "high", "raw"] | None = None
     pace_coaching: bool | None = None
     # AGPS settings
