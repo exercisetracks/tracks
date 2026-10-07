@@ -45,6 +45,7 @@ import com.patrykandpatrick.vico.compose.cartesian.layer.rememberColumnCartesian
 import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLine
 import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLineCartesianLayer
 import com.patrykandpatrick.vico.compose.cartesian.rememberCartesianChart
+import com.tracks.app.ui.components.claimInspectDrags
 import com.tracks.app.ui.components.rememberChartMarker
 import com.patrykandpatrick.vico.compose.common.ProvideVicoTheme
 import com.patrykandpatrick.vico.compose.common.component.rememberLineComponent
@@ -237,12 +238,12 @@ private fun TrainingLoadChart(points: List<TrainingLoadPoint>) {
                 chart = rememberCartesianChart(
                     rememberLineCartesianLayer(
                         lineProvider = LineCartesianLayer.LineProvider.series(
-                            lineSpec(ctlColor, filled = true),
-                            lineSpec(atlColor, filled = true),
+                            lineSpec(ctlColor, filled = true, smooth = true),
+                            lineSpec(atlColor, filled = true, smooth = true),
                         ),
                         rangeProvider = dataRange(axis),
                     ),
-                    startAxis = sharedStartAxis(axis.ticks),
+                    startAxis = sharedStartAxis(axis.step),
                     marker = rememberChartMarker(listOf("Fitness", "Fatigue")),
                     // No date axis here: the form chart below carries it for
                     // both, which is what keeps the two plot areas aligned —
@@ -254,7 +255,9 @@ private fun TrainingLoadChart(points: List<TrainingLoadPoint>) {
                 zoomState = fittedZoomState(),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(150.dp),
+                    .height(150.dp)
+                    // The drawer would take a sideways slide — see claimInspectDrags.
+                    .claimInspectDrags(),
             )
         }
     }
@@ -287,12 +290,22 @@ private fun FormChart(points: List<TrainingLoadPoint>) {
     // exactly what the range provider pins, or the colour boundaries sit a few
     // pixels off the band edges they are supposed to mark.
     // Rounded outwards to whole ticks, like every other axis here — see
-    // [niceAxis]. The padding constant is what it is rounded *from*, so a
-    // series that just grazes a band edge still gets air above it.
-    val axis = remember(low, high) { niceAxis(low - TSB_PADDING, high + TSB_PADDING) }
+    // [niceAxis]. The padding is added only where the *data* reaches past a
+    // landmark, so a series that grazes −30 still gets air below it. Padding
+    // the landmarks themselves turned an ordinary month's −30..+25 into
+    // −34..+29, which rounded out to −40..+40: a fifth of the chart was band
+    // the line could not reach, most of it above the title's head.
+    val axis = remember(low, high) {
+        niceAxis(
+            minOf(points.minOf { it.tsb } - TSB_PADDING, TSB_FLOOR),
+            maxOf(points.maxOf { it.tsb } + TSB_PADDING, TSB_CEILING),
+        )
+    }
     val axisMin = axis.min
     val axisMax = axis.max
-    val zones = rememberFormZones(low, high)
+    // Shaded to the axis edge, not the data's: with the axis now ending close
+    // to the data, a band stopping short of the frame read as a gap.
+    val zones = rememberFormZones(axisMin, axisMax)
     val zeroLine = rememberZeroLine()
     val zoneLine = rememberZoneColoredLine(axisMin, axisMax)
 
@@ -312,7 +325,7 @@ private fun FormChart(points: List<TrainingLoadPoint>) {
                         },
                     ),
                     marker = rememberChartMarker(listOf("Form")),
-                    startAxis = sharedStartAxis(axis.ticks),
+                    startAxis = sharedStartAxis(axis.step),
                     bottomAxis = HorizontalAxis.rememberBottom(
                         valueFormatter = DateAxisFormatter,
                         itemPlacer = thinnedLabels(),
@@ -325,7 +338,9 @@ private fun FormChart(points: List<TrainingLoadPoint>) {
                 zoomState = fittedZoomState(),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(150.dp),
+                    .height(150.dp)
+                    // The drawer would take a sideways slide — see claimInspectDrags.
+                    .claimInspectDrags(),
             )
         }
         FormZoneLegend()
@@ -406,7 +421,7 @@ private fun rememberZoneColoredLine(
     // A gradient needs at least two stops; a range so narrow that only one band
     // survives falls back to that band's flat colour.
     if (colors.size < 2) {
-        return lineSpec(colors.firstOrNull() ?: MaterialTheme.colorScheme.primary)
+        return lineSpec(colors.firstOrNull() ?: MaterialTheme.colorScheme.primary, smooth = true)
     }
 
     return LineCartesianLayer.rememberLine(
@@ -425,6 +440,7 @@ private fun rememberZoneColoredLine(
             thicknessDp = LINE_THICKNESS_DP,
             cap = android.graphics.Paint.Cap.ROUND,
         ),
+        pointConnector = GentleConnector,
     )
 }
 
@@ -526,13 +542,27 @@ private fun ChartLabel(text: String, info: MetricInfo? = null) {
  * whole steps at the top until it wants as many as the other. Growing rather
  * than shrinking, because shrinking would mean a coarser step and a top of
  * the chart even further above the data.
+ *
+ * ## Several counts are tried, and the tightest wins
+ *
+ * Aiming at exactly [AXIS_TICKS] made the step a function of the span alone,
+ * and [niceStep][com.tracks.app.ui.components.niceStep] rounds *up* — a peak
+ * of 41 asked for a step of 10.25, got 20, and topped the axis at 60, a third
+ * of the chart empty above the line. Trying four to six intervals and keeping
+ * whichever ends nearest the data gives 0–50 for the same series; ties go to
+ * the fewer gridlines.
  */
-private data class NiceAxis(val min: Double, val max: Double, val ticks: Int)
+internal data class NiceAxis(val min: Double, val max: Double, val ticks: Int, val step: Double)
 
-private fun niceAxis(min: Double, max: Double, atLeastTicks: Int = 0): NiceAxis {
+internal fun niceAxis(min: Double, max: Double, atLeastTicks: Int = 0): NiceAxis {
     val from = minOf(min, 0.0)
     val to = if (max > from) max else from + 1.0
-    val step = com.tracks.app.ui.components.niceStep((to - from) / (AXIS_TICKS - 1))
+    val step = (AXIS_TICKS - 1..AXIS_TICKS + 1)
+        .map { com.tracks.app.ui.components.niceStep((to - from) / it) }
+        .minWith(
+            compareBy<Double> { kotlin.math.ceil(to / it) * it - kotlin.math.floor(from / it) * it }
+                .thenByDescending { it },
+        )
     val low = kotlin.math.floor(from / step) * step
     var high = kotlin.math.ceil(to / step) * step
     var intervals = Math.round((high - low) / step).toInt().coerceAtLeast(1)
@@ -540,7 +570,7 @@ private fun niceAxis(min: Double, max: Double, atLeastTicks: Int = 0): NiceAxis 
         high += step
         intervals++
     }
-    return NiceAxis(low, high, intervals + 1)
+    return NiceAxis(low, high, intervals + 1, step)
 }
 
 @Composable
@@ -548,13 +578,14 @@ private fun dataRange(axis: NiceAxis): CartesianLayerRangeProvider =
     remember(axis) { CartesianLayerRangeProvider.fixed(minY = axis.min, maxY = axis.max) }
 
 @Composable
-private fun lineSpec(color: Color, filled: Boolean = false): LineCartesianLayer.Line =
+private fun lineSpec(color: Color, filled: Boolean = false, smooth: Boolean = false): LineCartesianLayer.Line =
     LineCartesianLayer.rememberLine(
         fill = LineCartesianLayer.LineFill.single(fill(color)),
         stroke = LineCartesianLayer.LineStroke.Continuous(
             thicknessDp = LINE_THICKNESS_DP,
             cap = android.graphics.Paint.Cap.ROUND,
         ),
+        pointConnector = if (smooth) GentleConnector else LineCartesianLayer.PointConnector.Sharp,
         areaFill = if (filled) {
             LineCartesianLayer.AreaFill.single(
                 fill(
@@ -621,12 +652,12 @@ private fun solidGuideline() = rememberAxisGuidelineComponent(
  * it is wide enough for four characters and a minus sign at this type size.
  */
 @Composable
-private fun sharedStartAxis(ticks: Int, formatter: CartesianValueFormatter? = null) =
+private fun sharedStartAxis(step: Double, formatter: CartesianValueFormatter? = null) =
     VerticalAxis.rememberStart(
         guideline = solidGuideline(),
         size = axisGutter(),
         valueFormatter = formatter ?: RoundFormatter,
-        itemPlacer = fixedTicks(ticks),
+        itemPlacer = fixedTicks(step),
     )
 
 /**
@@ -642,14 +673,54 @@ private val RoundFormatter = CartesianValueFormatter { _, value, _ ->
     else ((value * 10).toLong() / 10.0).toString()
 }
 
-/** The gridline count an axis asked for — see [niceAxis]. */
+/**
+ * Gridlines at multiples of the step [niceAxis] chose.
+ *
+ * By step rather than by count. Vico's count placer, when the labels it was
+ * asked for do not fit the height, quietly places fewer and spaces *those*
+ * evenly — a heart-rate axis of 110–145 in fives came out as 110, 117, 124.
+ * The step placer thins by whole multiples instead, which keeps every label
+ * on a round number. The two scales of the volume chart span the same number
+ * of steps over the same height, so they thin alike and still share one grid.
+ */
 @Composable
-private fun fixedTicks(count: Int) = remember(count) { VerticalAxis.ItemPlacer.count({ count }) }
+private fun fixedTicks(step: Double) = remember(step) { VerticalAxis.ItemPlacer.step({ step }) }
 
 /** The one gutter width, so charts stacked into a figure line up. */
 @Composable
 internal fun axisGutter() =
     com.patrykandpatrick.vico.core.cartesian.axis.BaseAxis.Size.fixed(AXIS_GUTTER)
+
+/**
+ * Straight runs with rounded joins, for the trend lines — the same curve the
+ * web's weekly volume line draws (`gentleCurve` in `weeklyVolumeData.js`), so
+ * the two clients show one shape.
+ *
+ * Vico's own cubic was tried first and was too heavy: its control points sit
+ * up to half a gap in, which over a dozen weekly points draws each week as a
+ * bell. Here they sit a fifth of the way in ([GENTLE_SMOOTHING]). Both are
+ * level with the segment's ends, which is what makes any smoothing safe on
+ * these charts — a segment never rises above its higher end or dips below its
+ * lower, so the way into an empty week stops at zero, and the form line does
+ * not cross a band edge that the data itself never crossed.
+ */
+private object GentleConnector : LineCartesianLayer.PointConnector {
+    override fun connect(
+        context: com.patrykandpatrick.vico.core.cartesian.CartesianDrawingContext,
+        path: android.graphics.Path,
+        x1: Float,
+        y1: Float,
+        x2: Float,
+        y2: Float,
+    ) {
+        val d = (x2 - x1) * GENTLE_SMOOTHING
+        path.cubicTo(x1 + d, y1, x2 - d, y2, x2, y2)
+    }
+}
+
+/** How far into each gap the control points sit. The web uses the same. */
+private const val GENTLE_SMOOTHING = 0.2f
+
 
 // Copied from the Health page's charts rather than chosen here. See [lineSpec].
 private const val LINE_THICKNESS_DP = 2f
@@ -690,12 +761,18 @@ private const val AXIS_TICKS = 5
  * series were drawn.
  */
 @Composable
-fun WeeklyVolumeChart(points: List<WeeklyVolumePoint>, modifier: Modifier = Modifier) {
-    if (points.isEmpty()) {
+fun WeeklyVolumeChart(
+    sparse: List<WeeklyVolumePoint>,
+    modifier: Modifier = Modifier,
+    /** The window's first day, ISO; null for lifetime. See [filledWeeks]. */
+    after: String? = null,
+) {
+    if (sparse.isEmpty()) {
         ChartPlaceholder("No activities in this window.", modifier)
         return
     }
 
+    val points = remember(sparse, after) { filledWeeks(sparse, after, LocalDate.now()) }
     val series = remember(points) { volumeSeries(points) }
     val columns = series.columns
     val hours = series.hours
@@ -770,7 +847,7 @@ fun WeeklyVolumeChart(points: List<WeeklyVolumePoint>, modifier: Modifier = Modi
                                     // Unfilled, unlike the load chart's lines: an
                                     // area under this one would wash over the
                                     // columns it is drawn across.
-                                    lineSpec(lineColor),
+                                    lineSpec(lineColor, smooth = true),
                                 ),
                                 rangeProvider = dataRange(rightAxis),
                                 verticalAxisPosition = Axis.Position.Vertical.End,
@@ -781,7 +858,7 @@ fun WeeklyVolumeChart(points: List<WeeklyVolumePoint>, modifier: Modifier = Modi
                     },
                     marker = rememberChartMarker(listOf("Distance", "Hours")),
                     startAxis = sharedStartAxis(
-                        ticks = leftAxis.ticks,
+                        step = leftAxis.step,
                         formatter = if (byDistance) KilometreFormatter else HourFormatter,
                     ),
                     // Present only when something is bound to it. An empty axis
@@ -798,7 +875,7 @@ fun WeeklyVolumeChart(points: List<WeeklyVolumePoint>, modifier: Modifier = Modi
                             size = axisGutter(),
                             // The same count as the left, so the one grid
                             // serves both scales — see [fixedTicks].
-                            itemPlacer = fixedTicks(rightAxis.ticks),
+                            itemPlacer = fixedTicks(rightAxis.step),
                         )
                     } else {
                         null
@@ -817,7 +894,9 @@ fun WeeklyVolumeChart(points: List<WeeklyVolumePoint>, modifier: Modifier = Modi
                 zoomState = fittedZoomState(),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(150.dp),
+                    .height(150.dp)
+                    // The drawer would take a sideways slide — see claimInspectDrags.
+                    .claimInspectDrags(),
             )
         }
         Text(
@@ -827,6 +906,36 @@ fun WeeklyVolumeChart(points: List<WeeklyVolumePoint>, modifier: Modifier = Modi
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
+}
+
+/**
+ * Every week of the window, with the empty ones as zeros.
+ *
+ * The server (and the phone's own stats) send a row only for a week that had
+ * an activity in it. Plotted as-is, a fortnight off was simply not there: the
+ * line ran straight from the week before to the week after, as if the time
+ * off had been training at the average of the two, and the column positions
+ * closed up over the gap so the date axis lied as well.
+ *
+ * Filled from the week containing [after] — or the first row, for lifetime —
+ * through the current week, so time off at either end of the window drops to
+ * zero too rather than the line just stopping.
+ */
+internal fun filledWeeks(
+    points: List<WeeklyVolumePoint>,
+    after: String?,
+    today: LocalDate,
+): List<WeeklyVolumePoint> {
+    if (points.isEmpty()) return points
+    val byWeek = points.associateBy { it.weekStart }
+    fun monday(d: LocalDate) = d.minusDays(d.dayOfWeek.value - 1L)
+    val first = LocalDate.parse(points.first().weekStart)
+    val start = after?.let { minOf(monday(LocalDate.parse(it)), first) } ?: first
+    val end = maxOf(monday(today), LocalDate.parse(points.last().weekStart))
+    return generateSequence(start) { it.plusWeeks(1) }
+        .takeWhile { !it.isAfter(end) }
+        .map { byWeek[it.toString()] ?: WeeklyVolumePoint(it.toString(), 0.0, 0.0, 0) }
+        .toList()
 }
 
 /** Which numbers this chart draws, and on which axes. */

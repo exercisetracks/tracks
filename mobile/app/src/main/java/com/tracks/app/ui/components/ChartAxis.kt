@@ -37,6 +37,9 @@ import kotlin.math.pow
 data class ChartScale(val min: Double, val max: Double, val ticks: List<Double>) {
     val span: Double get() = (max - min).takeIf { it > 0.0 } ?: 1.0
 
+    /** The distance between gridlines. */
+    val step: Double get() = if (ticks.size >= 2) ticks[1] - ticks[0] else span
+
     /** Where a value sits, 0f at the bottom of the plot and 1f at the top. */
     fun fraction(value: Double): Float = ((value - min) / span).toFloat()
 }

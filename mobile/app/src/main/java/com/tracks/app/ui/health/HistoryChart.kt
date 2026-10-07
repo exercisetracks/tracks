@@ -131,8 +131,7 @@ fun HistoryChart(
 
     // Press and hold to read a day (com.tracks.app.ui.components.holdToInspect).
     var inspectX by remember { mutableStateOf<Float?>(null) }
-    val pill = MaterialTheme.colorScheme.inverseSurface
-    val onPill = MaterialTheme.colorScheme.inverseOnSurface
+    val popup = com.tracks.app.ui.components.chartPopupColors()
 
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Canvas(
@@ -239,7 +238,7 @@ fun HistoryChart(
                     measurer, labelStyle,
                     x = x(nearest), y = y(nearest.value), plotHeight = plotHeight,
                     text = "${nearest.day.format(INSPECT_DAY)} · ${wholeOrOneDecimal(nearest.value)}",
-                    dot = color, pill = pill, onPill = onPill,
+                    dot = color, colors = popup,
                 )
             }
 

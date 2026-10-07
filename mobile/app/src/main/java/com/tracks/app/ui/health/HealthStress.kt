@@ -208,8 +208,7 @@ fun StressHistoryPanel(
 
     // Press and hold to read a moment (com.tracks.app.ui.components.holdToInspect).
     var inspectX by remember { mutableStateOf<Float?>(null) }
-    val pill = MaterialTheme.colorScheme.inverseSurface
-    val onPill = MaterialTheme.colorScheme.inverseOnSurface
+    val popup = com.tracks.app.ui.components.chartPopupColors()
 
     Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Canvas(
@@ -383,7 +382,7 @@ fun StressHistoryPanel(
                         measurer, labelStyle,
                         x = columnX(column), y = y(level), plotHeight = plotHeight,
                         text = "$whenText · stress ${level.roundToInt()}",
-                        dot = band.color, pill = pill, onPill = onPill,
+                        dot = band.color, colors = popup,
                     )
                 }
             }

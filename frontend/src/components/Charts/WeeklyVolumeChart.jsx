@@ -15,6 +15,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { CHART_GRID } from "../../design/chartGrid";
+import { fillEmptyWeeks, gentleCurve } from "./weeklyVolumeData";
 
 function fmtTooltipDate(ms) {
   return new Date(ms).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
@@ -56,13 +57,17 @@ export default function WeeklyVolumeChart({ data = [], imperial = false, xAxis }
   // Convert ISO week-start strings to ms timestamps so this chart shares an
   // identical numeric X scale with FitnessChart — that's what makes the
   // bars line up vertically with the Fitness/Form lines on the same date.
-  const chartData = useMemo(() => data.map(d => ({
+  //
+  // Missing weeks become zeros, and so does a week's missing duration: a
+  // null breaks the line, and a week with no hours in it is zero hours.
+  const [fromMs, toMs] = xAxis?.domain ?? [];
+  const chartData = useMemo(() => fillEmptyWeeks(data, fromMs, toMs).map(d => ({
     weekMs: new Date(d.week_start + "T00:00:00").getTime(),
     distance_km: d.distance_km != null
       ? (imperial ? +(d.distance_km * 0.621371).toFixed(2) : d.distance_km)
       : null,
-    duration_hours: d.duration_hours,
-  })), [data, imperial]);
+    duration_hours: d.duration_hours ?? 0,
+  })), [data, imperial, fromMs, toMs]);
 
   // When the user hovers on the daily FitnessChart, Recharts broadcasts the
   // hovered day's timestamp. Using syncMethod="value" would only show a cursor
@@ -145,6 +150,10 @@ export default function WeeklyVolumeChart({ data = [], imperial = false, xAxis }
           yAxisId="dur"
           dataKey="duration_hours"
           name="duration_hours"
+          // Lighter than the fitness chart's monotone, which suits daily
+          // points and turns weekly ones into a row of bells — see
+          // gentleCurve.
+          type={gentleCurve}
           stroke={colors.line}
           strokeWidth={2}
           dot={false}

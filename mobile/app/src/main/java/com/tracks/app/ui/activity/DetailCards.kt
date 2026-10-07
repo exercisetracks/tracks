@@ -29,6 +29,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
+import com.patrykandpatrick.vico.compose.cartesian.axis.rememberAxisGuidelineComponent
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberStart
 import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLine
 import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLineCartesianLayer
@@ -37,7 +38,11 @@ import com.patrykandpatrick.vico.compose.common.ProvideVicoTheme
 import com.patrykandpatrick.vico.compose.common.fill
 import com.patrykandpatrick.vico.compose.common.shader.verticalGradient
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianLayerRangeProvider
+import com.patrykandpatrick.vico.core.cartesian.data.CartesianValueFormatter
+import com.patrykandpatrick.vico.core.common.shape.Shape
+import com.tracks.app.ui.dashboard.axisGutter
 import com.patrykandpatrick.vico.core.common.shader.ShaderProvider
+import com.tracks.app.ui.components.claimInspectDrags
 import com.tracks.app.ui.components.rememberChartMarker
 import com.tracks.app.ui.components.wholeOrOneDecimal
 import com.patrykandpatrick.vico.compose.m3.common.rememberM3VicoTheme
@@ -97,15 +102,18 @@ fun StreamsCard(track: List<TrackPoint>, modifier: Modifier = Modifier, hrZones:
 
     Column(modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
         SectionHeader("Streams")
-        StreamChart("Heart rate", hr, MaterialTheme.colorScheme.error, "bpm", zones = hrZones)
-        StreamChart("Elevation", altitude, MaterialTheme.colorScheme.primary, "m", filled = true)
-        StreamChart("Speed", speed, MaterialTheme.colorScheme.secondary, "m/s")
-        StreamChart("Power", power, MaterialTheme.colorScheme.tertiary, "W")
+        // The minimum spans are what each channel calls a small change — see
+        // [streamScale]. Below them the axis stops zooming in, so an easy
+        // effort still looks like one.
+        StreamChart("Heart rate", hr, MaterialTheme.colorScheme.error, "bpm", minSpan = 30.0, zones = hrZones)
+        StreamChart("Elevation", altitude, MaterialTheme.colorScheme.primary, "m", minSpan = 30.0, floor = null, filled = true)
+        StreamChart("Speed", speed, MaterialTheme.colorScheme.secondary, "m/s", minSpan = 2.0)
+        StreamChart("Power", power, MaterialTheme.colorScheme.tertiary, "W", minSpan = 100.0)
         // Cadence was recorded and never drawn. It is the one stream that means
         // something different per sport — rpm on a bike, steps per minute
         // running, strokes swimming — so it carries no unit rather than a
         // wrong one.
-        StreamChart("Cadence", cadence, MaterialTheme.colorScheme.secondary, "")
+        StreamChart("Cadence", cadence, MaterialTheme.colorScheme.secondary, "", minSpan = 20.0)
     }
 }
 
@@ -117,6 +125,8 @@ private fun StreamChart(
     values: List<Double>,
     color: Color,
     unit: String,
+    minSpan: Double,
+    floor: Double? = 0.0,
     filled: Boolean = false,
     /**
      * Heart-rate zones: when given, the line takes each zone's colour as it
@@ -126,10 +136,12 @@ private fun StreamChart(
     zones: List<ZoneRange> = emptyList(),
 ) {
     if (values.size < MIN_STREAM) return
-    // The gradient is laid over the plot area, so the y range is pinned to
-    // the data (with a little air) rather than left to Vico's rounding.
-    val yMin = remember(values) { values.min() - 3 }
-    val yMax = remember(values) { values.max() + 3 }
+    // Pinned rather than left to Vico, whose automatic range starts at zero —
+    // see [streamScale]. The zone gradient is laid over the plot area, so it
+    // must be built against exactly this range too.
+    val scale = remember(values, minSpan, floor) { streamScale(values, minSpan, floor) }
+    val yMin = scale.min
+    val yMax = scale.max
     val line = if (zones.isNotEmpty()) {
         rememberZoneLine(yMin, yMax, zones)
     } else {
@@ -189,13 +201,29 @@ private fun StreamChart(
                     chart = rememberCartesianChart(
                         rememberLineCartesianLayer(
                             lineProvider = LineCartesianLayer.LineProvider.series(line),
-                            rangeProvider = if (zones.isNotEmpty()) {
+                            rangeProvider = remember(yMin, yMax) {
                                 CartesianLayerRangeProvider.fixed(minY = yMin, maxY = yMax)
-                            } else {
-                                CartesianLayerRangeProvider.auto()
                             },
                         ),
-                        startAxis = VerticalAxis.rememberStart(),
+                        // A label on every gridline, at round numbers. Vico's
+                        // default placer, given a 110dp chart, chose to label
+                        // only the floor and the top — an axis that says "0"
+                        // and "140" and leaves the reader to interpolate.
+                        startAxis = VerticalAxis.rememberStart(
+                            guideline = rememberAxisGuidelineComponent(
+                                fill = fill(MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
+                                thickness = 1.dp,
+                                shape = Shape.Rectangle,
+                            ),
+                            valueFormatter = StreamAxisFormatter,
+                            // By step, not count: see `fixedTicks` on the
+                            // dashboard for why a count goes off round numbers.
+                            itemPlacer = remember(scale) { VerticalAxis.ItemPlacer.step({ scale.step }) },
+                            // One gutter for every stream, so the five charts
+                            // stacked on this page start their plots at the
+                            // same x and read as one figure.
+                            size = axisGutter(),
+                        ),
                         marker = rememberChartMarker(
                             listOf(label),
                             format = { v -> wholeOrOneDecimal(v) + if (unit.isEmpty()) "" else " $unit" },
@@ -203,16 +231,21 @@ private fun StreamChart(
                         // No bottom axis: see the note on StreamsCard.
                     ),
                     modelProducer = producer,
-                scrollState = fittedScrollState(),
-                zoomState = fittedZoomState(),
+                    scrollState = fittedScrollState(),
+                    zoomState = fittedZoomState(),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(110.dp),
+                        .height(140.dp)
+                        // The drawer would take a sideways slide — see claimInspectDrags.
+                        .claimInspectDrags(),
                 )
             }
         }
     }
 }
+
+/** 112 for 112.0, 6.5 for 6.5 — the steps [streamScale] produces. */
+private val StreamAxisFormatter = CartesianValueFormatter { _, value, _ -> wholeOrOneDecimal(value) }
 
 /**
  * A line coloured by heart-rate zone: a hard-stopped vertical gradient over

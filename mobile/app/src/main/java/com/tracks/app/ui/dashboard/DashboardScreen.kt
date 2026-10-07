@@ -112,7 +112,7 @@ fun DashboardScreen(
             trailing = state.selectedSport?.let(::sportLabel),
             info = Explain.WeeklyVolume,
             modifier = Modifier.tourAnchor("dashboard-volume"),
-        ) { WeeklyVolumeChart(state.weeklyVolume) }
+        ) { WeeklyVolumeChart(state.weeklyVolume, after = state.period.afterDate()) }
 
         SectionCard("Activity history", modifier = Modifier.tourAnchor("dashboard-history")) {
             // Null for lifetime, deliberately — ActivityCalendar switches to its
