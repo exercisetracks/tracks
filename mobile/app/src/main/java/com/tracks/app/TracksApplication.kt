@@ -78,6 +78,10 @@ class TracksApplication : Application() {
         // And from then on, whenever the medications change — including ones
         // added on the web and brought down by a sync.
         com.tracks.app.meds.MedicationReminders.follow(this, container.sources, container.localData.revision)
+        // The workout reminder's next alarm, from the latest history. The chain
+        // re-arms itself; this picks up a time learned from newly synced
+        // activities and recovers an alarm lost to a hard kill.
+        container.rearmWorkoutReminder()
         // The phone's time zone is the account's; see TimezoneSync.
         TimezoneReceiver { container.syncTimezoneSoon() }.register(this)
         // Activities imported before the parser learned a field get it from
@@ -212,6 +216,13 @@ class AppContainer(private val context: Context) {
      * matches made by the UTC day ([com.tracks.core.local.LocalMatching.repairUtcDayMatches]).
      * Off the main thread: it can parse files.
      */
+    fun rearmWorkoutReminder() {
+        signalScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            runCatching { com.tracks.app.nudge.WorkoutReminders.rearm(context, sources) }
+                .onFailure { android.util.Log.w("TracksReminder", "workout reminder re-arm failed", it) }
+        }
+    }
+
     fun backfillActivitySummaries() {
         signalScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             runCatching { files.backfillSummaries() }

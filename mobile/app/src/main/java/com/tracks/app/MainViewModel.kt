@@ -20,6 +20,7 @@ import com.tracks.core.api.ActivitySummary
 import com.tracks.core.api.Capabilities
 import com.tracks.core.api.IncompatibleServerException
 import com.tracks.core.api.NotAuthenticatedException
+import com.tracks.core.api.WrongPasswordException
 import com.tracks.core.api.SessionState
 import com.tracks.core.replica.LinkResult
 import com.tracks.core.api.ServerNotFoundException
@@ -669,6 +670,25 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
         ) }
     }
 
+    /**
+     * Change the account's password. The server signs every other device out
+     * and revokes this phone's own credentials with the rest; the client swaps
+     * in the replacements it hands back and re-enrols this phone's device key,
+     * so the user stays signed in here and only the others need the new one.
+     */
+    fun changePassword(current: String, new: String) = run("Changing password") {
+        val result = container.client().changePassword(current, new, android.os.Build.MODEL)
+        val others = result.otherDevicesSignedOut
+        _state.update { now -> now.copy(
+            deviceKeyEnrolled = result.deviceKeyReEnrolled,
+            message = buildString {
+                append("Password changed.")
+                if (others > 0) append(" $others other device${if (others == 1) " was" else "s were"} signed out.")
+                if (!result.deviceKeyReEnrolled) append(" You may be asked for your password again later.")
+            },
+        ) }
+    }
+
     fun logout() = run("Signing out") {
         // Stop background work before dropping the credentials it needs, so a
         // run cannot land between the two and log a spurious failure.
@@ -1149,6 +1169,8 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
                 ) }
             } catch (e: NotAuthenticatedException) {
                 _state.update { current -> current.copy(message = "Sign-in required.") }
+            } catch (e: WrongPasswordException) {
+                _state.update { current -> current.copy(message = "That is not your current password.") }
             } catch (e: ServerNotFoundException) {
                 _state.update { current -> current.copy(message = e.message) }
             } catch (e: IncompatibleServerException) {

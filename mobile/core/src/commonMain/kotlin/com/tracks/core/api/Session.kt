@@ -101,6 +101,9 @@ class VaultLockedException(message: String = "Vault is locked") : Exception(mess
 /** Thrown when credentials are gone or rejected and the user must log in. */
 class NotAuthenticatedException(message: String = "Not authenticated") : Exception(message)
 
+/** A password change refused because the current password was wrong. */
+class WrongPasswordException(message: String = "Current password is incorrect") : Exception(message)
+
 /**
  * A sync call the server answered with an error. Carries the status so the
  * caller can tell a server that does not speak the protocol yet (404) from one

@@ -54,8 +54,8 @@ class OpenMeteoTest {
 
         val url = requests.single().url
         assertEquals("api.open-meteo.com", url.host)
-        assertEquals("46.8712", url.parameters["latitude"])
-        assertEquals("-113.9912", url.parameters["longitude"])
+        assertEquals("46.87", url.parameters["latitude"])
+        assertEquals("-113.99", url.parameters["longitude"])
         assertEquals("ms", url.parameters["wind_speed_unit"])
         assertNull(url.parameters["hourly"], "the map sheet does not need hours")
     }

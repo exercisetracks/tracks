@@ -671,7 +671,12 @@ private fun canNotify(context: Context): Boolean {
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun TimePickerDialog(initial: String, onPick: (String) -> Unit, onDismiss: () -> Unit) {
+internal fun TimePickerDialog(
+    initial: String,
+    onPick: (String) -> Unit,
+    onDismiss: () -> Unit,
+    title: String = "Dose time",
+) {
     val parsed = remember(initial) { com.tracks.app.meds.parseTime(initial) }
     val state = rememberTimePickerState(
         initialHour = parsed.hour,
@@ -680,7 +685,7 @@ private fun TimePickerDialog(initial: String, onPick: (String) -> Unit, onDismis
     )
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Dose time") },
+        title = { Text(title) },
         text = { TimeInput(state = state) },
         confirmButton = {
             PrimaryButton("OK", onClick = {

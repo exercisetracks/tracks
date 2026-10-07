@@ -40,4 +40,12 @@
     <string name="backup_reminder_channel_description">A weekly nudge when this phone holds your only copy and has not been backed up in two weeks.</string>
     <string name="backup_reminder_title">Back up your Tracks data</string>
     <string name="backup_reminder_text">This phone is the only copy and has no backup from the last two weeks.</string>
+    <string name="workout_reminder_channel_name">Workout reminders</string>
+    <string name="workout_reminder_channel_description">One reminder a day to train, around the time you usually start. Quiet on rest days and days you have already trained.</string>
+    <string name="workout_reminder_title">Time to move</string>
+    <string name="workout_reminder_text">A session today keeps the habit going.</string>
+    <string name="workout_reminder_habit_text">You usually start around %1$s. Good moment to get ready.</string>
+    <string name="workout_reminder_planned_title">Today: %1$s</string>
+    <string name="workout_reminder_planned_minutes">%1$d min planned. Tap to start.</string>
+    <string name="workout_reminder_planned_text">On the plan for today. Tap to start.</string>
 </resources>

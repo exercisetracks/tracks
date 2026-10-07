@@ -9,6 +9,7 @@ import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
+import io.ktor.client.plugins.timeout
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.delete
 import io.ktor.client.request.forms.MultiPartFormDataContent
@@ -217,9 +218,85 @@ class TracksClient(
         if (stored.deviceKey?.id == id) tokens.save(stored.copy(deviceKey = null))
     }
 
+    /**
+     * Sign out, on the server as well as here.
+     *
+     * Clearing the stored credentials alone left all of them valid: the access
+     * token for up to 30 days, the refresh token for 90, and the device key
+     * forever — so a copy taken off the phone before sign-out kept working. The
+     * server is told first, the device key revoked and then the session ended
+     * (which also revokes the refresh chain on it); the key goes first because
+     * revoking it needs the token that logout is about to end.
+     *
+     * Best-effort and bounded: signing out must work offline and must not hang
+     * on a dead server, so any failure here still clears the phone.
+     */
     suspend fun logout() {
+        val stored = tokens.load()
+        val access = stored.accessToken
+        if (access != null) {
+            // Separately: a key the server already forgot must not stop the
+            // session being ended.
+            stored.deviceKey?.let { key ->
+                runCatching {
+                    http.delete(url(Endpoints.deviceKey(key.id))) { bearer(access); signOutTimeout() }
+                }
+            }
+            runCatching { http.post(url(Endpoints.LOGOUT)) { bearer(access); signOutTimeout() } }
+        }
         tokens.clear()
         onSessionState(SessionState.LoggedOut)
+    }
+
+    /**
+     * Change the account's password from this phone.
+     *
+     * The server answers "I think I am compromised" by ending everything else:
+     * every access token issued before now, every refresh token, every device
+     * key — this phone's included. What it hands back is a replacement access
+     * token and refresh token on this same session, so the vault stays open,
+     * and this phone then enrols a fresh device key if it had one, so it keeps
+     * unlocking on its own. If that enrolment fails the change has still
+     * happened; the phone just asks for the password next time the vault shuts.
+     *
+     * Throws [WrongPasswordException] when the current password is wrong.
+     */
+    suspend fun changePassword(
+        currentPassword: String,
+        newPassword: String,
+        deviceLabel: String? = null,
+    ): PasswordChangeResult {
+        val resp = authorized {
+            http.post(url(Endpoints.CHANGE_PASSWORD)) {
+                contentType(ContentType.Application.Json)
+                setBody(PasswordChangeRequest(currentPassword, newPassword, deviceLabel = deviceLabel))
+                bearer(it)
+            }
+        }
+        when {
+            resp.status == HttpStatusCode.Forbidden -> throw WrongPasswordException()
+            resp.status == HttpStatusCode.Unauthorized -> {
+                if (resp.isSessionExpired()) throw VaultLockedException()
+                throw NotAuthenticatedException()
+            }
+            !resp.status.isSuccess() -> throw ServerErrorException(resp.status.value, errorDetail(resp))
+        }
+        val body: PasswordChangeResponse = resp.body()
+        val hadDeviceKey = tokens.load().deviceKey != null
+        tokens.save(
+            tokens.load().copy(
+                accessToken = body.accessToken,
+                // The old one is revoked; keeping it would only fail later.
+                refreshToken = body.refreshToken,
+                deviceKey = null,
+            ),
+        )
+        val reEnrolled = hadDeviceKey && runCatching { enrolDeviceKey(deviceLabel) }.isSuccess
+        return PasswordChangeResult(
+            // This phone's own key and refresh chain are among those counted.
+            otherDevicesSignedOut = maxOf(body.revokedDeviceKeys - (if (hadDeviceKey) 1 else 0), 0),
+            deviceKeyReEnrolled = reEnrolled,
+        )
     }
 
     // ── Data ─────────────────────────────────────────────────────────────────
@@ -1612,6 +1689,13 @@ class TracksClient(
         header("Authorization", "Bearer $token")
     }
 
+    private fun HttpRequestBuilder.signOutTimeout() {
+        timeout {
+            connectTimeoutMillis = LOGOUT_TIMEOUT_MS
+            requestTimeoutMillis = LOGOUT_TIMEOUT_MS
+        }
+    }
+
     private fun origin(): String {
         // base_url must be scheme + host with no path; the server rejects
         // anything else rather than mint a style pointing somewhere unexpected.
@@ -1742,6 +1826,9 @@ class TracksClient(
     fun close() = http.close()
 
     private companion object {
+        /** How long sign-out waits for the server before signing out anyway. */
+        const val LOGOUT_TIMEOUT_MS = 5_000L
+
         /** 64 KB: big enough that the syscall count is irrelevant next to the
          *  network, small enough to be invisible on a phone's heap. */
         const val DOWNLOAD_CHUNK = 64 * 1024
@@ -1755,6 +1842,14 @@ class TracksClient(
         const val SEARCH_BIAS_DEGREES = 0.5
     }
 }
+
+/** What [TracksClient.changePassword] did beyond changing the password. */
+data class PasswordChangeResult(
+    /** Other phones' device keys the change revoked; they now need the new password. */
+    val otherDevicesSignedOut: Int,
+    /** Whether this phone enrolled a fresh device key to replace its revoked one. */
+    val deviceKeyReEnrolled: Boolean,
+)
 
 /** A map viewport, in the order the server expects. */
 data class BoundingBox(

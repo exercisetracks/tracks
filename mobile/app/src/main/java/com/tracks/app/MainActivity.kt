@@ -72,6 +72,8 @@ class MainActivity : ComponentActivity() {
         const val EXTRA_OPEN = "open"
         /** Settings, where the backup section is. */
         const val OPEN_BACKUP = "backup"
+        /** The dashboard, where today's planned session is started. */
+        const val OPEN_TODAY = "today"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

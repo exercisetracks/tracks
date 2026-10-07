@@ -22,6 +22,8 @@ object Endpoints {
     const val DEVICE_KEYS = "/auth/device-keys"
     const val DEVICE_KEY_BY_ID = "/auth/device-keys/{key_id}"
     const val DEVICE_UNLOCK = "/auth/device-unlock"
+    const val LOGOUT = "/auth/logout"
+    const val CHANGE_PASSWORD = "/users/me/password"
 
     // Music. The library and the music-server connection are ordinary authed
     // paths; /music/ciq/* is what the *watch* calls with its own scoped token,

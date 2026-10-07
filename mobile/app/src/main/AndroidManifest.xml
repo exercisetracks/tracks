@@ -283,6 +283,20 @@
         </receiver>
 
         <!--
+          The daily workout reminder: its alarm, and re-arming after a reboot.
+          exported=false — the system's boot broadcast still reaches it, and
+          nothing outside this app should be able to fire a reminder.
+        -->
+        <receiver
+            android:name=".nudge.WorkoutReminderReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+
+        <!--
           The background half of a watch sync — see WatchSyncService's own doc
           comment for why this needs to be a foreground service rather than a
           plain WorkManager coroutine. exported=false: nothing outside this app

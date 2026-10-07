@@ -139,6 +139,10 @@ fun TracksNavHost(
                 container.pendingRoute.value = null
                 navController.navigate(Destination.Settings.route) { launchSingleTop = true }
             }
+            com.tracks.app.MainActivity.OPEN_TODAY -> {
+                container.pendingRoute.value = null
+                navController.navigate(Destination.Dashboard.route) { launchSingleTop = true }
+            }
             // A page asked for from inside the app (race plan → map to draw a
             // course, and back).
             Destination.Map.route, Destination.RacePlans.route -> {
@@ -607,6 +611,7 @@ fun TracksNavHost(
                     hasDevice = hasDevice,
                     onHasDeviceChange = container::setHasDevice,
                     onLogout = vm::logout,
+                    onChangePassword = vm::changePassword,
                     onErase = { vm.eraseLocalData(); profileVm.reload() },
                     onReparseHealth = vm::reparseHealth,
                     onRestored = { profileVm.reload(); container.localData.changed() },

@@ -106,6 +106,30 @@ data class TokenResponse(
     @SerialName("refresh_token") val refreshToken: String? = null,
 )
 
+/**
+ * `POST /users/me/password`. Asks for a refresh token because the change
+ * revokes every one the account holds, this phone's included.
+ */
+@Serializable
+data class PasswordChangeRequest(
+    @SerialName("current_password") val currentPassword: String,
+    @SerialName("new_password") val newPassword: String,
+    @SerialName("issue_refresh_token") val issueRefreshToken: Boolean = true,
+    @SerialName("device_label") val deviceLabel: String? = null,
+)
+
+/**
+ * The server refuses every access token issued before the change, so the
+ * caller's replacement comes back here, on the same session.
+ */
+@Serializable
+data class PasswordChangeResponse(
+    @SerialName("access_token") val accessToken: String,
+    @SerialName("refresh_token") val refreshToken: String? = null,
+    @SerialName("revoked_device_keys") val revokedDeviceKeys: Int = 0,
+    @SerialName("revoked_sessions") val revokedSessions: Int = 0,
+)
+
 /** `GET /users/me`, as much of it as the phone needs. */
 @Serializable
 data class CurrentUser(

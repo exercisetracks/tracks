@@ -99,6 +99,8 @@ fun SettingsScreen(
     hasDevice: Boolean,
     onHasDeviceChange: (Boolean) -> Unit,
     onLogout: () -> Unit,
+    /** Current password, then the new one. */
+    onChangePassword: (String, String) -> Unit,
     onErase: () -> Unit,
     onReparseHealth: () -> Unit,
     onRestored: () -> Unit,
@@ -142,6 +144,8 @@ fun SettingsScreen(
             }
             SettingsCard("Strength") { StrengthForm(profile, onSet) }
         }
+        // Outside the profile gate: the reminder is this phone's, not the account's.
+        WorkoutReminderCard(container)
 
         TourAnchor("settings-watch") {
         WatchSection(
@@ -174,6 +178,7 @@ fun SettingsScreen(
             onLogin = onLogin,
             onSync = onSync,
             onLogout = onLogout,
+            onChangePassword = onChangePassword,
             onReparseHealth = onReparseHealth,
         )
         }
@@ -261,6 +266,7 @@ private fun ServerSection(
     onLogin: (String, String) -> Unit,
     onSync: () -> Unit,
     onLogout: () -> Unit,
+    onChangePassword: (String, String) -> Unit,
     onReparseHealth: () -> Unit,
 ) {
     val signedIn = state.session !is SessionState.LoggedOut && state.session !is SessionState.VaultLocked
@@ -294,7 +300,7 @@ private fun ServerSection(
                 busy = state.busy,
                 onLogin = onLogin,
             )
-            else -> SignedIn(state, onSync, onLogout, onReparseHealth)
+            else -> SignedIn(state, onSync, onLogout, onChangePassword, onReparseHealth)
         }
         if (linked && signedIn) {
             SectionDivider()
@@ -466,8 +472,10 @@ private fun SignedIn(
     state: UiState,
     onSync: () -> Unit,
     onLogout: () -> Unit,
+    onChangePassword: (String, String) -> Unit,
     onReparseHealth: () -> Unit,
 ) {
+    var changingPassword by remember { mutableStateOf(false) }
     Text(
         if (state.deviceKeyEnrolled) "Signed in · unlocks on its own" else "Signed in · may ask for your password again",
         style = MaterialTheme.typography.bodySmall,
@@ -477,8 +485,66 @@ private fun SignedIn(
         PrimaryButton("Sync now", onClick = onSync, enabled = !state.busy)
         NeutralButton("Sign out", onClick = onLogout, enabled = !state.busy)
     }
+    TonalButton("Change password", onClick = { changingPassword = true }, enabled = !state.busy, modifier = Modifier.fillMaxWidth())
     TonalButton("Re-read health files", onClick = onReparseHealth, enabled = !state.busy, modifier = Modifier.fillMaxWidth())
+    if (changingPassword) {
+        ChangePasswordDialog(
+            onDismiss = { changingPassword = false },
+            onChange = { current, new ->
+                changingPassword = false
+                onChangePassword(current, new)
+            },
+        )
+    }
 }
+
+/**
+ * The same three fields and the same 8-character floor as the web's Security
+ * section. Changing the password signs every other device out — that is what
+ * someone who thinks they are compromised needs — so the dialog says so before
+ * they press it rather than after.
+ */
+@Composable
+private fun ChangePasswordDialog(onDismiss: () -> Unit, onChange: (String, String) -> Unit) {
+    var current by remember { mutableStateOf("") }
+    var new by remember { mutableStateOf("") }
+    var confirm by remember { mutableStateOf("") }
+    val tooShort = new.isNotEmpty() && new.length < MIN_PASSWORD_LENGTH
+    val mismatch = confirm.isNotEmpty() && confirm != new
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Change password") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(Tokens.Space.s2)) {
+                Text(
+                    "Every other device signed in to this account will be signed out.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                PasswordField(current, { current = it }, Modifier.fillMaxWidth(), label = "Current password")
+                PasswordField(new, { new = it }, Modifier.fillMaxWidth(), label = "New password",
+                              placeholder = "At least $MIN_PASSWORD_LENGTH characters", isError = tooShort)
+                PasswordField(confirm, { confirm = it }, Modifier.fillMaxWidth(), label = "Confirm new password",
+                              isError = mismatch)
+                if (mismatch) {
+                    Text("The passwords do not match.", style = MaterialTheme.typography.bodySmall,
+                         color = MaterialTheme.colorScheme.error)
+                }
+            }
+        },
+        confirmButton = {
+            PrimaryButton(
+                "Change",
+                onClick = { onChange(current, new) },
+                enabled = current.isNotEmpty() && new.length >= MIN_PASSWORD_LENGTH && confirm == new,
+            )
+        },
+        dismissButton = { NeutralButton("Cancel", onClick = onDismiss) },
+    )
+}
+
+/** The server's floor (backend/app/api/users.py); checked here only to say so sooner. */
+private const val MIN_PASSWORD_LENGTH = 8
 
 /** The rule between subjects inside one card. */
 @Composable

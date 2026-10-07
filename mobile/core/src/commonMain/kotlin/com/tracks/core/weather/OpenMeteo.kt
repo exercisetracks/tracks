@@ -41,7 +41,9 @@ import kotlin.math.roundToInt
  *
  * Privacy: each request sends the latitude and longitude being asked about —
  * a tapped point, or the phone's own rounded position for the watch —
- * rounded to four places (~11 m), and the phone's IP address rather than the
+ * rounded to two places (~1 km: finer than the model grid, so the forecast
+ * is the same, and coarse enough that a run's start is not the front door),
+ * and the phone's IP address rather than the
  * server's — the same disclosure the server made, from a different address.
  * Open-Meteo is keyless, so nothing identifies the account. Callers must check
  * the synced `weather_enabled` setting first; this class does not, so that it
@@ -135,8 +137,8 @@ class OpenMeteo(engine: HttpClientEngine? = null) {
     private suspend fun fetch(lat: Double, lon: Double, days: Int, hourly: Boolean): JsonObject? =
         try {
             val response = http.get(URL) {
-                parameter("latitude", fixed4(lat))
-                parameter("longitude", fixed4(lon))
+                parameter("latitude", fixed2(lat))
+                parameter("longitude", fixed2(lon))
                 parameter("current", CURRENT)
                 parameter("daily", DAILY)
                 parameter("forecast_days", days.coerceIn(1, MAX_DAYS))
@@ -292,7 +294,6 @@ class OpenMeteo(engine: HttpClientEngine? = null) {
         }
 
         private fun round5(v: Double): Double = kotlin.math.round(v * 100_000) / 100_000
-        private fun fixed4(v: Double): String = fixed(v, 4)
         private fun fixed2(v: Double): String = fixed(v, 2)
 
         /** `%.nf` without String.format, which commonMain does not have. */
