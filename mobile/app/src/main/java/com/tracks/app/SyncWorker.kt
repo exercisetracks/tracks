@@ -134,6 +134,23 @@ class SyncWorker(
             )
         }
 
+        /**
+         * One sync as soon as there is a network — for edits made on this
+         * phone (AppContainer pushes them a few seconds after the last one).
+         * `KEEP`, so a burst of edits queues one run rather than a run each.
+         */
+        fun syncSoon(context: Context) {
+            val request = androidx.work.OneTimeWorkRequestBuilder<SyncWorker>()
+                .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
+                .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, TimeUnit.SECONDS)
+                .build()
+            WorkManager.getInstance(context).enqueueUniqueWork(
+                "$WORK_NAME-edits",
+                androidx.work.ExistingWorkPolicy.KEEP,
+                request,
+            )
+        }
+
         fun cancel(context: Context) {
             WorkManager.getInstance(context).cancelUniqueWork(WORK_NAME)
         }

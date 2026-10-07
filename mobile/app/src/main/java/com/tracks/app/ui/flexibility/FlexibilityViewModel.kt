@@ -75,8 +75,6 @@ data class FlexibilityUiState(
     /** Stretches ticked in the library, waiting to become a flow or a session. */
     val picked: List<String> = emptyList(),
     val session: FlowSession? = null,
-    /** Sessions finished here that the server has not taken yet. */
-    val pending: Int = 0,
     val error: String? = null,
 ) {
     /** The library, narrowed the same way the strength library is. */
@@ -137,7 +135,6 @@ class FlexibilityViewModel(private val container: AppContainer) : ViewModel() {
                 library = runCatching { t.stretches() }.getOrNull(),
                 stillLoading = false,
             )
-            _state.update { it.copy(pending = container.replica.pendingCount().toInt()) }
         }
     }
 
@@ -280,7 +277,6 @@ class FlexibilityViewModel(private val container: AppContainer) : ViewModel() {
                 )
             }
             updateSession { it.copy(saving = false, saved = true) }
-            _state.update { it.copy(pending = container.replica.pendingCount().toInt()) }
         }
     }
 

@@ -52,7 +52,6 @@ import com.tracks.app.ui.components.Explain
 import com.tracks.app.ui.components.InfoHeading
 import com.tracks.app.ui.components.EmptyState
 import com.tracks.app.ui.components.NeutralButton
-import com.tracks.app.ui.components.PendingBanner
 import com.tracks.app.ui.components.PrimaryButton
 import com.tracks.app.ui.components.TonalButton
 import com.tracks.app.ui.theme.Tokens
@@ -119,7 +118,6 @@ fun StrengthScreen(vm: StrengthViewModel, modifier: Modifier = Modifier) {
                 ),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                item { PendingBanner(state.pending) }
 
                 // A session paused (or cut short by the process being
                 // reclaimed) is waiting on disk; say so first, because it is

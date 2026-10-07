@@ -52,7 +52,6 @@ import com.tracks.app.ui.components.EmptyState
 import com.tracks.app.ui.components.Explain
 import com.tracks.app.ui.components.InfoHeading
 import com.tracks.app.ui.components.NeutralButton
-import com.tracks.app.ui.components.PendingBanner
 import com.tracks.app.ui.components.PrimaryButton
 import com.tracks.app.ui.components.TonalButton
 import com.tracks.app.ui.strength.CustomDraft
@@ -115,7 +114,6 @@ fun FlexibilityScreen(vm: FlexibilityViewModel, modifier: Modifier = Modifier) {
             ),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            item { PendingBanner(state.pending) }
 
             item {
                 InfoHeading("Your flows", Explain.MyFlows, Modifier.fillMaxWidth().tourAnchor("flex-flows")) {

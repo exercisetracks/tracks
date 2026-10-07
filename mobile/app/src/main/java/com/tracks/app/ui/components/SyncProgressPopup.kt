@@ -28,11 +28,10 @@ import androidx.compose.ui.unit.dp
 import com.tracks.app.ui.theme.Tokens
 import com.tracks.core.replica.SyncProgress
 import kotlinx.coroutines.delay
-import java.text.NumberFormat
 import kotlin.math.roundToInt
 
 /**
- * The small "Syncing 412 of 2,994 files" pill at the bottom of the screen.
+ * The small "Syncing files 14%" pill at the bottom of the screen.
  *
  * For the long syncs a person would otherwise wonder about — a first sync, a
  * phone that has not seen its server in weeks. A routine sync finishes in well
@@ -111,15 +110,16 @@ fun ProgressPill(label: String?, fraction: Float?, modifier: Modifier = Modifier
     }
 }
 
-/** What the pill says for each step. Plain, and counted where there is a count. */
-internal fun syncLabel(p: SyncProgress): String {
-    val n = NumberFormat.getIntegerInstance()
-    return when (p.step) {
-        SyncProgress.Step.Sending -> "Sending changes"
-        SyncProgress.Step.Receiving -> if (p.done > 0) "Receiving ${n.format(p.done)} changes" else "Receiving changes"
-        SyncProgress.Step.Files -> "Syncing ${n.format(p.done)} of ${n.format(p.total ?: 0)} files"
-        SyncProgress.Step.Uploading -> "Uploading ${n.format(p.done)} of ${n.format(p.total ?: 0)} files"
-    }
+/**
+ * What the pill says for each step: words only. How far along it is, is the
+ * percentage beside it (from [SyncProgress.fraction]) — a count of files meant
+ * nothing to anyone, and "412 of 2,994" read as a chore list.
+ */
+internal fun syncLabel(p: SyncProgress): String = when (p.step) {
+    SyncProgress.Step.Sending -> "Sending changes"
+    SyncProgress.Step.Receiving -> "Receiving changes"
+    SyncProgress.Step.Files -> "Syncing files"
+    SyncProgress.Step.Uploading -> "Uploading files"
 }
 
 private const val SHOW_AFTER_MS = 700L

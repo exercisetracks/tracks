@@ -206,8 +206,6 @@ data class HealthUiState(
     val medicationLog: List<MedicationLog> = emptyList(),
     val meals: List<Meal> = emptyList(),
     val mealLog: List<MealLog> = emptyList(),
-    /** Entries made here that the server has not taken yet. */
-    val pending: Int = 0,
     val error: String? = null,
 ) {
     /**
@@ -374,7 +372,6 @@ class HealthViewModel(private val container: AppContainer) : ViewModel() {
                 runCatching { container.metrics.dailyMetrics(after = null) }.getOrDefault(emptyList())
             }
             applyMetrics(days = days, stillLoading = false)
-            _state.update { it.copy(pending = container.replica.pendingCount().toInt()) }
             loadStress()
         }
     }
@@ -474,7 +471,6 @@ class HealthViewModel(private val container: AppContainer) : ViewModel() {
                     // food, and its history reaches as far back as the window
                     // does. A few rows a day is nothing to hold.
                     mealLog = src.list("meal_log", MealLog.serializer()).sortedBy { l -> l.loggedAt },
-                    pending = container.replica.pendingCount().toInt(),
                 )
             }
         }

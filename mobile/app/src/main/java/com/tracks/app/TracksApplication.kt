@@ -755,6 +755,21 @@ class AppContainer(private val context: Context) {
     )
 
     init {
+        // Edits made on this phone go to the server on their own, a few
+        // seconds after the last one, instead of waiting for the six-hourly
+        // sync or a pull — so no screen has to tell anyone how many entries
+        // are still waiting. Through WorkManager with a network constraint,
+        // so an offline phone simply waits and sends them when it is back.
+        signalScope.launch {
+            @OptIn(kotlinx.coroutines.FlowPreview::class)
+            sources.version
+                .debounce(PUSH_EDITS_AFTER_MS)
+                .collect {
+                    if (isLinked() && runCatching { replica.pendingCount() }.getOrDefault(0L).toLong() > 0) {
+                        SyncWorker.syncSoon(context)
+                    }
+                }
+        }
         signalScope.launch {
             // At most one refresh per SIGNAL_INTERVAL_MS, the last change
             // always delivered. A first sync imports thousands of files, each a
@@ -1025,6 +1040,8 @@ class AppContainer(private val context: Context) {
         const val KEY_SERVER = "server_url"
         const val KEY_API_BASE = "api_base"
         /** See the signal fan-out in init: a burst of writes refreshes screens at this pace. */
+        /** Quiet time after the last local edit before it is sent; see the init block. */
+        private const val PUSH_EDITS_AFTER_MS = 5_000L
         const val SIGNAL_INTERVAL_MS = 1_500L
         const val PLAN_REBUILD_DEBOUNCE_MS = 1_500L
         const val KEY_ONBOARDED = "onboarding_complete"

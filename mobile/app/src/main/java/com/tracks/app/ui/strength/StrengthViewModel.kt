@@ -108,8 +108,6 @@ data class StrengthUiState(
      */
     val savedWorkouts: List<UserWorkout> = emptyList(),
     val session: SessionState? = null,
-    /** Writes made here that the server has not taken yet. */
-    val pending: Int = 0,
     val error: String? = null,
 ) {
     /**
@@ -175,10 +173,7 @@ class StrengthViewModel(private val container: AppContainer) : ViewModel() {
             apply(exercises = exercises, standings = standings, owned = owned, stillLoading = false)
             val saved = runCatching { t.savedWorkouts() }.getOrNull()
             _state.update {
-                it.copy(
-                    pending = container.replica.pendingCount().toInt(),
-                    savedWorkouts = saved ?: it.savedWorkouts,
-                )
+                it.copy(savedWorkouts = saved ?: it.savedWorkouts)
             }
         }
     }

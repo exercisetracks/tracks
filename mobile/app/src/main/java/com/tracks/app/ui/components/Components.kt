@@ -82,40 +82,6 @@ fun EmptyState(
 }
 
 /**
- * "Two entries waiting to sync."
- *
- * Shown when the phone is holding writes the server has not taken yet — a
- * session finished in a basement, a dose ticked off on a plane. Not an error
- * and deliberately not styled as one: nothing has gone wrong, the app is doing
- * exactly what it promises, and the only thing the user needs to know is that
- * it has not happened *yet*.
- *
- * It says nothing about how to fix it, because there is nothing to do. The
- * entries go out on their own the next time the server answers.
- */
-@Composable
-fun PendingBanner(count: Int, modifier: Modifier = Modifier) {
-    if (count <= 0) return
-    Surface(
-        modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(Tokens.Radius.lg),
-        color = MaterialTheme.colorScheme.surfaceVariant,
-    ) {
-        Row(
-            Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Text(
-                if (count == 1) "1 entry waiting to sync" else "$count entries waiting to sync",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
-}
-
-/**
  * A small selectable control for the app bar.
  *
  * Deliberately not a `FilterChip`. A chip is sized to be the content of a

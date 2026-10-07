@@ -27,7 +27,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.tracks.app.ui.components.BarPill
 import com.tracks.app.ui.components.Explain
-import com.tracks.app.ui.components.PendingBanner
 import com.tracks.core.format.Units
 import com.tracks.core.format.kgToDisplay
 import com.tracks.core.format.weightUnit
@@ -79,7 +78,6 @@ fun HealthScreen(vm: HealthViewModel, modifier: Modifier = Modifier) {
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        PendingBanner(state.pending)
 
         if (showMeasured) {
             // Activity first. It is the one group that changes hour to hour, and
