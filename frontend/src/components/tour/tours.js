@@ -62,7 +62,7 @@ export const TOURS = {
     {
       anchor: '[data-tour="dashboard-locations"]',
       title: "Where you train",
-      body: "A heatmap of every route you've recorded. The full map, with route building and offline areas, is under Maps.",
+      body: "A heatmap of your routes in the period above — tap a sport in the pie to show only that one. The full map, with route building and offline areas, is under Maps.",
       placement: "top",
     },
     {

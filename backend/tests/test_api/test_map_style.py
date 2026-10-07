@@ -227,3 +227,51 @@ class TestMissingArtifact:
         resp = client.get("/maps/style.json")
         assert resp.status_code == 503
         assert "build-map-style" in resp.json()["detail"]
+
+
+class TestBackdrop:
+    """GET /maps/backdrop.json — the plain basemap behind the phone's dashboard
+    heatmap, which has to follow the app's theme."""
+
+    def test_light_and_dark_are_different_palettes(self, client):
+        """The bug this exists for: the phone's heatmap card was always light,
+        because the only style it could fetch had no dark palette."""
+        light = client.get("/maps/backdrop.json?theme=light").json()
+        dark = client.get("/maps/backdrop.json?theme=dark").json()
+        bg = lambda s: next(l for l in s["layers"] if l["id"] == "bg")["paint"]["background-color"]
+        assert bg(light) != bg(dark)
+
+    def test_defaults_to_light(self, client):
+        assert client.get("/maps/backdrop.json").json() == client.get("/maps/backdrop.json?theme=light").json()
+
+    def test_an_unknown_theme_is_refused(self, client):
+        """Interpolated into a file path, so anything but the two names must
+        never reach the filesystem."""
+        assert client.get("/maps/backdrop.json?theme=../map_style").status_code == 422
+
+    def test_absolute_urls_for_native_clients(self, client):
+        raw = client.get("/maps/backdrop.json?theme=dark&base_url=https://t.example.com").text
+        assert '"/api' not in raw
+        assert '"https://t.example.com/api/tiles/basemap/' in raw
+
+    def test_trimmed_to_what_is_downloaded(self, client, map_archives):
+        """The same honesty as the planning style: an archive that is absent
+        takes its source and layers with it, or MapLibre refuses the style."""
+        (map_archives / "planet_dem_z7.pmtiles").unlink()
+        style = client.get("/maps/backdrop.json?theme=dark").json()
+        assert "dem_overview" not in style["sources"]
+        assert all(l.get("source") != "dem_overview" for l in style["layers"])
+
+    def test_tiles_are_requested_exactly_as_the_planning_style_requests_them(self, client):
+        """The phone keeps offline tiles keyed by URL, downloaded through the
+        planning style. A backdrop asking for the same tile with a different
+        query string misses them, and the heatmap card goes blank with the
+        radio off even inside a downloaded region."""
+        q = "base_url=https://t.example.com"
+        planning = {u for s in client.get(f"/maps/style.json?{q}").json()["sources"].values()
+                    for u in s.get("tiles", [])}
+        for theme in ("light", "dark"):
+            backdrop = client.get(f"/maps/backdrop.json?theme={theme}&{q}").json()
+            for source in backdrop["sources"].values():
+                for url in source.get("tiles", []):
+                    assert url in planning, url

@@ -919,6 +919,10 @@ class AppContainer(private val context: Context) {
      */
     fun mapStyleCache(): MapStyleCache = MapStyleCache(context.applicationContext)
 
+    /** The dashboard heatmap's backdrop, one per theme — see [MapStyleCache]. */
+    fun backdropStyleCache(dark: Boolean): MapStyleCache =
+        MapStyleCache(context.applicationContext, if (dark) "backdrop-dark" else "backdrop-light")
+
     /**
      * The uploader, or null when this phone has no agent token and cannot get
      * one right now.

@@ -15,6 +15,8 @@ import com.tracks.core.api.TrainingLoadPoint
 import com.tracks.core.api.Vo2MaxPoint
 import com.tracks.core.api.VaultLockedException
 import com.tracks.core.api.WeeklyVolumePoint
+import com.tracks.core.metrics.HeatmapMode
+import com.tracks.core.metrics.HeatmapRoutes
 import com.tracks.core.time.ZoneOffsets
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
@@ -25,13 +27,17 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
 
 data class DashboardUiState(
     val period: Period = Period.default,
-    /** Cross-filter: null is every sport. Drives the calendar and volume only. */
+    /**
+     * Cross-filter: null is every sport. Drives the calendar, the volume chart
+     * and the heatmap.
+     */
     val selectedSport: String? = null,
     val loading: Boolean = true,
     val summary: MetricsSummary? = null,
@@ -46,16 +52,30 @@ data class DashboardUiState(
     val trainingLoad: List<TrainingLoadPoint> = emptyList(),
     val coaching: DailyCoaching? = null,
     val upcoming: List<PlannedWorkout> = emptyList(),
-    /** The basemap for the training-locations card, from the on-disk cache. */
-    val mapStyleJson: String? = null,
     /**
-     * Every route as a GeoJSON FeatureCollection, raw.
-     *
-     * LineStrings rather than the point heatmap this used to fetch — see
-     * [com.tracks.app.ui.map.addRoutes] for why the density layer was the wrong
-     * shape for data that is already traces.
+     * The backdrop for the training-locations card, light and dark — both held,
+     * so the card follows a theme switch without a refetch. Either may be the
+     * planning style instead, on a server too old to serve a backdrop; see
+     * [DashboardViewModel.loadBackdrops].
+     */
+    val backdropLight: String? = null,
+    val backdropDark: String? = null,
+    /** What the heatmap colours its routes by. */
+    val heatmapMode: HeatmapMode = HeatmapMode.Frequency,
+    /**
+     * The routes in the window and sport, coloured for [heatmapMode], as a
+     * GeoJSON FeatureCollection of LineStrings — see [HeatmapRoutes]. LineStrings
+     * rather than a point heatmap: see [com.tracks.app.ui.map.addRoutes].
      */
     val routesGeoJson: String? = null,
+    /**
+     * The filter [routesGeoJson] was built for. The card re-frames its camera
+     * when this changes and not when only the mode does: Pace instead of
+     * Frequency is the same place, and the user's pan should survive it.
+     */
+    val routesFilter: String? = null,
+    /** Nothing in the window and sport has GPS — said, rather than a blank map. */
+    val routesEmpty: Boolean = false,
     val error: String? = null,
 ) {
     /**
@@ -127,7 +147,8 @@ class DashboardViewModel(private val container: AppContainer) : ViewModel() {
         loadAllTime()
         loadWindowed()
         loadFiltered()
-        loadLocations()
+        loadBackdrops()
+        loadRoutes()
         watchLocalImports()
         keepSnapshot()
     }
@@ -201,49 +222,109 @@ class DashboardViewModel(private val container: AppContainer) : ViewModel() {
     }
 
     /**
-     * The training-locations heatmap — the dashboard owns it, as on the web.
+     * The training-locations backdrop — the dashboard owns it, as on the web.
      *
-     * The style is read from disk first and only fetched when the cache is
-     * empty. An earlier version read the cache and gave up if it missed, on the
-     * reasoning that the Map tab would populate it; that made the card invisible
-     * for anyone who had not happened to open the map yet, which is everyone on
-     * a fresh install. A card that renders only after an unrelated tab has been
-     * visited is indistinguishable from one that does not work.
+     * The plain basemap the web draws its heatmap over, in both palettes, not
+     * the planning style the Map tab renders: that has no dark variant, and a
+     * white map in the middle of a dark dashboard was the bug this replaced.
      *
-     * The fetch caches what it gets, so this costs one download per install
-     * rather than one per dashboard load, and the Map tab benefits from it too.
+     * Refreshed rather than read-once, because the served style narrows each
+     * source to the tile archives that exist, so it changes when a region is
+     * downloaded — and a cache only written when empty pins the card to
+     * whatever it saw first. Each palette falls back to its cached copy, so the
+     * card still draws with no signal; and with neither (a server older than
+     * the backdrop endpoint) to the planning style, which is light but is a map.
+     * An earlier version gave up when its cache missed, and the card was
+     * invisible for anyone who had not opened the Map tab yet.
      */
-    private fun loadLocations() {
+    private fun loadBackdrops() {
         viewModelScope.launch {
-            val cache = container.mapStyleCache()
-            // Refreshed rather than read-once. The served style narrows each
-            // source to the tile archives that exist, so it changes when a
-            // region is downloaded — and a cache only written when empty pins
-            // the card to whatever it saw first. Falls back to the cached copy
-            // so the card still draws with no signal.
-            val style = attempt { container.client().mapStyleJson() }
-                ?.also { fresh -> withContext(Dispatchers.IO) { cache.write(fresh) } }
-                ?: withContext(Dispatchers.IO) { runCatching { cache.read() }.getOrNull() }
-            // The routes are the phone's own: every track it imported, drawn
-            // from the files it holds — so the card is right in a hut too.
-            // Sport-filtered like the web app's.
-            val sport = _state.value.selectedSport
+            // Disk first, and published before the network is tried: offline,
+            // the fetch below can take a full timeout to fail, and the card
+            // has nothing to wait for when yesterday's style is on disk.
+            val cachedLight = withContext(Dispatchers.IO) { readCache(container.backdropStyleCache(false)) }
+            val cachedDark = withContext(Dispatchers.IO) { readCache(container.backdropStyleCache(true)) }
+            // With nothing on disk, the plain ground stands in at once: the
+            // routes need no server, so they should not wait on one.
+            publishBackdrops(cachedLight ?: PLAIN_LIGHT_STYLE, cachedDark ?: PLAIN_DARK_STYLE)
+
+            suspend fun fetch(dark: Boolean): String? =
+                attempt { container.client().backdropStyleJson(dark) }
+                    ?.also { fresh -> withContext(Dispatchers.IO) { container.backdropStyleCache(dark).write(fresh) } }
+            val lightFetch = async { fetch(dark = false) }
+            val darkFetch = async { fetch(dark = true) }
+            val light = lightFetch.await() ?: cachedLight
+            val dark = darkFetch.await() ?: cachedDark
+            val planning = if (light != null && dark != null) null else {
+                val cache = container.mapStyleCache()
+                attempt { container.client().mapStyleJson() }
+                    ?.also { fresh -> withContext(Dispatchers.IO) { cache.write(fresh) } }
+                    ?: withContext(Dispatchers.IO) { readCache(cache) }
+            }
+            // Never a server and nothing cached — a phone used on its own from
+            // the start. The routes are the phone's own and need no server, so
+            // they still draw, over a plain ground in the theme's colours
+            // rather than not at all.
+            publishBackdrops(
+                light ?: planning ?: PLAIN_LIGHT_STYLE,
+                dark ?: planning ?: PLAIN_DARK_STYLE,
+            )
+        }
+    }
+
+    private fun readCache(cache: com.tracks.app.MapStyleCache): String? = runCatching { cache.read() }.getOrNull()
+
+    private fun publishBackdrops(light: String?, dark: String?) {
+        _state.update {
+            it.copy(backdropLight = light ?: it.backdropLight, backdropDark = dark ?: it.backdropDark)
+        }
+    }
+
+    /**
+     * The routes, from the phone's own files — every track it imported — so
+     * the card is right in a hut too. Windowed by the period and filtered by
+     * the sport, like every other card here and like the web's heatmap.
+     */
+    private fun loadRoutes() {
+        viewModelScope.launch {
+            val st = _state.value
+            val after = st.period.afterDate()
+            val sport = st.selectedSport
+            val mode = st.heatmapMode
             val routes = withContext(Dispatchers.Default) {
                 runCatching {
-                    val uids = sport?.let { s ->
-                        container.sources.activities().filter { it.sport == s }
-                            .mapNotNull { container.library.uidOf(it.id) }.toSet()
-                    }
-                    container.library.routesGeoJson(uids)
+                    // Through the sources, always — not only when a sport is
+                    // picked. They apply the user's edits: a hidden or deleted
+                    // activity is absent and a re-sported one is in its new
+                    // sport, and the heatmap drew both before when "all
+                    // sports" skipped this step.
+                    val byAlias = container.library.uidsByAlias()
+                    val uids = container.sources.activities()
+                        .filter { sport == null || it.sport == sport }
+                        .mapNotNull { byAlias[it.id] }.toSet()
+                    val tracks = container.library.heatmapTracks(uids, after, mode)
+                    HeatmapRoutes.geoJson(tracks, mode) to tracks.isEmpty()
                 }.getOrNull()
-            }
+            } ?: return@launch
             _state.update {
+                // A newer choice landed while this one was computing; its own
+                // load will arrive, and this one would draw the wrong window.
+                if (it.period.afterDate() != after || it.selectedSport != sport || it.heatmapMode != mode) {
+                    return@update it
+                }
                 it.copy(
-                    mapStyleJson = style ?: it.mapStyleJson,
-                    routesGeoJson = routes ?: it.routesGeoJson,
+                    routesGeoJson = routes.first,
+                    routesEmpty = routes.second,
+                    routesFilter = "${after.orEmpty()}|${sport.orEmpty()}",
                 )
             }
         }
+    }
+
+    fun setHeatmapMode(mode: HeatmapMode) {
+        if (mode == _state.value.heatmapMode) return
+        _state.update { it.copy(heatmapMode = mode) }
+        loadRoutes()
     }
 
     fun setPeriod(period: Period) {
@@ -251,20 +332,22 @@ class DashboardViewModel(private val container: AppContainer) : ViewModel() {
         _state.update { it.copy(period = period) }
         loadWindowed()
         loadFiltered()
+        loadRoutes()
     }
 
     /** Tapping the selected sport clears the filter, matching the web app. */
     fun toggleSport(sport: String) {
         _state.update { it.copy(selectedSport = if (it.selectedSport == sport) null else sport) }
         loadFiltered()
-        loadLocations()
+        loadRoutes()
     }
 
     fun refresh() {
         loadAllTime()
         loadWindowed()
         loadFiltered()
-        loadLocations()
+        loadBackdrops()
+        loadRoutes()
     }
 
     /** Not windowed by the period selector — see the class note. */
@@ -350,6 +433,7 @@ class DashboardViewModel(private val container: AppContainer) : ViewModel() {
                 loadAllTime()
                 loadWindowed()
                 loadFiltered()
+                loadRoutes()
             }
         }
     }
@@ -405,6 +489,16 @@ class DashboardViewModel(private val container: AppContainer) : ViewModel() {
 }
 
 private const val SNAPSHOT = "dashboard"
+
+/**
+ * A style with nothing but a background — the heatmap's ground when there is
+ * no basemap at all. The colours are the web backdrop's land colours
+ * (`basemapStyle.js`), so the routes sit on the same tone they would over tiles.
+ */
+private const val PLAIN_LIGHT_STYLE =
+    """{"version":8,"sources":{},"layers":[{"id":"bg","type":"background","paint":{"background-color":"#f4f1ea"}}]}"""
+private const val PLAIN_DARK_STYLE =
+    """{"version":8,"sources":{},"layers":[{"id":"bg","type":"background","paint":{"background-color":"#15181d"}}]}"""
 /** Long enough that a burst of slices arriving is one write, not nine. */
 private const val SNAPSHOT_SETTLE_MS = 1500L
 

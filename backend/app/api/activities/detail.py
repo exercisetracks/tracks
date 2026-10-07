@@ -149,7 +149,11 @@ def update_activity(
 ):
     activity = _owned_or_404(activity_id, user, db)
 
+    # The heatmap caches carry each track's sport, and the track GeoJSON its
+    # name too; the dashboard slices are per sport. All three go stale here.
+    caches_stale = False
     if update.name is not None:
+        caches_stale |= update.name != activity.name
         activity.name = update.name
     if update.notes is not None:
         activity.notes = update.notes
@@ -157,6 +161,7 @@ def update_activity(
     if update.sport is not None:
         new_sport = update.sport.strip().lower()
         if new_sport != activity.sport:
+            caches_stale = True
             activity.sport = new_sport
             # Recompute metrics that depend on sport from stored session-level values
             activity.efficiency_factor = compute_efficiency_factor(
@@ -172,8 +177,21 @@ def update_activity(
             _recompute_bests(db, activity, dp_dicts)
 
     db.commit()
+    if caches_stale:
+        _invalidate_activity_caches(user.id)
     db.refresh(activity)
     return activity
+
+
+def _invalidate_activity_caches(user_id: int) -> None:
+    """After an activity is edited or deleted. Imports invalidate these caches;
+    edits and deletes never did, so a deleted ride stayed on the heatmap and
+    in the dashboard totals until the next import happened to clear them."""
+    from app.api.metrics.caching import invalidate_dashboard_cache, invalidate_training_load_cache
+    from .heatmap_cache import invalidate_heatmap_cache
+    invalidate_heatmap_cache(user_id)
+    invalidate_dashboard_cache()
+    invalidate_training_load_cache()
 
 
 @router.delete("/{activity_id}", status_code=204)
@@ -198,6 +216,7 @@ def delete_activity(
             db.query(Lap).filter(Lap.activity_id == activity_id).delete()
             db.delete(activity)
             db.commit()
+        _invalidate_activity_caches(user.id)
         return
     else:
         # Null out import record's activity_id — preserves the SHA-256 dedup
@@ -213,3 +232,4 @@ def delete_activity(
     # file it came from is kept.
     db.delete(activity)
     db.commit()
+    _invalidate_activity_caches(user.id)

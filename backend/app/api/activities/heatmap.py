@@ -3,14 +3,13 @@
 """Heatmap + activity-track GeoJSON endpoints.
 
 `/activities/heatmap` returns anonymous simplified geometry for the WebGL glow
-layer (served from the Redis-backed cache in heatmap_cache.py for unfiltered/
-sport-only queries; date-filtered queries compute on the fly). `/activities/
+layer, every filter served from the Redis-backed cache in heatmap_cache.py. `/activities/
 tracks-geojson` returns the same tracks as a queryable FeatureCollection (each
 line carries its activity id) for click-to-inspect on the map.
 """
 
 import json
-from datetime import date, timedelta
+from datetime import date
 from itertools import groupby
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -25,13 +24,14 @@ from app.services.crypto_context import require_crypto_session
 from .helpers import _claimed_device_ids
 from .heatmap_cache import (
     _HEATMAP_MODES,
-    _SIMPLIFY_MIN_M,
-    _build_heatmap_bytes,
     _simplify_pts,
-    _value_col,
+    filter_base,
     filter_tracks_bbox,
-    get_cached_heatmap,
-    set_cached_heatmap,
+    get_cached_response,
+    get_cached_tracks_geojson,
+    heatmap_base,
+    set_cached_response,
+    set_cached_tracks_geojson,
     spacing_for_zoom,
 )
 
@@ -90,73 +90,32 @@ def heatmap(
     """
     if mode not in _HEATMAP_MODES:
         mode = "frequency"
+    sport = (sport or "").strip().lower()
 
     box = _parse_bbox(bbox)
     min_spacing = spacing_for_zoom(zoom) if zoom is not None else None
+    whole = box is None and min_spacing is None
 
-    def shape(tracks: list) -> list:
-        if box is not None:
-            tracks = filter_tracks_bbox(tracks, box)
-        if min_spacing is not None:
-            tracks = [s for s in (_simplify_pts(t, min_spacing) for t in tracks) if len(s) >= 2]
-        return tracks
-
-    # Cache covers unfiltered + sport-only queries.
-    # Date-range filters always compute on the fly.
-    if after is None and before is None:
-        cached = get_cached_heatmap(user.id, mode, sport or "")
+    # The finished bytes, when this exact filter has been answered before.
+    # Only for whole responses: a viewport is one of endless variations and
+    # caching each would fill Redis with near-copies.
+    if whole:
+        cached = get_cached_response(user.id, mode, sport, after, before)
         if cached is not None:
-            if box is None and min_spacing is None:
-                return Response(content=cached, media_type="application/json")
-            # Narrowing the cached payload still beats recomputing it: the
-            # alternative is re-reading and re-decrypting every data point.
-            return shape(json.loads(cached))
+            return Response(content=cached, media_type="application/json")
 
-    claimed_ids = _claimed_device_ids(db, user.id)
+    base = heatmap_base(db, user.id, mode, _claimed_device_ids(db, user.id))
+    tracks = filter_base(base, sport, after, before)
 
-    # Unfiltered / sport-only cache miss: compute and store the FULL payload so
-    # subsequent requests are instant, then narrow the copy we return. Caching
-    # the narrowed version would poison the cache for every other viewport.
-    if after is None and before is None:
-        payload = _build_heatmap_bytes(db, mode, sport or "", claimed_ids)
-        set_cached_heatmap(user.id, mode, sport or "", payload)
-        if box is None and min_spacing is None:
-            return Response(content=payload, media_type="application/json")
-        return shape(json.loads(payload))
-
-    # Date-filtered — compute on the fly without caching (data is dynamic)
-    val_col = _value_col(mode)
-    cols = [DataPoint.activity_id, DataPoint.lat, DataPoint.lng]
-    if val_col is not None:
-        cols.append(val_col)
-
-    q = (
-        db.query(*cols)
-        .join(Activity, DataPoint.activity_id == Activity.id)
-        .filter(DataPoint.lat.isnot(None), DataPoint.lng.isnot(None))
-        .filter(Activity.device_id.in_(claimed_ids))
-        .order_by(DataPoint.activity_id, DataPoint.recorded_at)
-    )
-    if val_col is not None:
-        q = q.filter(val_col.isnot(None))
-    if sport:
-        q = q.filter(Activity.sport == sport.strip().lower())
-    if after:
-        q = q.filter(Activity.started_at >= after)
-    if before:
-        q = q.filter(Activity.started_at < before + timedelta(days=1))
-
-    tracks = []
-    for _, grp in groupby(q.all(), key=lambda r: r.activity_id):
-        grp = list(grp)
-        if val_col is not None:
-            pts = [[round(r.lat, 4), round(r.lng, 4), round(r[3], 3)] for r in grp]
-        else:
-            pts = [[round(r.lat, 4), round(r.lng, 4)] for r in grp]
-        pts = _simplify_pts(pts, min_spacing or _SIMPLIFY_MIN_M)
-        if len(pts) >= 2:
-            tracks.append(pts)
-    return filter_tracks_bbox(tracks, box) if box is not None else tracks
+    if whole:
+        payload = json.dumps(tracks, separators=(",", ":")).encode()
+        set_cached_response(user.id, mode, sport, after, before, payload)
+        return Response(content=payload, media_type="application/json")
+    if box is not None:
+        tracks = filter_tracks_bbox(tracks, box)
+    if min_spacing is not None:
+        tracks = [s for s in (_simplify_pts(t, min_spacing) for t in tracks) if len(s) >= 2]
+    return tracks
 
 
 @router.get("/tracks-geojson")
@@ -170,8 +129,22 @@ def activity_tracks_geojson(
     """Past activities as a GeoJSON FeatureCollection of simplified LineStrings,
     each carrying its activity id + summary. Unlike /heatmap (anonymous geometry
     for the WebGL glow), this is queryable on the map: clicking near a line resolves
-    the activity so it can be inspected or turned into a custom track."""
-    claimed = _claimed_device_ids(db, user.id)
+    the activity so it can be inspected or turned into a custom track.
+
+    Cached like the heatmap, and under its prefix so the same post-import
+    invalidation clears it: every Maps page open asked for this, and each
+    answer decrypted the points of up to `limit` activities again."""
+    sport = (sport or "").strip().lower()
+    cached = get_cached_tracks_geojson(user.id, sport, limit)
+    if cached is not None:
+        return Response(content=cached, media_type="application/json")
+    payload = json.dumps(_tracks_geojson(db, user.id, sport, limit), separators=(",", ":")).encode()
+    set_cached_tracks_geojson(user.id, sport, limit, payload)
+    return Response(content=payload, media_type="application/json")
+
+
+def _tracks_geojson(db: Session, user_id: int, sport: str, limit: int) -> dict:
+    claimed = _claimed_device_ids(db, user_id)
     if not claimed:
         return {"type": "FeatureCollection", "features": []}
 
@@ -182,7 +155,7 @@ def activity_tracks_geojson(
                 Activity.distance_meters.isnot(None), Activity.distance_meters > 0)
     )
     if sport:
-        aq = aq.filter(Activity.sport == sport.strip().lower())
+        aq = aq.filter(Activity.sport == sport)
     acts = {a.id: a for a in aq.order_by(Activity.started_at.desc()).limit(limit).all()}
     if not acts:
         return {"type": "FeatureCollection", "features": []}

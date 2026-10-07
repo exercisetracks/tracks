@@ -46,10 +46,10 @@ object TracksSchema : SqlSchema<QueryResult.Value<Unit>> {
     const val BASELINE: Long = 7
 
     /** Bump together with [FINGERPRINT] whenever any `.sq` file's schema changes. */
-    const val VERSION: Long = 8
+    const val VERSION: Long = 9
 
     /** SHA-256 of the created schema; see `SchemaIdentityTest`. */
-    const val FINGERPRINT: String = "c944feb531c31b87a8c339c4d6501f38af4a1f04df587a89e09da084e3f67934"
+    const val FINGERPRINT: String = "02caae0dd04b0b86a9e091cc16c996da87b38d304f2a5bf036d952a3f4016df1"
 
     /**
      * The step that takes a database *to* each version, keyed by that version.
@@ -72,6 +72,20 @@ object TracksSchema : SqlSchema<QueryResult.Value<Unit>> {
                 0,
             )
             driver.execute(null, "UPDATE local_file SET uploaded = 0", 0)
+        },
+        // The dashboard heatmap's packed tracks (LocalLibrary.heatmapTracks).
+        // Empty to start: each is cut from its activity's detail the first
+        // time the heatmap asks, so the upgrade itself does no work.
+        9L to { driver ->
+            driver.execute(
+                null,
+                "CREATE TABLE local_heat_track (\n" +
+                    "    uid    TEXT NOT NULL PRIMARY KEY,\n" +
+                    "    sha256 TEXT NOT NULL,\n" +
+                    "    points BLOB NOT NULL\n" +
+                    ")",
+                0,
+            )
         },
     )
 

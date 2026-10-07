@@ -3,8 +3,15 @@
 // Activity heatmap: renders all of the user's activity tracks as a WebGL glow
 // layer over the self-hosted MapLibre basemap, coloured by the selected mode
 // (frequency / pace / heart rate / gradient). Fetches aggregated track points
-// from the API and feeds them to HeatmapGlowLayer; a sport filter and mode
-// switcher drive what's shown.
+// from the API and feeds them to HeatmapGlowLayer.
+//
+// What is shown is the dashboard's choice, not this card's: the period pills
+// set `after` and the sport-breakdown pie sets `sport`, the same two filters
+// every other card on the page follows. It once had its own sport picker,
+// date range and "Fit to data" button, which let it disagree with the page
+// around it; now the only control it owns is the colouring mode. The camera
+// re-frames whenever the filter changes, so the opening view is always the
+// activities in the window rather than wherever the last filter left it.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "../../api/client";
 import { useTheme } from "../../context/ThemeContext";
@@ -39,7 +46,7 @@ function Legend({ mode }) {
 
 // ── Controls panel ──────────────────────────────────────────────────────────────
 
-function Controls({ mode, onModeChange, sport, setSport, after, setAfter, before, setBefore, sports, onFitToData }) {
+function Controls({ mode, onModeChange }) {
   const [open, setOpen] = useState(true);
 
   return (
@@ -75,53 +82,6 @@ function Controls({ mode, onModeChange, sport, setSport, after, setAfter, before
               </div>
             </div>
 
-            {/* Sport */}
-            <div>
-              <p className="text-slate-400 mb-1 uppercase tracking-wider" style={{ fontSize: 10 }}>Sport</p>
-              <select
-                value={sport}
-                onChange={e => setSport(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-600 rounded px-1.5 py-1 text-slate-200 focus:outline-none focus:border-orange-400"
-              >
-                <option value="">All sports</option>
-                {sports.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-            </div>
-
-            {/* Date range */}
-            <div>
-              <p className="text-slate-400 mb-1 uppercase tracking-wider" style={{ fontSize: 10 }}>Date range</p>
-              <div className="space-y-1">
-                <input
-                  type="date"
-                  value={after}
-                  onChange={e => setAfter(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-600 rounded px-1.5 py-1 text-slate-200 focus:outline-none focus:border-orange-400"
-                />
-                <input
-                  type="date"
-                  value={before}
-                  onChange={e => setBefore(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-600 rounded px-1.5 py-1 text-slate-200 focus:outline-none focus:border-orange-400"
-                />
-              </div>
-              {(after || before) && (
-                <button
-                  onClick={() => { setAfter(""); setBefore(""); }}
-                  className="btn btn-neutral mt-1"
-                >
-                  Clear dates ×
-                </button>
-              )}
-            </div>
-
-            {/* Fit to data */}
-            <button
-              onClick={onFitToData}
-              className="btn btn-neutral btn-sm w-full"
-            >
-              Fit to data
-            </button>
           </div>
         )}
       </div>
@@ -169,7 +129,7 @@ function HeatmapMap({ tracks, mode, fitTracks, fitKey, theme }) {
     }
   }, [ready, tracks, mode]);
 
-  // Fit to data when fitKey bumps (initial auto-fit + explicit "Fit to data").
+  // Fit to data when fitKey bumps — once per filter, see maybeAutoFit.
   useEffect(() => {
     if (!ready || fitKey === lastFit.current || !fitTracks?.length) return;
     lastFit.current = fitKey;
@@ -179,7 +139,7 @@ function HeatmapMap({ tracks, mode, fitTracks, fitKey, theme }) {
       if (p[1]<minLng) minLng=p[1]; if (p[1]>maxLng) maxLng=p[1];
     }
     if (minLat <= maxLat) {
-      mapRef.current.fitBounds([[minLng,minLat],[maxLng,maxLat]], { padding: 28, animate: false });
+      mapRef.current.fitBounds([[minLng,minLat],[maxLng,maxLat]], { padding: 32, maxZoom: 15, animate: false });
     }
   }, [ready, fitKey, fitTracks]);
 
@@ -188,27 +148,24 @@ function HeatmapMap({ tracks, mode, fitTracks, fitKey, theme }) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function ActivityHeatmap({ height = 420, sport = "", onSportChange = () => {} }) {
+export default function ActivityHeatmap({ height = 420, sport = "", after = null }) {
   const { colorScheme } = useTheme();
   const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
   const isDark = colorScheme === "dark" || (colorScheme === "system" && systemDark);
 
   const [mode,   setMode]   = useState("frequency");
-  const [after,  setAfter]  = useState("");
-  const [before, setBefore] = useState("");
-  const [sports, setSports] = useState([]);
 
   const [loading,       setLoading]       = useState(true);
   const [displayTracks, setDisplayTracks] = useState([]);
   const [fitTracks,     setFitTracks]     = useState([]);
   const [fitKey,        setFitKey]        = useState(0);
 
-  // Heatmap response cache, keyed by (mode|sport|after|before), bounded LRU.
+  // Heatmap response cache, keyed by (mode|sport|after), bounded LRU.
   const cacheRef      = useRef(new Map());
-  const hasAutoFitRef = useRef(false);
+  const fittedForRef  = useRef(null);
   const fetchTokenRef = useRef(0);
 
-  function cacheKey(m, s, a, b) { return `${m}|${s}|${a}|${b}`; }
+  function cacheKey(m, s, a) { return `${m}|${s}|${a ?? ""}`; }
   function cacheGet(key) { return cacheRef.current.get(key); }
   function cacheSet(key, value) {
     const c = cacheRef.current;
@@ -217,22 +174,29 @@ export default function ActivityHeatmap({ height = 420, sport = "", onSportChang
     while (c.size > 32) c.delete(c.keys().next().value);
   }
 
+  // Frame once per filter (period + sport), on the first data that arrives for
+  // it. Not on a mode change: switching Frequency to Pace is a question about
+  // the same place, and yanking the camera back would throw away the user's
+  // pan. An empty result leaves the camera alone rather than flying to 0,0.
   function maybeAutoFit(tracks) {
-    if (hasAutoFitRef.current || !tracks?.length) return;
-    hasAutoFitRef.current = true;
+    const filter = `${sport}|${after ?? ""}`;
+    if (fittedForRef.current === filter || !tracks?.length) return;
+    fittedForRef.current = filter;
     setFitTracks(tracks);
     setFitKey(k => k + 1);
   }
 
-  // Load sports once.
-  useEffect(() => {
-    api.getSports().then(setSports).catch(() => {});
-  }, []);
+  function paramsFor(m) {
+    const params = { mode: m };
+    if (sport) params.sport = sport;
+    if (after) params.after = after;
+    return params;
+  }
 
   // Active-mode fetch. Cached responses skip the network.
   useEffect(() => {
     const token  = ++fetchTokenRef.current;
-    const key    = cacheKey(mode, sport, after, before);
+    const key    = cacheKey(mode, sport, after);
     const cached = cacheGet(key);
 
     if (cached !== undefined) {
@@ -243,12 +207,7 @@ export default function ActivityHeatmap({ height = 420, sport = "", onSportChang
     }
 
     setLoading(true);
-    const params = { mode };
-    if (sport)  params.sport  = sport;
-    if (after)  params.after  = after;
-    if (before) params.before = before;
-
-    api.getHeatmap(params)
+    api.getHeatmap(paramsFor(mode))
       .catch(() => [])
       .then(tracks => {
         if (token !== fetchTokenRef.current) return; // stale
@@ -258,7 +217,7 @@ export default function ActivityHeatmap({ height = 420, sport = "", onSportChang
         maybeAutoFit(tracks);
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, sport, after, before]);
+  }, [mode, sport, after]);
 
   // Background-prefetch the other modes during idle time.
   useEffect(() => {
@@ -268,25 +227,16 @@ export default function ActivityHeatmap({ height = 420, sport = "", onSportChang
 
     for (const { value: m } of MODES) {
       if (m === mode) continue;
-      const key = cacheKey(m, sport, after, before);
+      const key = cacheKey(m, sport, after);
       if (cacheGet(key) !== undefined) continue;
       const handle = idle(() => {
-        const params = { mode: m };
-        if (sport)  params.sport  = sport;
-        if (after)  params.after  = after;
-        if (before) params.before = before;
-        api.getHeatmap(params).then(t => cacheSet(key, t)).catch(() => cacheSet(key, []));
+        api.getHeatmap(paramsFor(m)).then(t => cacheSet(key, t)).catch(() => cacheSet(key, []));
       });
       handles.push(handle);
     }
     return () => { handles.forEach(h => cancel(h)); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, sport, after, before]);
-
-  function handleFitToData() {
-    setFitTracks(displayTracks);
-    setFitKey(k => k + 1);
-  }
+  }, [mode, sport, after]);
 
   return (
     <div style={{ height }} className="relative rounded-xl overflow-hidden">
@@ -314,18 +264,7 @@ export default function ActivityHeatmap({ height = 420, sport = "", onSportChang
         </div>
       )}
 
-      <Controls
-        mode={mode}
-        onModeChange={setMode}
-        sport={sport}
-        setSport={onSportChange}
-        after={after}
-        setAfter={setAfter}
-        before={before}
-        setBefore={setBefore}
-        sports={sports}
-        onFitToData={handleFitToData}
-      />
+      <Controls mode={mode} onModeChange={setMode} />
       <Legend mode={mode} />
     </div>
   );

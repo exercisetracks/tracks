@@ -38,6 +38,14 @@ export default function MapLibreMap({
   const mapRef = useRef(null);
   const onReadyRef = useRef(onReady);
   onReadyRef.current = onReady;
+  // The theme the current map instance was built with. Per instance, not "has
+  // this component styled once": StrictMode (dev) mounts, removes and creates
+  // the map again while refs survive, and a component-level flag then sent the
+  // brand-new map a setStyle before its first style had loaded. MapLibre
+  // rebuilt the style from scratch mid-load and never fired `load`, so onReady
+  // never ran and the map stayed a blank, unsized canvas. Lazy-loading the
+  // dashboard heatmap shifted the timing enough to hit it on every load.
+  const themeRef = useRef(theme);
 
   // Create the map exactly once.
   useEffect(() => {
@@ -57,6 +65,7 @@ export default function MapLibreMap({
         url.startsWith("/api/") ? { url: window.location.origin + url } : undefined,
     });
     mapRef.current = map;
+    themeRef.current = theme;
     if (interactive) {
       map.addControl(new maplibregl.NavigationControl({ showCompass: false }), navPosition);
     }
@@ -81,11 +90,10 @@ export default function MapLibreMap({
   }, []);
 
   // Theme switch → swap basemap style, then let the parent re-add its overlays.
-  const styledOnce = useRef(false);
   useEffect(() => {
     const map = mapRef.current;
-    if (!map) return;
-    if (!styledOnce.current) { styledOnce.current = true; return; } // initial style already set
+    if (!map || themeRef.current === theme) return; // this map already has it
+    themeRef.current = theme;
     map.setStyle(buildBasemapStyle(theme));
     map.once("styledata", () => onReadyRef.current?.(map));
   }, [theme]);

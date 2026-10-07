@@ -2,8 +2,22 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Heatmap cache state + builders.
 
-Pre-serialised JSON bytes for the unfiltered (and sport-only) heatmap, keyed by
-(user_id, mode, sport). Filled on demand by the route handlers in heatmap.py,
+Two layers, both per user:
+
+**Base** — per mode, every track the user has, each tagged with its
+activity's start time and sport: `[[started_utc_iso, sport, track], ...]`.
+Built for all four modes in one pass over the data points (see
+build_heatmap_bases), because the cost is decrypting lat/lng, and building the
+modes separately decrypted every point four times — which the dashboard's
+background prefetch of the other modes did on every cold load. Any sport and
+date window is then a filter over a base, so a windowed request is served from
+cache too. It used to be computed from scratch, which, once the dashboard
+heatmap began following the period pills, was every dashboard load.
+
+**Response** — the finished JSON bytes for one (mode, sport, after, before),
+so a repeat request costs one Redis read rather than parsing the base again.
+
+Filled on demand by the route handlers in heatmap.py,
 which hold the only key material that can decrypt DataPoint.lat/lng — there's
 no background warm-up (see git history for the pre-encryption version): a bare
 background thread has no active crypto session and no way to get one, so it
@@ -20,7 +34,7 @@ of 4 backend workers happened to handle them, because only one had ever
 recomputed since boot. Redis is one shared cache every process reads from
 and invalidates together.
 
-Modes:
+Modes (each track):
   frequency               → [[lat, lng], ...]
   pace / heartrate / gradient → [[lat, lng, value], ...]  (speed m/s, bpm, altitude m)
 """
@@ -28,6 +42,8 @@ Modes:
 import json
 import logging
 import math
+import time
+from datetime import date, timedelta, timezone
 from itertools import groupby
 
 import redis
@@ -35,7 +51,6 @@ import redis
 from app.models.activity import Activity, DataPoint
 from app.services.redis_client import get_redis
 
-from .helpers import _claimed_device_ids
 
 _log = logging.getLogger(__name__)
 
@@ -53,27 +68,127 @@ _SIMPLIFY_MIN_M = 15.0
 _SIMPLIFY_THR_SQ = (_SIMPLIFY_MIN_M / 111_000) ** 2  # degrees² (lng scaled per point)
 
 
-def _cache_key(user_id: int, mode: str, sport: str) -> str:
+def _base_key(user_id: int, mode: str) -> str:
     # user_id segregation is required for multi-user deployments so one
     # user's tracks never leak into another user's heatmap response.
-    return f"{_CACHE_PREFIX}{user_id}:{mode}:{sport}"
+    return f"{_CACHE_PREFIX}{user_id}:base:{mode}"
 
 
-def get_cached_heatmap(user_id: int, mode: str, sport: str) -> bytes | None:
-    """Returns None on a cache miss OR a Redis error — either way the caller
-    just recomputes, so a transient Redis blip degrades to slower responses,
-    never a broken one."""
+def _response_key(user_id: int, mode: str, sport: str,
+                  after: date | None, before: date | None) -> str:
+    return f"{_CACHE_PREFIX}{user_id}:resp:{mode}:{sport}:{after or ''}:{before or ''}"
+
+
+def _build_lock_key(user_id: int) -> str:
+    return f"{_CACHE_PREFIX}{user_id}:building"
+
+
+# How long a cold build may hold the lock, and how long another request waits
+# on it before giving up and building for itself. The lock is an optimisation,
+# never a correctness requirement, so it expires rather than risk a stuck one.
+_BUILD_LOCK_SECONDS = 120
+_BUILD_WAIT_SECONDS = 60
+
+
+def _redis_get(key: str) -> bytes | None:
+    """None on a miss OR a Redis error — either way the caller computes, so a
+    transient Redis blip degrades to slower responses, never a broken one."""
     try:
-        return get_redis().get(_cache_key(user_id, mode, sport))
+        return get_redis().get(key)
     except redis.RedisError:
         return None
 
 
-def set_cached_heatmap(user_id: int, mode: str, sport: str, payload: bytes) -> None:
+def _redis_set(key: str, payload: bytes) -> None:
     try:
-        get_redis().set(_cache_key(user_id, mode, sport), payload, ex=_CACHE_TTL_SECONDS)
+        get_redis().set(key, payload, ex=_CACHE_TTL_SECONDS)
     except redis.RedisError:
-        _log.warning("Failed to cache heatmap for user %s — will recompute next request", user_id)
+        _log.warning("Failed to cache heatmap entry %s — will recompute next request", key)
+
+
+def get_cached_response(user_id: int, mode: str, sport: str,
+                        after: date | None, before: date | None) -> bytes | None:
+    return _redis_get(_response_key(user_id, mode, sport, after, before))
+
+
+def set_cached_response(user_id: int, mode: str, sport: str,
+                        after: date | None, before: date | None, payload: bytes) -> None:
+    _redis_set(_response_key(user_id, mode, sport, after, before), payload)
+
+
+def _tracks_geojson_key(user_id: int, sport: str, limit: int) -> str:
+    return f"{_CACHE_PREFIX}{user_id}:geojson:{sport}:{limit}"
+
+
+def get_cached_tracks_geojson(user_id: int, sport: str, limit: int) -> bytes | None:
+    return _redis_get(_tracks_geojson_key(user_id, sport, limit))
+
+
+def set_cached_tracks_geojson(user_id: int, sport: str, limit: int, payload: bytes) -> None:
+    _redis_set(_tracks_geojson_key(user_id, sport, limit), payload)
+
+
+def heatmap_base(db, user_id: int, mode: str, claimed_ids: list) -> list:
+    """The base for `mode`, from cache or built (all modes at once) and cached.
+
+    A cold dashboard asks for one mode and, moments later, prefetches the
+    other three; without the lock each of those would start its own full
+    build. The first takes the lock and builds; the rest wait for its result,
+    and build for themselves only if it never comes.
+    """
+    cached = _redis_get(_base_key(user_id, mode))
+    if cached is not None:
+        return json.loads(cached)
+
+    lock = _build_lock_key(user_id)
+    try:
+        holder = bool(get_redis().set(lock, b"1", nx=True, ex=_BUILD_LOCK_SECONDS))
+    except redis.RedisError:
+        holder = True
+    if not holder:
+        deadline = time.monotonic() + _BUILD_WAIT_SECONDS
+        while time.monotonic() < deadline:
+            time.sleep(0.25)
+            cached = _redis_get(_base_key(user_id, mode))
+            if cached is not None:
+                return json.loads(cached)
+
+    try:
+        bases = build_heatmap_bases(db, claimed_ids)
+        for m, base in bases.items():
+            _redis_set(_base_key(user_id, m), json.dumps(base, separators=(",", ":")).encode())
+    finally:
+        if holder:
+            try:
+                get_redis().delete(lock)
+            except redis.RedisError:
+                pass
+    return bases[mode]
+
+
+def filter_base(base: list, sport: str, after: date | None, before: date | None) -> list:
+    """The tracks in a base that match a sport and an inclusive date window.
+
+    Start times are UTC ISO text, which compares in time order, and a bare
+    date sorts before every time on that day — the same edges as the SQL this
+    replaced (`started_at >= after`, `started_at < before + 1 day`). An
+    activity with no start time never matches a window, as NULL never matched
+    those comparisons.
+    """
+    lo = after.isoformat() if after else None
+    hi = (before + timedelta(days=1)).isoformat() if before else None
+    out = []
+    for started, s, track in base:
+        if sport and s != sport:
+            continue
+        if (lo or hi) and not started:
+            continue
+        if lo and started < lo:
+            continue
+        if hi and started >= hi:
+            continue
+        out.append(track)
+    return out
 
 
 def _simplify_pts(pts: list, min_m: float = _SIMPLIFY_MIN_M) -> list:
@@ -127,54 +242,69 @@ def filter_tracks_bbox(tracks: list, bbox: tuple[float, float, float, float]) ->
     ]
 
 
-def _value_col(mode: str):
-    if mode == "pace":       return DataPoint.speed
-    if mode == "heartrate":  return DataPoint.heart_rate
-    if mode == "gradient":   return DataPoint.altitude
-    return None
+def _utc_iso(dt) -> str:
+    if dt is None:
+        return ""
+    if dt.tzinfo is not None:
+        dt = dt.astimezone(timezone.utc).replace(tzinfo=None)
+    return dt.isoformat(timespec="seconds")
 
 
-def _build_heatmap_bytes(db, mode: str = "frequency", sport: str = "",
-                         claimed_ids: list | None = None) -> bytes:
-    val_col = _value_col(mode)
-    cols = [DataPoint.activity_id, DataPoint.lat, DataPoint.lng]
-    if val_col is not None:
-        cols.append(val_col)
+# Rows per fetch while streaming data points. The whole history at once is
+# every GPS point the user owns held in memory as ORM rows; streaming keeps
+# only one batch, and grouping still works because the query is ordered.
+_STREAM_BATCH = 50_000
 
+
+def build_heatmap_bases(db, claimed_ids: list) -> dict[str, list]:
+    """Every mode's base from one pass over the user's GPS points.
+
+    Points without a mode's value are dropped from that mode before
+    simplifying, as the per-mode queries this replaced filtered them in SQL —
+    a stretch with no heart rate is a gap, not a guess.
+    """
+    bases: dict[str, list] = {m: [] for m in _HEATMAP_MODES}
+    if not claimed_ids:
+        return bases
+
+    acts = {
+        a.id: (_utc_iso(a.started_at), (a.sport or "").strip().lower())
+        for a in db.query(Activity.id, Activity.started_at, Activity.sport)
+        .filter(Activity.device_id.in_(claimed_ids))
+    }
     q = (
-        db.query(*cols)
+        db.query(DataPoint.activity_id, DataPoint.lat, DataPoint.lng,
+                 DataPoint.speed, DataPoint.heart_rate, DataPoint.altitude)
         .join(Activity, DataPoint.activity_id == Activity.id)
         .filter(DataPoint.lat.isnot(None), DataPoint.lng.isnot(None))
+        .filter(Activity.device_id.in_(claimed_ids))
         .order_by(DataPoint.activity_id, DataPoint.recorded_at)
+        .yield_per(_STREAM_BATCH)
     )
-    if val_col is not None:
-        q = q.filter(val_col.isnot(None))
-    if sport:
-        q = q.filter(Activity.sport == sport)
-    if claimed_ids is not None:
-        q = q.filter(Activity.device_id.in_(claimed_ids))
-
-    rows = q.all()
-    tracks = []
-    for _, grp in groupby(rows, key=lambda r: r.activity_id):
+    value_index = {"pace": 3, "heartrate": 4, "gradient": 5}
+    for aid, grp in groupby(q, key=lambda r: r.activity_id):
         grp = list(grp)
-        if val_col is not None:
-            pts = [[round(r.lat, 4), round(r.lng, 4), round(r[3], 3)] for r in grp]
-        else:
-            pts = [[round(r.lat, 4), round(r.lng, 4)] for r in grp]
-        pts = _simplify_pts(pts)
+        started, sport = acts.get(aid, ("", ""))
+        pts = _simplify_pts([[round(r.lat, 4), round(r.lng, 4)] for r in grp])
         if len(pts) >= 2:
-            tracks.append(pts)
-    return json.dumps(tracks, separators=(",", ":")).encode()
+            bases["frequency"].append([started, sport, pts])
+        for mode, i in value_index.items():
+            vpts = _simplify_pts([[round(r.lat, 4), round(r.lng, 4), round(r[i], 3)]
+                                  for r in grp if r[i] is not None])
+            if len(vpts) >= 2:
+                bases[mode].append([started, sport, vpts])
+    return bases
 
 
-def invalidate_heatmap_cache() -> None:
-    """Discard every user's cached heatmap; next unfiltered request per
-    (user, mode, sport) recomputes. Global (all users), matching this
-    function's existing callers — none of them scope to one user today."""
+def invalidate_heatmap_cache(user_id: int | None = None) -> None:
+    """Discard cached heatmaps — bases, responses and track GeoJSON alike; the
+    next request rebuilds. Every user's when `user_id` is None (an import or a
+    device claim, whose callers do not scope), else just that user's (an edit
+    to one activity)."""
+    pattern = f"{_CACHE_PREFIX}{user_id}:*" if user_id is not None else f"{_CACHE_PREFIX}*"
     try:
         r = get_redis()
-        keys = list(r.scan_iter(match=f"{_CACHE_PREFIX}*"))
+        keys = list(r.scan_iter(match=pattern))
         if keys:
             r.delete(*keys)
     except redis.RedisError:

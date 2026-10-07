@@ -25,6 +25,7 @@ from app.database import get_db
 from app.models.activity import User
 from app.services import activity_status, fit_import
 from app.services.crypto_context import UserKeyMaterial, require_crypto_session
+from app.api.activities.heatmap_cache import invalidate_heatmap_cache
 from app.api.metrics.caching import invalidate_dashboard_cache, invalidate_training_load_cache
 from app.sync import store
 
@@ -51,9 +52,14 @@ def sync_push(
     # The cached load and dashboard series are computed from these entities
     # (goals choose the MTB multiplier, settings the thresholds). A web edit
     # invalidates them where it is made; a phone's edit arrives here instead.
-    if any(isinstance(c, dict) and c.get("entity") in _LOAD_INPUTS for c in body.get("changes", [])):
+    changes = [c for c in body.get("changes", []) if isinstance(c, dict)]
+    if any(c.get("entity") in _LOAD_INPUTS for c in changes):
         invalidate_training_load_cache()
         invalidate_dashboard_cache()
+    # A phone's rename, re-sport or delete of an activity: the heatmap caches
+    # carry its sport and name. See activities/heatmap_cache.py.
+    if any(c.get("entity") == "activity" for c in changes):
+        invalidate_heatmap_cache(user.id)
     return result
 
 

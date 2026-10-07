@@ -20,9 +20,11 @@ import java.io.File
  * new one on top of half of an old one is not a style, so a failed write
  * leaves the previous copy untouched by going through a temp file.
  */
-class MapStyleCache(context: Context) {
+class MapStyleCache(context: Context, name: String = "map-style") {
 
-    private val file = File(context.filesDir, "map-style.json")
+    // [name] keeps other styles apart: the dashboard heatmap's light and dark
+    // backdrops are cached beside the planning style, not over it.
+    private val file = File(context.filesDir, "$name.json")
 
     fun read(): String? = runCatching {
         if (file.isFile) file.readText() else null

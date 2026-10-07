@@ -170,6 +170,10 @@ class LocalImporter(
                 summary.dbl("vo2max_estimate"), summary.long("avg_power"), summary.long("normalized_power"),
                 summary.toString(), detail.toString(),
             )
+            // The heatmap's packed track was cut from the old detail; the
+            // sha256 join would also skip it, but nothing should outlive its
+            // source on the strength of a join alone.
+            q.deleteHeatTrack(uid)
             q.insertAlias(uid)
             q.upsertFile(sha256, "activity", uid, 0)
             Outcome.Imported

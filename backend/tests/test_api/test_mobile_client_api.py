@@ -28,9 +28,10 @@ def _auth(client, db, user, password="testpass123"):
     return headers, material
 
 
-def _make_activity_with_track(db, user, material, *, lat0=40.0, lng0=-150.0, npts=6, step=0.001):
-    a = Activity(user_id=user.id, device_id=1, sport="running",
-                 started_at=datetime(2024, 6, 1, 8), duration_seconds=3600,
+def _make_activity_with_track(db, user, material, *, lat0=40.0, lng0=-150.0, npts=6, step=0.001,
+                              started_at=datetime(2024, 6, 1, 8), sport="running", heart_rate=140):
+    a = Activity(user_id=user.id, device_id=1, sport=sport,
+                 started_at=started_at, duration_seconds=3600,
                  distance_meters=1000.0)
     db.add(a)
     db.flush()
@@ -39,7 +40,7 @@ def _make_activity_with_track(db, user, material, *, lat0=40.0, lng0=-150.0, npt
         db.add(DataPoint(id=a.id * 100000 + i, activity_id=a.id,
                          recorded_at=t0 + timedelta(seconds=i * 10),
                          lat=lat0 + i * step, lng=lng0 + i * step,
-                         altitude=1500.0 + i * 5, heart_rate=140, speed=3.0))
+                         altitude=1500.0 + i * 5, heart_rate=heart_rate, speed=3.0))
     token = crypto_context.set_current_key(material)
     try:
         db.commit()
@@ -160,6 +161,114 @@ class TestHeatmapViewport:
         for bad in ("not-a-bbox", "1,2,3", "-200,0,10,10", "10,10,-10,-10"):
             resp = client.get(f"/activities/heatmap?bbox={bad}", headers=headers)
             assert resp.status_code == 422, f"{bad!r} returned {resp.status_code}"
+
+
+class TestHeatmapCache:
+    """Every filter the dashboard sends is served from one cached pass.
+
+    Decrypting lat/lng is the whole cost of this endpoint. Date windows used to
+    bypass the cache entirely — and the dashboard heatmap now sends one on
+    every load, because it follows the period pills — and each mode was built
+    separately, so a cold dashboard decrypted every point four times.
+    """
+
+    def _counting_builds(self, monkeypatch):
+        from app.api.activities import heatmap_cache
+        calls = []
+        real = heatmap_cache.build_heatmap_bases
+
+        def counted(*a, **kw):
+            calls.append(1)
+            return real(*a, **kw)
+
+        monkeypatch.setattr(heatmap_cache, "build_heatmap_bases", counted)
+        return calls
+
+    def test_a_window_filters_by_start_date_inclusively(self, client, user, db):
+        headers, material = _auth(client, db, user)
+        _make_activity_with_track(db, user, material, started_at=datetime(2024, 5, 31, 23, 0))
+        _make_activity_with_track(db, user, material, lat0=10.0, started_at=datetime(2024, 6, 1, 0, 30))
+        _make_activity_with_track(db, user, material, lat0=20.0, started_at=datetime(2024, 6, 3, 12, 0))
+
+        def n(qs):
+            return len(client.get(f"/activities/heatmap?{qs}", headers=headers).json())
+
+        assert n("after=2024-06-01") == 2
+        assert n("before=2024-06-01") == 2      # the whole of the 1st is in
+        assert n("after=2024-06-02&before=2024-06-03") == 1
+        assert n("") == 3
+
+    def test_every_window_sport_and_mode_comes_from_one_build(self, client, user, db, monkeypatch):
+        calls = self._counting_builds(monkeypatch)
+        headers, material = _auth(client, db, user)
+        _make_activity_with_track(db, user, material)
+        _make_activity_with_track(db, user, material, lat0=10.0, sport="cycling")
+
+        for qs in ("", "after=2024-01-01", "after=2024-05-01&sport=cycling",
+                   "mode=pace", "mode=heartrate&after=2024-01-01", "mode=gradient&sport=running"):
+            assert client.get(f"/activities/heatmap?{qs}", headers=headers).status_code == 200
+        assert len(calls) == 1
+
+    def test_sport_filters_the_cached_tracks(self, client, user, db):
+        headers, material = _auth(client, db, user)
+        _make_activity_with_track(db, user, material)
+        _make_activity_with_track(db, user, material, lat0=10.0, sport="cycling")
+        client.get("/activities/heatmap", headers=headers)  # build
+        assert len(client.get("/activities/heatmap?sport=cycling", headers=headers).json()) == 1
+        assert len(client.get("/activities/heatmap?sport=Cycling ", headers=headers).json()) == 1
+
+    def test_a_mode_drops_points_without_its_value(self, client, user, db):
+        """No heart rate is a gap, not a guess — as the per-mode SQL filtered it."""
+        headers, material = _auth(client, db, user)
+        _make_activity_with_track(db, user, material, heart_rate=None)
+        assert len(client.get("/activities/heatmap", headers=headers).json()) == 1
+        assert client.get("/activities/heatmap?mode=heartrate", headers=headers).json() == []
+        pace = client.get("/activities/heatmap?mode=pace", headers=headers).json()
+        assert pace and all(len(p) == 3 for p in pace[0])
+
+    def test_an_import_clears_every_cached_filter(self, client, user, db):
+        from app.api.activities import invalidate_heatmap_cache
+        headers, material = _auth(client, db, user)
+        _make_activity_with_track(db, user, material)
+        assert len(client.get("/activities/heatmap?after=2024-01-01", headers=headers).json()) == 1
+        _make_activity_with_track(db, user, material, lat0=10.0)
+        invalidate_heatmap_cache()  # what fit_import does after every import
+        assert len(client.get("/activities/heatmap?after=2024-01-01", headers=headers).json()) == 2
+
+
+    def test_a_deleted_activity_leaves_every_cached_filter(self, client, user, db):
+        """Edits never invalidated these caches, only imports did — so a
+        deleted ride stayed on the heatmap until the next import."""
+        headers, material = _auth(client, db, user)
+        a = _make_activity_with_track(db, user, material)
+        _make_activity_with_track(db, user, material, lat0=10.0)
+        assert len(client.get("/activities/heatmap?after=2024-01-01", headers=headers).json()) == 2
+        assert client.delete(f"/activities/{a.id}", headers=headers).status_code == 204
+        assert len(client.get("/activities/heatmap?after=2024-01-01", headers=headers).json()) == 1
+
+    def test_a_re_sported_activity_moves_between_cached_sports(self, client, user, db):
+        headers, material = _auth(client, db, user)
+        a = _make_activity_with_track(db, user, material)
+        assert len(client.get("/activities/heatmap?sport=running", headers=headers).json()) == 1
+        client.patch(f"/activities/{a.id}", json={"sport": "hiking"}, headers=headers)
+        assert client.get("/activities/heatmap?sport=running", headers=headers).json() == []
+        assert len(client.get("/activities/heatmap?sport=hiking", headers=headers).json()) == 1
+
+    def test_track_geojson_is_cached_and_follows_a_rename(self, client, user, db, monkeypatch):
+        from app.api.activities import heatmap as heatmap_route
+        headers, material = _auth(client, db, user)
+        a = _make_activity_with_track(db, user, material)
+        calls = []
+        real = heatmap_route._tracks_geojson
+        monkeypatch.setattr(heatmap_route, "_tracks_geojson", lambda *x: calls.append(1) or real(*x))
+
+        first = client.get("/activities/tracks-geojson", headers=headers).json()
+        assert client.get("/activities/tracks-geojson", headers=headers).json() == first
+        assert len(calls) == 1  # the second open decrypted nothing
+
+        client.patch(f"/activities/{a.id}", json={"name": "Renamed"}, headers=headers)
+        after = client.get("/activities/tracks-geojson", headers=headers).json()
+        assert after["features"][0]["properties"]["name"] == "Renamed"
 
 
 class TestImportStatusIsScoped:

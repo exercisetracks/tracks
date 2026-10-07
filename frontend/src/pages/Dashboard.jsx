@@ -10,7 +10,7 @@
 // recap banner, the readiness card) and the pure date/format helpers live in
 // components/dashboard/ so this file stays focused on data orchestration.
 
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo, useCallback, lazy, Suspense } from "react";
 import { api } from "../api/client";
 import StatCard from "../components/StatCard";
 import CoachingCard from "../components/CoachingCard";
@@ -19,7 +19,6 @@ import ReadinessWidget from "../components/ReadinessWidget";
 import FitnessChart from "../components/Charts/FitnessChart";
 import ActivityCalendar from "../components/Charts/ActivityCalendar";
 import SportBreakdown from "../components/Charts/SportBreakdown";
-import ActivityHeatmap from "../components/Charts/ActivityHeatmap";
 import PlannedWorkoutCard from "../components/PlannedWorkoutCard";
 import WeeklyVolumeChart from "../components/Charts/WeeklyVolumeChart";
 import WorkoutRecapModal from "../components/WorkoutRecapModal";
@@ -31,6 +30,11 @@ import BarPills from "../components/ui/BarPills";
 import PageHeader from "../components/ui/PageHeader";
 import RecapBanner from "../components/dashboard/RecapBanner";
 
+// Lazy: it is the only thing on the dashboard that needs MapLibre, a megabyte
+// of script. Imported eagerly, it put that megabyte in the entry bundle, so
+// every first visit — the login page included — downloaded the map before it
+// could draw anything. Now the map loads while the cards above it render.
+const ActivityHeatmap = lazy(() => import("../components/Charts/ActivityHeatmap"));
 export default function Dashboard() {
   const [period,    setPeriod]    = useState("monthly");
   const [me,        setMe]        = useState(null);
@@ -260,7 +264,9 @@ export default function Dashboard() {
       {/* Geographic heatmap */}
       <Section title="Training Locations" dataTour="dashboard-locations">
         <div className="card p-0 overflow-hidden">
-          <ActivityHeatmap sport={selectedSport} onSportChange={setSelectedSport} />
+          <Suspense fallback={<div style={{ height: 420 }} />}>
+            <ActivityHeatmap sport={selectedSport} after={afterDateFor(period)} />
+          </Suspense>
         </div>
       </Section>
 

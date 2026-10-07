@@ -732,9 +732,16 @@ private const val ROUTES_LAYER = "tracks_routes_layer"
  * semi-transparent, overlapping routes accumulate into exactly the
  * "where do I actually go" picture the heatmap was reaching for, while a single
  * ride stays legible as a line.
+ *
+ * Each line carries its own `color` ([com.tracks.core.metrics.HeatmapRoutes]),
+ * so the dashboard's pace, heart-rate and gradient modes are the same layer.
+ * [valueColoured] lifts the opacity for those: overlap-as-density is the point
+ * of frequency mode, but in the others it muddies a colour into its neighbour's,
+ * which is why the web's glow is likewise stronger outside frequency.
  */
-internal fun addRoutes(style: org.maplibre.android.maps.Style, geoJson: String) {
+internal fun addRoutes(style: org.maplibre.android.maps.Style, geoJson: String, valueColoured: Boolean = false) {
     if (!style.isFullyLoaded) return
+    val opacity = if (valueColoured) 0.85f else 0.55f
 
     // Re-fed, not skipped, when the source already exists. This used to return
     // early on the reasoning that the layer was already installed — which meant
@@ -744,16 +751,22 @@ internal fun addRoutes(style: org.maplibre.android.maps.Style, geoJson: String) 
     val existing = style.getSource(ROUTES_SOURCE) as? GeoJsonSource
     if (existing != null) {
         existing.setGeoJson(geoJson)
+        style.getLayer(ROUTES_LAYER)?.setProperties(PropertyFactory.lineOpacity(opacity))
         return
     }
     style.addSource(GeoJsonSource(ROUTES_SOURCE, geoJson))
     style.addLayer(
         LineLayer(ROUTES_LAYER, ROUTES_SOURCE).withProperties(
-            PropertyFactory.lineColor("#f97316"),
+            PropertyFactory.lineColor(
+                org.maplibre.android.style.expressions.Expression.coalesce(
+                    org.maplibre.android.style.expressions.Expression.get("color"),
+                    org.maplibre.android.style.expressions.Expression.literal("#f97316"),
+                ),
+            ),
             // Thin and translucent so density comes from overlap rather than
             // from a colour ramp — one pass is faint, a commute is solid.
             PropertyFactory.lineWidth(1.6f),
-            PropertyFactory.lineOpacity(0.55f),
+            PropertyFactory.lineOpacity(opacity),
             PropertyFactory.lineCap(Property.LINE_CAP_ROUND),
             PropertyFactory.lineJoin(Property.LINE_JOIN_ROUND),
         ),
@@ -761,37 +774,17 @@ internal fun addRoutes(style: org.maplibre.android.maps.Style, geoJson: String) 
 }
 
 /**
- * Frame the camera on a GeoJSON FeatureCollection of LineStrings.
+ * Frame the camera on every line in a GeoJSON FeatureCollection of LineStrings.
  *
- * [withinDays] narrows what the *camera* considers, not what is drawn. Every
- * route stays on the map; the view simply opens on the recent ones.
- *
- * This is a deliberate divergence from the web app, which frames everything.
- * On a desktop that is fine — a lifetime of training on a large window is still
- * legible, and panning is cheap. On a phone the same bounds can span continents
- * for anyone who has travelled, so the card opens on a view where every route
- * is a few pixels and the user has to pan and zoom to find the ride they did on
- * Tuesday. Framing the last month puts the map where someone is actually
- * looking, and the history is one pinch away rather than absent.
- *
- * Falls back to framing everything when nothing falls in the window — after a
- * month off, an empty camera would be a worse answer than an old one.
+ * Everything, as the web does. It once narrowed to the last 30 days, because
+ * lifetime bounds on a phone can span continents; the dashboard's heatmap now
+ * follows its period selector, so how much history to frame is the user's
+ * choice rather than a guess made here. Does nothing for an empty collection,
+ * which leaves the camera where it was.
  */
-internal fun frameToGeoJson(
-    map: org.maplibre.android.maps.MapLibreMap,
-    geoJson: String,
-    withinDays: Long? = null,
-) {
+internal fun frameToGeoJson(map: org.maplibre.android.maps.MapLibreMap, geoJson: String) {
     val collection = runCatching { FeatureCollection.fromJson(geoJson) }.getOrNull() ?: return
-    val features = collection.features().orEmpty()
-
-    val framed = withinDays?.let { days ->
-        // The server sends `date` as an ISO datetime, and ISO dates compare
-        // lexicographically — the same trick the dashboard uses to window its
-        // training load, and the reason no parsing is needed here.
-        val cutoff = java.time.LocalDate.now().minusDays(days).toString()
-        features.filter { (it.getStringProperty("date") ?: "") >= cutoff }
-    }.orEmpty().ifEmpty { features }
+    val framed = collection.features().orEmpty()
 
     val points = framed.mapNotNull { it.geometry() as? LineString }
         .flatMap { it.coordinates() }

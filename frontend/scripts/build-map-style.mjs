@@ -17,6 +17,13 @@
 // build time. It's emitted as a placeholder the backend substitutes per
 // request — see backend/app/routes/map_style.py.
 //
+// It also writes the two backdrop styles (light and dark) that sit behind GPS
+// overlays — the web dashboard's heatmap, the activity maps — from
+// src/components/map/basemapStyle.js, beside the main one. The phone's
+// dashboard heatmap renders those rather than the 124-layer planning style,
+// for the same reason the browser does: it is a backdrop for colourful tracks,
+// and the planning style has no dark palette at all.
+//
 // Usage: node scripts/build-map-style.mjs [outfile]
 
 import "./extensionless-resolver.mjs";
@@ -33,6 +40,8 @@ const DEFAULT_OUT = resolvePath(HERE, "../../backend/app/static/map_style.json")
 const VERSION_PLACEHOLDER = "__TILE_VERSION__";
 
 const { buildStyle } = await import("../src/pages/maps/style/index.js");
+const { buildBasemapStyle } = await import("../src/components/map/basemapStyle.js");
+const { alignTileUrls } = await import("./align-tile-urls.mjs");
 
 // includeDem, unlike the browser: a native client cannot add a source to its own
 // style after load the way useRegionDownload does, so relief has to be in the
@@ -60,3 +69,15 @@ console.log(
   `build-map-style: ${style.layers.length} layers, ` +
   `${Object.keys(style.sources).length} sources -> ${out}`
 );
+
+// Named after the main artifact so a custom outfile keeps them together.
+for (const theme of ["light", "dark"]) {
+  const backdrop = alignTileUrls(buildBasemapStyle(theme), style);
+  if (!backdrop?.layers?.length) {
+    console.error(`build-map-style: buildBasemapStyle(${theme}) produced no layers`);
+    process.exit(1);
+  }
+  const backdropOut = out.replace(/map_style\.json$|\.json$/, `backdrop_style_${theme}.json`);
+  writeFileSync(backdropOut, JSON.stringify(backdrop, null, 0) + "\n");
+  console.log(`build-map-style: backdrop (${theme}), ${backdrop.layers.length} layers -> ${backdropOut}`);
+}

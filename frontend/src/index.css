@@ -142,6 +142,15 @@ input[type="range"].appearance-none::-moz-range-thumb {
   cursor: pointer;
 }
 
+/* A map placed with Tailwind's `absolute inset-0` keeps that placement.
+   maplibre-gl.css sets `.maplibregl-map { position: relative }` at the same
+   specificity as `.absolute`, so whichever stylesheet loaded last won. When the
+   map's chunk was lazy-loaded its CSS arrived last, the map became relative,
+   `inset-0` gave it no height, and the dashboard heatmap rendered blank. */
+.maplibregl-map.absolute {
+  position: absolute;
+}
+
 /* ── MapLibre Geocoder width + dark mode overrides ──────────────────────── */
 .maplibregl-ctrl-geocoder {
   min-width: 600px;

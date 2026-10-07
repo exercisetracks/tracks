@@ -57,6 +57,9 @@ object Endpoints {
     const val TRACKS_GEOJSON = "/activities/tracks-geojson"
     const val MAP_STYLE = "/maps/style.json"
 
+    /** The plain light/dark basemap behind the dashboard heatmap; `?theme=`. */
+    const val MAP_BACKDROP = "/maps/backdrop.json"
+
     // Offline map regions. The server does the extraction; the phone asks for
     // an area and watches. See [com.tracks.core.api.MapRegion].
     const val REGIONS = "/maps/regions"
@@ -281,7 +284,7 @@ object Endpoints {
         CAPABILITIES,
         LOGIN, REFRESH, DEVICE_KEYS, DEVICE_KEY_BY_ID, DEVICE_UNLOCK,
         SYNC_PUSH, SYNC_PULL, SYNC_BLOB, ACTIVITY_DETAIL, ACTIVITY_TRACK, ACTIVITY_LAPS,
-        HEATMAP, TRACKS_GEOJSON, MAP_STYLE,
+        HEATMAP, TRACKS_GEOJSON, MAP_STYLE, MAP_BACKDROP,
         REGIONS, REGION_BY_ID, REGION_PROGRESS, REGION_DOWNLOAD,
         REGION_ESTIMATE, REGION_SUGGEST_NAME,
         MAP_POINT, POI_SEARCH, POI_OFFLINE, ROUTE_SNAP,

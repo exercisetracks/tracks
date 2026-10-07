@@ -49,6 +49,12 @@ import com.tracks.app.ui.components.StatValue
 import com.tracks.app.ui.map.MapLibreView
 import com.tracks.app.ui.map.addRoutes
 import com.tracks.app.ui.map.frameToGeoJson
+import com.tracks.app.ui.profile.SegmentedChoice
+import com.tracks.core.metrics.HeatmapMode
+import androidx.compose.foundation.background
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import com.tracks.core.api.DailyCoaching
 import com.tracks.core.api.PlannedWorkout
 import com.tracks.core.spec.tsbBandFor
@@ -134,8 +140,13 @@ fun DashboardScreen(
         }
 
         TrainingLocationsCard(
-            styleJson = state.mapStyleJson,
+            backdropLight = state.backdropLight,
+            backdropDark = state.backdropDark,
             routesGeoJson = state.routesGeoJson,
+            routesFilter = state.routesFilter,
+            routesEmpty = state.routesEmpty,
+            mode = state.heatmapMode,
+            onMode = vm::setHeatmapMode,
         )
     }
 }
@@ -427,16 +438,7 @@ private fun PlanRow(
 // ── Training locations ───────────────────────────────────────────────────────
 
 /**
- * How much history the training-locations camera opens on.
- *
- * A month: long enough to include a normal training block, short enough that
- * the view is somewhere the user recognises rather than the bounding box of
- * everywhere they have ever been.
- */
-private const val RECENT_ROUTE_DAYS = 30L
-
-/**
- * Where the user trains.
+ * Where the user trains, in the dashboard's window and sport.
  *
  * Interactive, and deliberately not a link. It was a tap target that opened the
  * Map tab, on the reasoning that a pannable map inside a vertical scroll fights
@@ -448,13 +450,32 @@ private const val RECENT_ROUTE_DAYS = 30L
  *
  * Taller than a thumbnail for the same reason: at 180dp a state-sized region
  * was a few pixels of line. This is a chart, not a decoration.
+ *
+ * The camera opens on every route in the window, as the web's does. It used to
+ * open on the last 30 days whatever the window said, because "lifetime" on a
+ * phone can span continents; now the window *is* the user's answer to how much
+ * to look at, and picking 7 days frames the week.
  */
 @Composable
-private fun TrainingLocationsCard(styleJson: String?, routesGeoJson: String?) {
+private fun TrainingLocationsCard(
+    backdropLight: String?,
+    backdropDark: String?,
+    routesGeoJson: String?,
+    routesFilter: String?,
+    routesEmpty: Boolean,
+    mode: HeatmapMode,
+    onMode: (HeatmapMode) -> Unit,
+) {
+    // The app's theme, not the system's: the user can pick one in Settings,
+    // and the card should match the screen it sits on.
+    val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val styleJson = if (dark) backdropDark else backdropLight
     if (styleJson == null || routesGeoJson == null) return
 
     SectionCard("Training locations", subtitle = "Drag to pan, pinch to zoom") {
         var loaded by remember { mutableStateOf<Pair<MapLibreMap, Style>?>(null) }
+        // The filter the camera was last framed for; see DashboardUiState.routesFilter.
+        var framedFor by remember { mutableStateOf<String?>(null) }
 
         Box(
             Modifier
@@ -476,20 +497,73 @@ private fun TrainingLocationsCard(styleJson: String?, routesGeoJson: String?) {
                     loaded = map to style
                 },
             )
+            if (routesEmpty) {
+                Text(
+                    "No GPS data in this window",
+                    Modifier
+                        .align(Alignment.Center)
+                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.85f), RoundedCornerShape(Tokens.Radius.lg))
+                        .padding(horizontal = 10.dp, vertical = 4.dp),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
+
+        SegmentedChoice(
+            options = HeatmapMode.entries.map { it.name to it.shortLabel() },
+            selected = mode.name,
+            onSelect = { onMode(HeatmapMode.valueOf(it)) },
+        )
+        HeatmapLegend(mode)
 
         // Applied outside onMapReady: that callback fires as soon as the style
         // parses, which is before the routes arrive, so a camera framed there
-        // frames nothing and lands at null island.
+        // frames nothing and lands at null island. Keyed on the style too: a
+        // theme switch swaps the document, which drops the routes layer.
         LaunchedEffect(loaded, routesGeoJson) {
             val (map, style) = loaded ?: return@LaunchedEffect
-            addRoutes(style, routesGeoJson)
-            // Everything is drawn; only the opening view is narrowed. See
-            // frameToGeoJson for why the phone diverges from the web here.
-            frameToGeoJson(map, routesGeoJson, withinDays = RECENT_ROUTE_DAYS)
+            addRoutes(style, routesGeoJson, valueColoured = mode != HeatmapMode.Frequency)
+            if (routesFilter != framedFor) {
+                // An empty window leaves the camera where it was rather than
+                // flying to 0,0 — frameToGeoJson does nothing with no points.
+                frameToGeoJson(map, routesGeoJson)
+                framedFor = routesFilter
+            }
         }
     }
 }
+
+/** Four of these share a row, so heart rate is the one that is shortened. */
+private fun HeatmapMode.shortLabel(): String = if (this == HeatmapMode.HeartRate) "HR" else label
+
+/** The colour ramp a value mode is drawn in, as the web's legend shows it. */
+@Composable
+private fun HeatmapLegend(mode: HeatmapMode) {
+    val (labels, stops) = when (mode) {
+        HeatmapMode.Frequency -> return
+        HeatmapMode.Gradient -> listOf("Descent", "Flat", "Climb") to
+            listOf(Color(0xFF10B981), Color.White, Color(0xFF8B5CF6))
+        HeatmapMode.HeartRate -> listOf("Low HR", "High HR") to SPEED_RAMP
+        HeatmapMode.Pace -> listOf("Slow", "Fast") to SPEED_RAMP
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(8.dp)
+                .clip(RoundedCornerShape(Tokens.Radius.lg))
+                .background(Brush.horizontalGradient(stops)),
+        )
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            labels.forEach {
+                Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+    }
+}
+
+private val SPEED_RAMP = listOf(Color(0xFF2962FF), Color(0xFF10B981), Color(0xFFFBBF24), Color(0xFFEF4444))
 
 // ── Pieces ───────────────────────────────────────────────────────────────────
 

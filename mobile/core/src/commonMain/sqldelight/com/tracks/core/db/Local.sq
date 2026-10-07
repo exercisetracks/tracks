@@ -162,6 +162,39 @@ DELETE FROM local_activity WHERE uid = ?;
 deleteAllActivities:
 DELETE FROM local_activity;
 
+-- ── Heatmap tracks ──────────────────────────────────────────────────────────
+-- Each activity's track, thinned and packed small, for the dashboard heatmap
+-- (LocalLibrary.heatmapTracks). Derived from `detail`, and kept because
+-- deriving it means parsing every activity's whole detail JSON — seconds of
+-- work on a phone, repeated on every period, sport or mode change. Here, not
+-- in a file: these are GPS tracks, and this database is the encrypted one.
+-- `sha256` is the file it was cut from; a re-import invalidates it.
+CREATE TABLE local_heat_track (
+    uid    TEXT NOT NULL PRIMARY KEY,
+    sha256 TEXT NOT NULL,
+    points BLOB NOT NULL
+);
+
+-- Every activity started on or after :after (all, when it is NULL), with its
+-- packed track if one is current. LEFT JOIN, so a missing or stale track
+-- shows as NULL and is cut on demand. The window is applied here, on the
+-- started_at index, so a week's view does not read years of tracks.
+selectHeatTracks:
+SELECT a.uid, a.started_at, a.sha256, h.points
+FROM local_activity a
+LEFT JOIN local_heat_track h ON h.uid = a.uid AND h.sha256 = a.sha256
+WHERE :after IS NULL OR a.started_at >= :after
+ORDER BY a.started_at DESC;
+
+upsertHeatTrack:
+INSERT OR REPLACE INTO local_heat_track VALUES (?, ?, ?);
+
+deleteHeatTrack:
+DELETE FROM local_heat_track WHERE uid = ?;
+
+deleteAllHeatTracks:
+DELETE FROM local_heat_track;
+
 -- ── Days ────────────────────────────────────────────────────────────────────
 --
 -- One row per local date, folded together from every file that describes it

@@ -149,10 +149,11 @@ class LocalSources(
     /** Every trip, newest first, with totals derived from members that are still visible. */
     suspend fun trips(): List<TripSummary> = io {
         val visible = activities().associateBy { it.id }
+        val aliases = library.aliasesByUid()
         return@io replica.rows("trip").map { row ->
             val members = (row.fields["activity_uids"] as? JsonArray).orEmpty()
                 .mapNotNull { (it as? JsonPrimitive)?.content }
-                .mapNotNull { visible[library.alias(it)] }
+                .mapNotNull { uid -> aliases[uid]?.let(visible::get) }
             TripTotals.of(library.alias(row.uid), row.str("name") ?: "Trip", row.str("notes"), members)
         }.sortedByDescending { it.startedAt.orEmpty() }
     }

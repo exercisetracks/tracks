@@ -25,6 +25,8 @@ const ARTIFACT = resolve(HERE, "../../backend/app/static/map_style.json");
 const VERSION_PLACEHOLDER = "__TILE_VERSION__";
 
 const { buildStyle } = await import("../src/pages/maps/style/index.js");
+const { buildBasemapStyle } = await import("../src/components/map/basemapStyle.js");
+const { alignTileUrls } = await import("./align-tile-urls.mjs");
 
 const fail = (msg) => {
   console.error(`check-map-style: ${msg}`);
@@ -38,7 +40,9 @@ try {
   fail(`artifact missing at ${ARTIFACT} — run \`npm run build:map-style\``);
 }
 
-const fresh = JSON.stringify(buildStyle(VERSION_PLACEHOLDER)) + "\n";
+// includeDem, as build-map-style.mjs passes it — without it this compared
+// against a style the build never writes and reported every artifact stale.
+const fresh = JSON.stringify(buildStyle(VERSION_PLACEHOLDER, { includeDem: true })) + "\n";
 
 if (committed !== fresh) {
   fail("map_style.json is stale — run `npm run build:map-style` and commit the result");
@@ -60,6 +64,24 @@ const urls = [
   style.sprite,
   ...Object.values(style.sources).flatMap((s) => s.tiles || []),
 ].filter(Boolean);
+
+// The backdrops the phone's dashboard heatmap renders: the same staleness and
+// the same URL rule apply.
+for (const theme of ["light", "dark"]) {
+  const path = resolve(HERE, `../../backend/app/static/backdrop_style_${theme}.json`);
+  let text;
+  try {
+    text = readFileSync(path, "utf8");
+  } catch {
+    fail(`backdrop artifact missing at ${path} — run \`npm run build:map-style\``);
+  }
+  const planning = JSON.parse(committed);
+  if (text !== JSON.stringify(alignTileUrls(buildBasemapStyle(theme), planning)) + "\n") {
+    fail(`backdrop_style_${theme}.json is stale — run \`npm run build:map-style\` and commit the result`);
+  }
+  const b = JSON.parse(text);
+  urls.push(b.glyphs, ...Object.values(b.sources).flatMap((s) => s.tiles || []));
+}
 
 const bad = urls.filter((u) => !u.startsWith("/api/"));
 if (bad.length) {

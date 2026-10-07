@@ -893,7 +893,7 @@
           "activities"
         ],
         "summary": "Activity Tracks Geojson",
-        "description": "Past activities as a GeoJSON FeatureCollection of simplified LineStrings,\neach carrying its activity id + summary. Unlike /heatmap (anonymous geometry\nfor the WebGL glow), this is queryable on the map: clicking near a line resolves\nthe activity so it can be inspected or turned into a custom track.",
+        "description": "Past activities as a GeoJSON FeatureCollection of simplified LineStrings,\neach carrying its activity id + summary. Unlike /heatmap (anonymous geometry\nfor the WebGL glow), this is queryable on the map: clicking near a line resolves\nthe activity so it can be inspected or turned into a custom track.\n\nCached like the heatmap, and under its prefix so the same post-import\ninvalidation clears it: every Maps page open asked for this, and each\nanswer decrypted the points of up to `limit` activities again.",
         "operationId": "activity_tracks_geojson_activities_tracks_geojson_get",
         "security": [
           {
@@ -1449,6 +1449,52 @@
         "responses": {
           "204": {
             "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/activities/{activity_id}/outline": {
+      "get": {
+        "tags": [
+          "activities"
+        ],
+        "summary": "Get Outline",
+        "description": "The route's shape for the activity list's thumbnail, or null without GPS.\n\nOne small request per row rather than every track at once\n(``/tracks-geojson``): the list asks for a row's outline only when the row\nis on screen, a few at a time, so thumbnails fill in one by one and never\nhold up the table. Only the normalised shape leaves the server \u2014 see\ncalculators/track_outline.py for why that matters to where it is cached.",
+        "operationId": "get_outline_activities__activity_id__outline_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "activity_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Activity Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
           },
           "422": {
             "description": "Validation Error",
@@ -4033,7 +4079,7 @@
           "users"
         ],
         "summary": "Clear User Data",
-        "description": "Delete all activity/training data, ingested FIT blobs, and devices for\nthe current user.",
+        "description": "Delete all activity/training data, ingested FIT blobs, and devices for\nthe current user \u2014 only theirs; the admin wipes below reach everyone's.",
         "operationId": "clear_user_data_users_me_data_delete",
         "responses": {
           "204": {
@@ -4102,6 +4148,197 @@
                 "schema": {
                   "$ref": "#/components/schemas/CreateUserResponse"
                 }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/users/{user_id}/password": {
+      "post": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Admin Reset Password",
+        "description": "Admin only: set another account's password.\n\n## Why this can cost the account its data\n\nEach account's data is encrypted under a key that only its own password\n(or its recovery key) unwraps \u2014 by design, an admin cannot read anyone\nelse's GPS tracks, files or injury notes. So an admin who does not know the\nold password cannot carry that key over to a new one. Two ways out:\n\n* **With the recovery key**, the key is unwrapped with it and re-wrapped\n  under the new password. Nothing is lost.\n* **Without it** (``discard_data``), the account gets new keys, and the\n  data under the old ones is deleted: kept, it would be ciphertext nobody\n  can ever open, and every page reading it would fail. The account and\n  its settings stay. The response carries the new recovery key, to hand\n  to the user.\n\nEither way the account is signed out everywhere, as a self-service change\nsigns out every other session. Your own password is changed under\nSecurity, with your current one.",
+        "operationId": "admin_reset_password_users__user_id__password_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "User Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminPasswordReset"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/admin/wipe-data": {
+      "post": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Admin Wipe All Data",
+        "description": "Admin only: every account's data, as \"clear my data\" does for one.\nAccounts, settings and the instance's map data stay.",
+        "operationId": "admin_wipe_all_data_users_admin_wipe_data_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WipeConfirm"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/users/admin/wipe-accounts": {
+      "post": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Admin Wipe Accounts",
+        "description": "Admin only: every account's data, and every account but the caller's.",
+        "operationId": "admin_wipe_accounts_users_admin_wipe_accounts_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WipeConfirm"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/users/admin/factory-reset": {
+      "post": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Admin Factory Reset",
+        "description": "Admin only: every account and its data, the caller's included. The\nserver is back at first-run setup afterwards \u2014 the setup-complete flag is\ncleared, and the next visitor creates the admin. Map tiles are not\npersonal and are kept (Settings has its own button for them).",
+        "operationId": "admin_factory_reset_users_admin_factory_reset_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WipeConfirm"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
               }
             }
           },
@@ -5814,9 +6051,19 @@
           "garmin-sync"
         ],
         "summary": "Record Sync Start",
-        "description": "Called by garmin-sync the moment a watch is detected. Shows the spinner in the UI.",
+        "description": "Called by garmin-sync the moment a watch is detected: the owner's\nsidebar shows the watch syncing (activity_status, 5-minute heartbeat).",
         "operationId": "record_sync_start_training_plan_sync_start_post",
         "parameters": [
+          {
+            "name": "x-garmin-device-serial",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "X-Garmin-Device-Serial"
+            }
+          },
           {
             "name": "authorization",
             "in": "header",
@@ -5856,9 +6103,19 @@
           "garmin-sync"
         ],
         "summary": "Record Sync Abort",
-        "description": "Called by garmin-sync when a sync attempt dies (watch unplugged\nmid-sync, worker crash) so is_syncing doesn't stay latched for the\n5-minute staleness window \u2014 that left the sidebar stuck on\n\"Syncing watch\u2026\" after an unplug.",
+        "description": "Called by garmin-sync when a sync attempt dies (watch unplugged\nmid-sync, worker crash) so the status does not wait out its 5-minute\nheartbeat \u2014 that left the sidebar stuck on \"Syncing watch\u2026\" after an unplug.",
         "operationId": "record_sync_abort_training_plan_sync_abort_post",
         "parameters": [
+          {
+            "name": "x-garmin-device-serial",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "X-Garmin-Device-Serial"
+            }
+          },
           {
             "name": "authorization",
             "in": "header",
@@ -5950,8 +6207,25 @@
           "garmin-sync"
         ],
         "summary": "Get Sync Status",
-        "description": "Return the last watch sync timestamp, pending upload count, live sync state,\nand current import activity.",
+        "description": "What the sidebar shows: what is actually under way for this user.\n\n``activity`` is the whole answer (see app.services.activity_status for why\nit replaced a queue count and a global flag). Imports are split three\nways, because only one of them is work happening:\n\n* ``importing`` \u2014 the worker is on it, ``{done, total}``;\n* ``waiting``   \u2014 queued files this session cannot open, because the\n  vault is shut. They wait for the next sign-in; no spinner;\n* ``failed``    \u2014 files that were tried and could not be parsed.\n\nA queue with the vault open and no worker on it is started from here (at\nmost once a minute), so it drains in seconds rather than at the next\n90-second poll \u2014 and is then reported as importing, which it is.\n\nThe older top-level fields stay for the phone and anything else reading them.",
         "operationId": "get_sync_status_training_plan_sync_status_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Authorization"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -5960,13 +6234,18 @@
                 "schema": {}
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
+        }
       }
     },
     "/training-plan/sync/trigger": {
@@ -9680,6 +9959,51 @@
         ]
       }
     },
+    "/music/server/probe": {
+      "post": {
+        "tags": [
+          "music"
+        ],
+        "summary": "Probe Server",
+        "description": "Find a music server from a partial address \u2014 scheme and default port\nfilled in (services/subsonic.discover, which says why this is safe to\noffer). The form shows the login fields only once this has found one.",
+        "operationId": "probe_server_music_server_probe_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProbeBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/music/server/watch-config": {
       "get": {
         "tags": [
@@ -11446,6 +11770,31 @@
         "summary": "Global Downloads",
         "description": "Return status of the two global downloads (basemap overview + DEM).\n\nUsed by the frontend to show a progress indicator when the user first\nenables maps in Settings and the ~120 MB / ~3.1 GB archives are being\ndownloaded in the background.",
         "operationId": "global_downloads_maps_global_downloads_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/maps/basemap/reset": {
+      "post": {
+        "tags": [
+          "maps"
+        ],
+        "summary": "Reset Basemap",
+        "description": "Delete every basemap tile on this server, and fetch it again if map\ndownloads are on.\n\nFor a basemap that has gone wrong \u2014 a truncated archive, a region whose\ntiles no longer match its record \u2014 where deleting areas one by one does not\nreach the files that are broken. Admin-only, because the tiles are the\ninstance's, shared by every account on it.\n\nRefused while anything is downloading: the pipelines write these files as\nthey go, and deleting underneath one would leave it writing into a file\nthat no longer exists. Each region keeps its record and is rebuilt from\nits own bounding box, so the areas come back as they were; with downloads\noff they are marked for re-download instead, which is what startup\nrecovery does for a region whose files are missing.",
+        "operationId": "reset_basemap_maps_basemap_reset_post",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -13760,6 +14109,70 @@
         }
       }
     },
+    "/maps/backdrop.json": {
+      "get": {
+        "tags": [
+          "maps"
+        ],
+        "summary": "Backdrop Style",
+        "description": "The plain basemap that sits behind GPS overlays, in a light or dark palette.\n\nThe web builds this in the browser (`components/map/basemapStyle.js`) for\nits dashboard heatmap and activity maps. The phone's dashboard heatmap\nneeds the same thing: the planning style above is a single light document,\nso a phone in dark mode drew a white map in the middle of a dark screen.\nBuilt from the same module, so the two clients cannot drift apart.",
+        "operationId": "backdrop_style_maps_backdrop_json_get",
+        "parameters": [
+          {
+            "name": "theme",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "light",
+                "dark"
+              ],
+              "type": "string",
+              "default": "light",
+              "title": "Theme"
+            }
+          },
+          {
+            "name": "base_url",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Absolute origin to prefix onto /api paths, for clients with no page origin to resolve them against (e.g. https://tracks.example.com). Omit for same-origin use.",
+              "title": "Base Url"
+            },
+            "description": "Absolute origin to prefix onto /api paths, for clients with no page origin to resolve them against (e.g. https://tracks.example.com). Omit for same-origin use."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/contours/regenerate": {
       "post": {
         "tags": [
@@ -14494,6 +14907,35 @@
         },
         "type": "object",
         "title": "ActivityUpdate"
+      },
+      "AdminPasswordReset": {
+        "properties": {
+          "new_password": {
+            "type": "string",
+            "title": "New Password"
+          },
+          "recovery_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recovery Key"
+          },
+          "discard_data": {
+            "type": "boolean",
+            "title": "Discard Data",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "new_password"
+        ],
+        "title": "AdminPasswordReset"
       },
       "AutoBody": {
         "properties": {
@@ -18798,6 +19240,19 @@
         "type": "object",
         "title": "PrimaryDeviceBody"
       },
+      "ProbeBody": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "title": "Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "url"
+        ],
+        "title": "ProbeBody"
+      },
       "ProductIn": {
         "properties": {
           "name": {
@@ -22787,6 +23242,19 @@
         ],
         "title": "WeeklyVolumePoint",
         "description": "One ISO week of aggregated distance + duration."
+      },
+      "WipeConfirm": {
+        "properties": {
+          "confirm": {
+            "type": "string",
+            "title": "Confirm"
+          }
+        },
+        "type": "object",
+        "required": [
+          "confirm"
+        ],
+        "title": "WipeConfirm"
       },
       "WorkoutExerciseIn": {
         "properties": {

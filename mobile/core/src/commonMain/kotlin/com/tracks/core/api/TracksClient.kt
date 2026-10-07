@@ -453,7 +453,30 @@ class TracksClient(
         http.get(url("/sprite/usgs.png")).body()
 
     suspend fun mapStyleJson(): String =
-        http.get(url(Endpoints.MAP_STYLE)) { parameter("base_url", origin()) }.bodyAsText()
+        styleDocument(http.get(url(Endpoints.MAP_STYLE)) { parameter("base_url", origin()) })
+
+    /**
+     * The backdrop behind the dashboard heatmap, in the app's theme. Not the
+     * planning style above: that one has no dark palette, and the web draws
+     * its heatmap over this one.
+     */
+    suspend fun backdropStyleJson(dark: Boolean): String =
+        styleDocument(http.get(url(Endpoints.MAP_BACKDROP)) {
+            parameter("theme", if (dark) "dark" else "light")
+            parameter("base_url", origin())
+        })
+
+    /**
+     * A style body, or a throw. This client does not raise on HTTP errors
+     * (`expectSuccess = false`), and the callers cache what they get — so
+     * without the check a 503 "style not built", or an older server's 404 for
+     * the backdrop, was written to disk as the map style and replaced the
+     * last good one.
+     */
+    private suspend fun styleDocument(response: HttpResponse): String {
+        check(response.status.isSuccess()) { "Map style: HTTP ${response.status.value}" }
+        return response.bodyAsText()
+    }
 
     // ── Dashboard ────────────────────────────────────────────────────────────
     // `after` is an ISO date or null for all-time. Null is not merely the

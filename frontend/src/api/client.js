@@ -23,8 +23,16 @@ function _cacheSet(method, path, data, ttl = _CACHE_TTL_MS) {
   _cache.set(_cacheKey(method, path), { data, time: Date.now(), ttl });
 }
 
+// GETs still on the wire, by the same key. A page mounting several components
+// that each ask for /users/me/settings used to send one request apiece, since
+// none had landed in the cache when the others asked; now they share one.
+// Invalidation drops these too — a GET issued after a PATCH must not be handed
+// the response to a request that left before it.
+const _inflight = new Map();
+
 function _cacheDel(method, path) {
   _cache.delete(_cacheKey(method, path));
+  _inflight.delete(_cacheKey(method, path));
 }
 
 // Delete all cache entries whose key starts with `method:pathPrefix`.
@@ -34,20 +42,39 @@ function _cacheDelPrefix(method, pathPrefix) {
   for (const key of _cache.keys()) {
     if (key.startsWith(prefix)) _cache.delete(key);
   }
+  for (const key of _inflight.keys()) {
+    if (key.startsWith(prefix)) _inflight.delete(key);
+  }
 }
 
-async function request(method, path, body, { signal, ttl, noCache } = {}) {
+function request(method, path, body, opts = {}) {
+  const { signal, noCache } = opts;
+  // Signalled and uncached requests are by definition fresh fetches.
+  if (method !== "GET" || signal || noCache) return _send(method, path, body, opts);
+
+  const cached = _cacheGet(method, path);
+  if (cached !== undefined) return Promise.resolve(cached);
+
+  const key = _cacheKey(method, path);
+  const pending = _inflight.get(key);
+  if (pending) return pending;
+  const promise = _send(method, path, body, opts).then((data) => {
+    // Cached only if nothing invalidated it on the way: an update that landed
+    // mid-flight means this response may predate it.
+    if (_inflight.get(key) === promise) _cacheSet(method, path, data, opts.ttl);
+    return data;
+  }).finally(() => {
+    if (_inflight.get(key) === promise) _inflight.delete(key);
+  });
+  _inflight.set(key, promise);
+  return promise;
+}
+
+async function _send(method, path, body, { signal } = {}) {
   const token = localStorage.getItem(TOKEN_KEY);
   const headers = {};
   if (body !== undefined) headers["Content-Type"] = "application/json";
   if (token) headers["Authorization"] = `Bearer ${token}`;
-
-  // Serve from cache for idempotent GETs when no signal is attached
-  // (signalled requests are by definition fresh-fetch).
-  if (method === "GET" && !signal && !noCache) {
-    const cached = _cacheGet(method, path);
-    if (cached !== undefined) return cached;
-  }
 
   const res = await fetch(`${BASE_URL}${path}`, {
     method,
@@ -64,11 +91,6 @@ async function request(method, path, body, { signal, ttl, noCache } = {}) {
     const err = new Error(data.detail ?? `HTTP ${res.status}`);
     err.status = res.status;
     throw err;
-  }
-
-  // Cache successful GET responses (no signal/forced refresh to avoid caching stale data).
-  if (method === "GET" && !signal && !noCache) {
-    _cacheSet(method, path, data, ttl);
   }
 
   return data;
@@ -89,7 +111,7 @@ function qs(params) {
 
 export const api = {
   /** Forget every cached response — after a restore has changed everything at once. */
-  clearCache: () => _cache.clear(),
+  clearCache: () => { _cache.clear(); _inflight.clear(); },
 
   // Replica sync, as the phone speaks it (spec/sync.yaml) — used by backups.
   syncPull: (since, limit) => get(`/sync/pull?since=${since}&limit=${limit}`, { noCache: true }),

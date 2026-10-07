@@ -68,6 +68,9 @@ class LocalLibrary(
 
     fun uidOf(alias: Int): String? = q.uidOf(alias.toLong()).executeAsOneOrNull()
 
+    /** uid → alias for every row that has one, in one read — for loops that would call [alias] per row. */
+    fun aliasesByUid(): Map<String, Int> = q.allAliases().executeAsList().associate { it.uid to it.alias.toInt() }
+
     /** alias → uid for every row that has one; see `allAliases` in Local.sq. */
     fun uidsByAlias(): Map<Int, String> = q.allAliases().executeAsList().associate { it.alias.toInt() to it.uid }
 
@@ -111,9 +114,18 @@ class LocalLibrary(
 
     // ── Activities ──────────────────────────────────────────────────────────
 
-    fun activities(): List<ActivitySummary> = q.selectActivities().executeAsList().map {
+    fun activities(): List<ActivitySummary> {
+        // Every alias in one read, not one query per row: this list backs
+        // most screens and the dashboard asks for it several times a load,
+        // and a history of a thousand activities was a thousand lookups each
+        // time. [alias] still mints one for a row that has none yet.
+        val aliases = aliasesByUid()
+        return q.selectActivities().executeAsList().map { activitySummary(it, aliases[it.uid] ?: alias(it.uid)) }
+    }
+
+    private fun activitySummary(it: com.tracks.core.db.SelectActivities, id: Int) =
         ActivitySummary(
-            id = alias(it.uid),
+            id = id,
             sport = it.sport,
             subSport = it.sub_sport,
             name = it.name,
@@ -126,7 +138,6 @@ class LocalLibrary(
             totalAscent = it.total_ascent,
             avgSpeed = it.avg_speed,
         )
-    }
 
     fun activity(uid: String): Local_activity? = q.selectActivity(uid).executeAsOneOrNull()
 
@@ -194,10 +205,12 @@ class LocalLibrary(
      * (list id, uid) — the ones with a distance, so an indoor session is never
      * decoded just to find it has no track.
      */
-    fun shapeCandidates(): List<Pair<Int, String>> =
-        q.selectActivities().executeAsList()
+    fun shapeCandidates(): List<Pair<Int, String>> {
+        val aliases = aliasesByUid()
+        return q.selectActivities().executeAsList()
             .filter { (it.distance_meters ?: 0.0) > 0.0 }
-            .map { alias(it.uid) to it.uid }
+            .map { (aliases[it.uid] ?: alias(it.uid)) to it.uid }
+    }
 
     /**
      * One activity's route outline, from its own parsed file.
@@ -218,33 +231,62 @@ class LocalLibrary(
     }
 
     /**
-     * Every activity's track as one GeoJSON FeatureCollection of LineStrings —
-     * what `/activities/tracks-geojson` returns — for the dashboard's map of
-     * where you train. [uids] limits it to some activities (a sport filter);
-     * each line is thinned to at most [maxPoints] points, because a whole
-     * history at full resolution is millions of vertices for a thumbnail.
+     * The tracks the dashboard heatmap draws, from the phone's own files.
+     *
+     * [uids] limits it to some activities — the visible ones, in the chosen
+     * sport; [after], an ISO date, drops anything started before it — the
+     * dashboard's window, compared against the stored UTC start the way the
+     * server's `started_at >= after` does. In a value [mode] only points that
+     * carry the value are kept, as the server's heatmap query filters them, so
+     * a stretch with no heart rate is a gap rather than a guess.
+     *
+     * Read from `local_heat_track`, each activity's track packed small. A
+     * track missing there, or cut from an older file, is cut now from the
+     * detail JSON and stored, so each activity's detail is parsed once rather
+     * than on every filter change. Cut outside the write lock and stored in one
+     * short transaction, so a first run over a long history never holds up an
+     * import for the length of the parse.
      */
-    fun routesGeoJson(uids: Set<String>?, maxPoints: Int = 300): String {
-        val features = ArrayList<JsonObject>()
-        for (row in q.selectActivities().executeAsList()) {
-            if (uids != null && row.uid !in uids) continue
-            val points = detailJson(row.uid)?.get("data_points") as? JsonArray ?: continue
-            val coords = points.mapNotNull { p ->
-                val o = p as? JsonObject ?: return@mapNotNull null
-                val lat = (o["lat"] as? JsonPrimitive)?.doubleOrNull
-                val lng = (o["lng"] as? JsonPrimitive)?.doubleOrNull
-                if (lat == null || lng == null) null else JsonArray(listOf(JsonPrimitive(lng), JsonPrimitive(lat)))
-            }
-            if (coords.size < 2) continue
-            val step = maxOf(1, coords.size / maxPoints)
-            val thinned = coords.filterIndexed { i, _ -> i % step == 0 || i == coords.lastIndex }
-            features += JsonObject(mapOf(
-                "type" to JsonPrimitive("Feature"),
-                "properties" to JsonObject(mapOf("id" to JsonPrimitive(alias(row.uid)), "sport" to JsonPrimitive(row.sport))),
-                "geometry" to JsonObject(mapOf("type" to JsonPrimitive("LineString"), "coordinates" to JsonArray(thinned))),
-            ))
+    suspend fun heatmapTracks(
+        uids: Set<String>?,
+        after: String?,
+        mode: com.tracks.core.metrics.HeatmapMode,
+    ): List<List<com.tracks.core.metrics.HeatPoint>> {
+        // ISO text compares in date order, so a bare date sorts before every
+        // time on that day — the same inclusive edge as the server.
+        val rows = q.selectHeatTracks(after).executeAsList().filter { uids == null || it.uid in uids }
+        val cut = HashMap<String, Pair<String, ByteArray>>()
+        val out = ArrayList<List<com.tracks.core.metrics.HeatPoint>>(rows.size)
+        for (row in rows) {
+            val packed = row.points ?: cutHeatTrack(row.uid).also { cut[row.uid] = row.sha256 to it }
+            val track = com.tracks.core.metrics.HeatTrackCodec.decode(packed).filter { it.valueFor(mode) != null }
+            if (track.size >= 2) out += track
         }
-        return JsonObject(mapOf("type" to JsonPrimitive("FeatureCollection"), "features" to JsonArray(features))).toString()
+        if (cut.isNotEmpty()) lock.withLock {
+            db.transaction { cut.forEach { (uid, v) -> q.upsertHeatTrack(uid, v.first, v.second) } }
+        }
+        return out
+    }
+
+    /**
+     * One activity's track, thinned to at most [HEAT_TRACK_POINTS] points and
+     * packed; empty when it has no GPS, which is stored too so the activity
+     * is not re-parsed to learn that again.
+     */
+    private fun cutHeatTrack(uid: String): ByteArray {
+        val points = detailJson(uid)?.get("data_points") as? JsonArray
+            ?: return com.tracks.core.metrics.HeatTrackCodec.encode(emptyList())
+        val track = points.mapNotNull { p ->
+            val o = p as? JsonObject ?: return@mapNotNull null
+            fun num(key: String) = (o[key] as? JsonPrimitive)?.doubleOrNull
+            val lat = num("lat") ?: return@mapNotNull null
+            val lng = num("lng") ?: return@mapNotNull null
+            com.tracks.core.metrics.HeatPoint(lat, lng, num("speed"), num("heart_rate"), num("altitude"))
+        }
+        val step = maxOf(1, track.size / HEAT_TRACK_POINTS)
+        return com.tracks.core.metrics.HeatTrackCodec.encode(
+            track.filterIndexed { i, _ -> i % step == 0 || i == track.lastIndex },
+        )
     }
 
     /**
@@ -334,6 +376,7 @@ class LocalLibrary(
     suspend fun clear() = lock.withLock {
         db.transaction {
             q.deleteAllActivities()
+            q.deleteAllHeatTracks()
             q.deleteAllDays()
             q.deleteAllFiles()
             q.deleteUploadServer()
@@ -350,3 +393,9 @@ class LocalLibrary(
 
 /** One local date as every file that describes it adds up to. */
 data class LocalDay(val date: String, val metrics: JsonObject, val extra: JsonObject)
+
+/**
+ * Points kept per activity for the dashboard heatmap. A whole history at full
+ * resolution is millions of vertices for a card; 300 keeps a run's shape.
+ */
+private const val HEAT_TRACK_POINTS = 300
