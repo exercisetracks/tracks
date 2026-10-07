@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import React, { useMemo } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ReferenceLine } from "recharts";
-import { yAxisProps, gridProps } from "../utils/chartHelpers.jsx";
+import { yAxisProps, gridProps, useZoneMaxHR } from "../utils/chartHelpers.jsx";
 import { hrColor } from "../../../utils/formatUtils";
 import { HR_MODELS } from "../../../spec/zones";
 
@@ -30,7 +30,9 @@ function getZoneColor(hr, maxHR) {
   return zone.color;
 }
 
-export const HRHistogram = React.memo(function HRHistogram({ data, maxHR = 200 }) {
+export const HRHistogram = React.memo(function HRHistogram({ data, maxHR: activityMax = 200 }) {
+  // Zoned against the user's max HR when known, as the HR line is.
+  const maxHR = useZoneMaxHR(activityMax);
   if (!data?.length) return null;
 
   // Compute time in each zone from histogram data

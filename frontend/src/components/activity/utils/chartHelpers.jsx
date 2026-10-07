@@ -2,13 +2,38 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Chart utilities and helpers - moved from chartComponents.jsx
 
-import React from "react";
-import { fmtElapsed, hrColor } from "../../../utils/formatUtils";
+import React, { createContext, useContext } from "react";
+import { fmtElapsed } from "../../../utils/formatUtils";
+import { HR_MODELS } from "../../../spec/zones";
 
 /**
- * HRColorLine - Heart rate colored line rendered as raw SVG
+ * The user's own max heart rate (Settings, set or worked out from history),
+ * provided by ActivityView so every HR chart colours by the same zones on
+ * every activity. Null when unknown; charts then fall back to the activity's
+ * own peak, which is what they all used before.
  */
-export const HRColorLine = React.memo(function HRColorLine({ xAxisMap, yAxisMap, formData, maxHR }) {
+export const UserMaxHRContext = createContext(null);
+
+/** The max HR a chart should zone against: the user's, else [fallback]. */
+export function useZoneMaxHR(fallback) {
+  return useContext(UserMaxHRContext) ?? fallback;
+}
+
+/** The colour of the display zone (spec/zones.yaml display_maxhr) [hr] falls in. */
+export function hrZoneColor(hr, maxHR) {
+  const pct = maxHR ? hr / maxHR : 0;
+  const zones = HR_MODELS.display_maxhr.zones;
+  return (zones.find((z) => z.max_pct == null || pct < z.max_pct) ?? zones[zones.length - 1]).color;
+}
+
+/**
+ * HRColorLine - Heart rate line rendered as raw SVG, each stretch in the colour
+ * of the heart-rate zone it is in — the user's zones (UserMaxHRContext), so the
+ * colour changes exactly where the value crosses from one zone to the next.
+ * The phone draws its HR stream the same way (DetailCards.kt rememberZoneLine).
+ */
+export const HRColorLine = React.memo(function HRColorLine({ xAxisMap, yAxisMap, formData, maxHR: activityMax }) {
+  const maxHR = useZoneMaxHR(activityMax);
   if (!formData?.length || !xAxisMap || !yAxisMap) return null;
   const xAxis = Object.values(xAxisMap)[0], yAxis = Object.values(yAxisMap)[0];
   if (!xAxis?.scale || !yAxis?.scale) return null;
@@ -24,10 +49,9 @@ export const HRColorLine = React.memo(function HRColorLine({ xAxisMap, yAxisMap,
   for (let i = 0; i < formData.length - 1; i++) {
     const a = px(formData[i]), b = px(formData[i + 1]);
     if (!a || !b) continue;
-    const t = maxHR ? Math.max(0, Math.min(1, (formData[i].hr || 0) / maxHR)) : 0.5;
     lines.push(
       <line key={i} x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]}
-        stroke={hrColor(t)} strokeWidth={2} strokeLinecap="round" />
+        stroke={hrZoneColor(formData[i].hr || 0, maxHR)} strokeWidth={2} strokeLinecap="round" />
     );
   }
   return <g>{lines}</g>;

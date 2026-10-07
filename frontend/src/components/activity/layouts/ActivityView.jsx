@@ -1,5 +1,6 @@
 // SPDX-FileCopyrightText: 2026 Hawk Fugagli
 // SPDX-License-Identifier: AGPL-3.0-or-later
+import { UserMaxHRContext } from "../utils/chartHelpers.jsx";
 import React, { useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useActivityData } from "../../../hooks/useActivityData";
@@ -159,7 +160,7 @@ export function ActivityView() {
       )}
       <div className="relative pr-3.5">
         {deleteButton}
-        {layout}
+        <UserMaxHRContext.Provider value={settings?.max_hr ?? null}>{layout}</UserMaxHRContext.Provider>
         {/* Here rather than per layout: the watch asks after any sport. */}
         {!activity.is_merged && <HowItFelt activity={activity} />}
       </div>

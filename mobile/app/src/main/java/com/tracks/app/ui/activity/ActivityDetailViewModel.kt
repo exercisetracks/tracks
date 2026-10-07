@@ -199,6 +199,10 @@ class ActivityDetailViewModel(
                 _state.update { it.copy(loading = false, error = "This activity is not on this phone.") }
                 return@launch
             }
+            // The user's own max HR (set, or worked out from history), so
+            // zones mean the same thing on every activity; the activity's own
+            // peak only when the user has none yet.
+            val userMaxHr = runCatching { container.sources.importThresholds().maxHr?.toInt() }.getOrNull()
             _state.update {
                 it.copy(
                     loading = false,
@@ -209,7 +213,7 @@ class ActivityDetailViewModel(
                         laps = pieces.laps,
                         climbs = pieces.climbs,
                         sets = pieces.sets,
-                        hrZones = zonesFor(pieces.detail),
+                        hrZones = zonesFor(pieces.detail, userMaxHr),
                         track = pieces.track,
                     ),
                 )
@@ -229,8 +233,8 @@ class ActivityDetailViewModel(
      * Empty when the activity records no max HR, which correctly hides the card
      * rather than inventing zones from a guess.
      */
-    private fun zonesFor(detail: com.tracks.core.api.ActivityDetail): List<ZoneRange> {
-        val maxHr = detail.maxHeartRate ?: return emptyList()
+    private fun zonesFor(detail: com.tracks.core.api.ActivityDetail, userMaxHr: Int?): List<ZoneRange> {
+        val maxHr = userMaxHr ?: detail.maxHeartRate ?: return emptyList()
         if (maxHr <= 0) return emptyList()
         return displayHrZones(maxHr)
     }
