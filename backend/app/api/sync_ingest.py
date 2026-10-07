@@ -18,7 +18,7 @@ import base64
 import logging
 
 from fastapi import APIRouter, Depends, Header, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -92,6 +92,57 @@ class IngestRequest(BaseModel):
     sealed_b64: str      # libsodium sealed-box ciphertext, base64
 
 
+# Bounds for the batch endpoints below, mirrored in /capabilities so a client
+# clamps before sending. The file count keeps one request's commit small; the
+# byte bound is the client's to keep (it knows the sizes before it seals), and
+# is generous because the point is to amortise a round trip, not to stream.
+INGEST_BATCH_FILES = 200
+INGEST_BATCH_BYTES = 16 * 1024 * 1024
+INGEST_MISSING_HASHES = 10_000
+
+
+def _valid_hash(h: str) -> bool:
+    return len(h) == 64 and all(c in "0123456789abcdef" for c in h)
+
+
+def _ingest_one(db: Session, user_id: int, agent: SyncAgent, body: IngestRequest) -> str:
+    """Queue one sealed file, or say why not. Leaves the commit to the caller,
+    so a batch costs one commit rather than one per file.
+
+    Dedup against both already-imported files and blobs still queued — an
+    agent may legitimately retry an upload it's unsure landed. Both scoped to
+    the user, and the first regardless of source: another household member
+    holding the same file is not a duplicate, and the same user's file
+    delivered once by USB and once from the phone is.
+    """
+    content_hash = body.content_hash.lower()
+    if not _valid_hash(content_hash):
+        return "invalid_hash"
+
+    if db.query(Import).filter_by(user_id=user_id, source_id=content_hash).first():
+        return "duplicate"
+    if db.query(PendingImport).filter_by(user_id=user_id, content_hash=content_hash).first():
+        return "duplicate"
+
+    try:
+        sealed = base64.b64decode(body.sealed_b64)
+    except Exception:
+        return "invalid_base64"
+
+    blob_id = object_storage.store_blob(sealed)
+    db.add(PendingImport(
+        user_id=user_id, blob_id=blob_id, content_hash=content_hash,
+        filename=body.filename,
+    ))
+    # Registered now, not at parse: the parse waits for the vault, and other
+    # phones should learn the file exists (and fetch it) without waiting too.
+    # It also flushes, which is what lets a batch carrying the same file twice
+    # see the first copy and answer "duplicate" for the second.
+    register_file(db, user_id, content_hash, body.filename, blob_id=blob_id, sealed=True)
+    log.info("Queued sealed FIT %s for user %s (agent %s)", body.filename, user_id, agent.id)
+    return "queued"
+
+
 @router.post("/ingest")
 def ingest_sealed_fit(
     body: IngestRequest,
@@ -102,33 +153,92 @@ def ingest_sealed_fit(
     if user_id is None:
         raise HTTPException(status_code=404, detail="Device not claimed by any user yet")
 
-    content_hash = body.content_hash.lower()
-    if len(content_hash) != 64 or any(c not in "0123456789abcdef" for c in content_hash):
+    status = _ingest_one(db, user_id, agent, body)
+    if status == "invalid_hash":
         raise HTTPException(status_code=400, detail="content_hash must be a hex SHA-256")
-
-    # Dedup against both already-imported files and blobs still queued — an
-    # agent may legitimately retry an upload it's unsure landed. Both scoped to
-    # the user, and the first regardless of source: another household member
-    # holding the same file is not a duplicate, and the same user's file
-    # delivered once by USB and once from the phone is.
-    if db.query(Import).filter_by(user_id=user_id, source_id=content_hash).first():
-        return {"status": "duplicate"}
-    if db.query(PendingImport).filter_by(user_id=user_id, content_hash=content_hash).first():
-        return {"status": "duplicate"}
-
-    try:
-        sealed = base64.b64decode(body.sealed_b64)
-    except Exception:
+    if status == "invalid_base64":
         raise HTTPException(status_code=400, detail="sealed_b64 is not valid base64")
-
-    blob_id = object_storage.store_blob(sealed)
-    db.add(PendingImport(
-        user_id=user_id, blob_id=blob_id, content_hash=content_hash,
-        filename=body.filename,
-    ))
-    # Registered now, not at parse: the parse waits for the vault, and other
-    # phones should learn the file exists (and fetch it) without waiting too.
-    register_file(db, user_id, content_hash, body.filename, blob_id=blob_id, sealed=True)
     db.commit()
-    log.info("Queued sealed FIT %s for user %s (agent %s)", body.filename, user_id, agent.id)
-    return {"status": "queued"}
+    return {"status": status}
+
+
+class MissingRequest(BaseModel):
+    device_serial: str | None = None
+    hashes: list[str] = Field(max_length=INGEST_MISSING_HASHES)
+
+
+@router.post("/ingest/missing")
+def ingest_missing(
+    body: MissingRequest,
+    agent: SyncAgent = Depends(require_sync_agent),
+    db: Session = Depends(get_db),
+):
+    """Which of these files the server does not hold yet.
+
+    Exists because a phone re-sends its whole library whenever it meets a
+    server it has not uploaded to (a new install, a restore, a recreated
+    server), and through /ingest every file the server already had still
+    crossed the network in full — sealed, base64'd — only to be answered
+    "duplicate". Asking first turns thousands of those round trips into one.
+
+    Only hashes go up, never content, and they are answered for the agent's
+    own user only, so this tells an agent nothing it could not learn by
+    uploading the file.
+    """
+    user_id = resolve_sync_user_id(db, agent, body.device_serial)
+    if user_id is None:
+        raise HTTPException(status_code=404, detail="Device not claimed by any user yet")
+
+    wanted = {h.lower() for h in body.hashes if _valid_hash(h.lower())}
+    if not wanted:
+        return {"missing": []}
+    held = {h for (h,) in db.query(Import.source_id)
+            .filter(Import.user_id == user_id, Import.source_id.in_(wanted))}
+    held |= {h for (h,) in db.query(PendingImport.content_hash)
+             .filter(PendingImport.user_id == user_id, PendingImport.content_hash.in_(wanted))}
+    # In the order asked, so a client can zip the answer against its own list.
+    seen: set[str] = set()
+    missing = []
+    for h in body.hashes:
+        h = h.lower()
+        if h in wanted and h not in held and h not in seen:
+            seen.add(h)
+            missing.append(h)
+    return {"missing": missing}
+
+
+class BatchIngestRequest(BaseModel):
+    device_serial: str | None = None
+    files: list[IngestRequest] = Field(max_length=INGEST_BATCH_FILES)
+
+
+@router.post("/ingest/batch")
+def ingest_sealed_batch(
+    body: BatchIngestRequest,
+    agent: SyncAgent = Depends(require_sync_agent),
+    db: Session = Depends(get_db),
+):
+    """Many sealed files in one request — /ingest, amortised.
+
+    A phone with years of history was sending one file per round trip, each
+    paying the network's latency plus two commits here (the agent's
+    last-seen stamp and the insert), which held a first upload to about two
+    files a second however fast the link. One request now carries a batch
+    under one auth check and one commit.
+
+    Each file gets its own status, in order, and a bad one does not sink the
+    rest: a client deciding which files to mark sent needs to know exactly
+    which were taken. All files resolve to one user — the batch's
+    `device_serial` — since a phone uploads for one person; a per-file serial
+    is ignored rather than allowed to scatter one request across accounts.
+    """
+    user_id = resolve_sync_user_id(db, agent, body.device_serial)
+    if user_id is None:
+        raise HTTPException(status_code=404, detail="Device not claimed by any user yet")
+
+    results = [
+        {"content_hash": f.content_hash.lower(), "status": _ingest_one(db, user_id, agent, f)}
+        for f in body.files
+    ]
+    db.commit()
+    return {"results": results}

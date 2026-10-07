@@ -84,6 +84,9 @@ data class Limits(
     @SerialName("activities_page_size") val activitiesPageSize: Int = 100,
     @SerialName("fit_upload_bytes") val fitUploadBytes: Long = 50L * 1024 * 1024,
     @SerialName("fit_precheck_entries") val fitPrecheckEntries: Int = 10_000,
+    @SerialName("ingest_batch_files") val ingestBatchFiles: Int = 200,
+    @SerialName("ingest_batch_bytes") val ingestBatchBytes: Long = 16L * 1024 * 1024,
+    @SerialName("ingest_missing_hashes") val ingestMissingHashes: Int = 10_000,
 )
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
@@ -737,6 +740,33 @@ data class WaypointIngestRequest(
 
 @Serializable
 data class IngestResponse(val status: String)
+
+/** `POST /sync/ingest/missing`: which of these the server does not hold yet. */
+@Serializable
+data class IngestMissingRequest(
+    @SerialName("device_serial") val deviceSerial: String? = null,
+    val hashes: List<String>,
+)
+
+@Serializable
+data class IngestMissingResponse(val missing: List<String> = emptyList())
+
+/** `POST /sync/ingest/batch`: many [IngestRequest]s under one request and one commit. */
+@Serializable
+data class IngestBatchRequest(
+    @SerialName("device_serial") val deviceSerial: String? = null,
+    val files: List<IngestRequest>,
+)
+
+@Serializable
+data class IngestBatchResult(
+    @SerialName("content_hash") val contentHash: String,
+    val status: String,
+)
+
+/** One result per file sent, in the order sent. */
+@Serializable
+data class IngestBatchResponse(val results: List<IngestBatchResult> = emptyList())
 
 /**
  * Registering this phone as a sync agent.

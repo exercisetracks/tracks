@@ -427,6 +427,9 @@ class AppContainer(private val context: Context) {
      * Send the server every FIT file it has not had from this phone, through the
      * sealed ingest — which needs no unlocked vault, so this works on a locked
      * session. Best effort: whatever fails stays queued for the next run.
+     *
+     * In batches when the server can take them ([com.tracks.core.sync.BulkUpload]
+     * says why that matters), and file by file, as before, when it is older.
      */
     suspend fun uploadFiles(): Int {
         if (!isLinked()) return 0
@@ -436,12 +439,36 @@ class AppContainer(private val context: Context) {
         val pending = library.notUploaded()
         if (pending.isEmpty()) return 0
         val uploader = watchUploader() ?: return 0
+        fun progress(done: Int, total: Int) {
+            _syncProgress.value = com.tracks.core.replica.SyncProgress(
+                com.tracks.core.replica.SyncProgress.Step.Uploading, done, total,
+            )
+        }
         try {
+            progress(0, pending.size)
+            val caps = runCatching { client().capabilities() }.getOrNull()
+            if (caps?.supports("sync_ingest_batch") == true) {
+                var sent = 0
+                val started = System.currentTimeMillis()
+                runCatching {
+                    com.tracks.core.sync.BulkUpload(uploader, files::get, caps.limits).send(
+                        pending,
+                        onDelivered = { library.markUploaded(it); sent += it.size },
+                        onProgress = ::progress,
+                    )
+                }.onFailure {
+                    if (it is kotlinx.coroutines.CancellationException) throw it
+                    android.util.Log.w("TracksUpload", "batch upload stopped", it)
+                }
+                android.util.Log.i(
+                    "TracksUpload",
+                    "$sent of ${pending.size} file(s) on the server after ${System.currentTimeMillis() - started} ms",
+                )
+                return sent
+            }
             var sent = 0
             for ((i, sha) in pending.withIndex()) {
-                _syncProgress.value = com.tracks.core.replica.SyncProgress(
-                    com.tracks.core.replica.SyncProgress.Step.Uploading, i, pending.size,
-                )
+                progress(i, pending.size)
                 val bytes = files.get(sha) ?: continue
                 val ok = runCatching { uploader.upload("$sha.fit", bytes) }.isSuccess
                 if (!ok) break

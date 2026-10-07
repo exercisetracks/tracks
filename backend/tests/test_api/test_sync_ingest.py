@@ -142,3 +142,87 @@ class TestIngest:
             "sealed_b64": base64.b64encode(b"whatever").decode(),
         }, headers={"Authorization": f"Bearer {token}"})
         assert resp.status_code == 404
+
+
+class TestBatchIngest:
+    """The batch endpoints exist to make a phone's first upload of years of
+    history take minutes rather than hours; these pin that they still mean
+    exactly what /ingest means, file by file."""
+
+    def _sealed(self, client, token, plaintext: bytes, name="a.fit") -> dict:
+        return TestIngest()._seal_payload(client, token, plaintext) | {"filename": name}
+
+    def test_missing_names_only_what_the_server_lacks(self, client, user):
+        """Without this a phone re-sends every file the server already has,
+        in full, to be told "duplicate" one round trip at a time."""
+        headers = _auth_headers(client)
+        token = _create_personal_agent(client, headers)
+        agent_headers = {"Authorization": f"Bearer {token}"}
+        held = self._sealed(client, token, b"already on the server")
+        client.post("/sync/ingest", json=held, headers=agent_headers)
+        absent = hashlib.sha256(b"never sent").hexdigest()
+
+        resp = client.post("/sync/ingest/missing", json={
+            "hashes": [held["content_hash"], absent, absent.upper()],
+        }, headers=agent_headers)
+
+        assert resp.status_code == 200
+        assert resp.json()["missing"] == [absent]
+
+    def test_missing_ignores_what_is_not_a_hash(self, client, user):
+        headers = _auth_headers(client)
+        token = _create_personal_agent(client, headers)
+        resp = client.post("/sync/ingest/missing", json={"hashes": ["nope", ""]},
+                           headers={"Authorization": f"Bearer {token}"})
+        assert resp.json()["missing"] == []
+
+    def test_a_batch_reports_each_file_in_order(self, client, user, db):
+        """The phone marks a file sent from its own entry in the answer, so a
+        bad file must not hide whether its neighbours landed."""
+        from app.models.imports import PendingImport
+
+        headers = _auth_headers(client)
+        token = _create_personal_agent(client, headers)
+        agent_headers = {"Authorization": f"Bearer {token}"}
+        first = self._sealed(client, token, b"first file", "1.fit")
+        second = self._sealed(client, token, b"second file", "2.fit")
+        broken = first | {"content_hash": "abc"}
+
+        resp = client.post("/sync/ingest/batch", json={
+            "files": [first, broken, second, first],
+        }, headers=agent_headers)
+
+        assert resp.status_code == 200
+        assert [r["status"] for r in resp.json()["results"]] == [
+            "queued", "invalid_hash", "queued", "duplicate",
+        ]
+        assert db.query(PendingImport).filter_by(user_id=user.id).count() == 2
+
+    def test_a_file_sent_singly_is_a_duplicate_in_a_batch(self, client, user):
+        headers = _auth_headers(client)
+        token = _create_personal_agent(client, headers)
+        agent_headers = {"Authorization": f"Bearer {token}"}
+        body = self._sealed(client, token, b"sent the old way first")
+        client.post("/sync/ingest", json=body, headers=agent_headers)
+
+        resp = client.post("/sync/ingest/batch", json={"files": [body]}, headers=agent_headers)
+        assert resp.json()["results"][0]["status"] == "duplicate"
+
+    def test_a_batch_for_an_unclaimed_device_is_rejected(self, client, user):
+        headers = _auth_headers(client)
+        token = _create_household_agent(client, headers)
+        resp = client.post("/sync/ingest/batch", json={
+            "device_serial": "NEVER-CLAIMED", "files": [],
+        }, headers={"Authorization": f"Bearer {token}"})
+        assert resp.status_code == 404
+
+    def test_an_oversized_batch_is_refused_before_any_work(self, client, user):
+        from app.api.sync_ingest import INGEST_BATCH_FILES
+
+        headers = _auth_headers(client)
+        token = _create_personal_agent(client, headers)
+        body = self._sealed(client, token, b"x")
+        resp = client.post("/sync/ingest/batch", json={
+            "files": [body] * (INGEST_BATCH_FILES + 1),
+        }, headers={"Authorization": f"Bearer {token}"})
+        assert resp.status_code == 422

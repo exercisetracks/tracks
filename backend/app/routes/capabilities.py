@@ -22,6 +22,7 @@ from pathlib import Path
 from fastapi import APIRouter
 from pydantic import BaseModel
 
+from app.api.sync_ingest import INGEST_BATCH_BYTES, INGEST_BATCH_FILES, INGEST_MISSING_HASHES
 from app.config import settings
 from app.version import API_VERSION, MIN_CLIENT_API_VERSION, SERVER_VERSION
 
@@ -34,6 +35,9 @@ class CapabilityLimits(BaseModel):
     activities_page_size: int
     fit_upload_bytes: int
     fit_precheck_entries: int
+    ingest_batch_files: int
+    ingest_batch_bytes: int
+    ingest_missing_hashes: int
 
 
 class CapabilitiesOut(BaseModel):
@@ -61,6 +65,7 @@ _FEATURES = frozenset({
     "device_sync",       # /device-sync/* — push FIT to a watch via a client
     "sync_agents",       # /sync-agents/* pairing + /sync/ingest sealed upload
     "pending_imports",   # sealed blobs queued while the vault is locked
+    "sync_ingest_batch", # /sync/ingest/missing + /sync/ingest/batch
     "track_max_points",  # /activities/{id}/track?max_points=
     "heatmap_viewport",  # /activities/heatmap?bbox=&zoom=
     "sync_v1",           # /sync/push + /sync/pull + /sync/blobs (spec/sync.yaml)
@@ -98,5 +103,8 @@ def capabilities():
             "activities_page_size": 100,
             "fit_upload_bytes": 50 * 1024 * 1024,
             "fit_precheck_entries": 10_000,
+            "ingest_batch_files": INGEST_BATCH_FILES,
+            "ingest_batch_bytes": INGEST_BATCH_BYTES,
+            "ingest_missing_hashes": INGEST_MISSING_HASHES,
         },
     }

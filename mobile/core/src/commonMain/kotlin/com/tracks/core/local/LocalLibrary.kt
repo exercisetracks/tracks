@@ -79,6 +79,9 @@ class LocalLibrary(
 
     fun markUploaded(sha256: String) = q.markUploaded(sha256)
 
+    /** Many at once, in one transaction: a commit per file was its own cost on a backlog of thousands. */
+    fun markUploaded(sha256s: Collection<String>) = db.transaction { sha256s.forEach(q::markUploaded) }
+
     /**
      * Called before every upload run with the server the replica is bound to:
      * if the `uploaded` flags were earned on a different one, they are all

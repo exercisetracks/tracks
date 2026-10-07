@@ -6197,6 +6197,110 @@
         }
       }
     },
+    "/sync/ingest/missing": {
+      "post": {
+        "tags": [
+          "sync-ingest"
+        ],
+        "summary": "Ingest Missing",
+        "description": "Which of these files the server does not hold yet.\n\nExists because a phone re-sends its whole library whenever it meets a\nserver it has not uploaded to (a new install, a restore, a recreated\nserver), and through /ingest every file the server already had still\ncrossed the network in full \u2014 sealed, base64'd \u2014 only to be answered\n\"duplicate\". Asking first turns thousands of those round trips into one.\n\nOnly hashes go up, never content, and they are answered for the agent's\nown user only, so this tells an agent nothing it could not learn by\nuploading the file.",
+        "operationId": "ingest_missing_sync_ingest_missing_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MissingRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sync/ingest/batch": {
+      "post": {
+        "tags": [
+          "sync-ingest"
+        ],
+        "summary": "Ingest Sealed Batch",
+        "description": "Many sealed files in one request \u2014 /ingest, amortised.\n\nA phone with years of history was sending one file per round trip, each\npaying the network's latency plus two commits here (the agent's\nlast-seen stamp and the insert), which held a first upload to about two\nfiles a second however fast the link. One request now carries a batch\nunder one auth check and one commit.\n\nEach file gets its own status, in order, and a bad one does not sink the\nrest: a client deciding which files to mark sent needs to know exactly\nwhich were taken. All files resolve to one user \u2014 the batch's\n`device_serial` \u2014 since a phone uploads for one person; a per-file serial\nis ignored rather than allowed to scatter one request across accounts.",
+        "operationId": "ingest_sealed_batch_sync_ingest_batch_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchIngestRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/sync/push": {
       "post": {
         "tags": [
@@ -14450,6 +14554,34 @@
         "title": "BackfillResult",
         "description": "Summary of a metrics backfill operation."
       },
+      "BatchIngestRequest": {
+        "properties": {
+          "device_serial": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Device Serial"
+          },
+          "files": {
+            "items": {
+              "$ref": "#/components/schemas/IngestRequest"
+            },
+            "type": "array",
+            "maxItems": 200,
+            "title": "Files"
+          }
+        },
+        "type": "object",
+        "required": [
+          "files"
+        ],
+        "title": "BatchIngestRequest"
+      },
       "Body_import_course_maps_courses_import_post": {
         "properties": {
           "file": {
@@ -14592,6 +14724,18 @@
           "fit_precheck_entries": {
             "type": "integer",
             "title": "Fit Precheck Entries"
+          },
+          "ingest_batch_files": {
+            "type": "integer",
+            "title": "Ingest Batch Files"
+          },
+          "ingest_batch_bytes": {
+            "type": "integer",
+            "title": "Ingest Batch Bytes"
+          },
+          "ingest_missing_hashes": {
+            "type": "integer",
+            "title": "Ingest Missing Hashes"
           }
         },
         "type": "object",
@@ -14599,7 +14743,10 @@
           "track_max_points",
           "activities_page_size",
           "fit_upload_bytes",
-          "fit_precheck_entries"
+          "fit_precheck_entries",
+          "ingest_batch_files",
+          "ingest_batch_bytes",
+          "ingest_missing_hashes"
         ],
         "title": "CapabilityLimits",
         "description": "Bounds a client should clamp to before sending, not after being refused."
@@ -17912,6 +18059,34 @@
         ],
         "title": "MetricsSummaryOut",
         "description": "Aggregate totals for the dashboard headline cards."
+      },
+      "MissingRequest": {
+        "properties": {
+          "device_serial": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Device Serial"
+          },
+          "hashes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 10000,
+            "title": "Hashes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "hashes"
+        ],
+        "title": "MissingRequest"
       },
       "OneRMOverride": {
         "properties": {

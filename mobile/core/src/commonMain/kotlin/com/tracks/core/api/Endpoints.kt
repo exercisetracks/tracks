@@ -257,6 +257,10 @@ object Endpoints {
     const val SYNC_PUBKEY = "/sync/pubkey"
     const val SYNC_INGEST = "/sync/ingest"
 
+    /** Both behind the `sync_ingest_batch` feature; a server without it gets [SYNC_INGEST], file by file. */
+    const val SYNC_INGEST_MISSING = "/sync/ingest/missing"
+    const val SYNC_INGEST_BATCH = "/sync/ingest/batch"
+
     /**
      * Courses the watch had that Tracks did not put there.
      *
@@ -300,7 +304,7 @@ object Endpoints {
         GOALS, GOAL_PLAN, GOAL_PLAN_GENERATE, PLAN_WORKOUTS,
         PUSH_LIST, MARK_UPLOADED, SCHEDULE_FIT, WATCH_WEATHER, DELETE_LIST, AGPS,
         WATCH_SYNCED,
-        SYNC_AGENTS, SYNC_PUBKEY, SYNC_INGEST, COURSE_INGEST, WAYPOINT_INGEST,
+        SYNC_AGENTS, SYNC_PUBKEY, SYNC_INGEST, SYNC_INGEST_MISSING, SYNC_INGEST_BATCH, COURSE_INGEST, WAYPOINT_INGEST,
         STRETCHES, CUSTOM_STRETCHES, FLOWS, FLOW_BY_ID,
         STRENGTH_EXERCISES, STRENGTH_CUSTOM_EXERCISES, STRENGTH_EQUIPMENT,
         STRENGTH_ONE_RM, STRENGTH_HISTORY, STRENGTH_PROGRESS, WORKOUT_SESSIONS,

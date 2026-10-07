@@ -29,6 +29,7 @@ import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
+import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -1536,6 +1537,33 @@ class TracksClient(
             contentType(ContentType.Application.Json)
             setBody(body)
         }.body()
+
+    /**
+     * Which of [body]'s hashes the server lacks. Throws on any non-2xx rather
+     * than decoding an error body into an empty answer: "nothing is missing"
+     * is the one reading of a failure that would mark files sent that never
+     * went.
+     */
+    suspend fun ingestMissing(agentToken: String, body: IngestMissingRequest): IngestMissingResponse {
+        val resp = http.post(url(Endpoints.SYNC_INGEST_MISSING)) {
+            header("Authorization", "Bearer $agentToken")
+            contentType(ContentType.Application.Json)
+            setBody(body)
+        }
+        if (!resp.status.isSuccess()) throw SyncHttpException(resp.status.value, resp.bodyAsText().take(200))
+        return resp.body()
+    }
+
+    /** Many sealed files at once; same failure rule as [ingestMissing]. */
+    suspend fun ingestBatch(agentToken: String, body: IngestBatchRequest): IngestBatchResponse {
+        val resp = http.post(url(Endpoints.SYNC_INGEST_BATCH)) {
+            header("Authorization", "Bearer $agentToken")
+            contentType(ContentType.Application.Json)
+            setBody(body)
+        }
+        if (!resp.status.isSuccess()) throw SyncHttpException(resp.status.value, resp.bodyAsText().take(200))
+        return resp.body()
+    }
 
     /**
      * Hand over a course the watch was carrying.

@@ -3,9 +3,13 @@
 package com.tracks.core.sync
 
 import com.tracks.core.api.CourseIngestRequest
+import com.tracks.core.api.IngestBatchRequest
+import com.tracks.core.api.IngestMissingRequest
 import com.tracks.core.api.IngestRequest
 import com.tracks.core.api.TracksClient
 import com.tracks.core.crypto.IngestCrypto
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 
@@ -49,7 +53,7 @@ class WatchUploader(
         bytes: ByteArray,
         deviceSerial: String? = null,
     ): IngestOutcome {
-        val key = publicKey ?: fetchPublicKey(deviceSerial).also { publicKey = it }
+        val key = key(deviceSerial)
 
         val response = client.ingest(
             agentToken,
@@ -69,6 +73,53 @@ class WatchUploader(
             "queued" -> IngestOutcome.Queued
             "duplicate" -> IngestOutcome.AlreadyHeld
             else -> IngestOutcome.Rejected(response.status)
+        }
+    }
+
+    /**
+     * Of these plaintext hashes, the ones the server does not hold.
+     *
+     * Needs the `sync_ingest_batch` feature. One request answers thousands of
+     * files, which is what keeps a phone meeting a new server from sending its
+     * whole library just to be told "duplicate" for most of it.
+     */
+    suspend fun missing(hashes: List<String>, deviceSerial: String? = null): List<String> =
+        client.ingestMissing(agentToken, IngestMissingRequest(deviceSerial, hashes)).missing
+
+    /**
+     * [upload], for many files in one request. Returns one outcome per file,
+     * in the order given.
+     *
+     * Needs the `sync_ingest_batch` feature. Throws if the request as a whole
+     * fails, in which case none of these files may be counted delivered; a
+     * server answering with the wrong number of results is treated the same
+     * way, since there is then no saying which file an answer belongs to.
+     */
+    suspend fun uploadBatch(
+        files: List<Pair<String, ByteArray>>,
+        deviceSerial: String? = null,
+    ): List<IngestOutcome> {
+        if (files.isEmpty()) return emptyList()
+        val key = key(deviceSerial)
+        val requests = files.map { (filename, bytes) ->
+            IngestRequest(
+                deviceSerial = deviceSerial,
+                filename = filename,
+                // Of the plaintext, for the reason given in [upload].
+                contentHash = crypto.sha256Hex(bytes),
+                sealedB64 = Base64.encode(crypto.seal(key, bytes)),
+            )
+        }
+        val results = client.ingestBatch(agentToken, IngestBatchRequest(deviceSerial, requests)).results
+        check(results.size == requests.size) {
+            "server answered ${results.size} results for ${requests.size} files"
+        }
+        return results.map {
+            when (it.status) {
+                "queued" -> IngestOutcome.Queued
+                "duplicate" -> IngestOutcome.AlreadyHeld
+                else -> IngestOutcome.Rejected(it.status)
+            }
         }
     }
 
@@ -121,6 +172,14 @@ class WatchUploader(
         )
         IngestOutcome.Queued
     }.getOrElse { IngestOutcome.Rejected(it.message ?: "locations ingest failed") }
+
+    // Locked because batches go up several at a time: without it each one
+    // starting together would fetch the key for itself.
+    private val keyLock = Mutex()
+
+    private suspend fun key(deviceSerial: String?): ByteArray = keyLock.withLock {
+        publicKey ?: fetchPublicKey(deviceSerial).also { publicKey = it }
+    }
 
     private suspend fun fetchPublicKey(deviceSerial: String?): ByteArray =
         Base64.decode(client.syncPubkey(agentToken, deviceSerial).publicKey)
