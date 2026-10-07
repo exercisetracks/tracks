@@ -3,12 +3,31 @@
 """Experience-level mapping and the conservative history-based suggestion."""
 
 from app.calculators.strength_plan.leveling import (
+    effective_experience,
     experience_default_tier,
     experience_max_difficulty,
     experience_stage_floor,
     infer_experience_suggestion,
     starting_weight_factor,
 )
+
+
+class TestEffectiveExperience:
+    def test_how_often_someone_lifts_stands_in_for_experience(self):
+        """Onboarding no longer asks experience; without this, every new
+        account's strength plan would start at the unknown fallback."""
+        assert effective_experience(None, {"strength": "never"}) == "brand_new"
+        assert effective_experience(None, {"strength": "3_4"}) == "regular"
+        assert effective_experience(None, {"strength": "5_plus"}) == "advanced"
+
+    def test_an_explicit_level_wins_over_the_frequency(self):
+        """An accepted coach-note suggestion must not be undone by the
+        onboarding answer it was refining."""
+        assert effective_experience("advanced", {"strength": "never"}) == "advanced"
+
+    def test_no_answer_is_no_level(self):
+        assert effective_experience(None, None) is None
+        assert effective_experience(None, {"running": "3_4"}) is None
 
 
 class TestMappings:

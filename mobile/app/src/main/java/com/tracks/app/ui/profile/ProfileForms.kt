@@ -45,8 +45,6 @@ import com.tracks.app.ui.theme.Accent
 import com.tracks.app.ui.theme.ThemeMode
 import com.tracks.app.ui.theme.Tokens
 import com.tracks.core.spec.equipmentOptions
-import com.tracks.core.spec.experienceLevels
-import com.tracks.core.spec.experienceTable
 import kotlin.math.roundToInt
 
 // The profile forms, shared by onboarding and Settings. Each takes the state
@@ -248,15 +246,17 @@ private fun ZoneSetting(
 private val ZONE_TOGGLE = 148.dp
 
 /**
- * How often each endurance sport is done — `activity_frequency`, a map of
- * sport family to level (com.tracks.core.plan.PlanStart).
+ * How often each sport is done — `activity_frequency`, a map of sport family
+ * to level (com.tracks.core.plan.PlanStart). Asked once, in onboarding, and not
+ * shown in Settings afterwards: history replaces it as soon as there is any.
  *
  * The plan reads it only while there is no history of the sport, to decide
  * where a first plan starts: before it, someone who had never run and someone
- * who runs five times a week got the same first week. Running and cycling are
- * always asked; other sports get a row once picked. Tapping the chosen level
- * again clears it, as strength experience does — "not answered" keeps the
- * old default, which is a real choice.
+ * who runs five times a week got the same first week. The strength answer also
+ * stands in for lifting experience (com.tracks.core.spec.effectiveExperience).
+ * Every sport is asked, each optional; tapping the chosen level again clears
+ * it — "not answered" keeps the old default, which is a real choice. The web
+ * asks the same list (frontend/src/lib/frequency.js).
  */
 @Composable
 fun FrequencyForm(state: ProfileState, set: SetField) {
@@ -265,35 +265,16 @@ fun FrequencyForm(state: ProfileState, set: SetField) {
         val next = LinkedHashMap(answers).apply { if (level == null) remove(family) else put(family, level) }
         set("activity_frequency", next.toMap())
     }
-    // Rows beyond running and cycling: those already answered, plus any
-    // picked in this visit and not yet answered.
-    var added by remember { mutableStateOf(emptySet<String>()) }
-    val shown = FREQUENCY_ALWAYS + FREQUENCY_MORE.map { it.first }.filter { it in answers || it in added }
     Column(verticalArrangement = Arrangement.spacedBy(Tokens.Space.s4)) {
-        for (family in shown) {
+        for ((family, label) in FREQUENCY_SPORTS) {
             val current = answers[family] as? String
-            Labelled(FREQUENCY_SPORTS.getValue(family)) {
+            Labelled(label) {
                 OptionGrid(
                     FREQUENCY_LEVELS,
                     isSelected = { it == current },
                     onPick = { write(family, if (it == current) null else it) },
                 )
             }
-        }
-        Labelled("Other sports") {
-            OptionGrid(
-                FREQUENCY_MORE,
-                isSelected = { it in shown },
-                onPick = { family ->
-                    if (family in shown) {
-                        added = added - family
-                        if (family in answers) write(family, null)
-                    } else {
-                        added = added + family
-                    }
-                },
-                multi = true,
-            )
         }
     }
 }
@@ -306,42 +287,27 @@ internal val FREQUENCY_LEVELS = listOf(
     "3_4" to "3–4× a week",
     "5_plus" to "5+× a week",
 )
-private val FREQUENCY_ALWAYS = listOf("running", "cycling")
-/** Sport families (PlanBase.sportFamily) a plan can be built for. */
-private val FREQUENCY_MORE = listOf(
+/** Sport families (PlanBase.sportFamily) a plan can be built for, plus strength. */
+private val FREQUENCY_SPORTS = listOf(
+    "running" to "Running",
+    "cycling" to "Cycling",
     "swimming" to "Swimming",
+    "strength" to "Strength training",
     "mountain_biking" to "Mountain biking",
     "hiking" to "Hiking",
     "rowing" to "Rowing",
     "nordic_skiing" to "XC skiing",
     "climbing" to "Climbing",
 )
-private val FREQUENCY_SPORTS = mapOf("running" to "Running", "cycling" to "Cycling") + FREQUENCY_MORE
 
-/** Equipment and experience — what strength sessions may use, and how hard they start. */
-@OptIn(ExperimentalLayoutApi::class)
+/**
+ * The equipment strength sessions may use. Experience is not asked: how often
+ * the user strength-trains stands in for it ([FrequencyForm]).
+ */
 @Composable
 fun StrengthForm(state: ProfileState, set: SetField) {
-    Column(verticalArrangement = Arrangement.spacedBy(Tokens.Space.s4)) {
-        Labelled("Equipment you have", "Sessions only use what is ticked here.") {
-            EquipmentPicker(state.list("equipment_available").toSet()) { set("equipment_available", it) }
-        }
-        // One grid of four, and the chosen level's description under it — the
-        // four cards, each with its paragraph, were a screen of their own.
-        Labelled("Experience") {
-            Column(verticalArrangement = Arrangement.spacedBy(Tokens.Space.s2)) {
-                val current = state.str("strength_experience")
-                OptionGrid(
-                    experienceLevels.mapNotNull { level -> experienceTable[level]?.let { level to it.label } },
-                    isSelected = { it == current },
-                    // Tapping the chosen level again clears it, as on the web.
-                    onPick = { level -> set("strength_experience", if (current == level) null else level) },
-                )
-                current?.let { experienceTable[it] }?.let { entry ->
-                    Text(entry.blurb, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-        }
+    Labelled("Equipment you have", "Sessions only use what is ticked here.") {
+        EquipmentPicker(state.list("equipment_available").toSet()) { set("equipment_available", it) }
     }
 }
 

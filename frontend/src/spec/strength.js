@@ -105,3 +105,11 @@ export const EXPERIENCE_TABLE = {
 };
 
 export const UNKNOWN_FALLBACK_TIER = 3;
+
+export const EXPERIENCE_FROM_FREQUENCY = {
+  "never": "brand_new",
+  "occasional": "returning",
+  "1_2": "regular",
+  "3_4": "regular",
+  "5_plus": "advanced"
+};

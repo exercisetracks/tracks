@@ -40,7 +40,6 @@ import com.tracks.app.ui.components.TonalButton
 import com.tracks.app.ui.profile.AiCoachingRow
 import com.tracks.app.ui.profile.BackupSection
 import com.tracks.app.ui.profile.BodyForm
-import com.tracks.app.ui.profile.FrequencyForm
 import com.tracks.app.ui.profile.LookForm
 import com.tracks.app.ui.profile.PrivacyForm
 import com.tracks.app.ui.profile.ProfileState
@@ -68,6 +67,10 @@ import com.tracks.core.api.SessionState
  * [com.tracks.app.ui.profile.ProfileViewModel]), so a change on either reaches
  * the other; the watch, feeds and notification rows are this phone's own, and
  * AI coaching is the server's (see [AiCoachingRow]).
+ *
+ * The onboarding-only answers (how often you train) are not repeated here,
+ * matching the web's Settings: they set where a first plan starts, and the
+ * user's own history replaces them.
  *
  * The server sits after the settings rather than first because it is
  * optional: a phone with none is a complete Tracks, and "Link a server" is
@@ -130,16 +133,9 @@ fun SettingsScreen(
             }
             SettingsCard("Heart rate & power") { ZonesForm(profile, onSet) }
             SettingsCard("Training") {
+                // How often you train is not here: it is asked once in
+                // onboarding, as on the web, and history replaces it.
                 TrainingPrefsForm(profile, onSet)
-                SectionDivider()
-                SubHeading(
-                    "How often you train",
-                    MetricInfo(
-                        "How often you train",
-                        "Until Tracks has your own history of a sport, this sets where its plan starts.",
-                    ),
-                )
-                FrequencyForm(profile, onSet)
             }
             SettingsCard("Strength") { StrengthForm(profile, onSet) }
         }

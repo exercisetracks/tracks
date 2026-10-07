@@ -430,7 +430,9 @@ class LocalPlanning(
             preferred = p.filterValues { it == "preferred" }.keys,
             excluded = p.filterValues { it == "excluded" }.keys,
             sessionMaxMinutes = goal.strengthSessionMinutes,
-            experience = sources.setting("strength_experience"),
+            experience = com.tracks.core.spec.effectiveExperience(
+                sources.setting("strength_experience"), sources.activityFrequency(),
+            ),
             anchorDate = planStart(goal, today),
             customs = customs,
             recentlyUsed = recentlyUsed,

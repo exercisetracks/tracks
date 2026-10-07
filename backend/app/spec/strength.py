@@ -87,3 +87,9 @@ EXPERIENCE_TABLE = {   'brand_new': {   'label': 'Brand new',
                     'starting_weight_factor': 1.0}}
 
 UNKNOWN_FALLBACK_TIER = 3
+
+EXPERIENCE_FROM_FREQUENCY = {   'never': 'brand_new',
+    'occasional': 'returning',
+    '1_2': 'regular',
+    '3_4': 'regular',
+    '5_plus': 'advanced'}

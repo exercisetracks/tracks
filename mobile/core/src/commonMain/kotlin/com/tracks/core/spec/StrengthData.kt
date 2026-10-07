@@ -67,3 +67,11 @@ internal val EXPERIENCE_TABLE: Map<String, ExperienceEntry> = mapOf(
 )
 
 internal const val UNKNOWN_FALLBACK_TIER: Int = 3
+
+internal val EXPERIENCE_FROM_FREQUENCY: Map<String, String> = mapOf(
+    "never" to "brand_new",
+    "occasional" to "returning",
+    "1_2" to "regular",
+    "3_4" to "regular",
+    "5_plus" to "advanced",
+)

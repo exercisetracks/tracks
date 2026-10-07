@@ -50,6 +50,21 @@ equipment:
 # history above the floor always wins (see leveling.py's own docstring).
 experience_default_fallback_tier: 3
 
+# How often someone strength-trains — the onboarding answer
+# `activity_frequency["strength"]`, on the same five levels as every other
+# sport — read as an experience level. It stands in for the separate
+# experience question, which was asked once and then hidden: one "how often"
+# list is the whole onboarding, and how often someone lifts is the best
+# self-report of how used to lifting they are. An explicit
+# `strength_experience` (an accepted coach-note suggestion, or an answer from
+# before this) still wins; this is what is read when there is none.
+experience_from_frequency:
+  never: brand_new
+  occasional: returning
+  "1_2": regular
+  "3_4": regular
+  5_plus: advanced
+
 experience_levels:
   - value: brand_new
     label: "Brand new"

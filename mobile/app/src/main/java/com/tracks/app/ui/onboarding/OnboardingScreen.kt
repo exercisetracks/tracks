@@ -232,12 +232,12 @@ fun OnboardingScreen(
                     ) { ZonesForm(profile, set) }
                     OnboardingStep.Strength -> ProfileStep(
                         "Strength",
-                        "What you can lift with, and how long you have been lifting.",
+                        "What you can lift with. Strength sessions only use what is ticked.",
                         onBack = ::back, onNext = ::next,
                     ) { StrengthForm(profile, set) }
                     OnboardingStep.Habits -> ProfileStep(
                         "How often you train",
-                        "Sets where your first plan starts, until Tracks has your own history.",
+                        "Sets where each sport's first plan starts, and how hard strength begins, until Tracks has your own history. Skip any you don't do.",
                         onBack = ::back, onNext = ::next,
                     ) { FrequencyForm(profile, set) }
                     OnboardingStep.Look -> ProfileStep(

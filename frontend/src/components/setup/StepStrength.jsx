@@ -1,16 +1,12 @@
 // SPDX-FileCopyrightText: 2026 Hawk Fugagli
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Setup step — Strength training. Two optional, skippable sub-questions:
-// what equipment is available (drives which exercises can appear in
-// generated strength plans) and self-declared lifting experience (drives
-// starting difficulty/volume/progression). Both are editable later —
-// equipment any time in Settings, experience via the adaptive "Coach note"
-// suggestion once enough session history exists (see
-// backend/app/calculators/strength_plan/leveling.py). Reads/writes
-// `equipment_available`/`strength_experience` on the shared `strength`
-// draft slice.
+// Setup step — Strength training: what equipment is available (drives which
+// exercises can appear in generated strength plans), editable any time in
+// Settings. How experienced a lifter is no longer asked separately: the next
+// step's "how often do you strength train" answer stands in for it
+// (spec/strength.yaml experience_from_frequency), and the adaptive "Coach
+// note" suggestion refines it once there is history (leveling.py).
 import { EQUIPMENT_OPTIONS } from "../../lib/equipment";
-import { EXPERIENCE_OPTIONS } from "../../lib/experienceLevels";
 
 export default function StepStrength({ data, onChange, onNext, onBack }) {
   const selected = data.equipment_available;
@@ -48,25 +44,6 @@ export default function StepStrength({ data, onChange, onNext, onBack }) {
               </button>
             );
           })}
-        </div>
-      </div>
-
-      <div>
-        <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-0.5">Strength training experience</p>
-        <p className="text-xs text-slate-400 dark:text-slate-500 mb-2">Optional — sets the starting difficulty and volume of generated strength plans. Skip if you're not sure yet.</p>
-        <div className="grid grid-cols-2 gap-1.5">
-          {EXPERIENCE_OPTIONS.map(({ value, label, blurb }) => (
-            <button
-              key={value}
-              type="button"
-              onClick={() => onChange("strength_experience", data.strength_experience === value ? null : value)}
-              aria-pressed={data.strength_experience === value}
-              className="choice"
-            >
-              <div className="text-sm font-medium text-slate-800 dark:text-slate-100">{label}</div>
-              <div className="text-xs leading-snug mt-0.5 text-slate-500 dark:text-slate-400">{blurb}</div>
-            </button>
-          ))}
         </div>
       </div>
 

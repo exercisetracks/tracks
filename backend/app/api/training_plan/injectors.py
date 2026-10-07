@@ -20,7 +20,7 @@ from sqlalchemy.orm import Session
 
 from app.calculators.local_day import user_today
 from app.calculators.strength_plan import generate_strength_workouts
-from app.calculators.strength_plan.leveling import infer_experience_suggestion
+from app.calculators.strength_plan.leveling import effective_experience, infer_experience_suggestion
 from app.calculators.training_plan import _sport_family
 from app.models.activity import User
 from app.models.strength import (
@@ -74,7 +74,8 @@ def _refresh_experience_suggestion(db: Session, user_id: int, us: UserSettings) 
         "e1rm_trend": "flat",   # conservative default; upgrade needs != "falling"
         "weeks_since_last": _weeks_since(last),
     }
-    suggestion = infer_experience_suggestion(us.strength_experience, signals)
+    suggestion = infer_experience_suggestion(
+        effective_experience(us.strength_experience, us.activity_frequency), signals)
 
     if not suggestion:
         # Nothing to suggest — clear any stale, non-dismissed note.
@@ -220,7 +221,7 @@ def _inject_strength_workouts(
     equipment = (us.equipment_available if us and us.equipment_available
                  else ["bodyweight", "dumbbell"])
     units    = (us.units if us and us.units else "metric")
-    experience = us.strength_experience if us else None
+    experience = effective_experience(us.strength_experience, us.activity_frequency) if us else None
 
     # Refresh the history-derived experience "coach note" (suggestion only).
     if us is not None:

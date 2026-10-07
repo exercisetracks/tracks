@@ -11,7 +11,7 @@ import Switch from "../ui/Switch";
 import Tabs from "../ui/Tabs";
 
 // Ordered wizard steps — drives the StepIndicator dots and labels.
-export const STEPS = ["Account", "Body", "Zones", "Strength", "GPS", "Data", "Look", "AI"];
+export const STEPS = ["Account", "Body", "Zones", "Strength", "Habits", "GPS", "Data", "Look", "AI"];
 
 // Text inputs and selects are the kit's .field (src/design/kit.js).
 export const INPUT = "field";

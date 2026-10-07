@@ -4,8 +4,10 @@
 Experience-level mapping: turn the one-time "how familiar are you with
 strength training?" answer into generator inputs.
 
-The answer lives in user_settings.strength_experience:
-    brand_new | returning | regular | advanced   (None = never asked)
+The level lives in user_settings.strength_experience:
+    brand_new | returning | regular | advanced   (None = never set)
+and when that is unset, it is read from how often the user strength-trains,
+the onboarding answer activity_frequency["strength"] (see effective_experience).
 
 It shapes three things, all conservative-by-default:
   - the default strength tier suggested when a goal enables strength
@@ -20,7 +22,20 @@ max(actual sessions, floor).
 
 from __future__ import annotations
 
-from app.spec.strength import EXPERIENCE_LEVELS, EXPERIENCE_TABLE, UNKNOWN_FALLBACK_TIER
+from app.spec.strength import (
+    EXPERIENCE_FROM_FREQUENCY, EXPERIENCE_LEVELS, EXPERIENCE_TABLE, UNKNOWN_FALLBACK_TIER,
+)
+
+
+def effective_experience(explicit: str | None, frequencies: dict | None) -> str | None:
+    """The experience level the generator uses: an explicit one if set (an
+    accepted coach-note suggestion, or an answer from before onboarding asked
+    frequency instead), else the one the strength-training frequency implies
+    (spec/strength.yaml experience_from_frequency). None when neither is known.
+    The phone's twin is com.tracks.core.spec.effectiveExperience."""
+    if explicit:
+        return explicit
+    return EXPERIENCE_FROM_FREQUENCY.get((frequencies or {}).get("strength"))
 
 
 def experience_default_tier(experience: str | None, endurance_goal: bool) -> int:

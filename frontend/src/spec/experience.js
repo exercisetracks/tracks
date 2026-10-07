@@ -19,7 +19,7 @@
  * mean "don't show a suggestion yet"). Collapsing that difference would be a
  * behaviour change, not a refactor.
  */
-import { EXPERIENCE_LEVELS, EXPERIENCE_TABLE } from "./strength";
+import { EXPERIENCE_FROM_FREQUENCY, EXPERIENCE_LEVELS, EXPERIENCE_TABLE } from "./strength";
 
 export const EXPERIENCE_OPTIONS = EXPERIENCE_LEVELS.map((value) => ({
   value,
@@ -35,4 +35,14 @@ export function experienceDefaultTier(experience, isEndurance) {
   const entry = EXPERIENCE_TABLE[experience];
   if (!entry) return null;
   return isEndurance ? entry.default_tier.endurance : entry.default_tier.strength;
+}
+
+// The level a plan is built from: an explicit `strength_experience` if set
+// (an accepted coach-note suggestion, or an answer from before onboarding
+// asked frequency instead), else the one how often the user strength-trains
+// implies. Mirrors backend leveling.effective_experience.
+export function effectiveExperience(settings) {
+  return settings?.strength_experience
+    ?? EXPERIENCE_FROM_FREQUENCY[settings?.activity_frequency?.strength]
+    ?? null;
 }

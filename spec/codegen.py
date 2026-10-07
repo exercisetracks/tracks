@@ -372,6 +372,7 @@ def _strength_payload(spec: dict) -> dict:
         "equipment": spec["equipment"],
         "experience_default_fallback_tier": spec["experience_default_fallback_tier"],
         "experience_levels": spec["experience_levels"],
+        "experience_from_frequency": spec["experience_from_frequency"],
     }
 
 
@@ -405,7 +406,8 @@ def gen_strength_python(spec: dict) -> tuple[Path, str]:
         f"VALID_EQUIPMENT = {valid_equipment}\n\n"
         f"EXPERIENCE_LEVELS = {experience_levels}\n\n"
         f"EXPERIENCE_TABLE = {_pyliteral(_experience_table(levels))}\n\n"
-        f"UNKNOWN_FALLBACK_TIER = {data['experience_default_fallback_tier']}\n"
+        f"UNKNOWN_FALLBACK_TIER = {data['experience_default_fallback_tier']}\n\n"
+        f"EXPERIENCE_FROM_FREQUENCY = {_pyliteral(data['experience_from_frequency'])}\n"
     )
     return ROOT / "backend/app/spec/strength.py", src
 
@@ -422,7 +424,8 @@ def gen_strength_js(spec: dict) -> tuple[Path, str]:
         f"export const VALID_EQUIPMENT = {json.dumps([e['value'] for e in equipment])};\n\n"
         f"export const EXPERIENCE_LEVELS = {json.dumps([l['value'] for l in levels])};\n\n"
         f"export const EXPERIENCE_TABLE = {json.dumps(_experience_table(levels), indent=2)};\n\n"
-        f"export const UNKNOWN_FALLBACK_TIER = {data['experience_default_fallback_tier']};\n"
+        f"export const UNKNOWN_FALLBACK_TIER = {data['experience_default_fallback_tier']};\n\n"
+        f"export const EXPERIENCE_FROM_FREQUENCY = {json.dumps(data['experience_from_frequency'], indent=2)};\n"
     )
     return ROOT / "frontend/src/spec/strength.js", src
 
@@ -466,7 +469,10 @@ def gen_strength_kotlin(spec: dict) -> tuple[Path, str]:
         f"internal val VALID_EQUIPMENT: Set<String> = setOf({valid_equipment})\n\n"
         f"internal val EXPERIENCE_LEVELS: List<String> = listOf({experience_levels})\n\n"
         f"internal val EXPERIENCE_TABLE: Map<String, ExperienceEntry> = mapOf(\n{table}\n)\n\n"
-        f"internal const val UNKNOWN_FALLBACK_TIER: Int = {data['experience_default_fallback_tier']}\n"
+        f"internal const val UNKNOWN_FALLBACK_TIER: Int = {data['experience_default_fallback_tier']}\n\n"
+        "internal val EXPERIENCE_FROM_FREQUENCY: Map<String, String> = mapOf(\n"
+        + "".join(f"    {_kstr(k)} to {_kstr(v)},\n" for k, v in data["experience_from_frequency"].items())
+        + ")\n"
     )
     return (
         ROOT / "mobile/core/src/commonMain/kotlin/com/tracks/core/spec/StrengthData.kt",

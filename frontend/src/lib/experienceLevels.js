@@ -14,4 +14,4 @@
  * To add a level or reword its copy, edit spec/strength.yaml and run
  * `python3 spec/codegen.py`. Editing the generated file does nothing.
  */
-export { EXPERIENCE_OPTIONS, EXPERIENCE_LABEL, experienceDefaultTier } from "../spec/experience";
+export { EXPERIENCE_OPTIONS, EXPERIENCE_LABEL, experienceDefaultTier, effectiveExperience } from "../spec/experience";

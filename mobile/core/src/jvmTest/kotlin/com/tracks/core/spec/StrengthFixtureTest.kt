@@ -121,4 +121,14 @@ class StrengthFixtureTest {
             assertEquals(1.0, startingWeightFactor(unknown))
         }
     }
+
+    /** The server's TestEffectiveExperience, so the phone's plan starts where the server's does. */
+    @Test
+    fun `how often someone lifts stands in for experience, and an explicit level wins`() {
+        assertEquals("brand_new", effectiveExperience(null, mapOf("strength" to "never")))
+        assertEquals("regular", effectiveExperience(null, mapOf("strength" to "1_2")))
+        assertEquals("advanced", effectiveExperience(null, mapOf("strength" to "5_plus")))
+        assertEquals("advanced", effectiveExperience("advanced", mapOf("strength" to "never")))
+        assertEquals(null, effectiveExperience(null, mapOf("running" to "3_4")))
+    }
 }

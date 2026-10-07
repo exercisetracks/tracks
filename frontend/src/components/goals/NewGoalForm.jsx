@@ -19,7 +19,7 @@
 
 import { useEffect, useState } from "react";
 import { api } from "../../api/client";
-import { experienceDefaultTier } from "../../lib/experienceLevels";
+import { effectiveExperience, experienceDefaultTier } from "../../lib/experienceLevels";
 import { MTB_DISCIPLINES, CYCLING_DISCIPLINES } from "./constants";
 import { changedFields, draftFromGoal, hasPlan, newDraft, pickPreset, pickSport, todayISO } from "./helpers";
 import InfoTooltip from "../ui/InfoTooltip";
@@ -46,9 +46,10 @@ export default function NewGoalForm({ goal, imperial, settings, onCancel, onSave
   const [draft,   setDraft]   = useState(() => (goal ? draftFromGoal(goal, imperial) : newDraft()));
   const [saving,  setSaving]  = useState(false);
   const [error,   setError]   = useState(null);
-  // Ask for strength experience only if the user has never answered it.
+  // Ask for strength experience only if neither it nor how often the user
+  // strength-trains was ever answered (effectiveExperience).
   const [experience, setExperience] = useState(null);
-  const askExperience = !settings?.strength_experience;
+  const askExperience = !effectiveExperience(settings);
 
   function set(key, val) { setDraft(d => ({ ...d, [key]: val })); }
 
@@ -80,7 +81,7 @@ export default function NewGoalForm({ goal, imperial, settings, onCancel, onSave
 
   // The tier the strength experience suggests, for a slider nobody has moved.
   function defaultTier(isEndurance) {
-    const effExperience = experience ?? settings?.strength_experience;
+    const effExperience = experience ?? effectiveExperience(settings);
     const intensity = draft.plan_intensity ?? 1.0;
     const intensityTier = isEndurance
       ? (intensity >= 0.8 ? 2 : 1)

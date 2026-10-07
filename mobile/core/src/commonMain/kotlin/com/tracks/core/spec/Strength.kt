@@ -37,6 +37,16 @@ val experienceLevels: List<String> get() = EXPERIENCE_LEVELS
 val experienceTable: Map<String, ExperienceEntry> get() = EXPERIENCE_TABLE
 
 /**
+ * The experience level the generator uses: [explicit] if set (an accepted
+ * coach-note suggestion, or an answer from before onboarding asked frequency
+ * instead), else the one how often the user strength-trains implies —
+ * `activity_frequency["strength"]` through spec/strength.yaml's
+ * experience_from_frequency. The server's twin is leveling.effective_experience.
+ */
+fun effectiveExperience(explicit: String?, frequencies: Map<String, Any?>): String? =
+    explicit ?: (frequencies["strength"] as? String)?.let { EXPERIENCE_FROM_FREQUENCY[it] }
+
+/**
  * Suggested strength_tier for a new goal. Endurance-primary goals keep
  * strength supplementary regardless of lifting pedigree — only a brand-new
  * lifter gets the lower endurance tier (1); every other level uses 2.

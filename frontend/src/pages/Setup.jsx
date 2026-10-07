@@ -17,6 +17,7 @@ import StepBody from "../components/setup/StepBody";
 import { birthYearFromAge } from "../lib/age";
 import StepZones from "../components/setup/StepZones";
 import StepStrength from "../components/setup/StepStrength";
+import StepHabits from "../components/setup/StepHabits";
 import StepAGPS from "../components/setup/StepAGPS";
 import StepData from "../components/setup/StepData";
 import StepAppearance from "../components/setup/StepAppearance";
@@ -38,7 +39,8 @@ export default function Setup() {
   );
   const [body, setBody]       = useState({ units: "metric", weight: "", height: "", age: "", sex: "", timezone: Intl.DateTimeFormat().resolvedOptions().timeZone ?? "UTC" });
   const [zones, setZones]     = useState({ maxHrMode: "auto", maxHrManual: "", thresholdHrMode: "auto", thresholdHrManual: "", ftpMode: "auto", ftpManual: "" });
-  const [strength, setStrength] = useState({ equipment_available: ["bodyweight", "dumbbell"], strength_experience: null });
+  const [strength, setStrength] = useState({ equipment_available: ["bodyweight", "dumbbell"] });
+  const [habits, setHabits]   = useState({});
   const [agps, setAgps]       = useState({ agpsEnabled: false, weatherEnabled: false, mapEnabled: false, wildfireEnabled: false, gnisEnabled: false, garminSyncEnabled: true });
   const [look, setLook]       = useState({ colorScheme: "system", accent: "emerald" });
   const [ai, setAI]           = useState({ aiProvider: null, aiModel: "", aiEndpoint: "", aiKey: "" });
@@ -77,7 +79,7 @@ export default function Setup() {
       if (zones.thresholdHrMode === "manual" && zones.thresholdHrManual) settings.threshold_hr_manual = parseInt(zones.thresholdHrManual);
       if (zones.ftpMode         === "manual" && zones.ftpManual)         settings.ftp_manual          = parseInt(zones.ftpManual);
       settings.equipment_available = strength.equipment_available;
-      if (strength.strength_experience) settings.strength_experience = strength.strength_experience;
+      if (Object.keys(habits).length) settings.activity_frequency = habits;
       settings.agps_enabled = agps.agpsEnabled;
       settings.weather_enabled = agps.weatherEnabled;
       settings.map_enabled = agps.mapEnabled;
@@ -134,10 +136,11 @@ export default function Setup() {
     <StepBody       key={1} data={body}     onChange={patchBody}     onNext={() => setStep(2)} onBack={() => setStep(0)} />,
     <StepZones      key={2} data={zones}    onChange={patchZones}    onNext={() => setStep(3)} onBack={() => setStep(1)} />,
     <StepStrength   key={3} data={strength} onChange={patchStrength} onNext={() => setStep(4)} onBack={() => setStep(2)} />,
-    <StepAGPS       key={4} data={agps}     onChange={patchAgps}     onNext={() => setStep(5)} onBack={() => setStep(3)} />,
-    <StepData       key={5} data={agps}     onChange={patchAgps}     onNext={() => setStep(6)} onBack={() => setStep(4)} />,
-    <StepAppearance key={6} data={look}     onChange={patchLook}     onNext={() => setStep(7)} onBack={() => setStep(5)} />,
-    <StepAI         key={7} data={ai}       onChange={patchAI}       onFinish={finish}         onBack={() => setStep(6)} loading={loading} error={error} />,
+    <StepHabits     key={4} data={habits}   onChange={setHabits}     onNext={() => setStep(5)} onBack={() => setStep(3)} />,
+    <StepAGPS       key={5} data={agps}     onChange={patchAgps}     onNext={() => setStep(6)} onBack={() => setStep(4)} />,
+    <StepData       key={6} data={agps}     onChange={patchAgps}     onNext={() => setStep(7)} onBack={() => setStep(5)} />,
+    <StepAppearance key={7} data={look}     onChange={patchLook}     onNext={() => setStep(8)} onBack={() => setStep(6)} />,
+    <StepAI         key={8} data={ai}       onChange={patchAI}       onFinish={finish}         onBack={() => setStep(7)} loading={loading} error={error} />,
   ];
 
   const TITLES = [
@@ -145,6 +148,7 @@ export default function Setup() {
     "About you",
     "Training zones",
     "Strength training",
+    "How often you train",
     "Garmin watch sync",
     "Map & weather data",
     "Appearance",
@@ -154,7 +158,8 @@ export default function Setup() {
     "Choose a username and password for your admin account. · Offline",
     "Used for calorie estimates and zone boundaries. Both optional. · Offline",
     "Tracks derives these automatically — override if you know your numbers. · Offline",
-    "Equipment and experience shape your generated strength plans. Both optional. · Offline",
+    "The equipment you have shapes your generated strength plans. · Offline",
+    "Where each sport's first plan starts. All optional. · Offline",
     "USB plug-in sync, and optionally pre-loaded satellite data for faster GPS lock. · Online",
     "Download map tiles and enable weather forecasts. Both optional. · Online",
     "Pick a color scheme and accent color. · Offline",
