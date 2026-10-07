@@ -9,6 +9,15 @@
 // Improvement over the canvas version: each segment is drawn as a feathered quad
 // (bright core fading to transparent edges) instead of a hard 1px stroke, giving
 // a smoother, true "glow" look.
+//
+// Light mode subtracts instead of adding — the same glow, mirrored. Additive
+// light can only brighten, and over a near-white basemap there is almost no
+// brightness left to add: every colour washed out to the ground and the lines
+// were close to invisible. Subtracting (1 − ink) from white leaves the ink, and
+// overlaps keep subtracting, so density deepens toward the colour the way it
+// brightens toward white in dark mode. Shader, widths and intensities are
+// shared; only the blend equation and the palette (inks, see LIGHT_INKS)
+// differ by theme.
 
 // ── GL helpers ────────────────────────────────────────────────────────────────
 
@@ -86,6 +95,13 @@ export class HeatmapGlowLayer {
     this._count = 0;
     this._halfWidthPx = 2.75;   // ~25% thicker tracks
     this._intensity = 0.20;
+    this._subtractive = false;
+  }
+
+  /** Light mode: subtract from the map rather than add to it (see the header). */
+  setSubtractive(subtractive) {
+    this._subtractive = !!subtractive;
+    this._map?.triggerRepaint();
   }
 
   onAdd(map, gl) {
@@ -157,8 +173,15 @@ export class HeatmapGlowLayer {
     gl.vertexAttribPointer(this._loc.a_color, 3, gl.FLOAT, false, S, 20);
 
     gl.enable(gl.BLEND);
-    gl.blendEquation(gl.FUNC_ADD);
-    gl.blendFunc(gl.ONE, gl.ONE);   // additive — overlaps accumulate brightness
+    if (this._subtractive) {
+      // dst − src for colour; alpha left alone, or the canvas would turn
+      // see-through wherever a track was drawn.
+      gl.blendEquationSeparate(gl.FUNC_REVERSE_SUBTRACT, gl.FUNC_ADD);
+      gl.blendFuncSeparate(gl.ONE, gl.ONE, gl.ZERO, gl.ONE);
+    } else {
+      gl.blendEquation(gl.FUNC_ADD);
+      gl.blendFunc(gl.ONE, gl.ONE);   // additive — overlaps accumulate brightness
+    }
     gl.disable(gl.DEPTH_TEST);
     gl.drawArrays(gl.TRIANGLES, 0, this._count);
   }
@@ -174,15 +197,36 @@ export class HeatmapGlowLayer {
 // ── Geometry/colour building ──────────────────────────────────────────────────
 
 // Frequency base colour (orange); additive accumulation ramps it to yellow→white.
-const ORANGE = [1.0, 0.40, 0.05];
-const SPEED_STOPS = [
+const ORANGE_GLOW = [1.0, 0.40, 0.05];
+const SPEED_GLOW = [
   [0, [41, 98, 255]], [0.4, [16, 185, 129]], [0.7, [251, 191, 36]], [1, [239, 68, 68]],
 ];
-const GRAD_STOPS = [
+const GRAD_GLOW = [
   [0, [16, 185, 129]], [0.5, [255, 255, 255]], [1, [139, 92, 246]],
 ];
 
-function rgbFromStops(stops, t) {
+// Light mode's colours, as the inks a line leaves on white. Deeper and more
+// saturated than the glow colours, since they darken a pale map rather than
+// light a dark one; the gradient's "flat" is slate, because white is no ink.
+export const LIGHT_INKS = {
+  frequency: [234, 72, 12],
+  speed: [[0, [29, 78, 216]], [0.4, [4, 140, 98]], [0.7, [217, 119, 6]], [1, [220, 38, 38]]],
+  grad:  [[0, [4, 140, 98]], [0.5, [100, 116, 139]], [1, [124, 58, 237]]],
+};
+
+// What to subtract from white to leave an ink, as 0–1 channels.
+const subtractiveOf = (ink) => ink.map((c) => 1 - c / 255);
+
+const hex = (rgb) => "#" + rgb.map((c) => c.toString(16).padStart(2, "0")).join("");
+
+/** The legend's colours for a mode — the inks in light mode, the glow in dark. */
+export function legendStops(mode, theme) {
+  const light = theme === "light";
+  const stops = mode === "gradient" ? (light ? LIGHT_INKS.grad : GRAD_GLOW) : (light ? LIGHT_INKS.speed : SPEED_GLOW);
+  return stops.map(([, rgb]) => hex(rgb));
+}
+
+function rgbFromStopsRaw(stops, t) {
   for (let i = 1; i < stops.length; i++) {
     const [t0, c0] = stops[i - 1], [t1, c1] = stops[i];
     if (t <= t1) {
@@ -209,8 +253,15 @@ const mercY = (lat) => {
 
 // Build the interleaved vertex buffer for all track segments.
 // tracks: [[ [lat,lng,value?], ... ], ...].  Returns { verts: Float32Array, count }.
-export function buildHeatmapVerts(tracks, mode) {
+export function buildHeatmapVerts(tracks, mode, theme = "dark") {
   if (!tracks?.length) return { verts: new Float32Array(0), count: 0 };
+  const light = theme === "light";
+  const ORANGE = light ? subtractiveOf(LIGHT_INKS.frequency) : ORANGE_GLOW;
+  const SPEED_STOPS = light ? LIGHT_INKS.speed : SPEED_GLOW;
+  const GRAD_STOPS = light ? LIGHT_INKS.grad : GRAD_GLOW;
+  const rgbFromStops = light
+    ? (stops, t) => subtractiveOf(rgbFromStopsRaw(stops, t).map((c) => c * 255))
+    : rgbFromStopsRaw;
 
   let colorFor;
   if (mode === "gradient") {

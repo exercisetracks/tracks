@@ -29,9 +29,10 @@ vi.mock("../components/map/MapLibreMap", async () => {
   };
 });
 vi.mock("../components/map/HeatmapGlowLayer", () => ({
-  HeatmapGlowLayer: class { setStyle() {} setData() {} },
+  HeatmapGlowLayer: class { setStyle() {} setData() {} setSubtractive() {} },
   buildHeatmapVerts: () => ({ verts: null, count: 0 }),
   glowStyleForMode: () => ({}),
+  legendStops: () => ["#000", "#fff"],
 }));
 
 import ActivityHeatmap from "../components/Charts/ActivityHeatmap";

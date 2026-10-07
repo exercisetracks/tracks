@@ -16,7 +16,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "../../api/client";
 import { useTheme } from "../../context/ThemeContext";
 import MapLibreMap from "../map/MapLibreMap";
-import { HeatmapGlowLayer, buildHeatmapVerts, glowStyleForMode } from "../map/HeatmapGlowLayer";
+import { HeatmapGlowLayer, buildHeatmapVerts, glowStyleForMode, legendStops } from "../map/HeatmapGlowLayer";
 
 const MODES = [
   { value: "frequency", label: "Frequency"  },
@@ -27,12 +27,13 @@ const MODES = [
 
 // ── Legend ────────────────────────────────────────────────────────────────────
 
-function Legend({ mode }) {
+function Legend({ mode, theme }) {
   if (mode === "frequency") return null;
 
   const isGrad = mode === "gradient";
   const labels = isGrad ? ["Descent", "Flat", "Climb"] : mode === "heartrate" ? ["Low HR", "High HR"] : ["Slow", "Fast"];
-  const stops  = isGrad ? ["#10b981","#ffffff","#8b5cf6"] : ["#2962ff","#10b981","#fbbf24","#ef4444"];
+  // The colours the map is drawing in this theme, so the key matches the lines.
+  const stops  = legendStops(mode, theme);
 
   return (
     // bottom-12: clear of the map credits' "i" button in the corner below.
@@ -98,6 +99,9 @@ function HeatmapMap({ tracks, mode, fitTracks, fitKey, theme }) {
   const vertsRef  = useRef({ verts: null, count: 0 });
   const lastFit   = useRef(-1);
   const [ready, setReady] = useState(false);
+  // Read when a theme swap reloads the style and re-runs handleReady.
+  const themeRef  = useRef(theme);
+  themeRef.current = theme;
 
   // (Re)create the custom glow layer — also fires after a theme/style swap, which
   // drops custom layers, so we rebuild and re-upload the current geometry.
@@ -114,6 +118,7 @@ function HeatmapMap({ tracks, mode, fitTracks, fitKey, theme }) {
     }
     if (layer) {
       layer.setStyle(glowStyleForMode(mode));
+      layer.setSubtractive(themeRef.current === "light");
       if (vertsRef.current.verts) layer.setData(vertsRef.current.verts, vertsRef.current.count);
     }
     setReady(true);
@@ -122,13 +127,14 @@ function HeatmapMap({ tracks, mode, fitTracks, fitKey, theme }) {
 
   // Rebuild the vertex buffer when the data or mode changes.
   useEffect(() => {
-    const built = buildHeatmapVerts(tracks, mode);
+    const built = buildHeatmapVerts(tracks, mode, theme);
     vertsRef.current = built;
     if (ready && glowRef.current) {
       glowRef.current.setStyle(glowStyleForMode(mode));
+      glowRef.current.setSubtractive(theme === "light");
       glowRef.current.setData(built.verts, built.count);
     }
-  }, [ready, tracks, mode]);
+  }, [ready, tracks, mode, theme]);
 
   // Fit to data when fitKey bumps — once per filter, see maybeAutoFit.
   useEffect(() => {
@@ -266,7 +272,7 @@ export default function ActivityHeatmap({ height = 420, sport = "", after = null
       )}
 
       <Controls mode={mode} onModeChange={setMode} />
-      <Legend mode={mode} />
+      <Legend mode={mode} theme={isDark ? "dark" : "light"} />
     </div>
   );
 }
