@@ -7,6 +7,7 @@
 // constants below.
 import { useMemo } from "react";
 import { useTheme } from "../../context/ThemeContext";
+import { todayDate } from "../../lib/today";
 
 const GAP     = 3;
 const MCELL_H = 20;
@@ -39,7 +40,7 @@ function buildWeeks(data, days) {
   const map = {};
   for (const { date, count } of data) map[date] = count;
 
-  const today = new Date();
+  const today = todayDate();
   const todayStr = toStr(today);
   const weeksToShow = Math.max(4, Math.ceil(days / 7) + 1);
 

@@ -26,6 +26,7 @@ from sqlalchemy import and_, or_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.calculators.local_day import user_today
 from app.auth import require_auth
 from app.calculators.plan.moved import keep_completed, keep_moved
 from app.calculators.plan.starting import frequency_for
@@ -99,7 +100,7 @@ def generate_plan(
     if goal.goal_type not in PLAN_GOAL_TYPES:
         raise HTTPException(status_code=400,
                             detail="Training plans are built for Race / Event and Fitness goals")
-    today = date.today()
+    today = user_today(db, user.id)
     if goal.goal_type == "event":
         if not goal.event_date:
             raise HTTPException(status_code=400, detail="Goal has no event date")
@@ -358,7 +359,7 @@ def _plan_workout_dicts(db: Session, goal: TrainingGoal, user_id: int,
 
 def _regenerate_future_workouts(db: Session, goal: TrainingGoal, user_id: int) -> None:
     """Replace all non-completed future workouts with a freshly generated plan."""
-    today = date.today()
+    today = user_today(db, user_id)
     vdot, workout_dicts = _plan_workout_dicts(db, goal, user_id, today)
 
     # Concurrency: training_plans.goal_id has a UNIQUE constraint, but two
@@ -418,7 +419,7 @@ def refresh_plans_for_user(user_id: int) -> None:
     """
     db = SessionLocal()
     try:
-        today = date.today()
+        today = user_today(db, user_id)
         goals = (
             db.query(TrainingGoal)
             .filter(
@@ -452,7 +453,7 @@ def refresh_plans_for_user_force(user_id: int) -> None:
     """
     db = SessionLocal()
     try:
-        today = date.today()
+        today = user_today(db, user_id)
         goals = (
             db.query(TrainingGoal)
             .filter(
@@ -523,7 +524,7 @@ def get_upcoming_workouts(
     plan with ten workouts in it, which is exactly how the phone's offline
     calendar came to be built from a truncated copy of the plan.
     """
-    today = date.today()
+    today = user_today(db, user.id)
     cutoff = today + timedelta(days=days)
 
     workouts = (

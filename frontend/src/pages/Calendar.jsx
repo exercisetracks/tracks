@@ -22,9 +22,10 @@ import GoalSelector from "../components/calendar/GoalSelector";
 import { hasPlan } from "../components/goals/helpers";
 import IcsExport from "../components/calendar/IcsExport";
 import WorkoutDetail from "../components/calendar/WorkoutDetail";
+import { todayDate } from "../lib/today";
 
 export default function CalendarPage() {
-  const today = new Date();
+  const today = todayDate();
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth());
   const [goals, setGoals] = useState([]);

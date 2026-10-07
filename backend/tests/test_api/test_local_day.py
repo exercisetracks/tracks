@@ -16,7 +16,9 @@ relative to the current date.
 from datetime import date, datetime, timezone
 
 from app.api.coaching.helpers import _build_tss_by_date
-from app.calculators.local_day import activity_local_date, local_day_start
+import app.calculators.local_day as local_day
+from app.calculators.local_day import account_today, activity_local_date, local_day_start, user_today
+from app.models.metrics import DailyMetric
 from app.models.activity import Activity
 from app.models.user_settings import UserSettings
 
@@ -119,3 +121,43 @@ class TestTheRule:
         start = local_day_start(date(2026, 9, 6), "America/Santiago")
         assert start == datetime(2026, 9, 6, 4, 0, tzinfo=timezone.utc)
         assert activity_local_date(start, "America/Santiago") == date(2026, 9, 6)
+
+
+class _EveningInLA(datetime):
+    """The server's clock, stopped at 18:04 PDT — 01:04 UTC the next day."""
+
+    @classmethod
+    def now(cls, tz=None):
+        return EVENING_IN_LA.astimezone(tz) if tz else EVENING_IN_LA.replace(tzinfo=None)
+
+
+class TestToday:
+    """"Today" is the account's day, not the server's.
+
+    The server runs in UTC, so ``date.today()`` turned over at 17:00 in
+    California: the web showed tomorrow as today, and the day's workout,
+    readiness and doses were all a day ahead every evening (2026-10-06).
+    """
+
+    def test_today_is_the_day_in_the_accounts_zone(self):
+        assert account_today("America/Los_Angeles", now=EVENING_IN_LA) == date(2026, 9, 30)
+        assert account_today("UTC", now=EVENING_IN_LA) == date(2026, 10, 1)
+
+    def test_no_zone_or_an_unknown_one_is_utc(self):
+        """The server's own day — the behaviour before, for an account that never chose."""
+        assert account_today(None, now=EVENING_IN_LA) == date(2026, 10, 1)
+        assert account_today("Not/AZone", now=EVENING_IN_LA) == date(2026, 10, 1)
+
+    def test_a_users_today_reads_their_zone(self, user, db, monkeypatch):
+        monkeypatch.setattr(local_day, "datetime", _EveningInLA)
+        _zone(db, user, "America/Los_Angeles")
+        assert user_today(db, user.id) == date(2026, 9, 30)
+
+    def test_a_weight_set_in_the_evening_is_logged_on_that_day(self, client, user, db, monkeypatch):
+        """Settings files a weight as today's reading; at 18:04 in California
+        that is still the 30th, not the 1st."""
+        monkeypatch.setattr(local_day, "datetime", _EveningInLA)
+        _zone(db, user, "America/Los_Angeles")
+        assert client.patch("/users/me/settings", json={"weight_kg": 70.0}).status_code == 200
+        logged = db.query(DailyMetric).filter_by(user_id=user.id).one()
+        assert logged.date == date(2026, 9, 30)

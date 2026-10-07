@@ -21,6 +21,8 @@
 //   stacked   A total made of parts — a day's calories, a night's stages —
 //             where the arc itself carries the breakdown.
 
+import { isoOfDay, todayIso } from "../../lib/today";
+
 export const TEAL   = "#14b8a6";
 export const GREEN  = "#22c55e";
 export const AMBER  = "#eab308";
@@ -221,10 +223,13 @@ export function overflowOf(value, min, max) {
 
 // ── What is current ──────────────────────────────────────────────────────────
 
-/** Today as YYYY-MM-DD in the browser's own zone (toISOString is UTC). */
-export function localIso(d = new Date()) {
-  const p = n => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+/**
+ * A calendar-cell Date as YYYY-MM-DD from its own fields — or, with no
+ * argument, today in the account's zone (lib/today.js). Not toISOString,
+ * which is the UTC date.
+ */
+export function localIso(d) {
+  return d ? isoOfDay(d) : todayIso();
 }
 
 function daysBetween(fromIso, toIso) {

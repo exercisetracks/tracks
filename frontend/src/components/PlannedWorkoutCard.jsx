@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: 2026 Hawk Fugagli
 // SPDX-License-Identifier: AGPL-3.0-or-later
-
+import { todayDate } from "../lib/today";
 
 const WORKOUT_BADGE = {
   easy:          "bg-accent-100 text-accent-700 dark:bg-accent-900/40 dark:text-accent-300",
@@ -27,7 +27,7 @@ const PACE_LABELS = {
 };
 
 function relDay(dateStr) {
-  const today = new Date(new Date().toDateString());
+  const today = todayDate();
   const d = new Date(dateStr + "T00:00:00");
   const diff = Math.round((d - today) / 86400000);
   if (diff === 0) return "Today";

@@ -17,10 +17,11 @@
 // from both, which would double it.
 
 import { localIso } from "./scales";
+import { isoOf } from "../../lib/today";
 
-/** The local calendar day an entry was eaten on. */
+/** The day an entry was eaten on, in the account's zone. */
 export function dayOfEntry(entry) {
-  return localIso(new Date(entry.logged_at));
+  return isoOf(new Date(entry.logged_at));
 }
 
 /** Food entries on one local day, oldest first. */
@@ -56,7 +57,7 @@ export function eatenSeries(days, log, start = null) {
  * on that day in any zone the reader is likely to be in.
  */
 export function loggedAtFor(date, now = new Date()) {
-  if (date === localIso(now)) return now.toISOString();
+  if (date === isoOf(now)) return now.toISOString();
   const [y, m, d] = date.split("-").map(Number);
   return new Date(y, m - 1, d, 12).toISOString();
 }

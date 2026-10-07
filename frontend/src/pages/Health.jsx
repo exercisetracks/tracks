@@ -28,6 +28,7 @@ import InjuryActivitiesDrawer from "../components/health/InjuryActivitiesDrawer"
 import BarPills from "../components/ui/BarPills";
 import PageHeader from "../components/ui/PageHeader";
 import { PlusIcon } from "../components/ui/Button";
+import { todayDate } from "../lib/today";
 
 /**
  * How far back every chart on the page looks. One window for the whole page,
@@ -53,7 +54,7 @@ const INTRADAY_MAX_DAYS = 31;
 
 function windowStart(range) {
   if (range.days == null) return null;
-  const d = new Date();
+  const d = todayDate();
   d.setDate(d.getDate() - range.days);
   return localIso(d);
 }

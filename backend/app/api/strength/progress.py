@@ -15,13 +15,13 @@ include order in the package __init__.
 """
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import timedelta
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.auth import require_auth
-from app.calculators.local_day import activity_local_date, local_day_start
+from app.calculators.local_day import activity_local_date, local_day_start, user_today
 from app.database import get_db
 from app.models.activity import Activity, StrengthSet, User
 from app.models.user_settings import UserSettings
@@ -66,7 +66,7 @@ def get_history(days: int = 90,
     # as the phone's LocalLibrary.strengthHistory dates them.
     us = db.query(UserSettings).filter_by(user_id=user.id).first()
     tz = us.timezone if us else None
-    cutoff = date.today() - timedelta(days=max(1, min(days, 365)))
+    cutoff = user_today(db, user.id) - timedelta(days=max(1, min(days, 365)))
     rows = (
         db.query(StrengthSet, Activity)
         .join(Activity, Activity.id == StrengthSet.activity_id)
@@ -82,7 +82,7 @@ def get_history(days: int = 90,
     return [
         SetHistoryEntry(
             activity_id=act.id,
-            activity_date=activity_local_date(act.started_at, tz) if act.started_at else date.today(),
+            activity_date=activity_local_date(act.started_at, tz) if act.started_at else user_today(db, user.id),
             sport=act.sport or "strength_training",
             set_number=ss.set_number,
             exercise_name=ss.exercise_name,
@@ -130,7 +130,8 @@ def override_1rm(exercise_name: str, body: OneRMOverride,
 def weekly_summary(db: Session = Depends(get_db),
                    user: User = Depends(require_auth)):
     """Aggregate sets and volume by primary muscle group for the current week."""
-    week_start = date.today() - timedelta(days=date.today().weekday())
+    today = user_today(db, user.id)
+    week_start = today - timedelta(days=today.weekday())
 
     rows = (
         db.query(StrengthSet, Activity)

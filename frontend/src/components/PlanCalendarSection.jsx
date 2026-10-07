@@ -17,9 +17,10 @@ import {
   workoutColor, isoDate, monthDates, MONTH_NAMES, DOW,
 } from "./plancalendar/constants";
 import WorkoutDetail from "./plancalendar/WorkoutDetail";
+import { todayDate } from "../lib/today";
 
 export default function PlanCalendarSection({ goalId, refreshKey, imperial = false }) {
-  const today = new Date();
+  const today = todayDate();
   const [year,       setYear]       = useState(today.getFullYear());
   const [month,      setMonth]      = useState(today.getMonth());
   const [plan,       setPlan]       = useState(null);

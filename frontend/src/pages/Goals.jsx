@@ -20,6 +20,7 @@ import NewGoalForm from "../components/goals/NewGoalForm";
 import ExperienceSuggestionBanner from "../components/ExperienceSuggestionBanner";
 import GoalCard from "../components/goals/GoalCard";
 import ConfirmDialog from "../components/ConfirmDialog";
+import { isoOfDay, todayDate } from "../lib/today";
 
 export default function Goals() {
   const [goals,           setGoals]           = useState([]);
@@ -50,10 +51,10 @@ export default function Goals() {
       api.getTrainingLoad().catch(() => []),
       // 7-day weekly summary
       (() => {
-        const today = new Date();
+        const today = todayDate();
         const start = new Date(today);
         start.setDate(today.getDate() - 6);
-        const iso = d => d.toISOString().slice(0, 10);
+        const iso = isoOfDay;
         return api.getSummary({ after: iso(start), before: iso(today) }).catch(() => null);
       })(),
     ]).then(([g, s, tload, summary]) => {

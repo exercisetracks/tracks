@@ -7,7 +7,7 @@ from fastapi.security import HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 
 from app.auth import _BEARER, decode_token, require_auth
-from app.calculators.local_day import activity_local_date, local_day_start
+from app.calculators.local_day import activity_local_date, local_day_start, user_today
 from app.database import get_db
 from app.models.activity import Activity, User, UserDevice
 from app.models.health import Injury
@@ -192,7 +192,7 @@ def patch_daily(metric_date: date, body: DailyMetricPatch, db: Session = Depends
         result = m
 
     # Two-way weight sync: keep UserSettings.weight_kg in step with today's metric
-    if "weight_kg" in data and data["weight_kg"] is not None and metric_date == date.today():
+    if "weight_kg" in data and data["weight_kg"] is not None and metric_date == user_today(db, user.id):
         us = db.query(UserSettings).filter_by(user_id=user.id).first()
         if us is not None:
             us.weight_kg = data["weight_kg"]
@@ -292,7 +292,7 @@ def stress_detail(
     absence of a curve and a flat curve are different things, and every night
     imported before the parser kept the series is the former.
     """
-    end = before or date.today()
+    end = before or user_today(db, user.id)
     start = after or (end - timedelta(days=_STRESS_DEFAULT_DAYS))
     start = max(start, end - timedelta(days=_STRESS_MAX_DAYS))
 
@@ -330,7 +330,7 @@ def health_summary(
 ):
     """Recent daily metrics for the health page overview."""
     # user injected via Depends
-    since = date.today() - timedelta(days=days - 1)
+    since = user_today(db, user.id) - timedelta(days=days - 1)
     return (
         db.query(DailyMetric)
         .filter(DailyMetric.user_id == user.id, DailyMetric.date >= since)

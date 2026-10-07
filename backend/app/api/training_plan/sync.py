@@ -26,6 +26,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from app.calculators.local_day import user_today
 from app.auth import require_auth
 from app.calculators.fit_workout import (
     generate_schedule_fit,
@@ -195,7 +196,7 @@ def _upload_items_for_user(db: Session, user_id: int) -> list[dict]:
     """Workouts scheduled in the next 7 days (plus pending race plans) that
     have not yet been uploaded to the watch, each carrying its FIT as base64.
     Shared by the garmin-sync (secret-auth) and browser (user-auth) routes."""
-    today = date.today()
+    today = user_today(db, user_id)
     cutoff = today + timedelta(days=_SYNC_DAYS_AHEAD)
 
     workouts = (
@@ -379,7 +380,7 @@ def mark_deleted(
 def _schedule_fit_for_user(db: Session, user_id: int) -> dict:
     """FIT type-7 schedule file placing all upcoming uploaded workouts in the
     watch training calendar."""
-    today = date.today()
+    today = user_today(db, user_id)
     workouts = (
         db.query(PlannedWorkout)
         .filter(
@@ -461,7 +462,7 @@ def _schedule_bundle_for_user(db: Session, user_id: int) -> dict:
     in Connect's order. Unlike _schedule_fit_for_user this does not require the
     workouts to have been uploaded already: the point is to send them.
     """
-    today = date.today()
+    today = user_today(db, user_id)
     cutoff = today + timedelta(days=_SYNC_DAYS_AHEAD)
 
     workouts = (
@@ -686,7 +687,7 @@ def get_sync_status(user: User = Depends(require_auth), db: Session = Depends(ge
             PlannedWorkout.user_id == user.id,
             PlannedWorkout.watch_uploaded_at.is_(None),
             PlannedWorkout.workout_type != "rest",
-            PlannedWorkout.scheduled_date >= date.today(),
+            PlannedWorkout.scheduled_date >= user_today(db, user.id),
         )
         .scalar()
     )

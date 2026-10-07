@@ -8,15 +8,16 @@
 // the X-axis builder in particular is long enough to obscure the page's layout.
 
 import { PERIODS, DAY_MS } from "./constants";
+import { isoOfDay, todayDate } from "../../lib/today";
 
 // Turn the selected period into an ISO `after` date (YYYY-MM-DD) for the API,
 // or null for the "lifetime" period (no lower bound).
 export function afterDateFor(periodValue) {
   const p = PERIODS.find(x => x.value === periodValue);
   if (!p?.days) return null;
-  const d = new Date();
+  const d = todayDate();
   d.setDate(d.getDate() - p.days);
-  return d.toISOString().slice(0, 10);
+  return isoOfDay(d);
 }
 
 // Build the shared X-axis config (domain in ms timestamps + explicit ticks + label
@@ -24,8 +25,7 @@ export function afterDateFor(periodValue) {
 // charts off the same numeric X scale is what makes the Fitness chart's TSS spikes
 // line up vertically with the Weekly Volume bars.
 export function buildXAxisConfig(period, fallbackStartDate) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = todayDate();
   const maxMs = today.getTime();
 
   const p = PERIODS.find(x => x.value === period);

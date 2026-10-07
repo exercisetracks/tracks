@@ -18,6 +18,7 @@ from datetime import date, timedelta
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.calculators.local_day import user_today
 from app.calculators.strength_plan import generate_strength_workouts
 from app.calculators.strength_plan.leveling import infer_experience_suggestion
 from app.calculators.training_plan import _sport_family
@@ -104,7 +105,7 @@ def _get_active_injuries(db: Session, user_id: int) -> list:
     exercise exclusion/load-reduction is silently skipped for that run, so
     it's logged, not swallowed silently.
     """
-    today = date.today()
+    today = user_today(db, user_id)
     try:
         return (
             db.query(Injury)
@@ -286,7 +287,7 @@ def _inject_strength_workouts(
     strength_dicts = generate_strength_workouts(
         goal=goal,
         sport_family=sport_family,
-        today=date.today(),
+        today=user_today(db, user_id),
         existing_workouts=existing_workout_dicts,
         equipment=equipment,
         library=library,
@@ -314,7 +315,7 @@ def _inject_strength_workouts(
     recently_used: set = set()
     if custom_workouts:
         # Don't reuse a custom workout that was scheduled within the last 14 days
-        cutoff = date.today() - timedelta(days=14)
+        cutoff = user_today(db, user_id) - timedelta(days=14)
         recently_used = set(
             row[0] for row in db.execute(
                 select(PlannedWorkout.custom_workout_id).where(

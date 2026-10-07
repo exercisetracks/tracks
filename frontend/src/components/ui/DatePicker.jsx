@@ -7,6 +7,7 @@
 // through AnchoredPopover so it's never clipped by a card's overflow.
 import { useMemo, useRef, useState } from "react";
 import AnchoredPopover from "./AnchoredPopover";
+import { todayDate } from "../../lib/today";
 
 const WEEKDAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 const MONTHS = ["January", "February", "March", "April", "May", "June",
@@ -30,7 +31,7 @@ export default function DatePicker({
   const [open, setOpen] = useState(false);
   const anchorRef = useRef(null);
   const selected = parseISO(value);
-  const today = new Date();
+  const today = todayDate();
   // The month currently shown in the grid (defaults to the selected month / now).
   const [view, setView] = useState(() => selected || today);
 

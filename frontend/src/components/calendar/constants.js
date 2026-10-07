@@ -7,10 +7,12 @@
 // NOTE: this mirrors components/plancalendar/constants.js but is kept separate
 // on purpose — the two calendars have subtly different behaviour and we don't
 // want a change in one to silently alter the other.
+import { isoOfDay } from "../../lib/today";
 
 // ─────────────────────────────────────────
 // Colour palette per workout type
 // ─────────────────────────────────────────
+
 export const WORKOUT_COLORS = {
   easy:          "bg-accent-100 dark:bg-accent-900/40 text-accent-700 dark:text-accent-300 border-accent-200 dark:border-accent-800",
   long_run:      "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800",
@@ -43,7 +45,7 @@ export const DOW = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 
 // Format a Date as a YYYY-MM-DD string (matches the backend scheduled_date key).
 export function isoDate(d) {
-  return d.toISOString().slice(0, 10);
+  return isoOfDay(d);
 }
 
 // Returns array of dates for the calendar grid (including padding days).

@@ -5,6 +5,7 @@
 // mirrors the backend. Kept framework-free so they're trivially testable.
 
 import { EVENT_PRESETS, INTENSITY_STOPS, PRESET_NAMES, RAMP_RISK, presetName } from "./constants";
+import { todayDate, todayIso } from "../../lib/today";
 
 // ── Formatting helpers ────────────────────────────────────────────────────────
 
@@ -29,12 +30,12 @@ export function fmtDate(iso) {
 export function daysBetween(iso) {
   if (!iso) return null;
   const target = new Date(iso + "T00:00:00").getTime();
-  const today  = new Date(new Date().toDateString()).getTime();
+  const today  = todayDate().getTime();
   return Math.round((target - today) / 86400000);
 }
 
 export function todayISO() {
-  return new Date().toISOString().slice(0, 10);
+  return todayIso();
 }
 
 // ── Intensity slider colour/label ─────────────────────────────────────────────
@@ -212,7 +213,7 @@ function phaseForWeek(weekNum, totalWeeks) {
 // Returns current phase and per-phase week counts for a goal.
 // Uses created_at as the plan start so short plans always open with base.
 export function planPhaseInfo(goal) {
-  const today       = new Date(new Date().toDateString()).getTime();
+  const today       = todayDate().getTime();
   const raceMs      = new Date(goal.event_date + "T00:00:00").getTime();
   const planStartMs = goal.created_at ? new Date(goal.created_at).getTime() : today;
   const totalDays   = Math.max(1, Math.round((raceMs - planStartMs) / 86400000));

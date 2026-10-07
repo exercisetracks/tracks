@@ -7,6 +7,7 @@ import { api } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import { INPUT, SELECT, Section, FieldRow, useSaveStatus } from "./primitives";
 import Tabs from "../ui/Tabs";
+import { setAccountZone } from "../../lib/today";
 
 const TIMEZONES_COMMON = [
   "UTC",
@@ -55,6 +56,7 @@ export default function ProfileSection({ user, settings, onSaved }) {
 
   async function saveTz(v) {
     setTz(v);
+    setAccountZone(v);
     startSave();
     try {
       await api.updateSettings({ timezone: v });

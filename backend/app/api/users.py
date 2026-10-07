@@ -1,12 +1,13 @@
 # SPDX-FileCopyrightText: 2026 Hawk Fugagli
 # SPDX-License-Identifier: AGPL-3.0-or-later
-from datetime import date, datetime, timezone
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials
 from pydantic import BaseModel, field_validator
 from sqlalchemy.orm import Session
 
+from app.calculators.local_day import user_today
 from app.auth import _BEARER, decode_token, hash_password, require_auth, verify_password
 from app.calculators.user_stats import recalculate_auto_values
 from app.database import get_db
@@ -218,7 +219,7 @@ def update_settings(
 
     # Two-way weight sync: when weight is set in Settings, also log it as today's metric
     if "weight_kg" in data and data["weight_kg"] is not None:
-        today = date.today()
+        today = user_today(db, user.id)
         existing = db.query(DailyMetric).filter_by(date=today, user_id=user.id).first()
         if existing:
             existing.weight_kg = data["weight_kg"]

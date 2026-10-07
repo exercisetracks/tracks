@@ -82,3 +82,23 @@ def local_history(rows, tz_name: str | None) -> list[SimpleNamespace]:
         )
         for r in rows
     ]
+
+
+def account_today(tz_name: str | None, now: datetime | None = None) -> date:
+    """Today, in the account's zone.
+
+    Not ``date.today()``: that is the server's day, and the server runs in UTC,
+    so from 17:00 in California onward it already said tomorrow — the web
+    showed tomorrow as today, today's recommended workout was tomorrow's, and a
+    dose taken that evening was filed a day late (found 2026-10-06, 20:30 PDT).
+    ``now`` is for tests.
+    """
+    return (now or datetime.now(timezone.utc)).astimezone(_zone(tz_name)).date()
+
+
+def user_today(db, user_id: int) -> date:
+    """[account_today] for a user, reading their zone from their settings."""
+    from app.models.user_settings import UserSettings
+
+    tz = db.query(UserSettings.timezone).filter(UserSettings.user_id == user_id).scalar()
+    return account_today(tz)

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { api, TOKEN_KEY } from "../api/client";
+import { setAccountZone } from "../lib/today";
 
 const AuthContext = createContext(null);
 
@@ -38,6 +39,8 @@ export function AuthProvider({ children }) {
       setUser(u);
       // Phase 3: check if the user completed the onboarding wizard.
       const s = await api.getSettings();
+      // Every "today" on the web is counted in the account's zone (lib/today.js).
+      setAccountZone(s.timezone);
       if (!s.setup_complete) {
         setAuthStatus("needs_onboarding");
         return;

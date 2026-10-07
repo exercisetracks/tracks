@@ -23,6 +23,7 @@ from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
+from app.calculators.local_day import user_today
 from app.api.coaching.helpers import _event_load
 from app.auth import require_auth
 from app.calculators.event_date import counts_toward, recommend_event_date
@@ -42,7 +43,7 @@ router = APIRouter()
 def _invalidate_today_cache(db: Session, user_id: int) -> None:
     """Drop today's cached recommendation so it regenerates against the
     current goal set."""
-    db.query(CoachingRecommendation).filter_by(user_id=user_id, date=date.today()).delete()
+    db.query(CoachingRecommendation).filter_by(user_id=user_id, date=user_today(db, user_id)).delete()
     db.commit()
 
 
@@ -73,7 +74,7 @@ def create_goal(body: TrainingGoalCreate, user: User = Depends(require_auth), db
     # Auto-generate a training plan for future-dated event goals and for
     # fitness goals (off-thread so the request returns immediately).
     if (goal.goal_type == "fitness"
-            or goal.goal_type == "event" and goal.event_date and goal.event_date > date.today()):
+            or goal.goal_type == "event" and goal.event_date and goal.event_date > user_today(db, user.id)):
         from app.api.training_plan import refresh_plans_for_user
         threading.Thread(target=refresh_plans_for_user, args=(user.id,), daemon=True).start()
 
@@ -90,16 +91,16 @@ def recommended_event_date(
     """When this person could be ready for an event of this sport and
     distance — the date the new-goal form starts from, with its reasons.
     The phone computes the same offline (calculators/event_date.py)."""
-    today = date.today()
+    today = user_today(db, user.id)
     ctl, sport_tss, total_tss = _event_load(db, user.id, today, lambda s: counts_toward(sport, s))
     return recommend_event_date(sport, distance_m, today, ctl, sport_tss, total_tss)
 
 
-def _plannable(goal: TrainingGoal) -> bool:
+def _plannable(goal: TrainingGoal, today: date) -> bool:
     """A goal whose plan is live: fitness (rolling), or a race still ahead."""
     if goal.goal_type == "fitness":
         return True
-    return goal.goal_type == "event" and goal.event_date is not None and goal.event_date > date.today()
+    return goal.goal_type == "event" and goal.event_date is not None and goal.event_date > today
 
 
 @router.get("/goals/{goal_id}", response_model=TrainingGoalOut)
@@ -140,7 +141,7 @@ def update_goal(goal_id: int, body: TrainingGoalUpdate, user: User = Depends(req
     # (moved in the form or by dragging the race), the sport — rebuilds it,
     # and so does activating it: its plan was built for the fitness of
     # whenever it was last active. Workouts the user moved stay put.
-    if goal.is_active and _plannable(goal) and goal_edit_stales_plan(data):
+    if goal.is_active and _plannable(goal, user_today(db, user.id)) and goal_edit_stales_plan(data):
         from app.api.training_plan import _regenerate_future_workouts
         _regenerate_future_workouts(db, goal, user.id)
 

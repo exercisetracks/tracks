@@ -8,6 +8,7 @@ import { useAuth } from "../../auth/AuthContext";
 import ConfirmDialog from "../ConfirmDialog";
 import { Section } from "./primitives";
 import {
+import { todayIso } from "../../lib/today";
   checkRestore, chooseBackupTarget, lastBackupAt, runBackup, runRestore, useBackupJob,
 } from "../../lib/backup/job";
 
@@ -31,7 +32,7 @@ export default function BackupSection() {
     setAsking(null);
     if (!ask.restoring) {
       // Straight from the click: the save picker needs its user activation.
-      const target = await chooseBackupTarget(`tracks-${new Date().toISOString().slice(0, 10)}.tracksbackup`);
+      const target = await chooseBackupTarget(`tracks-${todayIso()}.tracksbackup`);
       if (target) runBackup({ user, passphrase, target });
       return;
     }

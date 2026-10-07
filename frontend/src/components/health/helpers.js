@@ -12,7 +12,7 @@ export function fmtDate(s) {
   });
 }
 
-// Today in the browser's own zone. It was toISOString().slice(0, 10), which is
+// Today in the account's zone (lib/today.js). It was toISOString().slice(0, 10), which is
 // the UTC date — so an entry logged on a Tuesday evening west of Greenwich was
 // filed under Wednesday, and never appeared on Tuesday's dials.
 export function isoToday() { return localIso(); }

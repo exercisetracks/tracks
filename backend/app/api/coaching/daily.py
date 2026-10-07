@@ -13,14 +13,14 @@ All are static paths; they register before the dynamic /goals/{id} routes.
 """
 
 from dataclasses import asdict
-from datetime import date, timedelta
+from datetime import timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.auth import require_auth
 from app.calculators.coaching import compute_weekly_plan
-from app.calculators.local_day import local_day_start, local_history
+from app.calculators.local_day import local_day_start, local_history, user_today
 from app.calculators.readiness import compute_readiness
 from app.database import get_db
 from app.models.activity import Activity, User
@@ -62,7 +62,7 @@ def today_recommendation(
     user, us = _get_user_and_settings(db, user)
     if not _claimed_device_ids(db, user.id):
         raise HTTPException(status_code=503, detail="No devices claimed")
-    today = date.today()
+    today = user_today(db, user.id)
     result = _build_result(db, user, us, today, force=force_refresh)
     return _result_to_schema(result, today)
 
@@ -71,7 +71,7 @@ def today_recommendation(
 def readiness(user: User = Depends(require_auth), db: Session = Depends(get_db)):
     """Current readiness score and breakdown."""
     user, us = _get_user_and_settings(db, user)
-    today = date.today()
+    today = user_today(db, user.id)
     today_metric = db.query(DailyMetric).filter_by(user_id=user.id, date=today).first()
     recent = _recent_metrics(db, user.id, today)
     tss_by_date = _build_tss_by_date(db, user.id, us)
@@ -96,7 +96,7 @@ async def ai_enhance(
     from app.services.ai_client import enhance_recommendations
 
     user, us = _get_user_and_settings(db, user)
-    today = date.today()
+    today = user_today(db, user.id)
     result = _build_result(db, user, us, today, force=force_refresh)
 
     if us is None or not us.ai_provider or not us.ai_model:
@@ -136,7 +136,7 @@ async def ai_enhance(
 def weekly_plan(user: User = Depends(require_auth), db: Session = Depends(get_db)):
     """7-day forward-looking training plan with projected CTL/ATL."""
     user, us = _get_user_and_settings(db, user)
-    today = date.today()
+    today = user_today(db, user.id)
 
     today_metric = db.query(DailyMetric).filter_by(user_id=user.id, date=today).first()
     recent = _recent_metrics(db, user.id, today)
@@ -189,7 +189,7 @@ def coaching_history(
     db: Session = Depends(get_db),
 ):
     """Past daily coaching recommendations from the cache, newest first."""
-    since = date.today() - timedelta(days=days - 1)
+    since = user_today(db, user.id) - timedelta(days=days - 1)
     rows = (
         db.query(CoachingRecommendation)
         .filter(

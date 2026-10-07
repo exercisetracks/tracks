@@ -19,7 +19,7 @@ from fastapi import HTTPException
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from app.calculators.local_day import activity_local_date, local_day_start, local_history
+from app.calculators.local_day import activity_local_date, local_day_start, local_history, user_today
 from app.models.activity import Activity, PaceBest, User
 from app.models.coaching import TrainingGoal
 from app.models.training_plan import (
@@ -140,7 +140,7 @@ def _get_activity_history(db: Session, user_id: int, days: int = 90):
     LocalPlanning.history gives them."""
     us = db.query(UserSettings).filter_by(user_id=user_id).first()
     tz = us.timezone if us else None
-    cutoff = local_day_start(date.today() - timedelta(days=days), tz)
+    cutoff = local_day_start(user_today(db, user_id) - timedelta(days=days), tz)
     return local_history(
         db.query(Activity)
         .filter(Activity.user_id == user_id, Activity.started_at >= cutoff,

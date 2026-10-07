@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from app.calculators.local_day import user_today
 from app.auth import require_auth
 from app.database import get_db
 from app.models.activity import User
@@ -101,12 +102,13 @@ def _parse_time(s: str) -> time:
 
 
 def _build_schedules(db: Session, med_id: int, schedules: list[ScheduleIn]):
+    today = user_today(db, db.get(Medication, med_id).user_id)
     for s in schedules:
         sched = MedicationSchedule(
             medication_id=med_id,
             time_of_day=_parse_time(s.time_of_day),
             days_of_week=s.days_of_week,
-            start_date=date.fromisoformat(s.start_date) if s.start_date else date.today(),
+            start_date=date.fromisoformat(s.start_date) if s.start_date else today,
             end_date=date.fromisoformat(s.end_date) if s.end_date else None,
             notify=s.notify,
             is_as_needed=s.is_as_needed,
@@ -234,7 +236,7 @@ def get_due_medications(
     Returns all scheduled doses for today with their log status.
     The frontend uses this to drive notification timing.
     """
-    today = date.today()
+    today = user_today(db, user.id)
     now   = datetime.now(timezone.utc)
 
     meds = db.query(Medication).filter_by(user_id=user.id, is_active=True).all()

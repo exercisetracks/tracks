@@ -9,9 +9,10 @@ import { useState } from "react";
 import { INPUT, BTN_GHOST, BTN_PRIMARY, BTN_TONAL, FORMS, DOSE_UNITS } from "./constants";
 import { PlusIcon } from "../ui/Button";
 import ScheduleRow from "./ScheduleRow";
+import { todayIso } from "../../lib/today";
 
 export default function MedForm({ initial, onSave, onCancel, loading }) {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayIso();
   const [form, setForm] = useState({
     name:      initial?.name      ?? "",
     dose:      initial?.dose      ?? "",

@@ -1,12 +1,12 @@
 # SPDX-FileCopyrightText: 2026 Hawk Fugagli
 # SPDX-License-Identifier: AGPL-3.0-or-later
-from datetime import date
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException
 import threading
 import time
 from sqlalchemy.orm import Session
+from app.calculators.local_day import user_today
 from app.database import SessionLocal
 
 logger = logging.getLogger(__name__)
@@ -24,7 +24,7 @@ router = APIRouter(prefix="/devices", tags=["devices"])
 
 def _invalidate_all_caches(db: Session, user_id: int) -> None:
     """Wipe all in-memory and DB caches that depend on which devices are claimed."""
-    db.query(CoachingRecommendation).filter_by(user_id=user_id, date=date.today()).delete()
+    db.query(CoachingRecommendation).filter_by(user_id=user_id, date=user_today(db, user_id)).delete()
     db.commit()
     invalidate_heatmap_cache()
     invalidate_dashboard_cache()

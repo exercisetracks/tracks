@@ -12,6 +12,7 @@ from datetime import date, timedelta
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
+from app.calculators.local_day import user_today
 from app.calculators.mtb import active_mtb_discipline
 from app.auth import require_auth
 from app.calculators import dashboard_stats
@@ -82,7 +83,7 @@ def readiness_history(
     Daily readiness scores for the last N days.
     Useful for charting recovery trends alongside CTL/ATL.
     """
-    today = date.today()
+    today = user_today(db, user.id)
     start = today - timedelta(days=days - 1)
     load_from = start - timedelta(days=7)
     us = _get_user_settings(db, user.id)

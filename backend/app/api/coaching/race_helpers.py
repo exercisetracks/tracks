@@ -14,6 +14,7 @@ import httpx
 
 from sqlalchemy.orm import Session
 
+from app.calculators.local_day import user_today
 from app.calculators.race_predictor import (
     course_totals,
     format_swim_pace,
@@ -39,7 +40,7 @@ def _get_running_metrics(db: Session, user: User,
     """
     from app.calculators.race_predictor import training_indices
     from app.api.training_plan.helpers import _get_running_evidence, _get_running_fitness
-    today = date.today()
+    today = user_today(db, user.id)
     evidence = _get_running_evidence(db, user.id, today)
     fitness = _get_running_fitness(db, user.id, us, today, evidence)
     vdot = fitness["vdot"] if fitness["measured"] else None
@@ -97,7 +98,7 @@ def _get_tsb_today(db: Session, user: User) -> float | None:
     tss_by_date = _build_tss_by_date(db, user.id, us)
     if not tss_by_date:
         return None
-    ctl, atl, _ = _ctl_atl_today(tss_by_date, date.today())
+    ctl, atl, _ = _ctl_atl_today(tss_by_date, user_today(db, user.id))
     return round(ctl - atl, 1)
 
 
@@ -138,6 +139,8 @@ def _fetch_weather(lat: float, lon: float, target_date: date) -> dict | None:
     source ("forecast" | "historical_avg"), and fetched_at.
     Returns None on any network/parse failure.
     """
+    # The forecast service's own day, not the account's: this only decides
+    # whether target_date is in its 16-day forecast range.
     today = date.today()
     days_out = (target_date - today).days
 

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api/client";
+import { todayDate } from "../lib/today";
 
 function makeFmtDist(imperial) {
   return function fmtDist(m) {
@@ -53,7 +54,7 @@ function fmtDur(min) {
 }
 
 function relDay(dateStr) {
-  const today = new Date(new Date().toDateString());
+  const today = todayDate();
   const d = new Date(dateStr + "T00:00:00");
   const diff = Math.round((d - today) / 86400000);
   if (diff === 0) return "Today";

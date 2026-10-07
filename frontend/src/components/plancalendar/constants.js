@@ -4,6 +4,8 @@
 // calendar. Framework-free so they're trivially shareable across the calendar
 // sub-components (StepRow, WorkoutDetail) and the section shell.
 
+import { isoOfDay } from "../../lib/today";
+
 export const WORKOUT_COLORS = {
   easy:          "bg-accent-100 dark:bg-accent-900/40 text-accent-700 dark:text-accent-300 border-accent-200 dark:border-accent-800",
   long_run:      "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800",
@@ -87,7 +89,7 @@ export const MONTH_NAMES = ["January","February","March","April","May","June",
                             "July","August","September","October","November","December"];
 export const DOW = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 
-export function isoDate(d) { return d.toISOString().slice(0, 10); }
+export function isoDate(d) { return isoOfDay(d); }
 
 // Build the grid of Date cells for a month, padded to whole weeks (Mon-start).
 // Leading days come from the previous month, trailing days from the next.
