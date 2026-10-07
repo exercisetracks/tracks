@@ -12,7 +12,7 @@ class SyncLabelTest {
     fun `file progress is a percentage, not a count`() {
         val p = SyncProgress(SyncProgress.Step.Files, 412, 2994)
         assertEquals("Syncing files", syncLabel(p))
-        assertEquals(14, (p.fraction!! * 100).toInt())
+        assertEquals(14, kotlin.math.round(p.fraction!! * 100).toInt())
     }
 
     /** A pull cannot know how much is left; a "1,500 of 0" would be a lie. */
