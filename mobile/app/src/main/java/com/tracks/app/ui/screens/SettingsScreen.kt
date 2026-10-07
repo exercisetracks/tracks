@@ -25,7 +25,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.tracks.app.ui.components.ButtonRow
 import com.tracks.app.AppContainer
@@ -34,6 +33,7 @@ import com.tracks.app.ui.components.DangerButton
 import com.tracks.app.ui.components.InfoTip
 import com.tracks.app.ui.components.MetricInfo
 import com.tracks.app.ui.components.NeutralButton
+import com.tracks.app.ui.components.PasswordField
 import com.tracks.app.ui.components.PrimaryButton
 import com.tracks.app.ui.components.TonalButton
 import com.tracks.app.ui.profile.AiCoachingRow
@@ -409,12 +409,9 @@ private fun SignIn(
         singleLine = true,
         modifier = Modifier.fillMaxWidth(),
     )
-    OutlinedTextField(
+    PasswordField(
         value = password,
         onValueChange = { password = it },
-        label = { Text("Password") },
-        singleLine = true,
-        visualTransformation = PasswordVisualTransformation(),
         modifier = Modifier.fillMaxWidth(),
     )
     PrimaryButton("Sign in", onClick = { onLogin(username, password) }, enabled = !busy && username.isNotBlank() && password.isNotBlank())

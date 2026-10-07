@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -25,11 +24,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import com.tracks.app.AppContainer
 import com.tracks.app.backup.BackupCrypto
 import com.tracks.app.ui.components.ButtonRow
 import com.tracks.app.ui.components.NeutralButton
+import com.tracks.app.ui.components.PasswordField
 import com.tracks.app.ui.components.PrimaryButton
 import com.tracks.app.ui.components.TonalButton
 import com.tracks.app.ui.theme.Tokens
@@ -139,14 +138,10 @@ private fun PassphraseDialog(restoring: Boolean, onDismiss: () -> Unit, onConfir
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }
-                OutlinedTextField(
-                    pass, { pass = it }, label = { Text("Passphrase") }, singleLine = true,
-                    visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth(),
-                )
+                PasswordField(pass, { pass = it }, label = "Passphrase", modifier = Modifier.fillMaxWidth())
                 if (!restoring) {
-                    OutlinedTextField(
-                        again, { again = it }, label = { Text("Again") }, singleLine = true,
-                        visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth(),
+                    PasswordField(
+                        again, { again = it }, label = "Again", modifier = Modifier.fillMaxWidth(),
                         isError = again.isNotEmpty() && again != pass,
                     )
                 }

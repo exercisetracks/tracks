@@ -7,9 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -22,9 +20,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import com.tracks.app.AppContainer
+import com.tracks.app.ui.components.PasswordField
 import com.tracks.app.ui.theme.Tokens
 import com.tracks.core.api.UserSettings
 import kotlinx.coroutines.launch
@@ -118,14 +115,12 @@ private fun ApiKeyField(configured: Boolean, onCommit: (String) -> Unit) {
         if (key.isNotEmpty()) onCommit(key)
         text = ""
     }
-    OutlinedTextField(
+    PasswordField(
         value = text,
         onValueChange = { text = it },
-        label = { Text("API key") },
-        placeholder = { Text(if (configured) "Stored — paste to replace" else "Paste your API key") },
-        singleLine = true,
-        visualTransformation = PasswordVisualTransformation(),
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+        label = "API key",
+        placeholder = if (configured) "Stored — paste to replace" else "Paste your API key",
+        imeAction = ImeAction.Done,
         keyboardActions = KeyboardActions(onDone = { commit(); focus.clearFocus() }),
         modifier = Modifier.fillMaxWidth().onFocusChanged { if (!it.isFocused) commit() },
     )

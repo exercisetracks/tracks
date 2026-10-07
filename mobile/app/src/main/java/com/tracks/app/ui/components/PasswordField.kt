@@ -4,6 +4,7 @@ package com.tracks.app.ui.components
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -20,6 +21,9 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -38,6 +42,9 @@ import androidx.compose.ui.unit.dp
  * The eye swaps the dots for the real characters, for checking a long password
  * before submitting it. The keyboard stays in password mode either way: there
  * is never a good reason to autocorrect one.
+ *
+ * Every secret the app takes — sign-in, backup passphrase, API key — goes
+ * through here; PasswordFieldTest fails when one is masked by hand instead.
  */
 @Composable
 fun PasswordField(
@@ -45,6 +52,10 @@ fun PasswordField(
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
     label: String = "Password",
+    placeholder: String? = null,
+    isError: Boolean = false,
+    imeAction: ImeAction = ImeAction.Default,
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
 ) {
     var visible by rememberSaveable { mutableStateOf(false) }
     val tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -52,11 +63,18 @@ fun PasswordField(
         value = value,
         onValueChange = onValueChange,
         label = { Text(label) },
+        placeholder = placeholder?.let { { Text(it) } },
         singleLine = true,
+        isError = isError,
         visualTransformation = if (visible) VisualTransformation.None else PasswordVisualTransformation(),
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = imeAction),
+        keyboardActions = keyboardActions,
         trailingIcon = {
-            IconButton(onClick = { visible = !visible }) { EyeIcon(off = !visible, tint = tint) }
+            IconButton(
+                onClick = { visible = !visible },
+                // The eye is drawn, not an Icon, so it has no description of its own.
+                modifier = Modifier.semantics { contentDescription = if (visible) "Hide $label" else "Show $label" },
+            ) { EyeIcon(off = !visible, tint = tint) }
         },
         modifier = modifier,
     )
