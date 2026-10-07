@@ -111,9 +111,10 @@ fun DashboardScreen(
             title = "Weekly volume",
             trailing = state.selectedSport?.let(::sportLabel),
             info = Explain.WeeklyVolume,
+            modifier = Modifier.tourAnchor("dashboard-volume"),
         ) { WeeklyVolumeChart(state.weeklyVolume) }
 
-        SectionCard("Activity history") {
+        SectionCard("Activity history", modifier = Modifier.tourAnchor("dashboard-history")) {
             // Null for lifetime, deliberately — ActivityCalendar switches to its
             // year matrix on null, and `?: 365` was silently making Lifetime
             // draw exactly the same chart as This year.

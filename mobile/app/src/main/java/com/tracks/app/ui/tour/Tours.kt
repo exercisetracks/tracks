@@ -75,9 +75,9 @@ object Tours {
             ),
             TourStep(
                 "Your sections",
-                "Tap here, or swipe in from the left edge, to open the menu: Dashboard, Health, " +
-                    "Activities, Training, Strength, Flexibility, Race Plans and Maps. Each one shows " +
-                    "its own quick tips the first time you open it.",
+                "Tap here, or swipe right from anywhere on the page, to open the menu: Dashboard, " +
+                    "Health, Activities, Training, Strength, Flexibility, Race Plans and Maps. Swipe " +
+                    "left to close it. Each page shows its own quick tips the first time you open it.",
                 anchor = "nav",
             ),
             TourStep(
@@ -99,10 +99,34 @@ object Tours {
                 anchor = "dashboard-upcoming",
             ),
             TourStep(
-                "Your fitness trend",
-                "Fitness (CTL), Fatigue (ATL), and Form over time. It climbs as you train and dips " +
-                    "when you rest. Tap the ? beside any title for what its number means.",
+                "Fitness and fatigue",
+                "Every workout earns a training-stress score from how long and how hard it was. " +
+                    "Fitness is the average of those over the last six weeks, so it rises slowly with " +
+                    "steady training and fades slowly when you stop. Fatigue is the same over one " +
+                    "week, so it jumps after a hard block and drops within days of rest.",
                 anchor = "dashboard-fitness",
+            ),
+            TourStep(
+                "Reading form",
+                "Form is fitness minus fatigue. Below zero you are carrying more fatigue than " +
+                    "fitness — normal while building, and the dip is where you get fitter. Around " +
+                    "zero to slightly positive is fresh: that is where you want to be on race day. " +
+                    "Far below zero for weeks is a sign to ease off. Press and hold the chart to read " +
+                    "any day.",
+                anchor = "dashboard-fitness",
+            ),
+            TourStep(
+                "Week by week",
+                "How much you trained each week, Monday to Sunday. The bars are distance and the " +
+                    "line is time, each on its own scale, so a long slow week and a short fast one " +
+                    "read fairly. An even row of bars is consistency; a spike then a gap is not.",
+                anchor = "dashboard-volume",
+            ),
+            TourStep(
+                "Activity history",
+                "One square per day, darker the more you trained, so streaks and breaks show at a " +
+                    "glance. On long windows it becomes a year-by-year grid.",
+                anchor = "dashboard-history",
             ),
             TourStep(
                 "Filter by sport",
@@ -255,6 +279,29 @@ object Tours {
                     "so your weights climb over time.",
                 anchor = "strength-exercise",
             ),
+            TourStep(
+                "Like or rule out",
+                "The heart marks an exercise you like: your training plan picks it first whenever it " +
+                    "fits the session. The no-entry sign rules one out — the plan never schedules it, " +
+                    "for an injury or a machine you hate. Tap again to clear either. Neither hides " +
+                    "it here; filter the library by Preferred or Excluded to see them.",
+                anchor = "strength-exercise",
+            ),
+            TourStep(
+                "Build a workout",
+                "Tap New to open the builder. Name it, add exercises from the library, and set each " +
+                    "one's sets, reps and weight. Drag to reorder; add a Superset or Repeat block to " +
+                    "group exercises, and Rest blocks between them. Save it and start it any time for " +
+                    "a guided session — with Schedule in my plan ticked, your training plan uses it too.",
+                anchor = "strength-workouts",
+            ),
+            TourStep(
+                "Filter by muscle",
+                "Swipe left from anywhere on this page to pull in the muscle map, and tap muscles to " +
+                    "show only exercises that work them. Swipe right to put it away — the same " +
+                    "swipe right, from the page itself, opens the menu.",
+                anchor = "strength-library",
+            ),
         ),
 
         "flexibility" to listOf(
@@ -270,6 +317,25 @@ object Tours {
                     "create your own. Tick a few to run them as a flow.",
                 anchor = "flex-library",
             ),
+            TourStep(
+                "Like or rule out",
+                "The heart marks a stretch you like: the mobility sessions in your plan pick it first. " +
+                    "The no-entry sign rules one out, so the plan never schedules it. Tap again to " +
+                    "clear either.",
+                anchor = "flex-library",
+            ),
+            TourStep(
+                "Build a flow",
+                "Tap New to open the builder: name the flow, add stretches, set each hold's length, " +
+                    "drag to reorder and add rests. Save it and start it for a timed, guided routine.",
+                anchor = "flex-flows",
+            ),
+            TourStep(
+                "Filter by muscle",
+                "Swipe left from anywhere on this page to pull in the muscle map; tap muscles to show " +
+                    "only stretches for them. Swipe right to put it away.",
+                anchor = "flex-library",
+            ),
         ),
 
         "race-plans" to listOf(
@@ -281,9 +347,29 @@ object Tours {
             ),
             TourStep(
                 "Open an event",
-                "Tap an event for its predicted finish, lap targets, and fuelling. Give it a course " +
-                    "from a saved track or draw one on the map. No events yet? Create one under Training.",
+                "Every race goal with a date gets a plan here on its own — there is nothing to " +
+                    "generate. No events yet? Create a race goal under Training. Tap an event to open " +
+                    "its plan.",
                 anchor = "raceplans-card",
+            ),
+            TourStep(
+                "Pacing",
+                "The plan predicts your finish from your fitness and splits it into lap targets. " +
+                    "The pacing slider sets how your second half compares to the first — even, or " +
+                    "faster for a negative split. The course shapes every lap: import a GPX file, use " +
+                    "a saved track, or draw one on the map — or, without one, pick how hilly it is.",
+            ),
+            TourStep(
+                "Fuelling",
+                "How much carbohydrate, fluid and sodium to take each hour, worked out from the " +
+                    "race's length and weather; change any target if you know yours. Tap + to add the " +
+                    "gels, drinks and bars you use, tick the ones you'll carry, and the plan turns the " +
+                    "targets into a timeline of what to take when.",
+            ),
+            TourStep(
+                "On the watch",
+                "With a watch, the plan goes to it on the next sync, and it coaches you to each " +
+                    "lap's target during the race — by pace, or pace with a heart-rate ceiling.",
             ),
         ),
 

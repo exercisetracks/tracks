@@ -139,6 +139,18 @@ export const TOURS = {
       body: "Open an exercise for how-to guidance, log your sets, or add custom movements. Logged sessions feed the progression engine so your weights climb over time.",
       placement: "top",
     },
+    {
+      anchor: '[data-tour="strength-content"]',
+      title: "Prefer or exclude",
+      body: "Each exercise has a ✓ and a ✕. ✓ marks one you like: your training plan picks it first whenever it fits the session. ✕ rules it out — the plan never schedules it, for an injury or a machine you'd rather avoid. Click again to clear either; neither hides it from the library.",
+      placement: "top",
+    },
+    {
+      anchor: '[data-tour="strength-tabs"]',
+      title: "Build a workout",
+      body: "Under Workouts, New Workout opens the builder: name it, add exercises, and set each one's sets, reps and weight. Drag to reorder, group exercises into a Superset or Repeat block, and add rests. Save it and start it for a guided session — with Schedule in my plan ticked, your training plan uses it too.",
+      placement: "bottom",
+    },
   ],
 
   flexibility: [
@@ -154,6 +166,18 @@ export const TOURS = {
       body: "Open any stretch for instructions, or create your own custom stretches and flows.",
       placement: "top",
     },
+    {
+      anchor: '[data-tour="flex-content"]',
+      title: "Prefer or exclude",
+      body: "✓ marks a stretch you like, so the mobility sessions in your plan pick it first; ✕ rules one out, so the plan never schedules it. Click again to clear either.",
+      placement: "top",
+    },
+    {
+      anchor: '[data-tour="flex-tabs"]',
+      title: "Build a flow",
+      body: "Under Flows, New Flow opens the builder: add stretches, set each hold's length, drag to reorder and add rests. Save it and start it for a timed, guided routine.",
+      placement: "bottom",
+    },
   ],
 
   "race-plans": [
@@ -168,6 +192,14 @@ export const TOURS = {
       title: "Generate & sync",
       body: "Each event goal gets a plan you can generate, review split-by-split, and sync to your watch. No events yet? Create one under Training.",
       placement: "top",
+    },
+    {
+      title: "Course and pacing",
+      body: "Open an event to give it a course — upload a GPX file or pick a saved track, and it appears on the map — and to set how your second half compares to the first. The course's hills shape every split.",
+    },
+    {
+      title: "Fuelling",
+      body: "Each plan works out carbohydrate, fluid and sodium per hour from the race's length and weather; change any target if you know yours. Add the gels, drinks and bars you use and pick the ones you'll carry, and the plan turns the targets into a timeline of what to take when.",
     },
   ],
 
