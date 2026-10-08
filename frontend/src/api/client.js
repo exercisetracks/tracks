@@ -142,7 +142,7 @@ export const api = {
   getSettings:     ()     => get("/users/me/settings"),
   getVersionStatus: ()    => get("/version", { noCache: true }),
   getSessions:     ()     => get("/auth/sessions", { noCache: true }),
-  updateSettings:  (data) => { _cacheDel("GET", "/users/me/settings"); return patch("/users/me/settings", data); },
+  updateSettings:  (data) => { _cacheDel("GET", "/users/me/settings"); _cacheDelPrefix("GET", "/coaching"); return patch("/users/me/settings", data); },
   recalculate:     ()     => { _cacheDel("GET", "/users/me/settings"); return post("/users/me/settings/recalculate"); },
   clearAllData:    ()     => del("/users/me/data"),
 
@@ -307,7 +307,10 @@ export const api = {
   // When this person could be ready for an event: { date, weeks, basis, reasons }.
   recommendedEventDate: (sport, distanceM) => get(`/coaching/goals/recommended-date${qs({ sport, distance_m: distanceM })}`),
   createGoal:         (d)  => { _cacheDel("GET", "/coaching/goals"); return post("/coaching/goals", d); },
-  updateGoal:         (id, d) => { _cacheDel("GET", "/coaching/goals"); _cacheDel("GET", `/coaching/goals/${id}`); return patch(`/coaching/goals/${id}`, d); },
+  // Any goal edit the plan reads rebuilds it on the server, and so may a
+  // settings edit (see backend calculators/plan/staleness.py): drop every
+  // cached plan view, or the page re-reads the plan from before the change.
+  updateGoal:         (id, d) => { _cacheDelPrefix("GET", "/coaching"); return patch(`/coaching/goals/${id}`, d); },
   deleteGoal:         (id) => { _cacheDel("GET", "/coaching/goals"); _cacheDel("GET", `/coaching/goals/${id}`); return del(`/coaching/goals/${id}`); },
 
   // Race plan
