@@ -67,7 +67,7 @@ def _attach_preferences(db: Session, user_id: int, items: list[dict]) -> None:
     pref_map = {p.exercise_name: p.preference for p in prefs}
     for item in items:
         nm = item["name"]
-        item["preference"] = pref_map.get(nm, "neutral")
+        item["preference"] = pref_map.get(nm) or "neutral"   # a cleared row is null
 
 
 @router.get("/stretches")

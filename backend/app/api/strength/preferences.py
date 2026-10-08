@@ -3,8 +3,15 @@
 """Per-exercise preferences.
 
 PUT/DELETE /strength/preferences/{name} — mark an exercise as "preferred" or
-"excluded" (or reset to neutral by deleting the row). Preferences bias which
-exercises the planner suggests and are surfaced on GET /exercises.
+"excluded", or reset it to neutral. Preferences bias which exercises the
+planner suggests and are surfaced on GET /exercises.
+
+Neutral is a row whose preference is null, never a deleted row. A preference's
+sync uid is derived from the exercise's name (spec/sync.yaml, uid_key), and a
+deleted synced row is a tombstone that wins over every later edit — so
+deleting one froze that exercise's preference everywhere: the phone's next
+change to it was refused as "deleted", on every retry. The phone clears the
+same way (LocalTraining.setPreference).
 """
 from __future__ import annotations
 
@@ -50,7 +57,9 @@ def set_preference(exercise_name: str,
 def delete_preference(exercise_name: str,
                       db: Session = Depends(get_db),
                       user: User = Depends(require_auth)):
-    db.query(UserExercisePreference).filter_by(
+    row = db.query(UserExercisePreference).filter_by(
         user_id=user.id, exercise_name=exercise_name
-    ).delete()
-    db.commit()
+    ).first()
+    if row is not None and row.preference is not None:
+        row.preference = None       # cleared, not deleted — see the module docstring
+        db.commit()

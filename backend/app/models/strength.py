@@ -93,6 +93,11 @@ class UserExercisePreference(Base, Synced):
     preference='preferred' → algorithm prioritises it when building sessions.
     preference='excluded'  → algorithm never schedules it.
     No row = neutral (available but not prioritised).
+    preference=None → neutral too: a phone clears a preference by syncing it
+                      as null (LocalTraining.setPreference) rather than
+                      deleting the row, whose uid is the exercise's name.
+                      NOT NULL here once failed that push, and a push is
+                      all-or-nothing, so it held back every later edit.
     """
     __tablename__ = "user_exercise_preferences"
 
@@ -100,7 +105,7 @@ class UserExercisePreference(Base, Synced):
     user_id       = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"),
                            nullable=False)
     exercise_name = Column(String(128), nullable=False)
-    preference    = Column(String(16), nullable=False, default="preferred")
+    preference    = Column(String(16), nullable=True, default="preferred")
 
     __table_args__ = (UniqueConstraint("user_id", "exercise_name"),)
 

@@ -3,8 +3,15 @@
 """Per-user stretch preference endpoints.
 
 A preference flags a named stretch as 'preferred', 'excluded', or 'neutral'.
-'neutral' is the absence of a row, so setting/deleting to neutral removes the
-record. These flags steer the post-activity flow generator (preferred bypass +
+
+Neutral is a row whose preference is null, never a deleted row. A preference's
+sync uid is derived from the exercise's name (spec/sync.yaml, uid_key), and a
+deleted synced row is a tombstone that wins over every later edit — so
+deleting one froze that exercise's preference everywhere: the phone's next
+change to it was refused as "deleted", on every retry. The phone clears the
+same way (LocalTraining.setPreference).
+
+These flags steer the post-activity flow generator (preferred bypass +
 excluded drop) and decorate the library listing.
 """
 
@@ -35,10 +42,7 @@ def set_stretch_preference(
     ).first()
 
     if pref_val == "neutral":
-        if existing:
-            db.delete(existing)
-        db.commit()
-        return {"exercise_name": exercise_name, "preference": "neutral"}
+        return _clear(db, existing, exercise_name)
 
     if existing:
         existing.preference = pref_val
@@ -60,7 +64,12 @@ def delete_stretch_preference(
     existing = db.query(UserFlexibilityPreference).filter_by(
         user_id=user.id, exercise_name=exercise_name
     ).first()
-    if existing:
-        db.delete(existing)
+    return _clear(db, existing, exercise_name)
+
+
+def _clear(db: Session, existing, exercise_name: str) -> dict:
+    """Neutral is a null preference, not a deleted row — see the module docstring."""
+    if existing is not None and existing.preference is not None:
+        existing.preference = None
         db.commit()
     return {"exercise_name": exercise_name, "preference": "neutral"}
