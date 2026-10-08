@@ -250,3 +250,29 @@ class TestProcessPendingImports:
             fit_import.process_pending_imports_for_user(user.id, material)
 
         mock_renew.assert_not_called()
+
+    def test_a_second_run_leaves_the_backlog_to_the_one_already_working(self, db, user):
+        """Two runs walking one backlog both passed the duplicate check for the
+        same file; the second insert hit imports' unique constraint and the
+        file was marked failed although it had been imported."""
+        material, pubkey = _key_material()
+        pending = _queue_pending_import(db, user, pubkey)
+        token = fit_import._claim_import_run(user.id)   # another worker's run
+
+        with patch.object(fit_import, "_parse_bytes", return_value=_ACTIVITY_PARSED) as parse:
+            fit_import.process_pending_imports_for_user(user.id, material)
+        parse.assert_not_called()
+
+        fit_import._release_import_run(user.id, token)
+        with patch.object(fit_import, "_parse_bytes", return_value=_ACTIVITY_PARSED):
+            fit_import.process_pending_imports_for_user(user.id, material)
+        db.expire_all()
+        reloaded = db.query(PendingImport).filter_by(id=pending.id).one()
+        assert reloaded.processed_at is not None and reloaded.error is None
+
+    def test_a_run_gives_its_claim_back_even_when_a_file_fails(self, db, user):
+        material, pubkey = _key_material()
+        _queue_pending_import(db, user, pubkey)
+        with patch.object(fit_import, "_parse_bytes", side_effect=ValueError("corrupt")):
+            fit_import.process_pending_imports_for_user(user.id, material)
+        assert fit_import._claim_import_run(user.id) is not None

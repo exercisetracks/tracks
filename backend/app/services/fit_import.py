@@ -855,6 +855,10 @@ def process_pending_imports_for_user(user_id: int, material: UserKeyMaterial,
     the session's Redis TTL is renewed after each item, since a large
     backlog could otherwise run past the crypto session's own sliding
     timeout with no HTTP activity to keep it alive."""
+    token = _claim_import_run(user_id)
+    if token is None:
+        log.info("Pending imports for user %s are already being processed", user_id)
+        return
     db = SessionLocal()
     try:
         pending = (
@@ -893,9 +897,69 @@ def process_pending_imports_for_user(user_id: int, material: UserKeyMaterial,
             finally:
                 if sid is not None:
                     crypto_context.renew_session_key(sid)
+                _renew_import_run(user_id, token)
 
         log.info("Processed pending imports for user %s: %d ok, %d failed", user_id, ok, fail)
     finally:
         db.close()
+        _release_import_run(user_id, token)
         from app.services import activity_status
         activity_status.clear(user_id, "import")
+
+
+# One run per user at a time. The web app asks for a run every time it polls
+# (/auth/sync-pending-imports), a phone and a second tab ask too, and the
+# worker runs two tasks at once — so two runs used to walk the same backlog
+# side by side. Both passed _insert_parsed's "already imported?" check for the
+# same file, the second insert hit imports' unique (user, source, source_id),
+# and that file was marked failed with an IntegrityError although it had been
+# imported. A run that finds the claim taken leaves: the holder imports
+# everything pending, and anything that arrives after its query is picked up
+# by the next poll.
+#
+# The claim expires on its own (renewed after every file), so a worker killed
+# mid-backlog blocks the next run for minutes, not forever. If Redis is down
+# the run goes ahead unclaimed — the old behaviour, which loses no data: the
+# duplicate check still holds, only the race comes back.
+_IMPORT_RUN_SECONDS = 600
+
+
+def _import_run_key(user_id: int) -> str:
+    return f"tracks:pending-imports:{user_id}"
+
+
+def _claim_import_run(user_id: int) -> str | None:
+    import secrets
+    import redis
+    from app.services.redis_client import get_redis
+    token = secrets.token_hex(8)
+    try:
+        if not get_redis().set(_import_run_key(user_id), token, nx=True, ex=_IMPORT_RUN_SECONDS):
+            return None
+    except redis.RedisError:
+        log.warning("Redis unavailable; processing pending imports for user %s unclaimed", user_id)
+    return token
+
+
+def _renew_import_run(user_id: int, token: str) -> None:
+    import redis
+    from app.services.redis_client import get_redis
+    try:
+        r = get_redis()
+        if r.get(_import_run_key(user_id)) in (token, token.encode()):
+            r.expire(_import_run_key(user_id), _IMPORT_RUN_SECONDS)
+    except redis.RedisError:
+        pass
+
+
+def _release_import_run(user_id: int, token: str) -> None:
+    """Only our own claim: one that expired and was taken by another run is
+    that run's to release."""
+    import redis
+    from app.services.redis_client import get_redis
+    try:
+        r = get_redis()
+        if r.get(_import_run_key(user_id)) in (token, token.encode()):
+            r.delete(_import_run_key(user_id))
+    except redis.RedisError:
+        pass
