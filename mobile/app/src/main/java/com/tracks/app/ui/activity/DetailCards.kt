@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
@@ -22,7 +23,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -42,7 +47,10 @@ import com.patrykandpatrick.vico.core.cartesian.data.CartesianValueFormatter
 import com.patrykandpatrick.vico.core.common.shape.Shape
 import com.tracks.app.ui.dashboard.axisGutter
 import com.patrykandpatrick.vico.core.common.shader.ShaderProvider
+import com.tracks.app.ui.components.chartPopupColors
 import com.tracks.app.ui.components.claimInspectDrags
+import com.tracks.app.ui.components.drawInspection
+import com.tracks.app.ui.components.holdToInspect
 import com.tracks.app.ui.components.rememberChartMarker
 import com.tracks.app.ui.components.wholeOrOneDecimal
 import com.patrykandpatrick.vico.compose.m3.common.rememberM3VicoTheme
@@ -106,7 +114,12 @@ fun StreamsCard(track: List<TrackPoint>, modifier: Modifier = Modifier, hrZones:
         // [streamScale]. Below them the axis stops zooming in, so an easy
         // effort still looks like one.
         StreamChart("Heart rate", hr, MaterialTheme.colorScheme.error, "bpm", minSpan = 30.0, zones = hrZones)
-        StreamChart("Elevation", altitude, MaterialTheme.colorScheme.primary, "m", minSpan = 30.0, floor = null, filled = true)
+        // Elevation alone is padded by a fixed distance rather than zoomed,
+        // matching the web — see the note on [streamScale].
+        StreamChart(
+            "Elevation", altitude, MaterialTheme.colorScheme.primary, "m",
+            minSpan = 0.0, floor = null, margin = ELEVATION_MARGIN_M, filled = true,
+        )
         StreamChart("Speed", speed, MaterialTheme.colorScheme.secondary, "m/s", minSpan = 2.0)
         StreamChart("Power", power, MaterialTheme.colorScheme.tertiary, "W", minSpan = 100.0)
         // Cadence was recorded and never drawn. It is the one stream that means
@@ -127,6 +140,7 @@ private fun StreamChart(
     unit: String,
     minSpan: Double,
     floor: Double? = 0.0,
+    margin: Double? = null,
     filled: Boolean = false,
     /**
      * Heart-rate zones: when given, the line takes each zone's colour as it
@@ -139,7 +153,7 @@ private fun StreamChart(
     // Pinned rather than left to Vico, whose automatic range starts at zero —
     // see [streamScale]. The zone gradient is laid over the plot area, so it
     // must be built against exactly this range too.
-    val scale = remember(values, minSpan, floor) { streamScale(values, minSpan, floor) }
+    val scale = remember(values, minSpan, floor, margin) { streamScale(values, minSpan, floor, margin) }
     val yMin = scale.min
     val yMax = scale.max
     val line = if (zones.isNotEmpty()) {
@@ -434,21 +448,50 @@ fun HeartRateDistributionCard(
             ),
         ) {
             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Row(
-                    Modifier.fillMaxWidth().height(96.dp),
-                    horizontalArrangement = Arrangement.spacedBy(2.dp),
-                    verticalAlignment = Alignment.Bottom,
-                ) {
-                    bins.forEach { bin ->
-                        Box(
-                            Modifier
-                                .weight(1f)
-                                // Every bin keeps a sliver of height, so an
-                                // empty one reads as a gap in the distribution
-                                // rather than as the axis running out.
-                                .fillMaxHeight((bin.seconds / peak).toFloat().coerceAtLeast(0.02f))
-                                .clip(RoundedCornerShape(topStart = 2.dp, topEnd = 2.dp))
-                                .background(binColor(bin.bpm, zones)),
+                Box(Modifier.fillMaxWidth().height(HR_BARS_HEIGHT)) {
+                    Row(
+                        Modifier.matchParentSize(),
+                        horizontalArrangement = Arrangement.spacedBy(HR_BAR_GAP),
+                        verticalAlignment = Alignment.Bottom,
+                    ) {
+                        bins.forEach { bin ->
+                            Box(
+                                Modifier
+                                    .weight(1f)
+                                    // Every bin keeps a sliver of height, so an
+                                    // empty one reads as a gap in the distribution
+                                    // rather than as the axis running out.
+                                    .fillMaxHeight(barFraction(bin, peak))
+                                    .clip(RoundedCornerShape(topStart = 2.dp, topEnd = 2.dp))
+                                    .background(binColor(bin.bpm, zones)),
+                            )
+                        }
+                    }
+                    // Press and hold to read a bar — the web's hover tooltip
+                    // (bpm range, time, zone), drawn in the same pill as every
+                    // other chart's hold on the phone. Laid over the bars rather
+                    // than built into them, so the bars stay plain layout.
+                    var inspectX by remember { mutableStateOf<Float?>(null) }
+                    val measurer = rememberTextMeasurer()
+                    val labelStyle = MaterialTheme.typography.labelSmall
+                    val popup = chartPopupColors()
+                    Canvas(Modifier.matchParentSize().holdToInspect { inspectX = it }) {
+                        val held = inspectX ?: return@Canvas
+                        // The Row's geometry: equal weights, a fixed gap between.
+                        val gap = HR_BAR_GAP.toPx()
+                        val pitch = (size.width + gap) / bins.size
+                        val index = (held / pitch).toInt().coerceIn(0, bins.lastIndex)
+                        val bin = bins[index]
+                        val zone = zoneFor(bin.bpm, zones)
+                        drawInspection(
+                            measurer, labelStyle,
+                            x = index * pitch + (pitch - gap) / 2,
+                            y = size.height * (1f - barFraction(bin, peak)),
+                            plotHeight = size.height,
+                            text = "${bin.bpm}–${bin.bpm + HR_BIN_BPM} bpm · ${elapsed(bin.seconds)}" +
+                                (zone?.let { "\n${it.name} · ${it.description}" } ?: ""),
+                            dot = binColor(bin.bpm, zones),
+                            colors = popup,
                         )
                     }
                 }
@@ -471,6 +514,15 @@ fun HeartRateDistributionCard(
 
 /** Five bpm: fine enough to separate two efforts, coarse enough to fit a phone. */
 private const val HR_BIN_BPM = 5
+
+private val HR_BARS_HEIGHT = 96.dp
+private val HR_BAR_GAP = 2.dp
+
+private fun barFraction(bin: HeartRateBin, peak: Double): Float =
+    (bin.seconds / peak).toFloat().coerceIn(0.02f, 1f)
+
+private fun zoneFor(bpm: Int, zones: List<ZoneRange>): ZoneRange? =
+    zones.lastOrNull { bpm >= it.min }
 
 private fun binColor(bpm: Int, zones: List<ZoneRange>): Color {
     val index = zones.indexOfLast { bpm >= it.min }

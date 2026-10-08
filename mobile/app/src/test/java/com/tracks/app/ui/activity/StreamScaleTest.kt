@@ -72,4 +72,27 @@ class StreamScaleTest {
         assertEquals(scale.min, scale.ticks.first(), 1e-9)
         assertEquals(scale.max, scale.ticks.last(), 1e-9)
     }
+
+    @Test
+    fun `a rolling run's elevation does not fill the chart`() {
+        // 25 m of relief used to span the whole chart under the 30 m minimum,
+        // so every outing read as a mountain stage. The web pads 100 m either
+        // side, and the phone now does the same.
+        val scale = streamScale(listOf(200.0, 225.0), minSpan = 0.0, floor = null, margin = ELEVATION_MARGIN_M)
+
+        assertTrue("min ${scale.min}", scale.min <= 100.0)
+        assertTrue("max ${scale.max}", scale.max >= 325.0)
+        assertTrue((225.0 - 200.0) / scale.span <= 0.15)
+    }
+
+    @Test
+    fun `a big climb keeps the same margin rather than a share of the height`() {
+        val scale = streamScale(listOf(480.0, 1160.0), minSpan = 0.0, floor = null, margin = ELEVATION_MARGIN_M)
+
+        assertTrue("min ${scale.min}", scale.min <= 380.0)
+        assertTrue("max ${scale.max}", scale.max >= 1260.0)
+        // Rounded out to round gridlines (200–1400 here), which costs some
+        // height, but the climb still takes most of the chart.
+        assertTrue((1160.0 - 480.0) / scale.span > 0.5)
+    }
 }

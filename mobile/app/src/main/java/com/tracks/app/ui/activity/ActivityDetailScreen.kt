@@ -180,16 +180,6 @@ private fun DetailBody(data: ActivityDetailData, mapStyleJson: String?) {
         // Everything below is absent unless the activity actually carries it,
         // so a treadmill run and a bouldering session show different screens
         // without either needing to know the other exists.
-        // Splits sit directly under the sport layout, above the charts: they
-        // are the part of a session people actually compare, and burying them
-        // under five stream graphs is how a watch screen loses to a spreadsheet.
-        SplitsCard(
-            track = data.track,
-            // Falls back to what the track measures, so an activity whose
-            // summary lost its distance still gets splits.
-            recordedDistance = distanceFor(data.detail, data.track),
-            showPace = paceReadingSport(data.sportType),
-        )
         RecordingCard(data.track, data.detail)
         HeartRateZonesCard(data.track, data.hrZones)
         HeartRateDistributionCard(data.track, data.hrZones)
@@ -197,15 +187,39 @@ private fun DetailBody(data: ActivityDetailData, mapStyleJson: String?) {
         ClimbsCard(data.climbs)
         StrengthSetsCard(data.sets)
         MuscleActivationCard(data.sets)
+
+        // The tables last, under the charts. They used to sit directly under
+        // the summary, and a long run's forty splits and auto-laps pushed every
+        // chart a dozen screens down — the graphs are read on every visit, the
+        // rows only when comparing. Drawn here rather than by each layout so
+        // the order is one decision instead of fourteen copies of it.
+        SplitsCard(
+            track = data.track,
+            // Falls back to what the track measures, so an activity whose
+            // summary lost its distance still gets splits.
+            recordedDistance = distanceFor(data.detail, data.track),
+            showPace = paceReadingSport(data.sportType),
+        )
+        if (data.sportType !in LAPLESS_SPORTS) {
+            LapsCard(data.laps, showPace = paceReadingSport(data.sportType))
+        }
     }
 }
+
+/**
+ * Sports whose laps are not a lap table. A strength session's laps are its
+ * sets, golf's are holes (drawn as the scorecard), climbing's are routes, and
+ * a yoga session's are nothing anyone reads — each layout shows those its own
+ * way, or not at all.
+ */
+private val LAPLESS_SPORTS = setOf("strength", "golf", "climbing", "bouldering", "mind_body")
 
 /**
  * Whether this sport's splits read as a pace or as a speed.
  *
  * The same split shown the wrong way round is unreadable to its audience — a
- * runner does not think in km/h and a cyclist does not think in min/km. Mirrors
- * the `showPace` flag each layout already passes to [LapsCard].
+ * runner does not think in km/h and a cyclist does not think in min/km. Used for
+ * both the splits and the laps, so the two tables read in the same unit.
  */
 private fun paceReadingSport(sportType: String): Boolean =
     sportType in setOf("running", "hiking", "nordic_skiing", "triathlon")

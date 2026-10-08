@@ -26,14 +26,38 @@ import com.tracks.app.ui.components.chartScale
  * cadence) from labelling its axis below zero when the centring would push it
  * there; the axis is slid up rather than cropped. Elevation passes null: a
  * walk below sea level is real.
+ *
+ * ## Elevation is padded, not zoomed
+ *
+ * [margin], when given, replaces all of the above with a fixed distance above
+ * the highest point and below the lowest, which is what the web's
+ * ElevationGraph does (100 m, its 330 ft). Elevation needs it because the
+ * share-and-minimum rule still zoomed far too hard: a 30 m minimum made a
+ * rolling run with 25 m of relief span the whole chart, and every outing read
+ * as a mountain stage. A fixed margin makes the chart's height mean the same
+ * thing on every activity — a flat loop is a line through the middle, and only
+ * a real climb approaches the edges — and keeps the two apps drawing the same
+ * activity the same way.
  */
-internal fun streamScale(values: List<Double>, minSpan: Double, floor: Double? = 0.0): ChartScale {
+internal fun streamScale(
+    values: List<Double>,
+    minSpan: Double,
+    floor: Double? = 0.0,
+    margin: Double? = null,
+): ChartScale {
     val lo = values.min()
     val hi = values.max()
-    val span = maxOf((hi - lo) / DATA_SHARE, minSpan)
-    val mid = (lo + hi) / 2
-    var from = mid - span / 2
-    var to = mid + span / 2
+    var from: Double
+    var to: Double
+    if (margin != null) {
+        from = lo - margin
+        to = hi + margin
+    } else {
+        val span = maxOf((hi - lo) / DATA_SHARE, minSpan)
+        val mid = (lo + hi) / 2
+        from = mid - span / 2
+        to = mid + span / 2
+    }
     if (floor != null && from < floor && lo >= floor) {
         to += floor - from
         from = floor
@@ -44,6 +68,13 @@ internal fun streamScale(values: List<Double>, minSpan: Double, floor: Double? =
     // 1250 m, and a climb that should have filled the chart filled half.
     return INTERVALS.map { chartScale(from, to, target = it) }.minBy { it.span }
 }
+
+/**
+ * The margin elevation is drawn with, in metres — the web's
+ * `imperial ? 330 : 100`, which is the same distance either way. The chart
+ * plots metres, so one number serves both unit systems.
+ */
+internal const val ELEVATION_MARGIN_M = 100.0
 
 /** How much of the height the data takes before [minSpan] steps in. */
 private const val DATA_SHARE = 0.85

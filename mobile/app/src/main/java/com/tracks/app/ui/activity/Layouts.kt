@@ -76,7 +76,6 @@ fun RunningLayout(data: ActivityDetailData) {
             )
         )
         TrainingEffectCard(d)
-        LapsCard(data.laps, showPace = true)
     }
 }
 
@@ -97,7 +96,6 @@ fun HikingLayout(data: ActivityDetailData) {
             )
         )
         TrainingEffectCard(d)
-        LapsCard(data.laps, showPace = true)
     }
 }
 
@@ -118,7 +116,6 @@ fun CyclingLayout(data: ActivityDetailData) {
             )
         )
         TrainingEffectCard(d)
-        LapsCard(data.laps, showPace = false)
     }
 }
 
@@ -164,7 +161,6 @@ fun SkiingLayout(data: ActivityDetailData) {
             )
         )
         TrainingEffectCard(d)
-        LapsCard(data.laps, showPace = false)
     }
 }
 
@@ -185,7 +181,6 @@ fun NordicSkiingLayout(data: ActivityDetailData) {
             )
         )
         TrainingEffectCard(d)
-        LapsCard(data.laps, showPace = true)
     }
 }
 
@@ -213,7 +208,6 @@ fun SwimmingLayout(data: ActivityDetailData) {
             )
         )
         TrainingEffectCard(d)
-        LapsCard(data.laps, showPace = false)
     }
 }
 
@@ -235,7 +229,6 @@ fun RowingLayout(data: ActivityDetailData) {
             )
         )
         TrainingEffectCard(d)
-        LapsCard(data.laps, showPace = false)
     }
 }
 
@@ -257,7 +250,6 @@ fun PaddlingLayout(data: ActivityDetailData) {
             )
         )
         TrainingEffectCard(d)
-        LapsCard(data.laps, showPace = false)
     }
 }
 
@@ -283,7 +275,6 @@ fun FitnessEquipmentLayout(data: ActivityDetailData) {
             )
         )
         TrainingEffectCard(d)
-        LapsCard(data.laps, showPace = false)
     }
 }
 
@@ -325,7 +316,6 @@ fun TeamSportsLayout(data: ActivityDetailData) {
             )
         )
         TrainingEffectCard(d)
-        LapsCard(data.laps, showPace = false)
     }
 }
 
@@ -364,7 +354,8 @@ fun GolfLayout(data: ActivityDetailData) {
  * Triathlon and other multisport.
  *
  * The summary is the whole event; the per-discipline breakdown lives in the
- * laps, which is why the lap table matters more here than anywhere else.
+ * laps, which is why the lap table matters more here than anywhere else. The
+ * detail screen draws it, below the charts, as it does for every sport.
  */
 @Composable
 fun TriathlonLayout(data: ActivityDetailData) {
@@ -381,7 +372,6 @@ fun TriathlonLayout(data: ActivityDetailData) {
             )
         )
         TrainingEffectCard(d)
-        LapsCard(data.laps, showPace = true)
     }
 }
 
@@ -403,7 +393,7 @@ fun TriathlonLayout(data: ActivityDetailData) {
  * type this app has never heard of still gets a sensible screen the first time
  * it is opened, rather than after someone adds a layout for it.
  *
- * The charts, splits, zones and recording details below come from the detail
+ * The charts, zones, splits, laps and recording details come from the detail
  * screen itself and apply to every sport, so they are not repeated here.
  */
 @Composable
@@ -441,7 +431,6 @@ private fun TravelledFallback(data: ActivityDetailData) {
             )
         )
         TrainingEffectCard(d)
-        LapsCard(data.laps, showPace = false)
     }
 }
 
@@ -470,9 +459,8 @@ private fun StationaryFallback(data: ActivityDetailData) {
             )
         )
         TrainingEffectCard(d)
-        LapsCard(data.laps, showPace = false)
 
-        // Said plainly, and only when it is true. Every card below this one
+        // Said plainly, and only when it is true. Every card below the layout
         // draws from the track or the laps, so with neither the screen ends
         // here — and a screen that simply stops looks like one that failed.
         if (data.track.isEmpty() && data.laps.isEmpty()) {
