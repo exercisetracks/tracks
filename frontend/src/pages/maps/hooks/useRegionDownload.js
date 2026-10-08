@@ -459,6 +459,7 @@ export function useRegionDownload(map) {
     async (name) => {
       if (!bbox) return;
       setPending(true);
+      let failed = false;
       try {
         const res = await api.downloadRegion({ bbox, name });
         await loadRegions();
@@ -472,10 +473,14 @@ export function useRegionDownload(map) {
           setAlreadyHave(res.region);
         }
       } catch (e) {
-        alert(e?.message || "Download failed");
+        // Said where the box is, and the box kept: the usual cause is a DNS
+        // filter blocking a map host, and the message names what to allow —
+        // after which the same box is downloaded with one more press.
+        failed = true;
+        setEstimateError(e?.message || "Download failed");
       } finally {
         setPending(false);
-        cancelDrawing();
+        if (!failed) cancelDrawing();
       }
     },
     [bbox, loadRegions, cancelDrawing, highlightRegion, zoomToRegion, map]

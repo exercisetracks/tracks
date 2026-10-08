@@ -18,7 +18,9 @@ from urllib.parse import urlparse
 
 from app.config import settings
 from app.services import region_registry
-from app.services.pmtiles_extract import resolve_source_url, run_pmtiles_with_progress
+from app.services.pmtiles_extract import (
+    _unreachable_error, resolve_source_url, run_pmtiles_with_progress,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -66,6 +68,10 @@ def dry_run_size(source_url: str, bbox: str, minzoom: int, maxzoom: int) -> int:
     output = (r.stderr or "") + "\n" + (r.stdout or "")
     m = _SIZE_RE.search(output)
     if r.returncode != 0 or not m:
+        unreachable = _unreachable_error(cmd, output.splitlines())
+        if unreachable is not None:
+            logger.warning("dry-run size: %s", unreachable.raw)
+            raise DryRunFailed(str(unreachable))
         reason = _last_line(output) or f"pmtiles exited with {r.returncode}"
         logger.warning("dry-run size failed for %s (exit %s): %s",
                        source_url, r.returncode, output.strip()[-2000:])

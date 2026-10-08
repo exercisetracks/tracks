@@ -111,7 +111,10 @@ class SourceUnreachable(RuntimeError):
                    f"connection, and whether an ad blocker or DNS filter (AdGuard "
                    f"Home, Pi-hole), a VPN or a firewall is blocking it — if so, "
                    f"allow {host}.")
-        super().__init__(msg)
+        # Everything else a download needs too, so the filter is fixed once
+        # rather than one host per failed download.
+        from app.services.map_hosts import allow_list_hint
+        super().__init__(f"{msg} {allow_list_hint()}")
 
 
 # Go's wording for a connection that never got as far as HTTP: a refused or

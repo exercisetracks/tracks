@@ -330,6 +330,20 @@ def fresh_sync_clock():
 
 
 @pytest.fixture(autouse=True)
+def fake_map_dns(monkeypatch):
+    """Map downloads ask DNS whether a filter is blocking their hosts
+    (app.services.map_hosts). Every name answers with a real-looking address
+    here, so no test depends on this machine's resolver; test_map_hosts.py
+    answers for itself."""
+    import socket
+    from app.services import map_hosts
+    monkeypatch.setattr(
+        map_hosts, "_resolve",
+        lambda host, port, *a, **kw: [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("203.0.113.7", port))],
+    )
+
+
+@pytest.fixture(autouse=True)
 def fake_redis(monkeypatch):
     """No real Redis in tests — swap the one shared client (crypto session
     cache, setup-complete flag, login rate limiter) for an in-memory fake.

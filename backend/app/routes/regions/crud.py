@@ -18,7 +18,7 @@ from app.auth import require_auth
 
 from app.config import settings
 from app.services import (
-    download_cancel, geocode, region_downloader, region_registry,
+    download_cancel, geocode, map_hosts, region_downloader, region_registry,
 )
 from app.services.global_download_tracker import global_download_tracker
 from app.services.pmtiles_extract import resolve_source_url
@@ -53,6 +53,7 @@ def estimate_region(bbox: str):
 
     if not settings.pmtiles_source_url:
         raise HTTPException(400, "PMTILES_SOURCE_URL is not configured")
+    _refuse_if_dns_blocked()
 
     jobs = []
     if settings.pmtiles_source_url:
@@ -74,8 +75,23 @@ def estimate_region(bbox: str):
                 jobs,
             ))
     except region_downloader.DryRunFailed as e:
-        raise HTTPException(502, f"Could not reach the map source — {e}")
+        raise HTTPException(502, str(e))
     return {"bytes": sum(sizes)}
+
+
+def _refuse_if_dns_blocked() -> None:
+    """Answer a blocked map host before anything is sized or downloaded.
+
+    A DNS filter (AdGuard Home, Pi-hole) blocking a map host used to surface
+    as a bare 502 from the estimate, and a download that failed without
+    saying why; the person running the filter then had to work out which
+    names to allow. This names what is blocked and everything to allow.
+    """
+    try:
+        map_hosts.check_download_hosts()
+    except map_hosts.MapHostsBlocked as e:
+        logger.warning("Map hosts blocked by DNS: %s", e.blocked)
+        raise HTTPException(502, str(e))
 
 
 # How far a requested box may poke outside an existing one and still count as
@@ -158,6 +174,10 @@ def download_region(data: dict):
     if existing is not None:
         status = "exists" if existing["status"] == "installed" else "downloading"
         return {"status": status, "region": existing}
+
+    # Refused before a region row exists, so a blocked host leaves no failed
+    # area behind to delete — just the reason, where the box was drawn.
+    _refuse_if_dns_blocked()
 
     if not name or name == "Untitled":
         name = geocode.suggest_region_name(bbox)

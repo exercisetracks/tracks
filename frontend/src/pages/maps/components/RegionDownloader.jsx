@@ -109,7 +109,7 @@ export default function RegionDownloader({
             </p>
           )}
           {bbox && estimateError && (
-            <p className="text-[11px] text-red-600 dark:text-red-400 leading-snug">
+            <p className="text-[11px] text-red-600 dark:text-red-400 leading-snug break-words select-text" role="alert">
               {estimateError}
             </p>
           )}

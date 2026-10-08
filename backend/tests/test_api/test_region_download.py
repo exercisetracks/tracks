@@ -46,7 +46,10 @@ def registry(monkeypatch):
         def start(self):
             pass
 
-    monkeypatch.setattr(crud.threading, "Thread", _Thread)
+    # The endpoint's own `threading`, not the module every thread in the
+    # process comes from (the DNS check before a download uses a pool).
+    import types
+    monkeypatch.setattr(crud, "threading", types.SimpleNamespace(Thread=_Thread))
     state["region"] = _region
     return state
 
