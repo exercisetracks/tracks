@@ -117,7 +117,17 @@
 	# csp-* snippets, picked the same way as the frontend-* ones.
 	import csp-{$TRACKS_FRONTEND:proxy}
 
-	@staticAssets path *.js *.css *.woff2 *.png *.jpg *.svg *.ico
+	# Not what Vite's dev server serves (/src, /node_modules, /@vite …): its
+	# modules are not content-hashed. A .js source file or a pre-bundled
+	# dependency chunk cached as immutable stays in the browser across edits
+	# and across Vite re-bundling its dependencies — after MapLibre 6, which
+	# has no default export, a year-cached chunk from before the upgrade
+	# imported the new bundle and the map page died on a SyntaxError. Vite
+	# sends its own no-cache for these; the built bundle has none of them.
+	@staticAssets {
+		path *.js *.css *.woff2 *.png *.jpg *.svg *.ico
+		not path /src/* /node_modules/* /@vite/* /@fs/* /@id/* /@react-refresh
+	}
 	header @staticAssets Cache-Control "public, max-age=31536000, immutable"
 
 	handle /api/tiles/version {

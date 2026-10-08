@@ -14,6 +14,7 @@ import re
 import subprocess
 import tempfile
 from pathlib import Path
+from urllib.parse import urlparse
 
 from app.config import settings
 from app.services import region_registry
@@ -26,10 +27,20 @@ _SIZE_RE = re.compile(r"archive size of ([\d.]+)\s*([kMGT]?i?B)", re.IGNORECASE)
 _UNIT = {"b": 1, "kb": 1_000, "mb": 1_000_000, "gb": 1_000_000_000}
 
 
+class DryRunFailed(RuntimeError):
+    """`pmtiles extract --dry-run` could not size an area; the message says why."""
+
+
 def dry_run_size(source_url: str, bbox: str, minzoom: int, maxzoom: int) -> int:
     """Return the exact archive byte size a bbox extract WOULD produce, without
     downloading. Uses `pmtiles extract --dry-run`, which reads only the source
-    directory and sums the matching tiles' lengths. 0 on failure.
+    directory and sums the matching tiles' lengths.
+
+    Raises DryRunFailed rather than answering 0. It used to answer 0, which the
+    map showed as "Estimated size: <1 MB" — so a source the server could not
+    read looked like a tiny area, the download that followed failed the same
+    way, and nothing anywhere said why. A failed dry run is the earliest
+    warning that a download will fail; it has to read as one.
 
     The output path is required by the CLI but never written (``--dry-run``); a
     unique temp name avoids any clash between concurrent estimate requests.
@@ -44,15 +55,35 @@ def dry_run_size(source_url: str, bbox: str, minzoom: int, maxzoom: int) -> int:
     ]
     try:
         r = subprocess.run(cmd, capture_output=True, text=True, timeout=90)
-    except Exception:
-        logger.exception("dry-run size failed for %s", source_url)
-        return 0
+    except subprocess.TimeoutExpired:
+        logger.warning("dry-run size timed out for %s", source_url)
+        raise DryRunFailed(f"{_host(source_url)} did not answer in time")
+    except OSError as e:
+        logger.exception("dry-run size could not run for %s", source_url)
+        raise DryRunFailed(f"could not run pmtiles: {e}")
     finally:
         Path(out_path).unlink(missing_ok=True)
-    m = _SIZE_RE.search((r.stderr or "") + "\n" + (r.stdout or ""))
-    if not m:
-        return 0
+    output = (r.stderr or "") + "\n" + (r.stdout or "")
+    m = _SIZE_RE.search(output)
+    if r.returncode != 0 or not m:
+        reason = _last_line(output) or f"pmtiles exited with {r.returncode}"
+        logger.warning("dry-run size failed for %s (exit %s): %s",
+                       source_url, r.returncode, output.strip()[-2000:])
+        raise DryRunFailed(f"{_host(source_url)}: {reason}")
     return int(float(m.group(1)) * _UNIT.get(m.group(2).lower().replace("ib", "b"), 1))
+
+
+def _host(url: str) -> str:
+    return urlparse(url).netloc or url
+
+
+def _last_line(output: str) -> str:
+    """The last thing pmtiles said, without its timestamp/file:line prefix —
+    that is where it puts the reason it stopped."""
+    lines = [ln.strip() for ln in output.splitlines() if ln.strip()]
+    if not lines:
+        return ""
+    return re.sub(r"^\d{4}/\d\d/\d\d \d\d:\d\d:\d\d (\S+\.go:\d+: )?", "", lines[-1])[:300]
 
 
 def _basemap_region_minzoom() -> int:

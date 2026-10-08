@@ -475,7 +475,7 @@ export default function MapView() {
       {bottomPanel === "areas" && (
         <ControlPopup title="High-Resolution Areas" onClose={() => setBottomPanel(null)} width="w-[256px]">
           <RegionDownloader
-            drawing={region.drawing} bbox={region.bbox} sizeEstimate={region.sizeEstimate}
+            drawing={region.drawing} bbox={region.bbox} sizeEstimate={region.sizeEstimate} estimateError={region.estimateError}
             regions={region.regions} pending={region.pending}
             onStart={region.startDrawing} onCancel={region.cancelDrawing}
             onDownload={region.downloadRegion} onDelete={region.deleteRegion}

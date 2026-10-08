@@ -36,6 +36,10 @@ export function useRegionDownload(map) {
   const [drawing, setDrawing] = useState(false);
   const [bbox, setBbox] = useState(null);
   const [sizeEstimate, setSizeEstimate] = useState(null);
+  // Why the server could not size the box, when it could not. Shown in place of
+  // a size: a source the server cannot read used to come back as 0 bytes and
+  // read as "<1 MB", and the download that followed failed with no word why.
+  const [estimateError, setEstimateError] = useState(null);
   const [regions, setRegions] = useState([]);
   const [pending, setPending] = useState(false);
   // The saved area that already covered the last box drawn, if one did.
@@ -71,6 +75,7 @@ export function useRegionDownload(map) {
   useEffect(() => {
     if (!drawing || !bbox) return;
     const [w, s, e, n] = bbox;
+    setEstimateError(null);
     if (w === e || s === n) { setSizeEstimate(null); return; }
     setSizeEstimate("…");
     let live = true;
@@ -78,8 +83,10 @@ export function useRegionDownload(map) {
       try {
         const { bytes } = await api.estimateRegion(bbox);
         if (live) setSizeEstimate(formatBytes(bytes));
-      } catch {
-        if (live) setSizeEstimate(null);
+      } catch (err) {
+        if (!live) return;
+        setSizeEstimate(null);
+        setEstimateError(err?.message || "The server could not size this area");
       }
     }, 500);
     return () => { live = false; clearTimeout(t); };
@@ -475,7 +482,7 @@ export function useRegionDownload(map) {
   );
 
   return {
-    drawing, bbox, sizeEstimate, regions, pending,
+    drawing, bbox, sizeEstimate, estimateError, regions, pending,
     alreadyHave, dismissAlreadyHave: () => setAlreadyHave(null),
     startDrawing, cancelDrawing, downloadRegion, deleteRegion,
     highlightRegion, zoomToRegion,

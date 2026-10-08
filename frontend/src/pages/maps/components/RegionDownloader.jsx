@@ -55,7 +55,7 @@ const PHASES = {
 };
 
 export default function RegionDownloader({
-  drawing, bbox, sizeEstimate, regions, pending,
+  drawing, bbox, sizeEstimate, estimateError, regions, pending,
   onStart, onCancel, onDownload, onDelete, onHighlight, onZoom,
 }) {
   const [name, setName] = useState("");
@@ -106,6 +106,11 @@ export default function RegionDownloader({
           {bbox && sizeEstimate && (
             <p className="text-[11px] text-slate-600 dark:text-slate-300 font-medium">
               Estimated size: {sizeEstimate}
+            </p>
+          )}
+          {bbox && estimateError && (
+            <p className="text-[11px] text-red-600 dark:text-red-400 leading-snug">
+              {estimateError}
             </p>
           )}
           {bbox && (
@@ -273,7 +278,14 @@ export default function RegionDownloader({
           <svg className="w-3 h-3 shrink-0 text-red-500" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01" />
           </svg>
-          <span className="flex-1 text-[11px] text-red-700 dark:text-red-400 truncate">{r.name}</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-[11px] text-red-700 dark:text-red-400 truncate">{r.name}</p>
+            {r.error && (
+              <p className="text-[10px] text-red-600/80 dark:text-red-400/80 line-clamp-2" title={r.error}>
+                {r.error}
+              </p>
+            )}
+          </div>
           <button
             onClick={() => handleDelete(r.id)}
             className="btn btn-danger btn-sm shrink-0"

@@ -15,6 +15,9 @@ def map_dir(tmp_path, monkeypatch):
     (tmp_path / "fonts").mkdir()
     (tmp_path / "fonts" / "keep.pbf").write_bytes(b"x")
     monkeypatch.setattr(crud.region_registry, "list_active", lambda: [])
+    # The tracker's state file is the real /map-data one (its path is fixed at
+    # import), so a basemap downloading on this machine would make these 409.
+    monkeypatch.setattr(crud.global_download_tracker, "get_all", lambda: [])
     monkeypatch.setattr("app.services.region_merger.write_reload_trigger", lambda: None)
     started = []
     monkeypatch.setattr("app.services.global_overview.start_map_download", lambda: started.append("map"))

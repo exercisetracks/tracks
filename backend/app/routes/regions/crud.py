@@ -51,6 +51,9 @@ def estimate_region(bbox: str):
     parts = parse_bbox(bbox)
     bbox_str = ",".join(str(p) for p in parts)
 
+    if not settings.pmtiles_source_url:
+        raise HTTPException(400, "PMTILES_SOURCE_URL is not configured")
+
     jobs = []
     if settings.pmtiles_source_url:
         jobs.append((resolve_source_url(settings.pmtiles_source_url),
@@ -62,11 +65,16 @@ def estimate_region(bbox: str):
 
     # Run the basemap + DEM dry-runs concurrently (each is a few seconds of
     # remote range requests).
-    with ThreadPoolExecutor(max_workers=len(jobs) or 1) as ex:
-        sizes = ex.map(
-            lambda j: region_downloader.dry_run_size(j[0], bbox_str, j[1], j[2]),
-            jobs,
-        )
+    # A failure is a 502 carrying pmtiles' reason, not a size of 0: the download
+    # this estimate precedes reads the same sources and would fail the same way.
+    try:
+        with ThreadPoolExecutor(max_workers=len(jobs)) as ex:
+            sizes = list(ex.map(
+                lambda j: region_downloader.dry_run_size(j[0], bbox_str, j[1], j[2]),
+                jobs,
+            ))
+    except region_downloader.DryRunFailed as e:
+        raise HTTPException(502, f"Could not reach the map source — {e}")
     return {"bytes": sum(sizes)}
 
 
