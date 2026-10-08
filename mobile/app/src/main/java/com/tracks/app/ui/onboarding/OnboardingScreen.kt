@@ -22,7 +22,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -57,7 +56,6 @@ import com.tracks.app.OnboardingProgress
 import com.tracks.app.device.BluetoothPermissions
 import com.tracks.app.feeds.FeedPermissions
 import com.tracks.app.ui.components.NeutralButton
-import com.tracks.app.ui.components.PasswordField
 import com.tracks.app.ui.components.PrimaryButton
 import com.tracks.app.ui.components.TonalButton
 import com.tracks.app.ui.profile.rememberRestoreFlow
@@ -311,9 +309,7 @@ fun OnboardingScreen(
                     OnboardingStep.Music -> MusicStep(
                         music = state.music,
                         watchPaired = state.watch.pairedName != null,
-                        onLoad = vm::loadMusicSetup,
-                        onConnect = vm::connectMusicServer,
-                        onSearch = vm::searchLanForMusicServer,
+                        vm = vm,
                         onPlaylist = vm::setWatchPlaylist,
                         onSendPlaylists = vm::sendWatchPlaylists,
                         onInstall = vm::installWatchMusicApp,
@@ -856,17 +852,13 @@ internal fun WeatherStep(onNext: () -> Unit) {
 }
 
 /**
- * Music: the one place two features share a watch and must not be confused.
+ * Music: the music server, then the watch app that plays from it.
  *
- * A Garmin can hold music two ways, and they do not mix. Files pushed over USB
- * land in the watch's own library and play under "My Music". Audio the Tracks
- * watch app downloads lands in that app's encrypted store and plays there. The
- * same song loaded both ways is on the watch twice, and a user who does not
- * know that will go looking for their playlist in the wrong player and conclude
- * the sync is broken.
- *
- * So the difference is stated first, before either option is offered, rather
- * than in help text somebody reads afterwards.
+ * Signing in is the same "Connect server" button and two-step dialog as in
+ * Settings ([com.tracks.app.ui.music.MusicServerConnectDialog]) — the address
+ * first, the login only once a music server has answered there. The USB
+ * library is the web app's, and is not mentioned: there is nothing on the
+ * phone to do about it.
  *
  * Everything here is skippable. Music is the least essential thing Tracks does,
  * and this step arrives late in a flow the user is already tired of.
@@ -875,19 +867,13 @@ internal fun WeatherStep(onNext: () -> Unit) {
 private fun MusicStep(
     music: MusicUiState,
     watchPaired: Boolean,
-    onLoad: () -> Unit,
-    onConnect: (String, String, String) -> Unit,
-    onSearch: () -> Unit,
+    vm: com.tracks.app.MainViewModel,
     onPlaylist: (String, Boolean) -> Unit,
     onSendPlaylists: () -> Unit,
     onInstall: () -> Unit,
     onNext: () -> Unit,
 ) {
-    LaunchedEffect(Unit) { onLoad() }
-
-    var url by rememberSaveable { mutableStateOf("") }
-    var username by rememberSaveable { mutableStateOf("") }
-    var password by rememberSaveable { mutableStateOf("") }
+    LaunchedEffect(Unit) { vm.loadMusicSetup() }
     val connected = music.server?.configured == true
 
     StepHeading(
@@ -896,35 +882,6 @@ private fun MusicStep(
             "without a Garmin account.",
     )
 
-    // The distinction, up front and unavoidable.
-    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
-        Column(
-            Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            Text(
-                "Two separate libraries",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Text(
-                "Set up here, the Tracks Music watch app downloads playlists from " +
-                    "your music server over the watch's own Wi-Fi — on the charger, " +
-                    "with no phone involved — and plays them in its own player.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(
-                "Music you push over USB from the web app plays under the watch's " +
-                    "own \"My Music\" instead. The two do not see each other — a song " +
-                    "loaded both ways is on the watch twice.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
-
     // ── 1. Where the music comes from ────────────────────────────────────────
     Text(
         "Your music server",
@@ -932,46 +889,16 @@ private fun MusicStep(
         fontWeight = FontWeight.Bold,
         color = MaterialTheme.colorScheme.onSurface,
     )
-    if (connected) {
-        StatusCard(good = true, text = "Connected to ${music.server?.url}.")
-    } else {
+    if (!connected) {
         Text(
             "Navidrome. The watch signs in to it directly, so the address has to " +
                 "be one the watch can reach over Wi-Fi, with a real certificate.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        LaunchedEffect(music.foundServer) { music.foundServer?.let { url = it } }
-        OutlinedTextField(
-            value = url,
-            onValueChange = { url = it },
-            label = { Text("Music server address") },
-            placeholder = { Text("music.example.com or 10.0.0.5") },
-            supportingText = { Text("http/https and the usual ports are tried for you") },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        TonalButton(if (music.scan != null) "Stop searching" else "Find it on my network", onClick = onSearch, modifier = Modifier.fillMaxWidth(), enabled = !music.busy)
-        music.scan?.let {
-            Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        OutlinedTextField(
-            value = username,
-            onValueChange = { username = it },
-            label = { Text("Username") },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        PasswordField(
-            value = password,
-            onValueChange = { password = it },
-            modifier = Modifier.fillMaxWidth(),
-        )
-        PrimaryButton(if (music.busy) "Checking…" else "Connect music server", onClick = { onConnect(url, username, password) }, modifier = Modifier.fillMaxWidth(), enabled = !music.busy && url.isNotBlank() && username.isNotBlank())
-        if (music.busy && music.message != null) {
-            Text(music.message, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
     }
+    // The same account row, button and two-step dialog as Settings.
+    com.tracks.app.ui.music.MusicServerRow(music, vm)
 
     // ── 2. The player itself ─────────────────────────────────────────────────
     Text(

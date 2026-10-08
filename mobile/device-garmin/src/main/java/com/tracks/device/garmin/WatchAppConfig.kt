@@ -90,9 +90,12 @@ object WatchAppConfig {
      * There is no way to authenticate the caller, so the exposure is bounded
      * in time instead: the phone answers only for a short while after the user
      * did something that implies a watch is being set up — installing the app,
-     * or opening the music screen. Outside that window the watch keeps the
-     * configuration it already stored, so the cost of being wrong is a
-     * password change that needs the music screen opened once. Only the
+     * connecting the server, sending a selection, onboarding's music step, or
+     * "Send the login to the watch again" in Settings. Not merely opening
+     * Settings, where the music controls now live: that is opened often
+     * enough to keep the window open most of the day. Outside that window the
+     * watch keeps the configuration it already stored, so the cost of being
+     * wrong is a password change that needs that button pressed once. Only the
      * revision is answered outside the window — a number, not a secret — and
      * the watch does not count it as applied until an armed answer brings the
      * settings that go with it.

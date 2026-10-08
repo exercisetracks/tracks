@@ -8,7 +8,6 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
@@ -64,7 +63,6 @@ enum class Destination(
     Mobility("mobility", "Flexibility", Icons.Filled.Refresh),
     RacePlans("race-plans", "Race Plans", Icons.Filled.Star),
     Map("map", "Maps", Icons.Filled.Place),
-    Music("music", "Music", Icons.Filled.PlayArrow),
     Settings("settings", "Settings", Icons.Filled.Settings),
     ;
 

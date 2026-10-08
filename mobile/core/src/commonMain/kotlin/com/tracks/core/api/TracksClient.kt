@@ -1513,22 +1513,6 @@ class TracksClient(
 
     // ── Music ────────────────────────────────────────────────────────────────
 
-    suspend fun musicTracks(): MusicTrackList = request { token ->
-        http.get(url(Endpoints.MUSIC_TRACKS)) { bearer(token) }
-    }
-
-    suspend fun setMusicLoad(ids: List<Int>, load: Boolean): Unit = request { token ->
-        http.post(url(Endpoints.MUSIC_TRACKS_LOAD)) {
-            bearer(token)
-            contentType(ContentType.Application.Json)
-            setBody(MusicLoadRequest(ids, load))
-        }
-    }
-
-    suspend fun musicDevicePlan(): MusicDevicePlan = request { token ->
-        http.get(url(Endpoints.MUSIC_DEVICE_PLAN)) { bearer(token) }
-    }
-
     suspend fun musicServer(): MusicServer = request { token ->
         http.get(url(Endpoints.MUSIC_SERVER)) { bearer(token) }
     }
@@ -1551,18 +1535,6 @@ class TracksClient(
         http.delete(url(Endpoints.MUSIC_SERVER)) { bearer(token) }
     }
 
-    suspend fun smartPlaylists(): SmartPlaylistList = request { token ->
-        http.get(url(Endpoints.MUSIC_SMART)) { bearer(token) }
-    }
-
-    suspend fun importSmartPlaylist(kind: String): Unit = request { token ->
-        http.post(url(Endpoints.musicSmartImport(kind))) { bearer(token) }
-    }
-
-    suspend fun dropSmartPlaylist(kind: String): Unit = request { token ->
-        http.delete(url(Endpoints.musicSmartByKind(kind))) { bearer(token) }
-    }
-
     suspend fun remotePlaylists(): RemotePlaylistList = request { token ->
         http.get(url(Endpoints.MUSIC_REMOTE_PLAYLISTS)) { bearer(token) }
     }
@@ -1572,10 +1544,6 @@ class TracksClient(
             bearer(token)
             parameter("q", query)
         }
-    }
-
-    suspend fun importRemotePlaylist(id: String): Unit = request { token ->
-        http.post(url(Endpoints.musicPlaylistImport(id))) { bearer(token) }
     }
 
     /**

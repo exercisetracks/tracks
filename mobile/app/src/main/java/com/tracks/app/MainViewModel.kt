@@ -6,16 +6,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tracks.app.device.WatchConfigRevision
 import com.tracks.app.device.WatchManager
-import com.tracks.core.api.MusicDevicePlan
 import com.tracks.core.api.MusicServer
 import com.tracks.core.api.MusicServerRequest
-import com.tracks.core.api.MusicTrackSummary
 import com.tracks.core.api.MusicServerDiscovery
 import com.tracks.core.api.RemoteSong
 import com.tracks.app.device.WatchMusicPreference
 import com.tracks.device.garmin.WatchAppConfig
 import com.tracks.device.garmin.GarminIntegration
-import com.tracks.core.api.SmartPlaylist
 import com.tracks.core.api.ActivitySummary
 import com.tracks.core.api.Capabilities
 import com.tracks.core.api.IncompatibleServerException
@@ -86,9 +83,6 @@ data class UiState(
  */
 data class MusicUiState(
     val server: MusicServer? = null,
-    val smart: List<SmartPlaylist> = emptyList(),
-    val tracks: List<MusicTrackSummary> = emptyList(),
-    val plan: MusicDevicePlan? = null,
     /** What the watch app can download: two built-ins, then the server's playlists. */
     val watchPlaylists: List<WatchPlaylist> = emptyList(),
     /** The phone's pick of [watchPlaylists], by id. Optional — the watch has its own. */
@@ -726,19 +720,22 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
      */
     // ── Music ────────────────────────────────────────────────────────────────
 
-    /** Load the music-server connection and the derived playlists on offer. */
-    fun loadMusicSetup() {
+    /**
+     * Load the music-server connection and the playlists on offer.
+     *
+     * [arm] also re-arms the phone's answer to the watch app's config request
+     * (see [refreshWatchMusicConfig]) — which hands the music password to any
+     * app on the watch that asks, for ten minutes. Onboarding's music step
+     * arms, as the Music page did on every visit; Settings does not, because
+     * Settings is opened far more often than that page was and the window
+     * would be open most of the day. There, the user re-arms on purpose with
+     * [resendWatchMusicLogin].
+     */
+    fun loadMusicSetup(arm: Boolean = true) {
         viewModelScope.launch {
             try {
                 val client = container.client()
                 val server = client.musicServer()
-                val smart = if (server.configured) {
-                    runCatching { client.smartPlaylists().kinds }.getOrDefault(emptyList())
-                } else {
-                    emptyList()
-                }
-                val tracks = runCatching { client.musicTracks().tracks }.getOrDefault(emptyList())
-                val plan = runCatching { client.musicDevicePlan() }.getOrNull()
                 val context = container.appContext
                 val offered = if (server.configured) {
                     watchPlaylistsFor(
@@ -751,7 +748,7 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
                 WatchMusicPreference.setSelected(context, offered.selected)
                 updateMusic {
                     it.copy(
-                        server = server, smart = smart, tracks = tracks, plan = plan,
+                        server = server,
                         watchPlaylists = offered.playlists,
                         watchSelection = offered.selected,
                         watchSelectionPending = WatchMusicPreference.isPending(context),
@@ -771,7 +768,7 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
                 // when the app was installed on an earlier run — and, when the
                 // server has gone (removed in the web app, say), able to tell
                 // the watch so.
-                if (server.configured) refreshWatchMusicConfig() else signOutWatchMusicConfig()
+                if (!server.configured) signOutWatchMusicConfig() else if (arm) refreshWatchMusicConfig()
             } catch (e: Exception) {
                 updateMusic { it.copy(message = e.message) }
             }
@@ -779,35 +776,50 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
     }
 
     /**
-     * Connect a music server from whatever was typed.
+     * The first half of connecting a music server: is there one at this address?
      *
-     * The address is resolved first — scheme, default port — by asking each
-     * candidate to identify itself, so `music.home` or `10.0.0.5` is enough.
-     * Only then are the credentials sent to the Tracks server, which verifies
-     * them before storing anything.
+     * The address is resolved by asking each candidate — scheme, default port —
+     * to identify itself as a music server, so `music.home` or `10.0.0.5` is
+     * enough. [onResult] gets the address that answered, or null and the reason
+     * none did. Nothing is saved: the credentials have not been typed yet, and
+     * asking for them before anything was known to be listening was the
+     * commonest dead end of the old one-form login.
      */
-    fun connectMusicServer(url: String, username: String, password: String) {
+    fun findMusicServer(url: String, onResult: (found: String?, error: String?) -> Unit) {
         stopMusicScan()
         viewModelScope.launch {
-            updateMusic { it.copy(busy = true, message = "Looking for the server…") }
+            updateMusic { it.copy(busy = true, message = null) }
+            val found = runCatching { MusicServerDiscovery.find(MusicServerDiscovery.candidatesFor(url)) }.getOrNull()
+            updateMusic { it.copy(busy = false) }
+            if (found == null) {
+                onResult(null, "No music server answered at ${url.trim()}. Check the address, or search your network.")
+            } else {
+                onResult(found, null)
+            }
+        }
+    }
+
+    /**
+     * The second half: sign in to the server [findMusicServer] found.
+     *
+     * The credentials go to the Tracks server, which verifies them against the
+     * music server before storing anything — so a failure here means "those
+     * details do not work", not "saved, will break later". [onResult] gets null
+     * on success or the reason.
+     */
+    fun logInMusicServer(url: String, username: String, password: String, onResult: (String?) -> Unit) {
+        viewModelScope.launch {
+            updateMusic { it.copy(busy = true, message = null) }
             try {
-                val found = MusicServerDiscovery.find(MusicServerDiscovery.candidatesFor(url))
-                    ?: throw IllegalStateException("No music server answered at ${url.trim()} — check the address, or find it on your network")
-                updateMusic { it.copy(message = "Found it at $found — checking the login…") }
                 container.client().setMusicServer(
-                    MusicServerRequest(
-                        url = found,
-                        username = username.trim(),
-                        password = password.ifBlank { null },
-                    ),
+                    MusicServerRequest(url = url, username = username.trim(), password = password.ifBlank { null }),
                 )
-                updateMusic { it.copy(busy = false, message = null) }
+                updateMusic { it.copy(busy = false) }
+                onResult(null)
                 loadMusicSetup()
             } catch (e: Exception) {
-                // The server verifies credentials before storing them, so a
-                // failure here means "those details do not work" rather than
-                // "saved, will break later".
-                updateMusic { it.copy(busy = false, message = e.message ?: "Could not connect") }
+                updateMusic { it.copy(busy = false) }
+                onResult(e.message ?: "Could not sign in")
             }
         }
     }
@@ -862,20 +874,6 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
         musicScan?.cancel()
         musicScan = null
         updateMusic { it.copy(scan = null) }
-    }
-
-    fun setSmartPlaylist(kind: String, wanted: Boolean) {
-        viewModelScope.launch {
-            updateMusic { it.copy(busy = true, message = null) }
-            try {
-                val client = container.client()
-                if (wanted) client.importSmartPlaylist(kind) else client.dropSmartPlaylist(kind)
-                updateMusic { it.copy(busy = false) }
-                loadMusicSetup()
-            } catch (e: Exception) {
-                updateMusic { it.copy(busy = false, message = e.message) }
-            }
-        }
     }
 
     /**
@@ -980,6 +978,15 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
         )
     }
 
+    /**
+     * Hand the watch app the current login again — after the music server's
+     * password changed, say. Arms the answer for its ten minutes; the watch
+     * collects it when Tracks Music is next opened.
+     */
+    fun resendWatchMusicLogin() {
+        viewModelScope.launch { refreshWatchMusicConfig() }
+    }
+
     /** Look a song up on the music server, to pick it for the watch. */
     fun searchWatchSongs(query: String) {
         if (query.isBlank()) {
@@ -1040,36 +1047,14 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
         }
     }
 
-    /**
-     * Carry a track, or stop carrying it.
-     *
-     * Optimistic: the row flips immediately and the reload confirms it. A
-     * checkbox that waits for a round trip on a phone with patchy signal feels
-     * broken even when it is working.
-     */
-    fun setTrackCarried(id: Int, carried: Boolean) {
-        updateMusic { state ->
-            state.copy(tracks = state.tracks.map { if (it.id == id) it.copy(loadToDevice = carried) else it })
-        }
-        viewModelScope.launch {
-            try {
-                container.client().setMusicLoad(listOf(id), carried)
-                loadMusicSetup()
-            } catch (e: Exception) {
-                updateMusic { it.copy(message = e.message) }
-                loadMusicSetup()
-            }
-        }
-    }
-
-    /** Forget the music server. Imported tracks stay; they just cannot refetch. */
+    /** Forget the music server, and tell the watch app it has gone. */
     fun disconnectMusicServer() {
         viewModelScope.launch {
             updateMusic { it.copy(busy = true, message = null) }
             try {
                 container.client().clearMusicServer()
                 signOutWatchMusicConfig()
-                updateMusic { it.copy(busy = false, server = null, smart = emptyList(), watchPlaylists = emptyList()) }
+                updateMusic { it.copy(busy = false, server = null, watchPlaylists = emptyList()) }
                 loadMusicSetup()
             } catch (e: Exception) {
                 updateMusic { it.copy(busy = false, message = e.message) }

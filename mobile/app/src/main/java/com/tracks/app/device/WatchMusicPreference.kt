@@ -70,7 +70,7 @@ object WatchMusicPreference {
 
     /**
      * Whether Tracks Music is on the watch, as last seen. Remembered because
-     * asking the watch is a Bluetooth exchange, and the music screen should not
+     * asking the watch is a Bluetooth exchange, and Settings should not
      * offer to send an app that is already there while it waits for one.
      */
     fun isAppOnWatch(context: Context): Boolean = prefs(context).getBoolean(KEY_APP_ON_WATCH, false)

@@ -118,7 +118,7 @@ No Connect IQ Store, no Garmin account, no cable:
    build by the product number the watch reports (`WatchAppBundle`).
 2. The phone pushes it over BLE as `FILETYPE.PRG`
    (`GarminIntegration.installWatchApp`) — from the onboarding Music step, or
-   later from the Music tab.
+   later from Settings › Music.
 3. On first run the app asks the phone who it belongs to by requesting one
    reserved URL, `https://tracks.invalid/ciq/config`, and gets back the music
    server's URL, username and password (`GET /music/server/watch-config` is
@@ -144,7 +144,7 @@ revision is newer than the last one it applied.
   (`WatchConfigRevision`). A phone that never had a server stays at 0 and
   says nothing.
 - The phone hands the password out only for ten minutes after the user did
-  something on its music screen (`WatchAppConfig.ARMED_FOR_MS` — the request
+  something in its music settings (`WatchAppConfig.ARMED_FOR_MS` — the request
   carries no proof of which watch app is asking). Outside that window it
   answers `{"revision", "server": true}` only, and the watch does not count
   that revision as applied: it takes the change the next time it asks inside
@@ -214,7 +214,7 @@ never-played one, capped at 50), and **Picked songs** — single songs chosen
 on the watch by browsing albums, or on the phone by search.
 
 Choose on the watch (Music › Music Providers › Tracks Music) or on the phone
-(Music tab › Playlists on the watch › Send). The phone's selection is an offer
+(Settings › Music › Playlists on the watch › Send). The phone's selection is an offer
 delivered once; whichever screen was touched last wins. Ticking downloads at
 the next sync; un-ticking deletes from the watch immediately, no network
 needed. "Sync now" is the last of the choices, on the charger or off it,

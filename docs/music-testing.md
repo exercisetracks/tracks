@@ -147,7 +147,7 @@ should be listed.
 
 ## Stage 4 — Pairing (the interesting bit)
 
-Connect the music server on the phone's Music tab first (or in the web app).
+Connect the music server in the phone's Settings › Music first (or in the web app).
 Then on the watch: **Music Providers → Tracks Music**.
 
 **Expected:** "Asking phone…", "Signing in…", "Loading…", then a list:

@@ -85,7 +85,7 @@ The builds go into the app as one xz stream plus an index
 MB compressed one by one and about 230 KB together. The phone picks a build by
 the product number the watch sends in its handshake, checks its sha256, and
 pushes it over Bluetooth (`WatchManager.installMusicApp` →
-`GarminIntegration.installWatchApp`), from onboarding or the Music tab. A watch
+`GarminIntegration.installWatchApp`), from onboarding or Settings › Music. A watch
 with no build is refused by name rather than sent the wrong one.
 
 **Only the fēnix 6X Pro has run a build on hardware.** The others compile

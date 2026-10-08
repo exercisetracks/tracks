@@ -73,7 +73,7 @@ import com.tracks.app.ui.map.MapScreen
 import com.tracks.app.ui.map.MapToolsViewModel
 import com.tracks.app.ui.map.MapViewModel
 import com.tracks.app.ui.map.RegionsViewModel
-import com.tracks.app.ui.music.MusicScreen
+import com.tracks.app.ui.music.MusicSettings
 import com.tracks.app.ui.plan.PlanViewModel
 import com.tracks.app.ui.plan.TrainingScreen
 import com.tracks.app.ui.race.RacePlansScreen
@@ -483,9 +483,6 @@ fun TracksNavHost(
                     },
                 )
             }
-            composable(Destination.Music.route) {
-                MusicScreen(vm)
-            }
             composable(Destination.Map.route) {
                 // Held by the nav entry, so panning away to another tab and
                 // back does not refetch a 200 KB style and the whole heatmap.
@@ -628,6 +625,7 @@ fun TracksNavHost(
                         tourVm.restart()
                         navigateTo(Destination.Dashboard)
                     },
+                    music = { MusicSettings(vm, state.music) },
                 )
             }
         }
@@ -681,9 +679,7 @@ private fun TracksDrawer(
                 modifier = Modifier.padding(start = 16.dp, top = 24.dp, bottom = 16.dp),
             )
 
-            // Music is the watch's music (the Tracks Music watch app, or files
-            // over USB); there is nothing on that page for a phone alone.
-            Destination.entries.filter { hasDevice || it != Destination.Music }.forEach { destination ->
+            Destination.entries.forEach { destination ->
                 // Settings sits under a rule at the bottom of the list, as it
                 // does in the browser: it is the one entry that is not a place
                 // you go to look at your training.

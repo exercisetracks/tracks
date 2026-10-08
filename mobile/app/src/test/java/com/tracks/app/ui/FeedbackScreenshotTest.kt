@@ -10,6 +10,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.dp
 import com.github.takahirom.roborazzi.captureRoboImage
@@ -68,6 +72,32 @@ class FeedbackScreenshotTest {
 
     @Test
     fun music_account_dark() = shoot("music_account_dark", ThemeMode.Dark) { musicAccount() }
+
+    @Composable
+    private fun musicConnect() = androidx.compose.material3.Surface(
+        shape = MaterialTheme.shapes.extraLarge,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        modifier = Modifier.padding(16.dp),
+    ) {
+        com.tracks.app.ui.music.MusicServerConnectSteps(
+            com.tracks.app.MusicUiState(), onSearch = {},
+            onFind = { _, done -> done("https://music.example.com", null) },
+            onLogIn = { _, _, _, _ -> }, onDone = {},
+            modifier = Modifier.padding(24.dp),
+        )
+    }
+
+    @Test
+    fun music_connect_address_light() = shoot("music_connect_address_light", ThemeMode.Light) { musicConnect() }
+
+    @Test
+    fun music_connect_signin_dark() {
+        shoot("music_connect_signin_dark", ThemeMode.Dark) { musicConnect() }
+        compose.onNodeWithText("Server address").performTextInput("music.example.com")
+        compose.onNodeWithText("Next").performClick()
+        compose.mainClock.advanceTimeBy(1_000)
+        compose.onRoot().captureRoboImage("build/outputs/roborazzi/music_connect_signin_dark.png")
+    }
 
     @Test
     fun sync_popup_dark() = shoot("sync_popup_dark", ThemeMode.Dark) {

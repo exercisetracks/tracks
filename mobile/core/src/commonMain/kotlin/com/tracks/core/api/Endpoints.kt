@@ -25,25 +25,13 @@ object Endpoints {
     const val LOGOUT = "/auth/logout"
     const val CHANGE_PASSWORD = "/users/me/password"
 
-    // Music. The library and the music-server connection are ordinary authed
-    // paths; /music/ciq/* is what the *watch* calls with its own scoped token,
-    // and the phone only ever touches the pairing end of it.
-    const val MUSIC_TRACKS = "/music/tracks"
-    const val MUSIC_TRACKS_LOAD = "/music/tracks/load"
-    const val MUSIC_DEVICE_PLAN = "/music/device-plan"
+    // Music. The music-server connection is an ordinary authed path (the USB
+    // library is the web app's alone); /music/ciq/* is what the *watch* calls
+    // with its own scoped token, and the phone only touches the pairing end.
     const val MUSIC_SERVER = "/music/server"
-    const val MUSIC_SMART = "/music/server/smart"
-    const val MUSIC_SMART_IMPORT = "/music/server/smart/{kind}/import"
-    const val MUSIC_SMART_BY_KIND = "/music/server/smart/{kind}"
     const val MUSIC_REMOTE_PLAYLISTS = "/music/server/playlists"
     const val MUSIC_REMOTE_SEARCH = "/music/server/search"
-    const val MUSIC_PLAYLIST_IMPORT = "/music/server/playlists/{playlist_id}/import"
     const val MUSIC_WATCH_CONFIG = "/music/server/watch-config"
-
-    fun musicSmartImport(kind: String) = "/music/server/smart/${encodePathSegment(kind)}/import"
-    fun musicSmartByKind(kind: String) = "/music/server/smart/${encodePathSegment(kind)}"
-    fun musicPlaylistImport(id: String) = "/music/server/playlists/${encodePathSegment(id)}/import"
-
 
     // The replica protocol (spec/sync.yaml, "Wire").
     const val SYNC_PUSH = "/sync/push"

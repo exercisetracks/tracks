@@ -113,6 +113,12 @@ fun SettingsScreen(
     tutorialEnabled: Boolean,
     onTutorialEnabled: (Boolean) -> Unit,
     onRestartTutorial: () -> Unit,
+    /**
+     * The Music card ([com.tracks.app.ui.music.MusicSettings]), which was a
+     * page of its own. A slot because it runs on the main view model, which
+     * this screen otherwise does without.
+     */
+    music: @Composable () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -160,6 +166,9 @@ fun SettingsScreen(
         // Its own card under the watch: which notifications reach the wrist
         // is a subject of its own, with its own sheets.
         if (hasDevice) NotificationRelayCard()
+        // Music is for the watch, and its login is kept by the Tracks server
+        // (it is what hands the watch app its credentials), so it needs both.
+        if (hasDevice && linked) music()
 
         if (profile.loaded) {
             SettingsCard("Privacy & connectivity") {

@@ -59,7 +59,6 @@ object Tours {
         Destination.Mobility -> "flexibility"
         Destination.RacePlans -> "race-plans"
         Destination.Map -> "maps"
-        Destination.Music -> "music"
         Destination.Settings -> "settings"
     }
 
@@ -405,27 +404,6 @@ object Tours {
                 "Long-press anywhere to start a route there — it snaps to trails. Keep long-pressing to " +
                     "add points, then save it to your tracks. A plain tap on the map shows what is there, " +
                     "with the weather.",
-            ),
-        ),
-
-        "music" to listOf(
-            TourStep(
-                "Your music server",
-                "Connect a music server and the watch can play from it directly — no cable, no " +
-                    "uploading.",
-                anchor = "music-server",
-            ),
-            TourStep(
-                "The watch app",
-                "Tracks Music is sent to the watch straight from this phone, then signs in to your " +
-                    "music server by itself. Find it on the watch under Music › Music Providers.",
-                anchor = "music-watch",
-            ),
-            TourStep(
-                "The USB library",
-                "Files uploaded in the web app, carried over the cable. Choose what goes on the watch " +
-                    "here.",
-                anchor = "music-library",
             ),
         ),
 

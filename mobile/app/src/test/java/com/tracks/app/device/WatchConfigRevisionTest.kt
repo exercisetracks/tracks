@@ -25,9 +25,9 @@ class WatchConfigRevisionTest {
 
     @Test
     fun `the revision does not move while the settings stay the same`() {
-        // The phone re-arms its answer every time the music screen opens. If
+        // The phone re-arms its answer whenever the user re-sends the login. If
         // that moved the number, the watch would take the phone's account over
-        // one typed on the wrist on every visit.
+        // one typed on the wrist every time.
         val first = WatchConfigRevision.reconcile(State(), login, now)
 
         val again = WatchConfigRevision.reconcile(first, login, now + 60_000)
