@@ -149,8 +149,8 @@ fun workoutFilename(workout: PlannedWorkout): String =
  * **must be stable across runs**: it is half the key the watch matches a
  * calendar entry to a workout file by, and it is also what makes the bundle's
  * bytes — and so its fingerprint — the same on a sync that changed nothing. A
- * fresh timestamp each time would rebuild the calendar every sync, and since
- * that batch import reboots the watch, it would reboot the watch every sync.
+ * fresh timestamp each time would rebuild the calendar every sync, resending
+ * every workout file on every sync for nothing.
  *
  * A workout whose steps cannot be encoded is left out of *both* halves rather
  * than only the file half: a schedule naming a file that is never sent is a
@@ -302,8 +302,8 @@ internal fun civilFromDays(days: Long): String {
  * Deliberately a pure function of synced rows rather than a server fetch with
  * a cache: the bytes of every workout file depend on it, and a context that
  * differed with and without signal would change those bytes, which changes
- * the schedule's digest, which resends it — and a schedule landing in
- * `GARMIN/NewFiles` reboots the watch. Read from rows every replica shares, it
+ * the schedule's digest, which resends the whole calendar for nothing. Read
+ * from rows every replica shares, it
  * is the same answer online and off, here and on the web.
  *
  * The goal chosen mirrors the server's `_plan_identity` — the newest active

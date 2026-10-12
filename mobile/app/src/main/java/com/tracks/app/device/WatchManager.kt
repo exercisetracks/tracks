@@ -926,9 +926,8 @@ class WatchManager(
      *    timestamp in different places — the server in a column, the phone in
      *    its own preferences. Alternating between them would produce different
      *    bytes for an unchanged plan, so the fingerprint would differ, so the
-     *    bundle would be resent, so **the watch would reboot every time the
-     *    signal came and went**. Encoding here always is what keeps the steady
-     *    state quiet.
+     *    bundle would be resent **every time the signal came and went**.
+     *    Encoding here always is what keeps the steady state quiet.
      *
      * The server is still the source of the *plan*: the cache is refreshed from
      * it whenever there is a network, and read as it stands when there is not.
@@ -952,7 +951,7 @@ class WatchManager(
             today = java.time.LocalDate.now().toString(),
             context = coaching,
             // Assigned once and kept. A fresh timestamp per run would change
-            // every file, and so reboot the watch, on every sync.
+            // every file, and so resend the whole calendar, on every sync.
             fitTimeCreated = { id -> stamps.getOrPut(id) { now } },
             nowMillis = now,
         )
@@ -970,12 +969,11 @@ class WatchManager(
 
         // Nothing to do if the watch already has exactly this calendar.
         //
-        // This is not an optimisation, it is the difference between a sync that
-        // disturbs the watch and one that does not. The schedule is a statement
-        // of the whole calendar rather than a queued item, so it used to be
-        // rebuilt and resent on every single run -- and now that it travels
-        // through GARMIN/NewFiles, every single run rebooted the watch. In the
-        // steady state, which is most runs, there is nothing new to say.
+        // The schedule is a statement of the whole calendar rather than a queued
+        // item, so it used to be rebuilt and resent -- schedule and every
+        // workout it names -- on every single run. In the steady state, which
+        // is most runs, there is nothing new to say, and at the watch's 23-byte
+        // MTU saying it again costs real time.
         //
         // Compared against what the watch last *accepted*, and written only
         // after it accepts: the same ordering rule the upload side follows, for
@@ -1087,7 +1085,7 @@ class WatchManager(
             // Counted from what was pushed, not from what the server was told
             // about: a workout the server has not seen yet is delivered to the
             // watch just the same, and gating the digest on the report would
-            // mean re-pushing -- and so rebooting -- on every sync until it
+            // mean re-pushing the whole calendar on every sync until it
             // synced.
             if (pushed == bundle.workouts.size) {
                 prefs().edit().putString(KEY_SCHEDULE_DIGEST, digest).apply()
@@ -1447,12 +1445,11 @@ class WatchManager(
          * TransferCompleteResponse Garmin Connect sends (see
          * FileSyncServiceHandler.handleTransferComplete). False forces the whole
          * bundle down the legacy CREATE_FILE path into GARMIN/NewFiles, which is
-         * measured to build the calendar but reboots the watch on import.
+         * measured to build the calendar.
          *
          * **False, and measured.** Tested 2026-08-28 with the burst terminator in
          * place: two syncs, both pushing all 21 files over FileSyncService, and
-         * the watch's Schedule.fit read back unchanged both times -- a manual
-         * reboot afterwards did not help either. The terminator itself works (the
+         * the watch's Schedule.fit read back unchanged both times. The terminator itself works (the
          * watch answers 20 {1:1} in 103 ms instead of timing out after 30 s), so
          * the session close was not what the calendar was missing.
          *
@@ -1537,7 +1534,7 @@ private fun WatchWeather.toReport() = WeatherReport(
  *
  * Top-level and internal rather than a private method, so it can be tested
  * without standing up a WatchManager and an Android Context — it is the guard
- * that decides whether the watch gets rebooted, and it is worth a test.
+ * that decides whether the whole calendar is resent, and it is worth a test.
  */
 internal fun scheduleDigest(schedule: ByteArray, workouts: List<WatchPushFile>): String {
     val md = java.security.MessageDigest.getInstance("SHA-256")

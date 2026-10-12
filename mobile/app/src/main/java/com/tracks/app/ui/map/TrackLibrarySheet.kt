@@ -210,10 +210,12 @@ fun TrackLibrarySheet(
 /**
  * Which half of the list to show.
  *
- * "On the watch" deliberately includes things merely queued for it. Somebody
- * checking this before walking out of the door is asking "will I have this with
- * me", and a queued track answers yes — the caption on the row is where the
- * distinction between queued and carried belongs.
+ * "On the watch" is what the watch has confirmed it holds — read out of the
+ * watch's own collection, not assumed from a transfer (see
+ * `com.tracks.device.garmin.explore.ExploreSession`). That includes a track
+ * still coming off, because it is still there. It excludes tracks once pulled
+ * *from* the watch: those were a snapshot of an earlier watch, and listing
+ * them here filled the tab with courses that had long since gone.
  */
 enum class Scope(val label: String) {
     Everything("Everything"),
@@ -221,10 +223,10 @@ enum class Scope(val label: String) {
     ;
 
     fun includes(course: CourseSummary): Boolean =
-        this == Everything || course.loadToDevice || course.isExternal
+        this == Everything || (!course.isExternal && course.deviceStatus in setOf("on_device", "pending_remove"))
 
     fun includes(waypoint: Waypoint): Boolean =
-        this == Everything || waypoint.loadToDevice || waypoint.onWatch
+        this == Everything || waypoint.onWatch
 
     val emptyTracks: String
         get() = when (this) {
@@ -295,8 +297,9 @@ private fun Empty(text: String) {
 @Composable
 private fun CourseRow(course: CourseSummary, sprite: SpriteSheet?, actions: LibraryActions) {
     var editing by remember { mutableStateOf(false) }
+    var picking by remember { mutableStateOf(false) }
 
-    Column {
+    Column(verticalArrangement = Arrangement.spacedBy(ROW_GAP)) {
         ItemHeader(
             color = course.color,
             icon = null,
@@ -308,9 +311,27 @@ private fun CourseRow(course: CourseSummary, sprite: SpriteSheet?, actions: Libr
                 if (com.tracks.app.ui.components.LocalHasDevice.current) append(" · ${deviceLabel(course)}")
             },
             expanded = editing,
-            onToggle = { editing = !editing },
+            // Opening a track is looking at it: the map goes there at once,
+            // which is what the magnifier button used to be for.
+            onToggle = {
+                editing = !editing
+                if (editing) actions.onCourseShow(course)
+            },
+            onRename = { actions.onCourseRename(course, it) },
+            onColor = { picking = true },
         )
-        if (editing) CourseActions(course, actions)
+        // The name is not repeated below the header: the header's own name is
+        // the editable one while the row is open.
+        if (editing) CourseActions(course, actions, withName = false)
+    }
+
+    if (picking) {
+        ColorPickerDialog(
+            current = course.color,
+            title = "Track colour",
+            onPick = { actions.onCourseColor(course, it) },
+            onDismiss = { picking = false },
+        )
     }
 }
 
@@ -349,22 +370,19 @@ internal fun CourseActions(
             }
         }
         ActionRow(
-            // A course discovered on the watch is already there and Tracks did
-            // not author its file; offering to send it back would be a no-op
-            // wearing a convincing button. One drawn or imported offline and
-            // not yet saved is the same story from the other end: the watch
-            // push list lives on the server, so there is nothing to send
-            // until the server has heard of this track at all.
+            // One button, whose job follows whether Tracks wants the track on
+            // the watch. Reliable now that "on the watch" is the watch's own
+            // word: the caption says whether it has confirmed yet.
             //
-            // Not disabled once it is believed on the watch: that belief is
-            // only that a transfer finished, and the watch has accepted a
-            // course and kept nothing. Sending again is the way out of that.
-            canSend = course.id >= 0 && !course.isExternal,
-            canRemove = course.id >= 0 && (course.loadToDevice || course.isExternal),
+            // None for a track pulled off the watch: it is in no collection
+            // Tracks owns, so Tracks can neither send it nor take it off. None
+            // either for one not yet saved: there is no id to put on the watch.
+            onWatch = course.loadToDevice,
+            canToggle = course.id >= 0 && !course.isExternal,
             onSend = { actions.onCourseSendNow(course) },
             onRemove = { actions.onCourseRemove(course) },
-            onShow = { actions.onCourseShow(course) },
             onDelete = { actions.onCourseDelete(course) },
+            deleteQuestion = if (course.loadToDevice) "Delete from Tracks and the watch?" else "Delete for good?",
         )
     }
 
@@ -381,8 +399,9 @@ internal fun CourseActions(
 @Composable
 private fun WaypointRow(waypoint: Waypoint, sprite: SpriteSheet?, actions: LibraryActions) {
     var editing by remember { mutableStateOf(false) }
+    var picking by remember { mutableStateOf(false) }
 
-    Column {
+    Column(verticalArrangement = Arrangement.spacedBy(ROW_GAP)) {
         ItemHeader(
             color = waypoint.color,
             icon = waypoint.icon,
@@ -390,9 +409,23 @@ private fun WaypointRow(waypoint: Waypoint, sprite: SpriteSheet?, actions: Libra
             name = waypoint.name,
             caption = deviceLabel(waypoint).takeIf { com.tracks.app.ui.components.LocalHasDevice.current }.orEmpty(),
             expanded = editing,
-            onToggle = { editing = !editing },
+            onToggle = {
+                editing = !editing
+                if (editing) actions.onWaypointShow(waypoint)
+            },
+            onRename = { actions.onWaypointRename(waypoint, it) },
+            onColor = { picking = true },
         )
-        if (editing) WaypointActions(waypoint, sprite, actions)
+        if (editing) WaypointActions(waypoint, sprite, actions, withName = false)
+    }
+
+    if (picking) {
+        ColorPickerDialog(
+            current = waypoint.color,
+            title = "Place colour",
+            onPick = { actions.onWaypointStyle(waypoint, it, null) },
+            onDismiss = { picking = false },
+        )
     }
 }
 
@@ -429,14 +462,13 @@ internal fun WaypointActions(
             actions.onWaypointStyle(waypoint, null, it)
         }
         ActionRow(
-            // See the note on the track's own [ActionRow]: nothing local can
-            // be pushed until the server knows it exists.
-            canSend = waypoint.id >= 0 && !waypoint.loadToDevice,
-            canRemove = waypoint.id >= 0 && (waypoint.loadToDevice || waypoint.onWatch),
+            // See the note on the track's own [ActionRow].
+            onWatch = waypoint.loadToDevice,
+            canToggle = waypoint.id >= 0,
             onSend = { actions.onWaypointSendNow(waypoint) },
             onRemove = { actions.onWaypointRemove(waypoint) },
-            onShow = { actions.onWaypointShow(waypoint) },
             onDelete = { actions.onWaypointDelete(waypoint) },
+            deleteQuestion = if (waypoint.loadToDevice) "Delete from Tracks and the watch?" else "Delete for good?",
         )
     }
 
@@ -466,15 +498,21 @@ private fun ItemHeader(
     caption: String,
     expanded: Boolean,
     onToggle: () -> Unit,
+    /** While open, the name itself is the rename control, so it is not shown twice. */
+    onRename: ((String) -> Unit)? = null,
+    /** While open, the marker is the colour control. */
+    onColor: (() -> Unit)? = null,
 ) {
     Row(
         Modifier.fillMaxWidth().clickable(onClick = onToggle).padding(vertical = 3.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Marker(color = color, icon = icon, sprite = sprite)
+        Marker(color = color, icon = icon, sprite = sprite, onClick = onColor.takeIf { expanded })
         Column(Modifier.weight(1f)) {
-            Text(
+            if (expanded && onRename != null) {
+                EditableName(name = name, style = MaterialTheme.typography.bodyMedium, onRename = onRename)
+            } else Text(
                 name,
                 style = MaterialTheme.typography.bodyMedium,
                 maxLines = 1,
@@ -564,9 +602,11 @@ internal fun Marker(
  */
 internal fun deviceLabel(course: CourseSummary): String = when {
     course.id < 0 -> "not yet saved"
-    course.isExternal -> "from the watch"
+    // Pulled off a watch at some point: a copy, not a statement about what the
+    // watch holds now.
+    course.isExternal -> "imported from a watch"
     course.deviceStatus == "on_device" -> "on the watch"
-    course.deviceStatus == "pending_upload" -> "queued"
+    course.deviceStatus == "pending_upload" -> "waiting for the watch"
     course.deviceStatus == "pending_remove" -> "coming off"
     else -> "not on the watch"
 }
@@ -575,7 +615,7 @@ internal fun deviceLabel(waypoint: Waypoint): String = when {
     waypoint.id < 0 -> "not yet saved"
     waypoint.onWatch && waypoint.loadToDevice -> "on the watch"
     waypoint.onWatch -> "coming off"
-    waypoint.loadToDevice -> "queued"
+    waypoint.loadToDevice -> "waiting for the watch"
     else -> "not on the watch"
 }
 
@@ -589,53 +629,43 @@ internal fun deviceLabel(waypoint: Waypoint): String = when {
  */
 @Composable
 private fun ActionRow(
-    canSend: Boolean,
-    canRemove: Boolean,
+    /** Whether Tracks wants this on the watch — decides what the one button does. */
+    onWatch: Boolean,
+    canToggle: Boolean,
     onSend: () -> Unit,
     onRemove: () -> Unit,
-    onShow: () -> Unit,
     onDelete: () -> Unit,
+    deleteQuestion: String,
 ) {
     var confirming by remember { mutableStateOf(false) }
 
     Row(
         Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (confirming) {
-            Text(
-                "Delete for good?",
-                Modifier.weight(1f),
-                style = MaterialTheme.typography.labelMedium,
-            )
-            NeutralButton("Keep", onClick = { confirming = false }, small = true)
-            DangerButton("Delete", onClick = { confirming = false; onDelete() }, small = true)
+            Text(deleteQuestion, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+            NeutralButton("Keep", onClick = { confirming = false })
+            DangerButton("Delete", onClick = { confirming = false; onDelete() })
             return@Row
         }
 
-        // "Send" and "Remove" alone left the destination to be inferred,
-        // next to a Delete button that removes it from Tracks entirely —
-        // three buttons where two act on the watch and one does not.
-        if (com.tracks.app.ui.components.LocalHasDevice.current) {
-            TonalButton("Send to device", onClick = onSend, modifier = Modifier.weight(1f), enabled = canSend, small = true)
-            NeutralButton("Remove from device", onClick = onRemove, modifier = Modifier.weight(1f), enabled = canRemove, small = true)
+        if (com.tracks.app.ui.components.LocalHasDevice.current && canToggle) {
+            if (onWatch) {
+                NeutralButton("Remove from device", onClick = onRemove, modifier = Modifier.weight(1f))
+            } else {
+                TonalButton("Send to device", onClick = onSend, modifier = Modifier.weight(1f))
+            }
         } else {
             Spacer(Modifier.weight(1f))
         }
-        IconButton(onClick = onShow, modifier = Modifier.size(32.dp)) {
-            Icon(
-                Icons.Filled.Search,
-                contentDescription = "Show on map",
-                modifier = Modifier.size(17.dp),
-            )
-        }
-        IconButton(onClick = { confirming = true }, modifier = Modifier.size(32.dp)) {
+        IconButton(onClick = { confirming = true }, modifier = Modifier.size(44.dp)) {
             Icon(
                 Icons.Filled.Delete,
                 contentDescription = "Delete",
                 tint = MaterialTheme.colorScheme.error,
-                modifier = Modifier.size(17.dp),
+                modifier = Modifier.size(24.dp),
             )
         }
     }

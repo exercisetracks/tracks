@@ -12,10 +12,9 @@ import org.junit.Test
 /**
  * Which things count as being "on the watch".
  *
- * The question somebody is really asking when they open that view is "will I
- * have this with me", so a track that is queued but not yet transferred belongs
- * in the list — the row's own caption is where queued and carried are told
- * apart. Filtering it out would answer a different, less useful question.
+ * What the watch has confirmed it holds, read from its own collection — not
+ * what was asked for, and not tracks once pulled off a watch. The tab used to
+ * count both, and filled with courses that had long since left the watch.
  */
 class LibraryScopeTest {
 
@@ -44,14 +43,20 @@ class LibraryScopeTest {
     }
 
     @Test
-    fun `something merely queued still counts as coming with you`() {
-        assertTrue(Scope.OnTheWatch.includes(course(loadToDevice = true)))
-        assertTrue(Scope.OnTheWatch.includes(waypoint(loadToDevice = true)))
+    fun `something asked for but not yet confirmed is not on the watch`() {
+        assertFalse(Scope.OnTheWatch.includes(course(loadToDevice = true, status = "pending_upload")))
+        assertFalse(Scope.OnTheWatch.includes(waypoint(loadToDevice = true)))
     }
 
     @Test
-    fun `a course found on the watch counts even though we never sent it`() {
-        assertTrue(Scope.OnTheWatch.includes(course(external = true)))
+    fun `a confirmed course is on the watch, and stays listed while it comes off`() {
+        assertTrue(Scope.OnTheWatch.includes(course(loadToDevice = true, status = "on_device")))
+        assertTrue(Scope.OnTheWatch.includes(course(status = "pending_remove")))
+    }
+
+    @Test
+    fun `a course once pulled off a watch is not evidence of what is on it now`() {
+        assertFalse(Scope.OnTheWatch.includes(course(external = true)))
     }
 
     @Test
@@ -64,10 +69,10 @@ class LibraryScopeTest {
     @Test
     fun `the summary counts what the current view shows`() {
         val summary = Scope.OnTheWatch.summary(
-            listOf(course(loadToDevice = true), course()),
+            listOf(course(loadToDevice = true, status = "on_device"), course()),
             listOf(waypoint(onWatch = true), waypoint(loadToDevice = true), waypoint()),
         )
-        assertEquals("1 track, 2 waypoints on the watch", summary)
+        assertEquals("1 track, 1 waypoint on the watch", summary)
     }
 
     @Test
@@ -81,7 +86,7 @@ class LibraryScopeTest {
 
     @Test
     fun `one of something is not one of somethings`() {
-        val summary = Scope.OnTheWatch.summary(listOf(course(loadToDevice = true)), emptyList())
+        val summary = Scope.OnTheWatch.summary(listOf(course(loadToDevice = true, status = "on_device")), emptyList())
         assertTrue(summary.startsWith("1 track, 0 waypoints"))
     }
 }

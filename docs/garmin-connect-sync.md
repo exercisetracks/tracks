@@ -73,7 +73,7 @@ Events added to the Connect *calendar* (rather than a training plan) did not
 appear on the watch. Connect sent nothing that would carry them.
 
 **Why this matters for Tracks.** Tracks sends its calendar over the legacy
-NewFiles path, which works but reboots the watch on every import. Earlier notes
+NewFiles path, which works. Earlier notes
 concluded that a `FIT_TYPE_7` over FileSyncService is acknowledged and dropped.
 Connect's sequence differs from what Tracks tried in two ways, and both are
 worth testing:

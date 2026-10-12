@@ -115,8 +115,8 @@ class SchedulePushPlanTest {
 
     @Test
     fun `the same plan builds the same bytes twice`() {
-        // The fingerprint that stops a sync rebooting the watch is taken over
-        // these bytes, so an unstable encoder would reboot it on every run.
+        // The fingerprint that stops a sync resending the calendar is taken over
+        // these bytes, so an unstable encoder would resend it on every run.
         val plan = listOf(workout(21, "2026-08-30"), workout(22, "2026-09-02"))
         val first = buildScheduleBundle(
             plan, "2026-08-29", context, fixedTimes, 1_788_000_000_000L,

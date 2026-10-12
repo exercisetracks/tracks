@@ -39,16 +39,15 @@ import kotlinx.coroutines.sync.withLock
  * [com.tracks.core.local.LocalFiles.add], the same importer the server runs, so
  * what the phone shows is final, not a placeholder for the server's copy.
  *
- * Push went from first to last on 2026-08-28. It was first on the argument that
- * a missing workout is more noticeable than a missing upload, and the pull would
- * retry next time. That stopped being true when the training calendar began
- * going out through `GARMIN/NewFiles`: importing that batch reboots the watch,
- * so *every* run died at the same point and the pull never happened at all.
+ * Push went from first to last on 2026-08-28, on the belief that importing a
+ * calendar batch restarts the watch and so ends the run. That belief was wrong
+ * (the watch never restarts; corrected 2026-10-12), but push-last stands on its
+ * own: recordings are the irreplaceable data, so they come off first.
  *
  * Upload also has to precede push, for a reason that is easy to tidy back into a
  * bug: a pulled file is confirmed — the watch told it may reclaim its copy —
  * only once the server holds the bytes, so confirming needs the link *and* the
- * network. Push last means a reboot costs nothing, because nothing follows it.
+ * network.
  *
  * Each phase says what it needs and is skipped rather than failed when it cannot
  * have it, so a sync with no signal still empties the watch.
@@ -142,19 +141,16 @@ class WatchSyncRunner(private val container: AppContainer) {
      *
      * **Pull before push.** Recordings are the only irreplaceable data in the
      * system; everything else can be rebuilt from the server or the phone. They
-     * come off the watch first, always. This used to be the other way round,
-     * which was defensible until the training calendar started going out through
-     * `GARMIN/NewFiles` -- importing that batch reboots the watch, so a push
-     * first meant the link was gone before the pull ever ran and activities
-     * simply never left the device.
+     * come off the watch first, always, so a long or failing push can never
+     * stand between a recording and the server.
      *
      * **Upload before push**, for the same reason and a subtler one:
      * [WatchManager.uploadPulled] only lets the watch reclaim a file once the
      * server has the bytes, so confirming needs the link *and* the network. A
-     * push that reboots the watch would strand every pulled file unconfirmed, to
-     * be pulled again next run.
+     * link lost during a push would strand every pulled file unconfirmed, to be
+     * pulled again next run.
      *
-     * Push therefore goes last, where losing the link costs nothing.
+     * Push therefore goes last.
      */
     private suspend fun runLocked(): Outcome {
         val phases = mutableListOf<PhaseReport>()
@@ -165,10 +161,8 @@ class WatchSyncRunner(private val container: AppContainer) {
         phases += PhaseReport(Phase.CONNECT, RAN)
 
         // ── pull ── needs the link
-        var pullRan = false
         val pulled = try {
             container.watch.pullAll().also {
-                pullRan = true
                 phases += PhaseReport(Phase.PULL, RAN, "${it.size} file(s)")
                 Log.i(TAG, "pulled ${it.size} file(s): ${it.groupingBy { f -> f.kind }.eachCount()}")
             }
@@ -239,32 +233,20 @@ class WatchSyncRunner(private val container: AppContainer) {
 
         // ── push ── needs the link, and today a server to build the files
         //
-        // Last on purpose: a schedule landing in NewFiles reboots the watch, so
-        // this phase may end the connection. Nothing after it needs one.
+        // Last on purpose: see the class doc.
         val pushed = runCatching { container.watch.pushFromServer(container.client()) }
             .onFailure { Log.w(TAG, "push to watch failed", it) }
             .also {
                 phases += if (it.isSuccess) {
                     PhaseReport(Phase.PUSH, RAN)
                 } else {
-                    // A disconnect here is the signature of a *successful*
-                    // NewFiles import, not a failure -- see AGENTS.md. Recorded
-                    // as such so the UI stops calling a working sync broken.
+                    // A disconnect here is a lost link, not a sign of success.
+                    // It used to be reported as "watch restarted after the
+                    // import", on the belief that a calendar import restarts the
+                    // watch; it does not (corrected 2026-10-12).
                     val cause = it.exceptionOrNull()
                     if (cause is CancellationException) throw cause
-                    // A disconnect here reads as success only if the link was
-                    // healthy up to this point: importing a NewFiles batch
-                    // reboots the watch, so losing it during the push is the
-                    // signature of one that worked. If the pull had already
-                    // failed the link was gone before we started, and calling
-                    // that a successful push would be a lie the user acts on.
-                    if (cause is com.tracks.device.garmin.GarminIntegration.DisconnectedException
-                        && pullRan
-                    ) {
-                        PhaseReport(Phase.PUSH, RAN, "watch restarted after the import")
-                    } else {
-                        PhaseReport(Phase.PUSH, FAILED, cause?.message)
-                    }
+                    PhaseReport(Phase.PUSH, FAILED, cause?.message)
                 }
             }
             .getOrNull()

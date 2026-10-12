@@ -11,8 +11,8 @@ training_plan.sync and courses_api.sync.
 
 Each pushable item carries the on-device destination folder so the frontend
 stays protocol-dumb:
-  workouts / race plans / schedule -> GARMIN/NewFiles (watch ingests on reboot
-                                      or activity start)
+  workouts / race plans / schedule -> GARMIN/NewFiles (the watch imports the
+                                      batch on its own; no restart needed)
   courses                          -> GARMIN/Courses
   waypoints                        -> GARMIN/Locations (one Locations.fit for
                                       every saved place, not one per point)

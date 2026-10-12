@@ -8,15 +8,14 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 
 /**
- * The guard that decides whether a sync reboots the watch.
+ * The guard that decides whether a sync resends the whole calendar.
  *
- * A training calendar reaches the watch through `GARMIN/NewFiles`, and
- * importing that batch restarts the device. The schedule is a statement of the
- * whole calendar rather than a queued item, so it is rebuilt every run and would
- * be resent every run — meaning every sync would reboot the watch and take the
- * link away before anything else could happen. This digest is what makes the
- * steady state quiet, so the two ways of getting it wrong both matter: too eager
- * and the watch restarts for nothing, too lazy and a plan change never arrives.
+ * The schedule is a statement of the whole calendar rather than a queued item,
+ * so it is rebuilt every run and would be resent every run — the schedule and
+ * every workout it names, slowly, at the watch's 23-byte MTU. This digest is
+ * what makes the steady state quiet, so the two ways of getting it wrong both
+ * matter: too eager and the calendar is resent for nothing, too lazy and a
+ * plan change never arrives.
  *
  * Now that the phone builds the files itself, the digest covers the bytes it
  * built rather than the base64 a server sent — which is the same guarantee, one
@@ -68,7 +67,7 @@ class ScheduleDigestTest {
 
     @Test
     fun `the ordering of the workouts is not a change`() {
-        // Otherwise a reordered plan would reboot the watch for nothing.
+        // Otherwise a reordered plan would resend the whole calendar for nothing.
         val a = scheduleDigest(schedule("SCHED"), listOf(workout("a.fit", "AAA"), workout("b.fit", "BBB")))
         val b = scheduleDigest(schedule("SCHED"), listOf(workout("b.fit", "BBB"), workout("a.fit", "AAA")))
         assertEquals(a, b)

@@ -116,6 +116,10 @@ fun MapScreen(
     var style by remember { mutableStateOf<org.maplibre.android.maps.Style?>(null) }
     var showDownloads by remember { mutableStateOf(false) }
     var showLibrary by remember { mutableStateOf(false) }
+    // The library sheet's share of the screen, for framing above it.
+    val libraryInsetPx = with(androidx.compose.ui.platform.LocalDensity.current) {
+        (androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp.dp * LIBRARY_SHEET_FRACTION).roundToPx()
+    }
     var showMenu by remember { mutableStateOf(false) }
     // Selection mode is its own thing rather than part of the sheet: the whole
     // point of a drag box is seeing the map under it, which a modal sheet
@@ -417,7 +421,16 @@ fun MapScreen(
                     val ready = map ?: return@LaunchedEffect
                     when (val target = tools.focus) {
                         null -> Unit
-                        is Focus.Point -> ready.animateCamera(
+                        // With the library open, framed into the strip of map
+                        // above it: opening a row there zooms to it, and a
+                        // track centred behind the sheet is a track not shown.
+                        is Focus.Point -> if (showLibrary) frameCamera(
+                            ready,
+                            listOf(LatLng(target.lat, target.lng)),
+                            paddingPx = FOCUS_PADDING_PX,
+                            maxZoom = SEARCH_RESULT_ZOOM,
+                            bottomPx = libraryInsetPx,
+                        ) else ready.animateCamera(
                             CameraUpdateFactory.newLatLngZoom(
                                 LatLng(target.lat, target.lng), SEARCH_RESULT_ZOOM,
                             )
@@ -437,6 +450,7 @@ fun MapScreen(
                             ),
                             paddingPx = FOCUS_PADDING_PX,
                             maxZoom = CONTEXT_ZOOM,
+                            bottomPx = if (showLibrary) libraryInsetPx else FOCUS_PADDING_PX,
                         )
                     }
                     if (tools.focus != null) toolsVm.focusHandled()
@@ -1472,6 +1486,9 @@ private fun List<android.graphics.RectF>.covers(map: MapLibreMap, point: LatLng)
 
 /** Room around a framed track, so its ends are not against the screen edge. */
 private const val FOCUS_PADDING_PX = 90
+
+/** How much of the screen the library sheet covers, roughly, when open. */
+private const val LIBRARY_SHEET_FRACTION = 0.62f
 
 /**
  * What the file picker will offer.

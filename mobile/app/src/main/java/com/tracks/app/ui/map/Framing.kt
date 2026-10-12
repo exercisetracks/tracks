@@ -40,6 +40,11 @@ internal fun frameCamera(
     positions: List<LatLng>,
     paddingPx: Int,
     maxZoom: Double = CLOSEST_USEFUL_ZOOM,
+    /**
+     * Extra room at the bottom for something covering the map — the library
+     * sheet, which takes most of the screen while a track is opened from it.
+     */
+    bottomPx: Int = paddingPx,
 ) {
     if (positions.isEmpty()) return
 
@@ -73,7 +78,7 @@ internal fun frameCamera(
     // at its default 0,0 and the whole card rendered as the open Atlantic. The
     // bounds update is deferred until there is a viewport to apply it to, which
     // is exactly the property that matters here.
-    map.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, paddingPx))
+    map.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, paddingPx, paddingPx, paddingPx, bottomPx))
 
     // Then capped, once the camera reflects the fit. A no-op when the move was
     // deferred — the zoom is still the default, which is nowhere near the cap.

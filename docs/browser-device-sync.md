@@ -139,7 +139,7 @@ Garmin's conventions (same as the cable sync):
 | Music tracks + `.m3u` playlists (opt-in, see below) | `Music/` — storage **root**, not under `GARMIN/` |
 | Completed-workout cleanup | deleted from `GARMIN/Workouts/` |
 
-The watch ingests NewFiles on reboot or next activity start. On the
+The watch imports NewFiles on its own; it does not need a restart. On the
 mounted-folder path the browser asks to upgrade to write access before the
 push phase. AGPS follows the same rules as the cable sync (the toggle and
 config live under Settings → Privacy & Connectivity → AGPS Sync); the

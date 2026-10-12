@@ -280,15 +280,13 @@ tried.
 
 ### What the watch does on import, and what it costs
 
-**The watch reboots.** Ingesting a NewFiles batch restarts it, which drops the
-BLE link mid-run. The phone sees a disconnect and reports the sync as failed
-even though the push is exactly what succeeded. Two consequences worth knowing:
-
-- A schedule push that "fails" with a disconnect immediately afterwards has very
-  likely worked. Check the watch, not the notification.
-- The read-back cannot run in the same sync, because the link the schedule
-  arrived on is gone by the time the calendar exists. Confirmation needs the
-  *next* sync.
+**The watch does not reboot.** Earlier versions of this file said that
+importing a NewFiles batch restarts the watch and that a disconnect straight
+after a calendar push was the sign it had worked. That was wrong, and it spread
+into code comments and sync logic: neither Garmin Connect nor Tracks has ever
+needed the watch to restart for new calendar entries to appear (corrected
+2026-10-12 by the maintainer). A disconnect during a push is a lost link and
+nothing more.
 
 Neither is a reason to go back to `FileSyncService`, which loses nothing except
 speed and gains nothing except a calendar that never appears.
@@ -600,9 +598,9 @@ that keeps a sync quiet. A schedule matches an entry to a workout by
 `(serial, time_created)`, and the two sides persist that timestamp in different
 places — the server in `planned_workouts.fit_time_created`, the phone in its own
 preferences. Alternating between the encoders produces different bytes for an
-unchanged plan, so the fingerprint differs, so the bundle is resent, so **the
-watch reboots every time signal comes and goes**. One encoder is the whole
-point.
+unchanged plan, so the fingerprint differs, so the **whole bundle is resent
+every time signal comes and goes** — twenty-odd files at the watch's 23-byte MTU.
+One encoder is the whole point.
 
 The port is held to **byte-for-byte equality** with the backend, checked by
 `WorkoutFitTest` against goldens regenerated with `scripts/gen_fit_goldens.py`.

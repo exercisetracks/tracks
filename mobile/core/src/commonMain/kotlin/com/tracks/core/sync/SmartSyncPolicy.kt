@@ -39,10 +39,10 @@ object SmartSyncPolicy {
      * How long the plan must sit still before it is pushed.
      *
      * Editing a plan is rarely one edit: move a run, drop a swim, regenerate
-     * the week, nudge the long ride. A sync per change would reboot the watch
-     * (a changed calendar goes down through `GARMIN/NewFiles`, which restarts
-     * it) several times in a minute, and every one but the last would be
-     * sending a calendar the person is about to change again. Ninety seconds is
+     * the week, nudge the long ride. A sync per change would resend the whole
+     * calendar — the schedule and every workout it names, slowly, over the
+     * watch's 23-byte MTU — several times in a minute, and every one but the
+     * last would be sending a calendar the person is about to change again. Ninety seconds is
      * long enough to cover the gap between edits in one sitting and short
      * enough that someone who is done and pockets the phone still has the
      * watch current by the time they reach the door.

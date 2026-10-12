@@ -77,6 +77,6 @@ class TrackProfileTest {
     @Test
     fun `the shared row label agrees for a detail and its summary`() {
         val detail = CourseDetail(id = 1, deviceStatus = "pending_upload", loadToDevice = true)
-        assertEquals("queued", deviceLabel(detail.summary()))
+        assertEquals("waiting for the watch", deviceLabel(detail.summary()))
     }
 }

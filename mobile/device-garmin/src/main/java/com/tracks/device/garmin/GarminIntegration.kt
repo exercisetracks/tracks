@@ -552,11 +552,6 @@ class GarminIntegration(private val context: Context) : DeviceIntegration {
             // flight waited out SYNC_TIMEOUT_MS -- forty-five minutes, holding a
             // foreground service -- and a legacy push waited five, for a link
             // the callback above had already reported gone.
-            //
-            // This stopped being an edge case when the training-calendar push
-            // started landing in GARMIN/NewFiles: importing that batch reboots
-            // the watch, so a drop mid-run is now the ordinary end of a
-            // successful push rather than a rare failure. See AGENTS.md.
             syncSignal?.completeExceptionally(DisconnectedException())
             uploadSignal?.complete(false)
         }
