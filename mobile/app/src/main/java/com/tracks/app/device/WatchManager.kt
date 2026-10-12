@@ -1019,10 +1019,25 @@ class WatchManager(
             var pushed = 0
             for ((index, workout) in bundle.workouts.withIndex()) {
                 try {
-                    integration.pushFile(
-                        workout.folder, workout.filename, workout.bytes,
-                        lastInBatch = index == lastIndex,
-                    )
+                    // Once more after a failure. Measured 2026-10-12: the watch
+                    // left a workout's CREATE_FILE unanswered while it was busy
+                    // with its own HTTP-proxy requests, the push stalled out
+                    // after 60 s, and the calendar went up with that day empty.
+                    // The same file went through on the sync before and after.
+                    try {
+                        integration.pushFile(
+                            workout.folder, workout.filename, workout.bytes,
+                            lastInBatch = index == lastIndex,
+                        )
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        Log.w(TAG, "${workout.filename} did not go through (${e.message}); trying once more")
+                        integration.pushFile(
+                            workout.folder, workout.filename, workout.bytes,
+                            lastInBatch = index == lastIndex,
+                        )
+                    }
                     pushed++
                     // Only what the server can actually record. A workout
                     // written on this phone and not yet synced has no row to

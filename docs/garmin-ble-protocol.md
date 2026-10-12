@@ -667,3 +667,16 @@ Worth doing as one piece rather than patching each feature:
    renamed or re-pushed by identity.
 3. Legacy `CREATE_FILE` upload stays only as a fallback for watches that do not
    negotiate the newer sync.
+
+## Pairing after Garmin Connect (measured 2026-10-12)
+
+A watch factory-reset and set up with Garmin Connect refuses Tracks' GFDI
+multi-link registration (`Failed to register GFDI, status=3`) on the bond
+Connect made, every time. With that bond removed in Android's Bluetooth
+settings, the watch accepts Tracks on an **unbonded** link — which works, and
+is **unencrypted**. Tracks then asks Android to bond (`GarminSupport.bondIfUnbonded`):
+the watch shows a passkey, the bond completes (LE Secure Connections, passkey
+entry), and on every later connection the watch registers GFDI over Tracks'
+own bond. So "Connect's bond" is refused, "a Tracks bond" is accepted, and the
+way from one to the other is forgetting the watch once. `GarminIntegration`
+says so when a bonded watch never finishes its handshake.

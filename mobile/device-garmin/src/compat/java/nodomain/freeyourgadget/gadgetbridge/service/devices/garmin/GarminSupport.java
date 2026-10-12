@@ -912,6 +912,32 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
     }
 
     /**
+     * Ask Android to bond with the watch if this link has no bond.
+     *
+     * <p><b>Security.</b> An unbonded Bluetooth LE link is not encrypted: health
+     * data, GPS tracks and notification text cross it in the clear, readable by
+     * anyone within radio range with a sniffer. Measured 2026-10-12: a watch
+     * set up with Garmin Connect refuses Tracks' GFDI registration on Connect's
+     * bond (status 3), yet accepts it with no bond at all, so removing the bond
+     * is what made it work — and left the link unencrypted. This asks for a
+     * bond of Tracks' own once the watch has accepted the unbonded link. Whether
+     * the watch keeps registering GFDI over a Tracks-made bond is what this
+     * establishes; see docs/garmin-ble-protocol.md.
+     */
+    private void bondIfUnbonded() {
+        try {
+            final android.bluetooth.BluetoothAdapter adapter = android.bluetooth.BluetoothAdapter.getDefaultAdapter();
+            final android.bluetooth.BluetoothDevice device = adapter.getRemoteDevice(getDevice().getAddress());
+            if (device.getBondState() == android.bluetooth.BluetoothDevice.BOND_NONE) {
+                LOG.warn("Watch link is not bonded, so not encrypted; asking Android to bond");
+                if (!device.createBond()) LOG.warn("Android would not start bonding with the watch");
+            }
+        } catch (final SecurityException | IllegalArgumentException e) {
+            LOG.warn("Could not check or create the bond", e);
+        }
+    }
+
+    /**
      * Announce that the watch will accept a sync. Fires at most once per
      * connection; a watch that re-sends its file types must not restart a run.
      */
@@ -920,6 +946,7 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
             return;
         }
         watchReadySignalled = true;
+        bondIfUnbonded();
         startExploreSync();
         final SyncListener listener = syncListener;
         if (listener != null) {

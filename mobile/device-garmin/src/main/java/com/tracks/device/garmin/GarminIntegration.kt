@@ -450,7 +450,7 @@ class GarminIntegration(private val context: Context) : DeviceIntegration {
             // Disconnected and that is otherwise the state the user is left
             // looking at in the link notification.
             disconnectLocked()
-            fail(device, reasonFor(e))
+            fail(device, reasonFor(e, device.address))
             throw e
         } finally {
             // Identity-checked, not cleared outright. An attempt may only
@@ -468,11 +468,25 @@ class GarminIntegration(private val context: Context) : DeviceIntegration {
      * verbatim next to the connection status — so they name what happened to
      * the watch, not what was thrown.
      */
-    private fun reasonFor(e: Exception): String = when (e) {
-        is TimeoutCancellationException -> "The watch did not finish its handshake"
+    private fun reasonFor(e: Exception, address: String): String = when (e) {
+        // Bonded and still refused is, in practice, a watch on Garmin Connect's
+        // bond: measured 2026-10-12, it refuses Tracks' GFDI registration
+        // (status 3) on that bond, accepts it with none, and then bonds with
+        // Tracks itself (see GarminSupport.bondIfUnbonded). So say how out.
+        is TimeoutCancellationException -> if (isBonded(address)) {
+            "The watch did not finish its handshake. If it was set up with Garmin Connect, " +
+                "forget it in Android's Bluetooth settings: Tracks will reconnect and pair it itself."
+        } else {
+            "The watch did not finish its handshake"
+        }
         is DisconnectedException -> "The watch went out of range"
         else -> "Could not open a Bluetooth connection"
     }
+
+    private fun isBonded(address: String): Boolean = runCatching {
+        android.bluetooth.BluetoothAdapter.getDefaultAdapter().getRemoteDevice(address).bondState ==
+            android.bluetooth.BluetoothDevice.BOND_BONDED
+    }.getOrDefault(false)
 
     override suspend fun disconnect() {
         connectLock.withLock { disconnectLocked() }
