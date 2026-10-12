@@ -69,6 +69,14 @@ internal object GarminFileTypes {
         }
     }
 
+    /**
+     * Whether a file of this type may go over `FileSyncService` at all.
+     *
+     * Courses may not: the watch acknowledges one there and discards it. See
+     * `GarminIntegration.pushFileLocked` for the measurement.
+     */
+    fun usesFileSync(type: FileType.FILETYPE): Boolean = type != FileType.FILETYPE.COURSES
+
     fun isWatchApp(filename: String): Boolean =
         filename.endsWith(".prg", ignoreCase = true)
 

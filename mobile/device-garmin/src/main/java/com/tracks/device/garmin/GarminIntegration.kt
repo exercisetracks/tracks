@@ -941,8 +941,17 @@ class GarminIntegration(private val context: Context) : DeviceIntegration {
         // Falls back to the legacy path rather than failing. Courses and
         // workouts demonstrably import from it, so a watch that will not take a
         // file this way should still get the file.
+        //
+        // Except courses, which go legacy unconditionally. Measured 2026-10-12
+        // on the fenix 6X: a FIT_TYPE_6 over file-sync is answered KEPT, every
+        // byte is taken, and the course never appears under Navigation →
+        // Courses, nor in the watch's Explore digest — the same accept-and-drop
+        // a schedule got on this path. The phone then recorded it delivered, so
+        // "Send to device" claimed success for a course that was not there.
         val typeName = fileType.typeName
-        if (support.newSyncProtocol() && typeName != null && !forceLegacyPush) {
+        if (GarminFileTypes.usesFileSync(fileType) &&
+            support.newSyncProtocol() && typeName != null && !forceLegacyPush
+        ) {
             Log.i(TAG, "pushing $filename as $typeName over file-sync (${bytes.size} bytes)")
             val accepted = CompletableDeferred<Boolean>()
             support.uploadFileViaFileSync("push $filename", bytes, typeName, lastInBatch) { ok ->
@@ -1025,19 +1034,20 @@ class GarminIntegration(private val context: Context) : DeviceIntegration {
     }
 
     /**
-     * Take a course off the watch, by the name the watch shows for it.
-     *
-     * Not a message the watch answers: a removal is a tombstone in the library
-     * the phone serves during an Explore sync, so this marks it and kicks a
-     * sync. True means the tombstone was recorded and a sync started, not that
-     * the watch has finished acting on it: the watch never acknowledges a
-     * removal, it just stops listing the course, which the next full sync's
-     * digest is where that gets noticed.
+     * Ask the watch for an Explore session now: the one place courses and saved
+     * places go on and come off — see
+     * [com.tracks.device.garmin.explore.ExploreSession]. False when no watch is
+     * connected; the next connection runs one anyway.
      */
-    suspend fun removeCourse(courseName: String): Boolean {
-        val support = requireConnected()
-        return support.removeCourseFromWatch(courseName)
+    fun syncLibrary(): Boolean {
+        val support = support ?: return false
+        support.exploreSession().requestSync()
+        return true
     }
+
+    /** Courses and places not yet confirmed by the watch, as Tracks ids. */
+    fun unconfirmedOnWatch(): Pair<Set<Int>, Set<Int>> =
+        support?.exploreSession()?.unconfirmed() ?: (emptySet<Int>() to emptySet())
 
     /**
      * The connected watch's Garmin product number, null until its handshake has

@@ -203,6 +203,25 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
 
     init {
         watchLocalChanges()
+        // The watch confirming a course on or off changes its label; redraw.
+        viewModelScope.launch {
+            container.watch.courseChanges.collect { report ->
+                loadLibrary()
+                // The "waiting for the watch" notice is answered here, by name,
+                // the moment the watch's own list settles it.
+                val names = _state.value.courses.associate { it.id to it.name }
+                val places = _state.value.waypoints.associate { it.id to it.name }
+                val said = listOfNotNull(
+                    "The watch couldn’t finish syncing — it will try again".takeIf { report.failed },
+                    report.coursesOn.firstOrNull { it in names }?.let { "“${names[it]}” is on the watch" },
+                    report.coursesOff.firstOrNull { it in names }?.let { "“${names[it]}” is off the watch" },
+                    report.coursesDeletedOnWatch.firstOrNull { it in names }?.let { "“${names[it]}” was deleted on the watch" },
+                    report.waypointsOn.firstOrNull { it in places }?.let { "“${places[it]}” is on the watch" },
+                    report.waypointsOff.firstOrNull { it in places }?.let { "“${places[it]}” is off the watch" },
+                ).firstOrNull()
+                if (said != null) _state.update { it.copy(notice = said) }
+            }
+        }
         // Opened from a race plan's "Draw on map": start in the route builder,
         // since drawing is the only reason the user came.
         viewModelScope.launch {
@@ -437,7 +456,7 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
     fun deleteCourse(course: CourseSummary) {
         viewModelScope.launch {
             container.mapItems.deleteCourse(course.id)
-            val confirmedByWatch = container.watch.deleteCourseFromWatch(course.name)
+            val confirmedByWatch = container.watch.syncCoursesWithWatch()
             _state.update {
                 it.copy(
                     selected = it.selected.unless(courseId = course.id),
@@ -474,7 +493,9 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
         if (course.id < 0) return
         viewModelScope.launch {
             patchCourseNow(course, CourseUpdate(loadToDevice = true))
-            deliver("“${course.name}”") { container.watch.pushCourseNow(container.client(), course.id) }
+            deliver("“${course.name}”", awaitsConfirmation = true) {
+                container.watch.pushCourseNow(container.client(), course.id)
+            }
         }
     }
 
@@ -516,7 +537,7 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
         if (course.id < 0) return
         viewModelScope.launch {
             patchCourseNow(course, CourseUpdate(loadToDevice = false))
-            val started = container.watch.deleteCourseFromWatch(course.name)
+            val started = container.watch.syncCoursesWithWatch()
             _state.update {
                 it.copy(
                     notice = if (started) {
@@ -561,6 +582,11 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
     private suspend fun deliver(
         what: String,
         removed: Boolean = false,
+        /**
+         * A course: the watch confirms it in its own collection a moment after
+         * the transfer, and only that confirmation makes it "on the watch".
+         */
+        awaitsConfirmation: Boolean = false,
         push: suspend () -> WatchManager.Outcome,
     ) {
         // "Sending" for a removal was a small lie with a real cost: it is the
@@ -573,8 +599,11 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
         }
         val outcome = push()
         val message = when (outcome) {
-            is WatchManager.Outcome.Sent ->
-                if (removed) "$what is off the watch" else "$what is on the watch"
+            is WatchManager.Outcome.Sent -> when {
+                removed -> "$what is off the watch"
+                awaitsConfirmation -> "Sent $what — waiting for the watch to confirm"
+                else -> "$what is on the watch"
+            }
 
             WatchManager.Outcome.Nothing ->
                 if (removed) "$what was not on the watch" else "$what is already on the watch"

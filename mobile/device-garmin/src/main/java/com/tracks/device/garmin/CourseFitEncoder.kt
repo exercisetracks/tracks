@@ -171,6 +171,26 @@ object CourseFitEncoder {
         return FitFile(records).outgoingMessage
     }
 
+    /** What a course file says about itself: who wrote it, and as which course. */
+    data class Identity(val manufacturer: Int?, val product: Int?, val serial: Long?, val name: String?)
+
+    /**
+     * Read a course file's identity, or null when it is not a readable course.
+     * A file this encoder wrote carries Garmin/Connect's product number and the
+     * Tracks course id as its serial — which is how one pulled back off the
+     * watch is recognised as Tracks' own rather than imported a second time.
+     */
+    fun identify(bytes: ByteArray): Identity? = runCatching {
+        val parsed = FitFile.parseIncoming(bytes)
+        val id = parsed.records.filterIsInstance<FitFileId>().firstOrNull() ?: return null
+        Identity(
+            manufacturer = id.manufacturer?.toInt(),
+            product = id.product?.toInt(),
+            serial = id.serialNumber?.toLong(),
+            name = parsed.records.filterIsInstance<FitCourse>().firstOrNull()?.name,
+        )
+    }.getOrNull()
+
     /**
      * Equirectangular-approximation distance in metres.
      *

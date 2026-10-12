@@ -108,6 +108,11 @@ def main() -> int:
     # not in the capture, fall back to whichever handles carry the most traffic
     # — on a watch connection that is overwhelmingly this service.
     garmin_handles = {h for h, u in uuids.items() if u.lower().startswith("6a4e28")}
+    # An explicit list wins: a capture with other Bluetooth devices in it (earbuds,
+    # a second watch app) defeats the busiest-handles guess below, and every
+    # stream is kept per handle, so naming an extra one only adds noise.
+    if len(sys.argv) > 2:
+        garmin_handles = {int(h, 16) for h in sys.argv[2].split(",")}
     if not garmin_handles:
         counts: dict[int, int] = defaultdict(int)
         for packet in packets:

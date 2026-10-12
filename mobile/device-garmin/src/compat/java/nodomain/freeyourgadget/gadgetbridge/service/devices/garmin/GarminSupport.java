@@ -2766,7 +2766,7 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
      * <p>Here rather than in {@code completeInitialization} because that runs
      * while the handshake is still in flight; this is the point where the watch
      * has answered everything and will actually talk. See
-     * {@link ExploreSyncHandler#startSyncRequest} for why Tracks asks rather
+     * {@code ExploreSession#startRequest} for why Tracks asks rather
      * than waiting to be asked.
      *
      * <p>Failures are logged and swallowed: an Explore sync is additive to
@@ -2774,34 +2774,17 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
      * should not cost the user their file sync.
      */
     /**
-     * Mark a course for removal and push that decision now.
-     *
-     * <p>Returns false when this phone has never learned the watch's UUID for
-     * that name, which happens before the first Explore sync of a connection.
-     * A caller should treat that as "not yet", not as "cannot".
+     * Tracks' Explore session for this watch: what the watch holds, and the
+     * courses being put on or taken off it. See ExploreSession.
      */
-    public boolean removeCourseFromWatch(final String courseName) {
-        if (!protocolBufferHandler.getExploreSyncHandler().tombstoneCourseNamed(courseName)) {
-            return false;
-        }
-        // Straight into a sync rather than waiting for the next connection: the
-        // watch only reads the phone's library during a session, so a tombstone
-        // sitting in preferences changes nothing until one runs.
-        startExploreSync();
-        return true;
+    public com.tracks.device.garmin.explore.ExploreSession exploreSession() {
+        return protocolBufferHandler.getExploreSyncHandler().getSession();
     }
 
     private void startExploreSync() {
-        try {
-            sendProtobufRequest(
-                    "start explore sync",
-                    GdiSmartProto.Smart.newBuilder()
-                            .setExploreSyncService(
-                                    protocolBufferHandler.getExploreSyncHandler().startSyncRequest())
-                            .build());
-        } catch (final Exception e) {
-            LOG.warn("Could not start an Explore sync", e);
-        }
+        // requestSync rather than sending blind: a session already open gets a
+        // follow-up instead of a second session interleaved with it.
+        exploreSession().requestSync();
     }
 
     public void sendProtobufRequest(final String taskName, final GdiSmartProto.Smart payload) {

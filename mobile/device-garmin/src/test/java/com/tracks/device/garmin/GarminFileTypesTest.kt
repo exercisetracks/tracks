@@ -97,4 +97,15 @@ class GarminFileTypesTest {
             GarminFileTypes.resolve("", "TracksMusic.prg", byteArrayOf(1, 2, 3)),
         )
     }
+
+    /**
+     * A course over file-sync is acknowledged and then discarded by the
+     * fenix 6X, and the phone records it as delivered — "on the watch" for a
+     * course that is not there. Only the legacy path puts it in Courses.
+     */
+    @Test
+    fun `a course never goes over file-sync`() {
+        assertTrue(!GarminFileTypes.usesFileSync(FileType.FILETYPE.COURSES))
+        assertTrue(GarminFileTypes.usesFileSync(FileType.FILETYPE.WORKOUTS))
+    }
 }

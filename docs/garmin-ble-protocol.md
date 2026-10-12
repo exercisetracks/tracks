@@ -109,43 +109,13 @@ Session facts that are not guessable:
 
 ## Deleting a course
 
-**The watch pulls; it never accepts a push.** Sending an unsolicited
-`LineDigestWriteRequest` is well-formed, gets a GFDI ack, and does nothing —
-measured, three variants, course still present afterwards. The watch drives:
-it sends `line_digest_read_request`, `collection_read_request`,
-`collection_digest_read_request`, `waypoint_digest_read_request`, and the phone
-**answers with its library**.
-
-Gadgetbridge's proto stubs `LineDigestReadResponse` as `{status}`. The real
-shape is:
-
-```protobuf
-message LineDigestReadResponse {
-  required ReadStatus status = 1;
-  optional LineDigest  digest = 2;   // stubbed out upstream
-  optional uint32      unk    = 3;
-}
-```
-
-Answering with a bare status tells the watch "my library is empty", which is why
-it then asks nothing further.
-
-**Deletion is expressed on the collection item, not on the line.** Garmin Explore
-never sets `LineReference.deleted` — all 36 line refs in a real capture carried
-`deleted = 0`. A collection item is:
-
-```
-{ uuid = 1, version_stamp = 2, tombstone = 3, item_kind = 4 }
-```
-
-`item_kind` 0 = waypoint, 3 = line/course. A removed course gets
-`tombstone = 1` with a fresh version stamp **and** is omitted from the line
-digest. Verified by exact correlation: three courses deleted, three items with
-`tombstone = 1`, and those same three were the only line-kind items missing from
-the digest — the other 41 appeared in both.
-
-So to remove a course: tombstone its collection item and drop it from the digest
-you serve. There is no delete message to send.
+Superseded — see [garmin-explore-sync.md](garmin-explore-sync.md), written from
+a capture of Explore on a factory-reset watch (2026-10-12). In short: the
+**phone** owns the collection and generates every item's UUID; a removal is
+the phone serving its own collection with the item `tombstone = 1` and a fresh
+**Unix-seconds** stamp. A course pushed as a FIT file is in no phone's
+collection and cannot be removed this way. The August notes that stood here
+(watch-owned collection, deletion via line digest) were wrong in both respects.
 
 ## Still unknown
 

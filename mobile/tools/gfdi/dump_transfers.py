@@ -11,6 +11,10 @@ os.makedirs(outdir, exist_ok=True)
 packets = btsnoop.att_packets(path)
 uuids = btsnoop.handle_uuids(path)
 gh = {h for h, u in uuids.items() if u.lower().startswith("6a4e28")}
+# Explicit handles win, as in decode_capture.py: other Bluetooth devices in a
+# capture defeat the busiest-handles guess.
+if len(sys.argv) > 3:
+    gh = {int(h, 16) for h in sys.argv[3].split(",")}
 if not gh:
     counts = defaultdict(int)
     for p in packets: counts[p.att_handle] += len(p.value)

@@ -355,7 +355,11 @@ internal fun CourseActions(
             // not yet saved is the same story from the other end: the watch
             // push list lives on the server, so there is nothing to send
             // until the server has heard of this track at all.
-            canSend = course.id >= 0 && !course.isExternal && !course.loadToDevice,
+            //
+            // Not disabled once it is believed on the watch: that belief is
+            // only that a transfer finished, and the watch has accepted a
+            // course and kept nothing. Sending again is the way out of that.
+            canSend = course.id >= 0 && !course.isExternal,
             canRemove = course.id >= 0 && (course.loadToDevice || course.isExternal),
             onSend = { actions.onCourseSendNow(course) },
             onRemove = { actions.onCourseRemove(course) },

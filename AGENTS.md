@@ -163,6 +163,14 @@ worth more than the code they explain:
   link actually behaves, measured against a fenix 6X Pro rather than inferred
   from Gadgetbridge. Where the two disagree, that file is what the hardware
   did. Read it before touching anything in `mobile/device-garmin/`.
+- [docs/garmin-explore-sync.md](docs/garmin-explore-sync.md) — how courses
+  and saved places get on and off the watch (Explore sync), decoded from
+  captures of Garmin Explore on a factory-reset watch. The phone owns the
+  collection; removal is a tombstone. Read it before touching
+  `mobile/device-garmin/.../explore/`.
+- [docs/garmin-connect-sync.md](docs/garmin-connect-sync.md) — what Garmin
+  Connect does for workouts and training calendars (FileSyncService, schedule
+  first, whole calendar replaced each sync), and which captures still exist.
 - [docs/music.md](docs/music.md) and
   [watchapp/README.md](watchapp/README.md) — why music cannot be pushed over
   BLE on any Garmin, and the two transports that work instead.

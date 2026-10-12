@@ -33,6 +33,10 @@ import com.tracks.core.api.TracksClient
 import com.tracks.core.api.PlannedWorkout
 import com.tracks.core.sync.CoachingContext
 import com.tracks.core.sync.CoursePushJob
+import com.tracks.device.garmin.explore.DesiredCourse
+import com.tracks.device.garmin.explore.DesiredWaypoint
+import com.tracks.device.garmin.explore.ExploreBridge
+import com.tracks.device.garmin.explore.ReconcileReport
 import com.tracks.core.sync.SCHEDULE_DAYS_AHEAD
 import com.tracks.core.sync.WatchPushBundle
 import com.tracks.core.sync.WatchPushFile
@@ -254,6 +258,17 @@ class WatchManager(
             } catch (e: Exception) {
                 Log.w(TAG, "could not read ${file.localPath}", e)
                 failed++
+                continue
+            }
+
+            if (file.kind == PulledFileKind.COURSE && isOwnCourse(bytes)) {
+                // A course Tracks pushed, read back off the watch. Importing it
+                // would add a second copy marked "from the watch" beside the
+                // track it came from — measured 2026-10-12 with test7. Kept on
+                // the watch, and the phone's copy dropped.
+                Log.d(TAG, "${file.name} is a course Tracks pushed; not importing it again")
+                runCatching { integration.keepPulledOnDevice(file) }
+                delivered++
                 continue
             }
 
@@ -515,17 +530,26 @@ class WatchManager(
     // ([OfflineRepository.markCourseUploaded]/[markWaypointsUploaded]) ever
     // touches the network, and that one queues like any other offline write.
 
-    /** Push one flagged course now, if it needs pushing at all. */
+    /**
+     * Push one course now, whatever the phone believes is on the watch.
+     *
+     * Deliberately not filtered through [coursesToPush], which skips a course
+     * already marked delivered. That belief comes from a finished transfer, and
+     * the watch has taken a course in full and filed it nowhere; when someone
+     * presses Send it is usually because the course is not there, and
+     * "already on the watch" left them no way to put it back.
+     */
     suspend fun pushCourseNow(client: TracksClient, courseId: Int): Outcome {
-        val items = containerProvider().mapItems
-        val courses = items.courses()
-        val job = coursesToPush(courses).firstOrNull { it.id == courseId } ?: return Outcome.Nothing
-        return pushCourseJob(job, courses)
+        val courses = containerProvider().mapItems.courses()
+        val course = courses.firstOrNull { it.id == courseId && !it.isExternal } ?: return Outcome.Nothing
+        if (integration is GarminIntegration) return syncLibraryNow()
+        return pushCourseJob(CoursePushJob(course.id, course.name, "TRK_${course.id}.fit"), courses)
     }
 
     /** Rebuild and push the saved-places file now, if the flagged set disagrees with what is believed on the watch. */
     suspend fun pushWaypointsNow(client: TracksClient): Outcome =
-        pushWaypointPlan(waypointPushPlan(containerProvider().mapItems.waypoints()))
+        if (integration is GarminIntegration) syncLibraryNow()
+        else pushWaypointPlan(waypointPushPlan(containerProvider().mapItems.waypoints()))
 
     /**
      * Switch off the watch's own Wi-Fi uploads to Garmin.
@@ -646,22 +670,99 @@ class WatchManager(
     }
 
     /**
-     * Take a course off the watch over Bluetooth, by the name the watch shows.
-     *
-     * By name rather than by filename or byte size because the watch names a
-     * course by a UUID of its own and the only thing joining the two is the
-     * name it displays — see `ExploreSyncHandler`. False means the removal was
-     * not recorded at all: no watch connected, no Explore sync has run yet on
-     * this connection so no UUID is known, or the integration is not Garmin's.
-     * True means it is recorded and a sync has started.
+     * Run an Explore session now, so the watch's courses and saved places are
+     * brought into line with Tracks'. What should be on the watch is read from
+     * the library, so this one call covers a send, a removal, a delete and a
+     * re-check. False when no Garmin watch is connected; the next connection
+     * runs a session anyway.
      */
-    suspend fun deleteCourseFromWatch(courseName: String): Boolean {
+    suspend fun syncCoursesWithWatch(): Boolean {
         val garmin = integration as? GarminIntegration ?: return false
-        return try {
-            garmin.removeCourse(courseName)
-        } catch (e: Exception) {
-            Log.w(TAG, "could not ask the watch to remove \"$courseName\"", e)
-            false
+        refreshWatchLibrary()
+        return garmin.syncLibrary()
+    }
+
+    private suspend fun syncLibraryNow(): Outcome =
+        if (syncCoursesWithWatch()) Outcome.Sent(1) else Outcome.Failed("No watch is connected")
+
+    /**
+     * What Tracks wants on the watch, for the Explore session. Cached, because
+     * the session asks from the Bluetooth thread mid-conversation and cannot
+     * wait on the database; refreshed before every session this class starts and
+     * after every confirmation. Null until first loaded — the session will not
+     * plan against a list the app has not given it.
+     */
+    @Volatile
+    private var wantedOnWatch: Pair<List<DesiredCourse>, List<DesiredWaypoint>>? = null
+
+    private suspend fun refreshWatchLibrary() {
+        val items = containerProvider().mapItems
+        val geo = items.coursesGeoJson()
+        val courses = items.courses()
+            .filter { !it.isExternal && it.id >= 0 && it.loadToDevice }
+            .mapNotNull { c ->
+                val coords = courseCoordinatesFromGeoJson(geo, c.id) ?: return@mapNotNull null
+                if (coords.size < 2) return@mapNotNull null
+                DesiredCourse(c.id, c.name, coords.map { Triple(it[1], it[0], it.getOrNull(2)) }, 0)
+            }
+        val places = items.waypoints()
+            .filter { it.id >= 0 && it.loadToDevice }
+            .map { DesiredWaypoint(it.id, it.name, it.lat, it.lng, it.elevationMetres, 0) }
+        wantedOnWatch = courses to places
+    }
+
+    /**
+     * Record what the watch confirmed. The only place a course or place becomes
+     * "on the watch" or stops being, so the label always reflects the watch.
+     */
+    private suspend fun applyWatchReport(report: ReconcileReport) {
+        val items = containerProvider().mapItems
+        val at = nowIso()
+        if (!report.failed) {
+            val courses = items.courses().associateBy { it.id }
+            for (id in report.coursesOn) {
+                val c = courses[id] ?: continue
+                if (c.deviceStatus != "on_device") items.markCourseUploaded(id, "explore", at)
+            }
+            for (id in report.coursesOff) if (courses[id]?.deviceStatus in setOf("on_device", "pending_remove")) {
+                items.markCourseOffWatch(id, at)
+            }
+            for (id in report.coursesDeletedOnWatch) {
+                // Kept, and not sent again: deleted on the watch is the owner's
+                // decision about the watch, not about the track.
+                if (courses[id] == null) continue
+                items.updateCourse(id, com.tracks.core.api.CourseUpdate(loadToDevice = false))
+                items.markCourseOffWatch(id, at)
+                Log.i(TAG, "course $id was deleted on the watch; kept in Tracks, not re-sent")
+            }
+            val places = items.waypoints().associateBy { it.id }
+            val newlyOn = report.waypointsOn.filter { places[it]?.onWatch == false }
+            if (newlyOn.isNotEmpty()) items.markWaypointsUploaded(newlyOn, "explore", at)
+            for (id in report.waypointsOff) if (places[id]?.onWatch == true) items.markWaypointOffWatch(id, at)
+        } else {
+            Log.w(TAG, "the watch could not finish syncing courses and places")
+        }
+        refreshWatchLibrary()
+        _courseChanges.tryEmit(report)
+    }
+
+    private val _courseChanges = kotlinx.coroutines.flow.MutableSharedFlow<ReconcileReport>(extraBufferCapacity = 4)
+
+    /** What the watch just confirmed; the map library reloads and says so. */
+    val courseChanges: Flow<ReconcileReport> = _courseChanges
+
+    init {
+        if (integration is GarminIntegration) {
+            ExploreBridge.library = object : ExploreBridge.Library {
+                override fun wanted() = wantedOnWatch
+                override fun onReport(report: ReconcileReport) {
+                    scope.launch {
+                        runCatching { applyWatchReport(report) }
+                            .onFailure { Log.w(TAG, "could not record what the watch confirmed", it) }
+                    }
+                }
+            }
+            scope.launch { runCatching { refreshWatchLibrary() } }
         }
     }
 
@@ -679,6 +780,7 @@ class WatchManager(
      * plan would have noticed on its own.
      */
     suspend fun syncWaypointsAfterDelete(client: TracksClient): Outcome {
+        if (integration is GarminIntegration) return syncLibraryNow()
         val desired = containerProvider().mapItems.waypoints().filter { it.loadToDevice }
         val plan = if (desired.isEmpty()) WaypointPushJob.Clear else WaypointPushJob.Rebuild(desired)
         return pushWaypointPlan(plan)
@@ -686,6 +788,13 @@ class WatchManager(
 
     /** Every course/waypoint push a full sync owes, folded into [pushFromServer]. */
     private suspend fun pushMapItems(client: TracksClient): MapPushCounts {
+        if (integration is GarminIntegration) {
+            // Courses and places go over Explore sync on a Garmin, not as files:
+            // a FIT course lands in nobody's collection and can never be taken
+            // off again. See docs/garmin-explore-sync.md.
+            syncLibraryNow()
+            return MapPushCounts(0, 0)
+        }
         val items = containerProvider().mapItems
         var delivered = 0
         var failed = 0
@@ -706,6 +815,28 @@ class WatchManager(
     }
 
     private data class MapPushCounts(val delivered: Int, val failed: Int)
+
+    /**
+     * Whether a course file pulled off the watch is one this app wrote: the
+     * encoder's product number, a serial that is one of Tracks' own course ids,
+     * and that course's name as the watch keeps it. All three, because Garmin
+     * Connect writes the same product number and a serial is only a number.
+     */
+    private suspend fun isOwnCourse(bytes: ByteArray): Boolean {
+        val id = CourseFitEncoder.identify(bytes) ?: return false
+        // A course Tracks delivered over Explore sync is written to a file by
+        // the watch itself; its name is the one Tracks sent.
+        if (integration is GarminIntegration && id.name != null &&
+            containerProvider().mapItems.courses().any { !it.isExternal && it.loadToDevice && it.name == id.name }
+        ) return true
+        if (id.manufacturer != 1 || id.product != 65534) return false
+        val serial = id.serial ?: return false
+        val course = containerProvider().mapItems.courses().firstOrNull { it.id.toLong() == serial && !it.isExternal }
+            ?: return false
+        // The file holds the name cut to 15 bytes; a prefix is the watch-side form.
+        val name = id.name
+        return !name.isNullOrEmpty() && course.name.startsWith(name)
+    }
 
     private suspend fun pushCourseJob(job: CoursePushJob, courses: List<CourseSummary>): Outcome {
         val course = courses.firstOrNull { it.id == job.id } ?: return Outcome.Nothing

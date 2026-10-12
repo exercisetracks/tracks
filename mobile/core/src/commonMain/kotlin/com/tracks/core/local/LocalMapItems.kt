@@ -77,6 +77,10 @@ class LocalMapItems(private val sources: LocalSources) {
     suspend fun markCourseUploaded(id: Int, filename: String, atIso: String) =
         sources.setValues("track", id, mapOf("watch_filename" to filename, "watch_uploaded_at" to atIso, "watch_deleted_at" to null))
 
+    /** Record that the watch's own collection no longer lists this track. */
+    suspend fun markCourseOffWatch(id: Int, atIso: String) =
+        sources.setValues("track", id, mapOf("watch_deleted_at" to atIso))
+
     /** `/courses/geojson`: every track's line, for drawing them all at once. */
     suspend fun coursesGeoJson(): String {
         val features = sources.replica.rows("track").mapNotNull { r ->
@@ -142,6 +146,10 @@ class LocalMapItems(private val sources: LocalSources) {
             sources.setValues("waypoint", id, mapOf("watch_filename" to filename, "watch_uploaded_at" to atIso, "watch_deleted_at" to null))
         }
     }
+
+    /** Record that the watch no longer holds this place. */
+    suspend fun markWaypointOffWatch(id: Int, atIso: String) =
+        sources.setValues("waypoint", id, mapOf("watch_deleted_at" to atIso))
 
     // ── Shared ──────────────────────────────────────────────────────────────
 
