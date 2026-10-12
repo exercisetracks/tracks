@@ -16,8 +16,8 @@ class TourStateTest {
     /** Before the settings row is read, "not seen" only means "not known yet". */
     @Test
     fun nothing_starts_before_the_settings_are_read() {
-        assertFalse(TourState().shouldStart("dashboard"))
-        assertTrue(ready.shouldStart("dashboard"))
+        assertFalse(TourState().shouldStart("dashboard-welcome"))
+        assertTrue(ready.shouldStart("dashboard-welcome"))
     }
 
     @Test
@@ -45,7 +45,7 @@ class TourStateTest {
     @Test
     fun the_web_s_tours_do_not_count_as_the_phone_s() {
         val s = ready.copy(seen = mapOf("dashboard" to true))
-        assertTrue(s.shouldStart("dashboard"))
+        assertTrue(s.shouldStart("dashboard-welcome"))
     }
 
     @Test
@@ -60,6 +60,68 @@ class TourStateTest {
         val s = ready.start("maps").withEnabled(false)
         assertNull(s.active)
         assertFalse(s.shouldStart("maps"))
+    }
+
+    // ── The dashboard's two tours ────────────────────────────────────────
+
+    /**
+     * A new user's dashboard has nothing on it. Explaining the fitness chart
+     * to them described an empty box; the charts wait for something to show.
+     */
+    @Test
+    fun the_charts_tour_waits_until_the_dashboard_has_data() {
+        val welcomed = ready.copy(seen = mapOf("phone.dashboard-welcome" to true))
+        assertFalse(welcomed.shouldStart("dashboard-charts", hasData = false))
+        assertTrue(welcomed.shouldStart("dashboard-charts", hasData = true))
+    }
+
+    /** Empty, the welcome sends them out to record something; with data, that tip is beside the point. */
+    @Test
+    fun the_push_to_record_shows_only_on_an_empty_dashboard() {
+        val empty = ready.start("dashboard-welcome", hasData = false).steps.map { it.title }
+        val full = ready.start("dashboard-welcome", hasData = true).steps.map { it.title }
+        assertTrue("Record your first activity" in empty)
+        assertFalse("Record your first activity" in full)
+        assertEquals(empty.size - 1, full.size)
+    }
+
+    /** The welcome says nothing about the charts; the charts are the other tour's. */
+    @Test
+    fun the_welcome_does_not_explain_the_charts() {
+        val anchors = Tours.all.getValue("dashboard-welcome").mapNotNull { it.anchor }
+        listOf("dashboard-fitness", "dashboard-volume", "dashboard-history", "dashboard-sports").forEach {
+            assertFalse(it in anchors, "the welcome points at $it")
+        }
+    }
+
+    /**
+     * Both came out of the one dashboard tour. Someone who finished that has
+     * read both, and should not have the charts replayed to them.
+     */
+    @Test
+    fun finishing_the_old_dashboard_tour_counts_for_both_new_ones() {
+        val s = ready.copy(seen = mapOf("phone.dashboard" to true))
+        assertFalse(s.shouldStart("dashboard-welcome", hasData = true))
+        assertFalse(s.shouldStart("dashboard-charts", hasData = true))
+    }
+
+    /**
+     * A standalone phone with no watch has nothing to sync with, and no
+     * gesture to do it; a tip teaching one would teach something that does not
+     * exist.
+     */
+    @Test
+    fun the_pull_to_sync_tip_needs_a_watch_or_a_server() {
+        val alone = ready.copy(canSync = false).start("dashboard-welcome").steps.map { it.title }
+        val linked = ready.start("dashboard-welcome").steps.map { it.title }
+        assertFalse("Pull to sync" in alone)
+        assertTrue("Pull to sync" in linked)
+    }
+
+    @Test
+    fun the_charts_follow_the_welcome_on_the_dashboard() {
+        assertEquals(listOf("dashboard-welcome", "dashboard-charts"), Tours.idsForRoute("dashboard"))
+        assertEquals(listOf("health"), Tours.idsForRoute("health"))
     }
 
     @Test

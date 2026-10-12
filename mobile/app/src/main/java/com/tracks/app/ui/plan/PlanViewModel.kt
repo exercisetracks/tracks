@@ -374,8 +374,17 @@ class PlanViewModel(private val container: AppContainer) : ViewModel() {
         }
     }
 
+    /** The new-goal form as it was last left, or a fresh one. */
+    fun newGoalDraft(): GoalDraft = container.goalDrafts.load() ?: GoalDraft()
+
+    fun keepNewGoalDraft(draft: GoalDraft) = container.goalDrafts.save(draft)
+
+    fun discardNewGoalDraft() = container.goalDrafts.clear()
+
     /** Create or edit a goal from the goal form; a new goal becomes the active one, as on the web. */
     fun saveGoal(draft: GoalDraft) {
+        // Created, so there is no longer a form to come back to.
+        if (draft.isNew) container.goalDrafts.clear()
         viewModelScope.launch {
             val src = container.sources
             val id = draft.id

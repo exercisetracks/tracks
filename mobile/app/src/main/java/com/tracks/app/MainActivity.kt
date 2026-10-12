@@ -74,6 +74,11 @@ class MainActivity : ComponentActivity() {
         const val OPEN_BACKUP = "backup"
         /** The dashboard, where today's planned session is started. */
         const val OPEN_TODAY = "today"
+        /**
+         * Training, with the new-goal form open — where a first run lands once
+         * setup is done, since a plan is what the rest of the app is built on.
+         */
+        const val OPEN_NEW_PLAN = "new-plan"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -185,6 +190,10 @@ private fun TracksApp(
                 onHasDevice = container::setHasDevice,
                 onFinished = {
                     container.completeOnboarding()
+                    // Straight on to making a plan: a new user's dashboard is
+                    // empty, and the plan is what fills it — today's workout
+                    // is how the phone records an activity at all.
+                    container.pendingRoute.value = MainActivity.OPEN_NEW_PLAN
                     onboarded = true
                 },
             )

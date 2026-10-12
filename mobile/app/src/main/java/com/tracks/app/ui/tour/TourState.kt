@@ -27,17 +27,28 @@ data class TourState(
     val seen: Map<String, Any?> = emptyMap(),
     val active: String? = null,
     val step: Int = 0,
+    /** Whether the page had data when [active] started — which steps it shows. */
+    val hasData: Boolean = false,
+    /** A watch or a server to sync with; without either, the pull-to-sync tip is left out. */
+    val canSync: Boolean = true,
 ) {
-    val steps: List<TourStep> get() = active?.let { Tours.all[it] }.orEmpty()
+    val steps: List<TourStep> get() = active?.let { Tours.stepsFor(it, hasData, canSync) }.orEmpty()
     val current: TourStep? get() = steps.getOrNull(step)
 
-    fun hasSeen(id: String) = seen[Tours.seenKey(id)] == true
+    /** Seen under its own key, or under the one tour it was split from ([Tours.SPLIT_FROM]). */
+    fun hasSeen(id: String) =
+        seen[Tours.seenKey(id)] == true || Tours.SPLIT_FROM[id]?.let { seen[Tours.seenKey(it)] == true } == true
 
-    /** Whether opening the page for [id] should start its tour. */
-    fun shouldStart(id: String?): Boolean =
-        id != null && hydrated && enabled && active == null && !hasSeen(id) && !Tours.all[id].isNullOrEmpty()
+    /**
+     * Whether opening the page for [id] should start its tour. A tour about
+     * the page's data ([Tours.NEEDS_DATA]) waits until there is some.
+     */
+    fun shouldStart(id: String?, hasData: Boolean = false): Boolean =
+        id != null && hydrated && enabled && active == null && !hasSeen(id) &&
+            (hasData || id !in Tours.NEEDS_DATA) && Tours.stepsFor(id, hasData).isNotEmpty()
 
-    fun start(id: String) = if (Tours.all[id].isNullOrEmpty()) this else copy(active = id, step = 0)
+    fun start(id: String, hasData: Boolean = false) =
+        if (Tours.stepsFor(id, hasData).isEmpty()) this else copy(active = id, step = 0, hasData = hasData)
 
     /** The next step, or — past the last — the tour finished. */
     fun next() = if (step >= steps.size - 1) complete() else copy(step = step + 1)
@@ -113,7 +124,8 @@ class TourViewModel(private val container: AppContainer) : ViewModel() {
         }
     }
 
-    fun start(id: String) = _state.update { it.start(id) }
+    fun start(id: String, hasData: Boolean = false) = _state.update { it.start(id, hasData) }
+    fun setCanSync(value: Boolean) = _state.update { it.copy(canSync = value) }
     fun prev() = _state.update { it.prev() }
     fun abort() = _state.update { it.abort() }
 

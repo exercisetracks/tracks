@@ -46,8 +46,17 @@ import kotlinx.coroutines.launch
 fun PullToSync(
     onSync: suspend () -> Unit,
     modifier: Modifier = Modifier,
+    /**
+     * False with neither a watch nor a server: there is nothing to sync with,
+     * and a gesture that spins and changes nothing reads as broken.
+     */
+    enabled: Boolean = true,
     content: @Composable () -> Unit,
 ) {
+    if (!enabled) {
+        content()
+        return
+    }
     val scope = rememberCoroutineScope()
     var syncing by remember { mutableStateOf(false) }
     val state = rememberPullToRefreshState()

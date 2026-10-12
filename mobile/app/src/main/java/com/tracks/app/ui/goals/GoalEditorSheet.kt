@@ -69,6 +69,10 @@ import java.time.ZoneOffset
  * kilometres (weekly volume), as the web does. Save stays disabled with the
  * reason shown until the type's required fields are filled in
  * ([GoalDraft.missing]).
+ *
+ * A new goal reports every change through [onChange], so the page can keep
+ * it for the next time the form opens (see [GoalDraftStore]); [onStartOver]
+ * is the way back to a blank form once one has been kept.
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -87,16 +91,24 @@ fun GoalEditorSheet(
      * and only with a server linked — the feed is a URL on the server.
      */
     onCopyLink: (() -> Unit)? = null,
+    /** Every change to the form, as it happens. */
+    onChange: (GoalDraft) -> Unit = {},
+    /** Clears a kept new-goal form; null hides the button. */
+    onStartOver: (() -> Unit)? = null,
     today: LocalDate = LocalDate.now(),
 ) {
     var d by remember { mutableStateOf(initial) }
+    // Bumped by Start over, so the recommended date is worked out again for
+    // a form whose sport and distance may not have changed.
+    var resets by remember { mutableStateOf(0) }
+    LaunchedEffect(d) { onChange(d) }
     var pickingDate by remember { mutableStateOf<String?>(null) }
     var confirmDelete by remember { mutableStateOf(false) }
     val imperial = Units.imperial
 
     // The recommended date follows the sport and distance while nobody has
     // picked one; the reasons stay behind the date's "?" either way.
-    LaunchedEffect(eventLoad, d.goalType, d.eventSport, d.eventDistanceMeters) {
+    LaunchedEffect(eventLoad, resets, d.goalType, d.eventSport, d.eventDistanceMeters) {
         if (eventLoad != null && d.goalType == "event") {
             d = d.withAdvice(eventLoad.recommend(d.eventSport, d.eventDistanceMeters, CivilDate(today.year, today.monthValue, today.dayOfMonth)))
         }
@@ -248,6 +260,11 @@ fun GoalEditorSheet(
             ButtonRow {
                 PrimaryButton(if (d.isNew) "Create goal" else "Save", onClick = { onSave(d) }, enabled = d.missing == null)
                 NeutralButton("Cancel", onClick = onDismiss)
+                // Only once there is something to throw away: Cancel keeps
+                // the form, so this is the one way to clear it.
+                if (d.isNew && onStartOver != null && !GoalDraftStore.isBlank(d)) {
+                    NeutralButton("Start over", onClick = { onStartOver(); d = GoalDraft(); resets++ })
+                }
                 onDelete?.let {
                     DangerButton(if (confirmDelete) "Tap again" else "Delete", onClick = { if (confirmDelete) it() else confirmDelete = true })
                 }

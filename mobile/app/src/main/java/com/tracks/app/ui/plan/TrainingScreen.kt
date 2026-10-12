@@ -114,6 +114,10 @@ fun TrainingScreen(
     onOpenWorkout: (Int) -> Unit,
     onSyncWatch: () -> Unit,
     modifier: Modifier = Modifier,
+    /** Open the new-goal form as soon as the page has loaded — a first run's plan. */
+    openNewGoal: Boolean = false,
+    /** The form opened by [openNewGoal] has closed, however it closed. */
+    onNewGoalClosed: () -> Unit = {},
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
     val clipboard = LocalClipboardManager.current
@@ -139,8 +143,13 @@ fun TrainingScreen(
             onSaveGoal = vm::saveGoal,
             onDeleteGoal = vm::deleteGoal,
             onDismissMessage = vm::dismissMessage,
+            newGoalDraft = vm::newGoalDraft,
+            onGoalDraftChange = vm::keepNewGoalDraft,
+            onGoalDraftDiscard = vm::discardNewGoalDraft,
         ),
         modifier = modifier,
+        openNewGoal = openNewGoal,
+        onNewGoalClosed = onNewGoalClosed,
     )
 }
 
@@ -165,6 +174,12 @@ data class TrainingActions(
     val onSaveGoal: (GoalDraft) -> Unit = {},
     val onDeleteGoal: (TrainingGoal) -> Unit = {},
     val onDismissMessage: () -> Unit = {},
+    /** The form a new goal opens on: the one left last time, or a fresh one. */
+    val newGoalDraft: () -> GoalDraft = { GoalDraft() },
+    /** A new goal's form changed — kept, so leaving it loses nothing. */
+    val onGoalDraftChange: (GoalDraft) -> Unit = {},
+    /** Start over: forget the kept form. */
+    val onGoalDraftDiscard: () -> Unit = {},
 )
 
 private enum class PlanView { Week, Month }
@@ -176,6 +191,8 @@ fun TrainingContent(
     actions: TrainingActions,
     modifier: Modifier = Modifier,
     today: LocalDate = LocalDate.now(),
+    openNewGoal: Boolean = false,
+    onNewGoalClosed: () -> Unit = {},
 ) {
     if (state.loading && state.workouts.isEmpty() && state.goals.isEmpty()) {
         Box(modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator() }
@@ -190,6 +207,23 @@ fun TrainingContent(
     var openDay by remember { mutableStateOf<LocalDate?>(null) }
     var moving by remember { mutableStateOf<PlannedWorkout?>(null) }
     var editingGoal by remember { mutableStateOf<GoalDraft?>(null) }
+    // Asked for from outside (a first run lands here). Only with no goal
+    // yet: someone whose goals arrived with their account has a plan, and
+    // the page itself is the right thing to show them.
+    var openedForCaller by remember { mutableStateOf(false) }
+    LaunchedEffect(openNewGoal) {
+        if (!openNewGoal) return@LaunchedEffect
+        if (state.goals.isEmpty()) {
+            editingGoal = actions.newGoalDraft()
+            openedForCaller = true
+        } else {
+            onNewGoalClosed()
+        }
+    }
+    fun closeGoal() {
+        editingGoal = null
+        if (openedForCaller) { openedForCaller = false; onNewGoalClosed() }
+    }
 
     // Dragging a workout (or the race) to another day. The race is the event
     // goal's own day, so dropping it moves the goal's date — never into the
@@ -223,7 +257,7 @@ fun TrainingContent(
         val active = state.activeGoal
         TourAnchor("goals-active") {
             when {
-                active == null -> NoGoalCard(onNew = { editingGoal = GoalDraft() })
+                active == null -> NoGoalCard(onNew = { editingGoal = actions.newGoalDraft() })
                 active.goalType == "event" -> EventGoalCard(
                     goal = active,
                     phase = state.phase,
@@ -303,7 +337,7 @@ fun TrainingContent(
         TourAnchor("goals-list") {
             GoalsList(
                 goals = state.goals,
-                onNew = { editingGoal = GoalDraft() },
+                onNew = { editingGoal = actions.newGoalDraft() },
                 onEdit = { editingGoal = GoalDraft.of(it) },
                 onActivate = actions.onActivate,
             )
@@ -350,11 +384,13 @@ fun TrainingContent(
         LaunchedEffect(Unit) { actions.onGoalSheet() }
         GoalEditorSheet(
             initial = draft,
-            onSave = { actions.onSaveGoal(it); editingGoal = null },
+            onSave = { actions.onSaveGoal(it); closeGoal() },
             onDelete = draft.id?.let { id ->
-                { state.goals.firstOrNull { it.id == id }?.let(actions.onDeleteGoal); editingGoal = null }
+                { state.goals.firstOrNull { it.id == id }?.let(actions.onDeleteGoal); closeGoal() }
             },
-            onDismiss = { editingGoal = null },
+            onDismiss = { closeGoal() },
+            onChange = { if (it.isNew) actions.onGoalDraftChange(it) },
+            onStartOver = actions.onGoalDraftDiscard.takeIf { draft.isNew },
             eventLoad = state.eventLoad,
             // The feed is a URL on the server that a calendar app polls; with
             // no server there is nothing to subscribe to, so there is no button.

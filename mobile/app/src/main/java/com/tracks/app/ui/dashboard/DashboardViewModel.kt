@@ -76,8 +76,27 @@ data class DashboardUiState(
     val routesFilter: String? = null,
     /** Nothing in the window and sport has GPS — said, rather than a blank map. */
     val routesEmpty: Boolean = false,
+    /** The all-time slice has been computed at least once, so an empty one means empty. */
+    val allTimeLoaded: Boolean = false,
     val error: String? = null,
 ) {
+    /**
+     * Whether there is training to chart — what the tutorial waits on before
+     * explaining the charts, rather than describing empty axes to someone who
+     * has not recorded anything. One activity with load draws a fitness line,
+     * a volume bar and a calendar square, which is enough to point at.
+     *
+     * Null while not yet known: the first frame has no data on every phone,
+     * and answering "none" then would give a full dashboard the new user's
+     * tour. A snapshot from the last run that has load answers at once.
+     */
+    val hasData: Boolean?
+        get() = when {
+            trainingLoad.any { it.tss > 0.0 } || (summary?.activityCount ?: 0) > 0 -> true
+            allTimeLoaded -> false
+            else -> null
+        }
+
     /**
      * The training-load series clipped to the selected window.
      *
@@ -363,7 +382,11 @@ class DashboardViewModel(private val container: AppContainer) : ViewModel() {
                     .filter { !it.isComplete }
             }.getOrNull()
             _state.update {
-                it.copy(trainingLoad = load ?: it.trainingLoad, upcoming = upcoming ?: it.upcoming)
+                it.copy(
+                    trainingLoad = load ?: it.trainingLoad,
+                    upcoming = upcoming ?: it.upcoming,
+                    allTimeLoaded = it.allTimeLoaded || load != null,
+                )
             }
             // Coached here, from the same readiness and load as the gauge — see
             // LocalMetrics.coaching for why this is no longer fetched.

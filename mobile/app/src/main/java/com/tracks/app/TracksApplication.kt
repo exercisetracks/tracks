@@ -410,6 +410,9 @@ class AppContainer(private val context: Context) {
     /** The dashboard's and health page's endpoints, answered on the phone. */
     val metrics: com.tracks.core.local.LocalMetrics by lazy { com.tracks.core.local.LocalMetrics(library, sources) }
 
+    /** The new-goal form as it was left — see [com.tracks.app.ui.goals.GoalDraftStore]. */
+    val goalDrafts: com.tracks.app.ui.goals.GoalDraftStore by lazy { com.tracks.app.ui.goals.GoalDraftStore(context) }
+
     /** Whether this phone has a server to sync with at all. Standalone is a normal state. */
     suspend fun isLinked(): Boolean = serverUrl.value.isNotBlank() && tokens.load().isAuthenticated
 

@@ -1160,5 +1160,11 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
      * that is actually reachable. The server catches up on its own.
      */
     suspend fun syncWatchFromGesture() = awaiting("Syncing watch") { syncWatchNow() }
+
+    /**
+     * The pull gesture on a phone with a server and no watch: a quiet delta
+     * sync, as on opening the app — the page redraws with whatever arrived.
+     */
+    suspend fun syncServerFromGesture() = catchUp()
 }
 

@@ -15,6 +15,13 @@ data class TourStep(
     val title: String,
     val body: String,
     val anchor: String? = null,
+    /**
+     * Shown only while the page has no data — the push to go and record
+     * something, which is the wrong thing to tell someone who already has.
+     */
+    val withoutData: Boolean = false,
+    /** Shown only with a watch or a server — there is nothing to sync otherwise. */
+    val needsSync: Boolean = false,
 )
 
 /**
@@ -42,6 +49,41 @@ object Tours {
      */
     fun seenKey(id: String) = "phone.$id"
 
+    /**
+     * The tours a route can start, in the order they run: its own, then any
+     * that follows it once the page has data ([FOLLOW_UPS]).
+     */
+    fun idsForRoute(route: String?): List<String> =
+        idForRoute(route)?.let { listOfNotNull(it, FOLLOW_UPS[it]) }.orEmpty()
+
+    /**
+     * The dashboard's charts, explained once there is something in them.
+     *
+     * The dashboard's tour used to walk through every chart on the first
+     * open — which, for a new user, meant five tips about empty axes and a
+     * fitness line that was not there. The first tour now says what the page
+     * is and sends them out to record something; this one comes the first
+     * time the dashboard opens with training on it.
+     */
+    val FOLLOW_UPS = mapOf("dashboard-welcome" to "dashboard-charts")
+
+    /** Tours that only start once the page has data to show. */
+    val NEEDS_DATA = setOf("dashboard-charts")
+
+    /**
+     * Tours split out of one that existed before them, and its id. Someone
+     * who finished the old one has seen what both say, and replaying the
+     * charts to a dashboard's long-time user would be noise.
+     */
+    val SPLIT_FROM = mapOf("dashboard-welcome" to "dashboard", "dashboard-charts" to "dashboard")
+
+    /**
+     * A tour's steps, without the ones for an empty page when there is data,
+     * or the ones about syncing when there is nothing to sync with.
+     */
+    fun stepsFor(id: String, hasData: Boolean, canSync: Boolean = true): List<TourStep> =
+        all[id].orEmpty().filter { !(hasData && it.withoutData) && !(!canSync && it.needsSync) }
+
     /** The tour for a route, or null for a page that has none. */
     fun idForRoute(route: String?): String? = when (route) {
         null -> null
@@ -51,7 +93,7 @@ object Tours {
 
     /** The tour that introduces [destination] the first time it is opened. */
     fun idFor(destination: Destination): String = when (destination) {
-        Destination.Dashboard -> "dashboard"
+        Destination.Dashboard -> "dashboard-welcome"
         Destination.Health -> "health"
         Destination.Activities -> "activities"
         Destination.Calendar -> "training"
@@ -66,11 +108,11 @@ object Tours {
     const val ACTIVITY_ROUTE = "activity/{activityId}"
 
     val all: Map<String, List<TourStep>> = mapOf(
-        "dashboard" to listOf(
+        "dashboard-welcome" to listOf(
             TourStep(
                 "Welcome to Tracks",
-                "This is your fitness command center. Here's a quick tour of what each part does — " +
-                    "you can replay it any time from Settings.",
+                "This is your fitness command center. It fills in as you train — here's how to get " +
+                    "going. You can replay these tips any time from Settings.",
             ),
             TourStep(
                 "Your sections",
@@ -78,6 +120,35 @@ object Tours {
                     "Health, Activities, Training, Strength, Flexibility, Race Plans and Maps. Swipe " +
                     "left to close it. Each page shows its own quick tips the first time you open it.",
                 anchor = "nav",
+            ),
+            TourStep(
+                "Record your first activity",
+                "Everything on this page is drawn from your training, so the best next step is to " +
+                    "go and do some. Tap today's workout here to start it — the phone guides you " +
+                    "through it with GPS and cues, and records it as you go. No plan yet? Make one " +
+                    "under Training. Once there's an activity to show, these tips will walk you " +
+                    "through the charts.",
+                anchor = "dashboard-upcoming",
+                withoutData = true,
+            ),
+            TourStep(
+                "Pull to sync",
+                "Drag this page down to pull new activities, sleep, and readiness off your watch. " +
+                    "Without a watch, the same gesture syncs with your server.",
+                needsSync = true,
+            ),
+            TourStep(
+                "Settings & replay",
+                "Profile, training zones, your watch, backups — and the switch for these tips — live " +
+                    "in Settings, at the bottom of the menu.",
+                anchor = "nav",
+            ),
+        ),
+
+        "dashboard-charts" to listOf(
+            TourStep(
+                "Reading your dashboard",
+                "There's training here to chart now, so here's what each part of this page shows.",
             ),
             TourStep(
                 "Pick a time window",
@@ -132,17 +203,6 @@ object Tours {
                 "Tap a sport to narrow the charts above to just that one; tap it again to see " +
                     "everything.",
                 anchor = "dashboard-sports",
-            ),
-            TourStep(
-                "Pull to sync",
-                "Drag this page down to pull new activities, sleep, and readiness off your watch. " +
-                    "Without a watch, the same gesture refreshes the page.",
-            ),
-            TourStep(
-                "Settings & replay",
-                "Profile, training zones, your watch, backups — and the switch for these tips — live " +
-                    "in Settings, at the bottom of the menu.",
-                anchor = "nav",
             ),
         ),
 

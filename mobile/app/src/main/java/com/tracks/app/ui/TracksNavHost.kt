@@ -34,6 +34,9 @@ import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -126,6 +129,14 @@ fun TracksNavHost(
     val bodyFemale by container.bodyFemale.collectAsStateWithLifecycle()
     val snackbars = remember { SnackbarHostState() }
     val pendingRoute by container.pendingRoute.collectAsStateWithLifecycle()
+    // Pull-to-sync needs something to sync with: a watch, or a server. A
+    // standalone phone with neither has the gesture, and its tip, taken away.
+    val linked by produceState(false, state.session) { value = container.isLinked() }
+    val canSync = hasDevice || linked
+    // A first run's plan form, open on the Training page until it closes.
+    // Tours wait for it: a tip drawn under the sheet would be waiting there,
+    // half-read, when the sheet went.
+    var firstPlan by rememberSaveable { mutableStateOf(false) }
 
     // After a workout that went to the watch: did its exercises animate? Asked
     // once, app-wide, when the app opens — see AnimationRecaps.
@@ -143,6 +154,11 @@ fun TracksNavHost(
             com.tracks.app.MainActivity.OPEN_TODAY -> {
                 container.pendingRoute.value = null
                 navController.navigate(Destination.Dashboard.route) { launchSingleTop = true }
+            }
+            com.tracks.app.MainActivity.OPEN_NEW_PLAN -> {
+                container.pendingRoute.value = null
+                firstPlan = true
+                navController.navigate(Destination.Calendar.route) { launchSingleTop = true }
             }
             // A page asked for from inside the app (race plan → map to draw a
             // course, and back).
@@ -228,6 +244,7 @@ fun TracksNavHost(
         },
     )
     val tour by tourVm.state.collectAsStateWithLifecycle()
+    LaunchedEffect(canSync) { tourVm.setCanSync(canSync) }
     val tourAnchors = remember { com.tracks.app.ui.tour.TourAnchors() }
 
     val drawer = rememberDrawerState(DrawerValue.Closed)
@@ -236,20 +253,40 @@ fun TracksNavHost(
     val route = backStack?.destination?.route
     val here = Destination.forRoute(route)
 
-    // A page's tour, the first time it is opened — the web's useTourAutoStart.
+    // Left Training with the first-run form still open: it closed with the
+    // page, so stop holding the tours for it. Only on leaving — the start
+    // destination composes around the moment the form is asked for, and
+    // reading that as a departure cancelled it before it opened.
+    var lastRoute by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(route) {
+        if (lastRoute == Destination.Calendar.route && route != Destination.Calendar.route) firstPlan = false
+        lastRoute = route
+    }
+
+    // Whether the dashboard has training to chart: null until it is known,
+    // since the dashboard's tours differ on it — an empty one is told to go
+    // and record something, a full one has its charts explained.
+    val dashboardState by dashboardVm.state.collectAsStateWithLifecycle()
+    val dashboardHasData = dashboardState.hasData
+
+    // A page's tours, the first time it is opened — the web's useTourAutoStart.
     // Leaving the page mid-tour drops it without marking it seen, so it shows
     // again next time; the half-second is for the page to compose the things
-    // the tips point at.
-    val tourHere = com.tracks.app.ui.tour.Tours.idForRoute(route)
-    LaunchedEffect(tourHere, tour.hydrated, tour.enabled, tour.seen, tour.active) {
+    // the tips point at. A page can have a second tour that waits on data
+    // (the dashboard's charts): it starts here the first time the page is
+    // opened with that data, however long after the first.
+    val toursHere = com.tracks.app.ui.tour.Tours.idsForRoute(route)
+    val hasDataHere = if (here == Destination.Dashboard) dashboardHasData else false
+    LaunchedEffect(toursHere, tour.hydrated, tour.enabled, tour.seen, tour.active, hasDataHere, firstPlan) {
         val active = tour.active
         if (active != null) {
-            if (active != tourHere) tourVm.abort()
+            if (active !in toursHere) tourVm.abort()
             return@LaunchedEffect
         }
-        if (!tour.shouldStart(tourHere)) return@LaunchedEffect
+        if (firstPlan || hasDataHere == null) return@LaunchedEffect
+        val next = toursHere.firstOrNull { tour.shouldStart(it, hasDataHere) } ?: return@LaunchedEffect
         kotlinx.coroutines.delay(500)
-        tourHere?.let(tourVm::start)
+        tourVm.start(next, hasDataHere)
     }
 
     fun navigateTo(destination: Destination) {
@@ -412,10 +449,10 @@ fun TracksNavHost(
                 // Drag down to sync the watch. Both of the pages that offer
                 // it are about what your body did, and the watch is where
                 // that comes from — see [PullToSync].
-                PullToSync(onSync = {
-                    // With no watch the gesture only refreshes: a watch sync
+                PullToSync(enabled = canSync, onSync = {
+                    // With no watch it syncs the server instead: a watch sync
                     // would try to reach a device that does not exist.
-                    if (hasDevice) vm.syncWatchFromGesture()
+                    if (hasDevice) vm.syncWatchFromGesture() else vm.syncServerFromGesture()
                     // And the server-backed half — readiness, VO₂max, the
                     // coaching line. The mirror-derived figures redraw
                     // themselves when the sync writes; these do not.
@@ -525,8 +562,8 @@ fun TracksNavHost(
                 )
             }
             composable(Destination.Health.route) {
-                PullToSync(onSync = {
-                    if (hasDevice) vm.syncWatchFromGesture()
+                PullToSync(enabled = canSync, onSync = {
+                    if (hasDevice) vm.syncWatchFromGesture() else vm.syncServerFromGesture()
                     healthVm.load()
                 }) {
                     HealthScreen(vm = healthVm)
@@ -545,6 +582,8 @@ fun TracksNavHost(
                     vm = planVm,
                     onOpenWorkout = { id -> navController.navigate("workout/$id") },
                     onSyncWatch = { vm.syncWatch() },
+                    openNewGoal = firstPlan,
+                    onNewGoalClosed = { firstPlan = false },
                 )
             }
             composable(Destination.RacePlans.route) {
@@ -593,7 +632,6 @@ fun TracksNavHost(
                 // Re-read whenever the session changes: a sign-in pulls the
                 // account's settings row down, and a sign-out makes the phone
                 // standalone again.
-                val linked by produceState(false, state.session) { value = container.isLinked() }
                 LaunchedEffect(state.session) { profileVm.reload() }
                 SettingsScreen(
                     state = state,
