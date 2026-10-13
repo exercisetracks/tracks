@@ -152,6 +152,35 @@ class ExploreSessionTest {
     }
 
     @Test
+    fun `a FULL session asking with no range is served what is new`() {
+        // Measured 2026-10-13: in a FULL session the watch asks for places and
+        // lines as `{4: 1}`, no bounds. Nothing was served, so nothing new
+        // ever arrived, while the session finished OK.
+        val host = FakeHost().apply { wanted = listOf(course) to listOf(place) }
+        val s = ExploreSession(host)
+        s.openTo()
+        val places = s.ask(16) { varint(4, 1) }.message(2)?.messages(1).orEmpty()
+        val lines = s.ask(26) { varint(4, 1); varint(5, 115) }.message(2)?.messages(1).orEmpty()
+        assertEquals(1, places.size, "the new place")
+        assertEquals(1, lines.size, "the new course")
+        s.ok()
+        // Confirmed now: a later FULL session does not serve it again.
+        val placeId = s.collections().values.flatten().first { it.varint(4) == 0L }.bytes(1)!!
+        val lineId = s.collections().values.flatten().first { it.varint(4) == 3L }.bytes(1)!!
+        s.openTo(places = listOf(placeId), lines = listOf(lineId))
+        assertTrue(s.ask(16) { varint(4, 1) }.message(2)?.messages(1).isNullOrEmpty())
+    }
+
+    @Test
+    fun `a new collection is declared in the session that first serves it`() {
+        val host = FakeHost().apply { wanted = emptyList<DesiredCourse>() to listOf(place.copy(group = "alps")) }
+        val s = ExploreSession(host)
+        s.startRequest(); s.handle(msg(2) { varint(1, 1) })
+        val declared = s.ask(4).message(2)!!.messages(1).map { it.bytes(1)!!.hex() }
+        assertEquals(2, declared.size, "the default and Alps, before anything is planned")
+    }
+
+    @Test
     fun `a collection emptied and settled is declared retired`() {
         val host = FakeHost().apply { wanted = emptyList<DesiredCourse>() to listOf(place.copy(group = "alps")) }
         val s = ExploreSession(host)

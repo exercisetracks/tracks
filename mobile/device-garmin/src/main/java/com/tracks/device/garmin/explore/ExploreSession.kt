@@ -194,6 +194,13 @@ class ExploreSession(private val host: Host) {
         val listed = body.message(1)?.let { l -> l.messages(1) + listOfNotNull(l.message(2)) }
             .orEmpty().mapNotNull { it.bytes(1)?.hex() }.toSet()
         watchListed = listed
+        // Every collection Tracks will serve this session is declared now,
+        // before the change summary plans it: a collection first made there
+        // was served this session without having been declared, and the
+        // watch did not take its items.
+        host.wanted()?.let { (courses, places) ->
+            (courses.mapNotNull { it.group } + places.mapNotNull { it.group }).forEach { library.collectionFor(it) }
+        }
         val c = library.collection.unhex()
         val all = library.activeCollections()
         host.log("declaring collection(s) $all")
@@ -521,9 +528,17 @@ class ExploreSession(private val host: Host) {
 
     /** Live items of [kind] changed within the watch's requested transaction range. */
     private fun changed(kind: Int, body: ProtoReader): List<WatchLibrary.Item> {
+        // A FULL session asks with no range at all (measured 2026-10-13: 16
+        // and 26 arrive as `{4: 1}`). The bound used to default to
+        // Long.MAX_VALUE.toInt(), which is -1, so the range was empty and no
+        // new place or course was ever served in a FULL session — the session
+        // still finished OK, so Tracks believed it had arrived.
         val from = body.varint(1).toInt()
-        val to = body.varint(2, Long.MAX_VALUE).toInt()
-        return library.live(kind).filter { it.txn in (from + 1)..to }
+        val to = if (body.has(2)) body.varint(2).toInt() else Int.MAX_VALUE
+        val inRange = library.live(kind).filter { it.txn != WatchLibrary.PENDING && it.txn in (from + 1)..to }
+        // Everything from 0, in a FULL session: what the watch lacks is what it
+        // has not confirmed; the rest it holds already.
+        return if (full && !body.has(2)) inRange.filter { !it.confirmed } else inRange
     }
 
     /** One entry per page, as Explore serves them. */
