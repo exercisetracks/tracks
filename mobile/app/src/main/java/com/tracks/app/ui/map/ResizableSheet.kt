@@ -98,6 +98,22 @@ fun ResizableSheet(
     }
 }
 
+/**
+ * The short drag handle every sheet on the map wears — Material's own is a
+ * band of padding the height of a list row, and on a screen that is mostly
+ * map, every row of chrome is map hidden. For a Material sheet's `dragHandle`.
+ */
+@Composable
+fun CompactDragHandle() {
+    Box(Modifier.fillMaxWidth().height(14.dp), contentAlignment = Alignment.Center) {
+        Box(
+            Modifier
+                .size(width = 36.dp, height = 4.dp)
+                .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f), RoundedCornerShape(2.dp)),
+        )
+    }
+}
+
 /** Where the panel opens the first time. */
 const val DEFAULT_SHEET_FRACTION = 0.45f
 

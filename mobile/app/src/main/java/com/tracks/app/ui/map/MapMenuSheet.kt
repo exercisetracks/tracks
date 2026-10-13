@@ -80,7 +80,7 @@ fun MapMenuSheet(
         style == null || group.layers.any { style.getLayer(it) != null }
     }
 
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, dragHandle = { CompactDragHandle() }) {
         Column(
             Modifier
                 .fillMaxWidth()

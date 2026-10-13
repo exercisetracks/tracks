@@ -385,6 +385,14 @@ fun MapScreen(
                             ready.handleNear(point, handles.value) == null
                         ) {
                             if (currentTool.value != MapTool.Route) {
+                                // A new drawing gets the screen: whatever sheet
+                                // was open (a place's details, the library, a
+                                // search) closes, or the editor opens under it.
+                                showLibrary = false
+                                showSearch = false
+                                showDownloads = false
+                                showMenu = false
+                                toolsVm.clearSelection()
                                 toolsVm.selectTool(MapTool.Route)
                             }
                             toolsVm.addWaypoint(point)
@@ -578,6 +586,9 @@ fun MapScreen(
                         onEditIcon = toolsVm::setEditIcon,
                         sprite = editorSprite,
                         onSimplify = toolsVm::setSimplify,
+                        collections = tools.collections,
+                        onEditCollection = toolsVm::setEditCollection,
+                        onNewCollection = toolsVm::newCollectionForDraft,
                         onProfileScrub = { m ->
                             toolsVm.scrubProfile(tools.route.coordinates().map { c -> c.map { it as Double? } }, m)
                         },
@@ -707,6 +718,7 @@ fun MapScreen(
 
         val actions = libraryActions(
             toolsVm,
+            collections = tools.collections,
             onOpenActivity = { id -> toolsVm.clearSelection(); onOpenActivity(id) },
             onImport = { pickTrackFile.launch(TRACK_FILE_TYPES) },
             onExport = { name, gpx ->
@@ -1515,6 +1527,7 @@ private fun outlineOf(geometry: String): Feature? = runCatching {
 @Composable
 private fun libraryActions(
     toolsVm: MapToolsViewModel,
+    collections: List<com.tracks.core.api.TrackCollection> = emptyList(),
     onOpenActivity: (Int) -> Unit = {},
     onImport: () -> Unit = {},
     /** Save GPX text under a name, through the system's save dialog. */
@@ -1548,6 +1561,8 @@ private fun libraryActions(
     onCollectionDelete = toolsVm::deleteCollection,
     onCollectionOnWatch = toolsVm::setCollectionOnWatch,
     onMove = toolsVm::moveToCollection,
+    onNewCollectionFor = toolsVm::newCollectionFor,
+    collections = collections,
 )
 
 /** Keeps the library sheet's wiring out of the screen's own body. */

@@ -220,4 +220,14 @@ class RouteGeometryTest {
         // than a strip of blank cells.
         assertEquals("08-19", hourLabel("2026-08-19"))
     }
+
+    @Test
+    fun `hourly labels follow the phone's clock`() {
+        assertEquals("2p", clockLabel("2026-08-19T14:00", is24 = false))
+        assertEquals("12a", clockLabel("2026-08-19T00:00", is24 = false))
+        assertEquals("12p", clockLabel("2026-08-19T12:00", is24 = false))
+        assertEquals("2 PM", clockLabel("2026-08-19T14:00", is24 = false, long = true))
+        assertEquals("14", clockLabel("2026-08-19T14:00", is24 = true))
+        assertEquals("no time: its tail, not a blank", "08-19", clockLabel("2026-08-19", is24 = false))
+    }
 }

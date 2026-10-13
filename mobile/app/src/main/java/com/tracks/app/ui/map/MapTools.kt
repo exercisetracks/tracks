@@ -120,17 +120,19 @@ fun PointSheet(
     onSaveWaypoint: ((SavedSpot) -> Unit)? = null,
     onDismiss: () -> Unit,
 ) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val clipboard = LocalClipboardManager.current
     val coordinates = coordinateLabel(point.lat, point.lon)
     var sprite by remember { mutableStateOf<SpriteSheet?>(null) }
     var saving by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { sprite = SpriteSheet.load(container) }
 
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+    // Non-modal, like a saved track's sheet: the map stays lit and can be
+    // panned behind it — the spot it describes is on that map.
+    ContentSheet(onDismiss = onDismiss) {
         Column(
             Modifier
                 .fillMaxWidth()
+                .heightIn(max = 560.dp)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = SHEET_PAD)
                 .padding(bottom = 14.dp),
@@ -256,6 +258,10 @@ private fun Weather(container: AppContainer, point: PointInfo, loading: Boolean)
     var openDay by remember(point.lat, point.lon) { mutableStateOf<String?>(null) }
     var hours by remember { mutableStateOf<List<WeatherHour>>(emptyList()) }
     var loadingHours by remember { mutableStateOf(false) }
+    // Today's hours open at once: the chart under the days is what says the
+    // days can be tapped, and an empty space under them said nothing.
+    val firstDay = forecast?.daily?.firstOrNull()?.date
+    LaunchedEffect(firstDay) { if (openDay == null && firstDay != null) openDay = firstDay }
 
     LaunchedEffect(openDay) {
         val date = openDay ?: return@LaunchedEffect
@@ -310,190 +316,181 @@ private fun Weather(container: AppContainer, point: PointInfo, loading: Boolean)
         if (days.isEmpty()) return@Column
 
         Row(
-            Modifier.fillMaxWidth().padding(top = 2.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            Modifier.fillMaxWidth().padding(top = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             days.forEachIndexed { index, day ->
                 ForecastDay(
                     day = day,
                     today = index == 0,
                     open = openDay == day.date,
-                    // Tapping the open day closes it, so the strip is never
-                    // stuck expanded with no way back to the week.
-                    onClick = { openDay = if (openDay == day.date) null else day.date },
+                    // A day is chosen, not toggled: one is always showing.
+                    onClick = { openDay = day.date },
                     modifier = Modifier.weight(1f),
                 )
             }
         }
 
         openDay?.let { date ->
-            when {
-                loadingHours -> Text(
-                    "Loading hours…",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+            Box(Modifier.fillMaxWidth().height(HOURS_HEIGHT + 22.dp), contentAlignment = Alignment.Center) {
+                when {
+                    loadingHours && hours.isEmpty() -> Text(
+                        "Loading hours…",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
 
-                hours.isEmpty() -> Text(
-                    "No hourly forecast for $date.",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                    hours.isEmpty() -> Text(
+                        "No hourly forecast for $date.",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
 
-                else -> HourStrip(hours)
+                    else -> HourChart(hours, today = date == firstDay)
+                }
             }
         }
     }
 }
 
 /**
- * A day's hours, as a chart rather than a row of numbers.
+ * A day's hours as two lines on one chart: temperature in orange, chance of
+ * rain in blue, each on its own scale, across the width of the sheet.
  *
- * Twenty-four readings printed as text is a table, and a table is the wrong
- * shape for the question being asked. Nobody opens this to look up the
- * temperature at 14:00; they open it to find the part of the day that is warm
- * and dry, which is a *shape* — and a shape is read in one glance from a curve
- * and lost entirely in a row of digits.
+ * Nobody opens this to look up the temperature at 14:00; they open it to find
+ * the part of the day that is warm and dry, which is a shape, and the shape is
+ * where the two lines trade off. It fits the width rather than scrolling — a
+ * strip wider than the phone hid the evening behind a swipe — and dragging
+ * along it reads out the hour under the finger.
  *
- * So: temperature as a filled curve, rain as bars rising from the floor, and
- * the two on the same canvas because the answer is where they trade off. It
- * scrolls sideways because a day does not fit across a phone and must not be
- * allowed to grow the sheet downward — this opens inside a panel already
- * competing with the map.
+ * Temperature is scaled to the day's own range: a day between 12° and 19°
+ * drawn from freezing is a flat line. Rain is 0–100% as it stands. Hours are
+ * labelled in the phone's own clock, 12- or 24-hour.
  */
 @Composable
-private fun HourStrip(hours: List<WeatherHour>) {
+private fun HourChart(hours: List<WeatherHour>, today: Boolean) {
     val temperatures = hours.mapNotNull { it.tempC }
     if (temperatures.isEmpty()) return
 
     val warm = Color(0xFFF97316)
     val rain = Color(0xFF0EA5E9)
+    val grid = MaterialTheme.colorScheme.outlineVariant
     val axis = MaterialTheme.colorScheme.onSurfaceVariant
     val measurer = rememberTextMeasurer()
     val labelStyle = MaterialTheme.typography.labelSmall
-    val hourWidth = HOUR_WIDTH
-    val width = hourWidth * hours.size
-
-    // The scale is the day's own range, not zero-based: a day between 12° and
-    // 19° drawn from freezing is a flat line, which is exactly the wrong answer
-    // for the one question this chart exists for.
+    val is24 = android.text.format.DateFormat.is24HourFormat(androidx.compose.ui.platform.LocalContext.current)
     val low = temperatures.min()
     val high = temperatures.max()
     val span = (high - low).takeIf { it > 0.5 } ?: 1.0
+    val nowHour = if (today) java.time.LocalTime.now().hour else null
+    var scrub by remember(hours) { mutableStateOf<Int?>(null) }
 
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState()),
-    ) {
-        Box(
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        // The legend doubles as the read-out: the hour under the finger, or
+        // the day's range when nothing is touched.
+        val shown = scrub?.let { hours.getOrNull(it) }
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+            if (shown != null) {
+                Text(clockLabel(shown.time, is24, long = true), style = labelStyle, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
+                Text(temperature(shown.tempC), style = labelStyle, color = warm)
+                Text("${(shown.precipProbPct ?: 0.0).roundToInt()}% rain", style = labelStyle, color = rain)
+            } else {
+                Text("● Temp ${temperature(low)}–${temperature(high)}", style = labelStyle, color = warm)
+                Text("● Rain ${(hours.mapNotNull { it.precipProbPct }.maxOrNull() ?: 0.0).roundToInt()}% max", style = labelStyle, color = rain)
+            }
+        }
+        Canvas(
             Modifier
-                .width(width)
+                .fillMaxWidth()
                 .height(HOURS_HEIGHT)
-                .clip(RoundedCornerShape(Tokens.Radius.lg))
-                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                .pointerInput(hours) {
+                    fun at(x: Float) = ((x / size.width) * hours.size).toInt().coerceIn(0, hours.lastIndex)
+                    detectDragGestures(
+                        onDragStart = { scrub = at(it.x) },
+                        onDragEnd = { scrub = null },
+                        onDragCancel = { scrub = null },
+                    ) { change, _ -> scrub = at(change.position.x) }
+                },
         ) {
-            Canvas(Modifier.fillMaxSize()) {
-                val step = size.width / hours.size
-                val plotTop = size.height * 0.30f
-                val plotBottom = size.height * 0.74f
-                fun x(index: Int) = step * (index + 0.5f)
-                fun y(celsius: Double) =
-                    plotBottom - ((celsius - low) / span).toFloat() * (plotBottom - plotTop)
+            val labelHeight = measurer.measure("12", labelStyle).size.height.toFloat()
+            val top = 4.dp.toPx()
+            val bottom = size.height - labelHeight - 4.dp.toPx()
+            val step = size.width / hours.size
+            fun x(i: Int) = step * (i + 0.5f)
+            fun yTemp(c: Double) = bottom - ((c - low) / span).toFloat() * (bottom - top)
+            fun yRain(p: Double) = bottom - (p.coerceIn(0.0, 100.0) / 100.0).toFloat() * (bottom - top)
 
-                // Rain first, underneath: it is context for the curve rather
-                // than a series competing with it.
-                hours.forEachIndexed { index, hour ->
-                    val chance = (hour.precipProbPct ?: 0.0).coerceIn(0.0, 100.0)
-                    if (chance <= 0) return@forEachIndexed
-                    val height = (size.height - plotBottom) * (chance / 100.0).toFloat()
-                    drawRoundRect(
-                        color = rain.copy(alpha = 0.30f + 0.5f * (chance / 100.0).toFloat()),
-                        topLeft = Offset(x(index) - step * 0.30f, size.height - height),
-                        size = Size(step * 0.60f, height),
-                        cornerRadius = CornerRadius(2.dp.toPx()),
-                    )
+            // Three faint guides; the lines carry the reading.
+            for (f in listOf(0f, 0.5f, 1f)) {
+                val y = top + (bottom - top) * f
+                drawLine(grid.copy(alpha = 0.5f), Offset(0f, y), Offset(size.width, y), strokeWidth = 1f)
+            }
+            nowHour?.let { h ->
+                hours.indexOfFirst { it.time.substringAfter('T').take(2).toIntOrNull() == h }.takeIf { it >= 0 }?.let { i ->
+                    drawLine(axis.copy(alpha = 0.6f), Offset(x(i), top), Offset(x(i), bottom), strokeWidth = 1.5f,
+                        pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(6f, 6f)))
                 }
+            }
 
-                val curve = Path()
-                hours.forEachIndexed { index, hour ->
-                    val celsius = hour.tempC ?: return@forEachIndexed
-                    val point = Offset(x(index), y(celsius))
-                    if (curve.isEmpty) curve.moveTo(point.x, point.y)
-                    else curve.lineTo(point.x, point.y)
+            fun line(values: List<Double?>, y: (Double) -> Float): Path = Path().apply {
+                var started = false
+                values.forEachIndexed { i, v ->
+                    v ?: return@forEachIndexed
+                    if (!started) { moveTo(x(i), y(v)); started = true } else lineTo(x(i), y(v))
                 }
-                // Filled beneath, so the warm part of the day reads as a mass
-                // rather than as a line that happens to be higher.
+            }
+            fun fill(path: Path, color: Color) {
                 val area = Path().apply {
-                    addPath(curve)
-                    lineTo(x(hours.lastIndex), size.height)
-                    lineTo(x(0), size.height)
+                    addPath(path)
+                    lineTo(x(hours.lastIndex), bottom)
+                    lineTo(x(0), bottom)
                     close()
                 }
-                drawPath(
-                    area,
-                    brush = Brush.verticalGradient(
-                        listOf(warm.copy(alpha = 0.28f), warm.copy(alpha = 0.02f)),
-                        startY = plotTop,
-                        endY = size.height,
-                    ),
-                )
-                drawPath(
-                    curve,
-                    color = warm,
-                    style = Stroke(
-                        width = 2.dp.toPx(),
-                        cap = StrokeCap.Round,
-                        join = StrokeJoin.Round,
-                    ),
-                )
+                drawPath(area, brush = Brush.verticalGradient(listOf(color.copy(alpha = 0.22f), color.copy(alpha = 0.0f)), startY = top, endY = bottom))
+            }
+            val stroke = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
+            val rainLine = line(hours.map { it.precipProbPct ?: 0.0 }, ::yRain)
+            fill(rainLine, rain)
+            drawPath(rainLine, rain, style = stroke)
+            val tempLine = line(hours.map { it.tempC }, ::yTemp)
+            fill(tempLine, warm)
+            drawPath(tempLine, warm, style = stroke)
 
-                // Labels every third hour. All twenty-four collide at this
-                // width, and a legible quarter of them is worth more than an
-                // illegible whole.
-                hours.forEachIndexed { index, hour ->
-                    if (index % HOUR_LABEL_EVERY != 0) return@forEachIndexed
-                    val text = measurer.measure(hourLabel(hour.time), labelStyle)
-                    drawText(
-                        text,
-                        color = axis,
-                        topLeft = Offset(
-                            x(index) - text.size.width / 2f,
-                            size.height - text.size.height - 1.dp.toPx(),
-                        ),
-                    )
-                    hour.tempC?.let { celsius ->
-                        val reading = measurer.measure(temperature(celsius), labelStyle)
-                        drawText(
-                            reading,
-                            color = warm,
-                            topLeft = Offset(
-                                x(index) - reading.size.width / 2f,
-                                (y(celsius) - reading.size.height - 3.dp.toPx())
-                                    .coerceAtLeast(0f),
-                            ),
-                        )
-                    }
-                }
+            // As many hour labels as fit without touching.
+            val sample = measurer.measure(clockLabel("T12:00", is24), labelStyle).size.width
+            val every = listOf(1, 2, 3, 4, 6, 12).first { it * step >= sample + 6.dp.toPx() }
+            hours.forEachIndexed { i, hour ->
+                if (i % every != 0) return@forEachIndexed
+                val text = measurer.measure(clockLabel(hour.time, is24), labelStyle)
+                val left = (x(i) - text.size.width / 2f).coerceIn(0f, size.width - text.size.width)
+                drawText(text, color = axis, topLeft = Offset(left, size.height - text.size.height))
+            }
+
+            scrub?.let { i ->
+                drawLine(axis, Offset(x(i), top), Offset(x(i), bottom), strokeWidth = 1.5f)
+                hours[i].tempC?.let { drawCircle(warm, 4.dp.toPx(), Offset(x(i), yTemp(it))) }
+                drawCircle(rain, 4.dp.toPx(), Offset(x(i), yRain(hours[i].precipProbPct ?: 0.0)))
             }
         }
     }
 }
 
-/** Narrow enough that a day is two screens of scrolling, not five. */
-private val HOUR_WIDTH = 26.dp
-private val HOURS_HEIGHT = 92.dp
-
-/** Every third hour carries a label; the rest would collide at this width. */
-private const val HOUR_LABEL_EVERY = 3
+private val HOURS_HEIGHT = 112.dp
 
 /**
- * `2026-08-19T14:00` → `14`.
- *
- * A value with no time in it has no hour to show, so the tail of it is shown
- * instead — wrong-looking beats a blank cell in a strip of twenty-four, and it
- * makes a provider that changed its format visible rather than silent.
+ * `2026-08-19T14:00` as the phone tells time: `2p` / `2 PM` in 12-hour, `14`
+ * in 24. A value with no time shows its tail, so a provider that changed its
+ * format is visible rather than silent.
  */
+internal fun clockLabel(iso: String, is24: Boolean, long: Boolean = false): String {
+    val hour = iso.substringAfter('T', "").take(2).toIntOrNull() ?: return iso.takeLast(5)
+    if (is24) return if (long) "%02d:00".format(hour) else "%02d".format(hour)
+    val h = if (hour % 12 == 0) 12 else hour % 12
+    val am = hour < 12
+    return if (long) "$h ${if (am) "AM" else "PM"}" else "$h${if (am) "a" else "p"}"
+}
+
+/** The hour of an ISO time, as 24-hour digits. */
 internal fun hourLabel(iso: String): String =
     iso.substringAfter('T', "").take(2).ifBlank { iso.takeLast(5) }
 
@@ -525,13 +522,15 @@ private fun ForecastDay(
 ) {
     Column(
         modifier
-            .clip(RoundedCornerShape(Tokens.Radius.md))
+            .clip(RoundedCornerShape(Tokens.Radius.lg))
             .background(
-                if (open) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent
+                if (open) MaterialTheme.colorScheme.primaryContainer
+                else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
             )
             .clickable(onClick = onClick)
-            .padding(vertical = 2.dp),
+            .padding(vertical = 5.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(1.dp),
     ) {
         Text(
             if (today) "Today" else dayOfWeek(day.date),
@@ -626,7 +625,7 @@ fun SearchSheet(
 
     LaunchedEffect(query) { vm.search(query, near) }
 
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, dragHandle = { CompactDragHandle() }) {
         Column(
             Modifier
                 .fillMaxWidth()
@@ -785,16 +784,16 @@ fun RouteBar(
     sprite: SpriteSheet? = null,
     onProfileScrub: ((Double?) -> Unit)? = null,
     onSimplify: (Int) -> Unit = {},
+    collections: List<com.tracks.core.api.TrackCollection> = emptyList(),
+    onEditCollection: (Int?) -> Unit = {},
+    onNewCollection: (String) -> Unit = {},
 ) {
-    var naming by remember { mutableStateOf(false) }
     val editingPlace = route.editingPlace != null
     val editing = route.editing != null || editingPlace
-    var name by remember { mutableStateOf("") }
-    // Random rather than always the same first swatch — a batch of tracks
-    // saved in one sitting is easy to tell apart on the map without anyone
-    // having had to think about colour at all, which is the point of a
-    // preset row in the first place.
-    var color by remember { mutableStateOf(TRACK_COLORS.random()) }
+    // One handle drawn fresh is a place; two or more, a track. The editor
+    // shows what it will save as, and Save is the only step.
+    val isPlace = editingPlace || (route.editing == null && route.waypoints.size == 1)
+    val drawing = !editing && route.waypoints.isNotEmpty()
 
     Surface(
         modifier = modifier.fillMaxWidth().padding(8.dp),
@@ -813,16 +812,26 @@ fun RouteBar(
             }
 
             // The editor: everything about the track or place in one place,
-            // committed together by Save. The line or pin is edited on the map.
-            if (editing) {
-                OutlinedTextField(
-                    value = route.editingName.orEmpty(),
-                    onValueChange = onEditName,
-                    label = { Text(if (editingPlace) "Place name" else "Track name") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    textStyle = MaterialTheme.typography.bodyMedium,
-                )
+            // committed together by Save — for a new drawing as for an edit,
+            // so naming it is not a second step after saving. The line or pin
+            // is edited on the map.
+            if (editing || drawing) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    OutlinedTextField(
+                        value = route.editingName.orEmpty(),
+                        onValueChange = onEditName,
+                        label = { Text(if (isPlace) "Place name" else "Track name") },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f),
+                        textStyle = MaterialTheme.typography.bodyMedium,
+                    )
+                    CollectionDropdown(
+                        current = route.editCollection,
+                        collections = collections,
+                        onPick = onEditCollection,
+                        onCreate = onNewCollection,
+                    )
+                }
                 ColorRow(selected = route.editColor ?: TRACK_COLORS.first(), onPick = onEditColor)
                 // Refine a recorded or imported line, as on the desktop: fewer
                 // points, same shape, previewed on the map as it moves.
@@ -840,7 +849,7 @@ fun RouteBar(
                         )
                     }
                 }
-                if (editingPlace) {
+                if (isPlace) {
                     IconRow(
                         sprite = sprite,
                         selected = route.editIcon ?: "marker",
@@ -850,27 +859,7 @@ fun RouteBar(
                 }
             }
 
-            if (naming) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    OutlinedTextField(
-                        value = name,
-                        onValueChange = { name = it },
-                        placeholder = { Text("Track name") },
-                        singleLine = true,
-                        modifier = Modifier.weight(1f),
-                        textStyle = MaterialTheme.typography.bodyMedium,
-                    )
-                    NeutralButton("Back", onClick = { naming = false })
-                    PrimaryButton(if (route.saving) "Saving…" else "Save", onClick = { onSave(name, color) }, enabled = !route.saving)
-                }
-                // Chosen here rather than after saving, because the colour is
-                // how you tell one track from another on the map and the moment
-                // you have just drawn it is the moment you know which it is.
-                ColorRow(selected = color, onPick = { color = it })
-            } else {
+            run {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -889,6 +878,7 @@ fun RouteBar(
 
                             editingPlace -> "Drag the pin, or tap to move it"
                             route.waypoints.isEmpty() -> "Tap the map to start"
+                            isPlace -> "A place — tap again to make a track"
                             else -> "Tap again to extend"
                         },
                         Modifier.weight(1f),
@@ -898,7 +888,7 @@ fun RouteBar(
                         color = if (route.error != null) MaterialTheme.colorScheme.error
                         else MaterialTheme.colorScheme.onSurface,
                     )
-                    if (!editingPlace) {
+                    if (!isPlace) {
                         Text(
                             "Snap",
                             style = MaterialTheme.typography.labelSmall,
@@ -917,13 +907,16 @@ fun RouteBar(
                             modifier = Modifier.size(18.dp),
                         )
                     }
-                    // Re-drawing a saved track writes straight back into it:
-                    // it already has a name and a colour.
                     PrimaryButton(
                         if (route.saving) "Saving…" else "Save",
-                        onClick = { if (editing) onSave("", "") else naming = true },
-                        // A place being moved has its one point; a track needs two.
-                        enabled = (if (editingPlace) route.waypoints.size == 1 else route.waypoints.size >= 2) && !route.saving,
+                        onClick = { onSave("", "") },
+                        // A place has its one point; a track being edited needs
+                        // two; a new drawing is a place at one, a track at two.
+                        enabled = when {
+                            editingPlace -> route.waypoints.size == 1
+                            route.editing != null -> route.waypoints.size >= 2
+                            else -> route.waypoints.isNotEmpty()
+                        } && !route.saving,
                     )
                 }
             }

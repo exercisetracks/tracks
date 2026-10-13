@@ -7,6 +7,9 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.border
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -235,7 +238,10 @@ fun TrackLibrarySheet(
             // Receipts for watch and sync work are toasts over the map now
             // (see StatusToast); this line is only the count.
             Text(
-                scope.summary(courses, waypoints),
+                // While picking, the count of picked rows rides here: the bar
+                // above is all buttons, and squeezed in there "1 selected"
+                // wrapped one syllable to a line.
+                scope.summary(courses, waypoints) + if (picking) " · ${picked.size} selected" else "",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -262,25 +268,21 @@ fun TrackLibrarySheet(
                 // One section per collection, the default first. A collection
                 // with nothing in this view is shown only under "Everything",
                 // where a new, empty one has to be visible to be filled.
-                val sections = listOf<com.tracks.core.api.TrackCollection?>(null) + collections
+                val sections = listOf<com.tracks.core.api.TrackCollection?>(null) +
+                    collections.sortedWith(compareBy(NaturalOrder) { it.name })
                 for (section in sections) {
                     val id = section?.id
                     val sCourses = shownCourses.filter { groupOf(it.folderId) == id }
                     val sPlaces = shownWaypoints.filter { groupOf(it.folderId) == id }
                     if (sCourses.isEmpty() && sPlaces.isEmpty() && (scope != Scope.Everything || section == null)) continue
                     item(key = "collection-${id ?: "default"}") {
-                        // The switch reads every member, shown or not: it acts on all of them.
-                        val members = courses.filter { groupOf(it.folderId) == id && !it.isExternal } +
-                            waypoints.filter { groupOf(it.folderId) == id }
-                        val allOn = members.isNotEmpty() && members.all { m ->
-                            if (m is CourseSummary) m.loadToDevice else (m as Waypoint).loadToDevice
-                        }
                         CollectionHeader(
                             name = section?.name ?: DEFAULT_COLLECTION,
                             count = "${sCourses.size} track${if (sCourses.size == 1) "" else "s"} · " +
                                 "${sPlaces.size} place${if (sPlaces.size == 1) "" else "s"}",
-                            hasDevice = hasDevice && members.isNotEmpty(),
-                            allOn = allOn,
+                            // A named collection is on the watch whole or not
+                            // at all; the default's items are each their own call.
+                            onTheWatch = if (hasDevice) section?.loadToDevice else null,
                             onWatch = { on -> actions.onCollectionOnWatch(id, on) },
                             onRename = section?.let { c -> { name: String -> actions.onCollectionRename(c.id, name) } },
                             onDelete = section?.let { c -> { actions.onCollectionDelete(c.id) } },
@@ -338,20 +340,67 @@ fun TrackLibrarySheet(
     }
 }
 
+/**
+ * Which collection an item is in, as a drop-down: "Tracks", every collection,
+ * and a new one (named, then the item filed in it).
+ */
+@Composable
+internal fun CollectionDropdown(
+    current: Int?,
+    collections: List<com.tracks.core.api.TrackCollection>,
+    onPick: (Int?) -> Unit,
+    onCreate: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var open by remember { mutableStateOf(false) }
+    var naming by remember { mutableStateOf(false) }
+    val here = collections.firstOrNull { it.id == current }
+    Box(modifier) {
+        Row(
+            Modifier
+                .clip(RoundedCornerShape(8.dp))
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
+                .clickable { open = true }
+                .padding(horizontal = 10.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Text("Collection", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(here?.name ?: DEFAULT_COLLECTION, style = MaterialTheme.typography.labelLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Icon(Icons.Filled.KeyboardArrowDown, contentDescription = "Choose a collection", modifier = Modifier.size(18.dp))
+        }
+        androidx.compose.material3.DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            listOf<com.tracks.core.api.TrackCollection?>(null).plus(collections.sortedWith(compareBy(NaturalOrder) { it.name })).forEach { c ->
+                androidx.compose.material3.DropdownMenuItem(
+                    text = { Text(c?.name ?: DEFAULT_COLLECTION, fontWeight = if (c?.id == here?.id) FontWeight.SemiBold else null) },
+                    onClick = { open = false; if (c?.id != here?.id) onPick(c?.id) },
+                )
+            }
+            Divider()
+            androidx.compose.material3.DropdownMenuItem(
+                text = { Text("+ New collection") },
+                onClick = { open = false; naming = true },
+            )
+        }
+    }
+    if (naming) {
+        NameDialog(title = "New collection", onSave = { onCreate(it); naming = false }, onDismiss = { naming = false })
+    }
+}
+
 /** The collection everything is in until it is filed elsewhere. */
 const val DEFAULT_COLLECTION = "Tracks"
 
 /**
  * A collection's heading: its name (tap to rename, except the default), what
- * is in it, and one switch for all of it — "To watch" until every member is
- * on, then "Off watch".
+ * is in it, and — for a named collection — one switch that keeps everything in
+ * it on the watch, or none of it. [onTheWatch] is null for no switch.
  */
 @Composable
 private fun CollectionHeader(
     name: String,
     count: String,
-    hasDevice: Boolean,
-    allOn: Boolean,
+    onTheWatch: Boolean?,
     onWatch: (Boolean) -> Unit,
     onRename: ((String) -> Unit)?,
     onDelete: (() -> Unit)?,
@@ -371,9 +420,9 @@ private fun CollectionHeader(
             DangerButton("Delete", onClick = { confirming = false; onDelete() }, small = true)
             return@Row
         }
-        if (hasDevice) {
-            if (allOn) NeutralButton("Off watch", onClick = { onWatch(false) }, small = true)
-            else TonalButton("To watch", onClick = { onWatch(true) }, small = true)
+        onTheWatch?.let { on ->
+            Text("Watch", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            com.tracks.app.ui.components.TracksSwitch(checked = on, onCheckedChange = onWatch)
         }
         if (onDelete != null) {
             IconButton(onClick = { confirming = true }, modifier = Modifier.size(36.dp)) {
@@ -417,7 +466,7 @@ private fun MovePicker(
 }
 
 @Composable
-private fun NameDialog(title: String, onSave: (String) -> Unit, onDismiss: () -> Unit) {
+internal fun NameDialog(title: String, onSave: (String) -> Unit, onDismiss: () -> Unit) {
     var name by remember { mutableStateOf("") }
     androidx.compose.material3.AlertDialog(
         onDismissRequest = onDismiss,
@@ -521,6 +570,10 @@ data class LibraryActions(
     val onCollectionOnWatch: (Int?, Boolean) -> Unit = { _, _ -> },
     /** File these tracks and places under a collection; null is the default. */
     val onMove: (List<Int>, List<Int>, Int?) -> Unit = { _, _, _ -> },
+    /** Make a collection of this name and file these tracks and places in it. */
+    val onNewCollectionFor: (String, List<Int>, List<Int>) -> Unit = { _, _, _ -> },
+    /** Every collection, for the pickers. */
+    val collections: List<com.tracks.core.api.TrackCollection> = emptyList(),
 )
 
 @Composable
@@ -641,6 +694,12 @@ internal fun CourseActions(
             onEdit = { actions.onCourseEditLine(course) }.takeIf { course.id >= 0 },
             onExport = { actions.onCourseExport(course) },
         )
+        if (course.id >= 0) CollectionDropdown(
+            current = course.folderId,
+            collections = actions.collections,
+            onPick = { actions.onMove(listOf(course.id), emptyList(), it) },
+            onCreate = { actions.onNewCollectionFor(it, listOf(course.id), emptyList()) },
+        )
     }
 
     if (picking) {
@@ -730,6 +789,12 @@ internal fun WaypointActions(
             deleteQuestion = if (waypoint.loadToDevice) "Delete from Tracks and the watch?" else "Delete for good?",
             onEdit = { actions.onWaypointEdit(waypoint) }.takeIf { waypoint.id >= 0 },
             onExport = { actions.onWaypointExport(waypoint) },
+        )
+        if (waypoint.id >= 0) CollectionDropdown(
+            current = waypoint.folderId,
+            collections = actions.collections,
+            onPick = { actions.onMove(emptyList(), listOf(waypoint.id), it) },
+            onCreate = { actions.onNewCollectionFor(it, emptyList(), listOf(waypoint.id)) },
         )
     }
 
@@ -1100,7 +1165,7 @@ private fun SelectionBar(
             DangerButton("Delete", onClick = { confirming = false; onDelete() })
             return@Row
         }
-        Text("$count selected", Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
+        Spacer(Modifier.weight(1f))
         onCombine?.let { NeutralButton("Combine", onClick = it, small = true) }
         NeutralButton("Move", onClick = onMove, small = true)
         if (hasDevice) {
@@ -1116,6 +1181,37 @@ private fun SelectionBar(
     }
 }
 
+/**
+ * Names in the order a person reads them: case aside, and a run of digits by
+ * its value, so "Trail 2" comes before "Trail 10" rather than after "Trail 19".
+ */
+internal object NaturalOrder : Comparator<String> {
+    override fun compare(a: String, b: String): Int {
+        var i = 0
+        var j = 0
+        while (i < a.length && j < b.length) {
+            val ca = a[i]
+            val cb = b[j]
+            if (ca.isDigit() && cb.isDigit()) {
+                val ea = run { var k = i; while (k < a.length && a[k].isDigit()) k++; k }
+                val eb = run { var k = j; while (k < b.length && b[k].isDigit()) k++; k }
+                val na = a.substring(i, ea).trimStart('0')
+                val nb = b.substring(j, eb).trimStart('0')
+                // Longer (zero-stripped) runs are bigger numbers; equal lengths compare digit by digit.
+                if (na.length != nb.length) return na.length - nb.length
+                val c = na.compareTo(nb)
+                if (c != 0) return c
+                i = ea; j = eb
+            } else {
+                val c = ca.lowercaseChar().compareTo(cb.lowercaseChar())
+                if (c != 0) return c
+                i++; j++
+            }
+        }
+        return (a.length - i) - (b.length - j)
+    }
+}
+
 /** How the list is ordered; remembered between openings. */
 enum class LibrarySort(val label: String) {
     Name("A–Z"),
@@ -1126,7 +1222,7 @@ enum class LibrarySort(val label: String) {
     fun next(): LibrarySort = entries[(ordinal + 1) % entries.size]
 
     fun courses(list: List<CourseSummary>, here: Pair<Double, Double>?): List<CourseSummary> = when (this) {
-        Name -> list.sortedBy { it.name.lowercase() }
+        Name -> list.sortedWith(compareBy(NaturalOrder) { it.name })
         // Ids are handed out in creation order; one made offline is newest.
         Newest -> list.sortedByDescending { if (it.id < 0) Int.MAX_VALUE else it.id }
         Nearest -> if (here == null) list else list.sortedBy { c ->
@@ -1135,7 +1231,7 @@ enum class LibrarySort(val label: String) {
     }
 
     fun places(list: List<Waypoint>, here: Pair<Double, Double>?): List<Waypoint> = when (this) {
-        Name -> list.sortedBy { it.name.lowercase() }
+        Name -> list.sortedWith(compareBy(NaturalOrder) { it.name })
         Newest -> list.sortedByDescending { if (it.id < 0) Int.MAX_VALUE else it.id }
         Nearest -> if (here == null) list else list.sortedBy { distance(here, it.lat, it.lng) }
     }

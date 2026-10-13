@@ -50,6 +50,8 @@ data class RouteDraft(
     val editingName: String? = null,
     val editColor: String? = null,
     val editIcon: String? = null,
+    /** The collection it goes in on Save; null is "Tracks". */
+    val editCollection: Int? = null,
     /**
      * The saved line being edited, `[lng, lat, ele?]`, and where each original
      * handle sits in it. Between two handles nobody has moved the line is this
@@ -591,12 +593,26 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
         }
     }
 
+    /** Make a collection and file tracks and places in it at once. */
+    fun newCollectionFor(name: String, courseIds: List<Int>, placeIds: List<Int>) {
+        viewModelScope.launch {
+            val id = container.mapItems.createCollection(name)
+            _state.update { it.copy(collections = container.mapItems.collections()) }
+            moveToCollection(courseIds, placeIds, id)
+        }
+    }
+
     /** File tracks and places under a collection; null is "Tracks". */
     fun moveToCollection(courseIds: List<Int>, placeIds: List<Int>, collectionId: Int?) {
         viewModelScope.launch {
             val items = container.mapItems
             courseIds.forEach { items.moveCourse(it, collectionId) }
             placeIds.forEach { items.moveWaypoint(it, collectionId) }
+            // A collection on the watch keeps everything in it there.
+            if (_state.value.collections.firstOrNull { it.id == collectionId }?.loadToDevice == true) {
+                courseIds.forEach { items.updateCourse(it, com.tracks.core.api.CourseUpdate(loadToDevice = true)) }
+                placeIds.forEach { items.updateWaypoint(it, WaypointUpdate(loadToDevice = true)) }
+            }
             loadLibrary()
             container.watch.syncLibrarySoon()
             val where = collectionId?.let { id -> _state.value.collections.firstOrNull { it.id == id }?.name } ?: "Tracks"
@@ -847,8 +863,16 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
             return
         }
         val waypoints = _state.value.route.waypoints + position
-        _state.update { it.copy(route = it.route.copy(waypoints = waypoints, error = null)) }
-        snap(waypoints)
+        _state.update {
+            it.copy(route = it.route.copy(
+                waypoints = waypoints, error = null,
+                // A fresh drawing gets a colour of its own straight away, shown
+                // in the editor: a batch drawn in one sitting tells apart on
+                // the map without anyone choosing.
+                editColor = it.route.editColor ?: TRACK_COLORS.random(),
+            ))
+        }
+        if (waypoints.size > 1) snap(waypoints)
     }
 
     /**
@@ -1034,6 +1058,7 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
                         editing = course.id,
                         editingName = course.name,
                         editColor = course.color,
+                        editCollection = course.folderId,
                         // Kept only when the handles came from the line itself;
                         // a line re-routed between stored handles is rebuilt.
                         baseLine = stored.takeIf { saved == null },
@@ -1067,6 +1092,7 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
                     editingName = waypoint.name,
                     editColor = waypoint.color,
                     editIcon = waypoint.icon,
+                    editCollection = waypoint.folderId,
                 ),
                 focus = Focus.Point(waypoint.lat, waypoint.lng),
                 notice = "Drag the pin, or tap the map to move it",
@@ -1139,16 +1165,29 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
     fun setEditName(name: String) = _state.update { it.copy(route = it.route.copy(editingName = name)) }
     fun setEditColor(hex: String) = _state.update { it.copy(route = it.route.copy(editColor = hex)) }
     fun setEditIcon(icon: String) = _state.update { it.copy(route = it.route.copy(editIcon = icon)) }
+    fun setEditCollection(id: Int?) = _state.update { it.copy(route = it.route.copy(editCollection = id)) }
+
+    /** A new collection, chosen for what is being drawn or edited. */
+    fun newCollectionForDraft(name: String) {
+        viewModelScope.launch {
+            val id = container.mapItems.createCollection(name)
+            _state.update { it.copy(collections = container.mapItems.collections(), route = it.route.copy(editCollection = id)) }
+        }
+    }
 
     private fun savePlaceEdit(id: Int, draft: RouteDraft) {
         val at = draft.waypoints.firstOrNull() ?: return
         viewModelScope.launch {
             _state.update { it.copy(route = it.route.copy(saving = true), notice = null) }
-            val updated = container.mapItems.updateWaypoint(id, WaypointUpdate(
+            var updated = container.mapItems.updateWaypoint(id, WaypointUpdate(
                 name = draft.editingName?.trim()?.takeIf { it.isNotEmpty() },
                 lat = at.latitude, lng = at.longitude,
                 color = draft.editColor, icon = draft.editIcon,
             ))
+            if (updated != null && updated.folderId != draft.editCollection) {
+                container.mapItems.moveWaypoint(id, draft.editCollection)
+                updated = updated.copy(folderId = draft.editCollection)
+            }
             _state.update {
                 it.copy(
                     tool = MapTool.Inspect,
@@ -1159,6 +1198,34 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
             }
             loadLibrary()
             if (updated?.loadToDevice == true) container.watch.syncLibrarySoon()
+        }
+    }
+
+    /** A drawing of one handle, saved as a place, in the same single step as a track. */
+    private fun saveNewPlace(draft: RouteDraft, name: String, color: String) {
+        val at = draft.waypoints.single()
+        viewModelScope.launch {
+            _state.update { it.copy(route = it.route.copy(saving = true), notice = null) }
+            val created = container.mapItems.createWaypoint(WaypointIn(
+                name = name.ifBlank { "Waypoint" },
+                lat = at.latitude, lng = at.longitude,
+                color = color, icon = draft.editIcon ?: "marker",
+            ))
+            if (created != null) {
+                draft.editCollection?.let { container.mapItems.moveWaypoint(created.id, it) }
+                if (_state.value.collections.firstOrNull { it.id == draft.editCollection }?.loadToDevice == true) {
+                    container.mapItems.updateWaypoint(created.id, WaypointUpdate(loadToDevice = true))
+                    container.watch.syncLibrarySoon()
+                }
+            }
+            _state.update {
+                it.copy(
+                    tool = MapTool.Inspect,
+                    route = RouteDraft(snapToTrails = it.route.snapToTrails),
+                    notice = if (created != null) "Saved “${created.name}”" else "Could not save that place",
+                )
+            }
+            loadLibrary()
         }
     }
 
@@ -1174,10 +1241,18 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
     fun exported(name: String, ok: Boolean) =
         _state.update { it.copy(notice = if (ok) "Exported “$name”" else "Could not export “$name”") }
 
-    fun saveTrack(name: String, color: String, sport: String = "hiking") {
+    fun saveTrack(name: String = "", color: String = "", sport: String = "hiking") {
         val draft = _state.value.route
         draft.editingPlace?.let { id ->
             savePlaceEdit(id, draft)
+            return
+        }
+        // One step: what was typed into the editor while drawing is what is
+        // saved. One handle is a place; two or more, a track.
+        val chosenName = name.ifBlank { draft.editingName?.trim().orEmpty() }
+        val chosenColor = color.ifBlank { draft.editColor ?: TRACK_COLORS.random() }
+        if (draft.editing == null && draft.waypoints.size == 1) {
+            saveNewPlace(draft, chosenName, chosenColor)
             return
         }
         val coordinates = draft.coordinates()
@@ -1192,6 +1267,9 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
                     name = draft.editingName?.trim()?.takeIf { it.isNotEmpty() },
                     color = draft.editColor,
                 ))
+                if (_state.value.courses.firstOrNull { it.id == id }?.folderId != draft.editCollection) {
+                    container.mapItems.moveCourse(id, draft.editCollection)
+                }
                 val updated = container.mapItems.updateCourseLine(id, coordinates)
                 runCatching { buildProfile(id) }
                 container.sources.row("track", id)?.uid?.let { handles.save(it, draft.waypoints, draft.snapToTrails) }
@@ -1215,8 +1293,8 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
             // the track is whole the moment it exists, server or not.
             val created = container.mapItems.createCourse(
                 CourseCreate(
-                    name = name.ifBlank { "New track" },
-                    color = color,
+                    name = chosenName.ifBlank { "New track" },
+                    color = chosenColor,
                     sport = sport,
                     coords = coordinates,
                 ),
@@ -1224,6 +1302,12 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
             if (created == null) {
                 _state.update { it.copy(route = it.route.copy(saving = false), notice = "A track needs at least two points") }
                 return@launch
+            }
+            draft.editCollection?.let { container.mapItems.moveCourse(created.id, it) }
+            // A collection on the watch keeps everything in it there.
+            if (_state.value.collections.firstOrNull { it.id == draft.editCollection }?.loadToDevice == true) {
+                container.mapItems.updateCourse(created.id, CourseUpdate(loadToDevice = true))
+                container.watch.syncLibrarySoon()
             }
             launch { runCatching { buildProfile(created.id) } }
             // Kept so the track can be re-drawn the way it was drawn.
