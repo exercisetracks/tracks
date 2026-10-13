@@ -358,11 +358,63 @@ These follow the same steps with kind 0, the waypoint digest and
 Everything changed since the watch's last transaction goes in one session with
 one transaction increment (capture c, t = 435 and 497).
 
-### A course deleted on the watch itself
+### Something deleted on the watch itself
 
-The watch reports it in its **line digest write** with `3: 1`. Explore's
-reaction is not in capture c. In capture b, Explore served such items back
-tombstoned, presumably to agree with the watch.
+Measured against Tracks on a factory-reset fēnix 6X, 2026-10-13. How the watch
+says so depends on what was deleted and what kind of session follows.
+
+| Deleted | Incremental session (`1: 2`) | FULL session (`1: 1`) |
+|---|---|---|
+| Saved place | Once, in the **first** session after: a waypoint digest write (14) entry with `2: 1`, stamped at the minute of deletion. Never repeated. | Left out of the waypoint digest writes, which list every place the watch holds. |
+| Course | **Nothing at all.** | Its item comes back tombstoned when the phone pulls the watch's side of the collection (msgs 8/9/22/23), and the line digest write lists it with `3: 1`. |
+
+Two consequences shape how a phone must behave:
+
+- **Announce changes only in a FULL session.** Announcing makes the watch re-read
+  the whole collection. If a deleted course is still live in it, the watch puts
+  it straight back. In incremental sessions that is exactly what happened:
+  test1 was deleted, then reappeared with the next send.
+  Tracks starts every session FULL. When the watch starts an incremental one
+  itself, Tracks answers "nothing to change" and starts a FULL session as soon
+  as it ends.
+- **Agree, don't argue.** The phone tombstones its own item, keeps the course
+  or place, and marks it off the watch. It is not re-sent unless the person
+  asks. A phone that kept serving such an item live left the watch failing
+  every session, for Explore as well. That happened twice on 2026-10-12, and
+  each time only a factory reset recovered it.
+
+Omission from a FULL listing counts only when the watch lists the phone's
+collection in its collection list write (4). A watch that does not list it
+either never took the collection up or has been reset. In that case Tracks
+re-sends everything into the same collection.
+
+**Never treat "transaction 0" as a reset.** Every FULL session asks from 0.
+Reading it as a reset replaced the collection every time and stranded the old
+ones on the watch.
+
+### What the watch offers, and what the phone must take
+
+Explore takes everything, and so does Tracks:
+- **The in-progress line (32):** the 33 reply asks for part 2. Read part 2,
+  then part 16, then send an empty reply.
+- **Recorded lines (type 2) in the line digest (24):** read part 2 page by page,
+  then parts 1, 4 and 16, then send an empty reply.
+- **Course lines (type 9):** answered `{1: 0}`, not read.
+- **Collections changed on the watch's side (8):** each one is pulled. The
+  `{1: 65}` stamp seen there is normal once places have been added.
+- **The collection digest read (10) is paged.** Field 3 is an offset and field
+  4 the page size. Ignoring the offset sent a watch round 240 times.
+
+### Things that must not reach a Garmin as files
+
+Course files (`GARMIN/Courses`) and `Locations.fit` put a second copy of
+everything on the watch. The watch names the copy "test1 1", and it belongs to
+no collection, so nothing can take it off again.
+
+The watch also rewrites its own saved-places file after every change and
+announces it. Tracks reads that file on the phone and adds only places made on
+the watch. It skips any position where Tracks has ever put a place
+(`WatchLibrary.sentPlaces`) and any position where Tracks already has one.
 
 ### Read a recorded activity
 
@@ -404,6 +456,11 @@ failed whether or not the phone had anything to say. A factory reset cleared it.
 Two separate phones and protocols failing identically pointed at the watch's
 state, not the messages. Explore also ends sessions FAILED itself sometimes
 (its first sync after pairing did).
+
+That state was caused by deleting things by hand on the watch while the phone
+kept serving them live. See "Something deleted on the watch itself" above. Item
+count is not a cause: 150 live items and 430 items in all in one collection
+synced fine.
 
 Practical rules:
 - Never treat a session as having applied anything unless it finished `1: 1`.
