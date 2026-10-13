@@ -178,21 +178,31 @@ internal class HeatmapGlow(private val scope: CoroutineScope, private val densit
         val spanX = view.x1 - view.x0
         val spanY = view.y1 - view.y0
         if (spanX <= 0 || spanY <= 0) return null
-        // Kept on the world: past its edge the quad's corners would clamp to
-        // the poles and stretch the image off its routes.
-        val rx0 = max(0.0, view.x0 - spanX * MARGIN)
-        val ry0 = max(0.0, view.y0 - spanY * MARGIN)
-        val rx1 = min(1.0, view.x1 + spanX * MARGIN)
-        val ry1 = min(1.0, view.y1 + spanY * MARGIN)
+        // Screen pixels per Mercator unit.
+        val px = view.widthPx / spanX
+        val py = view.heightPx / spanY
+        // The margin in whole screen pixels, so that at full resolution every
+        // pixel of the image lands on one of the screen's. A fractional offset
+        // has MapLibre's linear resampling spread each across two, which is a
+        // half-pixel blur over the whole map. Kept on the world, too: past its
+        // edge the quad's corners would clamp to the poles and stretch the
+        // image off its routes.
+        val left = min(floor(view.widthPx * MARGIN), floor(view.x0 * px)).coerceAtLeast(0.0)
+        val right = min(floor(view.widthPx * MARGIN), floor((1 - view.x1) * px)).coerceAtLeast(0.0)
+        val top = min(floor(view.heightPx * MARGIN), floor(view.y0 * py)).coerceAtLeast(0.0)
+        val bottom = min(floor(view.heightPx * MARGIN), floor((1 - view.y1) * py)).coerceAtLeast(0.0)
+        val rx0 = view.x0 - left / px
+        val rx1 = view.x1 + right / px
+        val ry0 = view.y0 - top / py
+        val ry1 = view.y1 + bottom / py
 
-        // Screen pixels per Mercator unit, then shrunk if the margin would
-        // make an image bigger than [MAX_PIXELS].
-        val growX = (rx1 - rx0) / spanX
-        val growY = (ry1 - ry0) / spanY
-        val fullPixels = view.widthPx * growX * view.heightPx * growY
-        val k = min(1.0, sqrt(MAX_PIXELS / fullPixels))
-        val bw = (view.widthPx * growX * k).roundToInt().coerceAtLeast(1)
-        val bh = (view.heightPx * growY * k).roundToInt().coerceAtLeast(1)
+        // Full resolution, unless that would make an image bigger than
+        // [MAX_PIXELS] — a tablet, not a phone.
+        val fullW = view.widthPx + left + right
+        val fullH = view.heightPx + top + bottom
+        val k = min(1.0, sqrt(MAX_PIXELS / (fullW * fullH)))
+        val bw = (fullW * k).roundToInt().coerceAtLeast(1)
+        val bh = (fullH * k).roundToInt().coerceAtLeast(1)
         val sx = bw / (rx1 - rx0)
         val sy = bh / (ry1 - ry0)
 
@@ -313,15 +323,19 @@ internal class HeatmapGlow(private val scope: CoroutineScope, private val densit
         const val SOURCE = "tracks_heat_glow"
         const val LAYER = "tracks_heat_glow_layer"
 
-        /** How far past the view the image reaches, as a share of the view, per side. */
-        const val MARGIN = 0.25
+        /**
+         * How far past the view the image reaches, as a share of the view, per
+         * side. Enough to cover a flick until the redraw lands; more costs
+         * buffer memory on every pixel of it.
+         */
+        const val MARGIN = 0.15
 
         /**
-         * Caps the image at about 40 MB of buffers. A phone-width card with its
-         * margin is just past it, so it is drawn a little under full
-         * resolution, which a line this soft does not show.
+         * Caps the image at about 50 MB of buffers. A phone's card with its
+         * margin fits under it, so phones draw at full resolution: this was
+         * once 2 M, which drew a phone's at 78 % and the map visibly soft.
          */
-        const val MAX_PIXELS = 2_000_000.0
+        const val MAX_PIXELS = 3_000_000.0
 
         // The web's half-widths are device pixels on a desktop screen; in dp
         // on a phone they read heavy on a card a third the size, hence 0.6×.
