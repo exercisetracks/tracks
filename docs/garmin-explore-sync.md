@@ -405,6 +405,22 @@ Explore takes everything, and so does Tracks:
 - **The collection digest read (10) is paged.** Field 3 is an offset and field
   4 the page size. Ignoring the offset sent a watch round 240 times.
 
+### Several collections (Tracks' collections)
+
+Each Tracks collection is an Explore collection of its own. A collection is a
+track folder, which holds places as well as tracks. The default, "Tracks", is
+the phone's first collection. Tracks declares only its own collections, never
+Explore's (in msg 5, with the default last as message 2).
+
+The collection digest read lists every active collection, paged by the watch's
+offset. Each collection's pages carry only its own items.
+
+- **Moving an item to another collection:** it is tombstoned in the old one and
+  added to the new one under a new UUID, because an item lives in exactly one
+  collection on the watch.
+- **A collection whose app collection has gone:** it is declared retired once
+  nothing live or unconfirmed is left in it.
+
 ### Things that must not reach a Garmin as files
 
 Course files (`GARMIN/Courses`) and `Locations.fit` put a second copy of
