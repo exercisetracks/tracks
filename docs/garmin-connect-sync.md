@@ -89,6 +89,59 @@ worth testing:
 | `FIT_TYPE_39` | every sync, requested by the phone | unidentified |
 | `FIT_TYPE_32`, `FIT_TYPE_58`, `FIT_TYPE_59` | listed by the watch | monitoring and health files the phone downloads |
 
+## The user profile (2026-10-13)
+
+When a profile value is changed in Connect, Connect uploads a `FIT_TYPE_2`
+settings file (368 bytes) over FileSyncService. The file holds four kinds of
+record:
+- `file_id`: type 2, manufacturer 1, product 65534
+- `user_profile` (3): see the table below
+- three `unknown_222` records
+- `device_settings` (2)
+- `ohr_settings` (188)
+
+The `user_profile` fields that matter:
+
+| Field | Meaning | Encoding |
+|---|---|---|
+| 1 | gender | enum: 0 female, 1 male |
+| 2 | age | years |
+| 3 | height | centimetres (FIT metres at scale 100) |
+| 4 | weight | tenths of a kilogram |
+| 24 | birth year | year − 1900 |
+| 28 / 29 | wake / sleep time | seconds after midnight |
+
+Tracks sends only the first five, in a file of its own over the legacy
+`GARMIN/NewFiles` path (`SettingsFit.encodeUserProfile`), and the watch
+accepts it.
+
+**Getting a file's bytes out of a capture.** Large transfers go on a
+multi-link handle as frames `d0 NN` + payload. The first frame is a 6-byte
+header, and the body is **raw deflate** (no zlib header). The `files`
+extractor assumes zlib, so it fails on these. Concatenate the payloads after
+the 2-byte frame headers, skip 2 bytes, and inflate with `wbits = -15`.
+
+## Wi-Fi network setup (2026-10-13)
+
+Smart field **11**:
+1. The phone asks with `8: {}`.
+2. The watch answers `9: {1: <8 bytes>}`.
+3. The phone sends `10: {}` three times. The watch answers `11: {1: <136 bytes>}`,
+   which is probably the scan results.
+4. The phone sends `14: {1: <192 bytes>}`, presumably the network and its
+   password, and the watch answers `15: {1: <168 bytes>}`.
+5. Then come `12` and `13`.
+
+**Every payload is encrypted**, at about 7 bits of entropy per byte, and none
+of them parse as protobuf. No request goes to Garmin's servers during the
+exchange, so the key is agreed between phone and watch, probably from the
+watch's 8-byte opening value. Tracks cannot set up Wi-Fi until that scheme is
+known.
+
+**The capture holds secrets.** It contains the Garmin account's OAuth tokens
+in plain text, in the `http_service` requests the watch makes through
+Connect. Never share it.
+
 ## Seen, not yet written up
 
 The capture also holds these, all decodable with the command above:
