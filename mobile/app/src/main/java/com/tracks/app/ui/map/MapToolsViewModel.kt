@@ -44,7 +44,12 @@ data class RouteDraft(
     val waypoints: List<LatLng> = emptyList(),
     /** The saved track being re-drawn, or null for a new one; Save writes back into it. */
     val editing: Int? = null,
+    /** The saved place being moved: its one handle is the pin. */
+    val editingPlace: Int? = null,
+    /** The editor's name, colour and symbol, committed together on Save. */
     val editingName: String? = null,
+    val editColor: String? = null,
+    val editIcon: String? = null,
     /** GeoJSON of the snapped line, ready to hand to a source. */
     val geoJson: String? = null,
     val metres: Double? = null,
@@ -128,7 +133,12 @@ data class MapToolsUiState(
      * A track whose line was just edited, to reopen the library on: editing
      * starts from the library and finishes back in it, with the track open.
      */
-    val reopenLibraryFor: Int? = null,
+    val reopenLibraryFor: String? = null,
+    /**
+     * Rows taken off the watch and not yet confirmed off — hidden from "On the
+     * watch" at once, and shown again if the watch never confirms. Display only.
+     */
+    val leavingWatch: Set<String> = emptySet(),
     val point: PointInfo? = null,
     /** Everything that can go on the watch, and how it is drawn. */
     val courses: List<CourseSummary> = emptyList(),
@@ -214,6 +224,9 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
         // The watch confirming a course on or off changes its label; redraw.
         viewModelScope.launch {
             container.watch.courseChanges.collect { report ->
+                // The watch has answered: whatever was leaving is now either
+                // off (and gone from the tab anyway) or, on a failure, back.
+                _state.update { it.copy(leavingWatch = emptySet()) }
                 loadLibrary()
                 // The "waiting for the watch" notice is answered here, by name,
                 // the moment the watch's own list settles it.
@@ -550,6 +563,7 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
         // See the note on [sendCourseToWatch]: nothing local can be on the
         // watch at all yet.
         if (course.id < 0) return
+        markLeaving("course-${course.id}")
         viewModelScope.launch {
             patchCourseNow(course, CourseUpdate(loadToDevice = false))
             val started = container.watch.syncCoursesWithWatch()
@@ -581,6 +595,7 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
     fun removeWaypointFromWatch(waypoint: Waypoint) {
         // See the note on [sendCourseToWatch].
         if (waypoint.id < 0) return
+        markLeaving("waypoint-${waypoint.id}")
         viewModelScope.launch {
             patchWaypointNow(waypoint, WaypointUpdate(loadToDevice = false))
             deliver("“${waypoint.name}”", removed = true) { container.watch.pushWaypointsNow(container.client()) }
@@ -735,6 +750,11 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
     // ── Routing ──────────────────────────────────────────────────────────────
 
     fun addWaypoint(position: LatLng) {
+        // Moving a place: a tap is where it goes, not another point.
+        if (_state.value.route.editingPlace != null) {
+            _state.update { it.copy(route = it.route.copy(waypoints = listOf(position), error = null)) }
+            return
+        }
         val waypoints = _state.value.route.waypoints + position
         _state.update { it.copy(route = it.route.copy(waypoints = waypoints, error = null)) }
         snap(waypoints)
@@ -750,6 +770,7 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
      * handle itself also puts it where the mistake is.
      */
     fun removeWaypointAt(index: Int) {
+        if (_state.value.route.editingPlace != null) return // a place keeps its one point
         val waypoints = _state.value.route.waypoints.toMutableList()
         if (index !in waypoints.indices) return
         waypoints.removeAt(index)
@@ -807,8 +828,22 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
                 tool = MapTool.Inspect,
                 route = RouteDraft(snapToTrails = it.route.snapToTrails),
                 // Leaving an edit goes back to where it started.
-                reopenLibraryFor = it.route.editing,
+                reopenLibraryFor = it.route.editing?.let { id -> "course-$id" }
+                    ?: it.route.editingPlace?.let { id -> "waypoint-$id" },
             )
+        }
+    }
+
+    /**
+     * Hide a row from "On the watch" the moment it is taken off. The next word
+     * from the watch settles it: confirmed off, it has gone anyway; a failed
+     * session, or none within [LEAVING_TIMEOUT_MS], brings it back.
+     */
+    private fun markLeaving(key: String) {
+        _state.update { it.copy(leavingWatch = it.leavingWatch + key) }
+        viewModelScope.launch {
+            kotlinx.coroutines.delay(LEAVING_TIMEOUT_MS)
+            _state.update { it.copy(leavingWatch = it.leavingWatch - key) }
         }
     }
 
@@ -867,6 +902,7 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
                         snapToTrails = saved?.snapToTrails ?: false,
                         editing = course.id,
                         editingName = course.name,
+                        editColor = course.color,
                     ),
                     notice = "Drag a handle to move it; tap the map to extend",
                 )
@@ -877,8 +913,76 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
 
     private val handles by lazy { TrackHandles(container.appContext) }
 
+    /**
+     * Open a place in the editor: its pin becomes the one handle, dragged or
+     * tapped into place, with its name, colour and symbol alongside — every
+     * edit to a place in one place.
+     */
+    fun editWaypoint(waypoint: Waypoint) {
+        if (waypoint.id < 0) return
+        _state.update {
+            it.copy(
+                tool = MapTool.Route,
+                selected = null,
+                route = RouteDraft(
+                    waypoints = listOf(LatLng(waypoint.lat, waypoint.lng)),
+                    snapToTrails = false,
+                    editingPlace = waypoint.id,
+                    editingName = waypoint.name,
+                    editColor = waypoint.color,
+                    editIcon = waypoint.icon,
+                ),
+                focus = Focus.Point(waypoint.lat, waypoint.lng),
+                notice = "Drag the pin, or tap the map to move it",
+            )
+        }
+    }
+
+    /** The editor's own fields, held in the draft until Save. */
+    fun setEditName(name: String) = _state.update { it.copy(route = it.route.copy(editingName = name)) }
+    fun setEditColor(hex: String) = _state.update { it.copy(route = it.route.copy(editColor = hex)) }
+    fun setEditIcon(icon: String) = _state.update { it.copy(route = it.route.copy(editIcon = icon)) }
+
+    private fun savePlaceEdit(id: Int, draft: RouteDraft) {
+        val at = draft.waypoints.firstOrNull() ?: return
+        viewModelScope.launch {
+            _state.update { it.copy(route = it.route.copy(saving = true), notice = null) }
+            val updated = container.mapItems.updateWaypoint(id, WaypointUpdate(
+                name = draft.editingName?.trim()?.takeIf { it.isNotEmpty() },
+                lat = at.latitude, lng = at.longitude,
+                color = draft.editColor, icon = draft.editIcon,
+            ))
+            _state.update {
+                it.copy(
+                    tool = MapTool.Inspect,
+                    route = RouteDraft(snapToTrails = it.route.snapToTrails),
+                    reopenLibraryFor = "waypoint-$id",
+                    notice = if (updated != null) "Updated “${updated.name}”" else "Could not update that place",
+                )
+            }
+            loadLibrary()
+            if (updated?.loadToDevice == true) container.watch.syncLibrarySoon()
+        }
+    }
+
+    /** A track as GPX 1.1, for sharing or another app. */
+    suspend fun gpx(course: CourseSummary): String? {
+        val line = container.mapItems.courseLine(course.id) ?: return null
+        return Gpx.track(course.name, line)
+    }
+
+    fun gpx(waypoint: Waypoint): String = Gpx.place(waypoint.name, waypoint.lat, waypoint.lng, waypoint.elevationMetres)
+
+    /** Say how an export went. */
+    fun exported(name: String, ok: Boolean) =
+        _state.update { it.copy(notice = if (ok) "Exported “$name”" else "Could not export “$name”") }
+
     fun saveTrack(name: String, color: String, sport: String = "hiking") {
         val draft = _state.value.route
+        draft.editingPlace?.let { id ->
+            savePlaceEdit(id, draft)
+            return
+        }
         val coordinates = draft.coordinates()
         if (coordinates.size < 2) {
             _state.update { it.copy(notice = "A track needs at least two points") }
@@ -887,6 +991,10 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
         draft.editing?.let { id ->
             viewModelScope.launch {
                 _state.update { it.copy(route = it.route.copy(saving = true), notice = null) }
+                container.mapItems.updateCourse(id, CourseUpdate(
+                    name = draft.editingName?.trim()?.takeIf { it.isNotEmpty() },
+                    color = draft.editColor,
+                ))
                 val updated = container.mapItems.updateCourseLine(id, coordinates)
                 runCatching { buildProfile(id) }
                 container.sources.row("track", id)?.uid?.let { handles.save(it, draft.waypoints, draft.snapToTrails) }
@@ -894,7 +1002,7 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
                     it.copy(
                         tool = MapTool.Inspect,
                         route = RouteDraft(snapToTrails = it.route.snapToTrails),
-                        reopenLibraryFor = id,
+                        reopenLibraryFor = "course-$id",
                         notice = if (updated != null) "Updated “${updated.name}”" else "Could not update that track",
                     )
                 }
@@ -1472,3 +1580,7 @@ private operator fun DoubleArray.component1() = this[0]
 private operator fun DoubleArray.component2() = this[1]
 
 private const val EARTH_RADIUS_M = 6_371_000.0
+
+/** How long a removal may go unconfirmed before its row is shown again. */
+private const val LEAVING_TIMEOUT_MS = 120_000L
+

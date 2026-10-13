@@ -99,7 +99,7 @@ fun ResizableSheet(
 }
 
 /** Where the panel opens the first time. */
-const val DEFAULT_SHEET_FRACTION = 0.62f
+const val DEFAULT_SHEET_FRACTION = 0.45f
 
 /** The smallest it stays at: a header and a row or two. */
 const val MIN_FRACTION = 0.2f

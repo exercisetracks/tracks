@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 package com.tracks.app.ui.map
 
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -12,6 +14,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -103,6 +106,8 @@ fun TrackLibrarySheet(
     container: AppContainer,
     courses: List<CourseSummary>,
     waypoints: List<Waypoint>,
+    /** Rows just taken off the watch, hidden from "On the watch" until it answers. */
+    leaving: Set<String> = emptySet(),
     loading: Boolean,
     notice: String?,
     actions: LibraryActions,
@@ -122,8 +127,9 @@ fun TrackLibrarySheet(
     var sprite by remember { mutableStateOf<SpriteSheet?>(null) }
     LaunchedEffect(Unit) { sprite = SpriteSheet.load(container) }
 
-    val shownCourses = courses.filter { scope.includes(it) }
-    val shownWaypoints = waypoints.filter { scope.includes(it) }
+    val hide = { key: String -> scope == Scope.OnTheWatch && key in leaving }
+    val shownCourses = courses.filter { scope.includes(it) && !hide("course-${it.id}") }
+    val shownWaypoints = waypoints.filter { scope.includes(it) && !hide("waypoint-${it.id}") }
     // One row open at a time, across both tabs: opening another closes this.
     var open by remember(initiallyOpen) { mutableStateOf(initiallyOpen) }
 
@@ -163,12 +169,13 @@ fun TrackLibrarySheet(
                         modifier = Modifier.size(19.dp),
                     )
                 }
-                IconButton(onClick = actions.onImport, modifier = Modifier.size(30.dp)) {
-                    Icon(
-                        Icons.Filled.Add,
-                        contentDescription = "Import a GPX or FIT file",
-                        modifier = Modifier.size(19.dp),
-                    )
+                // Says what it imports: a bare plus read as "new track".
+                androidx.compose.material3.TextButton(
+                    onClick = actions.onImport,
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp),
+                    modifier = Modifier.height(30.dp),
+                ) {
+                    Text("+GPX", style = MaterialTheme.typography.labelLarge)
                 }
             }
 
@@ -197,7 +204,7 @@ fun TrackLibrarySheet(
             LazyColumn(
                 Modifier.weight(1f),
                 state = listState,
-                verticalArrangement = Arrangement.spacedBy(2.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 item { Header("Tracks") }
                 if (shownCourses.isEmpty()) {
@@ -281,8 +288,12 @@ data class LibraryActions(
     val onCourseShow: (CourseSummary) -> Unit,
     val onCourseRename: (CourseSummary, String) -> Unit,
     val onCourseDelete: (CourseSummary) -> Unit,
-    /** Re-draw the track's line in the builder. */
+    /** Open the track in the editor: line, name, colour, all in one place. */
     val onCourseEditLine: (CourseSummary) -> Unit,
+    val onCourseExport: (CourseSummary) -> Unit,
+    /** Open the place in the editor: position, name, colour, symbol. */
+    val onWaypointEdit: (Waypoint) -> Unit,
+    val onWaypointExport: (Waypoint) -> Unit,
     val onWaypointSendNow: (Waypoint) -> Unit,
     val onWaypointRemove: (Waypoint) -> Unit,
     val onWaypointStyle: (Waypoint, String?, String?) -> Unit,
@@ -343,7 +354,6 @@ private fun CourseRow(
                 onToggle()
             },
             onRename = { actions.onCourseRename(course, it) },
-            onColor = { picking = true },
         )
         // The name is not repeated below the header: the header's own name is
         // the editable one while the row is open.
@@ -410,6 +420,7 @@ internal fun CourseActions(
             onDelete = { actions.onCourseDelete(course) },
             deleteQuestion = if (course.loadToDevice) "Delete from Tracks and the watch?" else "Delete for good?",
             onEdit = { actions.onCourseEditLine(course) }.takeIf { course.id >= 0 },
+            onExport = { actions.onCourseExport(course) },
         )
     }
 
@@ -446,7 +457,6 @@ private fun WaypointRow(
                 onToggle()
             },
             onRename = { actions.onWaypointRename(waypoint, it) },
-            onColor = { picking = true },
         )
         if (editing) WaypointActions(waypoint, sprite, actions, withName = false)
     }
@@ -487,12 +497,8 @@ internal fun WaypointActions(
                 )
             }
         }
-        // The symbol stays open. Unlike the palette it is not a repeated copy
-        // of one control — the chosen symbol IS the row's identity on the map,
-        // and eighteen tiles in two rows is the whole set.
-        IconRow(sprite = sprite, selected = waypoint.icon) {
-            actions.onWaypointStyle(waypoint, null, it)
-        }
+        // Symbol and colour are changed in the editor (Edit), with the
+        // position and name — one place for everything about the place.
         ActionRow(
             // See the note on the track's own [ActionRow].
             onWatch = waypoint.loadToDevice,
@@ -501,6 +507,8 @@ internal fun WaypointActions(
             onRemove = { actions.onWaypointRemove(waypoint) },
             onDelete = { actions.onWaypointDelete(waypoint) },
             deleteQuestion = if (waypoint.loadToDevice) "Delete from Tracks and the watch?" else "Delete for good?",
+            onEdit = { actions.onWaypointEdit(waypoint) }.takeIf { waypoint.id >= 0 },
+            onExport = { actions.onWaypointExport(waypoint) },
         )
     }
 
@@ -536,18 +544,19 @@ private fun ItemHeader(
     onColor: (() -> Unit)? = null,
 ) {
     Row(
-        Modifier.fillMaxWidth().clickable(onClick = onToggle).padding(vertical = 3.dp),
+        Modifier.fillMaxWidth().clickable(onClick = onToggle).padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Marker(color = color, icon = icon, sprite = sprite, onClick = onColor.takeIf { expanded })
+        // As tall as the row's text: the symbol is how a row is found.
+        Marker(color = color, icon = icon, sprite = sprite, onClick = onColor.takeIf { expanded }, size = 36.dp)
         Column(Modifier.weight(1f)) {
             if (expanded && onRename != null) {
                 // Larger while open: this is the row being worked on.
                 EditableName(name = name, style = MaterialTheme.typography.titleMedium, onRename = onRename)
             } else Text(
                 name,
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodyLarge,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -574,50 +583,73 @@ internal fun Marker(
     color: String,
     icon: String?,
     sprite: SpriteSheet?,
-    /** Set where the marker is also the colour control — see [ColorPickerDialog]. */
+    /** Set where the marker is also a control. */
     onClick: (() -> Unit)? = null,
+    size: androidx.compose.ui.unit.Dp = 22.dp,
 ) {
     val context = LocalContext.current
     val tile = MaterialTheme.colorScheme.surface.toArgb()
     val tint = parseHex(color)
+    // The outline the map gives its symbols, in the theme's own ink: light on
+    // a dark theme, dark on a light one. A black symbol on a dark sheet was
+    // invisible without it.
+    val halo = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.9f)
     val image = icon?.let { spriteFor(it) }?.let { sprite?.icon(it) }
+    val glyph = size * 0.82f
+    val ring = 1.5.dp
 
     Box(
         Modifier
-            .size(22.dp)
+            .size(size)
             .then(onClick?.let { Modifier.clickable(onClick = it) } ?: Modifier),
         contentAlignment = Alignment.Center,
     ) {
         when {
-            // The symbol itself, in the place's colour and on nothing —
-            // which is what the map draws now that these can be tinted. The
-            // disc that used to sit behind it was a workaround for a symbol
-            // that could not take a colour, and a row still showing one would
-            // be a legend for a map that no longer looks like that.
-            image != null -> Image(
-                bitmap = image,
-                contentDescription = null,
-                contentScale = ContentScale.Fit,
-                colorFilter = ColorFilter.tint(tint),
-                modifier = Modifier.size(18.dp),
-            )
+            image != null -> {
+                for ((dx, dy) in HALO_OFFSETS) {
+                    Image(
+                        bitmap = image,
+                        contentDescription = null,
+                        contentScale = ContentScale.Fit,
+                        colorFilter = ColorFilter.tint(halo),
+                        modifier = Modifier.size(glyph).offset(ring * dx, ring * dy),
+                    )
+                }
+                Image(
+                    bitmap = image,
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    colorFilter = ColorFilter.tint(tint),
+                    modifier = Modifier.size(glyph),
+                )
+            }
 
             // A track has no symbol; its colour is the line's, and a dot is the
-            // usual way a legend stands in for a line.
-            icon == null -> Box(Modifier.size(14.dp).background(tint, CircleShape))
+            // usual way a legend stands in for a line — ringed, like a symbol.
+            icon == null -> Box(
+                Modifier
+                    .size(size * 0.62f)
+                    .background(halo, CircleShape)
+                    .padding(ring)
+                    .background(tint, CircleShape),
+            )
 
-            // A place with no particular symbol wears the pin, as on the map.
+            // A place with no particular symbol wears the pin, as on the map;
+            // the pin bitmap carries its own white edge.
             else -> Image(
                 bitmap = remember(color) {
                     WaypointPins.bitmap(context, color, tile).asImageBitmap()
                 },
                 contentDescription = null,
                 contentScale = ContentScale.Fit,
-                modifier = Modifier.size(20.dp),
+                modifier = Modifier.size(size * 0.9f),
             )
         }
     }
 }
+
+/** The eight directions the outline is drawn in, around the symbol. */
+private val HALO_OFFSETS = listOf(-1f to 0f, 1f to 0f, 0f to -1f, 0f to 1f, -0.7f to -0.7f, 0.7f to -0.7f, -0.7f to 0.7f, 0.7f to 0.7f)
 
 /**
  * Where this stands with the watch, in the words somebody checks before
@@ -669,8 +701,9 @@ private fun ActionRow(
     onRemove: () -> Unit,
     onDelete: () -> Unit,
     deleteQuestion: String,
-    /** Re-draw the track; tracks only. Shares the row with send/remove and delete. */
+    /** Open the editor. Shares the row with send/remove, export and delete. */
     onEdit: (() -> Unit)? = null,
+    onExport: (() -> Unit)? = null,
 ) {
     var confirming by remember { mutableStateOf(false) }
 
@@ -687,16 +720,27 @@ private fun ActionRow(
         }
 
         if (com.tracks.app.ui.components.LocalHasDevice.current && canToggle) {
+            // Short enough to fit beside Edit at any width: "Remove from
+            // device" was cut to "Remove from" on most phones.
             if (onWatch) {
-                NeutralButton("Remove from device", onClick = onRemove, modifier = Modifier.weight(1f))
+                NeutralButton("Off watch", onClick = onRemove, modifier = Modifier.weight(1f).heightIn(min = 44.dp))
             } else {
-                TonalButton("Send to device", onClick = onSend, modifier = Modifier.weight(1f))
+                TonalButton("To watch", onClick = onSend, modifier = Modifier.weight(1f).heightIn(min = 44.dp))
             }
         } else if (onEdit == null) {
             Spacer(Modifier.weight(1f))
         }
         if (onEdit != null) {
-            NeutralButton("Edit track", onClick = onEdit, modifier = Modifier.weight(1f))
+            NeutralButton("Edit", onClick = onEdit, modifier = Modifier.weight(1f).heightIn(min = 44.dp))
+        }
+        if (onExport != null) {
+            IconButton(onClick = onExport, modifier = Modifier.size(44.dp)) {
+                Icon(
+                    Icons.Filled.Share,
+                    contentDescription = "Export as GPX",
+                    modifier = Modifier.size(24.dp),
+                )
+            }
         }
         IconButton(onClick = { confirming = true }, modifier = Modifier.size(44.dp)) {
             Icon(

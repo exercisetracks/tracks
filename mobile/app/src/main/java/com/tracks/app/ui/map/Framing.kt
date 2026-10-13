@@ -80,10 +80,21 @@ internal fun frameCamera(
     // is exactly the property that matters here.
     map.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, paddingPx, paddingPx, paddingPx, bottomPx))
 
-    // Then capped, once the camera reflects the fit. A no-op when the move was
-    // deferred — the zoom is still the default, which is nowhere near the cap.
+    // Then capped: a waypoint or a short track would otherwise fill the screen
+    // at street level, showing it and nothing around it. Set as an explicit
+    // centre and zoom rather than zoomTo — that kept whatever the fit had left,
+    // and a fit is not always applied by the time it is asked about.
     if (map.cameraPosition.zoom > maxZoom) {
-        map.moveCamera(CameraUpdateFactory.zoomTo(maxZoom))
+        val centre = LatLng((north + south) / 2, (east + west) / 2)
+        map.moveCamera(CameraUpdateFactory.newLatLngZoom(centre, maxZoom))
+        // Something covering the bottom of the map: put the centre in the
+        // middle of the strip left showing, not behind the cover.
+        if (bottomPx != paddingPx) {
+            val at = map.projection.toScreenLocation(centre)
+            val visibleMiddle = (paddingPx + (2 * at.y - bottomPx)) / 2
+            val shifted = map.projection.fromScreenLocation(android.graphics.PointF(at.x, 2 * at.y - visibleMiddle))
+            map.moveCamera(CameraUpdateFactory.newLatLng(shifted))
+        }
     }
 }
 

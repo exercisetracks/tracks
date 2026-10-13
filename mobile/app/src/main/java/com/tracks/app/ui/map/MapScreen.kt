@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 package com.tracks.app.ui.map
 
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -119,13 +120,45 @@ fun MapScreen(
     var style by remember { mutableStateOf<org.maplibre.android.maps.Style?>(null) }
     var showDownloads by remember { mutableStateOf(false) }
     var showLibrary by remember { mutableStateOf(false) }
+    // The map's symbols, for the editor's symbol picker.
+    var editorSprite by remember { mutableStateOf<SpriteSheet?>(null) }
+    LaunchedEffect(Unit) { editorSprite = SpriteSheet.load(toolsVm.container) }
     // Editing a track's line happens on the map, so the library makes way.
-    LaunchedEffect(tools.route.editing) { if (tools.route.editing != null) showLibrary = false }
+    LaunchedEffect(tools.route.editing, tools.route.editingPlace) {
+        if (tools.route.editing != null || tools.route.editingPlace != null) showLibrary = false
+    }
+    // A track or place tapped on the map while the panel is open: the panel
+    // makes way for its details, and comes back when they close.
+    var libraryBehindDetails by remember { mutableStateOf(false) }
+    LaunchedEffect(tools.selected != null) {
+        if (tools.selected != null && showLibrary) {
+            showLibrary = false
+            libraryBehindDetails = true
+        } else if (tools.selected == null && libraryBehindDetails) {
+            libraryBehindDetails = false
+            if (tools.tool != MapTool.Route) showLibrary = true
+        }
+    }
+    // GPX export, through the system's own save dialog.
+    var pendingExport by remember { mutableStateOf<Pair<String, String>?>(null) }
+    val exportContext = androidx.compose.ui.platform.LocalContext.current
+    val exportScope = rememberCoroutineScope()
+    val saveGpx = rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/gpx+xml"),
+    ) { uri ->
+        val (name, text) = pendingExport ?: return@rememberLauncherForActivityResult
+        pendingExport = null
+        if (uri == null) return@rememberLauncherForActivityResult
+        val ok = runCatching {
+            exportContext.contentResolver.openOutputStream(uri)?.use { it.write(text.toByteArray()) } != null
+        }.getOrDefault(false)
+        toolsVm.exported(name, ok)
+    }
     // ...and comes back, on the same track, when the edit is saved or abandoned.
     var libraryOpenOn by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(tools.reopenLibraryFor) {
-        tools.reopenLibraryFor?.let { id ->
-            libraryOpenOn = "course-$id"
+        tools.reopenLibraryFor?.let { key ->
+            libraryOpenOn = key
             showLibrary = true
             toolsVm.loadLibrary()
             toolsVm.libraryReopened()
@@ -517,6 +550,10 @@ fun MapScreen(
                         onSave = { name, color -> toolsVm.saveTrack(name, color) },
                         onSnapToTrails = toolsVm::setSnapToTrails,
                         onCancel = toolsVm::cancelRoute,
+                        onEditName = toolsVm::setEditName,
+                        onEditColor = toolsVm::setEditColor,
+                        onEditIcon = toolsVm::setEditIcon,
+                        sprite = editorSprite,
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
                             .reportBoundsTo(chrome),
@@ -613,9 +650,14 @@ fun MapScreen(
                             askLocation.launch(MyLocation.permissions)
                         }
                     },
+                    // A second tap puts the panel away.
                     onLibrary = {
-                        showLibrary = true
-                        toolsVm.loadLibrary()
+                        if (showLibrary) {
+                            showLibrary = false
+                        } else {
+                            showLibrary = true
+                            toolsVm.loadLibrary()
+                        }
                     },
                     modifier = Modifier
                         .align(Alignment.TopEnd)
@@ -636,7 +678,17 @@ fun MapScreen(
             }
         }
 
-        val actions = libraryActions(toolsVm) { pickTrackFile.launch(TRACK_FILE_TYPES) }
+        val actions = libraryActions(
+            toolsVm,
+            onImport = { pickTrackFile.launch(TRACK_FILE_TYPES) },
+            onExport = { name, gpx ->
+                exportScope.launch {
+                    val text = gpx() ?: return@launch toolsVm.exported(name, ok = false)
+                    pendingExport = name to text
+                    saveGpx.launch(Gpx.fileName(name))
+                }
+            },
+        )
 
         TrackLibraryHost(
             toolsVm.container, tools, actions, showLibrary,
@@ -1413,6 +1465,8 @@ private fun outlineOf(geometry: String): Feature? = runCatching {
 private fun libraryActions(
     toolsVm: MapToolsViewModel,
     onImport: () -> Unit = {},
+    /** Save GPX text under a name, through the system's save dialog. */
+    onExport: (name: String, gpx: suspend () -> String?) -> Unit = { _, _ -> },
 ) = LibraryActions(
     onCourseSendNow = toolsVm::sendCourseToWatch,
     onCourseRemove = toolsVm::removeCourseFromWatch,
@@ -1421,6 +1475,9 @@ private fun libraryActions(
     onCourseRename = toolsVm::renameCourse,
     onCourseDelete = toolsVm::deleteCourse,
     onCourseEditLine = toolsVm::editCourseLine,
+    onCourseExport = { c -> onExport(c.name) { toolsVm.gpx(c) } },
+    onWaypointEdit = toolsVm::editWaypoint,
+    onWaypointExport = { w -> onExport(w.name) { toolsVm.gpx(w) } },
     onWaypointSendNow = toolsVm::sendWaypointToWatch,
     onWaypointRemove = toolsVm::removeWaypointFromWatch,
     onWaypointStyle = toolsVm::setWaypointStyle,
@@ -1449,6 +1506,7 @@ private fun TrackLibraryHost(
         container = container,
         courses = tools.courses,
         waypoints = tools.waypoints,
+        leaving = tools.leavingWatch,
         loading = tools.libraryLoading,
         notice = tools.notice,
         actions = actions,

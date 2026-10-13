@@ -777,8 +777,14 @@ fun RouteBar(
     onSnapToTrails: (Boolean) -> Unit,
     onCancel: () -> Unit,
     modifier: Modifier = Modifier,
+    onEditName: (String) -> Unit = {},
+    onEditColor: (String) -> Unit = {},
+    onEditIcon: (String) -> Unit = {},
+    sprite: SpriteSheet? = null,
 ) {
     var naming by remember { mutableStateOf(false) }
+    val editingPlace = route.editingPlace != null
+    val editing = route.editing != null || editingPlace
     var name by remember { mutableStateOf("") }
     // Random rather than always the same first swatch — a batch of tracks
     // saved in one sitting is easy to tell apart on the map without anyone
@@ -802,12 +808,26 @@ fun RouteBar(
                 ElevationProfile(points = route.profile, modifier = Modifier.fillMaxWidth())
             }
 
-            route.editingName?.let {
-                Text(
-                    "Editing “$it”",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary,
+            // The editor: everything about the track or place in one place,
+            // committed together by Save. The line or pin is edited on the map.
+            if (editing) {
+                OutlinedTextField(
+                    value = route.editingName.orEmpty(),
+                    onValueChange = onEditName,
+                    label = { Text(if (editingPlace) "Place name" else "Track name") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    textStyle = MaterialTheme.typography.bodyMedium,
                 )
+                ColorRow(selected = route.editColor ?: TRACK_COLORS.first(), onPick = onEditColor)
+                if (editingPlace) {
+                    IconRow(
+                        sprite = sprite,
+                        selected = route.editIcon ?: "marker",
+                        color = route.editColor,
+                        onPick = onEditIcon,
+                    )
+                }
             }
 
             if (naming) {
@@ -847,6 +867,7 @@ fun RouteBar(
                                 route.seconds?.let { append(" · ~${elapsed(it)}") }
                             }
 
+                            editingPlace -> "Drag the pin, or tap to move it"
                             route.waypoints.isEmpty() -> "Tap the map to start"
                             else -> "Tap again to extend"
                         },
@@ -857,16 +878,18 @@ fun RouteBar(
                         color = if (route.error != null) MaterialTheme.colorScheme.error
                         else MaterialTheme.colorScheme.onSurface,
                     )
-                    Text(
-                        "Snap",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    TracksSwitch(
-                        checked = route.snapToTrails,
-                        onCheckedChange = onSnapToTrails,
-                        modifier = Modifier.scale(SWITCH_SCALE),
-                    )
+                    if (!editingPlace) {
+                        Text(
+                            "Snap",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        TracksSwitch(
+                            checked = route.snapToTrails,
+                            onCheckedChange = onSnapToTrails,
+                            modifier = Modifier.scale(SWITCH_SCALE),
+                        )
+                    }
                     IconButton(onClick = onCancel, modifier = Modifier.size(32.dp)) {
                         Icon(
                             Icons.Filled.Close,
@@ -878,8 +901,9 @@ fun RouteBar(
                     // it already has a name and a colour.
                     PrimaryButton(
                         if (route.saving) "Saving…" else "Save",
-                        onClick = { if (route.editing != null) onSave("", "") else naming = true },
-                        enabled = route.waypoints.size >= 2 && !route.saving,
+                        onClick = { if (editing) onSave("", "") else naming = true },
+                        // A place being moved has its one point; a track needs two.
+                        enabled = (if (editingPlace) route.waypoints.size == 1 else route.waypoints.size >= 2) && !route.saving,
                     )
                 }
             }

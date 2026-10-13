@@ -68,6 +68,18 @@ def sym_trailhead(d, s):            # "TH›" trailhead sign — red block lette
     _thick(d, s, (0.90, 0.50), (0.58, 0.86), W, fill=RED)
 
 
+def sym_beach(d, s):                # beach umbrella — canopy, rim, pole, sand (line art)
+    # Drawn here rather than taken from the Protomaps base sheet: that one is a
+    # filled tile with the umbrella cut out of it, which tinted to a single
+    # colour (as saved places are) became a solid square. Same ink, stroke and
+    # 0.10-0.90 frame as the other recreation glyphs.
+    lw = _lw(s, 0.08)
+    d.arc([0.12 * s, 0.16 * s, 0.88 * s, 0.68 * s], start=180, end=360, fill=INK, width=lw)
+    _line(d, s, [(0.12, 0.42), (0.88, 0.42)], width=lw)
+    _line(d, s, [(0.50, 0.16), (0.50, 0.86)], width=lw)
+    _line(d, s, [(0.26, 0.86), (0.74, 0.86)], width=lw)
+
+
 def sym_ranger_station(d, s):       # flag on a pole (USGS ranger/forest HQ)
     lw = _lw(s, 0.08)
     _line(d, s, [(0.28, 0.14), (0.28, 0.86)], width=lw)
@@ -252,9 +264,13 @@ def sym_toilets(d, s):              # restroom — line-drawn man + woman + divi
 def sym_parking(d, s):              # "P" on a square (USGS wayfinding)
     lw = _lw(s, 0.08)
     d.rectangle([0.16 * s, 0.16 * s, 0.84 * s, 0.84 * s], outline=INK, width=lw)
-    pw = _lw(s, 0.11)
-    _line(d, s, [(0.40, 0.26), (0.40, 0.76)], width=pw)
-    d.arc([0.24 * s, 0.26 * s, 0.56 * s, 0.58 * s], start=270, end=90, fill=INK, width=pw)
+    # The P at the frame's own weight, its bowl built from two bars and an arc
+    # so it has an open counter: drawn as one heavy arc it closed up into a
+    # lump at sprite size.
+    _line(d, s, [(0.38, 0.28), (0.38, 0.74)], width=lw)
+    _line(d, s, [(0.38, 0.31), (0.52, 0.31)], width=lw)
+    _line(d, s, [(0.38, 0.53), (0.52, 0.53)], width=lw)
+    d.arc([0.41 * s, 0.31 * s, 0.63 * s, 0.53 * s], start=270, end=90, fill=INK, width=lw)
 
 
 def sym_hospital(d, s):             # medical cross (Greek, equal arms) — red
@@ -301,9 +317,15 @@ def sym_alpine_hut(d, s):           # mountain hut — house outline + gable roo
     _line(d, s, [(0.20, 0.48), (0.50, 0.22), (0.80, 0.48)], width=lw)
 
 
-def sym_park(d, s):                 # city park — single shade tree
-    _circle(d, s, 0.5, 0.40, 0.25, fill=GREEN)
-    _line(d, s, [(0.5, 0.62), (0.5, 0.84)], fill=BROWN, width=_lw(s, 0.09))
+def sym_park(d, s):                 # city park — single shade tree, line art
+    # Outlined like the other recreation glyphs rather than a filled disc; the
+    # green and brown stay, since they are what make it read as a park.
+    lw = _lw(s, 0.07)
+    d.ellipse([0.22 * s, 0.12 * s, 0.78 * s, 0.62 * s], outline=GREEN, width=lw)
+    _line(d, s, [(0.50, 0.40), (0.50, 0.86)], fill=BROWN, width=lw)
+    _line(d, s, [(0.50, 0.56), (0.38, 0.44)], fill=BROWN, width=lw)
+    _line(d, s, [(0.50, 0.50), (0.62, 0.38)], fill=BROWN, width=lw)
+    _line(d, s, [(0.36, 0.86), (0.64, 0.86)], fill=BROWN, width=lw)
 
 
 def sym_forest(d, s):               # conifer stand

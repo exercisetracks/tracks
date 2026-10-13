@@ -85,7 +85,7 @@ internal fun parseHex(hex: String): Color = runCatching {
 internal val TRACK_COLORS = listOf(
     "#2563EB", "#DC2626", "#EA580C", "#CA8A04",
     "#16A34A", "#0891B2", "#7C3AED", "#DB2777",
-    "#0F172A", "#F8FAFC",
+    // No near-black or near-white: one vanishes on a dark theme, the other on a light one.
 )
 
 /**
@@ -221,9 +221,15 @@ private val SPECTRUM = Brush.sweepGradient(
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-internal fun IconRow(sprite: SpriteSheet?, selected: String, onPick: (String) -> Unit) {
+internal fun IconRow(
+    sprite: SpriteSheet?,
+    selected: String,
+    /** The place's colour: each symbol is shown as it will look on the map. */
+    color: String? = null,
+    onPick: (String) -> Unit,
+) {
     val context = LocalContext.current
-    val ink = MaterialTheme.colorScheme.onSurface.hex()
+    val ink = color ?: MaterialTheme.colorScheme.onSurface.hex()
     val tile = MaterialTheme.colorScheme.surfaceVariant.toArgb()
     FlowRow(
         Modifier.fillMaxWidth(),
@@ -269,7 +275,7 @@ internal fun IconRow(sprite: SpriteSheet?, selected: String, onPick: (String) ->
                         bitmap = image,
                         contentDescription = icon.replace('_', ' '),
                         contentScale = ContentScale.Fit,
-                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurface),
+                        colorFilter = ColorFilter.tint(color?.let(::parseHex) ?: MaterialTheme.colorScheme.onSurface),
                         modifier = Modifier.size(19.dp),
                     )
 

@@ -31,7 +31,7 @@ SYMBOLS = {
     "forest": s.sym_forest, "restaurant": s.sym_restaurant, "cafe": s.sym_cafe,
     "fast_food": s.sym_fast_food, "bar": s.sym_bar, "supermarket": s.sym_supermarket,
     "convenience": s.sym_convenience, "library": s.sym_library, "museum": s.sym_museum,
-    "theatre": s.sym_theatre,
+    "theatre": s.sym_theatre, "beach": s.sym_beach,
     # line symbols
     "rail_tie": s.sym_rail_tie, "pylon": s.sym_pylon, "levee_tick": s.sym_levee_tick,
     "pipeline_marker": s.sym_pipeline_marker,
