@@ -37,6 +37,10 @@ SYMBOLS = {
     "pipeline_marker": s.sym_pipeline_marker,
 }
 
+# Drawn at their own size, not normalised to a common height: placed along a
+# line (or, for a spot elevation, a dot), their size is part of the line's look.
+FIXED_SIZE = {"rail_tie", "pylon", "levee_tick", "pipeline_marker", "spot_elevation"}
+
 PATTERNS = {
     "marsh": p.pat_marsh, "swamp": p.pat_swamp, "wooded_swamp": p.pat_wooded_swamp,
     "mangrove": p.pat_mangrove, "orchard": p.pat_orchard, "vineyard": p.pat_vineyard,

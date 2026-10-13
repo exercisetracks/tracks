@@ -564,6 +564,7 @@ fun TracksNavHost(
                     regionsVm = regionsVm,
                     toolsVm = toolsVm,
                     onOpenDrawer = { scope.launch { drawer.open() } },
+                    onOpenActivity = { id -> navController.navigate("activity/$id") },
                 )
             }
             composable(Destination.Health.route) {

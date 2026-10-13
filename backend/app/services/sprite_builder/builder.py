@@ -19,7 +19,7 @@ from app.services.sprite_builder.atlas import (
 from app.services.sprite_builder.palette import (
     BUILD_VERSION, ICON_PX, PATTERN_PX, SPRITE_NAME, _sprite_dir,
 )
-from app.services.sprite_builder.registry import PATTERNS, SYMBOLS
+from app.services.sprite_builder.registry import FIXED_SIZE, PATTERNS, SYMBOLS
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 def _build_ratio(ratio: int) -> None:
     images = _load_base_icons(ratio)                 # base first (overridable)
     for name, fn in SYMBOLS.items():
-        images[name] = _render_glyph(fn, ICON_PX * ratio)
+        images[name] = _render_glyph(fn, ICON_PX * ratio, normalise=name not in FIXED_SIZE)
     for name, fn in PATTERNS.items():
         images[name] = _render_pattern(fn, PATTERN_PX * ratio)
 

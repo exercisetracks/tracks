@@ -108,3 +108,48 @@ private const val MAX_FRACTION = 0.92f
 
 /** How far it follows the finger below [MIN_FRACTION] before letting go puts it away. */
 private const val DISMISS_FRACTION = 0.08f
+
+/**
+ * A bottom panel as tall as what it holds, for a single item's details.
+ *
+ * Non-modal for the same reason as [ResizableSheet]: the map behind it is the
+ * thing being described, and greying it out hid exactly that. The handle is
+ * the same short strip, and a downward drag past it puts the panel away.
+ */
+@Composable
+fun ContentSheet(onDismiss: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
+    var dragged by remember { mutableFloatStateOf(0f) }
+    BackHandler(onBack = onDismiss)
+    Box(Modifier.fillMaxSize()) {
+        Surface(
+            modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
+            shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 3.dp,
+            shadowElevation = 8.dp,
+        ) {
+            Column(Modifier.windowInsetsPadding(WindowInsets.navigationBars)) {
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(14.dp)
+                        .draggable(
+                            orientation = Orientation.Vertical,
+                            state = rememberDraggableState { delta -> dragged += delta },
+                            onDragStarted = { dragged = 0f },
+                            onDragStopped = { if (dragged > 60f) onDismiss() },
+                        ),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Box(
+                        Modifier
+                            .size(width = 36.dp, height = 4.dp)
+                            .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f), RoundedCornerShape(2.dp)),
+                    )
+                }
+                content()
+            }
+        }
+    }
+}
+

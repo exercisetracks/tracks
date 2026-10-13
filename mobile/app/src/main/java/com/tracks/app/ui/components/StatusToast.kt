@@ -64,8 +64,11 @@ fun StatusToast(message: String?, onDismiss: () -> Unit, modifier: Modifier = Mo
     ) {
         Surface(
             shape = RoundedCornerShape(Tokens.Radius.full),
-            color = MaterialTheme.colorScheme.inverseSurface,
-            contentColor = MaterialTheme.colorScheme.inverseOnSurface,
+            // The theme's surface, raised like the sheets, not the inverse one: inverse
+            // turned the pill white in dark mode.
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 3.dp,
+            contentColor = MaterialTheme.colorScheme.onSurface,
             shadowElevation = 6.dp,
             modifier = Modifier.padding(top = Tokens.Space.s2).clickable(onClick = onDismiss),
         ) {
@@ -74,7 +77,7 @@ fun StatusToast(message: String?, onDismiss: () -> Unit, modifier: Modifier = Mo
                 horizontalArrangement = Arrangement.spacedBy(Tokens.Space.s3),
                 modifier = Modifier.padding(horizontal = Tokens.Space.s4, vertical = Tokens.Space.s2_5),
             ) {
-                val accent = MaterialTheme.colorScheme.inversePrimary
+                val accent = MaterialTheme.colorScheme.primary
                 if (busy) {
                     CircularProgressIndicator(color = accent, strokeWidth = 2.5.dp, modifier = Modifier.size(18.dp))
                 } else {

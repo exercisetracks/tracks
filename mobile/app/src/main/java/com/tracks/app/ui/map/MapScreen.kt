@@ -110,6 +110,8 @@ fun MapScreen(
      * carries its own, in the same top-left corner as everywhere else.
      */
     onOpenDrawer: () -> Unit = {},
+    /** Open a recorded activity's screen, from its line on the map. */
+    onOpenActivity: (Int) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
@@ -407,7 +409,11 @@ fun MapScreen(
                                 MapTool.Inspect -> {
                                     val hit = ready.savedItemAt(point)
                                     if (!toolsVm.selectAt(hit.courseId, hit.waypointId)) {
-                                        toolsVm.inspect(point, ready.surroundingsAt(point))
+                                        // A saved track wins over an activity
+                                        // under it; an activity over the ground.
+                                        val activity = ready.activityAt(point)
+                                        if (activity != null) toolsVm.selectActivity(activity)
+                                        else toolsVm.inspect(point, ready.surroundingsAt(point))
                                     }
                                 }
 
@@ -470,6 +476,18 @@ fun MapScreen(
                 // the routes planned on it.
                 LaunchedEffect(Unit) { toolsVm.loadLibrary() }
 
+                // Recorded activities, drawn from the phone's own files. The
+                // served style has the layer and an empty source; nothing on
+                // the phone fed it, so the "Activity Tracks" toggle showed
+                // nothing at all.
+                LaunchedEffect(Unit) { toolsVm.loadActivityTracks() }
+                val activityColor = MaterialTheme.colorScheme.primary
+                LaunchedEffect(style, tools.activityGeoJson, activityColor) {
+                    val loaded = style ?: return@LaunchedEffect
+                    val geo = tools.activityGeoJson ?: return@LaunchedEffect
+                    drawActivityTracks(loaded, geo, activityColor.toArgb())
+                }
+
                 LaunchedEffect(map, tools.focus) {
                     val ready = map ?: return@LaunchedEffect
                     when (val target = tools.focus) {
@@ -519,6 +537,11 @@ fun MapScreen(
                     drawRoute(loaded, tools.route)
                 }
 
+                LaunchedEffect(style, tools.profileCursor) {
+                    val loaded = style ?: return@LaunchedEffect
+                    drawProfileCursor(loaded, tools.profileCursor)
+                }
+
                 LaunchedEffect(style, tools.point) {
                     val loaded = style ?: return@LaunchedEffect
                     drawTappedPoint(
@@ -554,6 +577,10 @@ fun MapScreen(
                         onEditColor = toolsVm::setEditColor,
                         onEditIcon = toolsVm::setEditIcon,
                         sprite = editorSprite,
+                        onSimplify = toolsVm::setSimplify,
+                        onProfileScrub = { m ->
+                            toolsVm.scrubProfile(tools.route.coordinates().map { c -> c.map { it as Double? } }, m)
+                        },
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
                             .reportBoundsTo(chrome),
@@ -680,6 +707,7 @@ fun MapScreen(
 
         val actions = libraryActions(
             toolsVm,
+            onOpenActivity = { id -> toolsVm.clearSelection(); onOpenActivity(id) },
             onImport = { pickTrackFile.launch(TRACK_FILE_TYPES) },
             onExport = { name, gpx ->
                 exportScope.launch {
@@ -1332,6 +1360,29 @@ internal fun drawTappedPoint(style: Style, point: LatLng?) {
         }
 }
 
+/** Where on a track a finger on its height profile is. Cleared with null. */
+internal fun drawProfileCursor(style: Style, point: LatLng?) {
+    if (!style.isFullyLoaded) return
+    val features = FeatureCollection.fromFeatures(
+        point?.let { listOf(Feature.fromGeometry(Point.fromLngLat(it.longitude, it.latitude))) } ?: emptyList()
+    )
+    (style.getSource(CURSOR_SOURCE) as? GeoJsonSource)?.setGeoJson(features)
+        ?: run {
+            style.addSource(GeoJsonSource(CURSOR_SOURCE, features))
+            style.addLayer(
+                CircleLayer(CURSOR_LAYER, CURSOR_SOURCE).withProperties(
+                    PropertyFactory.circleRadius(7f),
+                    PropertyFactory.circleColor("#111827"),
+                    PropertyFactory.circleStrokeWidth(3f),
+                    PropertyFactory.circleStrokeColor("#ffffff"),
+                ),
+            )
+        }
+}
+
+private const val CURSOR_SOURCE = "tracks_profile_cursor"
+private const val CURSOR_LAYER = "tracks_profile_cursor_dot"
+
 private const val REGIONS_SOURCE = "tracks_offline_regions"
 private const val REGIONS_LINE_LAYER = "tracks_offline_regions_outline"
 
@@ -1464,6 +1515,7 @@ private fun outlineOf(geometry: String): Feature? = runCatching {
 @Composable
 private fun libraryActions(
     toolsVm: MapToolsViewModel,
+    onOpenActivity: (Int) -> Unit = {},
     onImport: () -> Unit = {},
     /** Save GPX text under a name, through the system's save dialog. */
     onExport: (name: String, gpx: suspend () -> String?) -> Unit = { _, _ -> },
@@ -1478,6 +1530,8 @@ private fun libraryActions(
     onCourseExport = { c -> onExport(c.name) { toolsVm.gpx(c) } },
     onWaypointEdit = toolsVm::editWaypoint,
     onWaypointExport = { w -> onExport(w.name) { toolsVm.gpx(w) } },
+    onProfileScrub = { m -> toolsVm.scrubProfile(toolsVm.selectedLine, m) },
+    onCombine = toolsVm::combineTracks,
     onWaypointSendNow = toolsVm::sendWaypointToWatch,
     onWaypointRemove = toolsVm::removeWaypointFromWatch,
     onWaypointStyle = toolsVm::setWaypointStyle,
@@ -1487,6 +1541,8 @@ private fun libraryActions(
     onImport = onImport,
     onReadWatch = toolsVm::readFromWatch,
     onDismissNotice = toolsVm::dismissNotice,
+    onOpenActivity = onOpenActivity,
+    onMakeTrack = toolsVm::makeTrackFromActivity,
 )
 
 /** Keeps the library sheet's wiring out of the screen's own body. */
@@ -1501,7 +1557,13 @@ private fun TrackLibraryHost(
     openOn: String?,
     onDismiss: () -> Unit,
 ) {
-    if (!visible) return
+    // Slides like the app's other sheets rather than appearing at once; it
+    // keeps whatever size it was left at, since that lives outside.
+    androidx.compose.animation.AnimatedVisibility(
+        visible = visible,
+        enter = androidx.compose.animation.slideInVertically { it } + androidx.compose.animation.fadeIn(),
+        exit = androidx.compose.animation.slideOutVertically { it } + androidx.compose.animation.fadeOut(),
+    ) {
     TrackLibrarySheet(
         container = container,
         courses = tools.courses,
@@ -1515,6 +1577,7 @@ private fun TrackLibraryHost(
         onFraction = onFraction,
         initiallyOpen = openOn,
     )
+    }
 }
 
 /**
@@ -1544,6 +1607,36 @@ private fun MapLibreMap.savedItemAt(point: LatLng): SavedHit {
 }
 
 private data class SavedHit(val courseId: Int?, val waypointId: Int?)
+
+/** The recorded activity whose line is under a tap, if the layer is showing. */
+private fun MapLibreMap.activityAt(point: LatLng): Selection.Activity? {
+    val screen = projection.toScreenLocation(point)
+    val slop = TAP_SLOP_PX
+    val box = android.graphics.RectF(screen.x - slop, screen.y - slop, screen.x + slop, screen.y + slop)
+    val f = runCatching { queryRenderedFeatures(box, "activity_tracks_hit", "activity_tracks_line") }
+        .getOrDefault(emptyList()).firstOrNull() ?: return null
+    val uid = f.getStringProperty("uid") ?: return null
+    fun str(key: String) = runCatching { f.getStringProperty(key) }.getOrNull()
+    return Selection.Activity(
+        id = f.getNumberProperty("id")?.toInt() ?: return null,
+        uid = uid,
+        name = str("name"),
+        sport = str("sport"),
+        date = str("date"),
+        distanceMetres = runCatching { f.getNumberProperty("distance_m")?.toDouble() }.getOrNull(),
+    )
+}
+
+/**
+ * Feed the served style's `activity_tracks` source, and colour its line in the
+ * theme's accent as the web does. The layers' visibility stays the layer
+ * toggle's business.
+ */
+private fun drawActivityTracks(style: org.maplibre.android.maps.Style, geoJson: String, color: Int) {
+    if (!style.isFullyLoaded) return
+    (style.getSource("activity_tracks") as? GeoJsonSource)?.setGeoJson(geoJson) ?: return
+    style.getLayer("activity_tracks_line")?.setProperties(PropertyFactory.lineColor(color))
+}
 
 /**
  * Keep [into] holding this composable's position on screen.

@@ -23,10 +23,35 @@ from app.services.sprite_builder.palette import (
 logger = logging.getLogger(__name__)
 
 
-def _render_glyph(fn, px: int) -> Image.Image:
-    """Supersample a glyph for crisp edges, then downscale to px."""
-    big = Image.new("RGBA", (px * SS, px * SS), CLEAR)
-    fn(ImageDraw.Draw(big), px * SS)
+# Point symbols fill this share of the tile's height, every one of them. Drawn by
+# hand in fractions of the tile, they came out at visibly different sizes —
+# a parking sign nearly to the edges, a tap a third of the way — and saved
+# places, which are these symbols tinted, looked arbitrary side by side.
+GLYPH_HEIGHT = 0.84
+
+
+def _render_glyph(fn, px: int, normalise: bool = True) -> Image.Image:
+    """Supersample a glyph for crisp edges, then downscale to px.
+
+    With ``normalise``, the drawn pixels are cropped and scaled so their height
+    is :data:`GLYPH_HEIGHT` of the tile, width following the glyph's own
+    proportions (capped at the tile's width), centred. Line symbols placed
+    along a line keep their drawn size; see :mod:`registry`.
+    """
+    size = px * SS
+    big = Image.new("RGBA", (size, size), CLEAR)
+    fn(ImageDraw.Draw(big), size)
+    if normalise:
+        box = big.getchannel("A").getbbox()
+        if box:
+            glyph = big.crop(box)
+            w, h = glyph.size
+            # Height decides; a glyph too wide for the tile is fitted to 94% width.
+            scale = min(GLYPH_HEIGHT * size / h, 0.94 * size / max(w, 1))
+            nw, nh = max(1, round(w * scale)), max(1, round(h * scale))
+            glyph = glyph.resize((nw, nh), Image.LANCZOS)
+            big = Image.new("RGBA", (size, size), CLEAR)
+            big.alpha_composite(glyph, ((size - nw) // 2, (size - nh) // 2))
     return big.resize((px, px), Image.LANCZOS)
 
 

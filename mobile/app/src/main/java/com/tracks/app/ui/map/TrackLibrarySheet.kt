@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 package com.tracks.app.ui.map
 
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.Image
@@ -128,8 +130,15 @@ fun TrackLibrarySheet(
     LaunchedEffect(Unit) { sprite = SpriteSheet.load(container) }
 
     val hide = { key: String -> scope == Scope.OnTheWatch && key in leaving }
-    val shownCourses = courses.filter { scope.includes(it) && !hide("course-${it.id}") }
-    val shownWaypoints = waypoints.filter { scope.includes(it) && !hide("waypoint-${it.id}") }
+    val context = LocalContext.current
+    var sort by remember { mutableStateOf(LibrarySort.load(context)) }
+    val here = remember(sort) { if (sort == LibrarySort.Nearest) LibrarySort.lastKnown(context) else null }
+    val shownCourses = sort.courses(courses.filter { scope.includes(it) && !hide("course-${it.id}") }, here)
+    val shownWaypoints = sort.places(waypoints.filter { scope.includes(it) && !hide("waypoint-${it.id}") }, here)
+    // Long-press starts picking several rows; their keys, as "course-<id>".
+    var picked by remember { mutableStateOf(setOf<String>()) }
+    val picking = picked.isNotEmpty()
+    fun togglePick(key: String) { picked = if (key in picked) picked - key else picked + key }
     // One row open at a time, across both tabs: opening another closes this.
     var open by remember(initiallyOpen) { mutableStateOf(initiallyOpen) }
 
@@ -140,7 +149,32 @@ fun TrackLibrarySheet(
         ) {
             // Title, filter and import on one line. Three stacked blocks of
             // chrome above a list is most of a phone screen spent on furniture.
-            Row(
+            if (picking) {
+                SelectionBar(
+                    count = picked.size,
+                    hasDevice = hasDevice,
+                    onSend = {
+                        courses.filter { "course-${it.id}" in picked && !it.loadToDevice }.forEach(actions.onCourseSendNow)
+                        waypoints.filter { "waypoint-${it.id}" in picked && !it.loadToDevice }.forEach(actions.onWaypointSendNow)
+                        picked = emptySet()
+                    },
+                    onRemove = {
+                        courses.filter { "course-${it.id}" in picked && it.loadToDevice }.forEach(actions.onCourseRemove)
+                        waypoints.filter { "waypoint-${it.id}" in picked && it.loadToDevice }.forEach(actions.onWaypointRemove)
+                        picked = emptySet()
+                    },
+                    onDelete = {
+                        courses.filter { "course-${it.id}" in picked }.forEach(actions.onCourseDelete)
+                        waypoints.filter { "waypoint-${it.id}" in picked }.forEach(actions.onWaypointDelete)
+                        picked = emptySet()
+                    },
+                    onDone = { picked = emptySet() },
+                    // In list order: what the person sees is the order they meant.
+                    onCombine = shownCourses.filter { "course-${it.id}" in picked }
+                        .takeIf { it.size >= 2 }
+                        ?.let { chosen -> { actions.onCombine(chosen); picked = emptySet() } },
+                )
+            } else Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
@@ -168,6 +202,13 @@ fun TrackLibrarySheet(
                         contentDescription = "Read the tracks and places already on the watch",
                         modifier = Modifier.size(19.dp),
                     )
+                }
+                androidx.compose.material3.TextButton(
+                    onClick = { sort = sort.next().also { it.save(context) } },
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 6.dp),
+                    modifier = Modifier.height(30.dp),
+                ) {
+                    Text(sort.label, style = MaterialTheme.typography.labelLarge)
                 }
                 // Says what it imports: a bare plus read as "new track".
                 androidx.compose.material3.TextButton(
@@ -212,7 +253,11 @@ fun TrackLibrarySheet(
                 } else {
                     items(shownCourses, key = { "course-${it.id}" }) { course ->
                         val key = "course-${course.id}"
-                        CourseRow(course, sprite, actions, open == key) { open = if (open == key) null else key }
+                        PickableRow(picking, key in picked, onPick = { togglePick(key) }) {
+                            CourseRow(course, sprite, actions, open == key && !picking, onLongPress = { togglePick(key) }) {
+                                if (picking) togglePick(key) else open = if (open == key) null else key
+                            }
+                        }
                     }
                 }
 
@@ -224,7 +269,11 @@ fun TrackLibrarySheet(
                 } else {
                     items(shownWaypoints, key = { "waypoint-${it.id}" }) { waypoint ->
                         val key = "waypoint-${waypoint.id}"
-                        WaypointRow(waypoint, sprite, actions, open == key) { open = if (open == key) null else key }
+                        PickableRow(picking, key in picked, onPick = { togglePick(key) }) {
+                            WaypointRow(waypoint, sprite, actions, open == key && !picking, onLongPress = { togglePick(key) }) {
+                                if (picking) togglePick(key) else open = if (open == key) null else key
+                            }
+                        }
                     }
                 }
             }
@@ -294,6 +343,10 @@ data class LibraryActions(
     /** Open the place in the editor: position, name, colour, symbol. */
     val onWaypointEdit: (Waypoint) -> Unit,
     val onWaypointExport: (Waypoint) -> Unit,
+    /** Join tracks, in the order given, into one new track. */
+    val onCombine: (List<CourseSummary>) -> Unit = {},
+    /** Finger on the open track's height profile: metres along it, or null. */
+    val onProfileScrub: (Double?) -> Unit = {},
     val onWaypointSendNow: (Waypoint) -> Unit,
     val onWaypointRemove: (Waypoint) -> Unit,
     val onWaypointStyle: (Waypoint, String?, String?) -> Unit,
@@ -304,6 +357,9 @@ data class LibraryActions(
     /** Pull the courses and saved places the watch is already carrying. */
     val onReadWatch: () -> Unit,
     val onDismissNotice: () -> Unit,
+    /** Open a recorded activity's own screen, by its id there. */
+    val onOpenActivity: (Int) -> Unit = {},
+    val onMakeTrack: (Selection.Activity) -> Unit = {},
 )
 
 @Composable
@@ -331,12 +387,14 @@ private fun CourseRow(
     sprite: SpriteSheet?,
     actions: LibraryActions,
     editing: Boolean,
+    onLongPress: () -> Unit = {},
     onToggle: () -> Unit,
 ) {
     var picking by remember { mutableStateOf(false) }
 
     Column(verticalArrangement = Arrangement.spacedBy(ROW_GAP)) {
         ItemHeader(
+            onLongPress = onLongPress,
             color = course.color,
             icon = null,
             sprite = sprite,
@@ -440,12 +498,14 @@ private fun WaypointRow(
     sprite: SpriteSheet?,
     actions: LibraryActions,
     editing: Boolean,
+    onLongPress: () -> Unit = {},
     onToggle: () -> Unit,
 ) {
     var picking by remember { mutableStateOf(false) }
 
     Column(verticalArrangement = Arrangement.spacedBy(ROW_GAP)) {
         ItemHeader(
+            onLongPress = onLongPress,
             color = waypoint.color,
             icon = waypoint.icon,
             sprite = sprite,
@@ -529,6 +589,7 @@ internal fun WaypointActions(
  * looks like on the map — so finding the row for the dot you are looking at is
  * a matter of matching, not of reading names.
  */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 private fun ItemHeader(
     color: String,
@@ -542,9 +603,11 @@ private fun ItemHeader(
     onRename: ((String) -> Unit)? = null,
     /** While open, the marker is the colour control. */
     onColor: (() -> Unit)? = null,
+    /** Long press: start picking several rows. */
+    onLongPress: () -> Unit = {},
 ) {
     Row(
-        Modifier.fillMaxWidth().clickable(onClick = onToggle).padding(vertical = 4.dp),
+        Modifier.fillMaxWidth().combinedClickable(onClick = onToggle, onLongClick = onLongPress).padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -836,3 +899,104 @@ internal fun EditableName(
             },
     )
 }
+
+/**
+ * A row that can be picked: a long press starts picking, and while picking a
+ * check box sits in front of it. The row's own tap is routed by its caller.
+ */
+@Composable
+private fun PickableRow(picking: Boolean, picked: Boolean, onPick: () -> Unit, content: @Composable () -> Unit) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+        if (picking) {
+            androidx.compose.material3.Checkbox(checked = picked, onCheckedChange = { onPick() })
+        }
+        Box(Modifier.weight(1f)) { content() }
+    }
+}
+
+/** What to do with every picked row at once. */
+@Composable
+private fun SelectionBar(
+    count: Int,
+    hasDevice: Boolean,
+    onSend: () -> Unit,
+    onRemove: () -> Unit,
+    onDelete: () -> Unit,
+    onDone: () -> Unit,
+    /** Shown when two or more tracks are picked. */
+    onCombine: (() -> Unit)? = null,
+) {
+    var confirming by remember { mutableStateOf(false) }
+    Row(
+        Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        if (confirming) {
+            Text("Delete $count for good?", Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+            NeutralButton("Keep", onClick = { confirming = false })
+            DangerButton("Delete", onClick = { confirming = false; onDelete() })
+            return@Row
+        }
+        Text("$count selected", Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
+        onCombine?.let { NeutralButton("Combine", onClick = it, small = true) }
+        if (hasDevice) {
+            TonalButton("To watch", onClick = onSend, small = true)
+            NeutralButton("Off watch", onClick = onRemove, small = true)
+        }
+        IconButton(onClick = { confirming = true }, modifier = Modifier.size(36.dp)) {
+            Icon(Icons.Filled.Delete, contentDescription = "Delete selected", tint = MaterialTheme.colorScheme.error)
+        }
+        IconButton(onClick = onDone, modifier = Modifier.size(36.dp)) {
+            Icon(Icons.Filled.Close, contentDescription = "Stop selecting")
+        }
+    }
+}
+
+/** How the list is ordered; remembered between openings. */
+enum class LibrarySort(val label: String) {
+    Name("A–Z"),
+    Newest("Newest"),
+    Nearest("Nearest"),
+    ;
+
+    fun next(): LibrarySort = entries[(ordinal + 1) % entries.size]
+
+    fun courses(list: List<CourseSummary>, here: Pair<Double, Double>?): List<CourseSummary> = when (this) {
+        Name -> list.sortedBy { it.name.lowercase() }
+        // Ids are handed out in creation order; one made offline is newest.
+        Newest -> list.sortedByDescending { if (it.id < 0) Int.MAX_VALUE else it.id }
+        Nearest -> if (here == null) list else list.sortedBy { c ->
+            c.bounds?.takeIf { it.size == 4 }?.let { b -> distance(here, (b[1] + b[3]) / 2, (b[0] + b[2]) / 2) } ?: Double.MAX_VALUE
+        }
+    }
+
+    fun places(list: List<Waypoint>, here: Pair<Double, Double>?): List<Waypoint> = when (this) {
+        Name -> list.sortedBy { it.name.lowercase() }
+        Newest -> list.sortedByDescending { if (it.id < 0) Int.MAX_VALUE else it.id }
+        Nearest -> if (here == null) list else list.sortedBy { distance(here, it.lat, it.lng) }
+    }
+
+    fun save(context: android.content.Context) =
+        context.getSharedPreferences("map_ui", android.content.Context.MODE_PRIVATE).edit().putString("library_sort", name).apply()
+
+    companion object {
+        fun load(context: android.content.Context): LibrarySort =
+            context.getSharedPreferences("map_ui", android.content.Context.MODE_PRIVATE).getString("library_sort", null)
+                ?.let { n -> entries.firstOrNull { it.name == n } } ?: Name
+
+        /** The phone's last known position, or null without one or without permission. */
+        fun lastKnown(context: android.content.Context): Pair<Double, Double>? = runCatching {
+            val lm = context.getSystemService(android.content.Context.LOCATION_SERVICE) as android.location.LocationManager
+            lm.getProviders(true).mapNotNull { lm.getLastKnownLocation(it) }.maxByOrNull { it.time }
+                ?.let { it.latitude to it.longitude }
+        }.getOrNull()
+
+        private fun distance(here: Pair<Double, Double>, lat: Double, lng: Double): Double {
+            val dx = (lng - here.second) * kotlin.math.cos(Math.toRadians(here.first))
+            val dy = lat - here.first
+            return dx * dx + dy * dy
+        }
+    }
+}
+

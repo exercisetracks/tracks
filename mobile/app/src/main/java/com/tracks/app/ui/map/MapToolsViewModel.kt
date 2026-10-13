@@ -50,6 +50,18 @@ data class RouteDraft(
     val editingName: String? = null,
     val editColor: String? = null,
     val editIcon: String? = null,
+    /**
+     * The saved line being edited, `[lng, lat, ele?]`, and where each original
+     * handle sits in it. Between two handles nobody has moved the line is this
+     * one, untouched — without it, opening a 2,000-point GPX and saving it would
+     * have replaced it with straight lines between sixty handles.
+     */
+    val baseLine: List<List<Double?>>? = null,
+    val baseHandles: List<Pair<LatLng, Int>> = emptyList(),
+    /** The line as it was opened, for the simplify slider to work from. */
+    val originalLine: List<List<Double?>>? = null,
+    /** 0 = as recorded; higher removes more detail. */
+    val simplifyPercent: Int = 0,
     /** GeoJSON of the snapped line, ready to hand to a source. */
     val geoJson: String? = null,
     val metres: Double? = null,
@@ -117,6 +129,16 @@ data class RoutePoint(val metres: Double, val elevationMetres: Double)
 sealed interface Selection {
     data class Track(val course: CourseDetail) : Selection
     data class Place(val waypoint: Waypoint) : Selection
+
+    /** A recorded activity's line, tapped on the map. [id] is the activity screen's. */
+    data class Activity(
+        val id: Int,
+        val uid: String,
+        val name: String?,
+        val sport: String?,
+        val date: String?,
+        val distanceMetres: Double?,
+    ) : Selection
 }
 
 /** Where to put the camera. A box when there is one, else a point. */
@@ -139,12 +161,16 @@ data class MapToolsUiState(
      * watch" at once, and shown again if the watch never confirms. Display only.
      */
     val leavingWatch: Set<String> = emptySet(),
+    /** The spot on a track matching the finger on its height profile. */
+    val profileCursor: LatLng? = null,
     val point: PointInfo? = null,
     /** Everything that can go on the watch, and how it is drawn. */
     val courses: List<CourseSummary> = emptyList(),
     val waypoints: List<Waypoint> = emptyList(),
     /** The tracks' own geometry, kept as text for the map source to swallow. */
     val courseGeoJson: String? = null,
+    /** Recorded activities as lines, from the phone's own files. */
+    val activityGeoJson: String? = null,
     val libraryLoading: Boolean = false,
     /** Land and trails at the tapped point, read off the rendered tiles. */
     val surroundings: PointSurroundings = PointSurroundings(),
@@ -234,11 +260,12 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
                 val places = _state.value.waypoints.associate { it.id to it.name }
                 val said = listOfNotNull(
                     "The watch couldn’t finish syncing — it will try again".takeIf { report.failed },
-                    report.coursesOn.firstOrNull { it in names }?.let { "“${names[it]}” is on the watch" },
-                    report.coursesOff.firstOrNull { it in names }?.let { "“${names[it]}” is off the watch" },
+                    // Only what this sync changed — see ReconcileReport.changedOn.
+                    receipt(report.changedOn.size + report.changedPlacesOn.size, "on",
+                        report.changedOn.firstNotNullOfOrNull { names[it] } ?: report.changedPlacesOn.firstNotNullOfOrNull { places[it] }),
+                    receipt(report.changedOff.size + report.changedPlacesOff.size, "off",
+                        report.changedOff.firstNotNullOfOrNull { names[it] } ?: report.changedPlacesOff.firstNotNullOfOrNull { places[it] }),
                     report.coursesDeletedOnWatch.firstOrNull { it in names }?.let { "“${names[it]}” was deleted on the watch" },
-                    report.waypointsOn.firstOrNull { it in places }?.let { "“${places[it]}” is on the watch" },
-                    report.waypointsOff.firstOrNull { it in places }?.let { "“${places[it]}” is off the watch" },
                 ).firstOrNull()
                 if (said != null) _state.update { it.copy(notice = said) }
             }
@@ -847,6 +874,45 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
         }
     }
 
+    /**
+     * Mark on the map where along [line] a press on its height profile is:
+     * [metres] along it, or null to clear. [line] is `[lng, lat, …]` per vertex.
+     */
+    fun scrubProfile(line: List<List<Double?>>?, metres: Double?) {
+        if (line == null || metres == null) {
+            _state.update { it.copy(profileCursor = null) }
+            return
+        }
+        var walked = 0.0
+        for (k in 1 until line.size) {
+            val a = line[k - 1]; val b = line[k]
+            val lng0 = a[0] ?: continue; val lat0 = a[1] ?: continue
+            val lng1 = b[0] ?: continue; val lat1 = b[1] ?: continue
+            val step = kotlin.math.hypot((lng1 - lng0) * kotlin.math.cos(Math.toRadians((lat0 + lat1) / 2)) * 111_320.0, (lat1 - lat0) * 110_540.0)
+            if (walked + step >= metres) {
+                val t = if (step <= 0) 0.0 else (metres - walked) / step
+                _state.update { it.copy(profileCursor = LatLng(lat0 + (lat1 - lat0) * t, lng0 + (lng1 - lng0) * t)) }
+                return
+            }
+            walked += step
+        }
+        line.lastOrNull()?.let { p ->
+            val lng = p[0]; val lat = p[1]
+            if (lng != null && lat != null) _state.update { it.copy(profileCursor = LatLng(lat, lng)) }
+        }
+    }
+
+    /** The open track's line, kept for scrubbing its profile. */
+    var selectedLine: List<List<Double?>>? = null
+        private set
+
+    /** "“Ridge” is on the watch", or "3 items are off the watch". */
+    private fun receipt(count: Int, onOrOff: String, name: String?): String? = when {
+        count == 0 -> null
+        count == 1 && name != null -> "“$name” is $onOrOff the watch"
+        else -> "$count items are $onOrOff the watch"
+    }
+
     /** The library has reopened on the edited track. */
     fun libraryReopened() {
         _state.update { it.copy(reopenLibraryFor = null) }
@@ -886,6 +952,7 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
             val saved = uid?.let { handles.load(it) }
             val line = com.tracks.core.sync.courseCoordinatesFromGeoJson(container.mapItems.coursesGeoJson(), course.id)
                 ?.map { LatLng(it[1], it[0]) }.orEmpty()
+            val stored = container.mapItems.courseLine(course.id).orEmpty()
             val points = saved?.handles ?: TrackHandles.fromLine(line)
             if (points.size < 2) {
                 _state.update { it.copy(notice = "That track has no line to edit") }
@@ -903,6 +970,11 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
                         editing = course.id,
                         editingName = course.name,
                         editColor = course.color,
+                        // Kept only when the handles came from the line itself;
+                        // a line re-routed between stored handles is rebuilt.
+                        baseLine = stored.takeIf { saved == null },
+                        baseHandles = if (saved == null) handleIndices(points, stored) else emptyList(),
+                        originalLine = stored.takeIf { saved == null },
                     ),
                     notice = "Drag a handle to move it; tap the map to extend",
                 )
@@ -935,6 +1007,67 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
                 focus = Focus.Point(waypoint.lat, waypoint.lng),
                 notice = "Drag the pin, or tap the map to move it",
             )
+        }
+    }
+
+    /**
+     * Take detail out of the line being edited, like the desktop's simplify
+     * slider: 0 is the line as recorded, 100 the coarsest. Previewed at once,
+     * written on Save.
+     */
+    fun setSimplify(percent: Int) {
+        val draft = _state.value.route
+        val original = draft.originalLine ?: return
+        val reduced = if (percent <= 0) original else TrackHandles.reduce(original, SIMPLIFY_MAX_M * percent / 100.0)
+        val points = TrackHandles.fromLine(reduced.mapNotNull { c ->
+            val lng = c.getOrNull(0); val lat = c.getOrNull(1)
+            if (lng == null || lat == null) null else LatLng(lat, lng)
+        })
+        val next = draft.copy(
+            simplifyPercent = percent, baseLine = reduced,
+            baseHandles = handleIndices(points, reduced), waypoints = points,
+        )
+        _state.update { it.copy(route = next.withStraightLine(points)) }
+    }
+
+    /**
+     * Join tracks into one new track, in the order given, each turned round if
+     * that makes it start nearer where the last one ended — the desktop's merge,
+     * done on the phone. The originals are left as they are; the new track opens
+     * in the editor to be named, refined or re-drawn.
+     */
+    fun combineTracks(courses: List<CourseSummary>) {
+        if (courses.size < 2) return
+        viewModelScope.launch {
+            val joined = ArrayList<List<Double>>()
+            for (c in courses) {
+                var line = container.mapItems.courseLine(c.id).orEmpty().mapNotNull { p ->
+                    val lng = p.getOrNull(0); val lat = p.getOrNull(1)
+                    if (lng == null || lat == null) null else listOfNotNull(lng, lat, p.getOrNull(2))
+                }
+                if (line.size < 2) continue
+                joined.lastOrNull()?.let { end ->
+                    fun gap(p: List<Double>) = (p[0] - end[0]) * (p[0] - end[0]) + (p[1] - end[1]) * (p[1] - end[1])
+                    if (gap(line.last()) < gap(line.first())) line = line.reversed()
+                }
+                joined += line
+            }
+            val created = container.mapItems.createCourse(
+                CourseCreate(
+                    name = courses.joinToString(" + ") { it.name }.take(80),
+                    color = courses.first().color,
+                    sport = courses.first().sport,
+                    coords = joined,
+                    source = "merged",
+                ),
+            )
+            if (created == null) {
+                _state.update { it.copy(notice = "Could not combine those tracks") }
+                return@launch
+            }
+            loadLibrary()
+            _state.update { it.copy(notice = "Combined ${courses.size} tracks into “${created.name}”") }
+            editCourseLine(created)
         }
     }
 
@@ -1072,6 +1205,26 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
     fun importTrack(filename: String, bytes: ByteArray) {
         viewModelScope.launch {
             _state.update { it.copy(notice = "Reading $filename…") }
+            // A GPX is read here, with or without signal, and opens in the
+            // editor to be refined or re-drawn before it is used.
+            Gpx.parse(bytes)?.let { (name, coords) ->
+                val created = container.mapItems.createCourse(
+                    CourseCreate(
+                        name = name ?: filename.substringBeforeLast('.'),
+                        color = TRACK_COLORS.random(),
+                        coords = coords,
+                        source = "gpx",
+                    ),
+                )
+                if (created == null) {
+                    _state.update { it.copy(notice = "$filename has no track to import") }
+                    return@launch
+                }
+                loadLibrary()
+                _state.update { it.copy(notice = "Imported “${created.name}”") }
+                editCourseLine(created)
+                return@launch
+            }
             val imported = runCatching { container.client().importCourse(filename, bytes) }
                 .getOrElse { e ->
                     _state.update { it.copy(notice = "Could not import $filename: ${e.message}") }
@@ -1083,7 +1236,7 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
             runCatching { container.syncWithServer(withHistory = false) }
             _state.update { it.copy(notice = "Imported “${imported.name}”") }
             loadLibrary()
-            container.mapItems.courses().firstOrNull { it.name == imported.name }?.let(::showOnMap)
+            container.mapItems.courses().firstOrNull { it.name == imported.name }?.let(::editCourseLine)
         }
     }
 
@@ -1148,6 +1301,7 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
     fun selectCourse(course: CourseSummary) {
         _state.update { it.copy(selected = Selection.Track(course.detailShell()), notice = null) }
         viewModelScope.launch {
+            selectedLine = runCatching { container.mapItems.courseLine(course.id) }.getOrNull()
             val full = runCatching { container.mapItems.course(course.id) }.getOrNull() ?: return@launch
             _state.update { state ->
                 val open = state.selected
@@ -1201,6 +1355,60 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
             }
         }
         return false
+    }
+
+    /**
+     * Fill the activity-tracks layer from this phone's files. The server has
+     * the same lines, but the map is the screen most used with no signal, and
+     * every activity a phone could draw is already on it.
+     */
+    fun loadActivityTracks() {
+        viewModelScope.launch {
+            val geo = runCatching {
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    container.library.activityTracksGeoJson()
+                }
+            }.getOrNull() ?: return@launch
+            _state.update { it.copy(activityGeoJson = geo) }
+        }
+    }
+
+    fun selectActivity(activity: Selection.Activity) {
+        _state.update { it.copy(selected = activity, notice = null, point = null) }
+    }
+
+    /**
+     * A new track drawn along a recorded activity, opened in the editor to be
+     * trimmed or re-routed. Full resolution: the editor keeps the line between
+     * the handles it is not asked to move.
+     */
+    fun makeTrackFromActivity(activity: Selection.Activity) {
+        viewModelScope.launch {
+            val line = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                container.library.activityLine(activity.uid)
+            }
+            if (line.size < 2) {
+                _state.update { it.copy(notice = "That activity has no GPS track") }
+                return@launch
+            }
+            val created = container.mapItems.createCourse(
+                CourseCreate(
+                    name = activity.name?.takeIf { it.isNotBlank() } ?: "Activity track",
+                    color = TRACK_COLORS.random(),
+                    sport = activity.sport,
+                    coords = line,
+                    source = "activity",
+                ),
+            )
+            if (created == null) {
+                _state.update { it.copy(notice = "Could not make a track from that activity") }
+                return@launch
+            }
+            _state.update { it.copy(selected = null) }
+            loadLibrary()
+            _state.update { it.copy(notice = "Made “${created.name}” from the activity") }
+            editCourseLine(created)
+        }
     }
 
     fun clearSelection() {
@@ -1395,11 +1603,18 @@ private fun RouteDraft.withSnapped(geoJson: String, handles: List<LatLng>): Rout
             .getJSONObject("properties")
     }.getOrNull()
 
+    // The handles join the line too: a handle left where the finger was, off
+    // to one side of the trail it routes along, reads as a point the route
+    // visits and then does not. Only when nothing has moved them since the
+    // request went out — a stale answer must not drag a handle back.
+    val line = lineCoordinates(geoJson)
+    val onTrail = if (waypoints == handles && line.size >= 2) handlesOnLine(handles, line) else waypoints
     return copy(
+        waypoints = onTrail,
         snapping = false,
         geoJson = geoJson,
         profile = elevationProfile(geoJson),
-        segments = routeSegments(lineCoordinates(geoJson), handles),
+        segments = routeSegments(line, onTrail),
         metres = properties?.optDouble("track-length")?.takeIf { !it.isNaN() },
         // BRouter's own name for it, and the one worth showing: "plain-ascend"
         // counts every metre of noise in the elevation model, while "filtered
@@ -1408,6 +1623,32 @@ private fun RouteDraft.withSnapped(geoJson: String, handles: List<LatLng>): Rout
         seconds = properties?.optDouble("total-time")?.takeIf { !it.isNaN() },
         error = null,
     )
+}
+
+/**
+ * Each handle moved to the nearest point of the routed line, in order along it:
+ * the first and last to its ends, each one between searched only beyond the one
+ * before, so a route that doubles back cannot pull a handle to the wrong pass.
+ */
+internal fun handlesOnLine(handles: List<LatLng>, line: List<List<Double>>): List<LatLng> {
+    fun at(i: Int) = LatLng(line[i][1], line[i][0])
+    fun d2(h: LatLng, i: Int): Double {
+        val dx = (line[i][0] - h.longitude) * kotlin.math.cos(Math.toRadians(h.latitude))
+        val dy = line[i][1] - h.latitude
+        return dx * dx + dy * dy
+    }
+    var from = 0
+    return handles.mapIndexed { k, h ->
+        when (k) {
+            0 -> at(0)
+            handles.lastIndex -> at(line.lastIndex)
+            else -> {
+                val best = (from until line.size).minByOrNull { d2(h, it) } ?: from
+                from = best
+                at(best)
+            }
+        }
+    }
 }
 
 /**
@@ -1472,9 +1713,31 @@ private fun CourseDetail.mergedWith(summary: CourseSummary) = copy(
  * flat profile would read as flat ground.
  */
 private fun RouteDraft.withStraightLine(waypoints: List<LatLng>): RouteDraft {
-    val coordinates = waypoints.joinToString(",") { "[${it.longitude},${it.latitude}]" }
+    // Between two original handles still where they were, the original line;
+    // anywhere else, a straight join.
+    val coords = ArrayList<List<Double?>>()
+    val base = baseLine
+    fun indexOf(p: LatLng) = baseHandles.firstOrNull { it.first == p }?.second
+    for (k in waypoints.indices) {
+        val here = waypoints[k]
+        if (k == 0) { coords += listOf(here.longitude, here.latitude); continue }
+        val from = indexOf(waypoints[k - 1]); val to = indexOf(here)
+        if (base != null && from != null && to != null && to > from &&
+            baseHandles.indexOfFirst { it.second == from } + 1 == baseHandles.indexOfFirst { it.second == to }
+        ) {
+            coords += base.subList(from + 1, to + 1)
+        } else {
+            coords += listOf(here.longitude, here.latitude)
+        }
+    }
+    val coordinates = coords.joinToString(",") { c ->
+        c.filterNotNull().joinToString(",", "[", "]")
+    }
     var metres = 0.0
-    waypoints.zipWithNext { from, to -> metres += from.metresTo(to) }
+    coords.zipWithNext { a, b ->
+        val la = a.getOrNull(1); val lo = a.getOrNull(0); val lb = b.getOrNull(1); val ob = b.getOrNull(0)
+        if (la != null && lo != null && lb != null && ob != null) metres += LatLng(la, lo).metresTo(LatLng(lb, ob))
+    }
 
     return copy(
         snapping = false,
@@ -1493,6 +1756,21 @@ private fun RouteDraft.withStraightLine(waypoints: List<LatLng>): RouteDraft {
         error = null,
     )
 }
+
+/** Where each handle sits in [line]; handles taken from the line match a vertex exactly. */
+internal fun handleIndices(handles: List<LatLng>, line: List<List<Double?>>): List<Pair<LatLng, Int>> {
+    var from = 0
+    return handles.mapNotNull { h ->
+        val i = (from until line.size).firstOrNull { k ->
+            line[k].getOrNull(1) == h.latitude && line[k].getOrNull(0) == h.longitude
+        } ?: return@mapNotNull null
+        from = i
+        h to i
+    }
+}
+
+/** The coarsest the simplify slider goes, in metres of allowed deviation. */
+private const val SIMPLIFY_MAX_M = 60.0
 
 /**
  * The positions of a one-line GeoJSON document, `[lng, lat, ele?]` as stored.

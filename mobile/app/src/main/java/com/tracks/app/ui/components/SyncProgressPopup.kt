@@ -78,8 +78,11 @@ fun ProgressPill(label: String?, fraction: Float?, modifier: Modifier = Modifier
         val shown = lastFraction
         Surface(
             shape = RoundedCornerShape(Tokens.Radius.full),
-            color = MaterialTheme.colorScheme.inverseSurface,
-            contentColor = MaterialTheme.colorScheme.inverseOnSurface,
+            // The theme's surface, raised like the sheets, not the inverse one: inverse
+            // turned the pill white in dark mode.
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 3.dp,
+            contentColor = MaterialTheme.colorScheme.onSurface,
             shadowElevation = 6.dp,
             modifier = Modifier.padding(bottom = Tokens.Space.s4),
         ) {
@@ -88,7 +91,7 @@ fun ProgressPill(label: String?, fraction: Float?, modifier: Modifier = Modifier
                 horizontalArrangement = Arrangement.spacedBy(Tokens.Space.s3),
                 modifier = Modifier.padding(horizontal = Tokens.Space.s4, vertical = Tokens.Space.s2_5),
             ) {
-                val indicator = MaterialTheme.colorScheme.inversePrimary
+                val indicator = MaterialTheme.colorScheme.primary
                 if (shown != null) {
                     CircularProgressIndicator(
                         progress = { shown }, color = indicator, strokeWidth = 2.5.dp,

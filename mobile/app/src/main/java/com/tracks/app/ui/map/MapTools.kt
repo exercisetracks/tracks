@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 package com.tracks.app.ui.map
 
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -781,6 +783,8 @@ fun RouteBar(
     onEditColor: (String) -> Unit = {},
     onEditIcon: (String) -> Unit = {},
     sprite: SpriteSheet? = null,
+    onProfileScrub: ((Double?) -> Unit)? = null,
+    onSimplify: (Int) -> Unit = {},
 ) {
     var naming by remember { mutableStateOf(false) }
     val editingPlace = route.editingPlace != null
@@ -805,7 +809,7 @@ fun RouteBar(
             // they turn round on. Drawn for un-snapped lines too, from ground
             // the server samples under them.
             if (route.profile.size > 1) {
-                ElevationProfile(points = route.profile, modifier = Modifier.fillMaxWidth())
+                ElevationProfile(points = route.profile, modifier = Modifier.fillMaxWidth(), onScrub = onProfileScrub)
             }
 
             // The editor: everything about the track or place in one place,
@@ -820,6 +824,22 @@ fun RouteBar(
                     textStyle = MaterialTheme.typography.bodyMedium,
                 )
                 ColorRow(selected = route.editColor ?: TRACK_COLORS.first(), onPick = onEditColor)
+                // Refine a recorded or imported line, as on the desktop: fewer
+                // points, same shape, previewed on the map as it moves.
+                route.originalLine?.let { original ->
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            if (route.simplifyPercent == 0) "Simplify" else "Simplify ${route.simplifyPercent}% · ${route.baseLine?.size ?: original.size} pts",
+                            style = MaterialTheme.typography.labelMedium,
+                        )
+                        androidx.compose.material3.Slider(
+                            value = route.simplifyPercent.toFloat(),
+                            onValueChange = { onSimplify(it.toInt()) },
+                            valueRange = 0f..100f,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                }
                 if (editingPlace) {
                     IconRow(
                         sprite = sprite,
@@ -967,21 +987,51 @@ internal fun coordinateLabel(lat: Double, lon: Double): String {
  * is precisely the wrong answer for the one question this chart exists for.
  */
 @Composable
-fun ElevationProfile(points: List<RoutePoint>, modifier: Modifier = Modifier) {
-    val line = MaterialTheme.colorScheme.primary
+fun ElevationProfile(
+    points: List<RoutePoint>,
+    modifier: Modifier = Modifier,
+    /**
+     * Distance along the line under the finger while pressing on the chart, and
+     * null when it lifts — so the map can mark the same spot on the track.
+     */
+    onScrub: ((Double?) -> Unit)? = null,
+) {
     val axisColor = MaterialTheme.colorScheme.onSurfaceVariant
     val gridColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)
+    val cursorColor = MaterialTheme.colorScheme.onSurface
     val measurer = rememberTextMeasurer()
     val labelStyle = MaterialTheme.typography.labelSmall
 
     val scale = remember(points) {
-        chartScale(points.minOf { it.elevationMetres }, points.maxOf { it.elevationMetres })
+        // At least 100 m either side of the median: a nearly flat track drawn
+        // to fill the box looked like mountains, which it is not.
+        val sorted = points.map { it.elevationMetres }.sorted()
+        val median = sorted[sorted.size / 2]
+        chartScale(minOf(sorted.first(), median - FLAT_MARGIN_M), maxOf(sorted.last(), median + FLAT_MARGIN_M))
     }
     val format = remember(scale) { axisFormat(scale) }
     val gutter = remember(scale, labelStyle) { measureGutter(scale, measurer, labelStyle, format) }
     val total = points.last().metres.takeIf { it > 0 } ?: 1.0
+    var cursor by remember { mutableStateOf<Double?>(null) }
 
-    Canvas(modifier.height(PROFILE_HEIGHT)) {
+    Canvas(
+        modifier
+            .height(PROFILE_HEIGHT)
+            .then(
+                if (onScrub == null) Modifier else Modifier.pointerInput(points, gutter) {
+                    fun at(px: Float): Double {
+                        val plotWidth = (size.width - gutter).coerceAtLeast(1f)
+                        return (((px - gutter) / plotWidth).coerceIn(0f, 1f) * total)
+                    }
+                    detectDragGestures(
+                        onDragStart = { cursor = at(it.x); onScrub(cursor) },
+                        onDragEnd = { cursor = null; onScrub(null) },
+                        onDragCancel = { cursor = null; onScrub(null) },
+                        onDrag = { change, _ -> cursor = at(change.position.x); onScrub(cursor) },
+                    )
+                },
+            ),
+    ) {
         drawYAxis(
             scale = scale,
             measurer = measurer,
@@ -996,33 +1046,61 @@ fun ElevationProfile(points: List<RoutePoint>, modifier: Modifier = Modifier) {
         fun x(metres: Double) = gutter + plotWidth * (metres / total).toFloat()
         fun y(elevation: Double) = size.height * (1f - scale.fraction(elevation))
 
-        val path = Path().apply {
-            points.forEachIndexed { index, point ->
-                val px = x(point.metres)
-                val py = y(point.elevationMetres)
-                if (index == 0) moveTo(px, py) else lineTo(px, py)
-            }
-        }
-        // Filled under the line: a profile reads as ground rather than as a
-        // trend when it has a solid mass beneath it.
+        // Ground under the line, neutral; the line carries the steepness.
         val area = Path().apply {
-            addPath(path)
+            points.forEachIndexed { index, point ->
+                if (index == 0) moveTo(x(point.metres), y(point.elevationMetres))
+                else lineTo(x(point.metres), y(point.elevationMetres))
+            }
             lineTo(x(points.last().metres), size.height)
             lineTo(x(points.first().metres), size.height)
             close()
         }
-        drawPath(
-            area,
-            brush = Brush.verticalGradient(
-                listOf(line.copy(alpha = 0.30f), line.copy(alpha = 0.03f)),
-            ),
-        )
-        drawPath(
-            path,
-            color = line,
-            style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round),
-        )
+        drawPath(area, brush = Brush.verticalGradient(listOf(axisColor.copy(alpha = 0.22f), axisColor.copy(alpha = 0.03f))))
+
+        // Each piece coloured by how steep it is, green to red, so the hard
+        // parts of a route are the ones that stand out.
+        val stroke = 2.5.dp.toPx()
+        for (k in 1 until points.size) {
+            val a = points[k - 1]; val b = points[k]
+            val run = (b.metres - a.metres).coerceAtLeast(1.0)
+            val grade = kotlin.math.abs(b.elevationMetres - a.elevationMetres) / run
+            drawLine(
+                gradeColor(grade),
+                Offset(x(a.metres), y(a.elevationMetres)),
+                Offset(x(b.metres), y(b.elevationMetres)),
+                strokeWidth = stroke,
+                cap = StrokeCap.Round,
+            )
+        }
+
+        cursor?.let { d ->
+            val cx = x(d)
+            drawLine(cursorColor.copy(alpha = 0.6f), Offset(cx, 0f), Offset(cx, size.height), strokeWidth = 1.dp.toPx())
+            val e = elevationAt(points, d)
+            drawCircle(cursorColor, radius = 4.dp.toPx(), center = Offset(cx, y(e)))
+        }
     }
 }
+
+/** Green when flat, yellow around 8%, red from 15%. */
+internal fun gradeColor(grade: Double): androidx.compose.ui.graphics.Color {
+    val t = (grade / 0.15).coerceIn(0.0, 1.0).toFloat()
+    val green = androidx.compose.ui.graphics.Color(0xFF16A34A)
+    val yellow = androidx.compose.ui.graphics.Color(0xFFEAB308)
+    val red = androidx.compose.ui.graphics.Color(0xFFDC2626)
+    return if (t < 0.53f) androidx.compose.ui.graphics.lerp(green, yellow, t / 0.53f)
+    else androidx.compose.ui.graphics.lerp(yellow, red, (t - 0.53f) / 0.47f)
+}
+
+private fun elevationAt(points: List<RoutePoint>, metres: Double): Double {
+    val k = points.indexOfFirst { it.metres >= metres }
+    if (k <= 0) return points.first().elevationMetres
+    val a = points[k - 1]; val b = points[k]
+    val t = ((metres - a.metres) / (b.metres - a.metres).coerceAtLeast(1e-6)).coerceIn(0.0, 1.0)
+    return a.elevationMetres + (b.elevationMetres - a.elevationMetres) * t
+}
+
+private const val FLAT_MARGIN_M = 100.0
 
 private val PROFILE_HEIGHT = 78.dp

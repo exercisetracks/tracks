@@ -14,7 +14,7 @@ from pathlib import Path
 from app.config import settings
 
 # Bump when symbol art changes so the sheet is regenerated on next launch.
-BUILD_VERSION = "usgs-sprite-13"
+BUILD_VERSION = "usgs-sprite-14"
 
 SPRITE_NAME = "usgs"
 BASE_SPRITE = "light"          # merged underneath for completeness

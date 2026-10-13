@@ -63,6 +63,18 @@ class TrackHandles(context: Context) {
             return out
         }
 
+        /**
+         * A line with detail under [toleranceM] metres taken out, every kept
+         * vertex exactly as it was — elevation included — for the simplify
+         * slider. `[lng, lat, ele?]` in and out.
+         */
+        fun reduce(line: List<List<Double?>>, toleranceM: Double): List<List<Double?>> {
+            val pts = line.filter { it.getOrNull(0) != null && it.getOrNull(1) != null }
+            if (pts.size <= 2) return pts
+            val kept = simplify(pts.map { LatLng(it[1]!!, it[0]!!) }, toleranceM).toHashSet()
+            return pts.filter { LatLng(it[1]!!, it[0]!!) in kept }
+        }
+
         private fun simplify(points: List<LatLng>, toleranceM: Double): List<LatLng> {
             val keep = BooleanArray(points.size)
             keep[0] = true

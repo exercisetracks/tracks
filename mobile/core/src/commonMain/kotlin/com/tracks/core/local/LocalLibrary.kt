@@ -269,6 +269,74 @@ class LocalLibrary(
     }
 
     /**
+     * The map's activity-tracks layer, as GeoJSON text, from the phone's own
+     * files: the [limit] newest activities with a track, each a line carrying
+     * its alias `id` (the activity screen's id), `uid`, name, sport, date and
+     * distance — the shape the server's `/activities/tracks-geojson` serves,
+     * so the one style draws either.
+     *
+     * Built from the packed heat tracks rather than the detail JSON, so a
+     * map open costs one small read per activity and a first run's cuts are
+     * kept for the heatmap as well.
+     */
+    suspend fun activityTracksGeoJson(limit: Int = 400): String {
+        val meta = q.selectActivities().executeAsList().associateBy { it.uid }
+        val aliases = aliasesByUid()
+        val rows = q.selectHeatTracks(null).executeAsList().take(limit)
+        val cut = HashMap<String, Pair<String, ByteArray>>()
+        val features = kotlinx.serialization.json.buildJsonArray {
+            for (row in rows) {
+                val packed = row.points ?: cutHeatTrack(row.uid).also { cut[row.uid] = row.sha256 to it }
+                val track = com.tracks.core.metrics.HeatTrackCodec.decode(packed)
+                if (track.size < 2) continue
+                val a = meta[row.uid]
+                val id = aliases[row.uid] ?: alias(row.uid)
+                add(kotlinx.serialization.json.buildJsonObject {
+                    put("type", JsonPrimitive("Feature"))
+                    put("id", JsonPrimitive(id))
+                    put("properties", kotlinx.serialization.json.buildJsonObject {
+                        put("id", JsonPrimitive(id))
+                        put("uid", JsonPrimitive(row.uid))
+                        put("name", JsonPrimitive(a?.name))
+                        put("sport", JsonPrimitive(a?.sport))
+                        put("date", JsonPrimitive(row.started_at))
+                        put("distance_m", JsonPrimitive(a?.distance_meters))
+                    })
+                    put("geometry", kotlinx.serialization.json.buildJsonObject {
+                        put("type", JsonPrimitive("LineString"))
+                        put("coordinates", kotlinx.serialization.json.buildJsonArray {
+                            for (p in track) add(kotlinx.serialization.json.buildJsonArray {
+                                add(JsonPrimitive(p.lng)); add(JsonPrimitive(p.lat))
+                            })
+                        })
+                    })
+                })
+            }
+        }
+        if (cut.isNotEmpty()) lock.withLock {
+            db.transaction { cut.forEach { (uid, v) -> q.upsertHeatTrack(uid, v.first, v.second) } }
+        }
+        return JsonObject(mapOf("type" to JsonPrimitive("FeatureCollection"), "features" to features)).toString()
+    }
+
+    /**
+     * An activity's whole recorded line, `[lng, lat, elevation?]` per point,
+     * for turning it into a track. Full resolution: the track editor thins it
+     * itself, and a line cut down for the map would lose the detail a course
+     * is made from.
+     */
+    fun activityLine(uid: String): List<List<Double>> {
+        val points = detailJson(uid)?.get("data_points") as? JsonArray ?: return emptyList()
+        return points.mapNotNull { p ->
+            val o = p as? JsonObject ?: return@mapNotNull null
+            fun num(key: String) = (o[key] as? JsonPrimitive)?.doubleOrNull
+            val lat = num("lat") ?: return@mapNotNull null
+            val lng = num("lng") ?: return@mapNotNull null
+            listOfNotNull(lng, lat, num("altitude"))
+        }
+    }
+
+    /**
      * One activity's track, thinned to at most [HEAT_TRACK_POINTS] points and
      * packed; empty when it has no GPS, which is stored too so the activity
      * is not re-parsed to learn that again.

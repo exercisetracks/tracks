@@ -386,11 +386,17 @@ class ExploreSession(private val host: Host) {
             if (full) lib.baseline = true
             val on = mutableSetOf<Pair<Int, Int>>()
             val off = mutableSetOf<Pair<Int, Int>>()
+            val fresh = mutableSetOf<WatchLibrary.Item>()
             for (i in lib.items.values.toList()) {
                 val carried = announcedTo >= 0 && i.txn != WatchLibrary.PENDING && i.txn <= announcedTo
-                if (!i.confirmed && carried) lib.items[i.uuid] = i.copy(confirmed = true)
+                if (!i.confirmed && carried) {
+                    lib.items[i.uuid] = i.copy(confirmed = true)
+                    fresh += i
+                }
                 if (i.confirmed || carried) (if (i.tombstone) off else on) += i.kind to i.ref
             }
+            fun freshIds(kind: Int, tomb: Boolean) =
+                fresh.filter { it.kind == kind && it.tombstone == tomb }.mapTo(HashSet()) { it.ref }
             fun ids(set: Set<Pair<Int, Int>>, kind: Int) = set.filter { it.first == kind }.mapTo(HashSet()) { it.second }
             val liveRefs = lib.live(WatchLibrary.KIND_COURSE).mapTo(HashSet()) { it.ref }
             host.onReport(ReconcileReport(
@@ -400,6 +406,10 @@ class ExploreSession(private val host: Host) {
                 waypointsOn = ids(on, WatchLibrary.KIND_WAYPOINT),
                 waypointsOff = ids(off, WatchLibrary.KIND_WAYPOINT) -
                     lib.live(WatchLibrary.KIND_WAYPOINT).mapTo(HashSet()) { it.ref },
+                changedOn = freshIds(WatchLibrary.KIND_COURSE, tomb = false),
+                changedOff = freshIds(WatchLibrary.KIND_COURSE, tomb = true) - liveRefs,
+                changedPlacesOn = freshIds(WatchLibrary.KIND_WAYPOINT, tomb = false),
+                changedPlacesOff = freshIds(WatchLibrary.KIND_WAYPOINT, tomb = true),
             ))
         } else {
             host.onReport(ReconcileReport(failed = true))

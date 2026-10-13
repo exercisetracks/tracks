@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 package com.tracks.app.ui.map
 
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -56,16 +57,16 @@ fun SelectionSheet(
     actions: LibraryActions,
     onDismiss: () -> Unit,
 ) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     // The same atlas the map draws from, so the symbol here is the symbol out
     // there — see [IconRow].
     var sprite by remember { mutableStateOf<SpriteSheet?>(null) }
     LaunchedEffect(Unit) { sprite = SpriteSheet.load(container) }
 
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+    ContentSheet(onDismiss = onDismiss) {
         Column(
             Modifier
                 .fillMaxWidth()
+                .heightIn(max = 520.dp)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = SHEET_PAD)
                 .padding(bottom = 16.dp),
@@ -74,6 +75,7 @@ fun SelectionSheet(
             when (selection) {
                 is Selection.Track -> TrackBody(selection.course, sprite, actions)
                 is Selection.Place -> PlaceBody(selection.waypoint, sprite, actions)
+                is Selection.Activity -> ActivityBody(selection, actions)
             }
 
             // Receipts are a toast over the map now (StatusToast), not a line here.
@@ -124,7 +126,7 @@ private fun TrackBody(course: CourseDetail, sprite: SpriteSheet?, actions: Libra
     // ones are different days out.
     val points = profilePoints(course.profile)
     if (points.size > 1) {
-        ElevationProfile(points = points, modifier = Modifier.fillMaxWidth())
+        ElevationProfile(points = points, modifier = Modifier.fillMaxWidth(), onScrub = actions.onProfileScrub)
     } else if (course.profile == null) {
         // Absent because it has not arrived, not because the track is flat.
         Text(
@@ -147,6 +149,37 @@ private fun TrackBody(course: CourseDetail, sprite: SpriteSheet?, actions: Libra
             title = "Track colour",
             onPick = { actions.onCourseColor(course.summary(), it) },
             onDismiss = { picking = false },
+        )
+    }
+}
+
+/**
+ * A recorded activity tapped on the map: what it was, and the two things to do
+ * with it — look at it properly, or make a track of it to edit and send.
+ */
+@Composable
+private fun ActivityBody(activity: Selection.Activity, actions: LibraryActions) {
+    Text(
+        activity.name?.takeIf { it.isNotBlank() } ?: "Activity",
+        style = MaterialTheme.typography.titleSmall,
+    )
+    Text(
+        listOfNotNull(
+            activity.date?.take(10),
+            activity.sport?.replace('_', ' ')?.replaceFirstChar { it.uppercase() },
+            activity.distanceMetres?.let { distance(it) },
+        ).joinToString(" · "),
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        com.tracks.app.ui.components.NeutralButton(
+            "Open", onClick = { actions.onOpenActivity(activity.id) },
+            modifier = Modifier.weight(1f).heightIn(min = 44.dp),
+        )
+        com.tracks.app.ui.components.TonalButton(
+            "Make track", onClick = { actions.onMakeTrack(activity) },
+            modifier = Modifier.weight(1f).heightIn(min = 44.dp),
         )
     }
 }

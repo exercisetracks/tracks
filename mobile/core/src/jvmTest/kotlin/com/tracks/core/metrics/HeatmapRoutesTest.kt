@@ -127,6 +127,19 @@ class HeatmapRoutesTest {
     }
 
     @Test
+    fun the_map_layer_carries_each_activity_by_the_id_its_screen_opens_with() = runBlocking {
+        // Nothing on the phone fed the map's activity layer, so the toggle
+        // showed nothing; a tap on a line also has to reach the right activity.
+        val lib = library()
+        val lines = features(lib.activityTracksGeoJson())
+        assertEquals(lib.heatmapTracks(null, null, HeatmapMode.Frequency).size, lines.size)
+        val first = lines.first()["properties"]!!.jsonObject
+        val uid = first["uid"]!!.jsonPrimitive.content
+        assertEquals(lib.alias(uid), first["id"]!!.jsonPrimitive.content.toInt())
+        assertTrue(lib.activityLine(uid).size >= 2, "the full line is there to make a track from")
+    }
+
+    @Test
     fun the_packing_keeps_a_point_to_well_under_a_metre_and_its_gaps() {
         val p = listOf(HeatPoint(45.1234567, -122.7654321, 3.25, null, 1234.5), HeatPoint(-33.9, 151.2))
         val back = HeatTrackCodec.decode(HeatTrackCodec.encode(p))

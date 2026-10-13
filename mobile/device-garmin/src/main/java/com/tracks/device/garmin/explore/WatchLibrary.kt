@@ -139,6 +139,16 @@ data class ReconcileReport(
     val waypointsOff: Set<Int> = emptySet(),
     /** The session failed; nothing in it was applied. */
     val failed: Boolean = false,
+    /**
+     * What this session itself put on or took off — the news, as against the
+     * standing state above, which repeats every tombstone ever confirmed. A
+     * receipt read from the standing state said "off the watch" about the
+     * same long-deleted track after every sync.
+     */
+    val changedOn: Set<Int> = emptySet(),
+    val changedOff: Set<Int> = emptySet(),
+    val changedPlacesOn: Set<Int> = emptySet(),
+    val changedPlacesOff: Set<Int> = emptySet(),
 )
 
 /**

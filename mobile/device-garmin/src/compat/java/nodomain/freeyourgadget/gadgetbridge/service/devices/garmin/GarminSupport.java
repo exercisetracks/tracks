@@ -2568,9 +2568,34 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
      * reach Tracks through this.
      */
     public Integer activityRecoveryStartPage() {
-        final int page = getDevicePrefs().getPreferences().getInt(PREF_RECOVERY_PAGE, 0);
+        final SharedPreferences prefs = getDevicePrefs().getPreferences();
+        // Once, from the first page: a page remembered before this build may
+        // belong to a watch that has since been factory reset, whose page ids
+        // start again from zero — and a listing from the old position finds
+        // nothing, every sync. Measured 2026-10-12: a walk recorded after a
+        // reset never reached the phone.
+        if (!prefs.getBoolean(PREF_RECOVERY_RESEEDED, false)) {
+            prefs.edit().putBoolean(PREF_RECOVERY_RESEEDED, true).apply();
+            android.util.Log.i("TracksFileSync", "sweeping every activity once, from the first page");
+            return null;
+        }
+        final int page = prefs.getInt(PREF_RECOVERY_PAGE, 0) - RECOVERY_PAGE_OVERLAP;
         return page > 0 ? page : null;
     }
+
+    /**
+     * How far behind the last listing's end each recovery listing starts.
+     *
+     * <p>An activity's page id is assigned when the recording <em>starts</em>,
+     * not when it is saved. Measured 2026-10-12: a walk was given page 375; a
+     * sync during it ended at page 384 (monitoring files written meanwhile); once
+     * the walk was saved, every later listing began at 384 and never saw it.
+     * Listing from a few hundred pages back costs a page or two of listing and
+     * covers anything recorded during a long day out.
+     */
+    private static final int RECOVERY_PAGE_OVERLAP = 200;
+
+    private static final String PREF_RECOVERY_RESEEDED = "garmin_activity_recovery_reseeded_v1";
 
     public void rememberActivityRecoveryPage(final int page) {
         if (page > 0) {
@@ -2632,6 +2657,11 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
         final boolean wanted = !getDevicePrefs()
                 .getStringSet(PREF_KNOWN_ACTIVITY_IDS, Collections.emptySet())
                 .contains(activityKey(file));
+        // Every recent activity the watch lists, and what became of it: the one
+        // line that says whether a missing recording is on the watch at all.
+        android.util.Log.i("TracksFileSync", "activity " + activityKey(file) + " recorded "
+                + java.time.Instant.ofEpochSecond(recordedS) + " page=" + file.getPageId() + " status=" + file.getUnk4()
+                + (wanted ? " -> fetching" : " -> already on this phone"));
         final long lastDone = getDevicePrefs().getPreferences().getLong(PREF_RECOVERY_DONE_AT, 0L);
         if (wanted && lastDone > 0 && recordedS >= lastDone) {
             syncedElsewhere.incrementAndGet();
