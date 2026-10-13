@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 package com.tracks.app.ui.map
 
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.windowInsetsPadding
 import com.tracks.app.ui.theme.Tokens
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -118,6 +121,16 @@ fun MapScreen(
     var showLibrary by remember { mutableStateOf(false) }
     // Editing a track's line happens on the map, so the library makes way.
     LaunchedEffect(tools.route.editing) { if (tools.route.editing != null) showLibrary = false }
+    // ...and comes back, on the same track, when the edit is saved or abandoned.
+    var libraryOpenOn by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(tools.reopenLibraryFor) {
+        tools.reopenLibraryFor?.let { id ->
+            libraryOpenOn = "course-$id"
+            showLibrary = true
+            toolsVm.loadLibrary()
+            toolsVm.libraryReopened()
+        }
+    }
     // The library panel's size, as the person last left it — kept across
     // openings and launches, because a size somebody chose is a preference.
     val appContext = androidx.compose.ui.platform.LocalContext.current
@@ -629,7 +642,15 @@ fun MapScreen(
             toolsVm.container, tools, actions, showLibrary,
             fraction = libraryFraction,
             onFraction = { libraryFraction = it; uiPrefs.edit().putFloat("library_fraction", it).apply() },
-        ) { showLibrary = false }
+            openOn = libraryOpenOn,
+        ) { showLibrary = false; libraryOpenOn = null }
+
+        // Watch and library receipts, at the top where neither sheet reaches.
+        com.tracks.app.ui.components.StatusToast(
+            message = tools.notice,
+            onDismiss = toolsVm::dismissNotice,
+            modifier = Modifier.align(Alignment.TopCenter).windowInsetsPadding(WindowInsets.statusBars),
+        )
 
         tools.selected?.let { selection ->
             SelectionSheet(
@@ -1420,6 +1441,7 @@ private fun TrackLibraryHost(
     visible: Boolean,
     fraction: Float,
     onFraction: (Float) -> Unit,
+    openOn: String?,
     onDismiss: () -> Unit,
 ) {
     if (!visible) return
@@ -1433,6 +1455,7 @@ private fun TrackLibraryHost(
         onDismiss = onDismiss,
         fraction = fraction,
         onFraction = onFraction,
+        initiallyOpen = openOn,
     )
 }
 

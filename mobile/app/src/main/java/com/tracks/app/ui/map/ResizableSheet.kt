@@ -71,7 +71,8 @@ fun ResizableSheet(
                 Box(
                     Modifier
                         .fillMaxWidth()
-                        .height(28.dp)
+                        // Short: every row of the panel is a row less of list.
+                        .height(14.dp)
                         .semantics { contentDescription = "Resize, or drag down to close" }
                         .draggable(
                             orientation = Orientation.Vertical,

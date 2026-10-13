@@ -124,6 +124,11 @@ sealed interface Focus {
 
 data class MapToolsUiState(
     val tool: MapTool = MapTool.Inspect,
+    /**
+     * A track whose line was just edited, to reopen the library on: editing
+     * starts from the library and finishes back in it, with the track open.
+     */
+    val reopenLibraryFor: Int? = null,
     val point: PointInfo? = null,
     /** Everything that can go on the watch, and how it is drawn. */
     val courses: List<CourseSummary> = emptyList(),
@@ -611,7 +616,7 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
         val message = when (outcome) {
             is WatchManager.Outcome.Sent -> when {
                 removed -> "$what is off the watch"
-                awaitsConfirmation -> "Sent $what — waiting for the watch to confirm"
+                awaitsConfirmation -> "Sent $what — waiting for the watch…"
                 else -> "$what is on the watch"
             }
 
@@ -801,8 +806,15 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
             it.copy(
                 tool = MapTool.Inspect,
                 route = RouteDraft(snapToTrails = it.route.snapToTrails),
+                // Leaving an edit goes back to where it started.
+                reopenLibraryFor = it.route.editing,
             )
         }
+    }
+
+    /** The library has reopened on the edited track. */
+    fun libraryReopened() {
+        _state.update { it.copy(reopenLibraryFor = null) }
     }
 
     /**
@@ -876,11 +888,13 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
             viewModelScope.launch {
                 _state.update { it.copy(route = it.route.copy(saving = true), notice = null) }
                 val updated = container.mapItems.updateCourseLine(id, coordinates)
+                runCatching { buildProfile(id) }
                 container.sources.row("track", id)?.uid?.let { handles.save(it, draft.waypoints, draft.snapToTrails) }
                 _state.update {
                     it.copy(
                         tool = MapTool.Inspect,
                         route = RouteDraft(snapToTrails = it.route.snapToTrails),
+                        reopenLibraryFor = id,
                         notice = if (updated != null) "Updated “${updated.name}”" else "Could not update that track",
                     )
                 }
@@ -906,6 +920,7 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
                 _state.update { it.copy(route = it.route.copy(saving = false), notice = "A track needs at least two points") }
                 return@launch
             }
+            launch { runCatching { buildProfile(created.id) } }
             // Kept so the track can be re-drawn the way it was drawn.
             container.sources.row("track", created.id)?.uid?.let { handles.save(it, draft.waypoints, draft.snapToTrails) }
 
@@ -981,7 +996,8 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
      */
     fun readFromWatch() {
         viewModelScope.launch {
-            _state.update { it.copy(notice = "Asking the watch what it holds…") }
+            // Progress is the watch-sync pill (WatchSyncRunner.progress); the
+            // toast is kept for the result.
             val outcome = runCatching { container.watchSync.readSavedItems() }
                 .getOrElse { e ->
                     _state.update { it.copy(notice = "Could not reach the watch: ${e.message}") }
@@ -1029,7 +1045,33 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
                 val open = state.selected
                 if (open is Selection.Track && open.course.id == full.id) state.copy(selected = Selection.Track(full)) else state
             }
+            // No profile yet: build it here rather than wait on the server.
+            if (full.profile == null && buildProfile(full.id)) {
+                val withProfile = runCatching { container.mapItems.course(course.id) }.getOrNull() ?: return@launch
+                _state.update { state ->
+                    val open = state.selected
+                    if (open is Selection.Track && open.course.id == withProfile.id) state.copy(selected = Selection.Track(withProfile)) else state
+                }
+            }
         }
+    }
+
+    /**
+     * Build and store a track's height profile on the phone — see
+     * [com.tracks.core.local.TrackProfile]. Uses the line's own elevations, or
+     * the offline DEM, which needs no network inside a downloaded region.
+     */
+    private suspend fun buildProfile(id: Int): Boolean {
+        val line = container.mapItems.courseLine(id) ?: return false
+        val dem = container.offlineDem()
+        val client = runCatching { container.client() }.getOrNull()
+        val profile = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+            com.tracks.core.local.TrackProfile.build(line) { lat, lng ->
+                client?.let { dem.elevation(it, lat, lng) }
+            }
+        } ?: return false
+        container.mapItems.setCourseProfile(id, profile)
+        return true
     }
 
     fun selectWaypoint(waypoint: Waypoint) {

@@ -123,6 +123,7 @@ fun TracksNavHost(
     val hasDevice by container.hasDevice.collectAsStateWithLifecycle()
     val themeMode by container.themeMode.collectAsStateWithLifecycle()
     val syncProgress by container.syncProgress.collectAsStateWithLifecycle()
+    val watchProgress by container.watchSync.progress.collectAsStateWithLifecycle()
     val backupProgress by container.backupProgress.collectAsStateWithLifecycle()
     val accent by container.accent.collectAsStateWithLifecycle()
     val imperial by container.imperial.collectAsStateWithLifecycle()
@@ -348,6 +349,10 @@ fun TracksNavHost(
                     horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
                 ) {
                     SyncProgressPopup(syncProgress)
+                    com.tracks.app.ui.components.ProgressPill(
+                        label = watchProgress?.label,
+                        fraction = watchProgress?.fraction,
+                    )
                     com.tracks.app.ui.components.ProgressPill(
                         label = backupProgress?.let { com.tracks.app.backup.backupLabel(it) },
                         fraction = backupProgress?.fraction,

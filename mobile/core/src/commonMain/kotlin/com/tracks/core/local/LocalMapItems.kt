@@ -73,6 +73,18 @@ class LocalMapItems(private val sources: LocalSources) {
 
     suspend fun deleteCourse(id: Int) = sources.delete("track", id)
 
+    /** The track's stored line, `[lng, lat, ele?]` per vertex, for [TrackProfile]. */
+    suspend fun courseLine(id: Int): List<List<Double?>>? {
+        val geometry = sources.row("track", id)?.fields?.get("geometry") as? JsonArray ?: return null
+        return geometry.mapNotNull { c ->
+            (c as? JsonArray)?.map { (it as? JsonPrimitive)?.content?.toDoubleOrNull() }
+        }
+    }
+
+    /** Store a height profile built on the phone; see [TrackProfile]. */
+    suspend fun setCourseProfile(id: Int, profile: Map<String, Any?>) =
+        sources.setValues("track", id, mapOf("profile" to profile))
+
     /**
      * Replace a track's line, with the stats that follow from it — as
      * [createCourse] computes them. What was derived from the old line (the
@@ -174,7 +186,16 @@ class LocalMapItems(private val sources: LocalSources) {
 
     // ── Shared ──────────────────────────────────────────────────────────────
 
-    private fun onDevice(r: SyncedRow): Boolean = r.str("watch_uploaded_at") != null && r.str("watch_deleted_at") == null
+    /**
+     * On the watch, by the watch's own word: confirmed through Tracks' Explore
+     * collection, which records [WATCH_CONFIRMED]. Timestamps from anything
+     * else — an old FIT push, or a course pulled off a watch long since reset —
+     * say nothing about the watch now, and counting them filled "On the watch"
+     * with courses that were not there.
+     */
+    private fun onDevice(r: SyncedRow): Boolean =
+        r.str("watch_uploaded_at") != null && r.str("watch_deleted_at") == null &&
+            r.str("watch_filename") == WATCH_CONFIRMED
 
     /** `_device_status`. */
     private fun deviceStatus(r: SyncedRow): String {
@@ -190,8 +211,11 @@ class LocalMapItems(private val sources: LocalSources) {
         }
     }
 
-    private companion object {
-        const val MAX_NAME = 100
+    companion object {
+        private const val MAX_NAME = 100
+
+        /** The `watch_filename` written when the watch confirms an item; see [onDevice]. */
+        const val WATCH_CONFIRMED = "explore"
     }
 }
 

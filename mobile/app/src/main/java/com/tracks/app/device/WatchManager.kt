@@ -235,11 +235,17 @@ class WatchManager(
      * connection uploading six activities at once mostly produces six timeouts;
      * serially, each one that lands is one that is safe.
      */
-    suspend fun uploadPulled(files: List<PulledFile>, uploader: WatchUploader): UploadResult {
+    suspend fun uploadPulled(
+        files: List<PulledFile>,
+        uploader: WatchUploader,
+        /** Files handled so far, of how many — for the progress pill. */
+        onProgress: (done: Int, total: Int) -> Unit = { _, _ -> },
+    ): UploadResult {
         var delivered = 0
         var failed = 0
 
-        for (file in files) {
+        for ((index, file) in files.withIndex()) {
+            onProgress(index, files.size)
             if (file.kind == PulledFileKind.SCHEDULE) {
                 // Neither delivered nor failed: nothing was owed to the server
                 // for this one. See [PulledFileKind.SCHEDULE] for why it goes
@@ -743,7 +749,7 @@ class WatchManager(
             val courses = items.courses().associateBy { it.id }
             for (id in report.coursesOn) {
                 val c = courses[id] ?: continue
-                if (c.deviceStatus != "on_device") items.markCourseUploaded(id, "explore", at)
+                if (c.deviceStatus != "on_device") items.markCourseUploaded(id, com.tracks.core.local.LocalMapItems.WATCH_CONFIRMED, at)
             }
             for (id in report.coursesOff) if (courses[id]?.deviceStatus in setOf("on_device", "pending_remove")) {
                 items.markCourseOffWatch(id, at)
@@ -758,7 +764,7 @@ class WatchManager(
             }
             val places = items.waypoints().associateBy { it.id }
             val newlyOn = report.waypointsOn.filter { places[it]?.onWatch == false }
-            if (newlyOn.isNotEmpty()) items.markWaypointsUploaded(newlyOn, "explore", at)
+            if (newlyOn.isNotEmpty()) items.markWaypointsUploaded(newlyOn, com.tracks.core.local.LocalMapItems.WATCH_CONFIRMED, at)
             for (id in report.waypointsOff) if (places[id]?.onWatch == true) items.markWaypointOffWatch(id, at)
         } else {
             Log.w(TAG, "the watch could not finish syncing courses and places")

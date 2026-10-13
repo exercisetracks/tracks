@@ -76,13 +76,7 @@ fun SelectionSheet(
                 is Selection.Place -> PlaceBody(selection.waypoint, sprite, actions)
             }
 
-            notice?.let {
-                Text(
-                    it,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-            }
+            // Receipts are a toast over the map now (StatusToast), not a line here.
         }
     }
 }

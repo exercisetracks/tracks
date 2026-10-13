@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -109,6 +110,8 @@ fun TrackLibrarySheet(
     /** The panel's share of the screen, kept between openings. */
     fraction: Float,
     onFraction: (Float) -> Unit,
+    /** The row to open with, as "course-<id>" — the track just edited. */
+    initiallyOpen: String? = null,
 ) {
     val hasDevice = com.tracks.app.ui.components.LocalHasDevice.current
     var chosenScope by remember { mutableStateOf(Scope.Everything) }
@@ -122,7 +125,7 @@ fun TrackLibrarySheet(
     val shownCourses = courses.filter { scope.includes(it) }
     val shownWaypoints = waypoints.filter { scope.includes(it) }
     // One row open at a time, across both tabs: opening another closes this.
-    var open by remember { mutableStateOf<String?>(null) }
+    var open by remember(initiallyOpen) { mutableStateOf(initiallyOpen) }
 
     ResizableSheet(fraction = fraction, onFraction = onFraction, onDismiss = onDismiss) {
         Column(
@@ -142,6 +145,10 @@ fun TrackLibrarySheet(
                             selected = scope == option,
                             onClick = { chosenScope = option },
                             shape = SegmentedButtonDefaults.itemShape(index, Scope.entries.size),
+                            // Material's 40 dp is tuned for a page; in a panel
+                            // the list is what the height is for.
+                            modifier = Modifier.height(30.dp),
+                            icon = {},
                         ) {
                             Text(option.label, style = MaterialTheme.typography.labelMedium)
                         }
@@ -149,14 +156,14 @@ fun TrackLibrarySheet(
                 }
                 // Two ways in, and they are genuinely different sources: a file
                 // somebody sent you, and the watch you are already wearing.
-                if (hasDevice) IconButton(onClick = actions.onReadWatch, modifier = Modifier.size(34.dp)) {
+                if (hasDevice) IconButton(onClick = actions.onReadWatch, modifier = Modifier.size(30.dp)) {
                     Icon(
                         Icons.Filled.Refresh,
                         contentDescription = "Read the tracks and places already on the watch",
                         modifier = Modifier.size(19.dp),
                     )
                 }
-                IconButton(onClick = actions.onImport, modifier = Modifier.size(34.dp)) {
+                IconButton(onClick = actions.onImport, modifier = Modifier.size(30.dp)) {
                     Icon(
                         Icons.Filled.Add,
                         contentDescription = "Import a GPX or FIT file",
@@ -168,12 +175,12 @@ fun TrackLibrarySheet(
             // The receipt for whatever was last asked for, and the count. These
             // operations all happen somewhere the user cannot see — a server
             // row, a watch — so without this, success and failure look alike.
+            // Receipts for watch and sync work are toasts over the map now
+            // (see StatusToast); this line is only the count.
             Text(
-                notice ?: scope.summary(courses, waypoints),
+                scope.summary(courses, waypoints),
                 style = MaterialTheme.typography.labelSmall,
-                color = if (notice != null) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.clickable { actions.onDismissNotice() },
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
             if (loading && courses.isEmpty() && waypoints.isEmpty()) {
@@ -181,8 +188,15 @@ fun TrackLibrarySheet(
                 return@Column
             }
 
+            // Reopened on a track just edited: bring its row into view.
+            val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+            LaunchedEffect(initiallyOpen) {
+                val index = shownCourses.indexOfFirst { "course-${it.id}" == initiallyOpen }
+                if (index >= 0) listState.scrollToItem(index + 1)
+            }
             LazyColumn(
                 Modifier.weight(1f),
+                state = listState,
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
                 item { Header("Tracks") }
@@ -395,14 +409,8 @@ internal fun CourseActions(
             onRemove = { actions.onCourseRemove(course) },
             onDelete = { actions.onCourseDelete(course) },
             deleteQuestion = if (course.loadToDevice) "Delete from Tracks and the watch?" else "Delete for good?",
+            onEdit = { actions.onCourseEditLine(course) }.takeIf { course.id >= 0 },
         )
-        if (course.id >= 0) {
-            NeutralButton(
-                "Edit line",
-                onClick = { actions.onCourseEditLine(course) },
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
     }
 
     if (picking) {
@@ -661,6 +669,8 @@ private fun ActionRow(
     onRemove: () -> Unit,
     onDelete: () -> Unit,
     deleteQuestion: String,
+    /** Re-draw the track; tracks only. Shares the row with send/remove and delete. */
+    onEdit: (() -> Unit)? = null,
 ) {
     var confirming by remember { mutableStateOf(false) }
 
@@ -682,8 +692,11 @@ private fun ActionRow(
             } else {
                 TonalButton("Send to device", onClick = onSend, modifier = Modifier.weight(1f))
             }
-        } else {
+        } else if (onEdit == null) {
             Spacer(Modifier.weight(1f))
+        }
+        if (onEdit != null) {
+            NeutralButton("Edit track", onClick = onEdit, modifier = Modifier.weight(1f))
         }
         IconButton(onClick = { confirming = true }, modifier = Modifier.size(44.dp)) {
             Icon(

@@ -117,6 +117,21 @@ class OfflineDem(context: Context) {
      * looked at once never costs a request again, offline or not.
      */
     private suspend fun tile(client: TracksClient, zoom: Int, x: Int, y: Int): Bitmap? {
+        val key = "$zoom/$x/$y"
+        synchronized(decoded) { decoded[key] }?.let { return it }
+        return loadTile(client, zoom, x, y)?.also { synchronized(decoded) { decoded[key] = it } }
+    }
+
+    /**
+     * Tiles already decoded, newest last. A track's profile samples hundreds of
+     * points that mostly share a handful of tiles; decoding the same tile from
+     * disk for every one of them is what made a profile slow to build.
+     */
+    private val decoded = object : LinkedHashMap<String, Bitmap>(16, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Bitmap>) = size > DECODED_TILES
+    }
+
+    private suspend fun loadTile(client: TracksClient, zoom: Int, x: Int, y: Int): Bitmap? {
         val file = File(dir, "$zoom/$x/$y.webp")
         val bytes = withContext(Dispatchers.IO) { runCatching { file.readBytes() }.getOrNull() }
             ?: runCatching { client.demTile(zoom, x, y) }
@@ -156,6 +171,8 @@ class OfflineDem(context: Context) {
     private companion object {
         const val TAG = "TracksOfflineDem"
         const val MAX_ZOOM = 12
+        /** About 1 MB each decoded; a dozen covers any one track. */
+        const val DECODED_TILES = 12
         const val MIN_ZOOM = 8
 
         /** Same floor `elevation_sampler.py` applies: below this is void, not ground. */

@@ -64,6 +64,18 @@ class WatchSyncRunner(private val container: AppContainer) {
 
     private val mutex = Mutex()
 
+    /** Where a running watch sync is, for the progress pill; null when none is. */
+    data class Progress(val label: String, val fraction: Float? = null)
+
+    private val _progress = kotlinx.coroutines.flow.MutableStateFlow<Progress?>(null)
+
+    /**
+     * Shown in the same pill as the server sync (see ProgressPill), so a watch
+     * sync shows what it is doing while it does it rather than a line of text
+     * once it is over.
+     */
+    val progress: kotlinx.coroutines.flow.StateFlow<Progress?> = _progress
+
     /**
      * Run a sync, or report that one is already running rather than queue
      * behind it.
@@ -152,8 +164,15 @@ class WatchSyncRunner(private val container: AppContainer) {
      *
      * Push therefore goes last.
      */
-    private suspend fun runLocked(): Outcome {
+    private suspend fun runLocked(): Outcome = try {
+        runPhases()
+    } finally {
+        _progress.value = null
+    }
+
+    private suspend fun runPhases(): Outcome {
         val phases = mutableListOf<PhaseReport>()
+        _progress.value = Progress("Connecting to the watch")
 
         if (!container.watch.connect()) {
             return Outcome(paired = false, phases = phases + PhaseReport(Phase.CONNECT, SKIPPED, "nothing paired"))
@@ -161,6 +180,7 @@ class WatchSyncRunner(private val container: AppContainer) {
         phases += PhaseReport(Phase.CONNECT, RAN)
 
         // ── pull ── needs the link
+        _progress.value = Progress("Reading the watch")
         val pulled = try {
             container.watch.pullAll().also {
                 phases += PhaseReport(Phase.PULL, RAN, "${it.size} file(s)")
@@ -213,7 +233,11 @@ class WatchSyncRunner(private val container: AppContainer) {
                 notRegistered = true
                 phases += PhaseReport(Phase.UPLOAD, SKIPPED, "no server session")
             }
-            else -> uploadResult = runCatching { container.watch.uploadPulled(pulled, uploader) }
+            else -> uploadResult = runCatching {
+                container.watch.uploadPulled(pulled, uploader) { done, total ->
+                    _progress.value = Progress("Uploading watch files", done.toFloat() / total.coerceAtLeast(1))
+                }
+            }
                 .onFailure { Log.w(TAG, "upload failed", it) }
                 .onSuccess { r ->
                     // Only when every file went: a partial result does not say
@@ -234,6 +258,7 @@ class WatchSyncRunner(private val container: AppContainer) {
         // ── push ── needs the link, and today a server to build the files
         //
         // Last on purpose: see the class doc.
+        _progress.value = Progress("Sending to the watch")
         val pushed = runCatching { container.watch.pushFromServer(container.client()) }
             .onFailure { Log.w(TAG, "push to watch failed", it) }
             .also {
