@@ -42,6 +42,9 @@ enum class MapTool {
 data class RouteDraft(
     /** In tap order. Fewer than two means there is nothing to snap yet. */
     val waypoints: List<LatLng> = emptyList(),
+    /** The saved track being re-drawn, or null for a new one; Save writes back into it. */
+    val editing: Int? = null,
+    val editingName: String? = null,
     /** GeoJSON of the snapped line, ready to hand to a source. */
     val geoJson: String? = null,
     val metres: Double? = null,
@@ -404,7 +407,11 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
      * sheet was closed and opened again, which reads as the app ignoring you.
      */
     private fun patchCourse(course: CourseSummary, update: CourseUpdate) {
-        viewModelScope.launch { patchCourseNow(course, update) }
+        viewModelScope.launch {
+            val updated = patchCourseNow(course, update)
+            // A track on (or going to) the watch carries the edit there too.
+            if (updated.loadToDevice) container.watch.syncLibrarySoon()
+        }
     }
 
     fun setWaypointStyle(waypoint: Waypoint, color: String?, icon: String?) =
@@ -412,7 +419,10 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
 
     /** Edit a place and reflect it everywhere — see [patchCourse]. */
     private fun patchWaypoint(waypoint: Waypoint, update: WaypointUpdate) {
-        viewModelScope.launch { patchWaypointNow(waypoint, update) }
+        viewModelScope.launch {
+            patchWaypointNow(waypoint, update)
+            if (waypoint.loadToDevice) container.watch.syncLibrarySoon()
+        }
     }
 
     fun deleteWaypoint(waypoint: Waypoint) {
@@ -817,11 +827,66 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
      * cleared on success — the line is now a track in the library, and leaving
      * a live builder over the top of it invites saving the same thing twice.
      */
+    /**
+     * Re-draw a saved track: the builder opens on its handles, and Save writes
+     * the new line back into the same track — see [TrackHandles] for where the
+     * handles come from when the track was not drawn on this phone.
+     */
+    fun editCourseLine(course: CourseSummary) {
+        if (course.id < 0) return
+        viewModelScope.launch {
+            val uid = container.sources.row("track", course.id)?.uid
+            val saved = uid?.let { handles.load(it) }
+            val line = com.tracks.core.sync.courseCoordinatesFromGeoJson(container.mapItems.coursesGeoJson(), course.id)
+                ?.map { LatLng(it[1], it[0]) }.orEmpty()
+            val points = saved?.handles ?: TrackHandles.fromLine(line)
+            if (points.size < 2) {
+                _state.update { it.copy(notice = "That track has no line to edit") }
+                return@launch
+            }
+            _state.update {
+                it.copy(
+                    tool = MapTool.Route,
+                    selected = null,
+                    route = RouteDraft(
+                        waypoints = points,
+                        // A track without its own handles opens with snapping off:
+                        // re-routing simplified points would move the whole line.
+                        snapToTrails = saved?.snapToTrails ?: false,
+                        editing = course.id,
+                        editingName = course.name,
+                    ),
+                    notice = "Drag a handle to move it; tap the map to extend",
+                )
+            }
+            snap(points)
+        }
+    }
+
+    private val handles by lazy { TrackHandles(container.appContext) }
+
     fun saveTrack(name: String, color: String, sport: String = "hiking") {
         val draft = _state.value.route
         val coordinates = draft.coordinates()
         if (coordinates.size < 2) {
             _state.update { it.copy(notice = "A track needs at least two points") }
+            return
+        }
+        draft.editing?.let { id ->
+            viewModelScope.launch {
+                _state.update { it.copy(route = it.route.copy(saving = true), notice = null) }
+                val updated = container.mapItems.updateCourseLine(id, coordinates)
+                container.sources.row("track", id)?.uid?.let { handles.save(it, draft.waypoints, draft.snapToTrails) }
+                _state.update {
+                    it.copy(
+                        tool = MapTool.Inspect,
+                        route = RouteDraft(snapToTrails = it.route.snapToTrails),
+                        notice = if (updated != null) "Updated “${updated.name}”" else "Could not update that track",
+                    )
+                }
+                loadLibrary()
+                if (updated?.loadToDevice == true) container.watch.syncLibrarySoon()
+            }
             return
         }
 
@@ -841,6 +906,8 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
                 _state.update { it.copy(route = it.route.copy(saving = false), notice = "A track needs at least two points") }
                 return@launch
             }
+            // Kept so the track can be re-drawn the way it was drawn.
+            container.sources.row("track", created.id)?.uid?.let { handles.save(it, draft.waypoints, draft.snapToTrails) }
 
             _state.update {
                 it.copy(

@@ -802,6 +802,14 @@ fun RouteBar(
                 ElevationProfile(points = route.profile, modifier = Modifier.fillMaxWidth())
             }
 
+            route.editingName?.let {
+                Text(
+                    "Editing “$it”",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
+
             if (naming) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -866,7 +874,13 @@ fun RouteBar(
                             modifier = Modifier.size(18.dp),
                         )
                     }
-                    PrimaryButton("Save", onClick = { naming = true }, enabled = route.waypoints.size >= 2 && !route.saving)
+                    // Re-drawing a saved track writes straight back into it:
+                    // it already has a name and a colour.
+                    PrimaryButton(
+                        if (route.saving) "Saving…" else "Save",
+                        onClick = { if (route.editing != null) onSave("", "") else naming = true },
+                        enabled = route.waypoints.size >= 2 && !route.saving,
+                    )
                 }
             }
         }

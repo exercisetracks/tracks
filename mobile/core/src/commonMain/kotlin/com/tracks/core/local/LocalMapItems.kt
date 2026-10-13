@@ -73,6 +73,27 @@ class LocalMapItems(private val sources: LocalSources) {
 
     suspend fun deleteCourse(id: Int) = sources.delete("track", id)
 
+    /**
+     * Replace a track's line, with the stats that follow from it — as
+     * [createCourse] computes them. What was derived from the old line (the
+     * elevation profile, turn prompts) is cleared rather than left describing
+     * a route that no longer exists.
+     */
+    suspend fun updateCourseLine(id: Int, coords: List<List<Double>>): CourseSummary? {
+        val stats = TrackStats.compute(coords) ?: return null
+        sources.setValues("track", id, mapOf(
+            "geometry" to stats.coords,
+            "distance_m" to stats.distanceM,
+            "ascent_m" to stats.ascentM,
+            "descent_m" to stats.descentM,
+            "bounds" to stats.bounds,
+            "profile" to null,
+            "course_points" to null,
+            "turn_by_turn" to false,
+        ))
+        return sources.row("track", id)?.let { summary(it) }
+    }
+
     /** Record that a Bluetooth push put this track on the watch. */
     suspend fun markCourseUploaded(id: Int, filename: String, atIso: String) =
         sources.setValues("track", id, mapOf("watch_filename" to filename, "watch_uploaded_at" to atIso, "watch_deleted_at" to null))
@@ -159,9 +180,12 @@ class LocalMapItems(private val sources: LocalSources) {
     private fun deviceStatus(r: SyncedRow): String {
         fun bool(k: String) = (r.fields[k] as? JsonPrimitive)?.content == "true"
         return when {
-            bool("is_external") -> if (bool("purge_after_delete")) "pending_remove" else "external"
+            // An imported track is an ordinary one once Tracks sends it: its
+            // status is the watch's word, like any other.
+            bool("purge_after_delete") -> "pending_remove"
             onDevice(r) -> if (!bool("load_to_device")) "pending_remove" else "on_device"
             bool("load_to_device") -> "pending_upload"
+            bool("is_external") -> "external"
             else -> "off"
         }
     }

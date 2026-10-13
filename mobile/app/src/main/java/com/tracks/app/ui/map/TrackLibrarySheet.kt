@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -38,7 +37,6 @@ import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -108,8 +106,10 @@ fun TrackLibrarySheet(
     notice: String?,
     actions: LibraryActions,
     onDismiss: () -> Unit,
+    /** The panel's share of the screen, kept between openings. */
+    fraction: Float,
+    onFraction: (Float) -> Unit,
 ) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val hasDevice = com.tracks.app.ui.components.LocalHasDevice.current
     var chosenScope by remember { mutableStateOf(Scope.Everything) }
     // With no watch there is no "on the watch" half to show.
@@ -121,10 +121,12 @@ fun TrackLibrarySheet(
 
     val shownCourses = courses.filter { scope.includes(it) }
     val shownWaypoints = waypoints.filter { scope.includes(it) }
+    // One row open at a time, across both tabs: opening another closes this.
+    var open by remember { mutableStateOf<String?>(null) }
 
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+    ResizableSheet(fraction = fraction, onFraction = onFraction, onDismiss = onDismiss) {
         Column(
-            Modifier.fillMaxWidth().padding(horizontal = SHEET_PAD).padding(bottom = 16.dp),
+            Modifier.fillMaxWidth().padding(horizontal = SHEET_PAD).padding(bottom = 8.dp),
             verticalArrangement = Arrangement.spacedBy(ROW_GAP),
         ) {
             // Title, filter and import on one line. Three stacked blocks of
@@ -180,7 +182,7 @@ fun TrackLibrarySheet(
             }
 
             LazyColumn(
-                Modifier.heightIn(max = 420.dp),
+                Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
                 item { Header("Tracks") }
@@ -188,7 +190,8 @@ fun TrackLibrarySheet(
                     item { Empty(scope.emptyTracks) }
                 } else {
                     items(shownCourses, key = { "course-${it.id}" }) { course ->
-                        CourseRow(course, sprite, actions)
+                        val key = "course-${course.id}"
+                        CourseRow(course, sprite, actions, open == key) { open = if (open == key) null else key }
                     }
                 }
 
@@ -199,7 +202,8 @@ fun TrackLibrarySheet(
                     item { Empty(scope.emptyPlaces) }
                 } else {
                     items(shownWaypoints, key = { "waypoint-${it.id}" }) { waypoint ->
-                        WaypointRow(waypoint, sprite, actions)
+                        val key = "waypoint-${waypoint.id}"
+                        WaypointRow(waypoint, sprite, actions, open == key) { open = if (open == key) null else key }
                     }
                 }
             }
@@ -223,7 +227,7 @@ enum class Scope(val label: String) {
     ;
 
     fun includes(course: CourseSummary): Boolean =
-        this == Everything || (!course.isExternal && course.deviceStatus in setOf("on_device", "pending_remove"))
+        this == Everything || course.deviceStatus in setOf("on_device", "pending_remove")
 
     fun includes(waypoint: Waypoint): Boolean =
         this == Everything || waypoint.onWatch
@@ -263,6 +267,8 @@ data class LibraryActions(
     val onCourseShow: (CourseSummary) -> Unit,
     val onCourseRename: (CourseSummary, String) -> Unit,
     val onCourseDelete: (CourseSummary) -> Unit,
+    /** Re-draw the track's line in the builder. */
+    val onCourseEditLine: (CourseSummary) -> Unit,
     val onWaypointSendNow: (Waypoint) -> Unit,
     val onWaypointRemove: (Waypoint) -> Unit,
     val onWaypointStyle: (Waypoint, String?, String?) -> Unit,
@@ -295,8 +301,13 @@ private fun Empty(text: String) {
 }
 
 @Composable
-private fun CourseRow(course: CourseSummary, sprite: SpriteSheet?, actions: LibraryActions) {
-    var editing by remember { mutableStateOf(false) }
+private fun CourseRow(
+    course: CourseSummary,
+    sprite: SpriteSheet?,
+    actions: LibraryActions,
+    editing: Boolean,
+    onToggle: () -> Unit,
+) {
     var picking by remember { mutableStateOf(false) }
 
     Column(verticalArrangement = Arrangement.spacedBy(ROW_GAP)) {
@@ -314,8 +325,8 @@ private fun CourseRow(course: CourseSummary, sprite: SpriteSheet?, actions: Libr
             // Opening a track is looking at it: the map goes there at once,
             // which is what the magnifier button used to be for.
             onToggle = {
-                editing = !editing
-                if (editing) actions.onCourseShow(course)
+                if (!editing) actions.onCourseShow(course)
+                onToggle()
             },
             onRename = { actions.onCourseRename(course, it) },
             onColor = { picking = true },
@@ -374,16 +385,24 @@ internal fun CourseActions(
             // the watch. Reliable now that "on the watch" is the watch's own
             // word: the caption says whether it has confirmed yet.
             //
-            // None for a track pulled off the watch: it is in no collection
-            // Tracks owns, so Tracks can neither send it nor take it off. None
-            // either for one not yet saved: there is no id to put on the watch.
+            // A track once pulled off a watch is an ordinary Tracks track now:
+            // sending it puts Tracks' own copy in Tracks' collection, which
+            // Tracks can then take off again. None for one not yet saved: there
+            // is no id to put on the watch.
             onWatch = course.loadToDevice,
-            canToggle = course.id >= 0 && !course.isExternal,
+            canToggle = course.id >= 0,
             onSend = { actions.onCourseSendNow(course) },
             onRemove = { actions.onCourseRemove(course) },
             onDelete = { actions.onCourseDelete(course) },
             deleteQuestion = if (course.loadToDevice) "Delete from Tracks and the watch?" else "Delete for good?",
         )
+        if (course.id >= 0) {
+            NeutralButton(
+                "Edit line",
+                onClick = { actions.onCourseEditLine(course) },
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
     }
 
     if (picking) {
@@ -397,8 +416,13 @@ internal fun CourseActions(
 }
 
 @Composable
-private fun WaypointRow(waypoint: Waypoint, sprite: SpriteSheet?, actions: LibraryActions) {
-    var editing by remember { mutableStateOf(false) }
+private fun WaypointRow(
+    waypoint: Waypoint,
+    sprite: SpriteSheet?,
+    actions: LibraryActions,
+    editing: Boolean,
+    onToggle: () -> Unit,
+) {
     var picking by remember { mutableStateOf(false) }
 
     Column(verticalArrangement = Arrangement.spacedBy(ROW_GAP)) {
@@ -410,8 +434,8 @@ private fun WaypointRow(waypoint: Waypoint, sprite: SpriteSheet?, actions: Libra
             caption = deviceLabel(waypoint).takeIf { com.tracks.app.ui.components.LocalHasDevice.current }.orEmpty(),
             expanded = editing,
             onToggle = {
-                editing = !editing
-                if (editing) actions.onWaypointShow(waypoint)
+                if (!editing) actions.onWaypointShow(waypoint)
+                onToggle()
             },
             onRename = { actions.onWaypointRename(waypoint, it) },
             onColor = { picking = true },
@@ -511,7 +535,8 @@ private fun ItemHeader(
         Marker(color = color, icon = icon, sprite = sprite, onClick = onColor.takeIf { expanded })
         Column(Modifier.weight(1f)) {
             if (expanded && onRename != null) {
-                EditableName(name = name, style = MaterialTheme.typography.bodyMedium, onRename = onRename)
+                // Larger while open: this is the row being worked on.
+                EditableName(name = name, style = MaterialTheme.typography.titleMedium, onRename = onRename)
             } else Text(
                 name,
                 style = MaterialTheme.typography.bodyMedium,
@@ -602,12 +627,12 @@ internal fun Marker(
  */
 internal fun deviceLabel(course: CourseSummary): String = when {
     course.id < 0 -> "not yet saved"
-    // Pulled off a watch at some point: a copy, not a statement about what the
-    // watch holds now.
-    course.isExternal -> "imported from a watch"
     course.deviceStatus == "on_device" -> "on the watch"
     course.deviceStatus == "pending_upload" -> "waiting for the watch"
     course.deviceStatus == "pending_remove" -> "coming off"
+    // Pulled off a watch at some point: a copy, not a statement about what the
+    // watch holds now.
+    course.isExternal -> "imported from a watch"
     else -> "not on the watch"
 }
 
@@ -685,11 +710,18 @@ internal fun EditableName(
     modifier: Modifier = Modifier,
 ) {
     var editing by remember(name) { mutableStateOf(false) }
-    var draft by remember(name) { mutableStateOf(name) }
+    var draft by remember(name) {
+        mutableStateOf(androidx.compose.ui.text.input.TextFieldValue(name, androidx.compose.ui.text.TextRange(name.length)))
+    }
     val focus = remember { FocusRequester() }
+    val keyboard = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
+    // onFocusChanged reports "not focused" once before focus arrives; acting
+    // on that closed the editor the instant it opened, so the keyboard never
+    // came up. Only a loss of focus the field actually had commits.
+    var hadFocus by remember(name) { mutableStateOf(false) }
 
     fun commit() {
-        val trimmed = draft.trim()
+        val trimmed = draft.text.trim()
         // A blank name is a rename nobody meant; the old one stands.
         if (trimmed.isNotEmpty() && trimmed != name) onRename(trimmed)
         editing = false
@@ -697,7 +729,11 @@ internal fun EditableName(
 
     if (!editing) {
         Row(
-            modifier.clickable { draft = name; editing = true },
+            modifier.clickable {
+                draft = androidx.compose.ui.text.input.TextFieldValue(name, androidx.compose.ui.text.TextRange(name.length))
+                hadFocus = false
+                editing = true
+            },
             verticalAlignment = Alignment.Top,
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
@@ -716,7 +752,10 @@ internal fun EditableName(
         return
     }
 
-    LaunchedEffect(Unit) { focus.requestFocus() }
+    LaunchedEffect(Unit) {
+        focus.requestFocus()
+        keyboard?.show()
+    }
     BasicTextField(
         value = draft,
         onValueChange = { draft = it },
@@ -734,6 +773,9 @@ internal fun EditableName(
             // Committed on the way out as well as on Done: tapping elsewhere in
             // the sheet is how people finish typing, and losing the edit at
             // that point would be losing work for no reason.
-            .onFocusChanged { if (!it.isFocused && editing) commit() },
+            .onFocusChanged {
+                if (it.isFocused) hadFocus = true
+                else if (hadFocus && editing) commit()
+            },
     )
 }

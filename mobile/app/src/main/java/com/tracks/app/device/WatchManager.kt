@@ -541,7 +541,7 @@ class WatchManager(
      */
     suspend fun pushCourseNow(client: TracksClient, courseId: Int): Outcome {
         val courses = containerProvider().mapItems.courses()
-        val course = courses.firstOrNull { it.id == courseId && !it.isExternal } ?: return Outcome.Nothing
+        val course = courses.firstOrNull { it.id == courseId } ?: return Outcome.Nothing
         if (integration is GarminIntegration) return syncLibraryNow()
         return pushCourseJob(CoursePushJob(course.id, course.name, "TRK_${course.id}.fit"), courses)
     }
@@ -682,6 +682,26 @@ class WatchManager(
         return garmin.syncLibrary()
     }
 
+    private var librarySyncJob: Job? = null
+
+    /**
+     * Sync the watch's courses and places a moment after the last edit.
+     *
+     * Debounced because edits come in runs — a rename typed, a handle dragged
+     * three times — and each would otherwise be a session of its own. The
+     * session re-sends only what changed: a renamed or re-drawn track gets a
+     * fresh stamp, and the watch pulls it again.
+     */
+    fun syncLibrarySoon() {
+        if (integration !is GarminIntegration) return
+        librarySyncJob?.cancel()
+        librarySyncJob = scope.launch {
+            kotlinx.coroutines.delay(LIBRARY_SYNC_DEBOUNCE_MS)
+            runCatching { syncCoursesWithWatch() }
+                .onFailure { Log.w(TAG, "could not start the watch sync after an edit", it) }
+        }
+    }
+
     private suspend fun syncLibraryNow(): Outcome =
         if (syncCoursesWithWatch()) Outcome.Sent(1) else Outcome.Failed("No watch is connected")
 
@@ -699,7 +719,8 @@ class WatchManager(
         val items = containerProvider().mapItems
         val geo = items.coursesGeoJson()
         val courses = items.courses()
-            .filter { !it.isExternal && it.id >= 0 && it.loadToDevice }
+            // Imported tracks included: sent, they are Tracks' own copy.
+            .filter { it.id >= 0 && it.loadToDevice }
             .mapNotNull { c ->
                 val coords = courseCoordinatesFromGeoJson(geo, c.id) ?: return@mapNotNull null
                 if (coords.size < 2) return@mapNotNull null
@@ -827,7 +848,7 @@ class WatchManager(
         // A course Tracks delivered over Explore sync is written to a file by
         // the watch itself; its name is the one Tracks sent.
         if (integration is GarminIntegration && id.name != null &&
-            containerProvider().mapItems.courses().any { !it.isExternal && it.loadToDevice && it.name == id.name }
+            containerProvider().mapItems.courses().any { it.loadToDevice && it.name == id.name }
         ) return true
         if (id.manufacturer != 1 || id.product != 65534) return false
         val serial = id.serial ?: return false
@@ -1457,6 +1478,9 @@ class WatchManager(
          * watches may not offer the legacy CREATE_FILE path at all, and whatever
          * FileSyncService still wants is the thing that would let this be true.
          */
+        /** How long after the last edit to a course or place the watch is synced. */
+        private const val LIBRARY_SYNC_DEBOUNCE_MS = 4_000L
+
         private const val SCHEDULE_OVER_FILE_SYNC = false
 
         /** Fingerprint of the calendar the watch last accepted in full. */

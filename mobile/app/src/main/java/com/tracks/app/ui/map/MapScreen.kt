@@ -116,9 +116,16 @@ fun MapScreen(
     var style by remember { mutableStateOf<org.maplibre.android.maps.Style?>(null) }
     var showDownloads by remember { mutableStateOf(false) }
     var showLibrary by remember { mutableStateOf(false) }
-    // The library sheet's share of the screen, for framing above it.
+    // Editing a track's line happens on the map, so the library makes way.
+    LaunchedEffect(tools.route.editing) { if (tools.route.editing != null) showLibrary = false }
+    // The library panel's size, as the person last left it — kept across
+    // openings and launches, because a size somebody chose is a preference.
+    val appContext = androidx.compose.ui.platform.LocalContext.current
+    val uiPrefs = remember { appContext.getSharedPreferences("map_ui", android.content.Context.MODE_PRIVATE) }
+    var libraryFraction by remember { mutableStateOf(uiPrefs.getFloat("library_fraction", DEFAULT_SHEET_FRACTION)) }
+    // Its share of the screen, for framing what is opened from it above it.
     val libraryInsetPx = with(androidx.compose.ui.platform.LocalDensity.current) {
-        (androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp.dp * LIBRARY_SHEET_FRACTION).roundToPx()
+        (androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp.dp * libraryFraction).roundToPx()
     }
     var showMenu by remember { mutableStateOf(false) }
     // Selection mode is its own thing rather than part of the sheet: the whole
@@ -618,7 +625,11 @@ fun MapScreen(
 
         val actions = libraryActions(toolsVm) { pickTrackFile.launch(TRACK_FILE_TYPES) }
 
-        TrackLibraryHost(toolsVm.container, tools, actions, showLibrary) { showLibrary = false }
+        TrackLibraryHost(
+            toolsVm.container, tools, actions, showLibrary,
+            fraction = libraryFraction,
+            onFraction = { libraryFraction = it; uiPrefs.edit().putFloat("library_fraction", it).apply() },
+        ) { showLibrary = false }
 
         tools.selected?.let { selection ->
             SelectionSheet(
@@ -1388,6 +1399,7 @@ private fun libraryActions(
     onCourseShow = toolsVm::showOnMap,
     onCourseRename = toolsVm::renameCourse,
     onCourseDelete = toolsVm::deleteCourse,
+    onCourseEditLine = toolsVm::editCourseLine,
     onWaypointSendNow = toolsVm::sendWaypointToWatch,
     onWaypointRemove = toolsVm::removeWaypointFromWatch,
     onWaypointStyle = toolsVm::setWaypointStyle,
@@ -1406,6 +1418,8 @@ private fun TrackLibraryHost(
     tools: MapToolsUiState,
     actions: LibraryActions,
     visible: Boolean,
+    fraction: Float,
+    onFraction: (Float) -> Unit,
     onDismiss: () -> Unit,
 ) {
     if (!visible) return
@@ -1417,6 +1431,8 @@ private fun TrackLibraryHost(
         notice = tools.notice,
         actions = actions,
         onDismiss = onDismiss,
+        fraction = fraction,
+        onFraction = onFraction,
     )
 }
 
@@ -1486,9 +1502,6 @@ private fun List<android.graphics.RectF>.covers(map: MapLibreMap, point: LatLng)
 
 /** Room around a framed track, so its ends are not against the screen edge. */
 private const val FOCUS_PADDING_PX = 90
-
-/** How much of the screen the library sheet covers, roughly, when open. */
-private const val LIBRARY_SHEET_FRACTION = 0.62f
 
 /**
  * What the file picker will offer.
