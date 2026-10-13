@@ -227,6 +227,11 @@ export function buildPublicLandBoundaryLabels() {
       id: "publiclands_boundary_labels",
       ...SRC,
       type: "symbol",
+      // Collision-placed, unlike the other point labels (see COLLIDE in
+      // style/index.js): an area's name repeats round its whole edge, and with
+      // nothing culling the repeats a small park in a city printed its name
+      // half a dozen times over itself, its neighbours and the streets.
+      metadata: { "tracks:collide": true },
       // Kick in a half-step later so the boundary spans enough screen pixels for
       // the name to sit cleanly inside rather than crowding the edge. Below this
       // the always-inside centered label (publiclands_labels) carries the name.
@@ -256,6 +261,8 @@ export function buildPublicLandBoundaryLabels() {
         // host mirror still survives.
         "text-padding": 5,
         "text-optional": true,
+        "text-allow-overlap": false,
+        "text-ignore-placement": false,
         // Bigger/more important areas (lower min_zoom) win collisions.
         "symbol-sort-key": ["get", "min_zoom"],
       },

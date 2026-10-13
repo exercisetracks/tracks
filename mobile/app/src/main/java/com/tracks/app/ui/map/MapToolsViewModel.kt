@@ -1373,6 +1373,24 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
                 editCourseLine(created)
                 return@launch
             }
+            // No line: a waypoint file, or a single point — places, not a
+            // track for the server to refuse.
+            val places = Gpx.places(bytes, filename.substringBeforeLast('.').ifBlank { "Place" })
+            if (places.isNotEmpty()) {
+                val made = places.mapNotNull { p ->
+                    container.mapItems.createWaypoint(
+                        WaypointIn(
+                            name = p.name.take(80), lat = p.lat, lng = p.lng, elevationMetres = p.ele,
+                            color = DEFAULT_WAYPOINT_COLOR, icon = "marker", loadToDevice = false,
+                        ),
+                    )
+                }
+                loadLibrary()
+                _state.update {
+                    it.copy(notice = if (made.size == 1) "Imported “${made.first().name}” as a place" else "Imported ${made.size} places")
+                }
+                return@launch
+            }
             val imported = runCatching { container.client().importCourse(filename, bytes) }
                 .getOrElse { e ->
                     _state.update { it.copy(notice = "Could not import $filename: ${e.message}") }

@@ -84,15 +84,25 @@ function withFadeIn(layers) {
 // geometry, so culling only ever slides a name along its own line — while
 // WITHOUT collision every segment's repeat prints and stacks up at junctions
 // (the downtown "street-name soup"). Kept collision-culled as the lesser evil.
+//
+// Stable symbols still RESERVE their space (ignore-placement off): they are
+// always drawn, but a collision-placed label laid out after them — line labels,
+// and any layer marked `metadata["tracks:collide"]` — goes round them instead
+// of printing on top. That is what keeps the public-land edge names off town,
+// park and street names; with every stable label invisible to collision, they
+// stacked five deep over the names they sit beside.
+export const COLLIDE = "tracks:collide";
+
 function withStablePlacement(layers) {
   return layers.map((layer) => {
     if (layer.type !== "symbol") return layer;
+    if (layer.metadata?.[COLLIDE]) return layer;
     const layout = { ...(layer.layout || {}) };
     if (String(layout["symbol-placement"] || "point").startsWith("line")) return layer;
     layout["text-allow-overlap"] = true;
-    layout["text-ignore-placement"] = true;
+    layout["text-ignore-placement"] = false;
     layout["icon-allow-overlap"] = true;
-    layout["icon-ignore-placement"] = true;
+    layout["icon-ignore-placement"] = false;
     delete layout["text-optional"];
     delete layout["icon-optional"];
     return { ...layer, layout };
@@ -159,11 +169,14 @@ export function buildStyle(version = "", { includeDem = false } = {}) {
     // Smoke plumes (live opt-in overlay) under the labels so place/road names
     // stay readable through the wash.
     ...buildSmoke(),
+    // Small along-the-line tags naming each area right at its own boundary.
+    // BELOW every other label: MapLibre places symbols top layer first, and
+    // these are the only point labels that collide, so they must come last —
+    // after the names they have to stay clear of have claimed their space.
+    ...buildPublicLandBoundaryLabels(),
     ...buildLabels(),
     // Public-land area names — after the main labels so place/POI names win.
     ...buildPublicLandLabels(),
-    // Small along-the-line tags naming each area right at its own boundary.
-    ...buildPublicLandBoundaryLabels(),
     // Past-activity tracks (heatmap) under the user's custom tracks.
     ...buildActivityTracks(),
     // User custom tracks (courses) above labels so the coloured line + selection

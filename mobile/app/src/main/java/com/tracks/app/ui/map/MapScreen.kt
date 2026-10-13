@@ -187,14 +187,17 @@ fun MapScreen(
     // OpenDocument rather than GetContent: GPX is not a type Android's picker
     // reliably knows, and a MIME filter that excludes it leaves the file the
     // user is looking at greyed out with no explanation.
+    // Several at once: a folder of GPX files is how routes and places arrive
+    // from most other apps. Each is filed as what it is — a track, or places.
     val pickTrackFile = rememberLauncherForActivityResult(
-        ActivityResultContracts.OpenDocument()
-    ) { uri ->
-        uri ?: return@rememberLauncherForActivityResult
-        val bytes = runCatching {
-            context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
-        }.getOrNull() ?: return@rememberLauncherForActivityResult
-        toolsVm.importTrack(uri.fileName(context) ?: "track.gpx", bytes)
+        ActivityResultContracts.OpenMultipleDocuments()
+    ) { uris ->
+        for (uri in uris) {
+            val bytes = runCatching {
+                context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+            }.getOrNull() ?: continue
+            toolsVm.importTrack(uri.fileName(context) ?: "track.gpx", bytes)
+        }
     }
     val askLocation = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()

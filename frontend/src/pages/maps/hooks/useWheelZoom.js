@@ -51,6 +51,8 @@ const MAX_EVENT_PX = 100;
 // Per-FRAME clamp (zoom levels): a hard ceiling on how far one rendered frame
 // may jump, however many events piled up behind a slow frame.
 const MAX_FRAME_DZ = 1.25;
+// Below this pitch the horizon is above the frame, so every pixel is ground.
+const HORIZON_SAFE_PITCH = 70;
 
 export function useWheelZoom(map) {
   useEffect(() => {
@@ -61,22 +63,29 @@ export function useWheelZoom(map) {
     let rafId = null;
 
     // Zoom around the cursor, except when a pitched camera puts the cursor
-    // above the horizon where unproject() has no ground to hit — then fall
-    // back to the screen center, exactly like the built-in handler
-    // (its condition: mouse.y > height/2 - getHorizon() ⇒ cursor is on the
-    // ground plane). getHorizon() is internal API — fine on our pinned
-    // maplibre 4.7.1, re-verify on any upgrade; the try/catch degrades to
-    // center-anchored zoom if it ever disappears.
+    // above the horizon, where unproject() has no ground to hit — then fall
+    // back to the screen center, as the built-in handler does.
+    //
+    // This once read the horizon from `map.transform.getHorizon()`, internal
+    // API that MapLibre 5 took away: the lookup threw on every event, the
+    // catch fell back to the center, and wheel zoom quietly stopped following
+    // the cursor at all. Public API only now. With the default 36.87° field of
+    // view the horizon only enters the frame past ~71.6° of pitch (90° less
+    // half the fov), so below HORIZON_SAFE_PITCH the cursor is always over
+    // ground; above it, the internal check is tried and the center is the
+    // fallback.
     const aroundLngLat = () => {
       const p = lastPoint;
       if (!p) return map.getCenter();
-      try {
-        const tr = map.transform;
-        if (!(p.y > tr.height / 2 - tr.getHorizon())) return map.getCenter();
-      } catch {
-        return map.getCenter();
+      if (map.getPitch() > HORIZON_SAFE_PITCH) {
+        try {
+          const tr = map.transform ?? map._transform;
+          if (!(p.y > tr.height / 2 - tr.getHorizon())) return map.getCenter();
+        } catch {
+          return map.getCenter();
+        }
       }
-      return map.unproject([p.x, p.y]);
+      try { return map.unproject([p.x, p.y]); } catch { return map.getCenter(); }
     };
 
     const applyZoom = () => {

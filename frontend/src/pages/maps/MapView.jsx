@@ -441,10 +441,7 @@ export default function MapView() {
   const imperial = settings?.units === "imperial";
 
   return (
-    // The library docks beside the map rather than over it, so the map
-    // narrows to make room and nothing on it is hidden.
-    <div className="h-full flex">
-    <div className="relative h-full flex-1 min-w-0">
+    <div className="relative h-full">
       <div ref={containerRef} className="w-full h-full" />
       {/* Grid/graticule HUD — painted over the map by useGridOverlay. Sits above
           the map canvas but below the controls, and never eats pointer events. */}
@@ -475,10 +472,12 @@ export default function MapView() {
 
       {!libraryOpen && (
         <div data-tour="map-tracks" className="absolute top-3 right-3 z-10 flex flex-col gap-1.5 items-stretch min-w-[180px]">
-          {/* Tinted + chevron so it clearly reads as a button, not a header. */}
+          {/* Chevron so it reads as a button, not a header. Its hover is a
+              solid shade, like Draw's below it: a translucent tint let the
+              map show through the button under the pointer. */}
           <button
             onClick={() => setLibraryOpen(true)}
-            className="flex items-center justify-between gap-2 px-2.5 py-2 text-xs font-semibold rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 text-accent-700 dark:text-accent-300 bg-white dark:bg-slate-900 hover:bg-accent-50 dark:hover:bg-accent-900/30 transition-colors"
+            className="flex items-center justify-between gap-2 px-2.5 py-2 text-xs font-semibold rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 text-accent-700 dark:text-accent-300 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
             <span className="flex items-center gap-2">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -678,7 +677,6 @@ export default function MapView() {
           </div>
         </div>
       )}
-    </div>
 
       <TrackLibrary
         open={libraryOpen} onClose={() => setLibraryOpen(false)}

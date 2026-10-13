@@ -9,6 +9,7 @@ import {
   sortItems, stitchLine, trackDeviceLabel, trackOnWatch, gradeColor, pointAlong,
 } from "../pages/maps/utils/mapItems";
 import { buildStyle } from "../pages/maps/style";
+import { classifyGpx } from "../pages/maps/utils/gpxImport";
 
 describe("naturalCompare", () => {
   it("puts Trail 2 before Trail 10, as a person reads them", () => {
@@ -104,5 +105,35 @@ describe("the map style", () => {
     const ids = style.layers.map((l) => l.id);
     expect(style.sources.saved_places).toBeDefined();
     expect(ids.indexOf("saved_places_icon")).toBeGreaterThan(ids.indexOf("custom_tracks_line"));
+  });
+});
+
+describe("GPX import", () => {
+  const gpx = (body) => `<?xml version="1.0"?><gpx version="1.1" xmlns="http://www.topografix.com/GPX/1/1">${body}</gpx>`;
+
+  it("files a single waypoint as a place, not a refused track", () => {
+    const r = classifyGpx(gpx('<wpt lat="47.6" lon="-117.4"><ele>600</ele><name>Spring</name></wpt>'), "spot.gpx");
+    expect(r.kind).toBe("places");
+    expect(r.places).toEqual([{ lat: 47.6, lng: -117.4, ele_m: 600, name: "Spring" }]);
+  });
+
+  it("names unnamed places after the file", () => {
+    const r = classifyGpx(gpx('<wpt lat="1" lon="2"/><wpt lat="3" lon="4"/>'), "camp.gpx");
+    expect(r.places.map((p) => p.name)).toEqual(["camp 1", "camp 2"]);
+  });
+
+  it("files a lone track point as a place named after its track", () => {
+    const r = classifyGpx(gpx('<trk><name>Here</name><trkseg><trkpt lat="1" lon="2"/></trkseg></trk>'), "x.gpx");
+    expect(r).toEqual({ kind: "places", places: [{ lat: 1, lng: 2, ele_m: null, name: "Here" }] });
+  });
+
+  it("keeps a line a track, even with waypoints beside it", () => {
+    const r = classifyGpx(gpx('<wpt lat="1" lon="2"/><trk><trkseg><trkpt lat="1" lon="2"/><trkpt lat="1.1" lon="2"/></trkseg></trk>'));
+    expect(r.kind).toBe("track");
+  });
+
+  it("says so when there is nothing in it", () => {
+    expect(classifyGpx(gpx("")).kind).toBe("empty");
+    expect(classifyGpx("not xml").kind).toBe("empty");
   });
 });

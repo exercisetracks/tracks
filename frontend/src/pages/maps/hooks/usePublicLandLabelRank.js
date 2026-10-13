@@ -28,6 +28,14 @@ const DEF_GRADE = 9; // grade assumed when a feature lacks min_zoom
 const IS_CENTER_LABEL = ["all",
   ["==", ["geometry-type"], "Point"], ["==", ["get", "label"], 1]];
 
+/** A cell key and its eight neighbours. */
+function neighbourhood(key) {
+  const [x, y] = key.split(":").map(Number);
+  const out = [];
+  for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) out.push(`${x + dx}:${y + dy}`);
+  return out;
+}
+
 export function usePublicLandLabelRank(map, ready) {
   const grantedRef = useRef(new Map()); // name -> { gz, lng, lat }
   const timerRef = useRef(null);
@@ -68,7 +76,10 @@ export function usePublicLandLabelRank(map, ready) {
       for (const cand of cands) {
         if (Math.ceil(cand.grade) > z) continue; // not important enough yet
         const key = cellKey(cand.c[0], cand.c[1], z, CELL_PX);
-        if (taken.has(key)) continue;
+        // Its neighbours too, not just its own cell: a wrapped area name is
+        // about a cell wide, so two in adjacent cells print into each other
+        // (three conservation areas along one river did exactly that).
+        if (neighbourhood(key).some((k) => taken.has(k))) continue;
         taken.add(key);
         granted.set(cand.name, { gz: z, lng: cand.c[0], lat: cand.c[1] });
       }

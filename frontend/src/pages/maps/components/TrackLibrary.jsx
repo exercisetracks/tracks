@@ -1,11 +1,12 @@
 // SPDX-FileCopyrightText: 2026 Hawk Fugagli
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // The library: every track and place, filed by collection — the phone's
-// TrackLibrarySheet, as a panel docked beside the map.
+// TrackLibrarySheet, as a panel floating over the map.
 //
-// Docked and non-modal rather than a dialog over the map: the map is what the
-// list is about, and opening a row frames its item there. The panel is sized
-// by its edge and remembers its width.
+// Over the map rather than docked beside it, so opening it never moves the
+// map; and non-modal, since the map is what the list is about — opening a row
+// frames its item there. It stops above the zoom controls, and is sized by its
+// edge and remembers its width.
 //
 // A row's switch-like button sets what the user *wants* on the watch; its
 // caption says what the watch has confirmed. Those differ — the phone is not
@@ -24,6 +25,7 @@ import { api } from "../../../api/client";
 import Switch from "../../../components/ui/Switch";
 import Tabs from "../../../components/ui/Tabs";
 import { formatGpx } from "../utils/gpx";
+import { classifyGpx } from "../utils/gpxImport";
 import {
   DEFAULT_COLLECTION, SORTS, countLabel, downloadText, fileSafe, naturalCompare, placeDeviceLabel,
   placeGpx, placeOnWatch, sortItems, trackDeviceLabel, trackOnWatch,
@@ -262,14 +264,40 @@ export default function TrackLibrary({
     try { const f = await onCreateFolder(name); return f; } catch (e) { setError(e.message); return null; }
   };
 
+  // Any number of files at once. Each is read first and filed as what it
+  // is (utils/gpxImport): a line is a track, a point is a place.
   const onImportFile = async (e) => {
-    const file = e.target.files?.[0];
+    const files = [...(e.target.files || [])];
     e.target.value = "";
-    if (!file) return;
+    if (!files.length) return;
     setBusy(true); setError(null);
-    try { const t = await api.importCourse(file); await onRefresh(); setOpenRow(keyOf("track", t.id)); onShowTrack(t); }
-    catch (err) { setError(err.message || "Import failed"); }
-    finally { setBusy(false); }
+    const failed = [];
+    let last = null;
+    for (const file of files) {
+      try {
+        const isGpx = /\.gpx$/i.test(file.name);
+        const read = isGpx ? classifyGpx(await file.text(), file.name) : { kind: "track" };
+        if (read.kind === "places") {
+          for (const p of read.places) {
+            const w = await api.createWaypoint({ name: p.name.slice(0, 80), lat: p.lat, lng: p.lng, ele_m: p.ele_m });
+            last = { kind: "place", item: w };
+          }
+        } else if (read.kind === "track") {
+          last = { kind: "track", item: await api.importCourse(file) };
+        } else {
+          failed.push(`${file.name}: no points in it`);
+        }
+      } catch (err) {
+        failed.push(`${file.name}: ${err.message || "import failed"}`);
+      }
+    }
+    await onRefresh();
+    if (last) {
+      setOpenRow(keyOf(last.kind, last.item.id));
+      (last.kind === "track" ? onShowTrack : onShowPlace)(last.item);
+    }
+    if (failed.length) setError(failed.join(" · "));
+    setBusy(false);
   };
 
   const onRowClick = (kind, it) => (e) => {
@@ -340,16 +368,16 @@ export default function TrackLibrary({
   };
 
   return (
-    <div className="relative h-full shrink-0 z-30 flex" style={{ width }}>
+    <div className="absolute top-3 right-3 bottom-40 z-30 flex" style={{ width }}>
       {/* The panel's edge sizes it. */}
       <div onPointerDown={startResize} title="Drag to resize"
-           className="w-1.5 cursor-col-resize hover:bg-accent-400/40 active:bg-accent-500/50 transition-colors" />
-      <div className="flex-1 min-w-0 flex flex-col bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-700 shadow-xl">
+           className="w-1.5 -mr-1.5 z-10 cursor-col-resize rounded-l hover:bg-accent-400/40 active:bg-accent-500/50 transition-colors" />
+      <div className="flex-1 min-w-0 flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl overflow-hidden">
         <div className="flex items-center gap-2 px-3 pt-2.5 pb-1.5">
           <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-100 flex-1">My Tracks</h2>
           <button type="button" className="btn btn-tonal btn-sm" onClick={onDraw} title="Click the map to draw a track or drop a place">Draw</button>
           <button type="button" className="btn btn-neutral btn-sm" disabled={busy} onClick={() => fileRef.current?.click()}>+GPX</button>
-          <input ref={fileRef} type="file" accept=".gpx,.fit" className="hidden" onChange={onImportFile} />
+          <input ref={fileRef} type="file" accept=".gpx,.fit" multiple className="hidden" onChange={onImportFile} />
           <button type="button" className="icon-btn" title="Close" onClick={onClose}>×</button>
         </div>
 
