@@ -479,6 +479,13 @@ class WatchManager(
             Log.w(TAG, "could not push the training calendar", e)
             null
         }
+        try {
+            pushUserProfileIfDue()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.w(TAG, "could not send the user profile", e)
+        }
         return PushResult(
             delivered = delivered.size + (mapPushed?.delivered ?: 0),
             failed = failed + (mapPushed?.failed ?: 0),
@@ -620,6 +627,43 @@ class WatchManager(
             Log.w(TAG, "watch refused the Wi-Fi settings", e)
             Outcome.Failed(e.message ?: "The watch refused the setting")
         }
+    }
+
+    /**
+     * Give the watch the person's weight, height, sex and age, when they have
+     * changed since it was last sent, or a week has passed — a factory reset
+     * clears them, and the watch says nothing back about settings to tell.
+     * The watch uses them for calories, VO2max and step length; Garmin
+     * Connect sends the same `user_profile` in the same kind of file, and so
+     * over the same legacy path as [stopWifiUploads].
+     */
+    private suspend fun pushUserProfileIfDue() {
+        val garmin = integration as? GarminIntegration ?: return
+        val s = containerProvider().sources.settingValues()
+        val weight = (s["weight_kg"] as? Number)?.toDouble()
+        val height = (s["height_cm"] as? Number)?.toDouble()
+        val sex = s["sex"] as? String
+        val birthYear = (s["birth_year"] as? Number)?.toInt()
+        val year = java.time.LocalDate.now().year
+        val key = listOf(weight, height, sex, birthYear, year).toString()
+        val prefs = context.getSharedPreferences(PROFILE_PREFS, android.content.Context.MODE_PRIVATE)
+        // Keyed per watch; the address stands in until the serial is known.
+        val serial = _paired.value?.let { it.serialNumber ?: it.address } ?: return
+        val sentKey = prefs.getString("sent_$serial", null)
+        val sentAt = prefs.getLong("sent_at_$serial", 0L)
+        val now = System.currentTimeMillis()
+        if (sentKey == key && now - sentAt < PROFILE_RESEND_MS) return
+        val bytes = com.tracks.core.fit.SettingsFit.encodeUserProfile(
+            weight, height, sex, birthYear, nowMillis = now, currentYear = year,
+        ) ?: run { Log.i(TAG, "user profile: weight, height, sex and birth year are all unset"); return }
+        garmin.setForceLegacyPush(true)
+        try {
+            integration.pushFile("GARMIN/NewFiles", PROFILE_SETTINGS_FILENAME, bytes)
+        } finally {
+            garmin.setForceLegacyPush(false)
+        }
+        prefs.edit().putString("sent_$serial", key).putLong("sent_at_$serial", now).apply()
+        Log.i(TAG, "sent the user profile (weight, height, sex, age) to the watch")
     }
 
     /**
@@ -1525,6 +1569,9 @@ class WatchManager(
         private val MAP_ITEM_TYPES = setOf("course", "waypoint")
 
         private const val WIFI_SETTINGS_FILENAME = "TRACKS_WIFI.fit"
+        private const val PROFILE_SETTINGS_FILENAME = "TRACKS_PROFILE.fit"
+        private const val PROFILE_PREFS = "tracks_watch_profile"
+        private const val PROFILE_RESEND_MS = 7L * 24 * 3600 * 1000
         private const val MUSIC_APP_FILENAME = "TracksMusic.prg"
 
         /**

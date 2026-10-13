@@ -67,4 +67,63 @@ object SettingsFit {
         writer.write(MESSAGE_DEVICE_SETTINGS, settings)
         return writer.finish()
     }
+
+    private const val MESSAGE_USER_PROFILE = 3
+    private const val FIELD_GENDER = 1
+    private const val FIELD_AGE = 2
+    private const val FIELD_HEIGHT = 3
+    private const val FIELD_WEIGHT = 4
+    private const val FIELD_BIRTH_YEAR = 24
+
+    /**
+     * The person's body, for the watch's calorie, VO2max and step-length
+     * estimates — what a factory reset loses and Garmin Connect puts back.
+     *
+     * Field for field as Connect's own settings file carries them (captured
+     * 2026-10-13: a `user_profile` record in a `settings` file pushed after a
+     * profile change): gender (1, enum: 0 female, 1 male), age (2, years),
+     * height (3, centimetres — FIT's metres at scale 100), weight (4, tenths
+     * of a kilogram) and birth year (24, years since 1900). Only the fields
+     * known are sent; Connect also sends sleep times and the like, which
+     * Tracks does not hold and so leaves alone.
+     *
+     * Null when nothing is known. [today] supplies the year the age is
+     * reckoned from, a parameter so the output is reproducible in tests.
+     */
+    fun encodeUserProfile(
+        weightKg: Double?,
+        heightCm: Double?,
+        sex: String?,
+        birthYear: Int?,
+        nowMillis: Long,
+        currentYear: Int,
+    ): ByteArray? {
+        val gender = when (sex?.lowercase()) {
+            "male", "m" -> 1
+            "female", "f" -> 0
+            else -> null
+        }
+        val fields = listOfNotNull(
+            gender?.let { fitEnum(FIELD_GENDER, it) },
+            birthYear?.let { y -> (currentYear - y).takeIf { it in 1..120 }?.let { fitUint8(FIELD_AGE, it) } },
+            heightCm?.takeIf { it in 50.0..250.0 }?.let { fitUint8(FIELD_HEIGHT, kotlin.math.round(it).toInt()) },
+            weightKg?.takeIf { it in 10.0..400.0 }?.let { fitUint16(FIELD_WEIGHT, kotlin.math.round(it * 10).toInt()) },
+            birthYear?.takeIf { it in 1901..2150 }?.let { fitUint8(FIELD_BIRTH_YEAR, it - 1900) },
+        )
+        if (fields.isEmpty()) return null
+        val writer = FitWriter(PROTOCOL_VERSION, PROFILE_VERSION, bigEndian = false)
+        writer.write(
+            MESSAGE_FILE_ID,
+            listOf(
+                fitEnum(0, FILE_TYPE_SETTINGS),
+                fitUint16(1, MANUFACTURER_GARMIN),
+                fitUint16(2, PRODUCT_CONNECT),
+                fitUint32z(3, SERIAL),
+                fitUint32(4, nowMillis / 1000 - FIT_EPOCH_OFFSET),
+                fitUint16(5, 0),
+            ),
+        )
+        writer.write(MESSAGE_USER_PROFILE, fields)
+        return writer.finish()
+    }
 }

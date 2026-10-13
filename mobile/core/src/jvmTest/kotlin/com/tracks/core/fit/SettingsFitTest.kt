@@ -41,4 +41,32 @@ class SettingsFitTest {
     fun a_file_that_would_change_nothing_is_not_built() {
         assertNull(SettingsFit.encode(wifiAutoUpload = null, nowMillis = now))
     }
+
+    @Test
+    fun the_profile_carries_the_body_as_garmin_connect_sends_it() {
+        // Connect's capture, 2026-10-13: user_profile in a settings file,
+        // height in centimetres, weight in tenths of a kilogram, birth year
+        // less 1900. A watch fresh from a factory reset has none of this.
+        val bytes = SettingsFit.encodeUserProfile(
+            weightKg = 72.34, heightCm = 181.6, sex = "male", birthYear = 1990,
+            nowMillis = now, currentYear = 2026,
+        )!!
+        val messages = FitReader(bytes).messages().toList()
+        assertEquals("settings", messages.single { it.name == "file_id" }.get("type").toString())
+        val profile = messages.single { it.globalMesgNum == 3 }
+        fun raw(n: String) = profile.fields.single { it.name == n }.rawValue.toString()
+        assertEquals("1", raw("gender"))
+        assertEquals("36", raw("age"))
+        assertEquals("182", raw("height"))
+        assertEquals("723", raw("weight"))
+        assertEquals("90", raw("unknown_24"), "birth year since 1900")
+    }
+
+    @Test
+    fun only_what_is_known_goes_into_the_profile() {
+        val profile = FitReader(SettingsFit.encodeUserProfile(70.0, null, null, null, now, 2026)!!)
+            .messages().single { it.globalMesgNum == 3 }
+        assertEquals(listOf("weight"), profile.fields.map { it.name })
+        assertNull(SettingsFit.encodeUserProfile(null, null, null, null, now, 2026))
+    }
 }
