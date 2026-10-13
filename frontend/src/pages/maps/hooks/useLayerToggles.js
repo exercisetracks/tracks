@@ -75,11 +75,12 @@ const LAYER_GROUPS = [
   },
   {
     id: "custom_tracks",
-    label: "My Tracks",
-    // The user's saved courses + any device-discovered ones. On by default so a
-    // freshly-saved track appears immediately; data is fed by useCustomTracks.
+    label: "My Tracks & Places",
+    // The user's saved tracks and places. On by default so a freshly-saved one
+    // appears immediately; data is fed by useMapItems.
     layers: ["custom_tracks_hit", "custom_tracks_hover", "custom_tracks_casing",
-             "custom_tracks_line", "custom_tracks_line_external", "custom_tracks_arrows"],
+             "custom_tracks_line", "custom_tracks_line_external", "custom_tracks_arrows",
+             "saved_places_selected", "saved_places_icon", "saved_places_label"],
     default: true,
   },
   {

@@ -85,9 +85,16 @@ export function buildSources(version = "") {
       type: "geojson",
       data: EMPTY_FC,
     },
-    // User custom tracks (courses), fed by useCustomTracks. promoteId:"id" lets
+    // User custom tracks (courses), fed by useMapItems. promoteId:"id" lets
     // feature-state (hover/selected) light a whole track on the GPU.
     custom_tracks: {
+      type: "geojson",
+      data: EMPTY_FC,
+      promoteId: "id",
+    },
+    // Saved places (waypoints), fed by useMapItems; promoteId for the
+    // selected/hover feature-state.
+    saved_places: {
       type: "geojson",
       data: EMPTY_FC,
       promoteId: "id",

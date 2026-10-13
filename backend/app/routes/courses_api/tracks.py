@@ -17,7 +17,7 @@ from sqlalchemy.orm import Session
 from app.auth import require_auth
 from app.database import get_db
 from app.models.activity import Activity, User
-from app.models.custom_track import CustomTrack
+from app.models.custom_track import CustomTrack, CustomTrackFolder
 from app.services import brouter_client, brouter_downloader, course_fit
 from app.services.course_turns import is_turn_compatible
 from app.services.crypto_context import require_crypto_session
@@ -56,6 +56,10 @@ class CourseCreate(BaseModel):
     source: str | None = "builder"
     turn_by_turn: bool = False
     load_to_device: bool = False
+    # The collection to file it in; omitted is the default collection.
+    folder_id: int | None = None
+    # The recorded activity it was traced from, when it was.
+    activity_id: int | None = None
     # Either a list of [lng,lat,ele?] OR a GeoJSON Feature/FeatureCollection.
     coords: list | None = None
     geojson: dict | None = None
@@ -88,6 +92,22 @@ def create_course(body: CourseCreate, user: User = Depends(require_auth),
         turn_by_turn=bool(body.turn_by_turn),
         load_to_device=bool(body.load_to_device),
     )
+    if body.folder_id is not None:
+        folder = db.get(CustomTrackFolder, body.folder_id)
+        if folder is None or folder.user_id != user.id:
+            raise HTTPException(404, "Folder not found")
+        t.folder_id = folder.id
+        # As when a track is moved into one: a synced collection's tracks are
+        # on the watch.
+        if folder.load_to_device:
+            t.load_to_device = True
+    if body.activity_id is not None:
+        act = db.get(Activity, body.activity_id)
+        # Only a link to one of the user's own (or an unowned legacy row, as
+        # from-activity allows); anyone else's is dropped rather than refused,
+        # since the track itself is still theirs.
+        if act is not None and act.user_id in (None, user.id):
+            t.activity_id = act.id
     _apply_stats(t, coords)
     _refresh_turns(t)
     db.add(t)

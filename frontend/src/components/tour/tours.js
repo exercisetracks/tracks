@@ -257,8 +257,8 @@ export const TOURS = {
     },
     {
       anchor: '[data-tour="map-tracks"]',
-      title: "Build & save routes",
-      body: "Click points to build a route (snapped to trails), check its elevation profile, and save it to My Tracks.",
+      title: "Your tracks and places",
+      body: "Draw (or right-click the map) and click points: one point saves a place, two or more a track, snapped to trails. My Tracks files them in collections and sends them to your watch.",
       placement: "left",
     },
   ],

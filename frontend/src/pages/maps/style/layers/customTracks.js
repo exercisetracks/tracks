@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Hawk Fugagli
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // User custom tracks (courses) — rendered from the `custom_tracks` geojson source
-// (fed by useCustomTracks). Patterned on the long-trail layers: a wide invisible
+// (fed by useMapItems). Patterned on the long-trail layers: a wide invisible
 // hit line for easy click/hover, a feature-state hover glow, a white casing, and
 // the per-track coloured line (`["get","color"]`). The selected track is widened
 // via the `selected` feature-state. All start hidden and are grouped under the

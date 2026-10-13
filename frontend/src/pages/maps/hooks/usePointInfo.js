@@ -125,7 +125,7 @@ export function usePointInfo(map, ready, enabled, onRouteClick) {
       // targets: the incident dot and the perimeter EDGE, not the fill, so
       // clicking around inside a big burn area still gives point info.
       if (_queryNear(e.point, [
-        "custom_tracks_hit", "activity_tracks_hit",
+        "custom_tracks_hit", "activity_tracks_hit", "saved_places_icon", "saved_places_label",
         "wildfire_points_core", "wildfire_points_glow", "wildfire_perimeter_line",
       ]).length > 0) return;
 

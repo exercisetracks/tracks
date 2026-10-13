@@ -234,6 +234,14 @@ export const api = {
   updateCourseFolder:(id, d) => patch(`/maps/folders/${id}`, d),
   deleteCourseFolder:(id)    => del(`/maps/folders/${id}`),
   checkCourseTurns:  (d, opts) => post("/maps/courses/check-turns", d, opts),
+  // Saved places (waypoints), filed in the same collections as tracks.
+  getWaypoints:      ()      => get("/maps/waypoints", { noCache: true }),
+  createWaypoint:    (d)     => post("/maps/waypoints", d),
+  updateWaypoint:    (id, d) => patch(`/maps/waypoints/${id}`, d),
+  deleteWaypoint:    (id)    => del(`/maps/waypoints/${id}`),
+  // One day's hours at a point (local dates, YYYY-MM-DD).
+  getPointHourly:    (lat, lon, date) =>
+    get(`/maps/point/hourly?lat=${lat}&lon=${lon}&date=${date}`, { ttl: 600_000 }),
   importCourse:      (file)  => {
     const fd = new FormData();
     fd.append("file", file);

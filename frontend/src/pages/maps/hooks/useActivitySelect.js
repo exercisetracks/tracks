@@ -10,6 +10,7 @@ import { useEffect, useRef } from "react";
 // or null.
 const ACT = "activity_tracks_hit";
 const TRACK = "custom_tracks_hit";
+const PLACES = ["saved_places_icon", "saved_places_label"];
 const BOX = 7;
 
 export function useActivitySelect(map, ready, enabled, onSelect) {
@@ -33,7 +34,8 @@ export function useActivitySelect(map, ready, enabled, onSelect) {
       const oe = e.originalEvent;
       if (oe && (oe.ctrlKey || oe.metaKey)) return;   // merge multi-select
       if (!enabledRef.current) return;
-      if (hits(e.point, TRACK).length > 0) return;     // a custom track click wins
+      // A saved track or place click wins (useCourseSelection).
+      if (hits(e.point, TRACK).length > 0 || PLACES.some((l) => hits(e.point, l).length > 0)) return;
 
       const f = hits(e.point, ACT)[0];
       if (!f) { onSelectRef.current(null); return; }   // clicked off → deselect

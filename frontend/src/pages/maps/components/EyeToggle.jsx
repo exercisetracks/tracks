@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Show/hide eye toggle for a custom track. `hidden` tracks stay in the list but
 // are dropped from the map's courses geojson (server-side), so toggling re-fetches.
-// Shared by CustomTrackManager rows and the CustomTrackDetail header.
+// Shared by the library rows and the item detail panel.
 export default function EyeToggle({ hidden, onClick, className = "", size = "w-4 h-4" }) {
   return (
     <button

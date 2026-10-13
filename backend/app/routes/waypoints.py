@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from app.auth import require_auth
 from app.database import get_db
 from app.models.activity import User
+from app.models.custom_track import CustomTrackFolder
 from app.models.waypoint import Waypoint
 
 router = APIRouter(prefix="/maps/waypoints", tags=["maps"])
@@ -29,6 +30,8 @@ class WaypointIn(BaseModel):
     icon: str = "marker"
     notes: str | None = None
     load_to_device: bool = False
+    # The collection to file it in; omitted is the default collection.
+    folder_id: int | None = None
 
 
 class WaypointUpdate(BaseModel):
@@ -42,6 +45,10 @@ class WaypointUpdate(BaseModel):
     icon: str | None = None
     notes: str | None = None
     load_to_device: bool | None = None
+    folder_id: int | None = None
+    # Explicitly back to the default collection: a null folder_id already
+    # means "leave it alone", as every other field here does.
+    clear_folder: bool = False
 
 
 def _out(w: Waypoint) -> dict:
@@ -59,6 +66,8 @@ def _out(w: Waypoint) -> dict:
         # and "on the wrist" are different answers and the UI has to be able to
         # say which one it is showing.
         "on_watch": w.watch_uploaded_at is not None and w.watch_deleted_at is None,
+        "folder_id": w.folder_id,
+        "created_at": w.created_at.isoformat() if w.created_at else None,
     }
 
 
@@ -67,6 +76,21 @@ def _owned_or_404(waypoint_id: int, user: User, db: Session) -> Waypoint:
     if w is None or w.user_id != user.id:
         raise HTTPException(404, "Waypoint not found")
     return w
+
+
+def _file_in(w: Waypoint, folder_id: int, user: User, db: Session) -> None:
+    """File a place under one of the user's collections.
+
+    A collection whose switch is on keeps everything in it on the watch, so a
+    place moved into one goes to the watch too — the rule a track follows
+    (see ``update_course``).
+    """
+    folder = db.get(CustomTrackFolder, folder_id)
+    if folder is None or folder.user_id != user.id:
+        raise HTTPException(404, "Folder not found")
+    w.folder_id = folder.id
+    if folder.load_to_device:
+        w.load_to_device = True
 
 
 @router.get("")
@@ -97,6 +121,8 @@ def create_waypoint(
         notes=body.notes,
         load_to_device=body.load_to_device,
     )
+    if body.folder_id is not None:
+        _file_in(w, body.folder_id, user, db)
     db.add(w)
     db.commit()
     db.refresh(w)
@@ -129,6 +155,10 @@ def update_waypoint(
         w.notes = body.notes
     if body.load_to_device is not None:
         w.load_to_device = body.load_to_device
+    if body.clear_folder:
+        w.folder_id = None
+    elif body.folder_id is not None:
+        _file_in(w, body.folder_id, user, db)
 
     # Anything the watch can see changed, so the copy on it is stale. Clearing
     # the upload stamp is what puts it back on the next sync's list — the same

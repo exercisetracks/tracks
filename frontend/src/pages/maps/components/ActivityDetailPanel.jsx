@@ -90,12 +90,14 @@ export default function ActivityDetailPanel({ activityId, imperial, onClose, onC
 
         {/* Controls */}
         <div className="mt-1.5 flex items-center justify-center gap-x-3 gap-y-2 flex-wrap text-[11px]">
+          {/* A new track along it, opened in the editor to be named, filed and
+              refined before anything is saved. */}
           <button onClick={() => onCreateTrack(activityId)} disabled={creating}
             className="btn btn-primary btn-sm">
-            {creating ? "Creating…" : "Create track from this activity"}
+            {creating ? "Opening…" : "Make track"}
           </button>
           <Link to={`/activities/${activityId}`}
-            className="px-2.5 py-1 rounded bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-300 font-medium">
+            className="btn btn-neutral btn-sm">
             View activity
           </Link>
           <span className="text-[10px] text-slate-400">Ctrl/⌘-click another track to merge.</span>

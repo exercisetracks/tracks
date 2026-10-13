@@ -22,6 +22,7 @@ import { buildLabels } from "./layers/labels";
 import { buildContours } from "./layers/contours";
 import { buildActivityTracks } from "./layers/activityTracks";
 import { buildCustomTracks } from "./layers/customTracks";
+import { buildSavedPlaces } from "./layers/savedPlaces";
 import { buildSmoke, buildWildfires } from "./layers/wildfires";
 
 // ── Systematic fade-in ────────────────────────────────────────────────────────
@@ -168,6 +169,8 @@ export function buildStyle(version = "", { includeDem = false } = {}) {
     // User custom tracks (courses) above labels so the coloured line + selection
     // glow always read on top (starts hidden; My Tracks toggle).
     ...buildCustomTracks(),
+    // Saved places over the tracks, so a place on a route stays tappable.
+    ...buildSavedPlaces(),
     // Live wildfires on the very top — an active fire outranks everything.
     ...buildWildfires(),
     // The graticule + UTM grid is NOT a style layer — it's painted as a canvas

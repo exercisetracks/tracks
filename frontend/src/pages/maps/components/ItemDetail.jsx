@@ -4,7 +4,9 @@
 // SelectionSheet. Everything you can do to the item, the same actions the
 // library's open row offers: two places offering different subsets of the same
 // actions is how a person learns to distrust both. The line, colour and symbol
-// are changed in the editor (Edit), one place for everything about the item.
+// are changed in the editor (Edit), one place for everything about the item —
+// its collection too, which is in the editor only, as on the phone; the
+// library moves several at once.
 //
 // A track carries its height profile, coloured by grade; the pointer on it
 // marks the same spot on the map.
@@ -17,7 +19,7 @@ import {
   downloadText, fileSafe, placeDeviceLabel, placeGpx, pointAlong, trackDeviceLabel,
 } from "../utils/mapItems";
 import ElevationProfileCard from "./ElevationProfileCard";
-import { CollectionPicker, ItemMark } from "./ItemBits";
+import { ItemMark } from "./ItemBits";
 
 function Name({ name, onRename }) {
   const [draft, setDraft] = useState(name);
@@ -49,8 +51,7 @@ function TurnCheck({ track }) {
 }
 
 export default function ItemDetail({
-  kind, id, places = [], folders = [], atlas, imperial, hasDevice,
-  onChanged, onClose, onEdit, onScrub, onCreateFolder,
+  kind, id, places = [], atlas, imperial, hasDevice, onChanged, onClose, onEdit, onScrub,
 }) {
   const [track, setTrack] = useState(null);
   const [confirming, setConfirming] = useState(false);
@@ -93,7 +94,6 @@ export default function ItemDetail({
   const km = (m) => (m == null ? "—" : imperial ? `${(m / 1609.34).toFixed(1)} mi` : `${(m / 1000).toFixed(1)} km`);
   const ht = (m) => (m == null ? "—" : imperial ? `${Math.round(m * 3.28084).toLocaleString()} ft` : `${Math.round(m).toLocaleString()} m`);
   const caption = kind === "track" ? trackDeviceLabel(item) : placeDeviceLabel(item);
-  const toFolder = (fid) => (fid != null ? { folder_id: fid } : { clear_folder: true });
 
   return (
     <div className="absolute bottom-0 left-2 right-2 sm:left-[11rem] sm:right-[5rem] z-30 pointer-events-none">
@@ -126,9 +126,7 @@ export default function ItemDetail({
 
         {error && <p className="text-xs text-rose-600 dark:text-rose-400 mb-1">{error}</p>}
 
-        <div className="mt-1.5 flex items-end justify-center gap-x-3 gap-y-2 flex-wrap text-[11px]">
-          <CollectionPicker value={item.folder_id ?? null} folders={folders}
-                            onChange={(fid) => patch(toFolder(fid))} onCreate={onCreateFolder} />
+        <div className="mt-1.5 flex items-center justify-center gap-x-3 gap-y-2 flex-wrap text-[11px]">
           {confirming ? (
             <span className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
               {item.load_to_device ? "Delete from Tracks and the watch?" : "Delete for good?"}

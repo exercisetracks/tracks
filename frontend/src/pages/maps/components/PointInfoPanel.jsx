@@ -3,8 +3,14 @@
 // Point-info panel for the map page. Renders the details usePointInfo gathered
 // for a tapped location — coordinates, elevation, current weather (decoded from
 // WMO codes via wmo() below), place name, and any nearby trails — with actions
-// to route here or dismiss.
-import { useState } from "react";
+// to save the spot as a place or dismiss.
+//
+// The days are a strip to pick from, and the picked day's hours open under it
+// — today's at once, since an empty space under the days said nothing about
+// their being clickable (the phone's PointSheet does the same).
+import { useEffect, useState } from "react";
+import { api } from "../../../api/client";
+import HourChart from "./HourChart";
 
 // WMO weather code → label.
 function wmo(code, isDay = 1) {
@@ -32,8 +38,25 @@ const OWNERSHIP_BADGE = {
   restricted: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300",
 };
 
-function PointInfoPanel({ point, trails, pois, activities = [], land, info, loading, imperial, onClose, onSelectRoute, onSelectActivity, onHoverActivity }) {
+function PointInfoPanel({ point, trails, pois, activities = [], land, info, loading, imperial, onClose, onSelectRoute, onSelectActivity, onHoverActivity, onSavePlace }) {
   const [copied, setCopied] = useState(false);
+  const [openDay, setOpenDay] = useState(null);
+  const [hours, setHours] = useState({ date: null, list: [], loading: false });
+  const firstDay = info?.weather?.daily?.[0]?.date ?? null;
+
+  // A new spot opens on today again.
+  useEffect(() => { setOpenDay(null); }, [point?.lat, point?.lng]);
+  const day = openDay ?? firstDay;
+  useEffect(() => {
+    if (!point || !day || info?.weather_disabled) { setHours({ date: null, list: [], loading: false }); return undefined; }
+    let live = true;
+    setHours((h) => ({ ...h, date: day, loading: true }));
+    api.getPointHourly(point.lat.toFixed(4), point.lng.toFixed(4), day)
+      .then((r) => { if (live) setHours({ date: day, list: r?.hours || [], loading: false }); })
+      .catch(() => { if (live) setHours({ date: day, list: [], loading: false }); });
+    return () => { live = false; };
+  }, [point, day, info?.weather_disabled]);
+
   if (!point) return null;
 
   const latlng = `${point.lat.toFixed(5)}, ${point.lng.toFixed(5)}`;
@@ -78,6 +101,14 @@ function PointInfoPanel({ point, trails, pois, activities = [], land, info, load
       </div>
 
       <div className="px-2.5 py-2 space-y-3">
+        {onSavePlace && (
+          // Named from what is here when there is a name to use: usually close,
+          // always better than an empty field — and the editor opens on it.
+          <button type="button" className="btn btn-tonal btn-sm w-full"
+                  onClick={() => onSavePlace(point, pois[0]?.name || info?.nearest_poi?.name || "")}>
+            Save place
+          </button>
+        )}
         {/* Elevation + Land (side by side) */}
         <div className="flex gap-4">
           <div className="min-w-0">
@@ -195,9 +226,12 @@ function PointInfoPanel({ point, trails, pois, activities = [], land, info, load
                 </div>
               </div>
               {daily.length > 0 && (
-                <div className="mt-2 grid grid-cols-7 gap-1 text-center">
+                <div className="mt-2 grid grid-cols-7 gap-0.5 text-center">
                   {daily.slice(0, 7).map((d, i) => (
-                    <div key={i} className="text-[10px]">
+                    // A day is chosen, not toggled: one is always showing.
+                    <button key={i} type="button" onClick={() => setOpenDay(d.date)}
+                      className={`text-[10px] rounded-md py-0.5 transition-colors ${
+                        d.date === day ? "bg-accent-100 dark:bg-accent-900/40" : "hover:bg-slate-100 dark:hover:bg-slate-800"}`}>
                       <div className="text-slate-400">{i === 0 ? "Today" : dow(d.date)}</div>
                       <div className="text-[9px] leading-tight text-slate-500 dark:text-slate-400">{wmo(d.weather_code, 1)}</div>
                       <div className="text-slate-700 dark:text-slate-200 font-medium">{temp(d.temp_max_c)}</div>
@@ -205,8 +239,15 @@ function PointInfoPanel({ point, trails, pois, activities = [], land, info, load
                       {d.precip_prob_pct > 0 && (
                         <div className="text-sky-500">{d.precip_prob_pct}%</div>
                       )}
-                    </div>
+                    </button>
                   ))}
+                </div>
+              )}
+              {day && (
+                <div className="mt-2 min-h-[96px]">
+                  {hours.loading && !hours.list.length
+                    ? <p className="text-[11px] text-slate-400">Loading hours…</p>
+                    : <HourChart hours={hours.list} temp={temp} />}
                 </div>
               )}
             </>

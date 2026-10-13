@@ -10,7 +10,6 @@ import { useMapSettings } from "./hooks/useMapSettings";
 import { useDownloadStatus } from "./hooks/useDownloadStatus";
 import { useLayerToggles } from "./hooks/useLayerToggles";
 import { useRegionDownload } from "./hooks/useRegionDownload";
-import { useRouteBuilder } from "./hooks/useRouteBuilder";
 import { usePoiSearch } from "./hooks/usePoiSearch";
 import { usePoiFeatures } from "./hooks/usePoiFeatures";
 import { usePublicLandLabelRank } from "./hooks/usePublicLandLabelRank";
@@ -20,7 +19,9 @@ import { use3D } from "./hooks/use3D";
 import { usePointInfo } from "./hooks/usePointInfo";
 import { useRouteHover } from "./hooks/useRouteHover";
 import { useActivityTracks } from "./hooks/useActivityTracks";
-import { useCustomTracks } from "./hooks/useCustomTracks";
+import { useMapItems } from "./hooks/useMapItems";
+import { useItemEditor } from "./hooks/useItemEditor";
+import { useMapCursor } from "./hooks/useMapCursor";
 import { useCourseSelection } from "./hooks/useCourseSelection";
 import { useActivitySelect } from "./hooks/useActivitySelect";
 import { useMergeSelect } from "./hooks/useMergeSelect";
@@ -31,10 +32,9 @@ import ControlPopup from "./components/ControlPopup";
 import PointInfoPanel from "./components/PointInfoPanel";
 import RouteDetailPanel from "./components/RouteDetailPanel";
 import RegionDownloader from "./components/RegionDownloader";
-import RouteBuilder from "./components/RouteBuilder";
-import ElevationProfile from "./components/ElevationProfile";
-import CustomTrackManager from "./components/CustomTrackManager";
-import CustomTrackDetail from "./components/CustomTrackDetail";
+import TrackLibrary from "./components/TrackLibrary";
+import ItemEditor from "./components/ItemEditor";
+import ItemDetail from "./components/ItemDetail";
 import ActivityDetailPanel from "./components/ActivityDetailPanel";
 import MergePanel from "./components/MergePanel";
 import MapToolbar from "./components/MapToolbar";
@@ -57,7 +57,7 @@ import MapLegend from "./components/MapLegend";
  *   • useMapSettings()        — one-shot settings fetch (map_enabled + units).
  *   • useDownloadStatus(regs) — global-download polling + toast status buckets.
  * plus the pre-existing per-feature hooks (useMapInit, useLayerToggles,
- * useRegionDownload, useRouteBuilder, usePointInfo, useCustomTracks, …).
+ * useRegionDownload, usePointInfo, useMapItems, useItemEditor, …).
  *
  * WIRING ORDER (important — do not reorder):
  *   1. Map init + settings/toggles (state that everything downstream reads).
@@ -79,9 +79,12 @@ export default function MapView() {
   const navigate = useNavigate();
   const [hideBanner, setHideBanner] = useState(false);
   const [routeDetail, setRouteDetail] = useState(null);   // {routeId, sectionId} | null
-  const [selectedCourseId, setSelectedCourseId] = useState(null);
+  const [selected, setSelected] = useState(null);         // {kind: "track"|"place", id} | null
+  const selectedCourseId = selected?.kind === "track" ? selected.id : null;
   const [selectedActivity, setSelectedActivity] = useState(null);  // {id, name, dist} | null
-  const [trackManagerOpen, setTrackManagerOpen] = useState(false);
+  const [libraryOpen, setLibraryOpen] = useState(false);
+  const [libraryKey, setLibraryKey] = useState(null);     // the row to open, "track-<id>"
+  const [hasDevice, setHasDevice] = useState(true);
   const [bottomPanel, setBottomPanel] = useState(null);   // null | "legend" | "layers" | "areas" | "merge"
   const [mergeSources, setMergeSources] = useState([]);   // ordered [{key,kind,id,name,dist,reverse}]
   const [merging, setMerging] = useState(false);          // merge request in flight
@@ -96,7 +99,32 @@ export default function MapView() {
 
   const { groups, toggles, setVisibility, applyInitial } = useLayerToggles(map);
   const region = useRegionDownload(map);
-  const route = useRouteBuilder(map);
+  // Tracks, places and collections (data + map sources), and the editor that
+  // draws and edits them.
+  const items = useMapItems(map, ready);
+  const showCursor = useMapCursor(map, ready);
+  // After a save: show what was saved — selected on the map, and its row open
+  // in the library when that is up. A track drawn from a race plan becomes
+  // that race's course, and the user goes back to the plan.
+  const onSaved = useCallback(async ({ kind, id }) => {
+    await items.refresh();
+    setSelected({ kind, id });
+    setLibraryKey(`${kind}-${id}`);
+    if (raceGoal && kind === "track") {
+      await api.courseFromTrack(raceGoal, id);
+      navigate(`/race-plans/${raceGoal}`);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items.refresh, raceGoal, navigate]);
+  const editor = useItemEditor(map, { atlas: items.atlas, onSaved });
+  // The item open in the editor is drawn by the editor, not the map's layers.
+  useEffect(() => {
+    items.setEditing(editor.open ? {
+      track: editor.kind === "track" ? editor.id : null,
+      place: editor.kind === "place" ? editor.id : null,
+    } : null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editor.open, editor.kind, editor.id, items.setEditing]);
   usePoiSearch(map, ready);
   usePoiFeatures(map, ready);
   // Grid-ranks the public-land area names (grant-once, pan-stable) — the layer
@@ -114,8 +142,8 @@ export default function MapView() {
   // Point-info is suppressed while merging UNLESS no track is selected yet — then an
   // empty-map click should dismiss the merge panel and reveal the location details.
   const pointInfo = usePointInfo(map, ready,
-    !route.building && !region.drawing && (!mergeMode || mergeSources.length === 0),
-    useCallback((routeId, sectionId) => { setRouteDetail({ routeId, sectionId }); setSelectedCourseId(null); }, []));
+    !editor.open && !region.drawing && (!mergeMode || mergeSources.length === 0),
+    useCallback((routeId, sectionId) => { setRouteDetail({ routeId, sectionId }); setSelected(null); }, []));
   // Light up long-trail segments on hover (pointer cursor) to signal clickability.
   useRouteHover(map, ready);
 
@@ -135,25 +163,35 @@ export default function MapView() {
   // Past-activity tracks layer (theme-coloured lines; toggle in the layer panel).
   const { setHoveredActivity } = useActivityTracks(map, ready, toggles.activity_tracks, accent);
 
-  // Custom tracks: data source for the map + manager list, and click selection.
-  const customTracks = useCustomTracks(map, ready);
-  const selectCourse = useCallback((id) => {
-    setSelectedCourseId(id);
-    if (id != null) { setSelectedActivity(null); setRouteDetail(null); pointInfo.close(); }
+  // Clicking a saved track or place selects it → the detail panel.
+  const selectItem = useCallback((sel) => {
+    setSelected(sel);
+    if (sel != null) { setSelectedActivity(null); setRouteDetail(null); pointInfo.close(); }
   }, [pointInfo]);
   useCourseSelection(
-    map, ready, !route.building && !region.drawing && !mergeMode && toggles.custom_tracks,
-    selectedCourseId, selectCourse,
+    map, ready, !editor.open && !region.drawing && !mergeMode && toggles.custom_tracks,
+    selected, selectItem,
   );
+  // Opening the editor puts away what it would sit on top of.
+  useEffect(() => {
+    if (editor.open) { setSelected(null); setSelectedActivity(null); pointInfo.close(); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editor.open]);
+
+  // Which watch controls to offer: none without a watch to send to. Shown if
+  // the answer is unknown, rather than hiding a working feature.
+  useEffect(() => {
+    api.getGarminDevices().then((list) => setHasDevice(Array.isArray(list) ? list.length > 0 : true)).catch(() => {});
+  }, []);
 
   // Single-click selection for recorded activities → the activity detail panel.
   const selectActivity = useCallback((meta) => {
     if (!meta) { setSelectedActivity(null); return; }
     setSelectedActivity(meta);
-    setSelectedCourseId(null); setRouteDetail(null); pointInfo.close();
+    setSelected(null); setRouteDetail(null); pointInfo.close();
   }, [pointInfo]);
   useActivitySelect(
-    map, ready, !route.building && !region.drawing && !mergeMode && toggles.activity_tracks,
+    map, ready, !editor.open && !region.drawing && !mergeMode && toggles.activity_tracks,
     selectActivity,
   );
 
@@ -192,19 +230,40 @@ export default function MapView() {
     } catch { /* source not ready */ }
   }, [map]);
 
-  const handleSaveTrack = useCallback(async (meta) => {
-    const created = await api.createCourse({
-      name: meta.name, color: meta.color, sport: meta.sport,
-      turn_by_turn: meta.turn_by_turn, source: meta.source, geojson: meta.geojson,
-    });
-    await customTracks.refresh();
-    route.clearRoute();
-    setSelectedCourseId(created.id);
-    if (raceGoal) {
-      await api.courseFromTrack(raceGoal, created.id);
-      navigate(`/race-plans/${raceGoal}`);
+  const flyToPlace = useCallback((p) => {
+    if (map && p) map.easeTo({ center: [p.lng, p.lat], zoom: Math.max(map.getZoom(), 14), duration: 600 });
+  }, [map]);
+
+  const createFolder = useCallback(async (name) => {
+    const f = await api.createCourseFolder({ name });
+    await items.refresh();
+    return f;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items.refresh]);
+
+  // Tracks joined, in the order given, each turned round if that starts it
+  // nearer where the last one ended — then opened in the editor as a new
+  // track, to be named and refined before it is saved. The originals stay.
+  const combineTracks = useCallback(async (list) => {
+    const joined = [];
+    for (const t of list) {
+      let line;
+      try { line = (await api.getCourse(t.id)).geometry || []; } catch { continue; }
+      line = line.filter((c) => c && c[0] != null && c[1] != null);
+      if (line.length < 2) continue;
+      const end = joined[joined.length - 1];
+      if (end) {
+        const gap = (p) => (p[0] - end[0]) ** 2 + (p[1] - end[1]) ** 2;
+        if (gap(line[line.length - 1]) < gap(line[0])) line = [...line].reverse();
+      }
+      joined.push(...line);
     }
-  }, [customTracks, route, raceGoal, navigate]);
+    editor.startFromLine(joined, {
+      name: list.map((t) => t.name).join(" + ").slice(0, 80),
+      color: list[0]?.color, sport: list[0]?.sport,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editor.startFromLine]);
 
   // ── Merge: ctrl/merge-mode click multi-select on the map ──────────────────
   // Toggle a clicked track/activity in the ordered merge set. When the set is
@@ -212,13 +271,13 @@ export default function MapView() {
   // (overview opens), then ctrl-click another" merges both. A modifier add also
   // opens the merge panel and drops the single selection.
   const mkSource = useCallback((kind, id, name, dist) => {
-    const fromList = kind === "track" ? customTracks.tracks.find((t) => t.id === id) : null;
+    const fromList = kind === "track" ? items.tracks.find((t) => t.id === id) : null;
     return {
       key: `${kind}-${id}`, kind, id,
       name: name || fromList?.name || (kind === "track" ? "Track" : "Activity"),
       dist: dist ?? fromList?.distance_m ?? null, reverse: false,
     };
-  }, [customTracks.tracks]);
+  }, [items.tracks]);
 
   const toggleMergeSource = useCallback((hit) => {
     setMergeError(null);
@@ -232,7 +291,7 @@ export default function MapView() {
       if (base.some((s) => s.key === key)) return base.filter((s) => s.key !== key);
       return [...base, mkSource(hit.kind, hit.id, hit.name, hit.dist)];
     });
-    if (hit.modifier) { setBottomPanel("merge"); setSelectedCourseId(null); setSelectedActivity(null); }
+    if (hit.modifier) { setBottomPanel("merge"); setSelected(null); setSelectedActivity(null); }
   }, [mkSource, selectedCourseId, selectedActivity]);
 
   // In merge mode, an empty-map click with nothing selected yet dismisses the panel
@@ -273,14 +332,15 @@ export default function MapView() {
     setMerging(true); setMergeError(null);
     try {
       const { track } = await api.mergeCourses(payload);
-      await customTracks.refresh();
+      await items.refresh();
       setBottomPanel(null);          // closes panel → clears the set via the effect
-      setSelectedCourseId(track.id);
+      setSelected({ kind: "track", id: track.id });
       flyToTrack(track);
     } catch (err) {
       setMergeError(err.message || "Merge failed");
     } finally { setMerging(false); }
-  }, [customTracks, flyToTrack]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items.refresh, flyToTrack]);
 
   // Open an activity by id (from a deep-link, the manager picker, or point-info):
   // fit the map to it and select it (→ the activity detail panel + amber highlight).
@@ -300,17 +360,43 @@ export default function MapView() {
     } catch { /* ignore */ }
   }, [map, selectActivity]);
 
-  // "Create track from this activity" (from the activity detail panel).
+  // "Make track" (from the activity detail panel): a new track along the
+  // activity, opened in the editor — named after it, linked to it, saved only
+  // when the person saves.
   const [creatingFromActivity, setCreatingFromActivity] = useState(false);
   const handleCreateFromActivity = useCallback(async (activityId) => {
     setCreatingFromActivity(true);
     try {
-      const created = await api.courseFromActivity(activityId);
-      await customTracks.refresh();
-      setSelectedActivity(null);
-      setSelectedCourseId(created.id);
+      const [points, act] = await Promise.all([
+        api.getTrack(activityId),
+        api.getActivity(activityId).catch(() => null),
+      ]);
+      const line = (points || []).filter((p) => p.lat != null && p.lng != null)
+        .map((p) => (p.altitude != null ? [p.lng, p.lat, p.altitude] : [p.lng, p.lat]));
+      editor.startFromLine(line, {
+        name: act?.name || selectedActivity?.name || "Track",
+        activityId, sport: act?.sport ? String(act.sport).toLowerCase() : undefined,
+      });
     } finally { setCreatingFromActivity(false); }
-  }, [customTracks]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editor.startFromLine, selectedActivity]);
+
+  // A right-click is the desktop's long-press: it starts a drawing there —
+  // one point is a place, a second makes it a track — and puts away the
+  // panels it would otherwise open under.
+  useEffect(() => {
+    if (!map || !ready) return undefined;
+    const onContext = (e) => {
+      if (editor.open || region.drawing) return;
+      e.preventDefault?.();
+      pointInfo.close();
+      setRouteDetail(null);
+      editor.startNew([e.lngLat.lng, e.lngLat.lat]);
+    };
+    map.on("contextmenu", onContext);
+    return () => map.off("contextmenu", onContext);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map, ready, editor.open, editor.startNew, region.drawing]);
 
   // Deep link from the Activities page: /maps?previewActivity=<id>.
   const deepLinkedRef = useRef(false);
@@ -352,8 +438,13 @@ export default function MapView() {
     );
   }
 
+  const imperial = settings?.units === "imperial";
+
   return (
-    <div className="relative h-full">
+    // The library docks beside the map rather than over it, so the map
+    // narrows to make room and nothing on it is hidden.
+    <div className="h-full flex">
+    <div className="relative h-full flex-1 min-w-0">
       <div ref={containerRef} className="w-full h-full" />
       {/* Grid/graticule HUD — painted over the map by useGridOverlay. Sits above
           the map canvas but below the controls, and never eats pointer events. */}
@@ -363,11 +454,12 @@ export default function MapView() {
         point={pointInfo.point} trails={pointInfo.trails} pois={pointInfo.pois}
         activities={pointInfo.activities}
         land={pointInfo.land} info={pointInfo.info} loading={pointInfo.loading}
-        imperial={settings?.units === "imperial"}
+        imperial={imperial}
         onClose={pointInfo.close}
         onSelectRoute={(routeId, sectionId) => setRouteDetail({ routeId, sectionId })}
         onSelectActivity={(id) => { setHoveredActivity(null); pointInfo.close(); openActivityById(id); }}
         onHoverActivity={setHoveredActivity}
+        onSavePlace={(pt, name) => { pointInfo.close(); editor.startNew([pt.lng, pt.lat], { name }); }}
       />
 
       {/* Fire detail card (same slot as PointInfoPanel; usePointInfo skips fire clicks). */}
@@ -376,44 +468,41 @@ export default function MapView() {
       {routeDetail && (
         <RouteDetailPanel
           routeId={routeDetail.routeId} sectionId={routeDetail.sectionId}
-          imperial={settings?.units === "imperial"}
+          imperial={imperial}
           onClose={() => setRouteDetail(null)}
         />
       )}
 
-      <div data-tour="map-tracks" className="absolute top-3 right-3 bg-white dark:bg-slate-900 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 z-10 min-w-[200px] max-w-[240px]">
-        {/* Tinted + chevron so it clearly reads as a button, not a header. */}
-        <button
-          onClick={() => setTrackManagerOpen(true)}
-          className="w-full flex items-center justify-between gap-2 px-2.5 py-2 text-xs font-semibold text-accent-700 dark:text-accent-300 bg-accent-50 dark:bg-accent-900/20 hover:bg-accent-100 dark:hover:bg-accent-900/30 transition-colors rounded-t-xl"
-        >
-          <span className="flex items-center gap-2">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z" />
-            </svg>
-            My Tracks
-          </span>
-          <span className="flex items-center gap-1.5">
-            {customTracks.tracks.length > 0 && (
-              <span className="badge bg-accent-100 dark:bg-accent-900/40 text-accent-700 dark:text-accent-300">{customTracks.tracks.length}</span>
-            )}
-            <svg className="w-3.5 h-3.5 opacity-70" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-            </svg>
-          </span>
-        </button>
-        <div className="border-t border-slate-100 dark:border-slate-800" />
-        <RouteBuilder
-          building={route.building} waypoints={route.waypoints}
-          route={route.route} snapping={route.snapping}
-          snapToTrails={route.snapToTrails} error={route.error}
-          elevation={route.elevation}
-          onStart={route.startBuilding} onFinish={route.finishBuilding}
-          onCancel={route.cancelBuilding} onClear={route.clearRoute}
-          onToggleSnap={() => route.setSnapToTrails((v) => !v)}
-          onSaveTrack={handleSaveTrack}
-        />
-      </div>
+      {!libraryOpen && (
+        <div data-tour="map-tracks" className="absolute top-3 right-3 z-10 flex flex-col gap-1.5 items-stretch min-w-[180px]">
+          {/* Tinted + chevron so it clearly reads as a button, not a header. */}
+          <button
+            onClick={() => setLibraryOpen(true)}
+            className="flex items-center justify-between gap-2 px-2.5 py-2 text-xs font-semibold rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 text-accent-700 dark:text-accent-300 bg-white dark:bg-slate-900 hover:bg-accent-50 dark:hover:bg-accent-900/30 transition-colors"
+          >
+            <span className="flex items-center gap-2">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z" />
+              </svg>
+              My Tracks
+            </span>
+            <span className="flex items-center gap-1.5">
+              {items.tracks.length + items.places.length > 0 && (
+                <span className="badge bg-accent-100 dark:bg-accent-900/40 text-accent-700 dark:text-accent-300">{items.tracks.length + items.places.length}</span>
+              )}
+              <svg className="w-3.5 h-3.5 opacity-70" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </span>
+          </button>
+          {!editor.open && (
+            <button onClick={() => editor.startNew()} title="Click the map to draw a track or drop a place (or right-click anywhere)"
+                    className="btn btn-primary btn-sm shadow-lg">
+              Draw
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Bottom-left control COLUMN: Legend / Layers / Areas / Merge popups + MapToolbar.
           A vertical stack (mirrors the right-side zoom column). Icon-only; the label
@@ -454,7 +543,7 @@ export default function MapView() {
       {bottomPanel === "merge" && (
         <MergePanel
           sources={mergeSources}
-          imperial={settings?.units === "imperial"}
+          imperial={imperial}
           busy={merging} error={mergeError}
           onReorder={setMergeSources}
           onReverse={(key) => setMergeSources((cur) => cur.map((s) => s.key === key ? { ...s, reverse: !s.reverse } : s))}
@@ -484,22 +573,17 @@ export default function MapView() {
         </ControlPopup>
       )}
 
-      {/* Elevation profile of the route under construction / built */}
-      <ElevationProfile
-        elevation={route.elevation}
-        snapping={route.snapping}
-        onClose={route.clearRoute}
-      />
-
-      {/* Custom-track detail + elevation overlay (selected on the map). */}
-      {selectedCourseId != null && (
-        <CustomTrackDetail
-          trackId={selectedCourseId}
-          folders={customTracks.folders}
-          imperial={settings?.units === "imperial"}
-          onChanged={customTracks.refresh}
-          onClose={() => setSelectedCourseId(null)}
-          onPreviewGeometry={previewGeometry}
+      {/* The editor, and the detail of a selected track or place, share the
+          bottom of the map: one is open at a time. */}
+      <ItemEditor editor={editor} folders={items.folders} atlas={items.atlas}
+                  imperial={imperial} onCreateFolder={createFolder} />
+      {selected != null && !editor.open && (
+        <ItemDetail
+          kind={selected.kind} id={selected.id} places={items.places}
+          atlas={items.atlas} imperial={imperial} hasDevice={hasDevice}
+          onChanged={items.refresh} onClose={() => setSelected(null)}
+          onEdit={(it) => (selected.kind === "track" ? editor.editTrack(it) : editor.editPlace(it))}
+          onScrub={showCursor}
         />
       )}
 
@@ -507,23 +591,12 @@ export default function MapView() {
       {selectedActivity != null && (
         <ActivityDetailPanel
           activityId={selectedActivity.id}
-          imperial={settings?.units === "imperial"}
+          imperial={imperial}
           creating={creatingFromActivity}
           onCreateTrack={handleCreateFromActivity}
           onClose={() => setSelectedActivity(null)}
         />
       )}
-
-      <CustomTrackManager
-        open={trackManagerOpen}
-        onClose={() => setTrackManagerOpen(false)}
-        tracks={customTracks.tracks}
-        folders={customTracks.folders}
-        imperial={settings?.units === "imperial"}
-        onRefresh={customTracks.refresh}
-        onSelect={(t) => { selectCourse(t.id); flyToTrack(t); setTrackManagerOpen(false); }}
-        onStartBuilder={route.startBuilding}
-      />
 
       {!ready && !error && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#f2efe9] gap-3 z-20">
@@ -534,7 +607,7 @@ export default function MapView() {
 
       {/* The area drawn was already covered by one we have — say which. */}
       {region.alreadyHave && (
-        <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-20 bg-white dark:bg-slate-900 rounded-xl shadow-lg border border-sky-200 dark:border-sky-800 px-3.5 py-2.5 flex items-start gap-3 max-w-sm w-[calc(100%-2rem)]">
+        <div className="absolute top-14 left-1/2 -translate-x-1/2 z-20 bg-white dark:bg-slate-900 rounded-xl shadow-lg border border-sky-200 dark:border-sky-800 px-3.5 py-2.5 flex items-start gap-3 max-w-sm w-[calc(100%-2rem)]">
           <div className="min-w-0 w-full">
             <p className="text-sm font-medium text-slate-800 dark:text-slate-200">
               Already downloaded
@@ -553,39 +626,29 @@ export default function MapView() {
         </div>
       )}
 
-      {/* Single unified download / error toast */}
+      {/* Map-data progress as a pill at the top, as the phone shows it: a
+          wheel and a percentage, out of the way of the editor and the panels
+          that share the bottom of the map. Errors widen it into a card. */}
       {showToast && (
-        <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-20 bg-white dark:bg-slate-900 rounded-xl shadow-lg border border-sky-200 dark:border-sky-800 px-3.5 py-2.5 flex items-start gap-3 max-w-sm w-[calc(100%-2rem)]">
-          {globalErrored.length > 0 ? (
-            <svg className="w-5 h-5 shrink-0 text-red-500 mt-0.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01" />
-            </svg>
-          ) : globalActive.length === 0 ? (
-            <div className="w-5 h-5 border-2 border-sky-500 border-t-transparent rounded-full animate-spin shrink-0 mt-0.5" />
-          ) : null}
-          <div className="min-w-0 space-y-1 w-full">
-            {(globalActive.length > 0 || regionDownloading.length > 0 || regionMerging.length > 0) && (
-              <>
-                <p className="text-sm font-medium text-slate-800 dark:text-slate-200">Setting up map data</p>
-                {globalActive.map((d) => (
-                  <div key={d.id} className="flex items-center gap-2.5">
-                    <ProgressRing percent={d.progress} size={30} className="text-sky-500 shrink-0" />
-                    <div className="min-w-0">
-                      <p className="text-xs text-slate-600 dark:text-slate-300 truncate">
-                        {d.label}
-                      </p>
-                      <p className="text-[10px] text-slate-400">
-                        {Math.round(d.progress || 0)}% · {d.detail || d.size_hint}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-                {regionMerging.length > 0 && (
-                  <p className="text-xs text-slate-400">Merging tiles into the map…</p>
-                )}
-                <p className="text-[10px] text-slate-400/70">Tiles will appear automatically when ready</p>
-              </>
-            )}
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 max-w-sm w-max">
+          <div className={`bg-white/95 dark:bg-slate-900/95 backdrop-blur shadow-lg border border-slate-200 dark:border-slate-700 px-3 py-1.5 ${
+            globalErrored.length ? "rounded-xl" : "rounded-full"}`}>
+            {(globalActive.length > 0 || regionDownloading.length > 0 || regionMerging.length > 0) && (() => {
+              const pct = globalActive.length
+                ? Math.round(globalActive.reduce((n, d) => n + (d.progress || 0), 0) / globalActive.length)
+                : null;
+              return (
+                <div className="flex items-center gap-2" title={globalActive.map((d) => `${d.label}: ${Math.round(d.progress || 0)}% · ${d.detail || d.size_hint || ""}`).join("\n")}>
+                  {pct != null
+                    ? <ProgressRing percent={pct} size={20} className="text-sky-500 shrink-0" />
+                    : <div className="w-4 h-4 border-2 border-sky-500 border-t-transparent rounded-full animate-spin shrink-0" />}
+                  <span className="text-xs font-medium text-slate-700 dark:text-slate-200 whitespace-nowrap">
+                    {regionMerging.length && !globalActive.length ? "Merging map tiles…" : "Setting up map data"}
+                    {pct != null && <span className="text-slate-400 tabular-nums"> · {pct}%</span>}
+                  </span>
+                </div>
+              );
+            })()}
             {globalErrored.map((d) => (
               <p key={d.id} className="text-xs text-red-500">{d.label}: {d.error}</p>
             ))}
@@ -594,7 +657,7 @@ export default function MapView() {
       )}
 
       {error && !hideBanner && (
-        <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-20 max-w-md w-[calc(100%-2rem)] bg-white dark:bg-slate-900 rounded-xl shadow-lg border border-amber-200 dark:border-amber-800 p-3.5">
+        <div className="absolute top-14 left-1/2 -translate-x-1/2 z-20 max-w-md w-[calc(100%-2rem)] bg-white dark:bg-slate-900 rounded-xl shadow-lg border border-amber-200 dark:border-amber-800 p-3.5">
           <div className="flex items-start gap-3">
             <svg className="w-5 h-5 shrink-0 text-amber-500 mt-0.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
@@ -615,6 +678,21 @@ export default function MapView() {
           </div>
         </div>
       )}
+    </div>
+
+      <TrackLibrary
+        open={libraryOpen} onClose={() => setLibraryOpen(false)}
+        tracks={items.tracks} places={items.places} folders={items.folders} atlas={items.atlas}
+        imperial={imperial} hasDevice={hasDevice} openKey={libraryKey}
+        onRefresh={items.refresh}
+        onShowTrack={(t) => { selectItem({ kind: "track", id: t.id }); flyToTrack(t); }}
+        onShowPlace={(p) => { selectItem({ kind: "place", id: p.id }); flyToPlace(p); }}
+        onEditTrack={(t) => editor.editTrack(t)}
+        onEditPlace={(p) => editor.editPlace(p)}
+        onDraw={() => editor.startNew()}
+        onCombine={combineTracks}
+        onCreateFolder={createFolder}
+      />
     </div>
   );
 }

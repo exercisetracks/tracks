@@ -290,7 +290,8 @@ def point_hourly(lat: float = Query(..., ge=-90, le=90),
     the daily strip this is opened from runs a week out.
 
     The phone now asks Open-Meteo itself (mobile core/weather/OpenMeteo.kt);
-    this stays for phones on releases from before that.
+    this serves the web app's point panel, and phones on releases from before
+    that.
     """
     try:
         wanted = _date.fromisoformat(date)
