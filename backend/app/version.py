@@ -25,10 +25,16 @@ Bump `MIN_CLIENT_API_VERSION` only when you remove something old clients
 depend on — that's a deliberate act of dropping support, not a side effect.
 """
 
-SERVER_VERSION = "1.4.2"
+SERVER_VERSION = "1.5.0"
 
 # 2: /sync/push + /sync/pull replace /sync/delta and the old offline write
 # paths outright (docs/offline-first.md: no backwards compatibility), so a
 # client built against 1 is told to update rather than half-working.
+#
+# Not moved for 1.5.0's collections (waypoints gain folder_uid, folders report
+# place_count): both are additive, and a phone's CLIENT_API_VERSION must equal
+# this, so a bump would have every 1.5.0 phone refuse every older server as
+# "too old". Against an older server a place's collection is simply refused
+# as an unknown field and the rest of the row syncs.
 API_VERSION = 2
 MIN_CLIENT_API_VERSION = 2
