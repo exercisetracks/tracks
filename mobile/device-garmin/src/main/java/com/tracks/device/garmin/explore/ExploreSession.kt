@@ -195,11 +195,15 @@ class ExploreSession(private val host: Host) {
             .orEmpty().mapNotNull { it.bytes(1)?.hex() }.toSet()
         watchListed = listed
         val c = library.collection.unhex()
-        host.log("declaring collection ${library.collection}")
+        val all = library.activeCollections()
+        host.log("declaring collection(s) $all")
         return reply(F_COLLECTION_LIST_WRITE + 1) {
             varint(1, 0)
             message(2) {
-                message(1) { bytes(1, c); message(2) { varint(1, library.collectionStamp); varint(2, 0) }; varint(3, 0) }
+                // Every Tracks collection, as Explore declares each of its own.
+                for (mine in all) {
+                    message(1) { bytes(1, mine.unhex()); message(2) { varint(1, library.collectionStamp); varint(2, 0) }; varint(3, 0) }
+                }
                 for ((old, at) in library.retired) {
                     message(1) { bytes(1, old.unhex()); message(2) { varint(1, at); varint(2, 0) }; varint(3, 1) }
                 }
@@ -459,7 +463,7 @@ class ExploreSession(private val host: Host) {
      * offset, a watch with two collections went round 240 times (2026-10-12).
      */
     private fun collectionDigest(body: ProtoReader): ByteArray = reply(F_COLLECTION_DIGEST_READ + 1) {
-        val all = listOf(library.collection)
+        val all = library.activeCollections()
         val offset = body.varint(3).toInt().coerceIn(0, all.size)
         val end = minOf(all.size, offset + body.varint(4, 2).toInt().coerceAtLeast(1))
         val more = end < all.size
@@ -484,18 +488,18 @@ class ExploreSession(private val host: Host) {
                 message(2) { bytes(1, asked.unhex()); bytes(3, ByteArray(0)) }
             }
         }
-        if (asked != library.collection) {
+        if (asked == null || asked !in library.activeCollections()) {
             host.log("watch asked for collection $asked, which is not Tracks'")
             return reply(F_COLLECTION_READ + 1) { varint(1, READ_ERROR) }
         }
-        val items = library.items.values.toList()
+        val items = library.items.values.filter { library.collectionOf(it) == asked }
         val offset = op.varint(2).toInt().coerceIn(0, items.size)
         val end = minOf(items.size, offset + op.varint(3, 2).toInt().coerceAtLeast(1))
         val more = end < items.size
         return reply(F_COLLECTION_READ + 1) {
             varint(1, if (more) READ_MORE else 0)
             message(2) {
-                bytes(1, library.collection.unhex())
+                bytes(1, asked.unhex())
                 message(3) {
                     for (i in items.subList(offset, end)) message(1) {
                         bytes(1, i.uuid.unhex())

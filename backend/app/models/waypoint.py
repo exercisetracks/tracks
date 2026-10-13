@@ -45,6 +45,12 @@ class Waypoint(Base, Synced):
     icon    = Column(String, nullable=False, default="marker")
     notes   = Column(String, nullable=True)
 
+    # The collection it belongs to — a track folder, which holds places as well
+    # as tracks. Null is the default collection. Each collection is a
+    # collection of its own on the watch; deleting one leaves its places in
+    # the default rather than deleting them.
+    folder_id = Column(Integer, ForeignKey("custom_track_folders.id", ondelete="SET NULL"), nullable=True)
+
     # Watch state, mirroring CustomTrack.
     load_to_device    = Column(Boolean, nullable=False, default=False)
     watch_filename    = Column(String, nullable=True)

@@ -184,6 +184,58 @@ class LocalMapItems(private val sources: LocalSources) {
     suspend fun markWaypointOffWatch(id: Int, atIso: String) =
         sources.setValues("waypoint", id, mapOf("watch_deleted_at" to atIso))
 
+    // ── Collections ─────────────────────────────────────────────────────────
+    //
+    // Track folders, which hold places too. Each is a collection of its own
+    // on the watch; an item in none is in the default, "Tracks".
+
+    suspend fun collections(): List<com.tracks.core.api.TrackCollection> =
+        sources.replica.rows("track_folder").mapNotNull { sources.decode(it, com.tracks.core.api.TrackCollection.serializer()) }
+            .sortedBy { it.name.lowercase() }
+
+    suspend fun createCollection(name: String, color: String = "#64748b"): Int =
+        sources.createValues("track_folder", mapOf(
+            "name" to name.trim().take(MAX_NAME).ifEmpty { "Collection" },
+            "color" to color,
+            "load_to_device" to false,
+        ))
+
+    suspend fun renameCollection(id: Int, name: String) =
+        sources.setValues("track_folder", id, mapOf("name" to name.trim().take(MAX_NAME).ifEmpty { "Collection" }))
+
+    /** File a track or place under a collection; null is the default. */
+    suspend fun moveCourse(id: Int, collectionId: Int?) =
+        sources.setValues("track", id, mapOf("folder_uid" to collectionId?.let(sources::uidOf)))
+
+    suspend fun moveWaypoint(id: Int, collectionId: Int?) =
+        sources.setValues("waypoint", id, mapOf("folder_uid" to collectionId?.let(sources::uidOf)))
+
+    /**
+     * Put a whole collection on the watch or take it off: the collection's own
+     * switch and every member's, as the server's folder switch cascades —
+     * external tracks (the watch's own) excepted, which Tracks never sends.
+     */
+    suspend fun setCollectionOnWatch(id: Int, on: Boolean) {
+        sources.setValues("track_folder", id, mapOf("load_to_device" to on))
+        for (c in courses()) if (c.folderId == id && !c.isExternal && c.loadToDevice != on) {
+            sources.setValues("track", c.id, mapOf("load_to_device" to on))
+        }
+        for (w in waypoints()) if (w.folderId == id && w.loadToDevice != on) {
+            sources.setValues("waypoint", w.id, mapOf("load_to_device" to on))
+        }
+    }
+
+    /**
+     * Delete a collection, keeping what was in it: members move to the
+     * default first, each a stamped edit of its own, so every replica learns
+     * where they went rather than holding a reference to nothing.
+     */
+    suspend fun deleteCollection(id: Int) {
+        for (c in courses()) if (c.folderId == id) moveCourse(c.id, null)
+        for (w in waypoints()) if (w.folderId == id) moveWaypoint(w.id, null)
+        sources.delete("track_folder", id)
+    }
+
     // ── Shared ──────────────────────────────────────────────────────────────
 
     /**

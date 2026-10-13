@@ -1543,6 +1543,11 @@ private fun libraryActions(
     onDismissNotice = toolsVm::dismissNotice,
     onOpenActivity = onOpenActivity,
     onMakeTrack = toolsVm::makeTrackFromActivity,
+    onCollectionCreate = toolsVm::createCollection,
+    onCollectionRename = toolsVm::renameCollection,
+    onCollectionDelete = toolsVm::deleteCollection,
+    onCollectionOnWatch = toolsVm::setCollectionOnWatch,
+    onMove = toolsVm::moveToCollection,
 )
 
 /** Keeps the library sheet's wiring out of the screen's own body. */
@@ -1568,6 +1573,7 @@ private fun TrackLibraryHost(
         container = container,
         courses = tools.courses,
         waypoints = tools.waypoints,
+        collections = tools.collections,
         leaving = tools.leavingWatch,
         loading = tools.libraryLoading,
         notice = tools.notice,

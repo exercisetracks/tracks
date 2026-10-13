@@ -167,6 +167,8 @@ data class MapToolsUiState(
     /** Everything that can go on the watch, and how it is drawn. */
     val courses: List<CourseSummary> = emptyList(),
     val waypoints: List<Waypoint> = emptyList(),
+    /** Tracks' collections; an item in none is in the default, "Tracks". */
+    val collections: List<com.tracks.core.api.TrackCollection> = emptyList(),
     /** The tracks' own geometry, kept as text for the map source to swallow. */
     val courseGeoJson: String? = null,
     /** Recorded activities as lines, from the phone's own files. */
@@ -394,11 +396,13 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
             _state.update { it.copy(libraryLoading = true) }
             val courses = runCatching { items.courses() }.getOrNull()
             val waypoints = runCatching { items.waypoints() }.getOrNull()
+            val collections = runCatching { items.collections() }.getOrNull()
             val geometry = runCatching { items.coursesGeoJson() }.getOrNull()
             _state.update {
                 it.copy(
                     courses = courses ?: it.courses,
                     waypoints = waypoints ?: it.waypoints,
+                    collections = collections ?: it.collections,
                     courseGeoJson = geometry ?: it.courseGeoJson,
                     libraryLoading = false,
                 )
@@ -541,6 +545,65 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
      * Which is why failure here is reported as "queued" rather than as an
      * error. Nothing was lost.
      */
+    // ── Collections ─────────────────────────────────────────────────────────
+    // Each is a collection of its own on the watch (see WatchLibrary.groups);
+    // filing something under another moves it there on the next sync.
+
+    fun createCollection(name: String) {
+        viewModelScope.launch {
+            container.mapItems.createCollection(name)
+            loadLibrary()
+        }
+    }
+
+    fun renameCollection(id: Int, name: String) {
+        viewModelScope.launch {
+            container.mapItems.renameCollection(id, name)
+            loadLibrary()
+        }
+    }
+
+    /** Delete a collection; what was in it moves to "Tracks". */
+    fun deleteCollection(id: Int) {
+        viewModelScope.launch {
+            container.mapItems.deleteCollection(id)
+            loadLibrary()
+            container.watch.syncLibrarySoon()
+        }
+    }
+
+    /** Put everything in a collection on the watch, or take it off; null is "Tracks". */
+    fun setCollectionOnWatch(id: Int?, on: Boolean) {
+        viewModelScope.launch {
+            val items = container.mapItems
+            if (id != null) {
+                items.setCollectionOnWatch(id, on)
+            } else {
+                for (c in _state.value.courses) if (c.folderId == null && !c.isExternal && c.loadToDevice != on) {
+                    items.updateCourse(c.id, com.tracks.core.api.CourseUpdate(loadToDevice = on))
+                }
+                for (w in _state.value.waypoints) if (w.folderId == null && w.loadToDevice != on) {
+                    items.updateWaypoint(w.id, WaypointUpdate(loadToDevice = on))
+                }
+            }
+            loadLibrary()
+            container.watch.syncLibrarySoon()
+        }
+    }
+
+    /** File tracks and places under a collection; null is "Tracks". */
+    fun moveToCollection(courseIds: List<Int>, placeIds: List<Int>, collectionId: Int?) {
+        viewModelScope.launch {
+            val items = container.mapItems
+            courseIds.forEach { items.moveCourse(it, collectionId) }
+            placeIds.forEach { items.moveWaypoint(it, collectionId) }
+            loadLibrary()
+            container.watch.syncLibrarySoon()
+            val where = collectionId?.let { id -> _state.value.collections.firstOrNull { it.id == id }?.name } ?: "Tracks"
+            _state.update { it.copy(notice = "Moved ${courseIds.size + placeIds.size} to “$where”") }
+        }
+    }
+
     fun sendCourseToWatch(course: CourseSummary) {
         // Nothing to push: a track with no server id yet has no filename to
         // push under. The library already disables this button for such a

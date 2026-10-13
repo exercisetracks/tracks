@@ -88,6 +88,70 @@ class ExploreSessionTest {
 
     private fun ExploreSession.ok() = handle(msg(3) { varint(1, 1) })
 
+    /** Every collection the phone serves, by UUID, with the items in each. */
+    private fun ExploreSession.collections(): Map<String, List<ProtoReader>> {
+        val out = LinkedHashMap<String, List<ProtoReader>>()
+        var at = 0
+        while (true) {
+            val digest = ask(10) { varint(1, 0); varint(2, 1); varint(3, at); varint(4, 2) }
+            val entry = digest.message(2)?.messages(1)?.firstOrNull() ?: return out
+            val uuid = entry.bytes(1)!!
+            val items = mutableListOf<ProtoReader>()
+            var offset = 0
+            while (true) {
+                val page = ask(6) { message(1) { message(1) { bytes(1, uuid); varint(2, 2) }; varint(2, offset); varint(3, 2) } }
+                items += page.message(2)!!.message(3)?.messages(1).orEmpty()
+                if (page.varint(1) == 0L) break
+                offset = page.varint(3).toInt()
+            }
+            out[uuid.hex()] = items
+            at++
+        }
+    }
+
+    @Test
+    fun `each Tracks collection is a collection of its own on the watch`() {
+        val host = FakeHost().apply { wanted = listOf(course) to listOf(place.copy(group = "alps")) }
+        val s = ExploreSession(host)
+        s.openTo()
+        val served = s.collections()
+        assertEquals(2, served.size, "the default and Alps")
+        assertEquals(listOf(3L), served.getValue(s.collectionId()).map { it.varint(4) }, "the course in the default")
+        assertEquals(listOf(0L), served.values.last().map { it.varint(4) }, "the place in its own")
+        val declared = s.ask(4).message(2)!!.messages(1).map { it.bytes(1)!!.hex() }
+        assertEquals(served.keys.toList(), declared)
+    }
+
+    @Test
+    fun `moving an item to another collection takes it out of the old one`() {
+        val host = FakeHost().apply { wanted = emptyList<DesiredCourse>() to listOf(place.copy(group = "alps")) }
+        val s = ExploreSession(host)
+        s.openTo(); val before = s.collections(); s.ok()
+        val alps = before.keys.last()
+        val placeId = before.getValue(alps).single().bytes(1)!!
+
+        host.wanted = emptyList<DesiredCourse>() to listOf(place.copy(group = "dolomites"))
+        s.openTo(places = listOf(placeId))
+        val after = s.collections()
+        assertEquals(1L, after.getValue(alps).single().varint(3), "tombstoned in Alps")
+        val moved = after.entries.single { it.key != alps && it.key != s.collectionId() }.value.single()
+        assertEquals(0L, moved.varint(3), "live in Dolomites")
+        assertTrue(moved.bytes(1)!!.hex() != placeId.hex(), "under a new UUID")
+    }
+
+    @Test
+    fun `a collection emptied and settled is declared retired`() {
+        val host = FakeHost().apply { wanted = emptyList<DesiredCourse>() to listOf(place.copy(group = "alps")) }
+        val s = ExploreSession(host)
+        s.openTo(); val alps = s.collections().keys.last(); s.ok()
+        host.wanted = emptyList<DesiredCourse>() to emptyList()
+        s.openTo(places = listOf(s.collections().getValue(alps).single().bytes(1)!!)); s.ok()
+        // Its last item's removal is confirmed; the next session retires it.
+        s.openTo(); s.ok()
+        val declared = s.ask(4).message(2)!!.messages(1)
+        assertEquals(1L, declared.single { it.bytes(1)!!.hex() == alps }.varint(3), "declared tombstoned")
+    }
+
     @Test
     fun `the phone declares its own collection as its default`() {
         val s = ExploreSession(FakeHost())

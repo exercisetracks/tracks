@@ -935,6 +935,21 @@ data class Waypoint(
     val notes: String? = null,
     @SerialName("load_to_device") val loadToDevice: Boolean = false,
     @SerialName("on_watch") val onWatch: Boolean = false,
+    /** The collection it is in; null is the default ("Tracks"). */
+    @SerialName("folder_id") val folderId: Int? = null,
+)
+
+/**
+ * A collection: a named group of tracks and places, which is a collection of
+ * its own on the watch. Stored as a track folder, the server's name for it.
+ * Every item is in exactly one; those in none are in the default, "Tracks".
+ */
+@Serializable
+data class TrackCollection(
+    val id: Int = 0,
+    val name: String = "Collection",
+    val color: String = "#64748b",
+    @SerialName("load_to_device") val loadToDevice: Boolean = false,
 )
 
 /** What the server accepts to save a place. */
@@ -978,6 +993,8 @@ data class CourseSummary(
     val hidden: Boolean = false,
     /** `[west, south, east, north]`, for framing the track on a map. */
     val bounds: List<Double>? = null,
+    /** The collection it is in; null is the default ("Tracks"). */
+    @SerialName("folder_id") val folderId: Int? = null,
 )
 
 /** One sample along a saved track's height profile, as the server stores it. */

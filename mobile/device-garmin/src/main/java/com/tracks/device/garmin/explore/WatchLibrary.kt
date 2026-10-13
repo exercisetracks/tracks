@@ -37,11 +37,45 @@ class WatchLibrary {
         val content: Int,
         /** A session that carried this version finished OK. */
         val confirmed: Boolean,
+        /** The collection it is in; "" for [collection], the default. */
+        val collection: String = "",
     )
 
     /** This phone's collection on this watch; generated once and kept. */
     var collection: String = newUuid()
     var collectionStamp: Long = 0
+
+    /**
+     * Tracks' own collections beyond the default, each a collection of its own
+     * on the watch: the app's collection key (a track folder's uid) -> the
+     * watch collection's UUID, generated the first time it is wanted.
+     */
+    val groups = LinkedHashMap<String, String>()
+
+    /** The watch collection for an app collection; null is the default. */
+    fun collectionFor(group: String?): String =
+        if (group == null) collection else groups.getOrPut(group) { newUuid() }
+
+    fun collectionOf(item: Item): String = item.collection.ifEmpty { collection }
+
+    /** Every collection Tracks currently declares, the default first. */
+    fun activeCollections(): List<String> = listOf(collection) + groups.values
+
+    /**
+     * Retire the collections of app collections that have gone, once nothing
+     * live or unsettled is left in them: their items were moved or removed
+     * first, so the watch has already been told about each one.
+     */
+    fun pruneGroups(wanted: Set<String>, now: Long) {
+        for ((key, uuid) in groups.entries.toList()) {
+            if (key in wanted) continue
+            val inIt = items.values.filter { collectionOf(it) == uuid }
+            if (inIt.any { !it.tombstone || !it.confirmed }) continue
+            inIt.forEach { items.remove(it.uuid) }
+            retired[uuid] = now
+            groups.remove(key)
+        }
+    }
 
     /** Item UUID -> item, in the order added. */
     val items = LinkedHashMap<String, Item>()
@@ -88,13 +122,15 @@ class WatchLibrary {
      */
     fun retire(now: Long): Int {
         retired[collection] = now
+        for (g in groups.values) retired[g] = now
+        groups.clear()
         collection = newUuid()
         collectionStamp = 0
         val live = items.values.filter { !it.tombstone }
         items.clear()
         for (i in live) {
             val uuid = newUuid()
-            items[uuid] = i.copy(uuid = uuid, stamp = now, txn = PENDING, confirmed = false)
+            items[uuid] = i.copy(uuid = uuid, stamp = now, txn = PENDING, confirmed = false, collection = "")
         }
         failures = 0
         collectionKnown = false
@@ -126,8 +162,9 @@ class WatchLibrary {
         append("C\t$collection\t$collectionStamp\t$transaction\t${baseline.bit}\t$failures\t${collectionKnown.bit}\n")
         for ((c, at) in retired) append("R\t$c\t$at\n")
         for (p in sentPlaces) append("P\t$p\n")
+        for ((g, c) in groups) append("G\t$g\t$c\n")
         for (i in items.values) {
-            append("I\t${i.uuid}\t${i.kind}\t${i.ref}\t${i.stamp}\t${i.tombstone.bit}\t${i.txn}\t${i.content}\t${i.confirmed.bit}\n")
+            append("I\t${i.uuid}\t${i.kind}\t${i.ref}\t${i.stamp}\t${i.tombstone.bit}\t${i.txn}\t${i.content}\t${i.confirmed.bit}\t${i.collection}\n")
         }
     }
 
@@ -165,10 +202,11 @@ class WatchLibrary {
                         }
                         "R" -> lib.retired[f[1]] = f[2].toLong()
                         "P" -> lib.sentPlaces += f[1]
+                        "G" -> lib.groups[f[1]] = f[2]
                         "I" -> lib.items[f[1]] = Item(
                             uuid = f[1], kind = f[2].toInt(), ref = f[3].toInt(), stamp = f[4].toLong(),
                             tombstone = f[5] == "1", txn = f[6].toInt(), content = f[7].toInt(),
-                            confirmed = f[8] == "1",
+                            confirmed = f[8] == "1", collection = f.getOrNull(9).orEmpty(),
                         )
                     }
                 }
@@ -185,6 +223,8 @@ data class DesiredCourse(
     /** (lat, lng, elevation or null) per vertex, in order. */
     val points: List<Triple<Double, Double, Double?>>,
     val createdAt: Long,
+    /** The app collection it belongs to (a track folder's uid); null is the default. */
+    val group: String? = null,
 ) {
     val content: Int get() = listOf(name, points).hashCode()
 }
@@ -197,6 +237,8 @@ data class DesiredWaypoint(
     val lng: Double,
     val elevation: Double?,
     val createdAt: Long,
+    /** The app collection it belongs to (a track folder's uid); null is the default. */
+    val group: String? = null,
 ) {
     val content: Int get() = listOf(name, lat, lng, elevation).hashCode()
 }
@@ -234,12 +276,21 @@ data class ReconcileReport(
  */
 fun plan(lib: WatchLibrary, courses: List<DesiredCourse>, waypoints: List<DesiredWaypoint>, now: Long): Boolean {
     var changed = false
-    fun upsert(kind: Int, ref: Int, content: Int) {
-        val existing = lib.byRef(kind, ref)
+    fun upsert(kind: Int, ref: Int, content: Int, group: String?) {
+        val target = lib.collectionFor(group)
+        val tag = if (target == lib.collection) "" else target
+        var existing = lib.byRef(kind, ref)
+        // Moved to another collection: an item lives in exactly one on the
+        // watch, so it leaves the old one (tombstoned) and arrives in the new
+        // one under a new UUID.
+        if (existing != null && lib.collectionOf(existing) != target) {
+            tombstone(lib, existing, now)
+            existing = null
+        }
         when {
             existing == null -> {
                 val uuid = WatchLibrary.newUuid()
-                lib.items[uuid] = WatchLibrary.Item(uuid, kind, ref, now, false, WatchLibrary.PENDING, content, false)
+                lib.items[uuid] = WatchLibrary.Item(uuid, kind, ref, now, false, WatchLibrary.PENDING, content, false, tag)
                 changed = true
             }
             existing.content != content -> {
@@ -251,9 +302,9 @@ fun plan(lib: WatchLibrary, courses: List<DesiredCourse>, waypoints: List<Desire
             }
         }
     }
-    courses.forEach { upsert(WatchLibrary.KIND_COURSE, it.trackId, it.content) }
+    courses.forEach { upsert(WatchLibrary.KIND_COURSE, it.trackId, it.content, it.group) }
     waypoints.forEach {
-        upsert(WatchLibrary.KIND_WAYPOINT, it.waypointId, it.content)
+        upsert(WatchLibrary.KIND_WAYPOINT, it.waypointId, it.content, it.group)
         lib.recordPlace(it.lat, it.lng)
     }
 
@@ -267,6 +318,7 @@ fun plan(lib: WatchLibrary, courses: List<DesiredCourse>, waypoints: List<Desire
             changed = true
         }
     }
+    lib.pruneGroups((courses.mapNotNull { it.group } + waypoints.mapNotNull { it.group }).toSet(), now)
     return changed
 }
 

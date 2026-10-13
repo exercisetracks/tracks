@@ -305,8 +305,8 @@ internal val ENTITY_SPECS: List<EntitySpec> = listOf(
     EntitySpec(
         name = "waypoint",
         kind = EntityKind.SOURCE,
-        fields = listOf("name", "lat", "lng", "ele_m", "color", "icon", "notes", "load_to_device", "watch_filename", "watch_uploaded_at", "watch_deleted_at"),
-        refs = mapOf(),
+        fields = listOf("folder_uid", "name", "lat", "lng", "ele_m", "color", "icon", "notes", "load_to_device", "watch_filename", "watch_uploaded_at", "watch_deleted_at"),
+        refs = mapOf("folder_uid" to "track_folder"),
         uidKey = null,
         uidKeyFallback = null,
         childOf = null,

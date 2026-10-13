@@ -793,6 +793,13 @@ class WatchManager(
     @Volatile
     private var wantedOnWatch: Pair<List<DesiredCourse>, List<DesiredWaypoint>>? = null
 
+    /**
+     * A Tracks collection as the watch library keys it: the folder's uid,
+     * which every replica agrees on, where the numeric id is this phone's own.
+     * Null — the default collection — for an item in none.
+     */
+    private fun groupOf(folderId: Int?): String? = folderId?.let { containerProvider().sources.uidOf(it) }
+
     private suspend fun refreshWatchLibrary() {
         val items = containerProvider().mapItems
         val geo = items.coursesGeoJson()
@@ -802,11 +809,11 @@ class WatchManager(
             .mapNotNull { c ->
                 val coords = courseCoordinatesFromGeoJson(geo, c.id) ?: return@mapNotNull null
                 if (coords.size < 2) return@mapNotNull null
-                DesiredCourse(c.id, c.name, coords.map { Triple(it[1], it[0], it.getOrNull(2)) }, 0)
+                DesiredCourse(c.id, c.name, coords.map { Triple(it[1], it[0], it.getOrNull(2)) }, 0, group = groupOf(c.folderId))
             }
         val places = items.waypoints()
             .filter { it.id >= 0 && it.loadToDevice }
-            .map { DesiredWaypoint(it.id, it.name, it.lat, it.lng, it.elevationMetres, 0) }
+            .map { DesiredWaypoint(it.id, it.name, it.lat, it.lng, it.elevationMetres, 0, group = groupOf(it.folderId)) }
         wantedOnWatch = courses to places
     }
 

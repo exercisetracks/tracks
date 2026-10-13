@@ -385,8 +385,9 @@ entities:
   waypoint:
     kind: source
     table: waypoints
-    fields: [name, lat, lng, ele_m, color, icon, notes, load_to_device, watch_filename,
-             watch_uploaded_at, watch_deleted_at]
+    fields: [folder_uid, name, lat, lng, ele_m, color, icon, notes, load_to_device,
+             watch_filename, watch_uploaded_at, watch_deleted_at]
+    refs: {folder_uid: track_folder}
 
   coaching_note:
     # LLM output from a linked server, kept so it can be reread offline.

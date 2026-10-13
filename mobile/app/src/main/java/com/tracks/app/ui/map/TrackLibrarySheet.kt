@@ -108,6 +108,8 @@ fun TrackLibrarySheet(
     container: AppContainer,
     courses: List<CourseSummary>,
     waypoints: List<Waypoint>,
+    /** Tracks' collections, each a collection of its own on the watch. */
+    collections: List<com.tracks.core.api.TrackCollection> = emptyList(),
     /** Rows just taken off the watch, hidden from "On the watch" until it answers. */
     leaving: Set<String> = emptySet(),
     loading: Boolean,
@@ -141,6 +143,12 @@ fun TrackLibrarySheet(
     fun togglePick(key: String) { picked = if (key in picked) picked - key else picked + key }
     // One row open at a time, across both tabs: opening another closes this.
     var open by remember(initiallyOpen) { mutableStateOf(initiallyOpen) }
+    var moving by remember { mutableStateOf(false) }
+    var naming by remember { mutableStateOf(false) }
+    // An item filed under a collection this phone has not got (deleted
+    // elsewhere, not yet synced) shows in the default, where it will land.
+    val known = collections.mapTo(HashSet()) { it.id }
+    fun groupOf(folderId: Int?): Int? = folderId?.takeIf { it in known }
 
     ResizableSheet(fraction = fraction, onFraction = onFraction, onDismiss = onDismiss) {
         Column(
@@ -169,6 +177,7 @@ fun TrackLibrarySheet(
                         picked = emptySet()
                     },
                     onDone = { picked = emptySet() },
+                    onMove = { moving = true },
                     // In list order: what the person sees is the order they meant.
                     onCombine = shownCourses.filter { "course-${it.id}" in picked }
                         .takeIf { it.size >= 2 }
@@ -247,11 +256,37 @@ fun TrackLibrarySheet(
                 state = listState,
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                item { Header("Tracks") }
-                if (shownCourses.isEmpty()) {
+                if (shownCourses.isEmpty() && shownWaypoints.isEmpty()) {
                     item { Empty(scope.emptyTracks) }
-                } else {
-                    items(shownCourses, key = { "course-${it.id}" }) { course ->
+                }
+                // One section per collection, the default first. A collection
+                // with nothing in this view is shown only under "Everything",
+                // where a new, empty one has to be visible to be filled.
+                val sections = listOf<com.tracks.core.api.TrackCollection?>(null) + collections
+                for (section in sections) {
+                    val id = section?.id
+                    val sCourses = shownCourses.filter { groupOf(it.folderId) == id }
+                    val sPlaces = shownWaypoints.filter { groupOf(it.folderId) == id }
+                    if (sCourses.isEmpty() && sPlaces.isEmpty() && (scope != Scope.Everything || section == null)) continue
+                    item(key = "collection-${id ?: "default"}") {
+                        // The switch reads every member, shown or not: it acts on all of them.
+                        val members = courses.filter { groupOf(it.folderId) == id && !it.isExternal } +
+                            waypoints.filter { groupOf(it.folderId) == id }
+                        val allOn = members.isNotEmpty() && members.all { m ->
+                            if (m is CourseSummary) m.loadToDevice else (m as Waypoint).loadToDevice
+                        }
+                        CollectionHeader(
+                            name = section?.name ?: DEFAULT_COLLECTION,
+                            count = "${sCourses.size} track${if (sCourses.size == 1) "" else "s"} · " +
+                                "${sPlaces.size} place${if (sPlaces.size == 1) "" else "s"}",
+                            hasDevice = hasDevice && members.isNotEmpty(),
+                            allOn = allOn,
+                            onWatch = { on -> actions.onCollectionOnWatch(id, on) },
+                            onRename = section?.let { c -> { name: String -> actions.onCollectionRename(c.id, name) } },
+                            onDelete = section?.let { c -> { actions.onCollectionDelete(c.id) } },
+                        )
+                    }
+                    items(sCourses, key = { "course-${it.id}" }) { course ->
                         val key = "course-${course.id}"
                         PickableRow(picking, key in picked, onPick = { togglePick(key) }) {
                             CourseRow(course, sprite, actions, open == key && !picking, onLongPress = { togglePick(key) }) {
@@ -259,15 +294,7 @@ fun TrackLibrarySheet(
                             }
                         }
                     }
-                }
-
-                item { Divider(Modifier.padding(vertical = 5.dp)) }
-
-                item { Header("Waypoints") }
-                if (shownWaypoints.isEmpty()) {
-                    item { Empty(scope.emptyPlaces) }
-                } else {
-                    items(shownWaypoints, key = { "waypoint-${it.id}" }) { waypoint ->
+                    items(sPlaces, key = { "waypoint-${it.id}" }) { waypoint ->
                         val key = "waypoint-${waypoint.id}"
                         PickableRow(picking, key in picked, onPick = { togglePick(key) }) {
                             WaypointRow(waypoint, sprite, actions, open == key && !picking, onLongPress = { togglePick(key) }) {
@@ -275,10 +302,137 @@ fun TrackLibrarySheet(
                             }
                         }
                     }
+                    item(key = "gap-${id ?: "default"}") { Divider(Modifier.padding(vertical = 5.dp)) }
+                }
+                item(key = "new-collection") {
+                    androidx.compose.material3.TextButton(onClick = { naming = true }) {
+                        Text("+ New collection", style = MaterialTheme.typography.labelLarge)
+                    }
                 }
             }
         }
     }
+
+    if (moving) {
+        MovePicker(
+            collections = collections,
+            onPick = { target ->
+                actions.onMove(
+                    courses.filter { "course-${it.id}" in picked }.map { it.id },
+                    waypoints.filter { "waypoint-${it.id}" in picked }.map { it.id },
+                    target,
+                )
+                picked = emptySet()
+                moving = false
+            },
+            onNew = { moving = false; naming = true },
+            onDismiss = { moving = false },
+        )
+    }
+    if (naming) {
+        NameDialog(
+            title = "New collection",
+            onSave = { actions.onCollectionCreate(it); naming = false },
+            onDismiss = { naming = false },
+        )
+    }
+}
+
+/** The collection everything is in until it is filed elsewhere. */
+const val DEFAULT_COLLECTION = "Tracks"
+
+/**
+ * A collection's heading: its name (tap to rename, except the default), what
+ * is in it, and one switch for all of it — "To watch" until every member is
+ * on, then "Off watch".
+ */
+@Composable
+private fun CollectionHeader(
+    name: String,
+    count: String,
+    hasDevice: Boolean,
+    allOn: Boolean,
+    onWatch: (Boolean) -> Unit,
+    onRename: ((String) -> Unit)?,
+    onDelete: (() -> Unit)?,
+) {
+    var confirming by remember { mutableStateOf(false) }
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Column(Modifier.weight(1f)) {
+            if (onRename != null) {
+                EditableName(name = name, style = MaterialTheme.typography.titleSmall, onRename = onRename)
+            } else {
+                Text(name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+            }
+            Text(count, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        if (confirming && onDelete != null) {
+            NeutralButton("Keep", onClick = { confirming = false }, small = true)
+            DangerButton("Delete", onClick = { confirming = false; onDelete() }, small = true)
+            return@Row
+        }
+        if (hasDevice) {
+            if (allOn) NeutralButton("Off watch", onClick = { onWatch(false) }, small = true)
+            else TonalButton("To watch", onClick = { onWatch(true) }, small = true)
+        }
+        if (onDelete != null) {
+            IconButton(onClick = { confirming = true }, modifier = Modifier.size(36.dp)) {
+                Icon(
+                    Icons.Filled.Delete,
+                    // Says what happens to the contents, which is the question.
+                    contentDescription = "Delete collection; its tracks and places move to $DEFAULT_COLLECTION",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+}
+
+/** Where to file the picked rows. */
+@Composable
+private fun MovePicker(
+    collections: List<com.tracks.core.api.TrackCollection>,
+    onPick: (Int?) -> Unit,
+    onNew: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Move to") },
+        text = {
+            Column {
+                listOf<com.tracks.core.api.TrackCollection?>(null).plus(collections).forEach { c ->
+                    androidx.compose.material3.TextButton(onClick = { onPick(c?.id) }, modifier = Modifier.fillMaxWidth()) {
+                        Text(c?.name ?: DEFAULT_COLLECTION, Modifier.fillMaxWidth())
+                    }
+                }
+                androidx.compose.material3.TextButton(onClick = onNew, modifier = Modifier.fillMaxWidth()) {
+                    Text("+ New collection", Modifier.fillMaxWidth())
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = { androidx.compose.material3.TextButton(onClick = onDismiss) { Text("Cancel") } },
+    )
+}
+
+@Composable
+private fun NameDialog(title: String, onSave: (String) -> Unit, onDismiss: () -> Unit) {
+    var name by remember { mutableStateOf("") }
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            androidx.compose.material3.OutlinedTextField(
+                value = name, onValueChange = { name = it }, singleLine = true,
+                label = { Text("Name") },
+            )
+        },
+        confirmButton = {
+            androidx.compose.material3.TextButton(onClick = { onSave(name) }, enabled = name.isNotBlank()) { Text("Create") }
+        },
+        dismissButton = { androidx.compose.material3.TextButton(onClick = onDismiss) { Text("Cancel") } },
+    )
 }
 
 /**
@@ -360,6 +514,13 @@ data class LibraryActions(
     /** Open a recorded activity's own screen, by its id there. */
     val onOpenActivity: (Int) -> Unit = {},
     val onMakeTrack: (Selection.Activity) -> Unit = {},
+    val onCollectionCreate: (String) -> Unit = {},
+    val onCollectionRename: (Int, String) -> Unit = { _, _ -> },
+    val onCollectionDelete: (Int) -> Unit = {},
+    /** Everything in a collection on or off the watch; null is the default. */
+    val onCollectionOnWatch: (Int?, Boolean) -> Unit = { _, _ -> },
+    /** File these tracks and places under a collection; null is the default. */
+    val onMove: (List<Int>, List<Int>, Int?) -> Unit = { _, _, _ -> },
 )
 
 @Composable
@@ -923,6 +1084,7 @@ private fun SelectionBar(
     onRemove: () -> Unit,
     onDelete: () -> Unit,
     onDone: () -> Unit,
+    onMove: () -> Unit,
     /** Shown when two or more tracks are picked. */
     onCombine: (() -> Unit)? = null,
 ) {
@@ -940,6 +1102,7 @@ private fun SelectionBar(
         }
         Text("$count selected", Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
         onCombine?.let { NeutralButton("Combine", onClick = it, small = true) }
+        NeutralButton("Move", onClick = onMove, small = true)
         if (hasDevice) {
             TonalButton("To watch", onClick = onSend, small = true)
             NeutralButton("Off watch", onClick = onRemove, small = true)

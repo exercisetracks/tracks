@@ -1,10 +1,11 @@
 # SPDX-FileCopyrightText: 2026 Hawk Fugagli
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Custom-track folders — `/folders` CRUD.
+"""Custom-track folders — `/folders` CRUD. The app calls them collections.
 
-Folders group tracks and carry a `load_to_device` flag; flipping it cascades the
-sync state to every (non-external) member track, and deleting a folder un-groups
-its members (folder_id → NULL via FK) rather than deleting them.
+Folders group tracks and saved places, and carry a `load_to_device` flag;
+flipping it cascades the sync state to every (non-external) member track and
+every member place, and deleting a folder un-groups its members rather than
+deleting them.
 """
 from __future__ import annotations
 
@@ -17,15 +18,16 @@ from app.auth import require_auth
 from app.database import get_db
 from app.models.activity import User
 from app.models.custom_track import CustomTrack, CustomTrackFolder
+from app.models.waypoint import Waypoint
 
 from .helpers import _MAX_NAME
 
 router = APIRouter()
 
 
-def _folder_dict(f: CustomTrackFolder, count: int) -> dict:
+def _folder_dict(f: CustomTrackFolder, count: int, places: int = 0) -> dict:
     return {"id": f.id, "name": f.name, "color": f.color,
-            "load_to_device": f.load_to_device, "track_count": count}
+            "load_to_device": f.load_to_device, "track_count": count, "place_count": places}
 
 
 @router.get("/folders")
@@ -37,7 +39,12 @@ def list_folders(user: User = Depends(require_auth), db: Session = Depends(get_d
         .filter(CustomTrack.user_id == user.id, CustomTrack.folder_id.isnot(None))
         .group_by(CustomTrack.folder_id).all()
     ) if folders else {}
-    return [_folder_dict(f, counts.get(f.id, 0)) for f in folders]
+    place_counts = dict(
+        db.query(Waypoint.folder_id, func.count(Waypoint.id))
+        .filter(Waypoint.user_id == user.id, Waypoint.folder_id.isnot(None))
+        .group_by(Waypoint.folder_id).all()
+    ) if folders else {}
+    return [_folder_dict(f, counts.get(f.id, 0), place_counts.get(f.id, 0)) for f in folders]
 
 
 class FolderBody(BaseModel):
@@ -80,11 +87,16 @@ def update_folder(folder_id: int, body: FolderBody,
                             CustomTrack.is_external.is_(False))
                     .all()):
             t.load_to_device = f.load_to_device
+        for w in (db.query(Waypoint)
+                    .filter(Waypoint.user_id == user.id, Waypoint.folder_id == f.id).all()):
+            w.load_to_device = f.load_to_device
     db.commit()
     db.refresh(f)
     count = (db.query(func.count(CustomTrack.id))
              .filter(CustomTrack.folder_id == f.id).scalar() or 0)
-    return _folder_dict(f, count)
+    places = (db.query(func.count(Waypoint.id))
+              .filter(Waypoint.folder_id == f.id).scalar() or 0)
+    return _folder_dict(f, count, places)
 
 
 @router.delete("/folders/{folder_id}", status_code=204)
@@ -92,6 +104,14 @@ def delete_folder(folder_id: int, user: User = Depends(require_auth), db: Sessio
     f = db.get(CustomTrackFolder, folder_id)
     if f is None or f.user_id != user.id:
         raise HTTPException(404, "Folder not found")
-    # Member tracks are un-grouped (folder_id → NULL via FK) but otherwise kept.
+    # Members are un-grouped, not deleted. Row by row rather than leaving it
+    # to the foreign key's SET NULL: a change the database makes on its own is
+    # never stamped, so phones would go on filing the members under a
+    # collection that no longer exists.
+    for t in db.query(CustomTrack).filter(CustomTrack.folder_id == f.id).all():
+        t.folder_id = None
+    for w in db.query(Waypoint).filter(Waypoint.folder_id == f.id).all():
+        w.folder_id = None
+    db.flush()
     db.delete(f)
     db.commit()
