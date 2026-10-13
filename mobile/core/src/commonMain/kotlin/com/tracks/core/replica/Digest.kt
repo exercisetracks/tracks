@@ -3,7 +3,7 @@
 package com.tracks.core.replica
 
 /**
- * SHA-1 and SHA-256, in common code.
+ * SHA-1, SHA-256 and MD5, in common code.
  *
  * Written out rather than pulled in because `commonMain` has to compile for
  * iOS, and the digests available here otherwise are either JVM-only
@@ -14,8 +14,10 @@ package com.tracks.core.replica
  *   the one the server derives from the same name, not resist collisions.
  * - SHA-256 identifies FIT files and checks a download arrived intact. The
  *   file is sealed and authenticated separately on the way in.
+ * - MD5 only because the Subsonic login token is *defined* as
+ *   `md5(password + salt)`: every music server checks exactly that.
  *
- * Both are checked against published test vectors in the jvmTest suite, which
+ * All three are checked against published test vectors in the jvmTest suite, which
  * is what makes a hand-rolled digest acceptable at all.
  */
 internal object Digest {
@@ -70,6 +72,53 @@ internal object Digest {
         }
         return h.toBytes()
     }
+
+    /** RFC 1321. Little-endian throughout, so it shares no padding helper with the SHA pair. */
+    fun md5(input: ByteArray): ByteArray {
+        val bitLength = input.size.toLong() * 8
+        var padded = input.size + 1
+        while (padded % 64 != 56) padded++
+        val msg = input.copyOf(padded + 8)
+        msg[input.size] = 0x80.toByte()
+        for (i in 0 until 8) msg[padded + i] = (bitLength ushr (8 * i)).toByte()
+
+        var a0 = 0x67452301; var b0 = 0xefcdab89.toInt(); var c0 = 0x98badcfe.toInt(); var d0 = 0x10325476
+        val m = IntArray(16)
+        for (block in msg.chunked64()) {
+            for (i in 0 until 16) {
+                val o = i * 4
+                m[i] = (block[o].toInt() and 0xff) or ((block[o + 1].toInt() and 0xff) shl 8) or
+                    ((block[o + 2].toInt() and 0xff) shl 16) or ((block[o + 3].toInt() and 0xff) shl 24)
+            }
+            var a = a0; var b = b0; var c = c0; var d = d0
+            for (i in 0 until 64) {
+                val f: Int; val g: Int
+                when (i / 16) {
+                    0 -> { f = (b and c) or (b.inv() and d); g = i }
+                    1 -> { f = (d and b) or (d.inv() and c); g = (5 * i + 1) % 16 }
+                    2 -> { f = b xor c xor d; g = (3 * i + 5) % 16 }
+                    else -> { f = c xor (b or d.inv()); g = (7 * i) % 16 }
+                }
+                val t = d; d = c; c = b
+                b += (a + f + K_MD5[i] + m[g]).rotateLeft(S_MD5[i])
+                a = t
+            }
+            a0 += a; b0 += b; c0 += c; d0 += d
+        }
+        val out = ByteArray(16)
+        intArrayOf(a0, b0, c0, d0).forEachIndexed { n, v -> for (i in 0 until 4) out[n * 4 + i] = (v ushr (8 * i)).toByte() }
+        return out
+    }
+
+    private val S_MD5 = intArrayOf(
+        7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22,
+        5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20,
+        4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23,
+        6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21,
+    )
+
+    /** floor(abs(sin(i + 1)) * 2^32), as RFC 1321 tabulates it. */
+    private val K_MD5 = IntArray(64) { i -> (kotlin.math.abs(kotlin.math.sin((i + 1).toDouble())) * 4294967296.0).toLong().toInt() }
 
     fun hex(bytes: ByteArray): String =
         bytes.joinToString("") { (it.toInt() and 0xff).toString(16).padStart(2, '0') }

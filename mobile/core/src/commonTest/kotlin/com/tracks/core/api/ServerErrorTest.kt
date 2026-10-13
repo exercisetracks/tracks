@@ -31,7 +31,7 @@ class ServerErrorTest {
         val client = clientAnswering(HttpStatusCode.BadRequest, """{"detail":"Wrong username or password"}""", "application/json")
 
         val e = assertFailsWith<ServerErrorException> {
-            client.setMusicServer(MusicServerRequest("http://music", "alex", "x"))
+            client.musicWatchConfig()
         }
         assertEquals("Wrong username or password", e.message)
         assertEquals(400, e.status)
@@ -42,7 +42,7 @@ class ServerErrorTest {
         val client = clientAnswering(HttpStatusCode.InternalServerError, "Internal Server Error", "text/plain")
 
         val e = assertFailsWith<ServerErrorException> {
-            client.setMusicServer(MusicServerRequest("http://music", "alex", "x"))
+            client.musicWatchConfig()
         }
         assertEquals("The server hit an error (500)", e.message)
     }

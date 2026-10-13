@@ -57,7 +57,7 @@ client is on the new protocol.
 | Standalone safety | Passphrase-encrypted export to a user-chosen location, plus reminders. |
 | AI | The deterministic coaching engine runs everywhere; LLM features only with a server. |
 | Maps | No server: blank basemap and a one-line explanation. Public tiles are **deferred**. |
-| Music | Out of scope for standalone. |
+| Music | Works standalone: the phone keeps the music login and talks to the music server itself (decided 2026-10-12). |
 | Accounts | Server supports several accounts (a family). A phone belongs to one account and may have several watches. |
 
 ## The data model: three kinds of row

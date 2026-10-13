@@ -182,3 +182,53 @@ object EncryptedDatabase {
         return fresh
     }
 }
+
+/**
+ * The music server login, kept on the phone.
+ *
+ * The phone talks to the music server itself (see `SubsonicClient`), so the
+ * login lives here rather than on the Tracks server, and works with no Tracks
+ * server at all. The password has to be recoverable — Subsonic's token is
+ * derived from it per request, and the watch app is handed it to log in by
+ * itself — so it is encrypted, not hashed: the same Keystore-backed
+ * preferences as [AndroidTokenStore], in a file of its own so signing out of
+ * Tracks does not also sign out of music.
+ */
+class MusicLoginStore(context: Context) {
+
+    data class Login(val url: String, val username: String, val password: String)
+
+    private val prefs: SharedPreferences by lazy {
+        val masterKey = MasterKey.Builder(context.applicationContext)
+            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+            .build()
+        EncryptedSharedPreferences.create(
+            context.applicationContext,
+            "tracks_music_login",
+            masterKey,
+            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
+        )
+    }
+
+    suspend fun load(): Login? = withContext(Dispatchers.IO) {
+        val url = prefs.getString("url", null)
+        val username = prefs.getString("username", null)
+        val password = prefs.getString("password", null)
+        if (url != null && username != null && password != null) Login(url, username, password) else null
+    }
+
+    suspend fun save(login: Login) = withContext(Dispatchers.IO) {
+        prefs.edit()
+            .putString("url", login.url)
+            .putString("username", login.username)
+            .putString("password", login.password)
+            .commit()
+        Unit
+    }
+
+    suspend fun clear() = withContext(Dispatchers.IO) {
+        prefs.edit().clear().commit()
+        Unit
+    }
+}

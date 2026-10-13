@@ -42,6 +42,13 @@ class PrimitivesTest {
             "248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1",
             Digest.hex(Digest.sha256(long.encodeToByteArray())),
         )
+        // RFC 1321's own suite.
+        assertEquals("d41d8cd98f00b204e9800998ecf8427e", Digest.hex(Digest.md5(ByteArray(0))))
+        assertEquals("900150983cd24fb0d6963f7d28e17f72", Digest.hex(Digest.md5("abc".encodeToByteArray())))
+        assertEquals(
+            "57edf4a22be3c955ac49da2e2107b67a",
+            Digest.hex(Digest.md5("1234567890".repeat(8).encodeToByteArray())),
+        )
     }
 
     /** Every padding boundary — 55, 56, 63, 64 bytes are where padding bugs live. */
@@ -52,6 +59,7 @@ class PrimitivesTest {
             val input = random.nextBytes(length)
             assertEquals(jdk("SHA-1", input), Digest.hex(Digest.sha1(input)), "sha1 length $length")
             assertEquals(jdk("SHA-256", input), Digest.hex(Digest.sha256(input)), "sha256 length $length")
+            assertEquals(jdk("MD5", input), Digest.hex(Digest.md5(input)), "md5 length $length")
         }
     }
 

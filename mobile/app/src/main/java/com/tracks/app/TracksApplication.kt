@@ -13,6 +13,7 @@ import com.tracks.app.ui.theme.Accent
 import com.tracks.app.ui.theme.ThemeMode
 import com.tracks.core.platform.AndroidTokenStore
 import com.tracks.core.platform.EncryptedDatabase
+import com.tracks.core.platform.MusicLoginStore
 import com.tracks.core.replica.AccountGate
 import com.tracks.core.replica.LinkResult
 import com.tracks.core.replica.ReplicaStore
@@ -164,6 +165,9 @@ class AppContainer(private val context: Context) {
     val sessionState = MutableStateFlow<SessionState>(SessionState.LoggedOut)
 
     val tokens = AndroidTokenStore(context)
+
+    /** The music server login. The phone's own, not the Tracks server's: see MusicLoginStore. */
+    val musicLogin = MusicLoginStore(context)
 
     /** What the user typed. A self-hosted app has no default to guess. */
     val serverUrl = MutableStateFlow(loadServerUrl())

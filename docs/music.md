@@ -25,7 +25,7 @@ That single `PRG` entry is what the Connect IQ path below is built on.
 | Lands in | Native `Music/` library | The app's encrypted sandbox |
 | Plays under | **My Music** | The Tracks Music app |
 | Source | The Tracks library (uploads + any Subsonic server) | **Navidrome, directly** |
-| Tracks server involved | Yes — normalises and serves the audio | **No** — only hands the phone the login |
+| Tracks server involved | Yes — normalises and serves the audio | **No** — the phone keeps the login and talks to Navidrome itself |
 | Needs | Chromium + cable | Navidrome on HTTPS with a real certificate |
 
 They are **two separate libraries on the same watch**. A track pushed over USB
@@ -121,8 +121,12 @@ No Connect IQ Store, no Garmin account, no cable:
    later from Settings › Music.
 3. On first run the app asks the phone who it belongs to by requesting one
    reserved URL, `https://tracks.invalid/ciq/config`, and gets back the music
-   server's URL, username and password (`GET /music/server/watch-config` is
-   where the phone fetched them — the one place the password leaves Tracks).
+   server's URL, username and password. The phone keeps them itself, in
+   Keystore-encrypted preferences, and checks the login against the music
+   server directly (`SubsonicClient`), so music needs no Tracks server at all.
+   An older app kept the login on the Tracks server; the phone adopts that
+   copy once (`GET /music/server/watch-config`) and never reads it again
+   after a connect or disconnect on the phone.
    It asks again every time the app opens and before every sync, which is how
    a playlist selection made in the phone app, a changed password or a
    removed server reaches it without a reinstall.

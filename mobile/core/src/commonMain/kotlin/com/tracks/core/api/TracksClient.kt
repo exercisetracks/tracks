@@ -1513,44 +1513,11 @@ class TracksClient(
 
     // ── Music ────────────────────────────────────────────────────────────────
 
-    suspend fun musicServer(): MusicServer = request { token ->
-        http.get(url(Endpoints.MUSIC_SERVER)) { bearer(token) }
-    }
-
     /**
-     * Save (and verify) a music server.
+     * A music login stored on this Tracks server by an older phone app.
      *
-     * The server proves the credentials before storing them, so a 4xx here
-     * means "those details do not work", not "saved but broken later".
-     */
-    suspend fun setMusicServer(body: MusicServerRequest): MusicServerResult = request { token ->
-        http.put(url(Endpoints.MUSIC_SERVER)) {
-            bearer(token)
-            contentType(ContentType.Application.Json)
-            setBody(body)
-        }
-    }
-
-    suspend fun clearMusicServer(): Unit = request { token ->
-        http.delete(url(Endpoints.MUSIC_SERVER)) { bearer(token) }
-    }
-
-    suspend fun remotePlaylists(): RemotePlaylistList = request { token ->
-        http.get(url(Endpoints.MUSIC_REMOTE_PLAYLISTS)) { bearer(token) }
-    }
-
-    suspend fun searchRemoteSongs(query: String): RemoteSongList = request { token ->
-        http.get(url(Endpoints.MUSIC_REMOTE_SEARCH)) {
-            bearer(token)
-            parameter("q", query)
-        }
-    }
-
-    /**
-     * The music server credentials for the on-watch music app.
-     *
-     * Fetched at the moment they are handed to the watch and not kept: the
-     * watch is where they live.
+     * The phone now keeps the login itself and talks to the music server
+     * directly; this is read once, to adopt such a login on upgrade.
      */
     suspend fun musicWatchConfig(): MusicWatchConfig = request { token ->
         http.get(url(Endpoints.MUSIC_WATCH_CONFIG)) { bearer(token) }

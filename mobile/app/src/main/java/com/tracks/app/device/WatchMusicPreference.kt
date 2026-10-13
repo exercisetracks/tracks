@@ -32,6 +32,7 @@ object WatchMusicPreference {
     private const val KEY_REVISION = "revision"
     private const val KEY_FINGERPRINT = "revision_fingerprint"
     private const val KEY_SALT = "revision_salt"
+    private const val KEY_LOGIN_SETTLED = "login_settled"
 
     /** A single song picked for the watch. The title is only for the phone's list. */
     data class PickedSong(val id: String, val albumId: String?, val title: String, val artist: String?)
@@ -110,6 +111,18 @@ object WatchMusicPreference {
             .putString(KEY_FINGERPRINT, state.fingerprint)
             .commit()
         return state.revision
+    }
+
+    /**
+     * Whether the music login is the phone's own business yet. Until it is, a
+     * login left on the Tracks server from before the phone kept its own is
+     * adopted once — and after a connect or disconnect here, never again, so
+     * a server copy cannot resurrect a login the user removed.
+     */
+    fun isLoginSettled(context: Context): Boolean = prefs(context).getBoolean(KEY_LOGIN_SETTLED, false)
+
+    fun setLoginSettled(context: Context) {
+        prefs(context).edit().putBoolean(KEY_LOGIN_SETTLED, true).apply()
     }
 
     /** Random per install; see WatchConfigRevision.fingerprint for why. */

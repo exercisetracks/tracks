@@ -17,7 +17,11 @@ import kotlinx.serialization.Serializable
  * parse failure that empties the screen.
  */
 
-/** What the phone knows about the user's music server. Never the password. */
+/**
+ * What the screens show of the user's music server. Never the password. Built
+ * on the phone from its own login (see SubsonicClient); the rotate fields are
+ * the web app's and stay at their defaults here.
+ */
 @Serializable
 data class MusicServer(
     val url: String? = null,
@@ -26,21 +30,6 @@ data class MusicServer(
     @SerialName("auto_rotate") val autoRotate: Boolean = false,
     @SerialName("rotate_count") val rotateCount: Int = 40,
     @SerialName("last_run") val lastRun: String? = null,
-)
-
-@Serializable
-data class MusicServerRequest(
-    val url: String,
-    val username: String,
-    /** Omitted to keep whatever is already stored. */
-    val password: String? = null,
-)
-
-@Serializable
-data class MusicServerResult(
-    val connected: Boolean = false,
-    val server: String? = null,
-    val url: String? = null,
 )
 
 @Serializable
@@ -68,9 +57,6 @@ data class RemoteSong(
     val album: String? = null,
     @SerialName("album_id") val albumId: String? = null,
 )
-
-@Serializable
-data class RemoteSongList(val songs: List<RemoteSong> = emptyList())
 
 /**
  * What the on-watch music app needs: the music server and how to log in.

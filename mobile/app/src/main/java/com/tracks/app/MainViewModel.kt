@@ -7,7 +7,8 @@ import androidx.lifecycle.viewModelScope
 import com.tracks.app.device.WatchConfigRevision
 import com.tracks.app.device.WatchManager
 import com.tracks.core.api.MusicServer
-import com.tracks.core.api.MusicServerRequest
+import com.tracks.core.api.SubsonicClient
+import com.tracks.core.platform.MusicLoginStore
 import com.tracks.core.api.MusicServerDiscovery
 import com.tracks.core.api.RemoteSong
 import com.tracks.app.device.WatchMusicPreference
@@ -721,6 +722,40 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
     // ── Music ────────────────────────────────────────────────────────────────
 
     /**
+     * The music login, which the phone keeps itself.
+     *
+     * Until the user connects or disconnects here, a login left on the Tracks
+     * server from before is adopted — so updating the app does not quietly
+     * disconnect the watch. Best effort: with no Tracks server, there is
+     * nothing to adopt and this is simply the phone's own (absent) login.
+     */
+    private suspend fun musicLogin(): MusicLoginStore.Login? {
+        container.musicLogin.load()?.let { return it }
+        val context = container.appContext
+        if (WatchMusicPreference.isLoginSettled(context)) return null
+        val old = runCatching { container.client().musicWatchConfig() }.getOrNull() ?: return null
+        if (old.url.isBlank() || old.username.isBlank() || old.password.isBlank()) return null
+        return MusicLoginStore.Login(old.url, old.username, old.password).also {
+            container.musicLogin.save(it)
+            WatchMusicPreference.setLoginSettled(context)
+        }
+    }
+
+    /** The playlists on the music server, with the counts behind the watch's built-in lists. */
+    private suspend fun remotePlaylists(login: MusicLoginStore.Login): RemotePlaylistList {
+        val client = SubsonicClient(login.url, login.username, login.password)
+        return try {
+            RemotePlaylistList(
+                playlists = client.playlists(),
+                starredCount = runCatching { client.starredCount() }.getOrNull(),
+                recentCount = client.recentlyPlayedCount(),
+            )
+        } finally {
+            client.close()
+        }
+    }
+
+    /**
      * Load the music-server connection and the playlists on offer.
      *
      * [arm] also re-arms the phone's answer to the watch app's config request
@@ -734,12 +769,12 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
     fun loadMusicSetup(arm: Boolean = true) {
         viewModelScope.launch {
             try {
-                val client = container.client()
-                val server = client.musicServer()
+                val login = musicLogin()
+                val server = MusicServer(url = login?.url, username = login?.username, configured = login != null)
                 val context = container.appContext
-                val offered = if (server.configured) {
+                val offered = if (login != null) {
                     watchPlaylistsFor(
-                        runCatching { client.remotePlaylists() }.getOrDefault(RemotePlaylistList()),
+                        runCatching { remotePlaylists(login) }.getOrDefault(RemotePlaylistList()),
                         WatchMusicPreference.selected(context),
                     )
                 } else {
@@ -765,10 +800,10 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
                     loadInstalledApps()
                 }
                 // Keep the phone able to answer the watch's config request even
-                // when the app was installed on an earlier run — and, when the
-                // server has gone (removed in the web app, say), able to tell
-                // the watch so.
-                if (!server.configured) signOutWatchMusicConfig() else if (arm) refreshWatchMusicConfig()
+                // when the app was installed on an earlier run. No login is not
+                // a sign-out: only [disconnectMusicServer] tells the watch that,
+                // because signing out deletes the watch's downloads.
+                if (login != null && arm) refreshWatchMusicConfig()
             } catch (e: Exception) {
                 updateMusic { it.copy(message = e.message) }
             }
@@ -802,18 +837,23 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
     /**
      * The second half: sign in to the server [findMusicServer] found.
      *
-     * The credentials go to the Tracks server, which verifies them against the
-     * music server before storing anything — so a failure here means "those
-     * details do not work", not "saved, will break later". [onResult] gets null
-     * on success or the reason.
+     * The phone checks the login against the music server itself and stores
+     * it only once it works — so a failure here means "those details do not
+     * work", not "saved, will break later". No Tracks server is involved.
+     * [onResult] gets null on success or the reason.
      */
     fun logInMusicServer(url: String, username: String, password: String, onResult: (String?) -> Unit) {
         viewModelScope.launch {
             updateMusic { it.copy(busy = true, message = null) }
             try {
-                container.client().setMusicServer(
-                    MusicServerRequest(url = url, username = username.trim(), password = password.ifBlank { null }),
-                )
+                // A blank password keeps the stored one, as the form promises.
+                val pw = password.ifBlank { musicLogin()?.password.orEmpty() }
+                if (pw.isEmpty()) throw IllegalArgumentException("A password is required")
+                val login = MusicLoginStore.Login(url.trim().trimEnd('/'), username.trim(), pw)
+                val probe = SubsonicClient(login.url, login.username, login.password)
+                try { probe.ping() } finally { probe.close() }
+                container.musicLogin.save(login)
+                WatchMusicPreference.setLoginSettled(container.appContext)
                 updateMusic { it.copy(busy = false) }
                 onResult(null)
                 loadMusicSetup()
@@ -961,7 +1001,7 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
      * when they could not be fetched.
      */
     private suspend fun watchConfig(): WatchAppConfig.Config? {
-        val remote = runCatching { container.client().musicWatchConfig() }.getOrNull() ?: return null
+        val remote = musicLogin() ?: return null
         val context = container.appContext
         val pending = WatchMusicPreference.isPending(context)
         val revision = WatchMusicPreference.reconcileRevision(
@@ -996,7 +1036,9 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
         viewModelScope.launch {
             updateMusic { it.copy(searching = true) }
             try {
-                val songs = container.client().searchRemoteSongs(query.trim()).songs
+                val login = musicLogin() ?: throw IllegalStateException("Connect a music server first")
+                val client = SubsonicClient(login.url, login.username, login.password)
+                val songs = try { client.searchSongs(query.trim()) } finally { client.close() }
                 updateMusic { it.copy(songResults = songs, searching = false) }
             } catch (e: Exception) {
                 updateMusic { it.copy(searching = false, message = e.message) }
@@ -1052,7 +1094,8 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
         viewModelScope.launch {
             updateMusic { it.copy(busy = true, message = null) }
             try {
-                container.client().clearMusicServer()
+                container.musicLogin.clear()
+                WatchMusicPreference.setLoginSettled(container.appContext)
                 signOutWatchMusicConfig()
                 updateMusic { it.copy(busy = false, server = null, watchPlaylists = emptyList()) }
                 loadMusicSetup()

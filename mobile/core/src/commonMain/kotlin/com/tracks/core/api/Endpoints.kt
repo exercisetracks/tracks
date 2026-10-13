@@ -25,12 +25,8 @@ object Endpoints {
     const val LOGOUT = "/auth/logout"
     const val CHANGE_PASSWORD = "/users/me/password"
 
-    // Music. The music-server connection is an ordinary authed path (the USB
-    // library is the web app's alone); /music/ciq/* is what the *watch* calls
-    // with its own scoped token, and the phone only touches the pairing end.
-    const val MUSIC_SERVER = "/music/server"
-    const val MUSIC_REMOTE_PLAYLISTS = "/music/server/playlists"
-    const val MUSIC_REMOTE_SEARCH = "/music/server/search"
+    // Music. The phone talks to the music server itself (SubsonicClient); this
+    // is read only to adopt a login an older app left on the Tracks server.
     const val MUSIC_WATCH_CONFIG = "/music/server/watch-config"
 
     // The replica protocol (spec/sync.yaml, "Wire").
