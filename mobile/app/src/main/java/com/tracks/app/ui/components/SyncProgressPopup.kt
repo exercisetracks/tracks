@@ -70,8 +70,8 @@ fun ProgressPill(label: String?, fraction: Float?, modifier: Modifier = Modifier
 
     AnimatedVisibility(
         visible = visible && running,
-        enter = fadeIn() + slideInVertically { it / 2 },
-        exit = fadeOut() + slideOutVertically { it / 2 },
+        enter = fadeIn() + slideInVertically { -it / 2 },
+        exit = fadeOut() + slideOutVertically { -it / 2 },
         modifier = modifier,
     ) {
         val text = lastLabel ?: return@AnimatedVisibility
@@ -84,7 +84,7 @@ fun ProgressPill(label: String?, fraction: Float?, modifier: Modifier = Modifier
             tonalElevation = 3.dp,
             contentColor = MaterialTheme.colorScheme.onSurface,
             shadowElevation = 6.dp,
-            modifier = Modifier.padding(bottom = Tokens.Space.s4),
+            modifier = Modifier.padding(top = Tokens.Space.s2),
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,

@@ -31,6 +31,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -341,25 +342,9 @@ fun TracksNavHost(
         },
     ) {
         com.tracks.app.ui.components.SlideOverHost {
+        androidx.compose.foundation.layout.Box(Modifier.fillMaxSize()) {
         Scaffold(
-            snackbarHost = {
-                // The sync pill sits where snackbars do: bottom centre, above
-                // content, out of the way of both bars.
-                androidx.compose.foundation.layout.Column(
-                    horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
-                ) {
-                    SyncProgressPopup(syncProgress)
-                    com.tracks.app.ui.components.ProgressPill(
-                        label = watchProgress?.label,
-                        fraction = watchProgress?.fraction,
-                    )
-                    com.tracks.app.ui.components.ProgressPill(
-                        label = backupProgress?.let { com.tracks.app.backup.backupLabel(it) },
-                        fraction = backupProgress?.fraction,
-                    )
-                    SnackbarHost(snackbars)
-                }
-            },
+            snackbarHost = { SnackbarHost(snackbars) },
             topBar = {
                 // The map has no bar. It is the one screen whose content goes
                 // all the way to the edges by design — a persistent 64dp strip
@@ -672,6 +657,26 @@ fun TracksNavHost(
                     music = { MusicSettings(vm, state.music) },
                 )
             }
+        }
+        }
+        // Sync, watch and backup progress, at the top: at the bottom the pills
+        // sat over the map's own controls and sheets. Just under the status
+        // bar, small, and only while something is running.
+        androidx.compose.foundation.layout.Column(
+            Modifier
+                .align(androidx.compose.ui.Alignment.TopCenter)
+                .windowInsetsPadding(androidx.compose.foundation.layout.WindowInsets.statusBars),
+            horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
+        ) {
+            SyncProgressPopup(syncProgress)
+            com.tracks.app.ui.components.ProgressPill(
+                label = watchProgress?.label,
+                fraction = watchProgress?.fraction,
+            )
+            com.tracks.app.ui.components.ProgressPill(
+                label = backupProgress?.let { com.tracks.app.backup.backupLabel(it) },
+                fraction = backupProgress?.fraction,
+            )
         }
         }
     }

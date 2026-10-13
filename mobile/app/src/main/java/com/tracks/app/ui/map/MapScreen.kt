@@ -535,9 +535,25 @@ fun MapScreen(
                     if (tools.focus != null) toolsVm.focusHandled()
                 }
 
-                LaunchedEffect(style, tools.courseGeoJson, tools.waypoints) {
+                // A place being edited is drawn where the editor has it, in the
+                // editor's colour and symbol: the place itself moves under the
+                // finger rather than a stand-in handle, and it jumping only on
+                // Save made the drag feel like it had not taken.
+                val editedPlace = tools.route.editingPlace
+                val draftAt = tools.route.waypoints.firstOrNull()
+                val placesShown = remember(tools.waypoints, editedPlace, draftAt, tools.route.editColor, tools.route.editIcon) {
+                    if (editedPlace == null || draftAt == null) tools.waypoints
+                    else tools.waypoints.map { w ->
+                        if (w.id != editedPlace) w
+                        else w.copy(
+                            lat = draftAt.latitude, lng = draftAt.longitude,
+                            color = tools.route.editColor ?: w.color, icon = tools.route.editIcon ?: w.icon,
+                        )
+                    }
+                }
+                LaunchedEffect(style, tools.courseGeoJson, placesShown) {
                     val loaded = style ?: return@LaunchedEffect
-                    drawLibrary(context, loaded, tools.courseGeoJson, tools.waypoints)
+                    drawLibrary(context, loaded, tools.courseGeoJson, placesShown)
                 }
 
                 LaunchedEffect(style, tools.route.geoJson, tools.route.waypoints) {
@@ -670,12 +686,6 @@ fun MapScreen(
                 // minutes to cut on the server, and the sheet is the first
                 // thing anyone dismisses to go and watch the map while they
                 // wait — leaving no evidence the work was still running.
-                DownloadBanner(
-                    rows = regions.rows,
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(horizontal = 12.dp, vertical = 12.dp),
-                )
 
                 MapControls(
                     onSearch = { showSearch = true },
@@ -738,11 +748,19 @@ fun MapScreen(
         ) { showLibrary = false; libraryOpenOn = null }
 
         // Watch and library receipts, at the top where neither sheet reaches.
-        com.tracks.app.ui.components.StatusToast(
-            message = tools.notice,
-            onDismiss = toolsVm::dismissNotice,
-            modifier = Modifier.align(Alignment.TopCenter).windowInsetsPadding(WindowInsets.statusBars),
-        )
+        // An area's download follows the user out of the downloads sheet: it
+        // takes minutes to cut on the server, and the sheet is the first thing
+        // anyone dismisses to watch the map while they wait.
+        Column(
+            Modifier.align(Alignment.TopCenter).windowInsetsPadding(WindowInsets.statusBars),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            DownloadBanner(rows = regions.rows)
+            com.tracks.app.ui.components.StatusToast(
+                message = tools.notice,
+                onDismiss = toolsVm::dismissNotice,
+            )
+        }
 
         tools.selected?.let { selection ->
             SelectionSheet(
@@ -1130,8 +1148,11 @@ internal fun drawRoute(style: Style, route: RouteDraft) {
             )
         }
 
+    // No handle dot for a place being edited: the place's own symbol is drawn
+    // there instead (see the library draw), and moves with the finger.
     val points = FeatureCollection.fromFeatures(
-        route.waypoints.map { Feature.fromGeometry(Point.fromLngLat(it.longitude, it.latitude)) }
+        if (route.editingPlace != null) emptyList()
+        else route.waypoints.map { Feature.fromGeometry(Point.fromLngLat(it.longitude, it.latitude)) }
     )
     (style.getSource(ROUTE_POINTS_SOURCE) as? GeoJsonSource)?.setGeoJson(points)
         ?: run {

@@ -51,91 +51,31 @@ import androidx.compose.animation.core.animateFloatAsState
  */
 @Composable
 fun DownloadBanner(rows: List<RegionRow>, modifier: Modifier = Modifier) {
-    // Finished and failed regions are the sheet's business, not the map's. This
-    // is only ever about work in flight.
     // Work in flight only. A finished area, one the server holds and nobody
     // asked to store, and one paused waiting for a person to tap Resume are all
     // the sheet's business — this is about what is happening right now.
     val active = rows.filter {
         it.phase is DownloadPhase.Extracting || it.phase is DownloadPhase.Storing
     }
-
-    AnimatedVisibility(
-        visible = active.isNotEmpty(),
-        enter = slideInVertically { it },
-        exit = slideOutVertically { it },
-        modifier = modifier,
-    ) {
-        Surface(
-            Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(Tokens.Radius.xl),
-            color = MaterialTheme.colorScheme.surface,
-            tonalElevation = 3.dp,
-            shadowElevation = 6.dp,
-        ) {
-            Column(
-                Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                active.forEach { row -> DownloadRow(row) }
-                if (active.size > 1) {
-                    Text(
-                        "${active.size} areas downloading",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
+    // A small pill with a wheel, at the top with the app's other progress —
+    // the full-width bar at the bottom covered the map's own controls for the
+    // minutes a download runs. The phase stays in the words: "Building" is the
+    // server and survives the phone sleeping, "Saving" is this phone.
+    val label = when {
+        active.isEmpty() -> null
+        active.size > 1 -> "Downloading ${active.size} areas"
+        else -> active.single().let { row ->
+            if (row.phase is DownloadPhase.Extracting) "Building ${row.name}" else "Saving ${row.name}"
         }
     }
-}
-
-@Composable
-private fun DownloadRow(row: RegionRow) {
-    val phase = row.phase
-    val fraction = when (phase) {
-        is DownloadPhase.Extracting -> phase.fraction
-        is DownloadPhase.Storing -> phase.fraction
-        is DownloadPhase.Paused -> phase.fraction
-        else -> 0f
-    }
-    // Animated, because the server reports extraction in coarse jumps and a bar
-    // that leaps 40% at a time reads as broken rather than as fast.
-    val animated by animateFloatAsState(
-        targetValue = fraction.coerceIn(0f, 1f),
-        label = "download",
-    )
-
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                row.name,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium,
-            )
-            Text(
-                "${(animated * 100).toInt()}%",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary,
-            )
+    val fraction = active.map {
+        when (val p = it.phase) {
+            is DownloadPhase.Extracting -> p.fraction
+            is DownloadPhase.Storing -> p.fraction
+            else -> 0f
         }
-
-        LinearProgressIndicator(
-            progress = { animated },
-            modifier = Modifier.fillMaxWidth(),
-            trackColor = MaterialTheme.colorScheme.surfaceVariant,
-        )
-
-        Text(
-            phaseDetail(phase),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
+    }.takeIf { it.isNotEmpty() }?.average()?.toFloat()
+    com.tracks.app.ui.components.ProgressPill(label = label, fraction = fraction, modifier = modifier)
 }
 
 /**

@@ -140,6 +140,18 @@ class ExploreSessionTest {
     }
 
     @Test
+    fun `an item in a collection the watch has not taken up yet is not read as deleted`() {
+        // The watch lists a new collection a session after it is declared;
+        // until then its items are absent from every FULL listing.
+        val host = FakeHost().apply { wanted = emptyList<DesiredCourse>() to listOf(place.copy(group = "alps")) }
+        val s = ExploreSession(host)
+        s.openTo(); s.collections(); s.ok()
+        s.openTo(); s.ok()   // lists only the default collection, and no places
+        assertTrue(host.reports.last().waypointsDeletedOnWatch.isEmpty())
+        assertTrue(s.unconfirmed().second.isEmpty(), "still wanted, still confirmed")
+    }
+
+    @Test
     fun `a collection emptied and settled is declared retired`() {
         val host = FakeHost().apply { wanted = emptyList<DesiredCourse>() to listOf(place.copy(group = "alps")) }
         val s = ExploreSession(host)

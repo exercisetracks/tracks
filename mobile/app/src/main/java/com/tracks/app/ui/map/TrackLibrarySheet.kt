@@ -18,6 +18,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -342,7 +344,9 @@ fun TrackLibrarySheet(
 
 /**
  * Which collection an item is in, as a drop-down: "Tracks", every collection,
- * and a new one (named, then the item filed in it).
+ * and a new one (named, then the item filed in it). The label sits above the
+ * box, and the two together take the height of the editor's name field they
+ * stand beside.
  */
 @Composable
 internal fun CollectionDropdown(
@@ -355,19 +359,26 @@ internal fun CollectionDropdown(
     var open by remember { mutableStateOf(false) }
     var naming by remember { mutableStateOf(false) }
     val here = collections.firstOrNull { it.id == current }
-    Box(modifier) {
-        Row(
-            Modifier
-                .clip(RoundedCornerShape(8.dp))
-                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
-                .clickable { open = true }
-                .padding(horizontal = 10.dp, vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
+    Box(modifier.height(COLLECTION_FIELD_HEIGHT)) {
+        Column(Modifier.fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text("Collection", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(here?.name ?: DEFAULT_COLLECTION, style = MaterialTheme.typography.labelLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Icon(Icons.Filled.KeyboardArrowDown, contentDescription = "Choose a collection", modifier = Modifier.size(18.dp))
+            Row(
+                Modifier
+                    .weight(1f)
+                    .widthIn(min = 96.dp, max = 160.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(4.dp))
+                    .clickable { open = true }
+                    .padding(horizontal = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Text(
+                    here?.name ?: DEFAULT_COLLECTION, Modifier.weight(1f, fill = false),
+                    style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                )
+                Icon(Icons.Filled.KeyboardArrowDown, contentDescription = "Choose a collection", modifier = Modifier.size(18.dp))
+            }
         }
         androidx.compose.material3.DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             listOf<com.tracks.core.api.TrackCollection?>(null).plus(collections.sortedWith(compareBy(NaturalOrder) { it.name })).forEach { c ->
@@ -387,6 +398,9 @@ internal fun CollectionDropdown(
         NameDialog(title = "New collection", onSave = { onCreate(it); naming = false }, onDismiss = { naming = false })
     }
 }
+
+/** An outlined text field's height, which the collection picker beside one matches. */
+private val COLLECTION_FIELD_HEIGHT = 56.dp
 
 /** The collection everything is in until it is filed elsewhere. */
 const val DEFAULT_COLLECTION = "Tracks"
@@ -694,12 +708,6 @@ internal fun CourseActions(
             onEdit = { actions.onCourseEditLine(course) }.takeIf { course.id >= 0 },
             onExport = { actions.onCourseExport(course) },
         )
-        if (course.id >= 0) CollectionDropdown(
-            current = course.folderId,
-            collections = actions.collections,
-            onPick = { actions.onMove(listOf(course.id), emptyList(), it) },
-            onCreate = { actions.onNewCollectionFor(it, listOf(course.id), emptyList()) },
-        )
     }
 
     if (picking) {
@@ -789,12 +797,6 @@ internal fun WaypointActions(
             deleteQuestion = if (waypoint.loadToDevice) "Delete from Tracks and the watch?" else "Delete for good?",
             onEdit = { actions.onWaypointEdit(waypoint) }.takeIf { waypoint.id >= 0 },
             onExport = { actions.onWaypointExport(waypoint) },
-        )
-        if (waypoint.id >= 0) CollectionDropdown(
-            current = waypoint.folderId,
-            collections = actions.collections,
-            onPick = { actions.onMove(emptyList(), listOf(waypoint.id), it) },
-            onCreate = { actions.onNewCollectionFor(it, emptyList(), listOf(waypoint.id)) },
         )
     }
 

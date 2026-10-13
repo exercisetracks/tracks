@@ -254,7 +254,13 @@ class ExploreSession(private val host: Host) {
     private fun agreeOmitted() {
         val gone = (if (placesListed) library.live(WatchLibrary.KIND_WAYPOINT).filter { it.uuid !in listedPlaces } else emptyList()) +
             (if (linesListed) library.live(WatchLibrary.KIND_COURSE).filter { it.uuid !in listedLines } else emptyList())
-        gone.filter { it.confirmed }.forEach(::agreeDeleted)
+        // Only where the watch lists the item's own collection. A collection
+        // just declared is taken up by the watch a session or so later, and
+        // until then its items are missing from every listing: measured
+        // 2026-10-13, a place filed in a new collection was read as deleted
+        // by hand the session after it was sent, and never reached the watch.
+        val listed = watchListed.orEmpty()
+        gone.filter { it.confirmed && library.collectionOf(it) in listed }.forEach(::agreeDeleted)
     }
 
     /** Something of Tracks' was deleted on the watch: tombstoned to agree, reported, not sent again. */
