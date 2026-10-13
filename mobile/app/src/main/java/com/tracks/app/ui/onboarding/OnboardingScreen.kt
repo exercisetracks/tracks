@@ -662,6 +662,7 @@ private fun WatchStep(
 
     if (pairedName != null) {
         StatusCard(good = true, text = "Paired with $pairedName.")
+        Bullet(GARMIN_CONNECT_ONLY)
         PrimaryButton("Continue", onClick = onNext, modifier = Modifier.fillMaxWidth())
         return
     }
@@ -672,6 +673,11 @@ private fun WatchStep(
         // The one that surprises people, and the one no amount of retrying
         // fixes: a Garmin holds a single companion pairing, so it has to be
         // unpaired from Garmin Connect before it will answer this app.
+        // Before the unpairing, because it needs Garmin Connect: Wi-Fi
+        // credentials go to the watch encrypted, by a scheme only Garmin
+        // Connect has (captured 2026-10-13, docs/garmin-connect-sync.md), and
+        // Garmin Pay runs through Garmin's and the card networks' servers.
+        Bullet(GARMIN_CONNECT_ONLY)
         Bullet("Unpair it from Garmin Connect first — a watch will only talk to one phone app")
     }
     Spacer(Modifier.height(4.dp))
@@ -679,6 +685,10 @@ private fun WatchStep(
     if (message != null && !busy) StatusCard(good = false, text = message)
     NeutralButton("Skip — I'll do this later", onClick = onNext)
 }
+
+/** What only Garmin Connect can set up, though it keeps working with Tracks. */
+private const val GARMIN_CONNECT_ONLY =
+    "Wi-Fi networks and Garmin Pay keep working with Tracks, but they have to be set up in Garmin Connect first"
 
 /**
  * The watch's own Wi-Fi upload, which no phone app can see.
