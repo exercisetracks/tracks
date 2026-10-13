@@ -73,6 +73,20 @@ class HeatmapRoutesTest {
     }
 
     @Test
+    fun a_light_map_gets_the_webs_inks_not_the_glow() {
+        // The glow's "flat" is white, which leaves nothing on a pale map; the
+        // ink is slate. Climbs and descents deepen the same way.
+        fun inks(json: String) = features(json).map { it["properties"]!!.jsonObject["ink"]!!.jsonPrimitive.content }
+        val flat = track(4) { _ -> { copy(altitude = 100.0) } }
+        val up = track(4) { i -> { copy(altitude = i * 30.0) } }
+        // Flat lands a step past the middle of the ramp, so near slate, not on it.
+        val flatInk = inks(HeatmapRoutes.geoJson(listOf(flat), HeatmapMode.Gradient)).single()
+        assertTrue((1..5 step 2).all { flatInk.substring(it, it + 2).toInt(16) < 0xa0 }, "flat ink $flatInk is too pale to see")
+        assertEquals(listOf("#7c3aed"), inks(HeatmapRoutes.geoJson(listOf(up), HeatmapMode.Gradient)))
+        assertEquals(listOf(HeatmapRoutes.FREQUENCY_INK), inks(HeatmapRoutes.geoJson(listOf(flat), HeatmapMode.Frequency)))
+    }
+
+    @Test
     fun points_without_the_value_are_not_drawn() {
         // The server's heatmap query drops them; guessing a colour for a
         // stretch with no heart rate would invent data.

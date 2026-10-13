@@ -48,7 +48,14 @@ data class HeatPoint(
 }
 
 /**
- * Tracks → a GeoJSON FeatureCollection of LineStrings, each with a `color`.
+ * Tracks → a GeoJSON FeatureCollection of LineStrings, each with a `color` and
+ * an `ink`.
+ *
+ * Two colours because the web's glow has two palettes. `color` is the light a
+ * line adds to a dark map; `ink` is what it leaves on a pale one, deeper and
+ * more saturated, since a light map is darkened rather than lit (gradient's
+ * "flat" is slate there, because white is no ink). Both are the web's
+ * (`HeatmapGlowLayer`: the glow stops and `LIGHT_INKS`).
  *
  * Coloured here rather than with a MapLibre expression, because two of the
  * three value modes are not a function of one feature: pace and heart rate are
@@ -63,8 +70,11 @@ data class HeatPoint(
  */
 object HeatmapRoutes {
 
-    /** The phone's route orange, kept from before modes existed. */
-    const val FREQUENCY_COLOR = "#f97316"
+    /** The web's frequency glow, which overlap ramps through yellow to white. */
+    const val FREQUENCY_COLOR = "#ff660d"
+
+    /** Frequency's ink on a light map. */
+    const val FREQUENCY_INK = "#ea480c"
 
     private val SPEED_STOPS = listOf(
         0.0 to intArrayOf(41, 98, 255), 0.4 to intArrayOf(16, 185, 129),
@@ -72,6 +82,13 @@ object HeatmapRoutes {
     )
     private val GRAD_STOPS = listOf(
         0.0 to intArrayOf(16, 185, 129), 0.5 to intArrayOf(255, 255, 255), 1.0 to intArrayOf(139, 92, 246),
+    )
+    private val SPEED_INKS = listOf(
+        0.0 to intArrayOf(29, 78, 216), 0.4 to intArrayOf(4, 140, 98),
+        0.7 to intArrayOf(217, 119, 6), 1.0 to intArrayOf(220, 38, 38),
+    )
+    private val GRAD_INKS = listOf(
+        0.0 to intArrayOf(4, 140, 98), 0.5 to intArrayOf(100, 116, 139), 1.0 to intArrayOf(124, 58, 237),
     )
 
     /** Colour resolution of the value modes; see the class note. */
@@ -91,7 +108,7 @@ object HeatmapRoutes {
             val pts = track.filter { it.valueFor(mode) != null }
             if (pts.size < 2) continue
             if (stepOf == null) {
-                features += line(pts, FREQUENCY_COLOR)
+                features += line(pts, FREQUENCY_COLOR, FREQUENCY_INK)
                 continue
             }
             // Walk the segments, cutting a new line whenever the step changes.
@@ -102,12 +119,12 @@ object HeatmapRoutes {
             for (i in 1 until pts.size - 1) {
                 val next = stepOf(pts[i], pts[i + 1])
                 if (next != step) {
-                    features += line(pts.subList(start, i + 1), colorOf(mode, step))
+                    features += line(pts.subList(start, i + 1), colorOf(mode, step), inkOf(mode, step))
                     start = i
                     step = next
                 }
             }
-            features += line(pts.subList(start, pts.size), colorOf(mode, step))
+            features += line(pts.subList(start, pts.size), colorOf(mode, step), inkOf(mode, step))
         }
         return JsonObject(mapOf(
             "type" to JsonPrimitive("FeatureCollection"),
@@ -148,6 +165,12 @@ object HeatmapRoutes {
         return hex(rgbFromStops(stops, t))
     }
 
+    internal fun inkOf(mode: HeatmapMode, step: Int): String {
+        val t = step.toDouble() / (STEPS - 1)
+        val stops = if (mode == HeatmapMode.Gradient) GRAD_INKS else SPEED_INKS
+        return hex(rgbFromStops(stops, t))
+    }
+
     /** The web's `pct`: linear interpolation between the closest ranks. */
     private fun percentile(sorted: List<Double>, p: Double): Double {
         val idx = (p / 100) * (sorted.size - 1)
@@ -171,9 +194,9 @@ object HeatmapRoutes {
     private fun hex(rgb: IntArray): String =
         "#" + rgb.joinToString("") { it.coerceIn(0, 255).toString(16).padStart(2, '0') }
 
-    private fun line(pts: List<HeatPoint>, color: String) = JsonObject(mapOf(
+    private fun line(pts: List<HeatPoint>, color: String, ink: String) = JsonObject(mapOf(
         "type" to JsonPrimitive("Feature"),
-        "properties" to JsonObject(mapOf("color" to JsonPrimitive(color))),
+        "properties" to JsonObject(mapOf("color" to JsonPrimitive(color), "ink" to JsonPrimitive(ink))),
         "geometry" to JsonObject(mapOf(
             "type" to JsonPrimitive("LineString"),
             "coordinates" to JsonArray(pts.map { JsonArray(listOf(JsonPrimitive(it.lng), JsonPrimitive(it.lat))) }),

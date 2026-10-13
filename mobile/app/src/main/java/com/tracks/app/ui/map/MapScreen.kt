@@ -871,63 +871,6 @@ fun MapScreen(
 
 private const val HEATMAP_SOURCE = "tracks_heatmap"
 private const val HEATMAP_LAYER = "tracks_heatmap_layer"
-private const val ROUTES_SOURCE = "tracks_routes"
-private const val ROUTES_LAYER = "tracks_routes_layer"
-
-/**
- * The user's activities as the routes they actually are.
- *
- * A density heatmap was the first attempt and it read as red blobs with hard
- * cyan edges — a year of GPS collapsed into saturated discs that showed which
- * *towns* someone had trained in and nothing about where. That is what a
- * heatmap layer does with tightly clustered points: MapLibre's `heatmap` type
- * is built for scattered observations, not for traces that already have shape.
- *
- * `/activities/tracks-geojson` sends the real LineStrings, correctly ordered as
- * `[lng, lat]` GeoJSON, so they can go straight to a source. Drawn thin and
- * semi-transparent, overlapping routes accumulate into exactly the
- * "where do I actually go" picture the heatmap was reaching for, while a single
- * ride stays legible as a line.
- *
- * Each line carries its own `color` ([com.tracks.core.metrics.HeatmapRoutes]),
- * so the dashboard's pace, heart-rate and gradient modes are the same layer.
- * [valueColoured] lifts the opacity for those: overlap-as-density is the point
- * of frequency mode, but in the others it muddies a colour into its neighbour's,
- * which is why the web's glow is likewise stronger outside frequency.
- */
-internal fun addRoutes(style: org.maplibre.android.maps.Style, geoJson: String, valueColoured: Boolean = false) {
-    if (!style.isFullyLoaded) return
-    val opacity = if (valueColoured) 0.85f else 0.55f
-
-    // Re-fed, not skipped, when the source already exists. This used to return
-    // early on the reasoning that the layer was already installed — which meant
-    // the sport cross-filter redrew every card on the dashboard except the one
-    // showing where the sport is actually done. The source is the data, and the
-    // data changes; only the layer is set up once.
-    val existing = style.getSource(ROUTES_SOURCE) as? GeoJsonSource
-    if (existing != null) {
-        existing.setGeoJson(geoJson)
-        style.getLayer(ROUTES_LAYER)?.setProperties(PropertyFactory.lineOpacity(opacity))
-        return
-    }
-    style.addSource(GeoJsonSource(ROUTES_SOURCE, geoJson))
-    style.addLayer(
-        LineLayer(ROUTES_LAYER, ROUTES_SOURCE).withProperties(
-            PropertyFactory.lineColor(
-                org.maplibre.android.style.expressions.Expression.coalesce(
-                    org.maplibre.android.style.expressions.Expression.get("color"),
-                    org.maplibre.android.style.expressions.Expression.literal("#f97316"),
-                ),
-            ),
-            // Thin and translucent so density comes from overlap rather than
-            // from a colour ramp — one pass is faint, a commute is solid.
-            PropertyFactory.lineWidth(1.6f),
-            PropertyFactory.lineOpacity(opacity),
-            PropertyFactory.lineCap(Property.LINE_CAP_ROUND),
-            PropertyFactory.lineJoin(Property.LINE_JOIN_ROUND),
-        ),
-    )
-}
 
 /**
  * Frame the camera on every line in a GeoJSON FeatureCollection of LineStrings.

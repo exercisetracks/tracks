@@ -26,7 +26,10 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,7 +50,6 @@ import com.tracks.app.ui.components.InfoTip
 import com.tracks.app.ui.components.MetricInfo
 import com.tracks.app.ui.components.StatValue
 import com.tracks.app.ui.map.MapLibreView
-import com.tracks.app.ui.map.addRoutes
 import com.tracks.app.ui.map.frameToGeoJson
 import com.tracks.app.ui.profile.SegmentedChoice
 import com.tracks.core.metrics.HeatmapMode
@@ -474,6 +476,10 @@ private fun TrainingLocationsCard(
 
     SectionCard("Training locations", subtitle = "Drag to pan, pinch to zoom") {
         var loaded by remember { mutableStateOf<Pair<MapLibreMap, Style>?>(null) }
+        val scope = rememberCoroutineScope()
+        val density = LocalDensity.current.density
+        val glow = remember { HeatmapGlow(scope, density) }
+        DisposableEffect(glow) { onDispose { glow.detach() } }
         // The filter the camera was last framed for; see DashboardUiState.routesFilter.
         var framedFor by remember { mutableStateOf<String?>(null) }
 
@@ -523,13 +529,15 @@ private fun TrainingLocationsCard(
         // theme switch swaps the document, which drops the routes layer.
         LaunchedEffect(loaded, routesGeoJson) {
             val (map, style) = loaded ?: return@LaunchedEffect
-            addRoutes(style, routesGeoJson, valueColoured = mode != HeatmapMode.Frequency)
+            glow.attach(map, style)
             if (routesFilter != framedFor) {
                 // An empty window leaves the camera where it was rather than
                 // flying to 0,0 — frameToGeoJson does nothing with no points.
+                // The glow redraws itself once the camera settles there.
                 frameToGeoJson(map, routesGeoJson)
                 framedFor = routesFilter
             }
+            glow.setRoutes(routesGeoJson, dark, valueColoured = mode != HeatmapMode.Frequency)
         }
     }
 }

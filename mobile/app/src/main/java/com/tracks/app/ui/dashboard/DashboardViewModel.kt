@@ -65,7 +65,7 @@ data class DashboardUiState(
     /**
      * The routes in the window and sport, coloured for [heatmapMode], as a
      * GeoJSON FeatureCollection of LineStrings — see [HeatmapRoutes]. LineStrings
-     * rather than a point heatmap: see [com.tracks.app.ui.map.addRoutes].
+     * rather than a point heatmap: see [HeatmapGlow].
      */
     val routesGeoJson: String? = null,
     /**
