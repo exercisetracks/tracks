@@ -267,6 +267,26 @@ class WatchManager(
                 continue
             }
 
+            if (file.kind == PulledFileKind.PLACES && integration is GarminIntegration) {
+                // Read here, not handed to the server's ingest. The watch rewrites
+                // this file after every change to its places, Explore sync's own
+                // included, so it arrives on ordinary syncs; and the ingest makes
+                // a new place of everything in it Tracks does not still have —
+                // the 300 places deleted in the app came straight back
+                // (2026-10-13), and every copy the watch had renamed ("name 1")
+                // became a place of its own. Here only places made on the watch
+                // itself are taken: not where Tracks has put a place, not where
+                // Tracks already has one. They become Tracks places like any
+                // other, and reach the server by ordinary sync.
+                val taken = runCatching { importWatchPlaces(bytes, integration as GarminIntegration) }
+                    .onFailure { Log.w(TAG, "could not read ${file.name}", it) }
+                    .getOrNull()
+                if (taken != null) Log.i(TAG, "${file.name}: $taken place(s) made on the watch added to Tracks")
+                runCatching { integration.keepPulledOnDevice(file.copy(deviceFileId = null)) }
+                if (taken != null) delivered++ else failed++
+                continue
+            }
+
             if (file.kind == PulledFileKind.COURSE && isOwnCourse(bytes)) {
                 // A course Tracks pushed, read back off the watch. Importing it
                 // would add a second copy marked "from the watch" beside the
@@ -391,6 +411,13 @@ class WatchManager(
             Log.i(TAG, "no upload list (offline?); pushing what the phone can build", e)
             emptyList()
         }.filterNot { it.type == "workout" }
+            // Courses and places reach a Garmin over Explore sync only. The
+            // server lists them as files as well (GARMIN/Courses, Locations.fit)
+            // for USB and older watches, and pushed here they landed beside the
+            // Explore copies: every course and place on the watch twice
+            // ("test1 1"), the file copies in no collection, so nothing could
+            // ever take them off again (2026-10-13, after a factory reset).
+            .filterNot { integration is GarminIntegration && it.type in MAP_ITEM_TYPES }
 
         val delivered = mutableListOf<MarkItem>()
         var failed = 0
@@ -475,6 +502,7 @@ class WatchManager(
     suspend fun pushNow(client: TracksClient, wanted: (PushItem) -> Boolean): Outcome {
         val pending = try {
             client.pushList(bluetooth = true).items.filter(wanted)
+                .filterNot { integration is GarminIntegration && it.type in MAP_ITEM_TYPES }
         } catch (e: Exception) {
             Log.w(TAG, "could not read the upload list", e)
             return Outcome.Failed(e.message ?: "the server could not be reached")
@@ -766,6 +794,14 @@ class WatchManager(
             val newlyOn = report.waypointsOn.filter { places[it]?.onWatch == false }
             if (newlyOn.isNotEmpty()) items.markWaypointsUploaded(newlyOn, com.tracks.core.local.LocalMapItems.WATCH_CONFIRMED, at)
             for (id in report.waypointsOff) if (places[id]?.onWatch == true) items.markWaypointOffWatch(id, at)
+            for (id in report.waypointsDeletedOnWatch) {
+                // As for courses: deleted on the watch is a decision about the
+                // watch, not about the place.
+                if (places[id] == null) continue
+                items.updateWaypoint(id, com.tracks.core.api.WaypointUpdate(loadToDevice = false))
+                items.markWaypointOffWatch(id, at)
+                Log.i(TAG, "place $id was deleted on the watch; kept in Tracks, not re-sent")
+            }
         } else {
             Log.w(TAG, "the watch could not finish syncing courses and places")
         }
@@ -863,6 +899,29 @@ class WatchManager(
         // The file holds the name cut to 15 bytes; a prefix is the watch-side form.
         val name = id.name
         return !name.isNullOrEmpty() && course.name.startsWith(name)
+    }
+
+    /**
+     * The places in a watch's saved-places file that were made on the watch,
+     * added to Tracks; returns how many. Not sent back to the watch
+     * (`loadToDevice` off): it already has them, outside Tracks' collection,
+     * and an Explore copy beside them would be a duplicate.
+     */
+    private suspend fun importWatchPlaces(bytes: ByteArray, garmin: GarminIntegration): Int {
+        val items = containerProvider().mapItems
+        val known = HashSet(garmin.placesTracksSent())
+        items.waypoints().forEach { known += com.tracks.device.garmin.explore.WatchLibrary.placeKey(it.lat, it.lng) }
+        var added = 0
+        for (p in LocationsFitEncoder.decode(bytes)) {
+            val key = com.tracks.device.garmin.explore.WatchLibrary.placeKey(p.lat, p.lng)
+            if (!known.add(key)) continue
+            items.createWaypoint(com.tracks.core.api.WaypointIn(
+                name = p.name, lat = p.lat, lng = p.lng, elevationMetres = p.elevationMetres,
+                icon = p.icon, loadToDevice = false,
+            ))
+            added++
+        }
+        return added
     }
 
     private suspend fun pushCourseJob(job: CoursePushJob, courses: List<CourseSummary>): Outcome {
@@ -1461,6 +1520,9 @@ class WatchManager(
 
     internal companion object {
         const val TAG = "TracksWatch"
+
+        /** Upload-list types that a Garmin takes over Explore sync, never as files. */
+        private val MAP_ITEM_TYPES = setOf("course", "waypoint")
 
         private const val WIFI_SETTINGS_FILENAME = "TRACKS_WIFI.fit"
         private const val MUSIC_APP_FILENAME = "TracksMusic.prg"

@@ -67,6 +67,27 @@ class ExploreSession(private val host: Host) {
     private var announcedFrom = -1
     private var announcedTo = -1
     private val deletedOnWatch = mutableSetOf<Int>()
+    private val placesDeletedOnWatch = mutableSetOf<Int>()
+
+    /** The collections the watch listed at the start of this session; null before it has. */
+    private var watchListed: Set<String>? = null
+
+    /** Every place the watch listed this session, and whether it listed any at all. */
+    private val listedPlaces = mutableSetOf<String>()
+    private var placesListed = false
+    private val listedLines = mutableSetOf<String>()
+    private var linesListed = false
+
+    /** Lines the watch offered, still to read, and the one being read. */
+    private val toRead = ArrayDeque<Pair<ByteArray, List<Int>>>()
+    private var reading: ByteArray? = null
+    private var readingParts: List<Int> = emptyList()
+
+    /** Collections the watch says changed on its side, still to pull, and the one being pulled. */
+    private val toPull = ArrayDeque<ByteArray>()
+    private var pulling: ByteArray? = null
+    private var pulled = 0
+
     private var wantedNow: Pair<List<DesiredCourse>, List<DesiredWaypoint>>? = null
 
     // ── Asked by the app ────────────────────────────────────────────────────
@@ -77,6 +98,12 @@ class ExploreSession(private val host: Host) {
         items.filter { it.kind == WatchLibrary.KIND_COURSE }.mapTo(HashSet()) { it.ref } to
             items.filter { it.kind == WatchLibrary.KIND_WAYPOINT }.mapTo(HashSet()) { it.ref }
     }
+
+    /** Tracks' current collection on this watch. */
+    fun collectionId(): String = locked { library.collection }
+
+    /** Positions of every place Tracks has put on this watch; see [WatchLibrary.sentPlaces]. */
+    fun sentPlaces(): Set<String> = locked { library.sentPlaces.toSet() }
 
     /**
      * Run a session now, or straight after the one in progress — two at once
@@ -89,7 +116,14 @@ class ExploreSession(private val host: Host) {
     fun startRequest(): ByteArray = locked { startLocked() }
 
     private fun startLocked(): ByteArray {
-        full = !library.baseline
+        // Always FULL. Only a FULL session has the watch report a course
+        // deleted on it — measured 2026-10-13: test1 deleted by hand, nothing
+        // in the next incremental session at all, then in a FULL one its
+        // tombstone in the watch's copy of the collection and `3: 1` in the
+        // line digest. And a deletion has to be known before anything is
+        // announced: announcing makes the watch re-read the whole collection,
+        // and a deleted item still served live there is put straight back.
+        full = true
         open = true
         resetSession()
         host.log("requesting a ${if (full) "FULL" else "INCREMENTAL"} sync")
@@ -125,20 +159,21 @@ class ExploreSession(private val host: Host) {
                 if (!ok) open = false
                 null
             }
-            F_COLLECTION_LIST_WRITE -> declare()
+            F_COLLECTION_LIST_WRITE -> declare(body)
             F_LINE_DIGEST_WRITE -> watchLines(body)
             F_CHANGE_SUMMARY_REQUEST -> changeSummary(body)
-            F_COLLECTION_DIGEST_READ -> collectionDigest()
+            F_COLLECTION_DIGEST_READ -> collectionDigest(body)
             F_COLLECTION_READ -> collectionPage(body)
             F_WAYPOINT_DIGEST_READ -> waypointDigest(body)
             F_WAYPOINT_READ -> waypoint(body)
             F_LINE_DIGEST_READ -> lineDigest(body)
             F_LINE_READ -> linePart(body)
             F_SYNC_FINISHED -> finished(body)
-            F_COLLECTION_DIGEST_WRITE, F_WAYPOINT_DIGEST_WRITE, F_ACTIVE_LINE_DIGEST_WRITE ->
-                reply(field.number + 1) { varint(1, 0) }
-            F_COLLECTION_PAGE -> reply(F_COLLECTION_PAGE + 1) {}
-            F_LINE_DATA_READY -> reply(F_LINE_DATA_READY + 1) {}
+            F_ACTIVE_LINE_DIGEST_WRITE -> activeLine(body)
+            F_COLLECTION_DIGEST_WRITE -> watchCollections(body)
+            F_COLLECTION_PAGE -> watchCollectionPage(body)
+            F_LINE_DATA_READY -> lineData(body)
+            F_WAYPOINT_DIGEST_WRITE -> watchPlaces(body)
             else -> {
                 host.log("no answer for message ${field.number}")
                 null
@@ -155,40 +190,198 @@ class ExploreSession(private val host: Host) {
     }
 
     /** Tracks' collection, declared as its own and as the default, exactly as Explore declares its. */
-    private fun declare(): ByteArray {
+    private fun declare(body: ProtoReader): ByteArray {
+        val listed = body.message(1)?.let { l -> l.messages(1) + listOfNotNull(l.message(2)) }
+            .orEmpty().mapNotNull { it.bytes(1)?.hex() }.toSet()
+        watchListed = listed
         val c = library.collection.unhex()
         host.log("declaring collection ${library.collection}")
         return reply(F_COLLECTION_LIST_WRITE + 1) {
             varint(1, 0)
             message(2) {
                 message(1) { bytes(1, c); message(2) { varint(1, library.collectionStamp); varint(2, 0) }; varint(3, 0) }
+                for ((old, at) in library.retired) {
+                    message(1) { bytes(1, old.unhex()); message(2) { varint(1, at); varint(2, 0) }; varint(3, 1) }
+                }
                 message(2) { bytes(1, c); message(2) { varint(1, 0); varint(2, 0) } }
             }
         }
     }
 
+    // ── What the watch has to hand over ─────────────────────────────────────
+    //
+    // Everything the watch offers is taken, the way Explore takes it: the
+    // in-progress line, every recorded line, and every collection the watch
+    // says changed on its side. Tracks used to wave all of it through with
+    // `{1: 0}`; on 2026-10-12 the watch then fell into a state where every
+    // session failed, for Explore too, until a factory reset. Which offer
+    // left unread did it was not pinned down, so none is left unread.
+
+    /**
+     * Places that changed on the watch. One listed with `2: 1` was deleted
+     * there (measured 2026-10-12: two places deleted by hand came back so
+     * flagged, stamped at the minute of deletion, while the watch's copy of
+     * the collection still held them live). Tracks agrees, keeps the place,
+     * and stops sending it; served live after that, every session failed.
+     * Entries without the flag are the watch's own re-saves of a place
+     * (`{t, 1}` stamps) and need nothing. Answered `{1: 0}`, as Explore does.
+     */
+    private fun watchPlaces(body: ProtoReader): ByteArray {
+        placesListed = true
+        for (p in body.message(1)?.messages(1).orEmpty()) {
+            p.bytes(1)?.hex()?.let(listedPlaces::add)
+            if (p.varint(2) != 1L) continue
+            val uuid = p.bytes(1)?.hex() ?: continue
+            val mine = library.items[uuid]?.takeIf { !it.tombstone } ?: continue
+            agreeDeleted(mine)
+        }
+        return reply(F_WAYPOINT_DIGEST_WRITE + 1) { varint(1, 0) }
+    }
+
+    /**
+     * In a FULL session the watch lists every place and every line it holds,
+     * so something of Tracks' that it had confirmed and now leaves out was
+     * deleted on it. The catch-all for a deletion the watch reported once, in
+     * a session that then failed: it is not reported again, and served live
+     * from then on, every session failed over it. Measured for places
+     * (2026-10-12: two deleted by hand, absent from the next FULL listing of
+     * 211); assumed for courses, which the watch lists the same way.
+     */
+    private fun agreeOmitted() {
+        val gone = (if (placesListed) library.live(WatchLibrary.KIND_WAYPOINT).filter { it.uuid !in listedPlaces } else emptyList()) +
+            (if (linesListed) library.live(WatchLibrary.KIND_COURSE).filter { it.uuid !in listedLines } else emptyList())
+        gone.filter { it.confirmed }.forEach(::agreeDeleted)
+    }
+
+    /** Something of Tracks' was deleted on the watch: tombstoned to agree, reported, not sent again. */
+    private fun agreeDeleted(mine: WatchLibrary.Item) {
+        host.log("${kindName(mine.kind)} ${mine.ref} (${mine.uuid}) was deleted on the watch")
+        tombstone(library, mine, host.nowSeconds())
+        // Already gone there: nothing to announce for it.
+        library.items[mine.uuid] = library.items.getValue(mine.uuid).copy(confirmed = true, txn = library.transaction)
+        if (mine.kind == WatchLibrary.KIND_COURSE) deletedOnWatch += mine.ref else placesDeletedOnWatch += mine.ref
+    }
+
+    /**
+     * The in-progress line, offered at the start of every session. Explore
+     * reads its points and its part 16, nothing else (capture c, every session).
+     */
+    private fun activeLine(body: ProtoReader): ByteArray {
+        val uuid = body.message(1)?.messages(1)?.firstNotNullOfOrNull { it.bytes(3) }
+        toRead.clear()
+        if (uuid != null) toRead += uuid to ACTIVE_PARTS
+        return reply(F_ACTIVE_LINE_DIGEST_WRITE + 1) {
+            varint(1, 0)
+            nextLine()?.let { message(2, it) }
+        }
+    }
+
+    /** The first request for the next line to read, or null when none is left. */
+    private fun nextLine(): ProtoWriter? {
+        val (uuid, parts) = toRead.removeFirstOrNull() ?: run { reading = null; return null }
+        reading = uuid
+        readingParts = parts
+        return lineOp(uuid, parts.first(), offset = 0)
+    }
+
+    private fun lineOp(uuid: ByteArray, part: Int, offset: Int?) = ProtoWriter().apply {
+        bytes(1, uuid); varint(2, part)
+        if (offset != null) varint(3, offset)
+        varint(5, LINE_OP_FLAGS)
+    }
+
+    /**
+     * One page of a line the watch is handing over, answered with the next
+     * request: the same part from the watch's next offset while it says there
+     * is more, then the next part, then the next line, then nothing.
+     * Tracks keeps none of it — activities arrive whole by file sync — but the
+     * watch is owed the read.
+     */
+    private fun lineData(body: ProtoReader): ByteArray {
+        val uuid = reading
+        val part = body.message(2)?.let { line -> PART_FIELDS.entries.firstOrNull { line.has(it.value) }?.key }
+        val next: ProtoWriter? = when {
+            uuid == null -> null
+            body.varint(1) == READ_MORE.toLong() && part != null -> lineOp(uuid, part, body.varint(3).toInt())
+            else -> {
+                val after = part?.let { readingParts.indexOf(it) } ?: -1
+                val following = readingParts.getOrNull(after + 1)
+                if (after >= 0 && following != null) lineOp(uuid, following, offset = null) else nextLine()
+            }
+        }
+        return reply(F_LINE_DATA_READY + 1) { next?.let { message(1, it) } }
+    }
+
+    /**
+     * Collections whose content changed on the watch — a course or place
+     * deleted there, or the watch's own copy of a place updated. Each is
+     * pulled, a page at a time, as Explore pulls every one listed.
+     */
+    private fun watchCollections(body: ProtoReader): ByteArray {
+        toPull.clear()
+        for (c in body.message(1)?.messages(1).orEmpty()) c.bytes(1)?.let { toPull += it }
+        if (toPull.isNotEmpty()) host.log("watch changed ${toPull.size} collection(s) on its side; reading them")
+        return reply(F_COLLECTION_DIGEST_WRITE + 1) {
+            varint(1, 0)
+            nextPull()?.let { message(2, it) }
+        }
+    }
+
+    private fun pullOp(uuid: ByteArray, offset: Int) = ProtoWriter()
+        .message(1) { bytes(1, uuid); varint(2, 2) }.varint(2, offset)
+
+    private fun nextPull(): ProtoWriter? {
+        val uuid = toPull.removeFirstOrNull() ?: run { pulling = null; return null }
+        pulling = uuid
+        pulled = 0
+        return pullOp(uuid, 0)
+    }
+
+    /**
+     * One page of a collection as the watch holds it. One of Tracks' live
+     * items that the watch holds tombstoned was deleted on the watch: Tracks
+     * agrees, keeps the course or place, and does not send it again.
+     */
+    private fun watchCollectionPage(body: ProtoReader): ByteArray {
+        val items = body.message(2)?.message(3)?.messages(1).orEmpty()
+        pulled += items.size
+        for (it in items) {
+            if (it.varint(3) != 1L) continue
+            val uuid = it.bytes(1)?.hex() ?: continue
+            val mine = library.items[uuid]?.takeIf { m -> !m.tombstone } ?: continue
+            agreeDeleted(mine)
+        }
+        val current = pulling
+        val next = if (body.varint(1) == READ_MORE.toLong() && current != null) pullOp(current, pulled) else nextPull()
+        return reply(F_COLLECTION_PAGE + 1) { next?.let { message(1, it) } }
+    }
+
     /**
      * Lines that changed on the watch. One of Tracks' own courses listed with
      * field 3 = 1 was deleted on the watch: it is tombstoned here to agree, and
-     * reported, and not sent again.
+     * reported, and not sent again. Recorded lines are read through, as
+     * Explore reads them; courses are not (Explore answers those `{1: 0}`).
      */
     private fun watchLines(body: ProtoReader): ByteArray {
         val lines = body.message(1)?.messages(1).orEmpty()
+        linesListed = true
+        lines.forEach { l -> l.bytes(1)?.hex()?.let(listedLines::add) }
         val ours = library.items.values.filter { it.kind == WatchLibrary.KIND_COURSE && !it.tombstone }
             .associateBy { it.uuid }
         for (l in lines) {
             val uuid = l.bytes(1)?.hex() ?: continue
             val item = ours[uuid] ?: continue
-            if (l.varint(3) == 1L) {
-                host.log("course ${item.ref} ($uuid) was deleted on the watch")
-                tombstone(library, item, host.nowSeconds())
-                // The watch already has it gone: nothing to announce for it.
-                library.items[uuid] = library.items.getValue(uuid).copy(confirmed = true, txn = library.transaction)
-                deletedOnWatch += item.ref
-            }
+            if (l.varint(3) == 1L) agreeDeleted(item)
         }
-        host.log("watch line digest: ${lines.size} line(s)")
-        return reply(F_LINE_DIGEST_WRITE + 1) { varint(1, 0) }
+        for (l in lines) {
+            val uuid = l.bytes(1) ?: continue
+            if (l.varint(2) != LINE_COURSE) toRead += uuid to RECORDED_PARTS
+        }
+        host.log("watch line digest: ${lines.size} line(s), ${toRead.size} to read")
+        return reply(F_LINE_DIGEST_WRITE + 1) {
+            varint(1, 0)
+            nextLine()?.let { message(2, it) }
+        }
     }
 
     /** "What changed since transaction N?" — where Tracks' wishes become the library. */
@@ -196,10 +389,31 @@ class ExploreSession(private val host: Host) {
         val since = body.varint(1).toInt()
         val lib = library
         val now = host.nowSeconds()
+        // A watch that no longer lists Tracks' collection, after it had, has
+        // forgotten Tracks: factory reset, or wiped. Everything is sent again,
+        // and nothing it lacks is read as "deleted on the watch" — the FULL
+        // listing below would otherwise mark every course and place as
+        // deleted by hand. Not "transaction 0": every FULL session asks from
+        // 0, and reading that as a reset replaced the collection each time,
+        // stranding the old one on the watch with everything in it.
+        val forgotten = lib.collectionKnown && watchListed?.contains(lib.collection) == false
+        if (forgotten) {
+            val moved = lib.resendAll(now)
+            host.log("the watch has forgotten Tracks (reset?); sending $moved item(s) again")
+        } else if (full && watchListed?.contains(lib.collection) == true) {
+            // Only a watch that holds Tracks' collection can be read as having
+            // deleted what it leaves out. One that does not list it never had
+            // the items to delete: measured 2026-10-13, a collection the watch
+            // had not taken up made a course look deleted by hand.
+            agreeOmitted()
+        }
         wantedNow = host.wanted()
         wantedNow?.let { (courses, places) ->
             // Courses deleted on the watch stay out until Tracks asks again.
-            plan(lib, courses.filterNot { it.trackId in deletedOnWatch }, places, now)
+            plan(
+                lib, courses.filterNot { it.trackId in deletedOnWatch },
+                places.filterNot { it.waypointId in placesDeletedOnWatch }, now,
+            )
         } ?: host.log("the app has not said what it wants yet; serving the library as it stands")
 
         // Anything the watch has already moved past is something it has.
@@ -210,6 +424,16 @@ class ExploreSession(private val host: Host) {
         }
         val pending = lib.items.values.filter { it.txn == WatchLibrary.PENDING }
         val unannounced = lib.items.values.filter { !it.confirmed && it.txn > since }
+        if (!full && (pending.isNotEmpty() || unannounced.isNotEmpty())) {
+            // The watch started this one, incrementally: it reports no course
+            // deleted on it, and announcing would have it re-read the whole
+            // collection and restore one. Changes wait for the FULL session
+            // Tracks starts as soon as this ends.
+            followUp = true
+            announcedFrom = -1; announcedTo = -1
+            host.log("changes wait for a full session (watch at transaction $since)")
+            return reply(F_CHANGE_SUMMARY_REQUEST + 1) { varint(1, since) }
+        }
         if (pending.isEmpty() && unannounced.isEmpty()) {
             announcedFrom = -1; announcedTo = -1
             host.log("nothing to change (watch at transaction $since)")
@@ -228,20 +452,38 @@ class ExploreSession(private val host: Host) {
         return reply(F_CHANGE_SUMMARY_REQUEST + 1) { varint(1, ending); varint(3, 1); varint(4, 1); varint(5, 1) }
     }
 
-    private fun collectionDigest(): ByteArray = reply(F_COLLECTION_DIGEST_READ + 1) {
-        varint(1, 0)
+    /**
+     * The collections with changes, paged as Explore pages them: field 3 of
+     * the request is an offset, 4 a page size, and the watch steps the offset
+     * by one per collection it has read. Answered without regard to the
+     * offset, a watch with two collections went round 240 times (2026-10-12).
+     */
+    private fun collectionDigest(body: ProtoReader): ByteArray = reply(F_COLLECTION_DIGEST_READ + 1) {
+        val all = listOf(library.collection)
+        val offset = body.varint(3).toInt().coerceIn(0, all.size)
+        val end = minOf(all.size, offset + body.varint(4, 2).toInt().coerceAtLeast(1))
+        val more = end < all.size
+        varint(1, if (more) READ_MORE else 0)
         message(2) {
-            message(1) {
-                bytes(1, library.collection.unhex()); varint(2, 0); varint(3, 1)
+            for (c in all.subList(offset, end)) message(1) {
+                bytes(1, c.unhex()); varint(2, 0); varint(3, 1)
                 message(4) { varint(1, library.collectionStamp); varint(2, 0) }
             }
         }
+        if (more) varint(3, end)
     }
 
     /** The whole collection, tombstones included, a page at a time. */
     private fun collectionPage(body: ProtoReader): ByteArray {
         val op = body.message(1)
         val asked = op?.message(1)?.bytes(1)?.hex()
+        if (asked != null && asked in library.retired) {
+            // Retired: nothing in it any more.
+            return reply(F_COLLECTION_READ + 1) {
+                varint(1, 0)
+                message(2) { bytes(1, asked.unhex()); bytes(3, ByteArray(0)) }
+            }
+        }
         if (asked != library.collection) {
             host.log("watch asked for collection $asked, which is not Tracks'")
             return reply(F_COLLECTION_READ + 1) { varint(1, READ_ERROR) }
@@ -384,6 +626,8 @@ class ExploreSession(private val host: Host) {
         val lib = library
         if (ok) {
             if (full) lib.baseline = true
+            lib.failures = 0
+            lib.collectionKnown = true
             val on = mutableSetOf<Pair<Int, Int>>()
             val off = mutableSetOf<Pair<Int, Int>>()
             val fresh = mutableSetOf<WatchLibrary.Item>()
@@ -405,13 +649,23 @@ class ExploreSession(private val host: Host) {
                 coursesDeletedOnWatch = deletedOnWatch.toSet(),
                 waypointsOn = ids(on, WatchLibrary.KIND_WAYPOINT),
                 waypointsOff = ids(off, WatchLibrary.KIND_WAYPOINT) -
-                    lib.live(WatchLibrary.KIND_WAYPOINT).mapTo(HashSet()) { it.ref },
+                    lib.live(WatchLibrary.KIND_WAYPOINT).mapTo(HashSet()) { it.ref } - placesDeletedOnWatch,
+                waypointsDeletedOnWatch = placesDeletedOnWatch.toSet(),
                 changedOn = freshIds(WatchLibrary.KIND_COURSE, tomb = false),
                 changedOff = freshIds(WatchLibrary.KIND_COURSE, tomb = true) - liveRefs,
                 changedPlacesOn = freshIds(WatchLibrary.KIND_WAYPOINT, tomb = false),
                 changedPlacesOff = freshIds(WatchLibrary.KIND_WAYPOINT, tomb = true),
             ))
         } else {
+            lib.failures++
+            // Still failing after a FULL session had its say: start again in a
+            // fresh collection. At most once a day, so a watch that fails for
+            // some other reason does not collect retired collections.
+            val now = host.nowSeconds()
+            if (lib.failures >= RETIRE_AFTER_FAILURES && (lib.retired.values.maxOrNull() ?: 0) < now - RETIRE_INTERVAL_S) {
+                val moved = lib.retire(now)
+                host.log("the watch keeps failing; retired collection, sending $moved item(s) again in ${lib.collection}")
+            }
             host.onReport(ReconcileReport(failed = true))
         }
         // Anything still waiting gets a session of its own straight away.
@@ -431,6 +685,12 @@ class ExploreSession(private val host: Host) {
         announcedFrom = -1
         announcedTo = -1
         deletedOnWatch.clear()
+        placesDeletedOnWatch.clear()
+        watchListed = null
+        listedPlaces.clear(); placesListed = false
+        listedLines.clear(); linesListed = false
+        toRead.clear(); reading = null
+        toPull.clear(); pulling = null
         wantedNow = null
     }
 
@@ -488,6 +748,21 @@ class ExploreSession(private val host: Host) {
         const val READ_ERROR = 2
         const val LINE_COURSE = 9L
         const val MAX_NAME = 63
+
+        /** Field 5 of every line request Explore makes. */
+        const val LINE_OP_FLAGS = 115
+
+
+        /** Failed sessions in a row, FULL ones among them, before the collection is replaced. */
+        const val RETIRE_AFTER_FAILURES = 4
+        const val RETIRE_INTERVAL_S = 24 * 3600L
+
+        /** Parts Explore reads, in order: of the in-progress line, and of a recorded one. */
+        val ACTIVE_PARTS = listOf(2, 16)
+        val RECORDED_PARTS = listOf(2, 1, 4, 16)
+
+        /** Where each part arrives in a line: part bit -> field. */
+        val PART_FIELDS = linkedMapOf(2 to 8, 1 to 4, 4 to 5, 8 to 6, 16 to 7)
 
         /** Explore's capability set after its first sync. */
         const val SYNC_CAPABILITIES = 31

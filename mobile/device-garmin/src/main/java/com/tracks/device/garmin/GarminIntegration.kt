@@ -725,6 +725,8 @@ class GarminIntegration(private val context: Context) : DeviceIntegration {
             if (wanted) {
                 // The schedule is not here: it is pulled on every sync, not
                 // just this one. See FileType.FILETYPE.ALWAYS_ALSO_PULL.
+                // Saved places are read on the phone, which takes only the
+                // ones made on the watch (WatchManager.importWatchPlaces).
                 java.util.EnumSet.of(FileType.FILETYPE.COURSES, FileType.FILETYPE.LOCATION)
             } else {
                 java.util.EnumSet.noneOf(FileType.FILETYPE::class.java)
@@ -1055,6 +1057,9 @@ class GarminIntegration(private val context: Context) : DeviceIntegration {
     }
 
     /** Courses and places not yet confirmed by the watch, as Tracks ids. */
+    /** Where Tracks has put saved places on the watch, as [WatchLibrary.placeKey]s. */
+    fun placesTracksSent(): Set<String> = support?.exploreSession()?.sentPlaces().orEmpty()
+
     fun unconfirmedOnWatch(): Pair<Set<Int>, Set<Int>> =
         support?.exploreSession()?.unconfirmed() ?: (emptySet<Int>() to emptySet())
 

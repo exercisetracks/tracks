@@ -83,4 +83,26 @@ class LocationsFitEncoderTest {
         assertTrue(nameBytes.size <= 31)
         assertEquals(place.name, String(nameBytes, Charsets.UTF_8))
     }
+
+    @Test
+    fun `a saved-places file reads back what was written`() {
+        // The phone reads the watch's own file to find places made on the
+        // watch; it has to read Tracks' own encoding back exactly first.
+        val places = listOf(
+            WaypointLocation("Trailhead", 45.12345, -122.54321, 1234.0, "trailhead"),
+            WaypointLocation("No elevation", -33.9, 151.2, null, "marker"),
+        )
+        val back = LocationsFitEncoder.decode(LocationsFitEncoder.encode(places))
+        assertEquals(places.map { it.name }, back.map { it.name })
+        assertEquals(45.12345, back[0].lat, 1e-6)
+        assertEquals(-122.54321, back[0].lng, 1e-6)
+        assertEquals(1234.0, back[0].elevationMetres!!, 0.2)
+        assertEquals("trailhead", back[0].icon)
+        assertNull(back[1].elevationMetres)
+    }
+
+    @Test
+    fun `bytes that are not a FIT file read as no places`() {
+        assertTrue(LocationsFitEncoder.decode(ByteArray(20)).isEmpty())
+    }
 }

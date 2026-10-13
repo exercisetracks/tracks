@@ -266,6 +266,7 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
                     receipt(report.changedOff.size + report.changedPlacesOff.size, "off",
                         report.changedOff.firstNotNullOfOrNull { names[it] } ?: report.changedPlacesOff.firstNotNullOfOrNull { places[it] }),
                     report.coursesDeletedOnWatch.firstOrNull { it in names }?.let { "“${names[it]}” was deleted on the watch" },
+                    report.waypointsDeletedOnWatch.firstOrNull { it in places }?.let { "“${places[it]}” was deleted on the watch" },
                 ).firstOrNull()
                 if (said != null) _state.update { it.copy(notice = said) }
             }

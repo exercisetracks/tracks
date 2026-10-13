@@ -130,4 +130,96 @@ object LocationsFitEncoder {
 
         return FitFile(records).outgoingMessage
     }
+
+    /**
+     * Read a watch's saved-places file back: every location with a position,
+     * as the same [WaypointLocation] [encode] writes. A port of the server's
+     * `parse_locations_fit` field for field (message 29: 0 name, 1 latitude,
+     * 2 longitude, 3 symbol, 4 altitude), so the phone and the server read one
+     * file the same way. Never throws: a malformed tail ends the list early.
+     */
+    fun decode(data: ByteArray): List<WaypointLocation> {
+        if (data.size < 14 || String(data, 8, 4, Charsets.US_ASCII) != ".FIT") return emptyList()
+        val headerSize = data[0].toInt() and 0xff
+        val declared = le(data, 4, 4, signed = false)
+        val end = minOf(headerSize + declared, data.size.toLong()).toInt()
+        val defs = HashMap<Int, Triple<Int, List<Pair<Int, Int>>, Boolean>>()
+        val out = mutableListOf<WaypointLocation>()
+        val symbols = LocationSymbol.values().associateBy { it.id }
+        val iconFor = HashMap<LocationSymbol, String>().apply { ICON_TO_SYMBOL.forEach { (icon, sym) -> putIfAbsent(sym, icon) } }
+        var at = headerSize
+        while (at < end) {
+            val header = data[at].toInt() and 0xff
+            at++
+            if (header and 0x80 != 0) break
+            if (header and 0x40 != 0) {
+                if (at + 5 > end) break
+                val little = data[at + 1].toInt() == 0
+                val global = if (little) le(data, at + 2, 2, false).toInt() else be(data, at + 2, 2).toInt()
+                val count = data[at + 4].toInt() and 0xff
+                at += 5
+                val fields = mutableListOf<Pair<Int, Int>>()
+                repeat(count) {
+                    if (at + 3 > end) return out
+                    fields += (data[at].toInt() and 0xff) to (data[at + 1].toInt() and 0xff)
+                    at += 3
+                }
+                if (header and 0x20 != 0) {
+                    if (at >= end) return out
+                    val dev = data[at].toInt() and 0xff
+                    at++
+                    repeat(dev) {
+                        if (at + 3 > end) return out
+                        fields += -1 to (data[at + 1].toInt() and 0xff)
+                        at += 3
+                    }
+                }
+                defs[header and 0x0f] = Triple(global, fields, little)
+                continue
+            }
+            val (global, fields, little) = defs[header and 0x0f] ?: break
+            val values = HashMap<Int, IntRange>()
+            for ((number, size) in fields) {
+                if (at + size > end) return out
+                values[number] = at until at + size
+                at += size
+            }
+            if (global != 29) continue
+            fun int(field: Int, signed: Boolean): Long? {
+                val r = values[field] ?: return null
+                val n = r.last - r.first + 1
+                val v = if (little) le(data, r.first, n, signed) else be(data, r.first, n, signed)
+                val invalid = (1L shl (n * 8 - if (signed) 1 else 0)) - 1
+                return v.takeIf { it != invalid }
+            }
+            val lat = int(1, true) ?: continue
+            val lng = int(2, true) ?: continue
+            val name = values[0]?.let { r ->
+                val raw = data.copyOfRange(r.first, r.last + 1)
+                val nul = raw.indexOf(0).let { if (it < 0) raw.size else it }
+                String(raw, 0, nul, Charsets.UTF_8)
+            }.orEmpty()
+            val symbol = int(3, false)?.let { symbols[it.toInt()] }
+            out += WaypointLocation(
+                name = name.ifEmpty { "Waypoint" },
+                lat = lat * 180.0 / 2147483648.0,
+                lng = lng * 180.0 / 2147483648.0,
+                elevationMetres = int(4, false)?.let { it / 5.0 - 500.0 },
+                icon = symbol?.let(iconFor::get) ?: "marker",
+            )
+        }
+        return out
+    }
+
+    private fun le(b: ByteArray, at: Int, n: Int, signed: Boolean = false): Long {
+        var v = 0L
+        for (k in 0 until n) v = v or ((b[at + k].toLong() and 0xff) shl (8 * k))
+        return if (signed && n < 8 && v and (1L shl (n * 8 - 1)) != 0L) v - (1L shl (n * 8)) else v
+    }
+
+    private fun be(b: ByteArray, at: Int, n: Int, signed: Boolean = false): Long {
+        var v = 0L
+        for (k in 0 until n) v = (v shl 8) or (b[at + k].toLong() and 0xff)
+        return if (signed && n < 8 && v and (1L shl (n * 8 - 1)) != 0L) v - (1L shl (n * 8)) else v
+    }
 }
