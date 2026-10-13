@@ -13,11 +13,15 @@ const SRC = { source: "saved_places" };
 
 export function buildSavedPlaces() {
   return [
-    // The selected place's ring, under its mark.
-    {
-      id: "saved_places_selected",
+    // The selected place's ring, under its mark: centred on a symbol, raised
+    // onto a pin's head. Two layers, because circle-translate takes no data
+    // expression — and MapLibre answers an invalid style by never loading,
+    // which shows as a blank map rather than an error.
+    ...[["saved_places_selected", false, [0, 0]], ["saved_places_selected_pin", true, [0, -16]]].map(([id, pin, translate]) => ({
+      id,
       ...SRC,
       type: "circle",
+      filter: ["==", ["get", "pin"], pin],
       layout: { "visibility": "none" },
       paint: {
         "circle-radius": 17,
@@ -25,9 +29,9 @@ export function buildSavedPlaces() {
         "circle-blur": 0.4,
         "circle-opacity": ["case", ["boolean", ["feature-state", "selected"], false], 0.75,
           ["boolean", ["feature-state", "hover"], false], 0.4, 0],
-        "circle-translate": ["case", ["get", "pin"], ["literal", [0, -16]], ["literal", [0, 0]]],
+        "circle-translate": translate,
       },
-    },
+    })),
     {
       id: "saved_places_icon",
       ...SRC,

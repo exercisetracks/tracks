@@ -488,13 +488,9 @@ async def lifespan(app: FastAPI):
         build_sprite_async()
 
         # Build the region-independent global long-route overview if missing, so
-        # long trails show everywhere (not only in downloaded regions). Write to a
-        # temp file and atomically rename, so a restart mid-build never leaves a
-        # truncated archive that `not exists()` would treat as "done" and serve.
-        from app.services.trail_builder import build_global_routes
-        from app.services import region_merger
+        # long trails show everywhere (not only in downloaded regions).
+        from app.services.global_routes import routes_path, start_global_routes_build
         from app.services.route_profile import precompute_route_profiles
-        _routes = Path(settings.map_data_dir, "master_routes.pmtiles")
 
         def _precompute_profiles():
             try:
@@ -502,24 +498,8 @@ async def lifespan(app: FastAPI):
             except Exception:
                 logger.exception("Route profile precompute failed")
 
-        def _build_routes():
-            tmp = _routes.with_suffix(".building.pmtiles")
-            global_download_tracker.register("routes", "Building long-trail overview", "")
-            global_download_tracker.start("routes")
-            try:
-                build_global_routes(str(tmp), progress_cb=lambda pct, detail: (
-                    global_download_tracker.set_progress("routes", pct, detail)))
-                tmp.replace(_routes)
-                global_download_tracker.complete("routes")
-                region_merger.write_reload_trigger()
-                _precompute_profiles()   # cache elevation profiles for the fresh routes
-            except Exception as exc:
-                global_download_tracker.fail("routes", str(exc))
-                logger.exception("Global routes build failed")
-                tmp.unlink(missing_ok=True)
-
-        if not _routes.exists():
-            threading.Thread(target=_build_routes, daemon=True, name="global-routes").start()
+        if not routes_path().exists():
+            start_global_routes_build()
         else:
             # Routes already built — precompute any still-missing section profiles
             # so the detail panel opens instantly (idempotent; skips cached ones).

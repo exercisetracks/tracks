@@ -303,6 +303,7 @@ def reset_basemap(user=Depends(require_auth)):
     from app.services import region_merger
     from app.services.global_dem import start_dem_download
     from app.services.global_overview import start_map_download
+    from app.services.global_routes import start_global_routes_build
 
     if not getattr(user, "is_admin", False):
         raise HTTPException(403, "Only an admin can delete the map data")
@@ -335,6 +336,10 @@ def reset_basemap(user=Depends(require_auth)):
         start_map_download()
         if settings.dem_source_url:
             start_dem_download()
+        # The long-trail overview is one of the files deleted above, and
+        # nothing else rebuilds it short of a restart. Contours come back
+        # with the areas, which retrace their own.
+        start_global_routes_build()
         for r in active:
             region_registry.update_status(r["id"], "downloading", progress=0.0, detail="Waiting to download again…")
 

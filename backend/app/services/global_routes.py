@@ -15,6 +15,7 @@ import json
 import logging
 import re
 import shutil
+import threading
 import time
 from pathlib import Path
 
@@ -172,3 +173,55 @@ def _seen_add(seen: set, val) -> None:
         seen.add(int(val))
     except (TypeError, ValueError):
         pass
+
+
+_build_lock = threading.Lock()
+
+
+def routes_path() -> Path:
+    return Path(settings.map_data_dir) / "master_routes.pmtiles"
+
+
+def start_global_routes_build() -> bool:
+    """Build master_routes.pmtiles in the background, tracked as "routes".
+
+    Called at startup when the archive is missing, and by the basemap reset,
+    which deletes it. The reset used to leave that to the next restart: the
+    long trails stayed gone, every route tile answered 404, and the download
+    list went on showing the *previous* build as complete.
+
+    Written to a temp file and renamed into place, so a restart mid-build
+    never leaves a truncated archive that an exists() check would take for
+    done. Returns False when a build is already running.
+    """
+    if not _build_lock.acquire(blocking=False):
+        return False
+
+    def _run():
+        from app.services import region_merger
+        from app.services.global_download_tracker import global_download_tracker
+        from app.services.route_profile import precompute_route_profiles
+
+        out = routes_path()
+        tmp = out.with_suffix(".building.pmtiles")
+        global_download_tracker.register("routes", "Building long-trail overview", "")
+        global_download_tracker.start("routes")
+        try:
+            build_global_routes(str(tmp), progress_cb=lambda pct, detail: (
+                global_download_tracker.set_progress("routes", pct, detail)))
+            tmp.replace(out)
+            global_download_tracker.complete("routes")
+            region_merger.write_reload_trigger()
+            try:
+                precompute_route_profiles()   # cache elevation profiles for the fresh routes
+            except Exception:
+                logger.exception("Route profile precompute failed")
+        except Exception as exc:
+            global_download_tracker.fail("routes", str(exc))
+            logger.exception("Global routes build failed")
+            tmp.unlink(missing_ok=True)
+        finally:
+            _build_lock.release()
+
+    threading.Thread(target=_run, daemon=True, name="global-routes").start()
+    return True

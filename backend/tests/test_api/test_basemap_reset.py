@@ -22,6 +22,7 @@ def map_dir(tmp_path, monkeypatch):
     started = []
     monkeypatch.setattr("app.services.global_overview.start_map_download", lambda: started.append("map"))
     monkeypatch.setattr("app.services.global_dem.start_dem_download", lambda: started.append("dem"))
+    monkeypatch.setattr("app.services.global_routes.start_global_routes_build", lambda: started.append("routes"))
     return tmp_path, started
 
 
@@ -48,6 +49,20 @@ def test_with_downloads_on_the_basemap_is_fetched_again(client, user, db, map_di
     db.commit()
     assert client.post("/maps/basemap/reset", headers=headers).json()["redownloading"] is True
     assert "map" in started
+
+
+def test_every_archive_it_deletes_is_built_again(client, user, db, map_dir):
+    """The reset deletes the long-trail overview with the rest of the basemap,
+    and it was once left for the next restart to rebuild: long trails vanished
+    and every route tile 404'd, while the download list still showed the old
+    build as complete."""
+    _, started = map_dir
+    headers = _admin(client)
+    from app.models.user_settings import UserSettings
+    db.query(UserSettings).first().map_enabled = True
+    db.commit()
+    client.post("/maps/basemap/reset", headers=headers)
+    assert "routes" in started
 
 
 def test_it_is_refused_while_a_download_is_running(client, user, db, map_dir, monkeypatch):

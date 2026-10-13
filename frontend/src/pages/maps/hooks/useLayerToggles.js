@@ -80,7 +80,7 @@ const LAYER_GROUPS = [
     // appears immediately; data is fed by useMapItems.
     layers: ["custom_tracks_hit", "custom_tracks_hover", "custom_tracks_casing",
              "custom_tracks_line", "custom_tracks_line_external", "custom_tracks_arrows",
-             "saved_places_selected", "saved_places_icon", "saved_places_label"],
+             "saved_places_selected", "saved_places_selected_pin", "saved_places_icon", "saved_places_label"],
     default: true,
   },
   {

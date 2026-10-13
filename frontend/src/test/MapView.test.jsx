@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { buildStyle } from '../pages/maps/style';
+import { validateStyleMin } from '@maplibre/maplibre-gl-style-spec';
 
 const mockMapInstance = {
   on: vi.fn(function () { return this; }),
@@ -52,6 +53,15 @@ describe('map initialization config', () => {
   it('all tile URLs use /api/tiles/ path prefix for Caddy routing', () => {
     const style = buildStyle();
     expect(style.sources.basemap.tiles[0]).toMatch(/^\/api\/tiles\//);
+  });
+
+  it('passes MapLibre\'s own style validation', () => {
+    // MapLibre does not throw on an invalid style: it logs nothing useful,
+    // never fires "load", and the page shows a blank map and "Map data not
+    // available" — which reads as missing tiles and is not. A data expression
+    // on a property that does not take one (circle-translate) did exactly that.
+    const errors = validateStyleMin(buildStyle()).map((e) => e.message);
+    expect(errors).toEqual([]);
   });
 
   it('every layer references a valid source defined in buildSources', () => {
