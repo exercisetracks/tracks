@@ -292,7 +292,10 @@ private fun SavedAreas(
             modifier = Modifier.heightIn(max = 360.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            items(state.rows, key = { it.serverId ?: it.storedId ?: it.name }) { row ->
+            // Keyed by what each row is, never by a bare server id: a phone
+            // area saved from a server area carries that area's id too, and
+            // both rows are listed — two rows keyed "7" crashed the sheet.
+            items(state.rows, key = ::rowKey) { row ->
                 RegionRowItem(
                     row = row,
                     onDelete = { vm.delete(row) },
@@ -539,3 +542,12 @@ private fun StorageKey(color: androidx.compose.ui.graphics.Color, text: String) 
     }
 }
 
+
+
+/** A key unique among the sheet's rows: phone areas, server areas, old MapLibre regions. */
+internal fun rowKey(row: RegionRow): String = when {
+    row.areaId != null -> "area:${row.areaId}"
+    row.serverId != null -> "server:${row.serverId}"
+    row.storedId != null -> "stored:${row.storedId}"
+    else -> "name:${row.name}"
+}
