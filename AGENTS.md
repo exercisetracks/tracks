@@ -265,16 +265,24 @@ Images are built with Docker's legacy builder, for amd64 only (there is no
    editing them, so the bump is an ordinary reviewed commit. `API_VERSION`
    in the same file is separate: it moves only when the REST surface changes
    in a way a client can observe (its docstring says when).
-5. **Watch app changed?** Run `watchapp/build.sh all`, which rebuilds the
+5. **Write the release notes** in `docs/release-notes/X.Y.Z.md` and commit
+   them with the version bump. They are what the GitHub release says, in full:
+   a few short paragraphs summarising every change since the last release, in
+   plain language, for the people who run Tracks (what they will notice, what
+   was fixed, anything they need to do). Read `git log vPREVIOUS..HEAD` to
+   cover it all. No install or update instructions and no changelog link:
+   the README carries the instructions. `release.sh` refuses to run without
+   the file.
+6. **Watch app changed?** Run `watchapp/build.sh all`, which rebuilds the
    bundle the APK carries. `release.sh` refuses a bundle older than the
    watch app's source.
-6. **Release:** `./scripts/release.sh X.Y.Z` from a clean `main`. It builds
+7. **Release:** `./scripts/release.sh X.Y.Z` from a clean `main`. It builds
    every image and the APK first and publishes only once all of them built,
    then pushes `main` and the tag, then creates the GitHub release. Expect
    20–40 minutes, most of it uploading.
-7. **Verify every channel** — the script finishing is not proof:
+8. **Verify every channel** — the script finishing is not proof:
    - `gh release view vX.Y.Z -R exercisetracks/tracks` lists the APK, its
-     `.sha256` and `compose.yaml`.
+     `.sha256` and `compose.yaml`, and its notes are the summary.
    - Docker Hub shows `X.Y.Z`, `X.Y`, `X` and `latest` on `exercisetracks/tracks`
      (`curl -s https://hub.docker.com/v2/repositories/exercisetracks/tracks/tags`).
    - A fresh install works, pulled from Docker Hub rather than a local image:

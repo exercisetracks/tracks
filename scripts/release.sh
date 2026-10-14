@@ -48,6 +48,11 @@ git rev-parse -q --verify "refs/tags/$TAG" >/dev/null && die "$TAG already exist
 grep -q "^SERVER_VERSION = \"${VERSION}\"" backend/app/version.py || die "backend/app/version.py is not $VERSION"
 grep -q "\"version\": \"${VERSION}\"" frontend/package.json || die "frontend/package.json is not $VERSION"
 grep -q "versionName = \"${VERSION}\"" mobile/app/build.gradle.kts || die "mobile versionName is not $VERSION"
+# The release notes are a hand-written summary of what changed, committed with
+# the version bump (AGENTS.md, Releasing). Checked before anything is built,
+# so a missing summary costs nothing to fix.
+notes="docs/release-notes/${VERSION}.md"
+[ -s "$notes" ] || die "no release notes at $notes — write a short summary of the changes since the last release (AGENTS.md, Releasing)"
 
 bundle=mobile/app/src/main/assets/watchapp/index.json
 [ -f "$bundle" ] || die "no watch app bundle — run watchapp/build.sh all"
@@ -96,30 +101,15 @@ done
 git tag -a "$TAG" -m "Tracks ${VERSION}"
 git push origin main "$TAG"
 
-notes="build/release/notes-${VERSION}.md"
-cat > "$notes" <<NOTES
-## Install or update
-
-**Server** — new install:
-\`\`\`sh
-docker run -d --name tracks --restart unless-stopped -p 4080:80 \\
-  -v tracks-data:/data -v tracks-maps:/map-data exercisetracks/tracks:latest
-\`\`\`
-or save \`compose.yaml\` (below) and run \`docker compose up -d\`.
-
-Existing install — back up first (\`docker exec tracks tracks-backup > tracks.tar.gz\`), then
-\`docker compose pull && docker compose up -d\`, or pull and re-run your \`docker run\`.
-
-**Android** — install \`tracks-${VERSION}.apk\` below (Android 8.0+); it installs over
-an earlier Tracks and keeps your data. SHA-256: \`$(cut -d' ' -f1 "build/release/tracks-${VERSION}.apk.sha256")\`
-NOTES
 prerelease=()
 [[ "$VERSION" == *-* ]] && prerelease=(--prerelease)
 # Last, and the step most likely to hit a network blip — by now the images and
 # the tag are public, so a failure here must say how to finish rather than
 # leave the release half-made. (1.0.0 needed exactly that.)
+# The notes are the summary alone: no install instructions (the README has
+# them) and no generated changelog link.
 gh release create "$TAG" -R "$REPO" --title "Tracks ${VERSION}" --notes-file "$notes" \
-    --generate-notes --verify-tag "${prerelease[@]}" \
+    --verify-tag "${prerelease[@]}" \
     "$apk" "build/release/tracks-${VERSION}.apk.sha256" deploy/compose.yaml \
     || die "images and tag $TAG are published, but the GitHub release is not. Finish it with:
   gh release create $TAG -R $REPO --title 'Tracks ${VERSION}' --notes-file $notes --verify-tag $apk build/release/tracks-${VERSION}.apk.sha256 deploy/compose.yaml"
