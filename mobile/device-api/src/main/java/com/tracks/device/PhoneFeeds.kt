@@ -38,6 +38,16 @@ data class DeviceNotification(
      * here, so the order is the contract.
      */
     val actions: List<NotificationAction> = emptyList(),
+    /**
+     * A phone call ringing right now. Sent to the watch as an incoming call —
+     * it rings until the call is answered, declined or ends, with the watch's
+     * own answer, decline and reply-with-message buttons — not as a
+     * notification. Withdrawn with [DeviceIntegration.dismissNotification]
+     * like any other, the moment it stops ringing.
+     */
+    val ringingCall: Boolean = false,
+    /** The caller's number when the phone app shares it; what a text reply goes to. */
+    val phoneNumber: String? = null,
 )
 
 /**
@@ -80,6 +90,12 @@ sealed interface NotificationResponse {
 
     /** Press the notification's action at [index] in [DeviceNotification.actions]. */
     data class Action(override val notificationId: Int, val index: Int) : NotificationResponse
+
+    /** Answer the ringing call this was sent for. */
+    data class AnswerCall(override val notificationId: Int) : NotificationResponse
+
+    /** Decline it; with [text], also text the caller that message. */
+    data class DeclineCall(override val notificationId: Int, val text: String? = null) : NotificationResponse
 }
 
 /**

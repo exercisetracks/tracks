@@ -83,6 +83,34 @@ class TracksNotificationListener : NotificationListenerService() {
         // came after the policy check.
         if (sbn.packageName != packageName) rememberSource(sbn.packageName)
 
+        // A ringing call goes to the watch as a call (IncomingCalls). The same
+        // notification posted again once answered is no longer ringing: the
+        // watch stops ringing then, as it does when the call is declined or
+        // ends and the notification goes.
+        val callId = NotificationCapture.idOf(sbn)
+        val call = IncomingCalls.ringing(sbn)
+        if (call != null) {
+            if (NotificationRelayPreferences.policy(this).allows(sbn.packageName, importanceOf(sbn, rankingMap))) {
+                synchronized(calls) { calls[callId] = call }
+                deliver(DeviceNotification(
+                    id = callId,
+                    appName = runCatching {
+                        packageManager.getApplicationLabel(packageManager.getApplicationInfo(sbn.packageName, 0)).toString()
+                    }.getOrDefault("Phone"),
+                    packageName = sbn.packageName,
+                    title = call.caller,
+                    body = call.caller,
+                    category = com.tracks.device.NotificationCategory.CALL,
+                    timestamp = sbn.postTime,
+                    sender = call.caller,
+                    ringingCall = true,
+                    phoneNumber = call.number,
+                ))
+            }
+            return
+        }
+        if (synchronized(calls) { calls.remove(callId) } != null) withdraw(callId)
+
         val notification = NotificationCapture.from(
             sbn,
             packageManager,
@@ -98,6 +126,10 @@ class TracksNotificationListener : NotificationListenerService() {
         // cable can read.
         Log.d(TAG, "notification from ${notification.appName} (${notification.category})")
 
+        deliver(notification)
+    }
+
+    private fun deliver(notification: DeviceNotification) {
         // Delivered straight through when a watch is listening, buffered when
         // one is not. Buffering unconditionally would put a second or two of
         // latency on every notification, which is exactly the thing a watch
@@ -107,6 +139,9 @@ class TracksNotificationListener : NotificationListenerService() {
             sink.onNotification(notification)
             return
         }
+        // A call that rang while no watch was connected is over or answered
+        // by the time one is: not worth ringing the wrist for later.
+        if (notification.ringingCall) return
 
         pending += notification
         // Bounded so a burst — a group chat waking up, a sync flood — cannot
@@ -121,7 +156,11 @@ class TracksNotificationListener : NotificationListenerService() {
         // the user had already cleared on the phone.
         val id = NotificationCapture.idOf(sbn)
         synchronized(live) { live.remove(id) }
+        synchronized(calls) { calls.remove(id) }
+        withdraw(id)
+    }
 
+    private fun withdraw(id: Int) {
         val sink = sink
         if (sink != null) {
             sink.onDismissed(id)
@@ -205,6 +244,23 @@ class TracksNotificationListener : NotificationListenerService() {
          * as the class note applies to what they send as to what they receive.
          */
         fun respond(context: Context, response: NotificationResponse): Boolean {
+            when (response) {
+                is NotificationResponse.AnswerCall -> {
+                    val call = synchronized(calls) { calls[response.notificationId] } ?: return false
+                    return IncomingCalls.press(context, call.answer)
+                }
+                is NotificationResponse.DeclineCall -> {
+                    val call = synchronized(calls) { calls[response.notificationId] } ?: return false
+                    val declined = IncomingCalls.press(context, call.decline)
+                    response.text?.let { text ->
+                        if (!IncomingCalls.textReply(context, call.number, text)) {
+                            couldNotText(context, call)
+                        }
+                    }
+                    return declined
+                }
+                else -> Unit
+            }
             val target = synchronized(live) { live[response.notificationId] } ?: return false
             Log.d(TAG, "watch response: ${response::class.simpleName}")
             return when (response) {
@@ -229,7 +285,21 @@ class TracksNotificationListener : NotificationListenerService() {
                     val action = target.actions.getOrNull(response.index) ?: return false
                     send(context, action) { null }
                 }
+                is NotificationResponse.AnswerCall, is NotificationResponse.DeclineCall -> false
             }
+        }
+
+        /** Ringing calls relayed to the watch, by notification id. */
+        private val calls = HashMap<Int, IncomingCalls.Ringing>()
+
+        /** The reply could not be texted: say so on the phone, and why. */
+        private fun couldNotText(context: Context, call: IncomingCalls.Ringing) {
+            val why = when {
+                call.number == null -> "the phone app did not share the caller's number"
+                else -> "texting callers is off — turn it on in Settings › Notifications on the watch"
+            }
+            (context.applicationContext as? com.tracks.app.TracksApplication)?.container?.status
+                ?.post("Could not text ${call.caller}: $why")
         }
 
         /**

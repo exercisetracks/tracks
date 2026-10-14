@@ -88,6 +88,16 @@ fun NotificationRelayCard(modifier: Modifier = Modifier) {
     var picking by remember { mutableStateOf(false) }
     var replies by remember { mutableStateOf(NotificationRelayPreferences.quickReplies(context)) }
     var editingReplies by remember { mutableStateOf(false) }
+    // Texting callers needs SEND_SMS, asked for only here, when wanted. The
+    // switch shows the permission itself: Android owns it, and turning it off
+    // is done in the app's system settings.
+    var canText by remember {
+        mutableStateOf(context.checkSelfPermission(android.Manifest.permission.SEND_SMS) ==
+            android.content.pm.PackageManager.PERMISSION_GRANTED)
+    }
+    val askToText = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.RequestPermission(),
+    ) { granted -> canText = granted }
 
     Column(modifier) {
         SettingsCard("Notifications on the watch") {
@@ -115,6 +125,40 @@ fun NotificationRelayCard(modifier: Modifier = Modifier) {
                     onCheckedChange = {
                         skipSilent = it
                         NotificationRelayPreferences.setSkipSilent(context, it)
+                    },
+                )
+            }
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
+
+            // Calls ring on the watch with answer, decline and a reply; the
+            // reply declines and texts the caller one of the quick replies.
+            Row(
+                Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        "Text callers your reply",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    Text(
+                        "Calls ring on the watch. Replying from it declines the call and texts the caller.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                TracksSwitch(
+                    checked = canText,
+                    onCheckedChange = { on ->
+                        if (on) askToText.launch(android.Manifest.permission.SEND_SMS)
+                        else context.startActivity(
+                            android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                                .setData(android.net.Uri.fromParts("package", context.packageName, null))
+                                .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK),
+                        )
                     },
                 )
             }

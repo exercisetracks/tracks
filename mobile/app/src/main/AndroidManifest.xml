@@ -108,6 +108,13 @@
       six-hour foreground-service cap. See map/packs/PackJobs.
     -->
     <uses-permission android:name="android.permission.RUN_USER_INITIATED_JOBS" />
+    <!--
+      Only to text a caller the reply chosen on the watch when declining a call
+      from it (feeds/IncomingCalls). Runtime permission, asked for only when the
+      user turns "Text callers your reply" on in Settings; never used otherwise.
+    -->
+    <uses-permission android:name="android.permission.SEND_SMS" />
+    <uses-feature android:name="android.hardware.telephony" android:required="false" />
 
     <!--
       Held only while a backup is written, so the CPU does not sleep under it

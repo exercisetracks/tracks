@@ -44,6 +44,8 @@ import nodomain.freeyourgadget.gadgetbridge.deviceevents.GBDeviceEvent
 import nodomain.freeyourgadget.gadgetbridge.deviceevents.GBDeviceEventBatteryInfo
 import nodomain.freeyourgadget.gadgetbridge.deviceevents.GBDeviceEventFindPhone
 import nodomain.freeyourgadget.gadgetbridge.deviceevents.GBDeviceEventMusicControl
+import nodomain.freeyourgadget.gadgetbridge.deviceevents.GBDeviceEventCallControl
+import nodomain.freeyourgadget.gadgetbridge.model.CallSpec
 import nodomain.freeyourgadget.gadgetbridge.deviceevents.GBDeviceEventNotificationControl
 import nodomain.freeyourgadget.gadgetbridge.deviceevents.GBDeviceEventVersionInfo
 import nodomain.freeyourgadget.gadgetbridge.impl.GBDevice
@@ -582,10 +584,45 @@ class GarminIntegration(private val context: Context) : DeviceIntegration {
             is GBDeviceEventMusicControl -> toMusicCommand(event.event)?.let { _musicCommands.tryEmit(it) }
             is WeatherRequestDeviceEvent -> _weatherRequests.tryEmit(Unit)
             is GBDeviceEventFindPhone -> findPhoneFor(event.event)?.let { _findPhone.tryEmit(it) }
-            is GBDeviceEventNotificationControl ->
-                GarminNotifications.responseOf(event)?.let { _notificationResponses.tryEmit(it) }
-                    ?: Log.d(TAG, "Unhandled notification control: $event")
+            is GBDeviceEventCallControl -> onCallControl(event)
+            is GBDeviceEventNotificationControl -> {
+                val call = ringing
+                // The watch's "reply with a message" to a call: a decline (the
+                // REJECT event before this one) with the text attached.
+                if (call != null && event.handle == call.watchId.toLong() &&
+                    event.event == GBDeviceEventNotificationControl.Event.REPLY) {
+                    pendingDecline?.cancel()
+                    ringing = null
+                    _notificationResponses.tryEmit(NotificationResponse.DeclineCall(call.notificationId, event.reply))
+                } else {
+                    GarminNotifications.responseOf(event)?.let { _notificationResponses.tryEmit(it) }
+                        ?: Log.d(TAG, "Unhandled notification control: $event")
+                }
+            }
             else -> Log.d(TAG, "Unhandled device event: $event")
+        }
+    }
+
+    private var pendingDecline: kotlinx.coroutines.Job? = null
+
+    private fun onCallControl(event: GBDeviceEventCallControl) {
+        val call = ringing ?: return
+        when (event.event) {
+            GBDeviceEventCallControl.Event.ACCEPT ->
+                _notificationResponses.tryEmit(NotificationResponse.AnswerCall(call.notificationId))
+            GBDeviceEventCallControl.Event.REJECT -> {
+                // A reply arrives as REJECT then the reply text; wait a moment
+                // so the decline is sent once, with its message.
+                pendingDecline?.cancel()
+                pendingDecline = lifecycle.launch {
+                    kotlinx.coroutines.delay(1500)
+                    if (ringing === call) {
+                        ringing = null
+                        _notificationResponses.tryEmit(NotificationResponse.DeclineCall(call.notificationId))
+                    }
+                }
+            }
+            else -> Log.d(TAG, "Unhandled call control: ${event.event}")
         }
     }
 
@@ -1241,12 +1278,49 @@ class GarminIntegration(private val context: Context) : DeviceIntegration {
     // ── Phone feeds ──────────────────────────────────────────────────────────
 
     override suspend fun sendNotification(notification: DeviceNotification) {
-        support?.sendNotification(GarminNotifications.toSpec(notification))
+        val support = support ?: return
+        if (notification.ringingCall) {
+            // An incoming call, not a notification: the watch rings until the
+            // call is withdrawn, and offers its own answer / decline / reply
+            // buttons (NotificationsHandler.onSetCallState).
+            val call = CallSpec().apply {
+                command = CallSpec.CALL_INCOMING
+                name = notification.title ?: notification.sender
+                number = notification.phoneNumber
+                sourceAppId = notification.packageName
+            }
+            ringing = RingingCall(notification.id, call)
+            support.sendCallState(call)
+            return
+        }
+        support.sendNotification(GarminNotifications.toSpec(notification))
     }
 
     override suspend fun dismissNotification(id: Int) {
+        val call = ringing
+        if (call != null && call.notificationId == id) {
+            ringing = null
+            support?.sendCallState(CallSpec().apply {
+                command = CallSpec.CALL_END
+                number = call.spec.number
+            })
+            return
+        }
         support?.deleteNotification(id)
     }
+
+    /**
+     * The call ringing on the watch, if any: the notification id the phone
+     * knows it by, and the spec the watch was sent. The watch's answers carry
+     * no id of their own — answer and decline name no call, and a reply names
+     * the vendored handler's id for it (the caller's number, hashed) — so they
+     * are matched to this.
+     */
+    private class RingingCall(val notificationId: Int, val spec: CallSpec) {
+        val watchId: Int get() = (spec.number?.takeIf { it.isNotBlank() } ?: "Gadgetbridge Call").hashCode()
+    }
+
+    @Volatile private var ringing: RingingCall? = null
 
     override suspend fun setQuickReplies(replies: List<String>) {
         support?.setQuickReplies(replies.toTypedArray())
