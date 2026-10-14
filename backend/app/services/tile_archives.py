@@ -96,6 +96,7 @@ def merge(
     min_zoom: int | None = None,
     max_zoom: int | None = None,
     prototype: str | Path | None = None,
+    progress: Callable[[int, int], None] | None = None,
 ) -> int:
     """Merge `sources` into `output`; on a tile two sources hold, the later wins.
 
@@ -138,8 +139,13 @@ def merge(
         streams = [tagged(s) for s in opened]
         written = 0
         last_id = -1
+        seen = 0
+        total = sum(int(s.header.get("addressed_tiles_count") or 0) for s in opened)
         with pmtiles_write(str(tmp)) as writer:
             for tid, _neg_rank, off, length, src in heapq.merge(*streams, key=lambda t: (t[0], t[1])):
+                seen += 1
+                if progress is not None and seen % 20000 == 0:
+                    progress(seen, total)
                 if tid == last_id:
                     continue
                 if tid < last_id:

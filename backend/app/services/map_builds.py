@@ -78,6 +78,13 @@ HEARTBEAT_S = 10.0
 MAX_ATTEMPTS = 3
 
 PHASES = ("extract", "overlay", "dem", "contours", "basemap", "publish")
+
+# Bumped when the overlay builder changes what it puts in a part. Areas whose
+# part was built by an older version get only their overlay rebuilt
+# (upgrade_overlays), over the ground they own — nothing downloaded again.
+#   2: public land reaching past the area's box is kept (boundary relations
+#      completed in the OSM extract; see osmium_runner._extract_region).
+OVERLAY_VERSION = 2
 _BUILD_STATUSES = {"downloading", "downloading_dem", "merging", "trails", "contours"}
 _TEARDOWN_STATUSES = {"deleting", "cancelling"}
 
@@ -125,6 +132,7 @@ def drain() -> bool:
         try:
             migrate_legacy_parts()
             recover_missing_masters()
+            upgrade_overlays()
             while True:
                 job = next_job()
                 if job is None:
@@ -190,6 +198,7 @@ def build(job: dict) -> None:
         return
     region_registry.record_attempt(rid)  # before the work, so a crash counts too
     done = set(done)
+    downloaded = "extract" not in done   # a fresh build, not an overlay-only rebuild
 
     work = map_store.work_dir(rid)
     work.mkdir(parents=True, exist_ok=True)
@@ -197,8 +206,18 @@ def build(job: dict) -> None:
     cancel.start_watching()
     phase = "start"
 
+    high = [0.0]
+
     def status(state, pct, detail):
-        region_registry.update_status(rid, state, progress=round(float(pct), 1), detail=detail)
+        # One overall percentage for the whole build, which only moves
+        # forward: each phase owns a slice of the bar (_SPAN), and reports
+        # how far through its own slice it is.
+        lo, hi = _SPAN[phase]
+        overall = lo + (hi - lo) * max(0.0, min(100.0, float(pct))) / 100.0
+        # Never backwards, whatever a tool's own counter does (tippecanoe
+        # restarts its percentage for each pass over the data).
+        overall = high[0] = max(high[0], overall)
+        region_registry.update_status(rid, state, progress=round(overall, 1), detail=detail)
 
     def finish(name):
         region_registry.add_phase_done(rid, name)
@@ -219,7 +238,9 @@ def build(job: dict) -> None:
             phase = "overlay"
             if phase not in done:
                 status("trails", 0, "Fetching trail data…")
-                owned = _ground_to_own(rid, bbox)
+                # Ground already owned stays owned: an overlay rebuild must not
+                # recompute it against areas built since, which were cut around it.
+                owned = map_store.shape(job.get("owned")) or _ground_to_own(rid, bbox)
                 part = work / "overlay.pmtiles"
                 if owned is not None:
                     from app.routes.regions.thematic import build_overlay_part
@@ -234,7 +255,8 @@ def build(job: dict) -> None:
             if phase not in done:
                 if (work / "dem.pmtiles").exists():
                     status("merging", 0, "Adding terrain…")
-                    map_store.publish(map_store.MASTER_DEM, work / "dem.pmtiles")
+                    map_store.publish(map_store.MASTER_DEM, work / "dem.pmtiles",
+                                      progress=lambda f: status("merging", f * 100, f"Adding terrain… {f:.0%}"))
                 finish(phase)
 
             phase = "contours"
@@ -249,24 +271,32 @@ def build(job: dict) -> None:
             if phase not in done:
                 src = work / "source.pmtiles"
                 if src.exists():
-                    status("merging", 50, "Adding map detail…")
-                    map_store.publish(map_store.MASTER_BASEMAP, src)
+                    status("merging", 0, "Adding map detail…")
+                    map_store.publish(map_store.MASTER_BASEMAP, src,
+                                      progress=lambda f: status("merging", f * 90, f"Adding map detail… {f:.0%}"))
+                    status("merging", 95, "Indexing places…")
                     _index_pois(src)
                 finish(phase)
 
             phase = "publish"
             if phase not in done:
-                status("merging", 90, "Adding trails…")
+                status("merging", 0, "Adding trails…")
                 part = work / "overlay.pmtiles"
+                dest = map_store.area_dir(rid)
+                dest.mkdir(parents=True, exist_ok=True)
                 if part.exists():
-                    dest = map_store.area_dir(rid)
-                    dest.mkdir(parents=True, exist_ok=True)
+                    # The new part covers all the ground this area owns, any
+                    # handed over from removed neighbours included.
+                    for old in dest.glob("overlay-from-*.pmtiles"):
+                        old.unlink()
                     shutil.move(str(part), dest / "overlay.pmtiles")
-                map_store.rebuild_overlay(cancel=cancel)
+                (dest / "overlay.version").write_text(str(OVERLAY_VERSION))
+                map_store.rebuild_overlay(cancel=cancel,
+                                          progress_cb=lambda pct, detail=None: status("merging", pct, detail or "Adding trails…"))
                 finish(phase)
 
         region_registry.update_status(rid, "installed", progress=100.0, detail=None,
-                                      size_bytes=size or None)
+                                      size_bytes=(size or None) if downloaded else None)
         region_registry.reset_phases(rid)
         shutil.rmtree(work, ignore_errors=True)
         map_store.write_reload_trigger()
@@ -282,6 +312,12 @@ def build(job: dict) -> None:
     finally:
         cancel.stop_watching()
 
+
+# Each phase's slice of the overall progress bar, by how long it takes.
+_SPAN = {
+    "start": (0, 0), "extract": (0, 30), "overlay": (30, 70), "dem": (70, 76),
+    "contours": (76, 86), "basemap": (86, 92), "publish": (92, 100),
+}
 
 _PHASE_LABEL = {
     "start": "Could not start",
@@ -457,6 +493,29 @@ def migrate_legacy_parts() -> None:
             logger.info("Area %s: removed per-area copies now held only by the masters", rid)
         if row.get("owned") is None:
             region_registry.set_owned(rid, map_store.geojson(region_registry.region_geom(row)))
+
+
+def upgrade_overlays() -> None:
+    """Queue an overlay-only rebuild for installed areas built before OVERLAY_VERSION."""
+    for r in region_registry.list_active():
+        if r["status"] != "installed":
+            continue
+        marker = map_store.area_dir(r["id"]) / "overlay.version"
+        try:
+            built = int(marker.read_text())
+        except (OSError, ValueError):
+            built = 1
+        if built >= OVERLAY_VERSION:
+            continue
+        if r.get("owned") is None:
+            region_registry.set_owned(r["id"], map_store.geojson(region_registry.region_geom(r)))
+        region_registry.reset_phases(r["id"])
+        for phase in ("extract", "dem", "contours", "basemap"):
+            region_registry.add_phase_done(r["id"], phase)
+        region_registry.update_status(r["id"], "queued", progress=0.0,
+                                      detail="Updating trails and public lands…")
+        logger.info("Area %s: rebuilding its overlay (built by version %s, now %s)",
+                    r["id"], built, OVERLAY_VERSION)
 
 
 def recover_missing_masters() -> None:

@@ -23,7 +23,8 @@ logger = logging.getLogger(__name__)
 
 
 def merge_archives(sources: list[str], output: str, min_zoom: int | None = None,
-                   max_zoom: int | None = None, prototype: str | None = None) -> int:
+                   max_zoom: int | None = None, prototype: str | None = None,
+                   progress=None) -> int:
     """Merge archives (newest source wins on overlap) into ``output``.
 
     ``min_zoom``/``max_zoom`` slice by zoom. The header and metadata come from
@@ -44,7 +45,7 @@ def merge_archives(sources: list[str], output: str, min_zoom: int | None = None,
         return 0
     old_size = Path(output).stat().st_size if Path(output).exists() else 0
     n = tile_archives.merge(cleaned, output, min_zoom=min_zoom, max_zoom=max_zoom,
-                            prototype=prototype)
+                            prototype=prototype, progress=progress)
     if n:
         logger.info("Custom merge done: %d → %d bytes (%d sources, %d unique tiles)",
                     old_size, Path(output).stat().st_size, len(cleaned), n)

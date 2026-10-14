@@ -95,7 +95,7 @@ def ensure_source(bbox: tuple[float, float, float, float], cancel=None,
                   progress=None) -> Path | None:
     """A slim, tag-filtered PBF covering ``bbox`` — one extract, or several
     merged when the box crosses a border (geofabrik.find_cover). None on any
-    failure. ``progress(detail)`` hears about first-time downloads.
+    failure. ``progress(detail, fraction)`` hears about first-time downloads.
     """
     from app.services.osm_source.geofabrik import find_cover
     if not osmium_available():
@@ -164,7 +164,7 @@ def _fetch_and_slim(extract_id: str, url: str, slim: Path, cancel=None, progress
 
     logger.info("Filtering %s (%.0f MB) → slim PBF …", extract_id, raw.stat().st_size / 1e6)
     if progress:
-        progress(f"Preparing {extract_id} trail data…")
+        progress(f"Preparing {extract_id} trail data…", 1.0)
     tmp = slim.with_suffix(".tmp.pbf")
     try:
         ok = _run_osmium(["tags-filter", "-O", "-o", str(tmp), str(raw),
@@ -217,7 +217,7 @@ def _download_resumable(url: str, dest: Path, label: str, cancel=None, progress=
                         done += len(chunk)
                         if progress and total:
                             progress(f"Downloading {label} trail data… "
-                                     f"{done / 1e6:.0f} / {total / 1e6:.0f} MB")
+                                     f"{done / 1e6:.0f} / {total / 1e6:.0f} MB", done / total)
             part.replace(dest)
             return
         except DownloadCancelled:
@@ -262,8 +262,15 @@ def _extract_region(bbox: tuple[float, float, float, float], source,
     fd, out = tempfile.mkstemp(suffix=".osm.pbf", dir=str(_osm_dir()))
     Path(out).unlink(missing_ok=True)  # osmium writes it fresh
     os.close(fd)
-    ok = _run_osmium(["extract", "-O", "-s", "smart", "-b", f"{w},{s},{e},{n}",
-                      "-o", out, str(source)], timeout=600, cancel=cancel)
+    # `smart` completes relations that only partly fall in the box — but by
+    # default only type=multipolygon. National forests, parks and wilderness
+    # are mostly type=boundary relations, so for a box inside one (smaller than
+    # the forest around it) the relation came out with most of its ring
+    # missing, could not be assembled into an area, and the public land simply
+    # was not on the map; only areas wholly inside the box survived. Measured on
+    # Colville National Forest: 0 polygons without `boundary` here, 1 with.
+    ok = _run_osmium(["extract", "-O", "-s", "smart", "-S", "types=multipolygon,boundary",
+                      "-b", f"{w},{s},{e},{n}", "-o", out, str(source)], timeout=600, cancel=cancel)
     if not ok or not Path(out).exists():
         Path(out).unlink(missing_ok=True)
         return None

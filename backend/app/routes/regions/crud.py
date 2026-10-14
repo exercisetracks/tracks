@@ -56,27 +56,31 @@ def estimate_region(bbox: str):
     # A failure is a 502 carrying pmtiles' reason, not a size of 0: the download
     # this estimate precedes reads the same sources and would fail the same way.
     try:
-        return {"bytes": estimate_bytes(parts)}
+        return estimate_parts(parts)
     except region_downloader.DryRunFailed as e:
         raise HTTPException(502, str(e))
 
 
 def estimate_bytes(bbox: list[float]) -> int:
-    """Bytes the basemap and terrain extracts for `bbox` would take."""
-    bbox_str = ",".join(str(p) for p in bbox)
-    jobs = []
+    """Bytes a build of `bbox` would add to this server (services.remote_estimate)."""
+    return estimate_parts(bbox)["bytes"]
+
+
+def estimate_parts(bbox: list[float]) -> dict:
+    from app.services import remote_estimate
+    sources = []
     if settings.pmtiles_source_url:
-        jobs.append((resolve_source_url(settings.pmtiles_source_url),
-                     region_downloader._basemap_region_minzoom(), 15))
+        sources.append(("basemap", resolve_source_url(settings.pmtiles_source_url),
+                        region_downloader._basemap_region_minzoom(), 15))
     if settings.dem_source_url:
-        jobs.append((settings.dem_source_url,
-                     region_downloader._dem_region_minzoom(),
-                     region_downloader._dem_region_maxzoom()))
-    if not jobs:
-        return 0
-    # Concurrently: each is a few seconds of remote range requests.
-    with ThreadPoolExecutor(max_workers=len(jobs)) as ex:
-        return sum(ex.map(lambda j: region_downloader.dry_run_size(j[0], bbox_str, j[1], j[2]), jobs))
+        sources.append(("dem", settings.dem_source_url,
+                        region_downloader._dem_region_minzoom(),
+                        region_downloader._dem_region_maxzoom()))
+    try:
+        return remote_estimate.estimate(bbox, sources, region_registry.coverage())
+    except Exception as e:
+        logger.warning("Size estimate failed for %s: %s", bbox, e)
+        raise region_downloader.DryRunFailed(f"could not read the map source: {e}")
 
 
 def _refuse_if_dns_blocked() -> None:

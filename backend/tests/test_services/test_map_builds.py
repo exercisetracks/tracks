@@ -84,7 +84,7 @@ def phases(monkeypatch, reg):
     from app.services import region_downloader
     monkeypatch.setattr(region_downloader, "extract_layers", extract)
     monkeypatch.setattr(thematic, "build_overlay_part", overlay)
-    monkeypatch.setattr(map_store, "publish", lambda name, part: ran.append(("publish", name)))
+    monkeypatch.setattr(map_store, "publish", lambda name, part, **k: ran.append(("publish", name)))
     monkeypatch.setattr(map_store, "rebuild_overlay", lambda **k: ran.append("rebuild_overlay"))
     monkeypatch.setattr(map_store, "drop_area", lambda name, area, rem: ran.append(("drop", name)))
     monkeypatch.setattr(map_builds, "_build_contours", lambda *a: ran.append("contours"))
@@ -121,6 +121,22 @@ class TestBuild:
         ]
         assert (map_store.area_dir(1) / "overlay.pmtiles").exists()
         assert not map_store.work_dir(1).exists(), "the scratch goes once it is published"
+
+    def test_the_progress_bar_only_moves_forward(self, reg, phases, monkeypatch):
+        """One percentage for the whole build: each step owns a slice, so the
+        bar no longer resets to 0 at every step or sits at 50% while merging."""
+        seen = []
+        original = region_registry.update_status
+
+        def record(rid, status, **kw):
+            if kw.get("progress") is not None and status != "installed":
+                seen.append(kw["progress"])
+            original(rid, status, **kw)
+        monkeypatch.setattr(region_registry, "update_status", record)
+        map_store.master_path(map_store.MASTER_DEM).write_bytes(b"dem")
+        map_builds.build(reg.add(1, "queued", (-121, 44, -120, 45)))
+        assert seen == sorted(seen), seen
+        assert seen[0] < 5 and seen[-1] >= 92
 
     def test_a_resumed_build_starts_after_its_last_finished_phase(self, reg, phases):
         """A restart used to start the whole build again, re-downloading
@@ -160,7 +176,7 @@ class TestBuild:
     def test_a_cancelled_build_removes_what_it_published(self, reg, phases, monkeypatch):
         job = reg.add(1, "queued", (-121, 44, -120, 45))
 
-        def cancel_during(name, part):
+        def cancel_during(name, part, **k):
             phases.append(("publish", name))
             reg.rows[1]["status"] = "cancelling"
         monkeypatch.setattr(map_store, "publish", cancel_during)
@@ -170,6 +186,22 @@ class TestBuild:
         map_builds.build(job)
         assert reg.rows[1]["status"] == "deleted"
         assert ("drop", "master_dem") in phases
+
+
+class TestOverlayUpgrade:
+    def test_an_area_built_by_an_older_overlay_builder_rebuilds_only_its_overlay(self, reg, phases):
+        """A fix to the overlay (public land past the box) reaches areas already
+        installed without downloading their maps again."""
+        reg.add(1, "installed", (-121, 44, -120, 45), owned=map_store.geojson(box(-121, 44, -120.5, 45)))
+        map_builds.upgrade_overlays()
+        assert reg.rows[1]["status"] == "queued"
+        map_builds.build(reg.rows[1])
+        assert reg.rows[1]["status"] == "installed"
+        assert phases == [("overlay", (-121.0, 44.0, -120.5, 45.0)), "rebuild_overlay"], \
+            "only the overlay, over the ground it already owned"
+        assert (map_store.area_dir(1) / "overlay.version").read_text() == str(map_builds.OVERLAY_VERSION)
+        map_builds.upgrade_overlays()
+        assert reg.rows[1]["status"] == "installed", "once is enough"
 
 
 class TestOwnership:

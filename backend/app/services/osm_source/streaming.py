@@ -23,7 +23,7 @@ from app.services.osm_source.osmium_runner import (
 
 
 def prepare_region_pbf(bbox: tuple[float, float, float, float],
-                       cancel=None) -> Path | None:
+                       cancel=None, progress=None) -> Path | None:
     """Clip ``bbox`` from the cached slim source into ONE temp region PBF (or None).
 
     The single extract is shared by both the GeoJSON export and the route-relation
@@ -32,7 +32,7 @@ def prepare_region_pbf(bbox: tuple[float, float, float, float],
     """
     if not osmium_available():
         return None
-    source = ensure_source(bbox, cancel=cancel)
+    source = ensure_source(bbox, cancel=cancel, progress=progress)
     if source is None:
         return None
     return _extract_region(bbox, source, cancel=cancel)

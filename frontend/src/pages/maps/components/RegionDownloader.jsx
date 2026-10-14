@@ -52,8 +52,8 @@ const PHASES = {
   downloading:     { label: "Downloading map",       tone: "sky" },
   downloading_dem: { label: "Downloading terrain",   tone: "sky" },
   merging:         { label: "Adding to the map",     tone: "amber" },
-  trails:          { label: "Generating trails",     tone: "emerald" },
-  contours:        { label: "Generating contours",   tone: "violet" },
+  trails:          { label: "Fetching trail data",   tone: "emerald" },
+  contours:        { label: "Tracing contours",      tone: "violet" },
   combining:       { label: "Merging areas",         tone: "amber" },
   cancelling:      { label: "Cancelling",            tone: "rose", indeterminate: true },
 };
@@ -185,10 +185,13 @@ export default function RegionDownloader({
         // process left to finish it (crash, container restart, killed
         // subprocess) — show it as stalled rather than spinning forever.
         const tone = TONES[r.stale ? "rose" : phase.tone];
+        // The server reports one percentage for the whole build, each step
+        // owning a slice of it (map_builds._SPAN), so the bar only moves
+        // forward; the step and its own detail are the line underneath.
         const pct = Math.max(0, Math.min(100, r.progress || 0));
-        // Show an indeterminate slide-bar for phases with no byte/tile progress
-        // (the merge) and at the very start of a phase before the first tick.
-        const indeterminate = !r.stale && (phase.indeterminate || pct <= 0);
+        // Indeterminate only while there is no build to measure: waiting in
+        // the queue, or being cancelled.
+        const indeterminate = !r.stale && !!phase.indeterminate;
 
         return (
           <div key={r.id} className={`px-2 py-1.5 rounded-lg bg-gradient-to-br ${tone.card} border space-y-2`}>

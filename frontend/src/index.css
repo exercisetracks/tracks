@@ -183,6 +183,15 @@ input[type="range"].appearance-none::-moz-range-thumb {
   /* rounded-xl, as the map's other floating controls and panels are. */
   border-radius: 0.75rem;
 }
+/* The geocoder's input is type="search", so Chrome draws its own clear X while
+   typing, beside the geocoder's own button: two X's for one action. The
+   geocoder's (the rightmost, always there) is the one kept. */
+.maplibregl-ctrl-geocoder--input::-webkit-search-cancel-button,
+.maplibregl-ctrl-geocoder--input::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+  display: none;
+}
 .maplibregl-ctrl-top-left .maplibregl-ctrl-geocoder--input {
   border-radius: 0.75rem;
 }

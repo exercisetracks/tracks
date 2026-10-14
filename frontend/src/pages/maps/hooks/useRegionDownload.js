@@ -69,8 +69,9 @@ export function useRegionDownload(map) {
   }, [loadRegions, hasActive]);
 
   // --- 3. Download-size estimate (debounced) -----------------------------
-  // Precise download-size estimate: the exact byte size of the basemap (z13-15)
-  // + DEM extracts, computed server-side via `pmtiles extract --dry-run`.
+  // What the area would add to the server: basemap detail and terrain read
+  // from the sources' directories, trails and contours in proportion, and
+  // nothing for ground already held (services/remote_estimate.py).
   // Debounced so it only fires when the user pauses dragging the rectangle.
   useEffect(() => {
     if (!drawing || !bbox) return;
@@ -88,7 +89,7 @@ export function useRegionDownload(map) {
         setSizeEstimate(null);
         setEstimateError(err?.message || "The server could not size this area");
       }
-    }, 500);
+    }, 250);
     return () => { live = false; clearTimeout(t); };
   }, [bbox, drawing]);
 
@@ -288,6 +289,18 @@ export function useRegionDownload(map) {
     setBbox(null);
     setSizeEstimate(null);
     map.getCanvas().style.cursor = "crosshair";
+    // Size the visible map now, unawaited: the server reads the map sources'
+    // directories for this ground once and keeps them, so the estimate for
+    // the box drawn next answers in a fraction of a second instead of the
+    // several it takes cold.
+    try {
+      const b = map.getBounds();
+      // Not when zoomed far out: warming a continent would read megabytes of
+      // directories for ground nobody is about to frame.
+      if ((b.getEast() - b.getWest()) * (b.getNorth() - b.getSouth()) < 25) {
+        api.estimateRegion([b.getWest(), b.getSouth(), b.getEast(), b.getNorth()]).catch(() => {});
+      }
+    } catch {}
 
     try { map.dragPan.disable(); } catch {}
     try { map.boxZoom.disable(); } catch {}

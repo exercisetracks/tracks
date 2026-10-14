@@ -168,6 +168,14 @@ def merge_overlays(sources: list[str], output_path: str | Path, progress_cb=None
     return len(srcs)
 
 
+def _takes_detail(cb) -> bool:
+    import inspect
+    try:
+        return len(inspect.signature(cb).parameters) >= 2
+    except (TypeError, ValueError):
+        return False
+
+
 def _join_shared_only(srcs: list[str], output: Path, progress_cb=None, cancel=None) -> None:
     """tile-join only the tiles two or more regions share; byte-copy the rest.
 
@@ -186,53 +194,49 @@ def _join_shared_only(srcs: list[str], output: Path, progress_cb=None, cancel=No
 
     from app.services import custom_merge
 
-    owners: dict[int, int] = {}
+    from app.services import tile_archives
+
+    def report(pct, detail):
+        if progress_cb is not None:
+            progress_cb(pct, detail) if _takes_detail(progress_cb) else progress_cb(pct)
+
+    # Ids from the directories alone: which tiles two parts share is a
+    # question about addresses, not contents (it used to read every tile).
+    seen: set[int] = set()
     shared: set[int] = set()
     for src in srcs:
-        with open(src, "rb") as f:
-            reader = Reader(MmapSource(f))
-            for (z, x, y), _ in all_tiles(reader.get_bytes):
-                tid = zxy_to_tileid(z, x, y)
-                owners[tid] = owners.get(tid, 0) + 1
-                if owners[tid] == 2:
-                    shared.add(tid)
-    del owners
+        for tid in tile_archives.tile_ids(src):
+            if tid in seen:
+                shared.add(tid)
+            else:
+                seen.add(tid)
+    del seen
     if cancel is not None:
         cancel.raise_if_cancelled()
+    report(10, "Finding shared tiles…")
 
     work = output.with_name(output.stem + ".shared")
     shutil.rmtree(work, ignore_errors=True)
     work.mkdir(parents=True)
     try:
         parts: list[str] = []
-        for i, src in enumerate(srcs):
-            part = work / f"part{i}.pmtiles"
-            wrote = 0
-            with open(src, "rb") as f:
-                reader = Reader(MmapSource(f))
-                header, metadata = reader.header(), reader.metadata()
-                with pmtiles_write(str(part)) as writer:
-                    for (z, x, y), data in all_tiles(reader.get_bytes):
-                        tid = zxy_to_tileid(z, x, y)
-                        if tid in shared:
-                            writer.write_tile(tid, data)
-                            wrote += 1
-                    # finalize() needs at least one tile.
-                    if wrote:
-                        writer.finalize(header, metadata)
-            if wrote:
-                parts.append(str(part))
-            else:
-                part.unlink(missing_ok=True)
+        if shared:
+            for i, src in enumerate(srcs):
+                part = work / f"part{i}.pmtiles"
+                # Only the shared tiles' bytes are read.
+                if tile_archives.copy_subset(src, part, shared.__contains__):
+                    parts.append(str(part))
 
         layers = list(srcs)
         if len(parts) >= 2:
             joined = work / "joined.pmtiles"
             _run(["tile-join", "-o", str(joined), "--force", "--no-tile-size-limit", *parts],
-                 "tile-join shared overlay tiles", progress_cb=progress_cb, cancel=cancel)
+                 "tile-join shared overlay tiles", cancel=cancel)
             layers.append(str(joined))
         logger.info("Overlay merge: %d sources, %d shared tiles tile-joined", len(srcs), len(shared))
-        custom_merge.merge_archives(layers, str(output), prototype=srcs[-1])
+        custom_merge.merge_archives(
+            layers, str(output), prototype=srcs[-1],
+            progress=lambda done, total: report(20 + 80 * done / max(total, 1), "Adding trails…"))
     finally:
         shutil.rmtree(work, ignore_errors=True)
 

@@ -54,7 +54,25 @@ def _reachable(url: str) -> bool | None:
         return False
 
 
+_resolved: dict[str, tuple[float, str]] = {}
+# A resolved build stays the answer this long: probing the host on every
+# estimate cost a second per drag of the selection box.
+_RESOLVE_TTL_S = 6 * 3600
+
+
 def resolve_source_url(url: str) -> str:
+    """Cached front for _resolve_source_url (see there)."""
+    import time
+    hit = _resolved.get(url)
+    if hit and time.monotonic() - hit[0] < _RESOLVE_TTL_S:
+        return hit[1]
+    answer = _resolve_source_url(url)
+    if answer != url or _PROTOMAPS_HOST not in url:
+        _resolved[url] = (time.monotonic(), answer)
+    return answer
+
+
+def _resolve_source_url(url: str) -> str:
     """Return a usable pmtiles URL, falling forward to the newest Protomaps build.
 
     Protomaps publishes dated daily builds (build.protomaps.com/YYYYMMDD.pmtiles)

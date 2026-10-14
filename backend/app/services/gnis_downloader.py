@@ -127,6 +127,31 @@ FEATURE_CLASS_TO_KIND = {
 }
 
 
+# Names used in place of GNIS's own. GNIS renamed the Gulf of Mexico in 2025;
+# the map names it as everyone else on it does — OSM, Natural Earth, the
+# basemap's own label, and the countries on its shores. Applied at import, and
+# to an existing index by apply_name_overrides (run at startup).
+NAME_OVERRIDES = {
+    "Gulf of America": "Gulf of Mexico",
+}
+
+
+def apply_name_overrides() -> int:
+    """Rename rows an older import stored under an overridden name."""
+    from sqlalchemy import text
+    from app.database import SessionLocal
+    db = SessionLocal()
+    try:
+        n = 0
+        for old, new in NAME_OVERRIDES.items():
+            n += db.execute(text("UPDATE poi_search SET name = :new WHERE name = :old"),
+                            {"old": old, "new": new}).rowcount or 0
+        db.commit()
+        return n
+    finally:
+        db.close()
+
+
 def download_gnis_zip() -> Optional[bytes]:
     """Download the GNIS NationalFile.zip from USGS."""
     logger.info("Downloading GNIS data from %s", GNIS_URL)
@@ -218,6 +243,7 @@ def import_gnis_to_db(data: bytes, batch_size: int = 2000) -> int:
                         continue
 
                     name = (row.get("feature_name") or "").strip()
+                    name = NAME_OVERRIDES.get(name, name)
                     if not name:
                         continue
 

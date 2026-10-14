@@ -430,6 +430,11 @@ async def lifespan(app: FastAPI):
                          name="poi-reindex").start()
 
         _recover_map_data()
+        try:
+            from app.services.gnis_downloader import apply_name_overrides
+            apply_name_overrides()
+        except Exception:
+            logger.exception("Could not apply GNIS name overrides")
 
         # Source long-trail emblem images (non-blocking, idempotent).
         trail_logos.source_logos_async()

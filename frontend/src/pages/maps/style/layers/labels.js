@@ -57,19 +57,54 @@ function sizeByZoomAnd(prop, def, zoomStops, dataStops) {
   return zi;
 }
 
+const WATER_NAME = ["coalesce", ["get", "name:en"], ["get", "name"]];
+// Water bodies the POI index holds (from GNIS); drawn as water names, not POIs.
+const WATER_POI_KINDS = ["lake", "reservoir", "bay", "sea", "strait", "gulf"];
+
 export function buildLabels() {
   return [
+    // ── Water names ─────────────────────────────────────────────────────────
+    // From the basemap's own label points, which Protomaps puts in the `water`
+    // layer (not `places`, where these used to look, finding nothing): oceans
+    // carry only `name:en`; seas, gulfs and bays `kind` sea/bay; named lakes
+    // and reservoirs are points with `kind` "water" and a `kind_detail` — the
+    // lake *polygons* have no names at all, which is why no lake was ever
+    // labelled. English first, so the Gulf of Mexico is not "Golfo de México".
+    // These are in the planet basemap downloaded at setup (and a phone's world
+    // pack), so they show everywhere, not only in downloaded areas.
     {
       id: "labels_water_ocean",
       source: "basemap",
       "source-layer": "water",
       type: "symbol",
       minzoom: 0,
-      filter: ["==", ["get", "kind"], "ocean"],
+      filter: ["all", ["==", ["geometry-type"], "Point"], ["==", ["get", "kind"], "ocean"]],
       layout: {
-        "text-field": ["get", "name"],
+        "text-field": WATER_NAME,
         "text-font": ["Noto Sans Italic"],
-        "text-size": ["interpolate", ["linear"], ["zoom"], 2, 10, 10, 16],
+        "text-size": ["interpolate", ["linear"], ["zoom"], 1, 11, 6, 18],
+        "text-letter-spacing": 0.2,
+        "text-max-width": 8,
+        "symbol-placement": "point",
+      },
+      paint: {
+        "text-color": COLORS.labels.water,
+        "text-halo-color": COLORS.background,
+        "text-halo-width": 1,
+      },
+    },
+    {
+      id: "labels_water_seas",
+      source: "basemap",
+      "source-layer": "water",
+      type: "symbol",
+      minzoom: 2,
+      filter: ["all", ["==", ["geometry-type"], "Point"],
+        ["in", ["get", "kind"], ["literal", ["sea", "bay", "strait", "gulf"]]]],
+      layout: {
+        "text-field": WATER_NAME,
+        "text-font": ["Noto Sans Italic"],
+        "text-size": ["interpolate", ["linear"], ["zoom"], 2, 10, 8, 15],
         "text-letter-spacing": 0.1,
         "text-max-width": 8,
         "symbol-placement": "point",
@@ -78,7 +113,6 @@ export function buildLabels() {
         "text-color": COLORS.labels.water,
         "text-halo-color": COLORS.background,
         "text-halo-width": 1,
-        "text-opacity": ["interpolate", ["linear"], ["zoom"], 0, 0, 0.5, 1],
       },
     },
     {
@@ -86,40 +120,47 @@ export function buildLabels() {
       source: "basemap",
       "source-layer": "water",
       type: "symbol",
-      minzoom: 5,
-      filter: ["in", ["get", "kind"], ["literal", ["lake", "reservoir"]]],
+      minzoom: 4,
+      filter: ["all", ["==", ["geometry-type"], "Point"],
+        ["any",
+          ["in", ["get", "kind"], ["literal", ["lake", "reservoir"]]],
+          ["all", ["==", ["get", "kind"], "water"],
+            ["in", ["get", "kind_detail"], ["literal", ["lake", "reservoir", "basin", "lagoon"]]]]]],
       layout: {
-        "text-field": ["get", "name"],
+        "text-field": WATER_NAME,
         "text-font": ["Noto Sans Italic"],
-        "text-size": ["interpolate", ["linear"], ["zoom"], 5, 9, 14, 14],
+        // Bigger lakes have earlier label points (min_zoom), so size follows.
+        "text-size": ["interpolate", ["linear"], ["zoom"], 5, 10, 10, 12, 14, 14],
         "text-max-width": 7,
       },
       paint: {
         "text-color": COLORS.labels.water,
         "text-halo-color": COLORS.background,
-        "text-halo-width": 1,
-        "text-opacity": ["interpolate", ["linear"], ["zoom"], 5, 0, 5.5, 1],
+        "text-halo-width": 1.2,
       },
     },
+    // USGS names for lakes the basemap leaves unlabelled (OSM has no label
+    // point for Coeur d'Alene Lake, for one). GNIS names every pond, so these
+    // cull against each other and every other label (tracks:collide) rather
+    // than stacking.
     {
-      id: "labels_water_seas",
-      source: "basemap",
-      "source-layer": "places",
+      id: "labels_water_gnis",
+      source: "poi_features",
       type: "symbol",
-      minzoom: 2,
-      filter: ["in", ["get", "kind"], ["literal", ["sea", "bay"]]],
+      minzoom: 11,
+      metadata: { "tracks:collide": true },
+      filter: ["in", ["get", "kind"], ["literal", WATER_POI_KINDS]],
       layout: {
         "text-field": ["get", "name"],
         "text-font": ["Noto Sans Italic"],
-        "text-size": ["interpolate", ["linear"], ["zoom"], 2, 9, 8, 14],
-        "text-max-width": 8,
-        "symbol-placement": "point",
+        "text-size": ["interpolate", ["linear"], ["zoom"], 11, 11, 15, 13],
+        "text-max-width": 7,
+        "text-padding": 6,
       },
       paint: {
         "text-color": COLORS.labels.water,
         "text-halo-color": COLORS.background,
-        "text-halo-width": 1,
-        "text-opacity": ["interpolate", ["linear"], ["zoom"], 2, 0, 2.5, 1],
+        "text-halo-width": 1.2,
       },
     },
     {
@@ -277,6 +318,8 @@ export function buildLabels() {
         "administrative", "country", "region", "county", "borough", "pseudo",
         "spring", "well", "drinking_water", "trailhead",
         "national_park", "protected_area", "nature_reserve", "forest", "wilderness",
+        // Water bodies are named by labels_water_gnis, in water lettering.
+        ...WATER_POI_KINDS,
       ]]]],
       layout: {
         // Deterministic density: usePoiFeatures bakes an `icon_zoom` grade into

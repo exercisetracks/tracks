@@ -148,7 +148,11 @@ def _build_thematic_streaming(owned, out_path, progress, cancel=None) -> bool:
     clip = _clipper(owned)
     src_dir = out_path.parent
     src_dir.mkdir(parents=True, exist_ok=True)
-    region_pbf = osm_source.prepare_region_pbf(tuple(bbox), cancel=cancel)
+    # The first build in a state downloads its OSM extract (hundreds of MB):
+    # the first 35% of this phase, with the bytes shown, as the map download is.
+    region_pbf = osm_source.prepare_region_pbf(
+        tuple(bbox), cancel=cancel,
+        progress=lambda detail, frac: progress(35.0 * (frac if frac is not None else 1.0), detail))
     if region_pbf is None:
         return False
 
@@ -166,7 +170,7 @@ def _build_thematic_streaming(owned, out_path, progress, cancel=None) -> bool:
     poi_rows: dict = {}
     geojson = None
 
-    progress(10.0, "Extracting map features…")
+    progress(40.0, "Reading trails, water and land…")
     try:
         geojson = osm_source.export_geojson(region_pbf, cancel=cancel)
         if geojson is None:
@@ -206,8 +210,8 @@ def _build_thematic_streaming(owned, out_path, progress, cancel=None) -> bool:
                 if n_feat % 50000 == 0:
                     if cancel is not None:
                         cancel.raise_if_cancelled()
-                    progress(min(60.0, 10.0 + n_feat / 5000.0),
-                             f"Extracting map features… {n_feat:,}")
+                    progress(min(78.0, 40.0 + n_feat / 5000.0),
+                             f"Reading trails, water and land… {n_feat:,}")
 
             # Hiking/foot routes (relations) — osmium export can't emit their geometry.
             try:
@@ -255,10 +259,17 @@ def _clip_all(feats, clip):
 
 def _tile_part(ndjson: dict, out_path, bbox, progress, cancel) -> None:
     """One tippecanoe over all layers → the part. Failure raises (audit F20)."""
+    # tippecanoe counts 0-100% once per pass over the data; shown as one climb.
+    best = [0.0]
+
+    def tip(pct):
+        best[0] = max(best[0], pct)
+        progress(min(99.0, 80.0 + best[0] * 0.19), f"Drawing trail tiles… {best[0]:.0f}%")
+
     try:
         tippecanoe_writer.build_overlay(
             ndjson, out_path,
-            progress_cb=lambda pct: progress(min(99.0, 85.0 + pct * 0.14), f"Generating tiles… {pct:.0f}%"),
+            progress_cb=tip,
             cancel=cancel,
             # Features are already cut to the owned ground; the box keeps
             # tippecanoe's tile buffers from reaching past it.

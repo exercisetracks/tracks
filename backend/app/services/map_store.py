@@ -101,11 +101,13 @@ def write_reload_trigger() -> None:
 
 # ── Writers ──────────────────────────────────────────────────────────────────
 
-def publish(name: str, part: str | Path) -> int:
-    """Merge an area's freshly built tiles into a master; the new tiles win."""
+def publish(name: str, part: str | Path, progress=None) -> int:
+    """Merge an area's freshly built tiles into a master; the new tiles win.
+    `progress(fraction)` follows the merge."""
     master = master_path(name)
     before = master.stat().st_size if master.exists() else 0
-    n = tile_archives.merge([master, part], master, prototype=part)
+    n = tile_archives.merge([master, part], master, prototype=part,
+                            progress=(lambda d, t: progress(d / max(t, 1))) if progress else None)
     logger.info("Published %s into %s: %d → %d bytes, %d tiles", Path(part).name, name,
                 before, master.stat().st_size if master.exists() else 0, n)
     return n
@@ -157,6 +159,8 @@ def rebuild_overlay(progress_cb=None, cancel=None) -> int:
         master.unlink(missing_ok=True)
         return 0
     tippecanoe_writer.merge_overlays(parts, master, progress_cb=progress_cb, cancel=cancel)
+    if progress_cb is not None:
+        progress_cb(100.0, "Trails added")
     return tile_archives.tile_count(master)
 
 
