@@ -421,9 +421,10 @@ export default function MapView() {
   const { regionDownloading, regionMerging, globalActive, globalErrored, showToast } =
     useDownloadStatus(region.regions);
 
-  // Esc puts away the panel last used, then the one before it. The editor
-  // is not among them: Esc there would throw away a drawing.
+  // Esc puts away the panel last used, then the one before it — the editor
+  // too, which discards the drawing or edit, as its × does.
   const touchPanel = usePanelStack({
+    editor: { open: editor.open, close: editor.close },
     point: { open: !!pointInfo.point, close: pointInfo.close },
     fire: { open: !!selectedFire, close: closeFire },
     route: { open: !!routeDetail, close: () => setRouteDetail(null) },
@@ -612,8 +613,10 @@ export default function MapView() {
 
       {/* The editor, and the detail of a selected track or place, share the
           bottom of the map: one is open at a time. */}
-      <ItemEditor editor={editor} folders={items.folders} atlas={items.atlas}
-                  imperial={imperial} onCreateFolder={createFolder} rightInset={rightInset} />
+      <div {...grab("editor")}>
+        <ItemEditor editor={editor} folders={items.folders} atlas={items.atlas}
+                    imperial={imperial} onCreateFolder={createFolder} rightInset={rightInset} />
+      </div>
       {selected != null && !editor.open && (
         <div {...grab("item")}>
       <ItemDetail

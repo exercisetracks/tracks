@@ -180,6 +180,11 @@ input[type="range"].appearance-none::-moz-range-thumb {
   width: 600px;
   min-width: 0;
   max-width: calc(100vw - 2rem);
+  /* rounded-xl, as the map's other floating controls and panels are. */
+  border-radius: 0.75rem;
+}
+.maplibregl-ctrl-top-left .maplibregl-ctrl-geocoder--input {
+  border-radius: 0.75rem;
 }
 /* Keep the search box AND its live-results dropdown above the click-info popup
    (PointInfoPanel is z-10 and sits just below the search bar). The map container

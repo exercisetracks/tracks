@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useRef } from "react";
 
 // Esc closes the map page's panels one at a time, the last one used first —
-// opened, or clicked in — as a desktop's windows do.
+// opened, or clicked in — as a desktop's windows do. Map clicks while drawing
+// do not count as using the editor; opening it does.
 //
 // `panels` is `{ id: { open, close } }`, rebuilt each render. A panel becomes
 // the most recent when it opens; `touch(id)` (wired to a pointer-down inside
