@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.tracks.app.AppContainer
 import com.tracks.app.map.OfflineRoutingData
 import com.tracks.app.map.packs.PackJobs
+import com.tracks.app.map.packs.PackSaver
 import com.tracks.app.map.packs.PackStore
 import com.tracks.core.api.PackManifest
 import com.tracks.app.map.OfflineTiles
@@ -207,6 +208,9 @@ class RegionsViewModel(
     fun refresh() {
         viewModelScope.launch {
             _state.update { it.copy(loading = true) }
+            // Failed packs get another go each time the list is opened: most
+            // failures (no network, a server hiccup) do not outlive the moment.
+            packs.retryFailed()
             reloadServer()
             _state.update { it.copy(loading = false) }
             pickUpRequests()
@@ -289,6 +293,9 @@ class RegionsViewModel(
                 // Written before the wait: the process may not outlive the
                 // server's build, and the intention has to.
                 PendingRegions.want(container.appContext, region.id, name, bbox)
+                // The job waits for the build too, with a notification, so
+                // closing the app does not stop the download (see PackJobs).
+                PackJobs.schedule(container.appContext, userInitiated = onScreen)
                 reloadServer()
                 startPollingIfBuilding()
             }
@@ -393,42 +400,16 @@ class RegionsViewModel(
 
     // ── Internals ────────────────────────────────────────────────────────────
 
-    /** Bytes a manifest would add to what is held at the current versions. */
-    private fun newBytes(m: PackManifest): Long {
-        val held = packs.state.value.packs
-        fun extra(key: String, version: String, bytes: Long) =
-            if (held[key]?.current == true && held[key]?.version == version) 0 else bytes
-        return m.cells.sumOf { c -> c.layers.entries.sumOf { (l, e) -> extra("${c.cell}/$l", e.version, e.bytes) } } +
-            m.shared.entries.sumOf { (n, e) -> extra("shared/$n", e.version, e.bytes) }
-    }
+    private fun newBytes(m: PackManifest): Long = PackSaver.newBytes(packs, m)
 
-    /**
-     * Fetch the manifest, check the budget, and queue the packs.
-     *
-     * Refused, with the numbers, when the area would not fit: in the budget,
-     * or on the volume with its reserve kept free. A download that fails a
-     * third of the way through for want of space is the one thing worse than
-     * being told before it starts.
-     */
     private suspend fun saveOnPhone(name: String, bbox: List<Double>, serverId: Int?) {
-        val m = runCatching { container.client().packManifest(bbox.joinToString(",")) }.getOrElse { e ->
-            _state.update { it.copy(error = "Could not ask the server what to save: ${e.message}") }
-            return
-        }
-        val need = newBytes(m)
-        val room = minOf(packs.budget() - packs.state.value.usedBytes,
-                         packs.freeBytes() - packs.reserveBytes())
-        if (need > room) {
-            _state.update {
-                it.copy(error = "$name needs ${formatBytes(need)} and there is room for " +
-                    "${formatBytes(room.coerceAtLeast(0))}. Raise the storage limit or remove an area.")
+        when (val r = PackSaver.save(container, name, bbox, serverId)) {
+            is PackSaver.Result.Refused -> _state.update { it.copy(error = r.reason) }
+            PackSaver.Result.Saved -> {
+                PackJobs.schedule(container.appContext, userInitiated = onScreen)
+                rebuild()
             }
-            return
         }
-        packs.addArea(name, bbox, m, serverId)
-        serverId?.let { PendingRegions.settled(container.appContext, it) }
-        PackJobs.schedule(container.appContext, userInitiated = onScreen)
-        rebuild()
     }
 
     /** Requests whose server build has finished: save them now. */

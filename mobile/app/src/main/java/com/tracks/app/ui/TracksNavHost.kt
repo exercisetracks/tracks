@@ -823,15 +823,16 @@ fun AccountConflictDialog(vm: MainViewModel) {
     state.serverRestore?.let { question ->
         androidx.compose.material3.AlertDialog(
             onDismissRequest = vm::declineNewServer,
-            title = { androidx.compose.material3.Text("Restore this phone's data?") },
+            title = { androidx.compose.material3.Text("Combine with this server?") },
             text = {
                 androidx.compose.material3.Text(
                     "This phone's data came from a different or rebuilt Tracks server. " +
-                        "Restore it into ${question.username ?: "this account"} here?",
+                        "Combine it with ${question.username ?: "this account"} here? Nothing on " +
+                        "either side is deleted: where both have the same item, the newer edit wins.",
                 )
             },
             confirmButton = {
-                PrimaryButton("Restore", onClick = vm::restoreIntoNewServer)
+                PrimaryButton("Combine", onClick = vm::restoreIntoNewServer)
             },
             dismissButton = {
                 NeutralButton("No, sign out", onClick = vm::declineNewServer)

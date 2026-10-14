@@ -402,9 +402,17 @@ class ReplicaEngineTest {
         assertEquals(AccountBinding(home.serverId, "1"), store.boundAccount())
     }
 
-    /** Yes: the rebuilt server gets everything back, deletes included, and the phone is its account's. */
+    /**
+     * Yes: the phone's data and the new server's are combined, nothing deleted.
+     *
+     * A restore used to push the phone's deletes too. Joining a server that
+     * held copies of the same rows deleted them there, and a server with its
+     * own tracks and places lost every one the phone had ever removed —
+     * found by connecting a phone to a dev server that then had none of its
+     * 150 tracks left.
+     */
     @Test
-    fun `restoring into a rebuilt server re-pushes everything`() = runTest {
+    fun `restoring into another server combines both sides and deletes nothing`() = runTest {
         val store = replica()
         val old = FakeServer(now)
         val (kept, _) = store.create("waypoint", mapOf("name" to str("Camp")))
@@ -415,17 +423,25 @@ class ReplicaEngineTest {
         ReplicaSyncEngine(store, old).sync()
         assertEquals(0, store.pendingCount())
 
+        // The new server has data of its own, from another device.
         val rebuilt = FakeServer(now, node = "6f6f6f6f6f6f6f6f")
+        val other = replica()
+        val (theirs, _) = other.create("waypoint", mapOf("name" to str("Theirs")))
+        other.link(rebuilt.identify(), "3")
+        ReplicaSyncEngine(other, rebuilt).sync()
+
         val question = store.link(rebuilt.identify(), "3", "alex") as LinkResult.DifferentServer
         store.restoreInto(question.server, question.account)
         assertEquals(AccountBinding(rebuilt.serverId, "3"), store.boundAccount())
-        assertEquals(2, store.pendingCount())
+        assertEquals(1, store.pendingCount(), "the live row, not the delete")
         assertEquals(0L, store.cursor())
 
         val report = ReplicaSyncEngine(store, rebuilt).sync()
         assertFalse(report.newServer) // already settled by the restore, not rediscovered
         assertEquals(str("Camp"), rebuilt.rows.get("waypoint", kept)!!.fields["name"])
-        assertNotNull(rebuilt.rows.get("waypoint", gone)!!.deleted)
+        assertEquals(null, rebuilt.rows.get("waypoint", gone), "a delete from another server is not sent")
+        assertEquals(str("Theirs"), rebuilt.rows.get("waypoint", theirs)!!.fields["name"])
+        assertEquals(str("Theirs"), store.row("waypoint", theirs)!!.fields["name"], "and the phone gets theirs")
         assertEquals(LinkResult.Resumed, store.link(rebuilt.identify(), "3"))
     }
 

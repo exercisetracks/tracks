@@ -140,6 +140,15 @@ class ReplicaStore(
      */
     suspend fun restoreInto(server: ServerIdentity, account: String) = lock.withLock {
         db.transaction {
+            // A merge, not a replacement: everything both sides hold survives.
+            // The phone's tombstones record deletes made against the server it
+            // came from, and were sent as deletes too — so joining a server
+            // that held the same rows (a copy, a restore) deleted them there,
+            // and a server with its own tracks and places lost every one that
+            // the phone had ever removed. They are dropped instead: the new
+            // server's rows come back on the first pull, and live rows merge
+            // field by field, the newer write winning on each field.
+            q.deleteTombstones()
             markAllDirty()
             q.setCursor(0)
             q.setServer(server.serverId, server.epoch)

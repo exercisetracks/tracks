@@ -98,6 +98,11 @@ SELECT count(*) FROM synced_row;
 deleteAllRows:
 DELETE FROM synced_row;
 
+-- Deletes recorded against one server, forgotten when the phone joins another
+-- (ReplicaStore.restoreInto).
+deleteTombstones:
+DELETE FROM synced_row WHERE deleted IS NOT NULL;
+
 selectRow:
 SELECT * FROM synced_row WHERE entity = ? AND uid = ?;
 

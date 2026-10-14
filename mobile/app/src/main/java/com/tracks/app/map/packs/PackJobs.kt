@@ -58,7 +58,8 @@ object PackJobs {
     fun schedule(context: Context, userInitiated: Boolean = true) {
         val store = (context.applicationContext as TracksApplication).container.packs
         val wifiOnly = store.state.value.settings.wifiOnly
-        if (store.pending().isEmpty()) return
+        val waitingOnServer = com.tracks.app.map.PendingRegions.requests(context).isNotEmpty()
+        if (store.pending().isEmpty() && !waitingOnServer) return
         if (userInitiated && Build.VERSION.SDK_INT >= 34) {
             val ok = runCatching {
                 val info = JobInfo.Builder(JOB_ID, ComponentName(context, PackJobService::class.java))
@@ -93,21 +94,35 @@ object PackJobs {
         )
     }
 
-    fun notification(context: Context, done: Long, total: Long) = run {
+    /** What the job's notification says: building on the server, or saving. */
+    data class Progress(val title: String? = null, val text: String? = null, val fraction: Float? = null)
+
+    fun notification(context: Context, done: Long, total: Long) =
+        notification(context, Progress(
+            text = if (total > 0) "%.2f of %.2f GB".format(done / 1e9, total / 1e9) else null,
+            fraction = if (total > 0) done.toFloat() / total else null,
+        ))
+
+    fun notification(context: Context, p: Progress) = run {
         ensureChannel(context)
-        val pct = if (total > 0) (done * 100 / total).toInt().coerceIn(0, 100) else 0
+        val pct = ((p.fraction ?: 0f) * 100).toInt().coerceIn(0, 100)
         NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.stat_sys_download)
-            .setContentTitle(context.getString(R.string.map_download_title))
-            .setContentText(if (total > 0) "%.1f of %.1f GB".format(done / 1e9, total / 1e9) else context.getString(R.string.map_download_starting))
-            .setProgress(100, pct, total <= 0)
+            .setContentTitle(p.title ?: context.getString(R.string.map_download_title))
+            .setContentText(p.text ?: context.getString(R.string.map_download_starting))
+            .setProgress(100, pct, p.fraction == null)
+            // Tapping it opens the app, where the download is listed.
+            .setContentIntent(android.app.PendingIntent.getActivity(
+                context, 0, context.packageManager.getLaunchIntentForPackage(context.packageName),
+                android.app.PendingIntent.FLAG_IMMUTABLE))
             .setOnlyAlertOnce(true)
             .setOngoing(true)
             .build()
     }
 
-    internal suspend fun work(context: Context, notify: (Long, Long) -> Unit): Boolean {
+    internal suspend fun work(context: Context, notify: (Progress) -> Unit): Boolean {
         val container = (context.applicationContext as TracksApplication).container
+        awaitServerBuilds(container, notify)
         val total = container.packs.state.value.pendingBytes
         var last = 0L
         val finished = container.packDownloader.run { _, _ ->
@@ -115,11 +130,55 @@ object PackJobs {
             if (now - last > 1500) {
                 last = now
                 val s = container.packs.state.value
-                notify(total - s.pendingBytes, total)
+                val done = total - s.pendingBytes
+                notify(Progress(
+                    text = if (total > 0) "%.2f of %.2f GB".format(done / 1e9, total / 1e9) else null,
+                    fraction = if (total > 0) done.toFloat() / total else null,
+                ))
             }
         }
         fetchExtras(container)
         return finished
+    }
+
+    /**
+     * Wait for areas this phone asked the server to build, then save them.
+     *
+     * It used to be the downloads sheet that waited, in a loop that died with
+     * the app — so closing Tracks during the server's build (minutes, often)
+     * left nothing waiting and nothing on screen until it was opened again.
+     * Now the job waits, saying how far the server has got in its
+     * notification, and queues the packs the moment the build is done.
+     */
+    private suspend fun awaitServerBuilds(container: com.tracks.app.AppContainer, notify: (Progress) -> Unit) {
+        val ctx = container.appContext
+        while (true) {
+            val requests = com.tracks.app.map.PendingRegions.requests(ctx)
+            if (requests.isEmpty()) return
+            val regions = runCatching { container.client().mapRegions() }.getOrNull()
+            if (regions == null) {
+                kotlinx.coroutines.delay(15_000)
+                continue
+            }
+            val byId = regions.associateBy { it.id }
+            var building: com.tracks.core.api.MapRegion? = null
+            for ((id, req) in requests) {
+                val r = byId[id]
+                when {
+                    r == null || r.isFailed -> com.tracks.app.map.PendingRegions.settled(ctx, id)
+                    r.isReady -> PackSaver.save(container, req.name, req.bbox, id)
+                    else -> if (building == null) building = r
+                }
+            }
+            building?.let { r ->
+                notify(Progress(
+                    title = "Building ${requests[r.id]?.name ?: r.name} on the server",
+                    text = r.detail ?: "Waiting to start…",
+                    fraction = if (r.status == "queued") null else (r.progress / 100.0).toFloat().coerceIn(0f, 1f),
+                ))
+                kotlinx.coroutines.delay(5_000)
+            }
+        }
     }
 
     /**
@@ -153,14 +212,14 @@ class PackJobService : JobService() {
 
     override fun onStartJob(params: JobParameters): Boolean {
         if (Build.VERSION.SDK_INT >= 34) {
-            setNotification(params, PackJobs.NOTIFICATION, PackJobs.notification(this, 0, 0),
+            setNotification(params, PackJobs.NOTIFICATION, PackJobs.notification(this, PackJobs.Progress()),
                             JOB_END_NOTIFICATION_POLICY_REMOVE)
         }
         job = scope.launch {
             val finished = runCatching {
-                PackJobs.work(this@PackJobService) { done, total ->
+                PackJobs.work(this@PackJobService) { p ->
                     if (Build.VERSION.SDK_INT >= 34) {
-                        setNotification(params, PackJobs.NOTIFICATION, PackJobs.notification(this@PackJobService, done, total),
+                        setNotification(params, PackJobs.NOTIFICATION, PackJobs.notification(this@PackJobService, p),
                                         JOB_END_NOTIFICATION_POLICY_REMOVE)
                     }
                 }
@@ -178,23 +237,22 @@ class PackJobService : JobService() {
     }
 
     private fun stillWanted() =
-        (applicationContext as TracksApplication).container.packs.pending().isNotEmpty()
+        (applicationContext as TracksApplication).container.packs.pending().isNotEmpty() ||
+            com.tracks.app.map.PendingRegions.requests(applicationContext).isNotEmpty()
 }
 
 /** The path below Android 14, and for background updates: see [PackJobs]. */
 class PackWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
-        setForeground(info(0, 0))
-        val finished = PackJobs.work(applicationContext) { done, total ->
-            setForegroundAsync(info(done, total))
-        }
+        setForeground(info(PackJobs.Progress()))
+        val finished = PackJobs.work(applicationContext) { p -> setForegroundAsync(info(p)) }
         return if (finished) Result.success() else Result.retry()
     }
 
-    override suspend fun getForegroundInfo(): ForegroundInfo = info(0, 0)
+    override suspend fun getForegroundInfo(): ForegroundInfo = info(PackJobs.Progress())
 
-    private fun info(done: Long, total: Long) = ForegroundInfo(
-        PackJobs.NOTIFICATION, PackJobs.notification(applicationContext, done, total),
+    private fun info(p: PackJobs.Progress) = ForegroundInfo(
+        PackJobs.NOTIFICATION, PackJobs.notification(applicationContext, p),
         ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC,
     )
 }

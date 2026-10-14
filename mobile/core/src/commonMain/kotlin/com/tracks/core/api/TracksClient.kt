@@ -1547,8 +1547,12 @@ class TracksClient(
         onStatus: (status: Int, etag: String?) -> Unit = { _, _ -> },
         sink: suspend (ByteArray, Int) -> Unit,
     ): PackResponse {
+        // The manifest names packs by their full path from the site root
+        // (/api/maps/packs/...), and this client's base already ends in /api:
+        // joined as-is, every pack was asked for at /api/api/... and 404'd.
+        val relative = if (path.startsWith("/api/")) path.removePrefix("/api") else path
         suspend fun attempt(token: String): PackResponse? =
-            http.prepareGet(url(path)) {
+            http.prepareGet(url(relative)) {
                 bearer(token)
                 if (from > 0) {
                     header(HttpHeaders.Range, "bytes=$from-")
