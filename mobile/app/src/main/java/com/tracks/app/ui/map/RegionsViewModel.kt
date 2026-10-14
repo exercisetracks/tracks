@@ -304,6 +304,31 @@ class RegionsViewModel(
         }
     }
 
+    /**
+     * Build the framed area on the server and stop there: full detail
+     * wherever there is signal, nothing stored on this phone. It can be saved
+     * to the phone later from its row.
+     */
+    fun downloadServerOnly(bounds: LatLngBounds, name: String) {
+        if (bounds.tooLargeToDownload()) {
+            _state.update { it.copy(tooLarge = true) }
+            return
+        }
+        viewModelScope.launch {
+            val started = runCatching { container.client().downloadRegion(bounds.toBbox(), name) }.getOrElse { e ->
+                _state.update { it.copy(error = "Could not start the download: ${e.message}") }
+                return@launch
+            }
+            clearEstimate()
+            _state.update {
+                it.copy(error = null, notice = if (started.status == "exists")
+                    "${started.region?.name ?: "That area"} is already on the server." else null)
+            }
+            reloadServer()
+            startPollingIfBuilding()
+        }
+    }
+
     /** "Save to phone" on an area the server has: the whole area. */
     fun storeExisting(row: RegionRow) {
         val bounds = row.bounds ?: return
@@ -491,10 +516,13 @@ class RegionsViewModel(
                     areaId = area.id,
                 ))
             }
-            val savedServerIds = snap.areas.mapNotNull { it.serverId }.toSet()
             server.forEach { region ->
                 val requested = region.id in requests
-                if (region.id in savedServerIds && !requested) return@forEach
+                // A server area stays in the list (and its outline on the map)
+                // unless the phone holds all of it: saving a small piece of a
+                // big server area used to hide the big one entirely.
+                val wholeOnPhone = snap.areas.any { a -> a.serverId == region.id && covers(a.bbox, region.bbox) }
+                if (wholeOnPhone && !requested) return@forEach
                 val phase = when {
                     region.isFailed -> DownloadPhase.Failed(region.error ?: "The server could not build this area")
                     region.stale -> DownloadPhase.Failed("The server stopped working on this area")
@@ -524,6 +552,10 @@ class RegionsViewModel(
             )
         }
     }
+
+    private fun covers(outer: List<Double>, inner: List<Double>): Boolean =
+        outer.size == 4 && inner.size == 4 && outer[0] <= inner[0] + 1e-4 && outer[1] <= inner[1] + 1e-4 &&
+            outer[2] >= inner[2] - 1e-4 && outer[3] >= inner[3] - 1e-4
 
     private fun onUnmeteredNetwork(): Boolean = runCatching {
         val cm = container.appContext.getSystemService(android.net.ConnectivityManager::class.java)

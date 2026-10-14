@@ -192,13 +192,24 @@ fun SelectionBar(
 
             ButtonRow {
                 NeutralButton("Cancel", onClick = onDone)
+                // Build it on the server only: full detail with signal, no
+                // space taken here. Saved to the phone later from its row.
+                TonalButton(
+                    "Server only",
+                    onClick = {
+                        bounds?.let { vm.downloadServerOnly(it, name.ifBlank { state.suggestedName ?: "Saved area" }) }
+                        name = ""
+                        onDone()
+                    },
+                    enabled = bounds != null && !state.tooLarge,
+                )
                 PrimaryButton(
                     // Named for what will actually happen. Past the phone's
                     // ceiling the area is still worth building — the server
                     // will serve it at full detail — but nothing is coming down
                     // to this phone, and a button that says "Download" there is
                     // a promise the app cannot keep.
-                    "Download",
+                    "Save to phone",
                     onClick = {
                         bounds?.let {
                             vm.download(it, name.ifBlank { state.suggestedName ?: "Saved area" })
