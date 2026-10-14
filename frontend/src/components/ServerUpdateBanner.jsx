@@ -44,11 +44,11 @@ export default function ServerUpdateBanner() {
         <span className="flex-1 min-w-0">
           Tracks <span className="font-semibold">{latest}</span> is available — this server runs {status.server_version}.
         </span>
-        <a href={status.latest.url} target="_blank" rel="noreferrer" className="btn-neutral btn-sm">Release notes</a>
-        <button type="button" className="btn-tonal btn-sm" onClick={() => setOpen(o => !o)}>
+        <a href={status.latest.url} target="_blank" rel="noreferrer" className="btn btn-neutral btn-sm rounded-lg">Release notes</a>
+        <button type="button" className="btn btn-tonal btn-sm rounded-lg" onClick={() => setOpen(o => !o)}>
           {open ? "Hide" : "How to update"}
         </button>
-        <button type="button" className="btn-neutral btn-sm" onClick={dismiss}>Dismiss</button>
+        <button type="button" className="btn btn-neutral btn-sm rounded-lg" onClick={dismiss}>Dismiss</button>
       </div>
       {open && (
         <div className="mx-auto mt-3 max-w-5xl">
