@@ -172,8 +172,14 @@ input[type="range"].appearance-none::-moz-range-thumb {
 }
 
 /* ── MapLibre Geocoder width + dark mode overrides ──────────────────────── */
-.maplibregl-ctrl-geocoder {
-  min-width: 600px;
+/* Twice the plugin's own width. Its stylesheet caps the box at a third of
+   the map and 360px from 640px up, which the min-width this used to set never
+   beat; a selector one class longer does, and max-width keeps it inside a
+   narrow window. */
+.maplibregl-ctrl-top-left .maplibregl-ctrl-geocoder {
+  width: 600px;
+  min-width: 0;
+  max-width: calc(100vw - 2rem);
 }
 /* Keep the search box AND its live-results dropdown above the click-info popup
    (PointInfoPanel is z-10 and sits just below the search bar). The map container

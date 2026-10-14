@@ -403,7 +403,7 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
             val courses = runCatching { items.courses() }.getOrNull()
             val waypoints = runCatching { items.waypoints() }.getOrNull()
             val collections = runCatching { items.collections() }.getOrNull()
-            val geometry = runCatching { items.coursesGeoJson() }.getOrNull()
+            val geometry = runCatching { items.coursesGeoJson(includeHidden = false) }.getOrNull()
             _state.update {
                 it.copy(
                     courses = courses ?: it.courses,
@@ -467,6 +467,18 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
             val updated = patchCourseNow(course, update)
             // A track on (or going to) the watch carries the edit there too.
             if (updated.loadToDevice) container.watch.syncLibrarySoon()
+        }
+    }
+
+    /**
+     * Take a track off the map, or put it back: it stays in the library
+     * either way, and on the watch if it is there. The web's eye toggle.
+     */
+    fun setCourseHidden(course: CourseSummary, hidden: Boolean) {
+        viewModelScope.launch {
+            patchCourseNow(course, CourseUpdate(hidden = hidden))
+            val geometry = runCatching { container.mapItems.coursesGeoJson(includeHidden = false) }.getOrNull()
+            if (geometry != null) _state.update { it.copy(courseGeoJson = geometry) }
         }
     }
 

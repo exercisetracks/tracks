@@ -13,7 +13,7 @@ import ElevationProfileCard from "./ElevationProfileCard";
 import { CollectionPicker, ColorRow, SymbolPicker } from "./ItemBits";
 import { DEFAULT_PLACE_COLOR, pointAlong, profileOf } from "../utils/mapItems";
 
-export default function ItemEditor({ editor, folders, atlas, imperial, onCreateFolder }) {
+export default function ItemEditor({ editor, folders, atlas, imperial, onCreateFolder, rightInset }) {
   if (!editor.open) return null;
   const { isPlace, kind, handles, stats, line } = editor;
 
@@ -32,7 +32,7 @@ export default function ItemEditor({ editor, folders, atlas, imperial, onCreateF
   const showProfile = !isPlace && line?.length > 1;
 
   return (
-    <div className="absolute bottom-0 left-2 right-2 sm:left-[11rem] sm:right-[5rem] z-30 pointer-events-none">
+    <div className="absolute bottom-0 left-2 right-2 sm:left-[11rem] sm:right-[5rem] z-30 pointer-events-none" style={rightInset != null ? { right: rightInset } : undefined}>
       {/* Wide and short: the profile on the left, everything else in a
           column beside it, so the panel takes as little of the map's height
           as it can. */}

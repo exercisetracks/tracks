@@ -21,6 +21,7 @@ import { useActivityTracks } from "./hooks/useActivityTracks";
 import { useMapItems } from "./hooks/useMapItems";
 import { useItemEditor } from "./hooks/useItemEditor";
 import { useMapCursor } from "./hooks/useMapCursor";
+import { usePanelStack } from "./hooks/usePanelStack";
 import { useCourseSelection } from "./hooks/useCourseSelection";
 import { useActivitySelect } from "./hooks/useActivitySelect";
 import { useMergeSelect } from "./hooks/useMergeSelect";
@@ -83,6 +84,10 @@ export default function MapView() {
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [libraryKey, setLibraryKey] = useState(null);     // the row to open, "track-<id>"
   const [hasDevice, setHasDevice] = useState(true);
+  // The library's width while it is open: the panels along the bottom of the
+  // map stop short of it rather than running underneath (they overlapped).
+  const [libraryWidth, setLibraryWidth] = useState(0);
+  const rightInset = libraryOpen && libraryWidth ? libraryWidth + 12 + 8 : undefined;
   const [bottomPanel, setBottomPanel] = useState(null);   // null | "legend" | "layers" | "areas" | "merge"
   const [mergeSources, setMergeSources] = useState([]);   // ordered [{key,kind,id,name,dist,reverse}]
   const [merging, setMerging] = useState(false);          // merge request in flight
@@ -416,6 +421,21 @@ export default function MapView() {
   const { regionDownloading, regionMerging, globalActive, globalErrored, showToast } =
     useDownloadStatus(region.regions);
 
+  // Esc puts away the panel last used, then the one before it. The editor
+  // is not among them: Esc there would throw away a drawing.
+  const touchPanel = usePanelStack({
+    point: { open: !!pointInfo.point, close: pointInfo.close },
+    fire: { open: !!selectedFire, close: closeFire },
+    route: { open: !!routeDetail, close: () => setRouteDetail(null) },
+    item: { open: selected != null && !editor.open, close: () => setSelected(null) },
+    activity: { open: selectedActivity != null, close: () => setSelectedActivity(null) },
+    library: { open: libraryOpen, close: () => setLibraryOpen(false) },
+    popup: { open: bottomPanel != null, close: () => setBottomPanel(null) },
+  });
+  // On a panel's wrapper, so a click inside it makes it the most recent. The
+  // wrapper is `contents`: it has no box, so the panel positions as before.
+  const grab = (id) => ({ className: "contents", onPointerDownCapture: () => touchPanel(id) });
+
   if (settingsLoaded && !settings?.map_enabled) {
     return (
       <div className="h-full flex flex-col items-center justify-center bg-[#f2efe9] gap-4 p-7 text-center">
@@ -449,6 +469,7 @@ export default function MapView() {
           the map canvas but below the controls, and never eats pointer events. */}
       <canvas ref={gridCanvasRef} className="absolute inset-0 w-full h-full pointer-events-none z-[5]" />
 
+      <div {...grab("point")}>
       <PointInfoPanel
         point={pointInfo.point} trails={pointInfo.trails} pois={pointInfo.pois}
         activities={pointInfo.activities}
@@ -460,11 +481,12 @@ export default function MapView() {
         onHoverActivity={setHoveredActivity}
         onSavePlace={(pt, name) => { pointInfo.close(); editor.startNew([pt.lng, pt.lat], { name }); }}
       />
+      </div>
 
       {/* How many of a searched category are marked — and when the view holds
           more than are drawn, that zooming in shows the rest. */}
       {search.marked && (
-        <div className="absolute top-[0.9rem] left-[16.5rem] z-10 px-2.5 py-1 rounded-full bg-white/95 dark:bg-slate-900/95 shadow border border-slate-200 dark:border-slate-700 text-[11px] text-slate-600 dark:text-slate-300">
+        <div className="absolute top-[0.9rem] left-[39rem] z-10 px-2.5 py-1 rounded-full bg-white/95 dark:bg-slate-900/95 shadow border border-slate-200 dark:border-slate-700 text-[11px] text-slate-600 dark:text-slate-300">
           {search.marked.count === 0 ? `No ${search.marked.category} in view`
             : search.capped ? `${search.marked.count}+ ${search.marked.category} — zoom in for the rest`
               : `${search.marked.count} ${search.marked.category} in view`}
@@ -472,15 +494,17 @@ export default function MapView() {
       )}
 
       {/* Fire detail card (same slot as PointInfoPanel; usePointInfo skips fire clicks). */}
-      {selectedFire && <WildfirePanel fire={selectedFire} onClose={closeFire} />}
+      {selectedFire && <div {...grab("fire")}><WildfirePanel fire={selectedFire} onClose={closeFire} /></div>}
 
+      <div {...grab("route")}>
       {routeDetail && (
         <RouteDetailPanel
           routeId={routeDetail.routeId} sectionId={routeDetail.sectionId}
           imperial={imperial}
-          onClose={() => setRouteDetail(null)}
+          onClose={() => setRouteDetail(null)} rightInset={rightInset}
         />
       )}
+      </div>
 
       {!libraryOpen && (
         <div data-tour="map-tracks" className="absolute top-3 right-3 z-10 flex flex-col gap-1.5 items-stretch min-w-[180px]">
@@ -551,6 +575,7 @@ export default function MapView() {
         })}
       </div>
 
+      <div {...grab("popup")}>
       {bottomPanel === "merge" && (
         <MergePanel
           sources={mergeSources}
@@ -583,30 +608,35 @@ export default function MapView() {
           />
         </ControlPopup>
       )}
+      </div>
 
       {/* The editor, and the detail of a selected track or place, share the
           bottom of the map: one is open at a time. */}
       <ItemEditor editor={editor} folders={items.folders} atlas={items.atlas}
-                  imperial={imperial} onCreateFolder={createFolder} />
+                  imperial={imperial} onCreateFolder={createFolder} rightInset={rightInset} />
       {selected != null && !editor.open && (
-        <ItemDetail
+        <div {...grab("item")}>
+      <ItemDetail
           kind={selected.kind} id={selected.id} places={items.places}
           atlas={items.atlas} imperial={imperial} hasDevice={hasDevice}
           onChanged={items.refresh} onClose={() => setSelected(null)}
           onEdit={(it) => (selected.kind === "track" ? editor.editTrack(it) : editor.editPlace(it))}
-          onScrub={showCursor}
+          onScrub={showCursor} rightInset={rightInset}
         />
+      </div>
       )}
 
       {/* Activity detail overlay (a recorded activity selected on the map). */}
       {selectedActivity != null && (
-        <ActivityDetailPanel
+        <div {...grab("activity")}>
+      <ActivityDetailPanel
           activityId={selectedActivity.id}
           imperial={imperial}
           creating={creatingFromActivity}
-          onCreateTrack={handleCreateFromActivity}
+          onCreateTrack={handleCreateFromActivity} rightInset={rightInset}
           onClose={() => setSelectedActivity(null)}
         />
+      </div>
       )}
 
       {!ready && !error && (
@@ -618,7 +648,7 @@ export default function MapView() {
 
       {/* The area drawn was already covered by one we have — say which. */}
       {region.alreadyHave && (
-        <div className="absolute top-14 left-1/2 -translate-x-1/2 z-20 bg-white dark:bg-slate-900 rounded-xl shadow-lg border border-sky-200 dark:border-sky-800 px-3.5 py-2.5 flex items-start gap-3 max-w-sm w-[calc(100%-2rem)]">
+        <div className="absolute top-28 left-1/2 -translate-x-1/2 z-20 bg-white dark:bg-slate-900 rounded-xl shadow-lg border border-sky-200 dark:border-sky-800 px-3.5 py-2.5 flex items-start gap-3 max-w-sm w-[calc(100%-2rem)]">
           <div className="min-w-0 w-full">
             <p className="text-sm font-medium text-slate-800 dark:text-slate-200">
               Already downloaded
@@ -641,7 +671,9 @@ export default function MapView() {
           wheel and a percentage, out of the way of the editor and the panels
           that share the bottom of the map. Errors widen it into a card. */}
       {showToast && (
-        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 max-w-sm w-max">
+        // Under the search row, not in it: the search box is wide enough now
+        // to run underneath a pill centred at the top.
+        <div className="absolute top-[3.75rem] left-1/2 -translate-x-1/2 z-20 max-w-sm w-max">
           <div className={`bg-white/95 dark:bg-slate-900/95 backdrop-blur shadow-lg border border-slate-200 dark:border-slate-700 px-3 py-1.5 ${
             globalErrored.length ? "rounded-xl" : "rounded-full"}`}>
             {(globalActive.length > 0 || regionDownloading.length > 0 || regionMerging.length > 0) && (() => {
@@ -668,7 +700,7 @@ export default function MapView() {
       )}
 
       {error && !hideBanner && (
-        <div className="absolute top-14 left-1/2 -translate-x-1/2 z-20 max-w-md w-[calc(100%-2rem)] bg-white dark:bg-slate-900 rounded-xl shadow-lg border border-amber-200 dark:border-amber-800 p-3.5">
+        <div className="absolute top-28 left-1/2 -translate-x-1/2 z-20 max-w-md w-[calc(100%-2rem)] bg-white dark:bg-slate-900 rounded-xl shadow-lg border border-amber-200 dark:border-amber-800 p-3.5">
           <div className="flex items-start gap-3">
             <svg className="w-5 h-5 shrink-0 text-amber-500 mt-0.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
@@ -690,6 +722,7 @@ export default function MapView() {
         </div>
       )}
 
+      <div {...grab("library")}>
       <TrackLibrary
         open={libraryOpen} onClose={() => setLibraryOpen(false)}
         tracks={items.tracks} places={items.places} folders={items.folders} atlas={items.atlas}
@@ -699,10 +732,11 @@ export default function MapView() {
         onShowPlace={(p) => { selectItem({ kind: "place", id: p.id }); flyToPlace(p); }}
         onEditTrack={(t) => editor.editTrack(t)}
         onEditPlace={(p) => editor.editPlace(p)}
-        onDraw={() => editor.startNew()}
+        onWidth={setLibraryWidth}
         onCombine={combineTracks}
         onCreateFolder={createFolder}
       />
+      </div>
     </div>
   );
 }

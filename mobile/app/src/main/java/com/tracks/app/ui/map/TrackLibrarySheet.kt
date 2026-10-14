@@ -557,6 +557,8 @@ data class LibraryActions(
     /** Open the track in the editor: line, name, colour, all in one place. */
     val onCourseEditLine: (CourseSummary) -> Unit,
     val onCourseExport: (CourseSummary) -> Unit,
+    /** Hide a track from the map, or show it again; it stays in the library. */
+    val onCourseHidden: (CourseSummary, Boolean) -> Unit = { _, _ -> },
     /** Open the place in the editor: position, name, colour, symbol. */
     val onWaypointEdit: (Waypoint) -> Unit,
     val onWaypointExport: (Waypoint) -> Unit,
@@ -707,6 +709,8 @@ internal fun CourseActions(
             deleteQuestion = if (course.loadToDevice) "Delete from Tracks and the watch?" else "Delete for good?",
             onEdit = { actions.onCourseEditLine(course) }.takeIf { course.id >= 0 },
             onExport = { actions.onCourseExport(course) },
+            hidden = course.hidden.takeIf { course.id >= 0 },
+            onToggleHidden = { actions.onCourseHidden(course, !course.hidden) },
         )
     }
 
@@ -995,6 +999,9 @@ private fun ActionRow(
     /** Open the editor. Shares the row with send/remove, export and delete. */
     onEdit: (() -> Unit)? = null,
     onExport: (() -> Unit)? = null,
+    /** A track's: whether it is hidden from the map, or null for no eye (places). */
+    hidden: Boolean? = null,
+    onToggleHidden: () -> Unit = {},
 ) {
     var confirming by remember { mutableStateOf(false) }
 
@@ -1023,6 +1030,18 @@ private fun ActionRow(
         }
         if (onEdit != null) {
             NeutralButton("Edit", onClick = onEdit, modifier = Modifier.weight(1f).heightIn(min = 44.dp))
+        }
+        hidden?.let { off ->
+            IconButton(onClick = onToggleHidden, modifier = Modifier.size(44.dp)) {
+                Icon(
+                    if (off) EyeIcons.Hidden else EyeIcons.Shown,
+                    contentDescription = if (off) "Hidden from the map — show it" else "Shown on the map — hide it",
+                    // Dimmed while hidden, like the row it belongs to.
+                    tint = if (off) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    else MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp),
+                )
+            }
         }
         if (onExport != null) {
             IconButton(onClick = onExport, modifier = Modifier.size(44.dp)) {

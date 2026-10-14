@@ -114,7 +114,8 @@ function Row({ item, kind, atlas, imperial, hasDevice, open, picking, picked, on
            {...(open ? {} : dragHandle || {})}>
         {!preview && (
           <input
-            type="checkbox" checked={picked} onChange={onPick} onClick={(e) => e.stopPropagation()}
+            type="checkbox" checked={picked} onChange={() => {}}
+            onClick={(e) => { e.stopPropagation(); onPick(e); }}
             title="Select" aria-label={`Select ${item.name}`}
             className={`shrink-0 ${picking || picked ? "" : "opacity-0 group-hover:opacity-100"}`}
           />
@@ -186,7 +187,8 @@ function CollectionHeader({ folder, tracks, places, hasDevice, onWatch, onRename
 
 export default function TrackLibrary({
   open, onClose, tracks, places, folders, atlas, imperial, hasDevice,
-  openKey, onRefresh, onShowTrack, onShowPlace, onEditTrack, onEditPlace, onDraw, onCombine, onCreateFolder,
+  openKey, onRefresh, onShowTrack, onShowPlace, onEditTrack, onEditPlace, onCombine, onCreateFolder,
+  onWidth,
 }) {
   const [width, setWidth] = useState(readWidth);
   const [scope, setScope] = useState("all");
@@ -199,9 +201,12 @@ export default function TrackLibrary({
   const [busy, setBusy] = useState(false);
   const [dragging, setDragging] = useState(null);
   const fileRef = useRef(null);
+  const anchorRef = useRef(null);   // the last row picked, where a Shift-click range starts
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
   useEffect(() => { if (openKey) setOpenRow(openKey); }, [openKey]);
+  // The map's bottom panels keep clear of this one; they need its width.
+  useEffect(() => { onWidth?.(open ? width : 0); }, [open, width, onWidth]);
   useEffect(() => { if (!open) { setPicked(new Set()); setConfirmBulk(false); setError(null); } }, [open]);
 
   // Reopened on an item just saved: bring its row into view.
@@ -244,7 +249,19 @@ export default function TrackLibrary({
   const pickedTracks = tracks.filter((t) => picked.has(keyOf("track", t.id)));
   const pickedPlaces = places.filter((p) => picked.has(keyOf("place", p.id)));
   const picking = picked.size > 0;
-  const togglePick = (k) => setPicked((s) => { const n = new Set(s); n.has(k) ? n.delete(k) : n.add(k); return n; });
+  const togglePick = (k) => {
+    anchorRef.current = k;
+    setPicked((s) => { const n = new Set(s); n.has(k) ? n.delete(k) : n.add(k); return n; });
+  };
+  // Shift-click: everything between the last row picked and this one, in the
+  // order the list shows them, as in any desktop file list.
+  const pickRange = (k) => {
+    const from = order.indexOf(anchorRef.current);
+    const to = order.indexOf(k);
+    if (from < 0 || to < 0) { togglePick(k); return; }
+    const [a, b] = from < to ? [from, to] : [to, from];
+    setPicked((s) => new Set([...s, ...order.slice(a, b + 1)]));
+  };
 
   const bulk = run(async (fn) => { await fn(); setPicked(new Set()); });
   const moveTo = (fid) => bulk(() => Promise.all([
@@ -302,7 +319,8 @@ export default function TrackLibrary({
 
   const onRowClick = (kind, it) => (e) => {
     const k = keyOf(kind, it.id);
-    // Ctrl/⌘ or Shift picks, as in any desktop list.
+    // Ctrl/⌘ picks one, Shift a run of them, as in any desktop list.
+    if (e.shiftKey && anchorRef.current) { pickRange(k); return; }
     if (picking || e.ctrlKey || e.metaKey || e.shiftKey) { togglePick(k); return; }
     if (openRow === k) { setOpenRow(null); return; }
     setOpenRow(k);
@@ -340,6 +358,14 @@ export default function TrackLibrary({
   };
 
   const sections = [null, ...[...folders].sort((a, b) => naturalCompare(a.name, b.name))];
+  // Every shown row's key, top to bottom, for Shift-click ranges.
+  const order = sections.flatMap((f) => {
+    const id = f?.id ?? null;
+    return [
+      ...shownTracks.filter((t) => groupOf(t.folder_id) === id).map((t) => keyOf("track", t.id)),
+      ...shownPlaces.filter((p) => groupOf(p.folder_id) === id).map((p) => keyOf("place", p.id)),
+    ];
+  });
   const summary = `${countLabel(tracks.filter((t) => inScope("track", t)).length, places.filter((p) => inScope("place", p)).length)}${
     scope === "watch" ? " on the watch" : ""}${picking ? ` · ${picked.size} selected` : ""}`;
 
@@ -349,7 +375,8 @@ export default function TrackLibrary({
     const props = {
       item: it, kind, atlas, imperial, hasDevice,
       open: openRow === k, picking, picked: picked.has(k),
-      onRowClick: onRowClick(kind, it), onPick: () => togglePick(k),
+      onRowClick: onRowClick(kind, it),
+      onPick: (e) => (e?.shiftKey && anchorRef.current ? pickRange(k) : togglePick(k)),
       onRename: (name) => (isTrack ? patchTrack(it, { name }) : patchPlace(it, { name })),
       actions: (
         <Actions
@@ -373,26 +400,26 @@ export default function TrackLibrary({
       <div onPointerDown={startResize} title="Drag to resize"
            className="w-1.5 -mr-1.5 z-10 cursor-col-resize rounded-l hover:bg-accent-400/40 active:bg-accent-500/50 transition-colors" />
       <div className="flex-1 min-w-0 flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl overflow-hidden">
+        {/* One row: the view, the order, import and close. A title row above
+            it said "My Tracks" over a panel opened from a button saying the
+            same, and cost the list its height. */}
         <div className="flex items-center gap-2 px-3 pt-2.5 pb-1.5">
-          <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-100 flex-1">My Tracks</h2>
-          <button type="button" className="btn btn-neutral btn-sm" disabled={busy} onClick={() => fileRef.current?.click()}>+GPX</button>
-          <input ref={fileRef} type="file" accept=".gpx,.fit" multiple className="hidden" onChange={onImportFile} />
-          <button type="button" className="icon-btn" title="Close" onClick={onClose}>×</button>
-        </div>
-
-        <div className="flex items-center gap-2 px-3 pb-1.5">
           {hasDevice
-            ? <Tabs size="sm" value={scope} onChange={setScope} tabs={[{ key: "all", label: "Everything" }, { key: "watch", label: "On the watch" }]} />
-            : <span className="flex-1" />}
+            ? <Tabs size="sm" className="shrink-0 flex-nowrap whitespace-nowrap" value={scope} onChange={setScope} tabs={[{ key: "all", label: "Everything" }, { key: "watch", label: "On the watch" }]} />
+            : null}
           <span className="flex-1" />
           <button
             type="button" className="btn btn-neutral btn-sm" title="Change the order"
             onClick={() => {
-              const next = SORTS[(SORTS.findIndex((s) => s.key === sort) + 1) % SORTS.length].key;
+              const next = SORTS[(SORTS.findIndex((x) => x.key === sort) + 1) % SORTS.length].key;
               setSort(next);
               try { localStorage.setItem(SORT_KEY, next); } catch { /* not kept */ }
             }}
-          >{SORTS.find((s) => s.key === sort)?.label}</button>
+          >{SORTS.find((x) => x.key === sort)?.label}</button>
+          <button type="button" className="btn btn-neutral btn-sm" disabled={busy} onClick={() => fileRef.current?.click()}
+                  title="Import GPX or FIT files — a line becomes a track, a point a place">+GPX</button>
+          <input ref={fileRef} type="file" accept=".gpx,.fit" multiple className="hidden" onChange={onImportFile} />
+          <button type="button" className="icon-btn icon-btn-sm" title="Close" onClick={onClose}>×</button>
         </div>
 
         {/* While picking, what to do with all of them. */}

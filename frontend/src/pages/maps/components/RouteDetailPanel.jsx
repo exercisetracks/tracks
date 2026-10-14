@@ -10,7 +10,7 @@ import ElevationProfileCard from "./ElevationProfileCard";
 // distances come from the per-route index, elevation is DEM-sampled on demand.
 // The elevation chart itself is the shared ElevationProfileCard.
 
-export default function RouteDetailPanel({ routeId, sectionId, imperial, onClose }) {
+export default function RouteDetailPanel({ routeId, sectionId, imperial, onClose, rightInset }) {
   const [detail, setDetail] = useState(null);
   const [activeSection, setActiveSection] = useState(sectionId || null);
   const [loading, setLoading] = useState(false);
@@ -41,7 +41,7 @@ export default function RouteDetailPanel({ routeId, sectionId, imperial, onClose
     // Outer wrapper spans the width but is click-through (pointer-events-none) so
     // the bottom-left/right corners stay interactive; only the centered card itself
     // captures clicks and carries the background.
-    <div className="absolute bottom-0 inset-x-0 z-30 flex justify-center pointer-events-none">
+    <div className="absolute bottom-0 inset-x-0 z-30 flex justify-center pointer-events-none" style={rightInset != null ? { right: rightInset } : undefined}>
       <div className="pointer-events-auto w-full max-w-[50rem] mx-2 px-3.5 py-2
                       bg-white/80 dark:bg-slate-900/80 backdrop-blur-md
                       border border-b-0 border-slate-200/80 dark:border-slate-700/80 rounded-t-xl

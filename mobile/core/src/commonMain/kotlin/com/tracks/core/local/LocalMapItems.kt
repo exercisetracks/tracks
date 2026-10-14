@@ -17,6 +17,7 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.booleanOrNull
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.hypot
@@ -115,8 +116,14 @@ class LocalMapItems(private val sources: LocalSources) {
         sources.setValues("track", id, mapOf("watch_deleted_at" to atIso))
 
     /** `/courses/geojson`: every track's line, for drawing them all at once. */
-    suspend fun coursesGeoJson(): String {
+    /**
+     * Every track's line, for the map. [includeHidden] false leaves out the
+     * tracks hidden from the map (they stay in the library), as the server's
+     * `/courses/geojson` does; editing still needs them, hence the default.
+     */
+    suspend fun coursesGeoJson(includeHidden: Boolean = true): String {
         val features = sources.replica.rows("track").mapNotNull { r ->
+            if (!includeHidden && (r.fields["hidden"] as? JsonPrimitive)?.booleanOrNull == true) return@mapNotNull null
             val coords = r.fields["geometry"] as? JsonArray ?: return@mapNotNull null
             val id = sources.idOf(r.uid)
             JsonObject(mapOf(

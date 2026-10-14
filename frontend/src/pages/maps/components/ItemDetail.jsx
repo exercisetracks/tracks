@@ -51,7 +51,7 @@ function TurnCheck({ track }) {
 }
 
 export default function ItemDetail({
-  kind, id, places = [], atlas, imperial, hasDevice, onChanged, onClose, onEdit, onScrub,
+  kind, id, places = [], atlas, imperial, hasDevice, onChanged, onClose, onEdit, onScrub, rightInset,
 }) {
   const [track, setTrack] = useState(null);
   const [confirming, setConfirming] = useState(false);
@@ -96,7 +96,7 @@ export default function ItemDetail({
   const caption = kind === "track" ? trackDeviceLabel(item) : placeDeviceLabel(item);
 
   return (
-    <div className="absolute bottom-0 left-2 right-2 sm:left-[11rem] sm:right-[5rem] z-30 pointer-events-none">
+    <div className="absolute bottom-0 left-2 right-2 sm:left-[11rem] sm:right-[5rem] z-30 pointer-events-none" style={rightInset != null ? { right: rightInset } : undefined}>
       <div className="pointer-events-auto w-full max-w-[52rem] mx-auto px-3.5 py-2
                       bg-white/85 dark:bg-slate-900/85 backdrop-blur-md
                       border border-b-0 border-slate-200/70 dark:border-slate-700/70 rounded-t-xl

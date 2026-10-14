@@ -1584,6 +1584,7 @@ private fun libraryActions(
     onCourseDelete = toolsVm::deleteCourse,
     onCourseEditLine = toolsVm::editCourseLine,
     onCourseExport = { c -> onExport(c.name) { toolsVm.gpx(c) } },
+    onCourseHidden = toolsVm::setCourseHidden,
     onWaypointEdit = toolsVm::editWaypoint,
     onWaypointExport = { w -> onExport(w.name) { toolsVm.gpx(w) } },
     onProfileScrub = { m -> toolsVm.scrubProfile(toolsVm.selectedLine, m) },

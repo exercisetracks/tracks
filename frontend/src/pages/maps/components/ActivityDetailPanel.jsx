@@ -10,7 +10,7 @@ import ElevationProfileCard from "./ElevationProfileCard";
 // variant of CustomTrackDetail). Lets you rename the activity, see its elevation
 // profile, turn it into a custom track, or jump to the full activity page. Shares
 // the wide/translucent bottom layout. The amber map highlight is driven by MapView.
-export default function ActivityDetailPanel({ activityId, imperial, onClose, onCreateTrack, creating, onRenamed }) {
+export default function ActivityDetailPanel({ activityId, imperial, onClose, onCreateTrack, creating, onRenamed, rightInset }) {
   const [act, setAct] = useState(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -53,7 +53,7 @@ export default function ActivityDetailPanel({ activityId, imperial, onClose, onC
   const date = act?.started_at ? new Date(act.started_at).toLocaleDateString() : null;
 
   return (
-    <div className="absolute bottom-0 left-2 right-2 sm:left-[11rem] sm:right-[5rem] z-30 pointer-events-none">
+    <div className="absolute bottom-0 left-2 right-2 sm:left-[11rem] sm:right-[5rem] z-30 pointer-events-none" style={rightInset != null ? { right: rightInset } : undefined}>
       <div className="pointer-events-auto w-full px-3.5 py-2
                       bg-white/70 dark:bg-slate-900/70 backdrop-blur-md
                       border border-b-0 border-slate-200/70 dark:border-slate-700/70 rounded-t-xl
