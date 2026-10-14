@@ -23,8 +23,12 @@ router = APIRouter(prefix="/maps/packs", tags=["maps"])
 
 
 @router.get("/manifest")
-def pack_manifest(bbox: str):
-    return map_packs.manifest(parse_bbox(bbox))
+def pack_manifest(bbox: str, prebuild: bool = True):
+    doc = map_packs.manifest(parse_bbox(bbox))
+    # A phone asking what to save is about to fetch it: start cutting now.
+    if prebuild:
+        map_packs.prebuild(doc)
+    return doc
 
 
 @router.get("/{key:path}")

@@ -306,7 +306,7 @@ def _current_version(key: str) -> str | None:
 
 def _build(key: str, out: Path) -> None:
     parts = key.split("/")
-    tmpdir = Path(tempfile.mkdtemp(dir=packs_dir()))
+    tmpdir = Path(tempfile.mkdtemp(dir=packs_dir(), prefix=".build-"))
     try:
         if parts[0] == "shared":
             name = parts[1]
@@ -392,20 +392,90 @@ def cache_cap() -> int:
     return max(CACHE_FLOOR, int(masters * CACHE_FRACTION))
 
 
+# A pack served or built this recently is in use — a phone is part-way
+# through an area — and is never what makes room.
+_IN_USE_S = 3600
+
+
 def evict() -> None:
-    """Least recently used packs out until the cache is under its cap."""
+    """Least recently used packs out until the cache is under its cap.
+
+    Only finished packs (those with their .json beside them): eviction used to
+    take any *.pmtiles under the cache, which included the pieces of packs
+    being built at that moment, so a concurrent build failed with "no such
+    file" and the phone saw a 500.
+    """
+    import time
     root = packs_dir()
     if not root.exists():
         return
-    files = [p for p in root.rglob("*") if p.suffix in (".pmtiles", ".zip") and p.is_file()]
+    files = [p for p in root.rglob("*")
+             if p.suffix in (".pmtiles", ".zip") and p.is_file()
+             and p.with_suffix(".json").exists()
+             and not any(part.startswith(".build-") for part in p.relative_to(root).parts)]
     total = sum(p.stat().st_size for p in files)
     cap = cache_cap()
     if total <= cap:
         return
+    now = time.time()
     for p in sorted(files, key=lambda p: p.stat().st_mtime):
         if total <= cap:
             break
+        if now - p.stat().st_mtime < _IN_USE_S:
+            continue
         size = p.stat().st_size
         for q in (p, p.with_suffix(".json"), p.with_suffix(".lock")):
             q.unlink(missing_ok=True)
         total -= size
+
+
+# ── Building ahead of the phone ──────────────────────────────────────────────
+
+import threading as _threading
+
+_prebuild_lock = _threading.Lock()
+_prebuild_queue: list[tuple[str, str]] = []
+_prebuild_running = False
+
+
+def prebuild(manifest_doc: dict) -> None:
+    """Cut a manifest's packs in the background, so a phone's requests find
+    them ready instead of each waiting for its own cut. Shared packs first:
+    the world basemap is the slowest single cut and every phone needs it."""
+    global _prebuild_running
+    keys = [(f"shared/{n}", e["version"]) for n, e in manifest_doc.get("shared", {}).items() if not e["ready"]]
+    keys += [(f"{c['cell']}/{layer}", e["version"]) for c in manifest_doc.get("cells", [])
+             for layer, e in c["layers"].items() if not e["ready"]]
+    with _prebuild_lock:
+        known = set(_prebuild_queue)
+        _prebuild_queue.extend(k for k in keys if k not in known)
+        if _prebuild_running or not _prebuild_queue:
+            return
+        _prebuild_running = True
+
+    def run():
+        global _prebuild_running
+        while True:
+            with _prebuild_lock:
+                if not _prebuild_queue:
+                    _prebuild_running = False
+                    return
+                key, version = _prebuild_queue.pop(0)
+            try:
+                pack_file(key, version)
+            except (StaleVersion, LookupError):
+                pass
+            except Exception:
+                logger.exception("Pre-building pack %s failed", key)
+
+    _threading.Thread(target=run, daemon=True, name="pack-prebuild").start()
+
+
+def warm_shared() -> None:
+    """Build the shared packs once at startup (the world basemap takes a while)."""
+    try:
+        prebuild({"shared": {n: {"version": shared_version(n), "ready": _cached(f"shared/{n}", shared_version(n)) is not None}
+                             for n in SHARED if n == "assets" or _shared_source(n).exists()},
+                  "cells": []})
+    except Exception:
+        logger.exception("Warming shared packs failed")

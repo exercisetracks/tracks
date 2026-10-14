@@ -431,6 +431,11 @@ async def lifespan(app: FastAPI):
 
         _recover_map_data()
         try:
+            from app.services.map_packs import warm_shared
+            warm_shared()
+        except Exception:
+            logger.exception("Could not start warming map packs")
+        try:
             from app.services.gnis_downloader import apply_name_overrides
             apply_name_overrides()
         except Exception:

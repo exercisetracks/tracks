@@ -110,9 +110,26 @@ def test_a_change_elsewhere_leaves_this_cells_packs_alone(server):
 
 def test_the_cache_keeps_to_its_cap(server, monkeypatch):
     monkeypatch.setattr(map_packs, "cache_cap", lambda: 1)
+    monkeypatch.setattr(map_packs, "_IN_USE_S", 0)
     m = map_packs.manifest(list(server["cell"]))
     layers = next(c for c in m["cells"] if c["cell"] == "8/44/90")["layers"]
     for name in ("basemap", "overlay"):
         map_packs.pack_file(f"8/44/90/{name}", layers[name]["version"])
     left = [p for p in map_packs.packs_dir().rglob("*.pmtiles")]
     assert len(left) <= 1
+
+
+def test_eviction_never_takes_a_pack_being_built_or_in_use(server, monkeypatch):
+    """It took the pieces of packs mid-build (any *.pmtiles under the cache),
+    so a concurrent build failed and the phone saw a 500 — and every failure
+    sent its download into the system's retry backoff."""
+    monkeypatch.setattr(map_packs, "cache_cap", lambda: 1)
+    m = map_packs.manifest(list(server["cell"]))
+    layers = next(c for c in m["cells"] if c["cell"] == "8/44/90")["layers"]
+    built = map_packs.pack_file("8/44/90/basemap", layers["basemap"]["version"])
+    piece = map_packs.packs_dir() / ".build-x" / "0.pmtiles"
+    piece.parent.mkdir(parents=True)
+    piece.write_bytes(b"half a pack")
+    map_packs.evict()
+    assert piece.exists(), "a build in progress is not the cache's to clear"
+    assert built.exists(), "nor is a pack a phone is fetching right now"

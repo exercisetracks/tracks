@@ -42,11 +42,12 @@ class PackStoreTest {
         ShadowStatFs.registerStats(store.root().apply { mkdirs() }, 1_000_000, 900_000, 900_000)
     }
 
-    private fun manifest(vararg cells: Pair<String, String>, shared: String = "s1") = PackManifest(
+    private fun manifest(vararg cells: Pair<String, String>, shared: String? = "s1") = PackManifest(
         cells = cells.map { (cell, v) ->
             PackCell(cell, covered = true, layers = mapOf("basemap" to PackEntry(v, 100, null, "/api/maps/packs/$cell/basemap?v=$v")))
         },
-        shared = mapOf("world" to PackEntry(shared, 100, null, "/api/maps/packs/shared/world?v=$shared")),
+        shared = if (shared == null) emptyMap()
+        else mapOf("world" to PackEntry(shared, 100, null, "/api/maps/packs/shared/world?v=$shared")),
     )
 
     private fun sha(b: ByteArray) = MessageDigest.getInstance("SHA-256").digest(b).joinToString("") { "%02x".format(it) }
@@ -90,9 +91,19 @@ class PackStoreTest {
         assertArrayEquals(body, File(p.file!!).readBytes())
     }
 
+    /** One pack dropping does not stop the others; it resumes in the same run. */
+    @Test
+    fun one_dropped_pack_does_not_stop_the_rest() = runBlocking {
+        store.addArea("A", listOf(0.0, 0.0, 1.0, 1.0), manifest("8/4/4" to "v1"))
+        val body = fixture.readBytes()
+        val server = FakeServer(body, sha(body), dropAfter = 70_000)
+        assertTrue(downloader(server).run())
+        assertTrue(store.state.value.packs.values.all { it.current })
+    }
+
     @Test
     fun a_dropped_download_resumes_where_it_stopped() = runBlocking {
-        store.addArea("A", listOf(0.0, 0.0, 1.0, 1.0), manifest("8/4/4" to "v1"))
+        store.addArea("A", listOf(0.0, 0.0, 1.0, 1.0), manifest("8/4/4" to "v1", shared = null))
         val body = fixture.readBytes()
         val server = FakeServer(body, sha(body), dropAfter = 70_000)
         assertFalse(downloader(server).run())
@@ -105,7 +116,7 @@ class PackStoreTest {
 
     @Test
     fun a_pack_that_changed_since_the_partial_starts_over() = runBlocking {
-        store.addArea("A", listOf(0.0, 0.0, 1.0, 1.0), manifest("8/4/4" to "v1"))
+        store.addArea("A", listOf(0.0, 0.0, 1.0, 1.0), manifest("8/4/4" to "v1", shared = null))
         val old = fixture.readBytes()
         val server = FakeServer(old, sha(old), dropAfter = 50_000)
         downloader(server).run()
@@ -134,13 +145,14 @@ class PackStoreTest {
     }
 
     @Test
-    fun a_full_storage_limit_stops_with_the_reason_not_a_retry_loop() = runBlocking {
-        store.setSettings { it.copy(budgetBytes = 10) }
+    fun a_full_phone_stops_with_the_reason_not_a_retry_loop() = runBlocking {
+        // Free space just over the reserve: nothing more fits.
+        ShadowStatFs.registerStats(store.root(), 1_000_000, 1, 1)
         store.addArea("A", listOf(0.0, 0.0, 1.0, 1.0), manifest("8/4/4" to "v1"))
         downloader(FakeServer(fixture.readBytes(), "x")).run()
         val p = store.state.value.packs.getValue("8/4/4/basemap")
         assertEquals(PackStore.State.FAILED, p.state)
-        assertTrue(p.error!!.contains("limit"))
+        assertTrue(p.error!!.contains("space"))
     }
 
     @Test

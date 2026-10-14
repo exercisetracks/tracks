@@ -129,10 +129,19 @@ class PackStore(private val context: Context) {
         maxOf(1L shl 30, StatFs(dir.path).totalBytes / 20)
     }.getOrDefault(1L shl 30)
 
-    fun budget(): Long {
-        val s = _state.value.settings
-        return s.budgetBytes ?: ((freeBytes() + _state.value.usedBytes) / 2)
-    }
+    fun totalBytes(dir: File = root()): Long = runCatching {
+        dir.mkdirs()
+        StatFs(dir.path).totalBytes
+    }.getOrDefault(0)
+
+    /**
+     * Most the packs may take: everything the volume has, less its reserve.
+     * Offline maps are what the person chose to keep; they are not rationed
+     * against free space they would rather fill. (`Settings.budgetBytes` is
+     * no longer offered and is ignored, so a limit set by an earlier version
+     * cannot quietly refuse downloads.)
+     */
+    fun budget(): Long = (freeBytes() + _state.value.usedBytes - reserveBytes()).coerceAtLeast(0)
 
     // ── Areas ────────────────────────────────────────────────────────────────
 

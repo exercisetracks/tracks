@@ -54,30 +54,31 @@ class PackDownloader(
     }
 
     suspend fun run(onProgress: (done: Long, total: Long) -> Unit = { _, _ -> }): Boolean = running.withLock {
-        var clean = true
         while (true) {
             val batch = store.pending().take(PARALLEL)
             if (batch.isEmpty()) break
-            val outcomes = mutableListOf<Boolean>()
+            var offline = 0
             coroutineScope {
                 for (pack in batch) launch {
-                    val ok = runCatching { fetch(pack, onProgress) }.getOrElse { e ->
+                    runCatching { fetch(pack, onProgress) }.onFailure { e ->
                         if (e is kotlinx.coroutines.CancellationException) throw e
                         Log.w(TAG, "Pack ${pack.key} failed", e)
-                        store.markFailed(pack.key, e.message ?: e.javaClass.simpleName, retry = e is IOException)
-                        false
+                        val network = e is IOException && e !is ServerStatus
+                        if (network) synchronized(this@PackDownloader) { offline++ }
+                        // Room is not made by trying again; anything else may be.
+                        store.markFailed(pack.key, e.message ?: e.javaClass.simpleName, retry = e !is RoomException)
                     }
-                    synchronized(outcomes) { outcomes += ok }
                 }
             }
-            if (outcomes.any { !it }) {
-                clean = false
-                // A network failure leaves its packs queued; going round again
-                // at once would spin. Stop, and let the job be rescheduled.
-                if (store.pending().any { p -> batch.any { it.key == p.key } }) break
-            }
+            // Only when the connection itself is gone does the run stop (and
+            // the job wait for the network constraint). One pack failing used
+            // to stop every other pack too, and hand the whole download to the
+            // system's retry backoff — minutes, then longer, each time — which
+            // is what a download that sped up and then crawled was doing.
+            if (offline == batch.size) break
         }
-        clean && store.pending().isEmpty()
+        // Finished means nothing is left to fetch, however many tries it took.
+        store.pending().isEmpty()
     }
 
     private suspend fun fetch(pack: PackStore.Pack, onProgress: (Long, Long) -> Unit): Boolean {
@@ -119,6 +120,9 @@ class PackDownloader(
             409 -> {
                 part.delete(); etagFile.delete()
                 refreshManifest(pack)
+                // Counted, so a pack the server keeps rebuilding cannot be
+                // asked for in a loop; a new version starts its count afresh.
+                store.markFailed(pack.key, "Rebuilt on the server; fetching the new version", retry = true)
                 return false
             }
             404 -> {
@@ -126,7 +130,7 @@ class PackDownloader(
                 store.markFailed(pack.key, "The server no longer has this part of the map", retry = false)
                 return false
             }
-            else -> throw IOException("Server answered ${response.status}")
+            else -> throw ServerStatus(response.status)
         }
         val answered = (response.etag ?: etagFile.takeIf { it.exists() }?.readText())?.trim('"')
 
@@ -153,6 +157,9 @@ class PackDownloader(
             throw RoomException("Over your offline-map storage limit of ${format(store.budget())}")
         }
     }
+
+    /** The server answered, with an error: the network is fine, try the next pack. */
+    class ServerStatus(val status: Int) : IOException("Server answered $status")
 
     /** Not an IOException: retrying the same pack cannot make room. */
     class RoomException(message: String) : Exception(message)

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 package com.tracks.app.ui.map
 
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -171,9 +173,9 @@ fun SelectionBar(
             state.estimateBytes?.let { bytes ->
                 val room = (state.budgetBytes - state.usedBytes).coerceAtLeast(0)
                 Text(
-                    if (bytes > room) "More than your offline-map limit leaves room for " +
-                        "(${formatBytes(room)}). Raise the limit in Offline maps, or remove an area."
-                    else "Room for it: ${formatBytes(room)} left of your ${formatBytes(state.budgetBytes)} limit.",
+                    if (bytes > room) "More than this phone has room for (${formatBytes(room)} free). " +
+                        "Remove an area or free up space first."
+                    else "${formatBytes(room)} free on this phone.",
                     style = MaterialTheme.typography.bodySmall,
                     color = if (bytes > room) MaterialTheme.colorScheme.error
                     else MaterialTheme.colorScheme.onSurfaceVariant,
@@ -342,12 +344,6 @@ private fun RegionRowItem(
                 row.phase is DownloadPhase.Failed && row.areaId != null ->
                     TonalButton("Retry", onClick = onRetry, small = true)
 
-                // Stored here and on the server. Freeing the phone's copy is a
-                // different decision from giving the area up altogether, now
-                // that the server serves it at full detail either way.
-                row.phase is DownloadPhase.Ready && row.serverId != null ->
-                    TonalButton("Free up space", onClick = onRemoveFromPhone, small = true)
-
                 else -> Unit
             }
             // The phone only ever removes its own copy, or stops waiting for
@@ -356,7 +352,10 @@ private fun RegionRowItem(
             // no confirmation; deleting it is the web app's job now.
             val waitingHere = row.phase is DownloadPhase.Extracting && row.requestedHere
             if (row.storedId != null || row.areaId != null || waitingHere) {
-                DangerButton(if (row.phase is DownloadPhase.Ready) "Remove" else "Cancel", onClick = onDelete, small = true)
+                // One action for a saved area: the phone only ever deletes its
+                // own copy, so "remove" and "free up space" were the same thing.
+                DangerButton(if (row.phase is DownloadPhase.Ready) "Delete from device" else "Cancel",
+                             onClick = onDelete, small = true)
             }
         }
 
@@ -468,35 +467,36 @@ internal fun formatBytes(bytes: Long): String = when {
 
 
 /**
- * Where saved maps go and how much they may take.
+ * How the phone's storage is spent: other apps, offline maps, and what is free.
  *
- * The limit is the person's: map packs use as much storage as they allow, up
- * to what the volume can spare with its reserve kept free (see PackStore).
+ * Maps use as much as the phone has, keeping a reserve free (PackStore); an
+ * area that would not fit is refused, with the numbers, before it starts.
  */
 @Composable
 private fun StorageSettings(vm: RegionsViewModel, state: RegionsUiState) {
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text("Storage", style = MaterialTheme.typography.labelLarge)
-        Text(
-            "${formatBytes(state.usedBytes)} used of a ${formatBytes(state.budgetBytes)} limit · " +
-                "${formatBytes(state.freeBytes)} free on this phone",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        val choices = BUDGET_STEPS.filter { it < state.freeBytes + state.usedBytes } + (state.freeBytes + state.usedBytes)
-        val index = choices.indexOfFirst { it >= state.budgetBytes }.let { if (it < 0) choices.lastIndex else it }
-        // Applied when the thumb is let go: each change reschedules downloads.
-        var dragging by androidx.compose.runtime.remember(index) { androidx.compose.runtime.mutableFloatStateOf(index.toFloat()) }
-        androidx.compose.material3.Slider(
-            value = dragging,
-            onValueChange = { dragging = it },
-            onValueChangeFinished = { vm.setBudget(choices[dragging.toInt().coerceIn(0, choices.lastIndex)]) },
-            valueRange = 0f..choices.lastIndex.coerceAtLeast(1).toFloat(),
-            steps = (choices.size - 2).coerceAtLeast(0),
-        )
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Download on Wi-Fi only", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-            com.tracks.app.ui.components.TracksSwitch(checked = state.wifiOnly, onCheckedChange = vm::setWifiOnly)
+        val total = state.totalBytes.coerceAtLeast(1)
+        val maps = state.usedBytes
+        val others = (total - state.freeBytes - maps).coerceAtLeast(0)
+        val otherColor = MaterialTheme.colorScheme.outline
+        val mapColor = MaterialTheme.colorScheme.primary
+        Row(
+            Modifier.fillMaxWidth().height(12.dp)
+                .clip(androidx.compose.foundation.shape.RoundedCornerShape(6.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant),
+        ) {
+            if (others > 0) androidx.compose.foundation.layout.Box(
+                Modifier.fillMaxHeight().weight(others.toFloat() / total).background(otherColor))
+            if (maps > 0) androidx.compose.foundation.layout.Box(
+                Modifier.fillMaxHeight().weight(maps.toFloat().coerceAtLeast(total * 0.004f) / total).background(mapColor))
+            val free = (total - others - maps).coerceAtLeast(1)
+            androidx.compose.foundation.layout.Spacer(Modifier.fillMaxHeight().weight(free.toFloat() / total))
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            StorageKey(otherColor, "Other apps ${formatBytes(others)}")
+            StorageKey(mapColor, "Offline maps ${formatBytes(maps)}")
+            StorageKey(MaterialTheme.colorScheme.surfaceVariant, "Free ${formatBytes(state.freeBytes)}")
         }
         if (state.volumes > 1) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -519,4 +519,12 @@ private fun StorageSettings(vm: RegionsViewModel, state: RegionsUiState) {
     }
 }
 
-private val BUDGET_STEPS = listOf(1L, 2, 5, 10, 20, 50, 100, 200, 500).map { it * 1_000_000_000L }
+@Composable
+private fun StorageKey(color: androidx.compose.ui.graphics.Color, text: String) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        androidx.compose.foundation.layout.Box(
+            Modifier.size(8.dp).clip(androidx.compose.foundation.shape.CircleShape).background(color))
+        Text(text, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+

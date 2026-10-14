@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 package com.tracks.app.ui.screens
 
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -175,6 +176,8 @@ fun SettingsScreen(
                 PrivacyForm(profile, onSet, hasDevice) { AiCoachingRow(container, linked) }
             }
         }
+
+        SettingsCard("Offline maps") { OfflineMapsSettings(container) }
 
         TourAnchor("settings-server") {
         ServerSection(
@@ -561,5 +564,30 @@ internal fun SettingsCard(title: String, info: MetricInfo? = null, content: @Com
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) { content() }
         }
+    }
+}
+
+
+/** Where offline-map downloads may run. The areas themselves are managed on the map. */
+@Composable
+private fun OfflineMapsSettings(container: AppContainer) {
+    val packs by container.packs.state.collectAsStateWithLifecycle()
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            Text("Download on Wi-Fi only", style = MaterialTheme.typography.bodyMedium)
+            Text(
+                "Saved map areas can be gigabytes. Off, they also download over mobile data.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        com.tracks.app.ui.components.TracksSwitch(
+            checked = packs.settings.wifiOnly,
+            onCheckedChange = { on ->
+                container.packs.setSettings { it.copy(wifiOnly = on) }
+                // Rescheduled under the new network rule.
+                com.tracks.app.map.packs.PackJobs.schedule(container.appContext)
+            },
+        )
     }
 }

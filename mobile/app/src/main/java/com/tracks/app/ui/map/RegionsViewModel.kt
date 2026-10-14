@@ -126,6 +126,8 @@ data class RegionsUiState(
     val usedBytes: Long = 0,
     val budgetBytes: Long = 0,
     val freeBytes: Long = 0,
+    /** The volume's size, for the storage bar. */
+    val totalBytes: Long = 0,
     /** Storage the packs can live on: the phone's own, then SD cards. */
     val volumes: Int = 1,
     val volume: Int = 0,
@@ -514,6 +516,7 @@ class RegionsViewModel(
                 usedBytes = snap.usedBytes,
                 budgetBytes = packs.budget(),
                 freeBytes = packs.freeBytes(),
+                totalBytes = packs.totalBytes(),
                 volumes = packs.volumes().size,
                 volume = snap.settings.volume,
                 wifiOnly = snap.settings.wifiOnly,
