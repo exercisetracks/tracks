@@ -30,8 +30,8 @@ android {
         // because Android refuses a lower code over a higher one without an
         // uninstall, which loses the app's data. Every version from 1.1.2 on
         // follows the formula again, and is above it.
-        versionCode = 10701
-        versionName = "1.7.1"
+        versionCode = 10702
+        versionName = "1.7.2"
     }
 
     /**
