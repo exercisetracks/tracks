@@ -243,15 +243,13 @@ def _ensure_user_settings() -> None:
 def _recover_map_data() -> None:
     """Re-trigger any map data downloads that should be running but aren't.
 
-    Called at startup after the DB is ready. Covers two scenarios:
-    1. map_enabled=True in settings but planet_z7.pmtiles is missing
-       (e.g. the map-data bind-mount was wiped).
-    2. Regions marked 'installed' in the DB whose tile files no longer exist
-       on disk — marks them as 'error' so the UI shows a re-download prompt.
+    Called at startup after the DB is ready: map_enabled=True in settings but
+    the planet overview is missing (e.g. the map-data bind-mount was wiped).
+    Areas whose tiles are gone are the build queue's to recover
+    (map_builds.recover_missing_masters).
     """
     import threading
     from app.models.user_settings import UserSettings as _US
-    from app.services import region_registry, region_merger
     from app.services.global_overview import start_map_download
     from app.services.global_dem import start_dem_download
 
@@ -291,36 +289,9 @@ def _recover_map_data() -> None:
                 threading.Thread(target=start_dem_download, daemon=True,
                                  name="dem-recovery").start()
 
-    # ── Interrupted builds ────────────────────────────────────────────────────
-    # A region download is a daemon thread, and a restart takes it with no
-    # record anywhere that the work stopped. Picked back up here rather than
-    # left to go stale twenty minutes later — see resume_interrupted.
-    try:
-        from app.routes.regions.download import resume_interrupted
-        resume_interrupted()
-    except Exception:
-        logger.exception("Could not resume interrupted region builds")
-
-    # ── Region orphan check ───────────────────────────────────────────────────
-    active = region_registry.list_active()
-    orphaned = [
-        r for r in active
-        if r["status"] == "installed" and not region_registry.source_dir(r["id"]).exists()
-    ]
-    if orphaned:
-        names = ", ".join(r["name"] for r in orphaned)
-        logger.warning(
-            "Map data recovery: %d region(s) missing files — marking for re-download: %s",
-            len(orphaned), names,
-        )
-        for r in orphaned:
-            region_registry.update_status(
-                r["id"], "error",
-                error="Region tile files missing — please re-download this area",
-            )
-        # Rebuild master from whatever regions still have files
-        threading.Thread(target=region_merger.rebuild_master, daemon=True,
-                         name="master-recovery").start()
+    # Interrupted builds and removals need nothing here: the build queue
+    # (services.map_builds) resumes any area left mid-build the first time a
+    # worker takes its lock, from the last phase that finished.
 
 
 def _ensure_map_dirs() -> None:
@@ -441,6 +412,12 @@ async def lifespan(app: FastAPI):
             _ensure_user_settings()
     finally:
         barrier.close()   # releases the lock for the next worker
+    # Every worker runs a map builder; one advisory lock decides which builds
+    # (services.map_builds). Not under the test suite, whose rows live in a
+    # transaction a background session could never see anyway.
+    if not os.environ.get("TRACKS_SKIP_SEED"):
+        from app.services import map_builds
+        map_builds.start()
     if seeding:
         _ensure_map_dirs()
         get_exercise_library_cache()
@@ -451,31 +428,6 @@ async def lifespan(app: FastAPI):
         from app.services.poi_indexer import full_reindex
         threading.Thread(target=full_reindex, daemon=True,
                          name="poi-reindex").start()
-
-        # Generate contours only if the DEM exists and contours are missing or
-        # stale (older than the DEM). Avoids re-deriving from a multi-GB DEM on
-        # every restart.
-        from app.services.contour_generator import regenerate_contours
-        from app.services.global_download_tracker import global_download_tracker
-        _dem = Path(settings.map_data_dir, "master_dem.pmtiles")
-        _contours = Path(settings.map_data_dir, "master_contours.pmtiles")
-        if _dem.exists() and (
-            not _contours.exists()
-            or _contours.stat().st_mtime < _dem.stat().st_mtime
-        ):
-            def _regen_contours_tracked():
-                global_download_tracker.register("contours", "Generating contour lines", "")
-                global_download_tracker.start("contours")
-                try:
-                    regenerate_contours(progress_cb=lambda done, total: (
-                        global_download_tracker.set_progress(
-                            "contours", done / max(total, 1) * 100, f"{done} / {total} tiles")))
-                    global_download_tracker.complete("contours")
-                except Exception as exc:
-                    global_download_tracker.fail("contours", str(exc))
-                    logger.exception("Contour generation failed")
-            threading.Thread(target=_regen_contours_tracked, daemon=True,
-                             name="contour-gen").start()
 
         _recover_map_data()
 

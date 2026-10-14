@@ -33,39 +33,31 @@ class DownloadCancelled(Exception):
 
 # ── Cross-worker marker file ────────────────────────────────────────────────
 
-def _marker_path(region_id: int) -> Path:
-    # Imported lazily to avoid a module import cycle (region_registry → nothing
-    # here, but keep this leaf module dependency-free at import time).
-    from app.services import region_registry
-    return region_registry.source_dir(region_id) / ".cancel"
-
-
 def request_cancel(region_id: int) -> None:
-    """Write the cancel marker for a region (idempotent, any worker may call)."""
-    p = _marker_path(region_id)
-    try:
-        p.parent.mkdir(parents=True, exist_ok=True)
-        p.touch()
-    except OSError:
-        logger.warning("Could not write cancel marker %s", p)
+    """Kept for callers; the request *is* the area's status now (see below)."""
 
 
 def is_cancel_requested(region_id: int) -> bool:
+    """Whether the area has been asked to stop: its row says cancelling or
+    deleting, or it is gone.
+
+    Read from the database, which every uvicorn worker shares. It used to be a
+    marker file in the area's directory — which a request had to create, so a
+    cancel arriving after a teardown left an empty directory behind (audit,
+    "empty region directories"), and the file could outlive its download and
+    kill the next one.
+    """
+    from app.services import region_registry
     try:
-        return _marker_path(region_id).exists()
+        r = region_registry.get(region_id)
     except Exception:
         return False
+    return r is None or r["status"] in ("cancelling", "deleting")
 
 
 def clear(region_id: int) -> None:
-    """Remove a region's cancel marker if present (no-op if the dir is gone)."""
-    try:
-        _marker_path(region_id).unlink(missing_ok=True)
-    except Exception:
-        pass
+    """Nothing to clear: there is no marker any more."""
 
-
-# ── Per-download token (owned by the worker running the pipeline) ────────────
 
 def _kill_proc(proc) -> None:
     try:
@@ -134,12 +126,12 @@ class CancelToken:
             _shutdown_pool(pool)
 
     # watcher lifecycle -------------------------------------------------------
-    def start_watching(self, interval: float = 1.0) -> None:
-        """Poll the shared marker file; trip the token the moment it appears."""
+    def start_watching(self, interval: float = 2.0) -> None:
+        """Poll the area's status; trip the token the moment a cancel shows."""
         def _loop():
             while not self._watch_stop.wait(interval):
                 if is_cancel_requested(self.region_id):
-                    logger.info("Cancel marker seen for region %s — aborting download",
+                    logger.info("Cancel requested for region %s — aborting download",
                                 self.region_id)
                     self.cancel()
                     return

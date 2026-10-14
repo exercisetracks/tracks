@@ -10,7 +10,7 @@ in, the list filled with identically-named copies of one place.
 import pytest
 
 from app.config import settings
-from app.routes.regions import crud, download
+from app.routes.regions import crud
 
 
 STATE = [-154.06, 36.99, -147.04, 41.00]
@@ -39,17 +39,17 @@ def registry(monkeypatch):
     monkeypatch.setattr(crud.geocode, "suggest_region_name", lambda bbox: "Example State")
     monkeypatch.setattr(settings, "pmtiles_source_url", "http://example.invalid/planet.pmtiles")
 
-    class _Thread:
-        def __init__(self, target=None, args=(), daemon=False):
-            state["started"].append(args)
+    def _update(region_id, status, **kwargs):
+        for r in state["regions"]:
+            if r["id"] == region_id:
+                r["status"] = status
 
-        def start(self):
-            pass
-
-    # The endpoint's own `threading`, not the module every thread in the
-    # process comes from (the DNS check before a download uses a pool).
-    import types
-    monkeypatch.setattr(crud, "threading", types.SimpleNamespace(Thread=_Thread))
+    monkeypatch.setattr(crud.region_registry, "update_status", _update)
+    monkeypatch.setattr(crud.region_registry, "clear_attempts", lambda rid: None)
+    monkeypatch.setattr(crud.region_registry, "get",
+                        lambda rid: next((r for r in state["regions"] if r["id"] == rid), None))
+    # The build itself runs in the queue; a request only wakes it.
+    monkeypatch.setattr(crud.map_builds, "kick", lambda: state["started"].append("kick"))
     state["region"] = _region
     return state
 
@@ -91,13 +91,31 @@ class TestAlreadyHave:
         registry["regions"].append(registry["region"](status="merging", stale=True))
         assert crud._already_have(TOWN) is None
 
-    def test_a_merged_area_only_answers_for_its_exact_box(self, registry):
-        # Its bbox is the envelope of the areas it combines; an L-shaped merge
-        # has corners the envelope claims and no tile covers.
-        merged = registry["region"](geometry={"type": "Polygon", "coordinates": []})
-        registry["regions"].append(merged)
+    def test_neighbouring_areas_together_cover_a_box_across_their_border(self, registry):
+        """Areas overlap and abut freely now; a box straddling two installed
+        neighbours is already on the server, and building it again would be
+        the duplicate the list used to fill up with."""
+        registry["regions"].append(registry["region"](id=1, bbox=[-151.0, 39.0, -150.2, 41.0]))
+        registry["regions"].append(registry["region"](id=2, bbox=[-150.2, 39.0, -149.0, 41.0]))
+        answer = crud._already_have(TOWN)
+        assert answer is not None and answer["id"] in (1, 2)
+
+    def test_coverage_follows_an_areas_shape_not_its_envelope(self, registry):
+        # An L-shaped area from an older version's merge: its bbox is the
+        # envelope, and the empty corner of the L must not count as covered.
+        ell = {"type": "Polygon", "coordinates": [[
+            [-154.06, 36.99], [-147.04, 36.99], [-147.04, 38.0],
+            [-153.0, 38.0], [-153.0, 41.0], [-154.06, 41.0], [-154.06, 36.99]]]}
+        registry["regions"].append(registry["region"](geometry=ell))
         assert crud._already_have(TOWN) is None
-        assert crud._already_have(STATE) is not None
+        assert crud._already_have([-154.0, 39.0, -153.5, 40.0]) is not None
+
+    def test_a_failed_area_asked_for_again_resumes(self, registry):
+        """The same box again after a failure picks the failed area up, from
+        its last finished phase, rather than starting a second copy."""
+        registry["regions"].append(registry["region"](status="error", bbox=TOWN))
+        answer = crud._already_have(TOWN)
+        assert answer is not None and answer["status"] == "queued"
 
 
 class TestDownloadEndpoint:
@@ -106,7 +124,7 @@ class TestDownloadEndpoint:
         assert resp.status_code == 200
         assert resp.json()["status"] == "downloading"
         assert len(registry["created"]) == 1
-        assert len(registry["started"]) == 1
+        assert registry["started"] == ["kick"]
 
     def test_an_area_already_installed_starts_nothing(self, client, user, registry):
         registry["regions"].append(registry["region"]())
@@ -117,7 +135,6 @@ class TestDownloadEndpoint:
         assert body["status"] == "exists"
         assert body["region"]["id"] == 1
         assert registry["created"] == []
-        assert registry["started"] == []
 
     def test_a_second_request_joins_the_download_in_flight(self, client, user, registry):
         registry["regions"].append(registry["region"](status="downloading"))
@@ -125,7 +142,7 @@ class TestDownloadEndpoint:
 
         assert resp.json()["status"] == "downloading"
         assert resp.json()["region"]["id"] == 1
-        assert registry["started"] == [], "one extraction, not two"
+        assert registry["created"] == [], "one area, not two"
 
     def test_neighbouring_areas_get_names_that_tell_them_apart(self, client, user, registry):
         west = client.post("/maps/regions/download",
@@ -139,116 +156,3 @@ class TestDownloadEndpoint:
         resp = client.post("/maps/regions/download",
                            json={"bbox": STATE, "name": "Ski trip"})
         assert resp.json()["region"]["name"] == "Ski trip"
-
-
-class TestResumeInterrupted:
-    """A build the server abandoned when it restarted.
-
-    `download_and_merge` runs in a daemon thread, so a deploy, an OOM kill or a
-    `docker compose up -d` on any other service ends it with nothing written
-    down anywhere. The row went on reporting progress for a build that had not
-    existed for hours, and the only way out was to delete an area that might
-    have been most of the way through gigabytes of extraction and start again.
-    """
-
-    @pytest.fixture
-    def resumable(self, monkeypatch):
-        from app.routes.regions import download as download_module
-
-        state = {"regions": [], "built": [], "settled": [], "purged": [], "cleared": []}
-
-        def _update(region_id, status, **kwargs):
-            state["settled"].append((region_id, status))
-            for r in state["regions"]:
-                if r["id"] == region_id:
-                    r["status"] = status
-
-        monkeypatch.setattr(download_module.region_registry, "list_active",
-                            lambda: list(state["regions"]))
-        monkeypatch.setattr(download_module.region_registry, "update_status", _update)
-        monkeypatch.setattr(download_module.download_cancel, "clear",
-                            lambda rid: state["cleared"].append(rid))
-        monkeypatch.setattr(download_module, "download_and_merge",
-                            lambda rid, bbox: state["built"].append(rid))
-        monkeypatch.setattr(download_module, "purge_region",
-                            lambda rid: state["purged"].append(("delete", rid)))
-        monkeypatch.setattr(download_module, "purge_cancelled_region",
-                            lambda rid: state["purged"].append(("cancel", rid)))
-
-        class _Thread:
-            def __init__(self, target=None, args=(), daemon=False, name=None):
-                self._target, self._args = target, args
-
-            def start(self):
-                # Run it here: the point of the test is what the thread does,
-                # and a real one would race the assertions.
-                self._target(*self._args)
-
-        monkeypatch.setattr(download_module.threading, "Thread", _Thread)
-        return state
-
-    def _region(self, region_id, status):
-        return {"id": region_id, "name": f"Area {region_id}", "bbox": TOWN,
-                "status": status, "progress": 40.0, "geometry": None,
-                "detail": None, "error": None, "stale": False}
-
-    @pytest.mark.parametrize(
-        "status", ["downloading", "downloading_dem", "merging", "trails", "contours"],
-    )
-    def test_a_build_stopped_mid_phase_starts_again(self, resumable, status):
-        resumable["regions"].append(self._region(7, status))
-
-        assert download.resume_interrupted() == 1
-        assert resumable["built"] == [7]
-
-    def test_an_installed_area_is_left_alone(self, resumable):
-        resumable["regions"].append(self._region(7, "installed"))
-
-        assert download.resume_interrupted() == 0
-        assert resumable["built"] == []
-
-    def test_a_failed_area_is_not_retried_behind_the_users_back(self, resumable):
-        # Restarting a build that errored would loop on whatever broke it, and
-        # the user has a re-download button for the case where it was transient.
-        resumable["regions"].append(self._region(7, "error"))
-
-        assert download.resume_interrupted() == 0
-        assert resumable["built"] == []
-
-    def test_a_stale_cancel_marker_cannot_kill_the_new_run(self, resumable):
-        # The dead run's marker file survives it, and the resumed build checks
-        # for cancellation at its first phase boundary — so without clearing it
-        # the resume would abort instantly and look like a failure.
-        resumable["regions"].append(self._region(7, "trails"))
-
-        download.resume_interrupted()
-
-        assert resumable["cleared"] == [7]
-
-    def test_an_area_that_was_merging_is_settled_not_rebuilt(self, resumable):
-        # The download itself finished before `combining` began: folding
-        # overlapping areas together is an optimisation, and re-running the
-        # whole extraction to redo it would be minutes of work for nothing.
-        resumable["regions"].append(self._region(7, "combining"))
-
-        assert download.resume_interrupted() == 0
-        assert resumable["built"] == []
-        assert (7, "installed") in resumable["settled"]
-
-    def test_a_teardown_caught_halfway_is_finished(self, resumable):
-        resumable["regions"].append(self._region(7, "cancelling"))
-        resumable["regions"].append(self._region(8, "deleting"))
-
-        download.resume_interrupted()
-
-        assert ("cancel", 7) in resumable["purged"]
-        assert ("delete", 8) in resumable["purged"]
-
-    def test_several_interrupted_builds_all_come_back(self, resumable):
-        resumable["regions"].append(self._region(7, "downloading"))
-        resumable["regions"].append(self._region(8, "contours"))
-
-        assert download.resume_interrupted() == 2
-        # In order, in one thread: each build is already parallel inside itself
-        # and they share a disk and a merge lock.
-        assert resumable["built"] == [7, 8]

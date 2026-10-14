@@ -18,7 +18,8 @@ def map_dir(tmp_path, monkeypatch):
     # The tracker's state file is the real /map-data one (its path is fixed at
     # import), so a basemap downloading on this machine would make these 409.
     monkeypatch.setattr(crud.global_download_tracker, "get_all", lambda: [])
-    monkeypatch.setattr("app.services.region_merger.write_reload_trigger", lambda: None)
+    monkeypatch.setattr("app.services.map_store.write_reload_trigger", lambda: None)
+    monkeypatch.setattr("app.services.map_builds.kick", lambda: None)
     started = []
     monkeypatch.setattr("app.services.global_overview.start_map_download", lambda: started.append("map"))
     monkeypatch.setattr("app.services.global_dem.start_dem_download", lambda: started.append("dem"))

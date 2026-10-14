@@ -60,7 +60,7 @@ export function useRegionDownload(map) {
   // Poll fast while something is in flight (download/merge/delete) so progress
   // wheels appear and retire promptly; idle back to a lazy 30s.
   const hasActive = regions.some((r) =>
-    ["downloading", "downloading_dem", "merging", "trails", "contours", "combining", "cancelling", "deleting"].includes(r.status)
+    ["queued", "downloading", "downloading_dem", "merging", "trails", "contours", "combining", "cancelling", "deleting"].includes(r.status)
   );
   useEffect(() => {
     loadRegions();

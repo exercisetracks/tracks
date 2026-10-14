@@ -1,70 +1,45 @@
 # SPDX-FileCopyrightText: 2026 Hawk Fugagli
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Region-level contour orchestration (public entry points).
+"""Whole-archive contour regeneration.
 
-Wraps the per-archive PMTiles builder with the region registry: build one
-region's contours from its DEM, or rebuild every active region whose contours
-are missing/stale, then assemble the master contours archive. Both are
-serialised via ``_contour_lock`` so the lifespan startup thread and the
-post-reindex call can't race on the same output files.
+An area's contours are traced as a step of its build (services.map_builds),
+from master_dem for its box and a ring around it. This rebuilds the whole of
+master_contours from master_dem instead: for a server whose contours are
+missing (a fresh volume restored without them), and for the admin endpoint.
+The new archive is written beside the old and renamed over it, so the
+contours already served stay up until it is done.
 """
 
 from __future__ import annotations
-
-from pathlib import Path
 
 from .builder import build_contours_pmtiles
 from .constants import _contour_lock, logger
 
 
-def build_region_contours(region_id: int, progress_cb=None, cancel=None) -> bool:
-    """Build ONE region's contours from its own ``dem.pmtiles`` → region
-    ``contours.pmtiles``, then assemble ``master_contours`` from all regions.
-
-    Bounded by region size — no full-planet DEM iteration and no whole-archive
-    copy loop (the old design re-copied every existing contour tile per region).
-    Serialised via ``_contour_lock``."""
-    from app.services import region_registry, region_merger
-    region_dir = region_registry.source_dir(region_id)
-    dem = region_dir / "dem.pmtiles"
-    out = region_dir / "contours.pmtiles"
-    if not dem.exists():
-        logger.info("Region %s has no dem.pmtiles — skipping contours", region_id)
-        return False
-    with _contour_lock:
-        build_contours_pmtiles(dem, out, progress_cb=progress_cb, cancel=cancel)
-    if not out.exists():
-        return False
-    region_merger.rebuild_master_contours(write_trigger=True)
-    return True
-
-
 def regenerate_contours(progress_cb=None) -> bool:
-    """Rebuild every active region's contours from its DEM (when missing or older
-    than the DEM) and assemble ``master_contours``. Used at startup and by the
-    admin endpoint. ``progress_cb(done_regions, total_regions)`` for a coarse bar."""
-    from app.services import region_registry, region_merger
-    active = region_registry.list_active()
-    jobs: list[tuple[Path, Path]] = []
-    for r in active:
-        d = region_registry.source_dir(r["id"])
-        dem, out = d / "dem.pmtiles", d / "contours.pmtiles"
-        if dem.exists() and (not out.exists() or out.stat().st_mtime < dem.stat().st_mtime):
-            jobs.append((dem, out))
+    """Rebuild master_contours from master_dem. False when there is no DEM.
 
-    total = len(jobs)
-    with _contour_lock:
-        for i, (dem, out) in enumerate(jobs):
-            if progress_cb is not None:
-                try:
-                    progress_cb(i, total or 1)
-                except Exception:
-                    pass
-            build_contours_pmtiles(dem, out)
-    if progress_cb is not None:
+    Takes the map writer lock (services.map_builds) so it can never run while
+    an area build is publishing into the same archive; returns False if the
+    queue is busy rather than waiting behind a build that may take an hour.
+    """
+    from sqlalchemy import text
+
+    from app.database import engine
+    from app.services import map_builds, map_store
+
+    dem = map_store.master_path(map_store.MASTER_DEM)
+    if not dem.exists():
+        return False
+    with engine.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
+        if not conn.execute(text("SELECT pg_try_advisory_lock(:k)"), {"k": map_builds.LOCK_KEY}).scalar():
+            logger.info("Map writer busy — contour regeneration not started")
+            return False
         try:
-            progress_cb(total, total or 1)
-        except Exception:
-            pass
-    region_merger.rebuild_master_contours(write_trigger=True)
+            with _contour_lock:
+                build_contours_pmtiles(dem, map_store.master_path(map_store.MASTER_CONTOURS),
+                                       progress_cb=progress_cb)
+        finally:
+            conn.execute(text("SELECT pg_advisory_unlock(:k)"), {"k": map_builds.LOCK_KEY})
+    map_store.write_reload_trigger()
     return True

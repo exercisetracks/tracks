@@ -102,3 +102,66 @@ def find_extract(bbox: tuple[float, float, float, float]) -> tuple[str, str] | N
     else:
         logger.warning("No Geofabrik extract covers bbox %s", bbox)
     return best
+
+
+# A cover of more extracts than this is slower to fetch and merge than the one
+# parent extract it would replace.
+MAX_COVER = 4
+
+
+def find_cover(bbox: tuple[float, float, float, float]) -> list[tuple[str, str]]:
+    """The smallest extracts that together cover ``bbox``: [(extract_id, url)].
+
+    A box across a state line used to pull the smallest *single* extract
+    containing it — for Washington and Idaho, all of us-west (1.6 GB slim, more
+    to download) — when the two states hold the same ground for a fraction of
+    that (audit F21). Greedy over the extracts' real outlines, smallest first;
+    falls back to the single smallest covering extract when no small cover is
+    found or it would not be smaller.
+    """
+    from shapely.geometry import box, shape
+    single = find_extract(bbox)
+    features = _load_index() or []
+    want = box(*bbox)
+    cands = []
+    for f in features:
+        props = f.get("properties") or {}
+        url = (props.get("urls") or {}).get("pbf")
+        geom = f.get("geometry")
+        if not url or not geom:
+            continue
+        try:
+            g = shape(geom)
+        except Exception:
+            continue
+        if g.is_empty or not g.intersects(want):
+            continue
+        cands.append((g.envelope.area, props.get("id") or url, url, g))
+    cands.sort(key=lambda c: c[0])
+
+    left = want
+    chosen = []
+    for area, ident, url, g in cands:
+        if not g.intersects(left):
+            continue
+        # Skip a parent whose children are already being considered: only
+        # take an extract that removes ground still uncovered.
+        cut = left.difference(g)
+        if cut.area >= left.area - 1e-12:
+            continue
+        chosen.append((area, ident, url))
+        left = cut
+        if left.is_empty or left.area < 1e-10:
+            break
+        if len(chosen) >= MAX_COVER:
+            break
+    covered = left.is_empty or left.area < 1e-10
+    if not covered or not chosen:
+        return [single] if single else []
+    if single:
+        single_area = next((c[0] for c in cands if c[2] == single[1]), float("inf"))
+        if sum(c[0] for c in chosen) >= single_area:
+            return [single]
+    if len(chosen) > 1:
+        logger.info("Geofabrik cover for bbox %s → %s", bbox, ", ".join(c[1] for c in chosen))
+    return [(c[1], c[2]) for c in chosen]

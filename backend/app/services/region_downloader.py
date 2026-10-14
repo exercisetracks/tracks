@@ -106,48 +106,6 @@ def _basemap_region_minzoom() -> int:
     return 8
 
 
-def download_region(region_id: int, bbox: list[float], cancel=None) -> None:
-    """Download vector basemap tiles for a region bbox.
-
-    Runs go-pmtiles extract for the basemap source.
-    Updates the registry status throughout. Does NOT trigger a merge —
-    that's the caller's responsibility. ``cancel`` (a CancelToken) makes the
-    extract abortable; a user abort re-raises DownloadCancelled instead of
-    marking the region errored.
-    """
-    from app.services.download_cancel import DownloadCancelled
-
-    src_dir = region_registry.source_dir(region_id)
-    src_dir.mkdir(parents=True, exist_ok=True)
-
-    west, south, east, north = bbox
-    bbox_str = f"{west},{south},{east},{north}"
-
-    region_registry.update_status(region_id, "downloading", progress=0.0,
-                                  detail="Starting download…")
-    try:
-        _extract_source(
-            resolve_source_url(settings.pmtiles_source_url),
-            str(src_dir / "source.pmtiles"),
-            bbox_str,
-            minzoom=_basemap_region_minzoom(), maxzoom=15,
-            on_progress=lambda pct, detail: region_registry.update_status(
-                region_id, "downloading", progress=float(pct), detail=detail),
-            cancel=cancel,
-        )
-    except DownloadCancelled:
-        raise
-    except Exception as e:
-        logger.exception("Basemap extract failed for %s", region_id)
-        region_registry.update_status(region_id, "error", error=str(e))
-        return
-
-    region_registry.update_status(
-        region_id, "downloading", progress=100.0,
-        size_bytes=_dir_size(src_dir), detail="Download complete",
-    )
-
-
 def _dem_region_minzoom() -> int:
     """DEM extracts start above the global DEM overview's max zoom (z7).
 
@@ -191,50 +149,47 @@ def _dem_region_maxzoom() -> int:
 _cached_dem_maxzoom: int | None = None
 
 
-def download_region_dem(region_id: int, bbox: list[float], cancel=None) -> None:
-    """Download DEM elevation tiles for a region bbox.
+def extract_layers(bbox: list[float], out_dir: Path, progress=None, cancel=None) -> None:
+    """Extract an area's basemap detail and terrain into `out_dir`, in parallel.
 
-    Downloads from settings.dem_source_url for the same geographic
-    area.  Min zoom starts above the global overview; max zoom is
-    capped to the source archive's actual max (z12 for Mapterhorn)
-    to avoid wasted 404 round-trips.  Does NOT trigger a merge.
-    ``cancel`` makes the extract abortable.
+    Writes `source.pmtiles` and (with a DEM source configured) `dem.pmtiles`,
+    each to a temp name and renamed on success, so a file that exists is a
+    finished extract — the build queue skips a phase whose output is there.
+    `progress(pct, detail)` gets the combined progress. Raises on failure.
     """
-    from app.services.download_cancel import DownloadCancelled
+    from concurrent.futures import ThreadPoolExecutor
 
-    if not settings.dem_source_url:
-        return
-
-    src_dir = region_registry.source_dir(region_id)
-    src_dir.mkdir(parents=True, exist_ok=True)
-
+    out_dir.mkdir(parents=True, exist_ok=True)
     west, south, east, north = bbox
     bbox_str = f"{west},{south},{east},{north}"
+    progress = progress or (lambda pct, detail: None)
+    jobs = [("basemap", resolve_source_url(settings.pmtiles_source_url), "source.pmtiles",
+             _basemap_region_minzoom(), 15)]
+    if settings.dem_source_url:
+        jobs.append(("terrain", settings.dem_source_url, "dem.pmtiles",
+                     _dem_region_minzoom(), _dem_region_maxzoom()))
+    pct = {name: 0.0 for name, *_ in jobs}
 
-    region_registry.update_status(region_id, "downloading_dem", size_bytes=0,
-                                  progress=0.0, detail="Starting terrain download…")
+    def run(job):
+        name, url, filename, minz, maxz = job
+        final = out_dir / filename
+        if final.exists() and final.stat().st_size > 0:
+            pct[name] = 100.0
+            return
+        # Keeps the .pmtiles suffix: the tools pick formats from extensions.
+        tmp = out_dir / filename.replace(".pmtiles", ".part.pmtiles")
 
-    try:
-        _extract_source(
-            settings.dem_source_url,
-            str(src_dir / "dem.pmtiles"),
-            bbox_str,
-            minzoom=_dem_region_minzoom(), maxzoom=_dem_region_maxzoom(),
-            on_progress=lambda pct, detail: region_registry.update_status(
-                region_id, "downloading_dem", progress=float(pct), detail=detail),
-            cancel=cancel,
-        )
-    except DownloadCancelled:
-        raise
-    except Exception as e:
-        logger.exception("DEM extract failed for %s", region_id)
-        region_registry.update_status(region_id, "error", error=str(e))
-        return
+        def on_progress(p, detail):
+            pct[name] = float(p)
+            progress(sum(pct.values()) / len(pct), f"Downloading {name}… {detail or ''}".strip())
 
-    region_registry.update_status(
-        region_id, "downloading_dem", progress=100.0,
-        size_bytes=_dir_size(src_dir), detail="Terrain download complete",
-    )
+        _extract_source(url, str(tmp), bbox_str, minzoom=minz, maxzoom=maxz,
+                        on_progress=on_progress, cancel=cancel)
+        os.replace(tmp, final)
+
+    with ThreadPoolExecutor(max_workers=len(jobs)) as ex:
+        for f in [ex.submit(run, j) for j in jobs]:
+            f.result()
 
 
 # How long a go-pmtiles extract may go without a word before it is presumed dead.

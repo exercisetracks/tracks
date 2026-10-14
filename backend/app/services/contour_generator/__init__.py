@@ -27,7 +27,7 @@ Modules:
   contours.py   contour level/index logic + contourpy → MVT line features
   tiling.py     (z,x,y) → geographic bounds + bbox-overlap test
   builder.py    per-tile worker + parallel build_contours_pmtiles archive writer
-  regions.py    public region orchestration (build_region_contours / regenerate_contours)
+  regions.py    whole-archive regeneration (regenerate_contours)
 """
 
 from __future__ import annotations
@@ -50,13 +50,12 @@ from .constants import (
 )
 from .contours import _contour_levels_ft, _generate_mvt_features, _is_index
 from .dem import _decode_terrarium, _decode_tile, _elev_m_to_ft, _padded_elevation
-from .regions import build_region_contours, regenerate_contours
+from .regions import regenerate_contours
 from .tiling import _bbox_overlaps, _tile_bounds, _tile_west_east
 
 __all__ = [
     # public API
     "build_contours_pmtiles",
-    "build_region_contours",
     "regenerate_contours",
     # constants
     "MVT_EXTENT",

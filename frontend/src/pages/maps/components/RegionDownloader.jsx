@@ -47,9 +47,11 @@ const TONES = {
   },
 };
 const PHASES = {
-  downloading:     { label: "Downloading basemap",   tone: "sky" },
+  // Waiting behind another area: the server builds one at a time.
+  queued:          { label: "Waiting to start",      tone: "sky", indeterminate: true },
+  downloading:     { label: "Downloading map",       tone: "sky" },
   downloading_dem: { label: "Downloading terrain",   tone: "sky" },
-  merging:         { label: "Merging tiles",         tone: "amber", indeterminate: true },
+  merging:         { label: "Adding to the map",     tone: "amber" },
   trails:          { label: "Generating trails",     tone: "emerald" },
   contours:        { label: "Generating contours",   tone: "violet" },
   combining:       { label: "Merging areas",         tone: "amber" },
@@ -73,7 +75,7 @@ export default function RegionDownloader({
     return () => { cancelled = true; };
   }, [bbox]);
   const downloading = regions.filter((r) =>
-    ["downloading", "downloading_dem", "merging", "trails", "contours", "combining", "cancelling"].includes(r.status)
+    ["queued", "downloading", "downloading_dem", "merging", "trails", "contours", "combining", "cancelling"].includes(r.status)
   );
   const deleting = regions.filter((r) => r.status === "deleting");
   const installed = regions.filter((r) => r.status === "installed");

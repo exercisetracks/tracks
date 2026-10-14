@@ -9,35 +9,35 @@ dynamic `/regions/{region_id}` routes that would otherwise swallow them.
 """
 
 import logging
-import threading
 from concurrent.futures import ThreadPoolExecutor
 
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import text
 
 from app.auth import require_auth
 from app.models.activity import User
 
 from app.config import settings
 from app.services import (
-    download_cancel, geocode, map_hosts, region_downloader, region_registry,
+    geocode, map_builds, map_hosts, map_store, region_downloader, region_registry,
 )
 from app.services.global_download_tracker import global_download_tracker
 from app.services.pmtiles_extract import resolve_source_url
 
 from .bbox import MAX_NAME_LEN, parse_bbox
-from .download import download_and_merge
-from .purge import purge_region
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/maps", tags=["maps"])
 
-# Statuses that mean a download pipeline is still running for the region — a
-# DELETE on one of these aborts the download (cancel) rather than removing a
-# finished area.
+# Queued or being built — a DELETE on one of these cancels the build rather
+# than removing a finished area.
 _IN_PROGRESS_STATUSES = {
-    "downloading", "downloading_dem", "merging", "trails", "contours", "combining",
+    "queued", "downloading", "downloading_dem", "merging", "trails", "contours", "combining",
 }
+# Serialises "is it already here? no — create it" across workers, so two
+# requests for one box at the same moment make one area, not two (audit F23).
+_CREATE_LOCK_KEY = 0x746D6171
 
 
 @router.get("/regions/suggest-name")
@@ -50,12 +50,20 @@ def estimate_region(bbox: str):
     """Precise download-size estimate for a bbox: the exact byte size of the
     basemap (z13-15 detail) + DEM extracts, via `pmtiles extract --dry-run`."""
     parts = parse_bbox(bbox)
-    bbox_str = ",".join(str(p) for p in parts)
-
     if not settings.pmtiles_source_url:
         raise HTTPException(400, "PMTILES_SOURCE_URL is not configured")
     _refuse_if_dns_blocked()
+    # A failure is a 502 carrying pmtiles' reason, not a size of 0: the download
+    # this estimate precedes reads the same sources and would fail the same way.
+    try:
+        return {"bytes": estimate_bytes(parts)}
+    except region_downloader.DryRunFailed as e:
+        raise HTTPException(502, str(e))
 
+
+def estimate_bytes(bbox: list[float]) -> int:
+    """Bytes the basemap and terrain extracts for `bbox` would take."""
+    bbox_str = ",".join(str(p) for p in bbox)
     jobs = []
     if settings.pmtiles_source_url:
         jobs.append((resolve_source_url(settings.pmtiles_source_url),
@@ -64,20 +72,11 @@ def estimate_region(bbox: str):
         jobs.append((settings.dem_source_url,
                      region_downloader._dem_region_minzoom(),
                      region_downloader._dem_region_maxzoom()))
-
-    # Run the basemap + DEM dry-runs concurrently (each is a few seconds of
-    # remote range requests).
-    # A failure is a 502 carrying pmtiles' reason, not a size of 0: the download
-    # this estimate precedes reads the same sources and would fail the same way.
-    try:
-        with ThreadPoolExecutor(max_workers=len(jobs)) as ex:
-            sizes = list(ex.map(
-                lambda j: region_downloader.dry_run_size(j[0], bbox_str, j[1], j[2]),
-                jobs,
-            ))
-    except region_downloader.DryRunFailed as e:
-        raise HTTPException(502, str(e))
-    return {"bytes": sum(sizes)}
+    if not jobs:
+        return 0
+    # Concurrently: each is a few seconds of remote range requests.
+    with ThreadPoolExecutor(max_workers=len(jobs)) as ex:
+        return sum(ex.map(lambda j: region_downloader.dry_run_size(j[0], bbox_str, j[1], j[2]), jobs))
 
 
 def _refuse_if_dns_blocked() -> None:
@@ -99,13 +98,6 @@ def _refuse_if_dns_blocked() -> None:
 # covered by it — about 11 m, which is smaller than a user can aim a drag.
 _COVER_SLACK = 1e-4
 
-# Statuses that make an existing region a real answer to a fresh request.
-# `error`, `cancelling` and `deleting` are deliberately absent: a failed or
-# half-removed area is exactly when someone asks again, and the answer they
-# want is a new attempt, not a pointer at the wreckage.
-_MATCHABLE_STATUSES = _IN_PROGRESS_STATUSES | {"installed"}
-
-
 def _covers(outer: list[float], inner: list[float]) -> bool:
     """True when `outer` contains `inner` (west, south, east, north)."""
     return (outer[0] <= inner[0] + _COVER_SLACK
@@ -115,30 +107,34 @@ def _covers(outer: list[float], inner: list[float]) -> bool:
 
 
 def _already_have(bbox: list[float]) -> dict | None:
-    """An existing region that makes this download unnecessary, if there is one.
+    """An existing area that answers this request, if there is one.
 
-    Without this, every request created a row and started an extraction, so
-    asking for an area you already had downloaded it a second time into a second
-    directory — which is what "the server is trying to download it again" looked
-    like from the map. Worse, the duplicates all get the same suggested name, so
-    the region list filled up with identically-labelled copies of one state.
+    * A queued or building area whose box covers this one: join it.
+    * Installed areas that together cover this box: nothing to build. Areas
+      overlap freely now, so coverage is their union, not one box — a request
+      straddling two installed neighbours is already here. The answer names the
+      area covering most of it.
+    * A failed area with this same box: it is queued again and resumes from
+      its last finished phase instead of a fresh area starting from nothing.
 
-    A merged area is matched only on an exact box. Its stored bbox is the
-    ENVELOPE of the areas it combines, and an L-shaped merge has a large corner
-    that envelope claims but no tile covers; treating that as coverage would
-    tell someone they already had a place they had never downloaded.
+    Without this, asking for ground you already had downloaded it again, and
+    the list filled with identically named copies.
     """
-    for region in region_registry.list_active():
-        if region["status"] not in _MATCHABLE_STATUSES or region.get("stale"):
-            continue
-        existing = region.get("bbox")
-        if not isinstance(existing, list) or len(existing) != 4:
-            continue
-        if not _covers(existing, bbox):
-            continue
-        if region.get("geometry") is not None and not _covers(bbox, existing):
-            continue
-        return region
+    from shapely.geometry import box
+    want = box(*bbox)
+    rows = region_registry.list_active()
+    for r in rows:
+        if r["status"] in _IN_PROGRESS_STATUSES and not r.get("stale") and _covers(r["bbox"], bbox):
+            return r
+    covered = region_registry.coverage()
+    if covered is not None and covered.buffer(_COVER_SLACK).covers(want):
+        installed = [r for r in rows if r["status"] == "installed"]
+        return max(installed, key=lambda r: region_registry.region_geom(r).intersection(want).area)
+    for r in rows:
+        if r["status"] == "error" and _covers(r["bbox"], bbox) and _covers(bbox, r["bbox"]):
+            region_registry.clear_attempts(r["id"])
+            region_registry.update_status(r["id"], "queued", progress=0.0, detail="Waiting to start…")
+            return region_registry.get(r["id"])
     return None
 
 
@@ -167,30 +163,31 @@ def download_region(data: dict):
     if not settings.pmtiles_source_url:
         raise HTTPException(400, "PMTILES_SOURCE_URL is not configured")
 
-    # Answer with what's already here before building anything. Both cases hand
-    # back a region the caller can watch exactly as if it had just been started,
-    # so a client needs no new branch to benefit — the phone half of the download
-    # follows on from an "exists" region the same way it follows a fresh one.
-    existing = _already_have(bbox)
-    if existing is not None:
-        status = "exists" if existing["status"] == "installed" else "downloading"
-        return {"status": status, "region": existing}
+    from app.database import engine
+    with engine.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
+        conn.execute(text("SELECT pg_advisory_lock(:k)"), {"k": _CREATE_LOCK_KEY})
+        try:
+            # Answer with what's already here before building anything. Every
+            # answer hands back an area the caller can watch exactly as if it
+            # had just been started.
+            existing = _already_have(bbox)
+            if existing is not None:
+                status = "exists" if existing["status"] == "installed" else "downloading"
+                map_builds.kick()
+                return {"status": status, "region": existing}
 
-    # Refused before a region row exists, so a blocked host leaves no failed
-    # area behind to delete — just the reason, where the box was drawn.
-    _refuse_if_dns_blocked()
+            # Refused before a row exists, so a blocked host leaves no failed
+            # area behind to delete — just the reason, where the box was drawn.
+            _refuse_if_dns_blocked()
 
-    if not name or name == "Untitled":
-        name = geocode.suggest_region_name(bbox)
-    name = _distinct_name(name)
+            if not name or name == "Untitled":
+                name = geocode.suggest_region_name(bbox)
+            region = region_registry.create(name=_distinct_name(name), bbox=bbox)
+        finally:
+            conn.execute(text("SELECT pg_advisory_unlock(:k)"), {"k": _CREATE_LOCK_KEY})
 
-    region = region_registry.create(name=name, bbox=bbox)
-
-    thread = threading.Thread(
-        target=download_and_merge, args=(region["id"], bbox), daemon=True
-    )
-    thread.start()
-
+    # The build runs in the queue (map_builds), in whichever worker holds it.
+    map_builds.kick()
     return {"status": "downloading", "region": region}
 
 
@@ -219,37 +216,19 @@ def delete_region(region_id: int, user: User = Depends(require_auth)):
         raise HTTPException(404, "Region not found")
     status = r["status"]
 
-    # Already being removed (delete or cancel cleanup in flight) — don't kick a
-    # second rebuild that would race the first.
-    if status == "deleting":
-        return {"status": "deleting"}
+    # Already being removed: the queue will finish it.
+    if status in ("deleting", "cancelling"):
+        return {"status": status}
 
-    # A stalled build (region_registry.stale — no status update in a long
-    # while) has no live worker left to notice a cancel request, so the
-    # request_cancel() path below would leave it stuck in "cancelling"
-    # forever too. Nothing is writing to its files anymore, so it's safe to
-    # purge directly instead of waiting for a worker that's already gone.
-    if (status in _IN_PROGRESS_STATUSES or status == "cancelling") and r.get("stale"):
-        region_registry.update_status(region_id, "deleting", progress=0.0)
-        threading.Thread(target=purge_region, args=(region_id,), daemon=True).start()
-        return {"status": "deleting"}
-
-    # In-progress download (or a cancel already requested) → abort it. We only set
-    # the cross-worker marker + UI state; the worker running the pipeline notices,
-    # stops the work, and runs cleanup itself — doing it here would race that live
-    # pipeline's file writes.
-    if status in _IN_PROGRESS_STATUSES or status == "cancelling":
-        download_cancel.request_cancel(region_id)
-        region_registry.update_status(region_id, "cancelling", progress=0.0,
-                                      detail="Cancelling…")
-        return {"status": "cancelling"}
-
-    # Installed / errored → remove now. Mark 'deleting' so it stays in the list
-    # with a wheel until the async master rebuild finishes; _purge_region then
-    # marks it deleted, which retires the wheel.
-    region_registry.update_status(region_id, "deleting", progress=0.0)
-    threading.Thread(target=purge_region, args=(region_id,), daemon=True).start()
-    return {"status": "deleting"}
+    # Queued or building → cancel: the build sees the status and stops at its
+    # next check, then removes what it published. Anything else → remove. The
+    # queue does both (map_builds.teardown), one at a time with every other
+    # map write, so a removal can never run under a live build.
+    new = "cancelling" if status in _IN_PROGRESS_STATUSES else "deleting"
+    region_registry.update_status(region_id, new, progress=0.0,
+                                  detail="Cancelling…" if new == "cancelling" else "Removing…")
+    map_builds.kick()
+    return {"status": new}
 
 
 @router.get("/regions/{region_id}/progress")
@@ -302,11 +281,11 @@ def reset_basemap(user=Depends(require_auth)):
     off they are marked for re-download instead, which is what startup
     recovery does for a region whose files are missing.
     """
+    import shutil
     from pathlib import Path
 
     from app.database import SessionLocal
     from app.models.user_settings import UserSettings
-    from app.services import region_merger
     from app.services.global_dem import start_dem_download
     from app.services.global_overview import start_map_download
     from app.services.global_routes import start_global_routes_build
@@ -316,7 +295,7 @@ def reset_basemap(user=Depends(require_auth)):
 
     active = region_registry.list_active()
     busy = [r for r in active if r["status"] in _IN_PROGRESS_STATUSES | {"cancelling", "deleting"}
-            and not r.get("stale")]
+            and r["status"] != "queued" and not r.get("stale")]
     busy_global = [d for d in global_download_tracker.get_all() if d.get("status") == "downloading"]
     if busy or busy_global:
         raise HTTPException(409, "A map download is still running — wait for it to finish or cancel it first")
@@ -330,6 +309,7 @@ def reset_basemap(user=Depends(require_auth)):
             removed += 1
     for r in active:
         region_registry.delete_region_files(r["id"])
+    shutil.rmtree(data_dir / "work", ignore_errors=True)
 
     db = SessionLocal()
     try:
@@ -343,28 +323,21 @@ def reset_basemap(user=Depends(require_auth)):
         if settings.dem_source_url:
             start_dem_download()
         # The long-trail overview is one of the files deleted above, and
-        # nothing else rebuilds it short of a restart. Contours come back
-        # with the areas, which retrace their own.
+        # nothing else rebuilds it short of a restart.
         start_global_routes_build()
+        # Every area goes back in the queue and is built again from its own
+        # box, one at a time, as any download is.
         for r in active:
-            region_registry.update_status(r["id"], "downloading", progress=0.0, detail="Waiting to download again…")
-
-        def _again():
-            # One area at a time: each is a multi-gigabyte extract, and the
-            # whole set at once would be every one of them at once.
-            for r in active:
-                try:
-                    download_and_merge(r["id"], r["bbox"])
-                except Exception:
-                    logger.exception("Re-download of region %s failed", r["id"])
-
-        threading.Thread(target=_again, daemon=True, name="basemap-redownload").start()
+            region_registry.reset_phases(r["id"])
+            region_registry.set_owned(r["id"], None)
+            region_registry.update_status(r["id"], "queued", progress=0.0, detail="Waiting to download again…")
+        map_builds.kick()
     else:
         for r in active:
             region_registry.update_status(
                 r["id"], "error", error="Map data was deleted — re-download this area")
     # Let go-pmtiles drop its handles on the files that are gone.
-    region_merger.write_reload_trigger()
+    map_store.write_reload_trigger()
     logger.warning("Basemap reset by user %s: %d archive(s), %d region(s); re-download=%s",
                    user.id, removed, len(active), enabled)
     return {"removed_files": removed, "regions": len(active), "redownloading": enabled}
