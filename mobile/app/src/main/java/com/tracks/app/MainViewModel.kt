@@ -318,8 +318,9 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
             // Not "nothing new": the watch has files and will not send them
             // until it is restarted (see WatchSyncRunner.pullReport).
             _state.update { current ->
-                current.copy(message = pushNote + "Your watch refused to send its ${outcome.refusedByWatch} file(s). " +
-                    "Restart the watch (hold LIGHT, Power Off, then on) and sync again.")
+                // The remedy first: the status pill shows one line of it.
+                current.copy(message = "Restart your watch — it refused ${outcome.refusedByWatch} file(s). " +
+                    "Hold LIGHT, Power Off, then on, and sync again. " + pushNote)
             }
             return
         }

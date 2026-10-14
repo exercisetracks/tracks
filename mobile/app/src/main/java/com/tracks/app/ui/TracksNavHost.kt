@@ -24,8 +24,6 @@ import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -64,7 +62,10 @@ import com.tracks.app.ui.components.DangerButton
 import com.tracks.app.ui.components.NeutralButton
 import com.tracks.app.ui.components.PrimaryButton
 import com.tracks.app.ui.components.PullToSync
-import com.tracks.app.ui.components.SyncProgressPopup
+import com.tracks.app.ui.components.syncLabel
+import com.tracks.app.ui.status.StatusHost
+import com.tracks.app.ui.status.StatusJob
+import com.tracks.app.ui.status.StatusSource
 import com.tracks.app.ui.dashboard.DashboardPeriodActions
 import com.tracks.app.ui.dashboard.DashboardScreen
 import com.tracks.app.ui.dashboard.DashboardViewModel
@@ -103,10 +104,10 @@ import kotlinx.coroutines.launch
 /**
  * The shell: a bottom bar, a nav graph, and one place messages surface.
  *
- * Messages are a snackbar rather than a card in the layout, which is a change
- * from the first screen and a deliberate one — the old inline card pushed the
- * content down every time a sync reported, so the list moved under the user's
- * thumb mid-scroll. A snackbar says the same thing without reflowing anything.
+ * Messages go to the status pill at the top ([StatusHost]), never a snackbar
+ * or a card in the layout: an inline card pushed the list down under the
+ * user's thumb mid-scroll, and a snackbar was a second voice beside the pill
+ * already reporting the same sync. docs/mobile-status-ui.md has the rules.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -129,7 +130,7 @@ fun TracksNavHost(
     val accent by container.accent.collectAsStateWithLifecycle()
     val imperial by container.imperial.collectAsStateWithLifecycle()
     val bodyFemale by container.bodyFemale.collectAsStateWithLifecycle()
-    val snackbars = remember { SnackbarHostState() }
+    val status = container.status
     val pendingRoute by container.pendingRoute.collectAsStateWithLifecycle()
     // Pull-to-sync needs something to sync with: a watch, or a server. A
     // standalone phone with neither has the gesture, and its tip, taken away.
@@ -177,8 +178,18 @@ fun TracksNavHost(
     // only place the app has to think about surfacing them.
     LaunchedEffect(state.message) {
         val message = state.message ?: return@LaunchedEffect
-        snackbars.showSnackbar(message)
+        status.post(message)
         vm.dismissMessage()
+    }
+    // The runners' progress, one slot each on the board.
+    LaunchedEffect(syncProgress) {
+        status.setJob(StatusSource.Server, syncProgress?.let { StatusJob(syncLabel(it), it.fraction) })
+    }
+    LaunchedEffect(watchProgress) {
+        status.setJob(StatusSource.Watch, watchProgress?.let { StatusJob(it.label, it.fraction) })
+    }
+    LaunchedEffect(backupProgress) {
+        status.setJob(StatusSource.Backup, backupProgress?.let { StatusJob(com.tracks.app.backup.backupLabel(it), it.fraction) })
     }
 
     AccountConflictDialog(vm)
@@ -344,7 +355,6 @@ fun TracksNavHost(
         com.tracks.app.ui.components.SlideOverHost {
         androidx.compose.foundation.layout.Box(Modifier.fillMaxSize()) {
         Scaffold(
-            snackbarHost = { SnackbarHost(snackbars) },
             topBar = {
                 // The map has no bar. It is the one screen whose content goes
                 // all the way to the edges by design — a persistent 64dp strip
@@ -424,6 +434,19 @@ fun TracksNavHost(
                 }
             },
         ) { padding ->
+            // Drag down to sync, on every page but the map, whose drag pans.
+            // It syncs the watch, and the server when there is no watch: a
+            // watch sync would try to reach a device that does not exist.
+            PullToSync(enabled = canSync && here != Destination.Map, onSync = {
+                if (hasDevice) vm.syncWatchFromGesture() else vm.syncServerFromGesture()
+                // The server-backed figures — readiness, VO₂max, the coaching
+                // line — do not redraw from the mirror on their own.
+                when (here) {
+                    Destination.Dashboard -> dashboardVm.refresh()
+                    Destination.Health -> healthVm.load()
+                    else -> Unit
+                }
+            }) {
             NavHost(
             navController = navController,
             startDestination = Destination.start.route,
@@ -436,18 +459,7 @@ fun TracksNavHost(
             modifier = Modifier.padding(padding).consumeWindowInsets(padding),
         ) {
             composable(Destination.Dashboard.route) {
-                // Drag down to sync the watch. Both of the pages that offer
-                // it are about what your body did, and the watch is where
-                // that comes from — see [PullToSync].
-                PullToSync(enabled = canSync, onSync = {
-                    // With no watch it syncs the server instead: a watch sync
-                    // would try to reach a device that does not exist.
-                    if (hasDevice) vm.syncWatchFromGesture() else vm.syncServerFromGesture()
-                    // And the server-backed half — readiness, VO₂max, the
-                    // coaching line. The mirror-derived figures redraw
-                    // themselves when the sync writes; these do not.
-                    dashboardVm.refresh()
-                }) {
+                run {
                     DashboardScreen(
                         vm = dashboardVm,
                         onOpenWorkout = { id -> navController.navigate("workout/$id") },
@@ -553,10 +565,7 @@ fun TracksNavHost(
                 )
             }
             composable(Destination.Health.route) {
-                PullToSync(enabled = canSync, onSync = {
-                    if (hasDevice) vm.syncWatchFromGesture() else vm.syncServerFromGesture()
-                    healthVm.load()
-                }) {
+                run {
                     HealthScreen(vm = healthVm)
                 }
             }
@@ -658,26 +667,26 @@ fun TracksNavHost(
                 )
             }
         }
+            }
         }
-        // Sync, watch and backup progress, at the top: at the bottom the pills
+        // Every status in the app, in one pill at the top: at the bottom it
         // sat over the map's own controls and sheets. Just under the status
-        // bar, small, and only while something is running.
-        androidx.compose.foundation.layout.Column(
-            Modifier
+        // bar, small, and only while there is something to say.
+        val jobs by status.jobs.collectAsStateWithLifecycle()
+        val notes by status.notes.collectAsStateWithLifecycle()
+        StatusHost(
+            jobs = jobs,
+            notes = notes,
+            onDismiss = status::dismiss,
+            onExpirePosted = status::expirePosted,
+            onHeight = { status.hostHeightPx = it },
+            onSyncNow = if (canSync) {
+                { scope.launch { if (hasDevice) vm.syncWatchFromGesture() else vm.syncServerFromGesture() } }
+            } else null,
+            modifier = Modifier
                 .align(androidx.compose.ui.Alignment.TopCenter)
                 .windowInsetsPadding(androidx.compose.foundation.layout.WindowInsets.statusBars),
-            horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
-        ) {
-            SyncProgressPopup(syncProgress)
-            com.tracks.app.ui.components.ProgressPill(
-                label = watchProgress?.label,
-                fraction = watchProgress?.fraction,
-            )
-            com.tracks.app.ui.components.ProgressPill(
-                label = backupProgress?.let { com.tracks.app.backup.backupLabel(it) },
-                fraction = backupProgress?.fraction,
-            )
-        }
+        )
         }
     }
     }

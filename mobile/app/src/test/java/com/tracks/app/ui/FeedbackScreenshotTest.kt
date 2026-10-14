@@ -19,7 +19,11 @@ import androidx.compose.ui.unit.dp
 import com.github.takahirom.roborazzi.captureRoboImage
 import androidx.compose.foundation.layout.padding
 import com.tracks.app.ui.components.MetricInfo
-import com.tracks.app.ui.components.SyncProgressPopup
+import com.tracks.app.ui.status.StatusHost
+import com.tracks.app.ui.status.StatusJob
+import com.tracks.app.ui.status.StatusNote
+import com.tracks.app.ui.status.StatusSource
+import com.tracks.app.ui.components.syncLabel
 import com.tracks.app.ui.music.MusicAccountRow
 import com.tracks.app.ui.screens.SettingsCard
 import com.tracks.app.ui.theme.ThemeMode
@@ -51,8 +55,15 @@ class FeedbackScreenshotTest {
     }
 
     @Composable
-    private fun popup(p: SyncProgress) = Box(Modifier.fillMaxWidth().height(120.dp), contentAlignment = Alignment.BottomCenter) {
-        SyncProgressPopup(p)
+    private fun popup(p: SyncProgress) = Box(Modifier.fillMaxWidth().height(120.dp), contentAlignment = Alignment.TopCenter) {
+        StatusHost(
+            jobs = mapOf(
+                StatusSource.Server to StatusJob(syncLabel(p), p.fraction),
+                StatusSource.Watch to StatusJob("Reading the watch"),
+            ),
+            notes = listOf(StatusNote(1, StatusSource.Watch, "Your watch refused to send its 12 file(s). Restart the watch", failed = true)),
+            onDismiss = {}, onExpirePosted = {}, onSyncNow = {},
+        )
     }
 
     @Test

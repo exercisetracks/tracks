@@ -238,7 +238,7 @@ fun TrackLibrarySheet(
             // operations all happen somewhere the user cannot see — a server
             // row, a watch — so without this, success and failure look alike.
             // Receipts for watch and sync work are toasts over the map now
-            // (see StatusToast); this line is only the count.
+            // (see StatusHost); this line is only the count.
             Text(
                 // While picking, the count of picked rows rides here: the bar
                 // above is all buttons, and squeezed in there "1 selected"

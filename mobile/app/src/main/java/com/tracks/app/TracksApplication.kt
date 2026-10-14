@@ -284,6 +284,9 @@ class AppContainer(private val context: Context) {
     /** When this phone last wrote a backup, or null — drives the reminder. */
     val lastBackupAt = MutableStateFlow(prefs().getLong(KEY_LAST_BACKUP, 0L).takeIf { it > 0 })
 
+    /** Everything running and every result, for the one status pill — see StatusBoard. */
+    val status = com.tracks.app.ui.status.StatusBoard()
+
     private val _backupProgress = MutableStateFlow<com.tracks.app.backup.BackupProgress?>(null)
 
     /** The backup being written, or null — the pill, the notification and Settings all watch it. */

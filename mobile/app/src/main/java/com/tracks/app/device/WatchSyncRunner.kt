@@ -72,7 +72,7 @@ class WatchSyncRunner(private val container: AppContainer) {
     private val _progress = kotlinx.coroutines.flow.MutableStateFlow<Progress?>(null)
 
     /**
-     * Shown in the same pill as the server sync (see ProgressPill), so a watch
+     * Shown in the app's one status pill (see StatusHost), so a watch
      * sync shows what it is doing while it does it rather than a line of text
      * once it is over.
      */

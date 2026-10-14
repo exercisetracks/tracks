@@ -78,7 +78,7 @@ fun SelectionSheet(
                 is Selection.Activity -> ActivityBody(selection, actions)
             }
 
-            // Receipts are a toast over the map now (StatusToast), not a line here.
+            // Receipts go to the status pill (StatusHost), not a line here.
         }
     }
 }

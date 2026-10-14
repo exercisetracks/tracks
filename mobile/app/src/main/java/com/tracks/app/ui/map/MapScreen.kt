@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 package com.tracks.app.ui.map
 
+import com.tracks.app.ui.status.StatusSource
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.WindowInsets
@@ -801,15 +802,36 @@ fun MapScreen(
         // An area's download follows the user out of the downloads sheet: it
         // takes minutes to cut on the server, and the sheet is the first thing
         // anyone dismisses to watch the map while they wait.
+        // Both go to the app's one status pill rather than drawing their own.
+        val status = toolsVm.container.status
+        val downloading = downloadJob(regions.rows)
+        LaunchedEffect(downloading) { status.setJob(StatusSource.Maps, downloading) }
+        // Off the map nothing updates the download's progress, so it leaves
+        // with the map rather than freezing at its last percentage.
+        DisposableEffect(Unit) { onDispose { status.setJob(StatusSource.Maps, null) } }
+        LaunchedEffect(tools.notice) {
+            val notice = tools.notice ?: return@LaunchedEffect
+            status.post(notice)
+            toolsVm.dismissNotice()
+        }
+        // The status bar is hidden here, so the map runs to the top edge; a
+        // swipe from the edge brings it back for a moment, and every other
+        // page has it as usual.
+        val view = androidx.compose.ui.platform.LocalView.current
+        DisposableEffect(view) {
+            val window = view.context.findActivity()?.window
+            val bars = window?.let { androidx.core.view.WindowCompat.getInsetsController(it, view) }
+            bars?.systemBarsBehavior =
+                androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            bars?.hide(androidx.core.view.WindowInsetsCompat.Type.statusBars())
+            onDispose { bars?.show(androidx.core.view.WindowInsetsCompat.Type.statusBars()) }
+        }
+        // What is marked sits under the status pill, never beneath it.
+        val pillHeight = with(androidx.compose.ui.platform.LocalDensity.current) { status.hostHeightPx.toDp() }
         Column(
-            Modifier.align(Alignment.TopCenter).windowInsetsPadding(WindowInsets.statusBars),
+            Modifier.align(Alignment.TopCenter).windowInsetsPadding(WindowInsets.statusBars).padding(top = pillHeight),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            DownloadBanner(rows = regions.rows)
-            com.tracks.app.ui.components.StatusToast(
-                message = tools.notice,
-                onDismiss = toolsVm::dismissNotice,
-            )
             // What is marked, and the way to unmark it.
             tools.marked?.let { marked ->
                 Surface(
@@ -2114,3 +2136,10 @@ private const val HANDLE_MENU_GAP_PX = 18
 
 /** Far enough that a shaky tap is still a tap and not a two-metre move. */
 private val HANDLE_DRAG_SLOP = 7.dp
+
+
+private tailrec fun android.content.Context.findActivity(): android.app.Activity? = when (this) {
+    is android.app.Activity -> this
+    is android.content.ContextWrapper -> baseContext.findActivity()
+    else -> null
+}

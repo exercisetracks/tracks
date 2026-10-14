@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 package com.tracks.app.ui.map
 
+import com.tracks.app.ui.status.StatusJob
 import com.tracks.app.ui.theme.Tokens
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
@@ -49,17 +50,15 @@ import androidx.compose.animation.core.animateFloatAsState
  * can lock their screen — which is the actual question they have while looking
  * at it.
  */
-@Composable
-fun DownloadBanner(rows: List<RegionRow>, modifier: Modifier = Modifier) {
+fun downloadJob(rows: List<RegionRow>): StatusJob? {
     // Work in flight only. A finished area, one the server holds and nobody
     // asked to store, and one paused waiting for a person to tap Resume are all
     // the sheet's business — this is about what is happening right now.
     val active = rows.filter {
         it.phase is DownloadPhase.Extracting || it.phase is DownloadPhase.Storing
     }
-    // A small pill with a wheel, at the top with the app's other progress —
-    // the full-width bar at the bottom covered the map's own controls for the
-    // minutes a download runs. The phase stays in the words: "Building" is the
+    // The app's status pill carries it — the full-width bar this once was
+    // covered the map's own controls for the minutes a download runs. The phase stays in the words: "Building" is the
     // server and survives the phone sleeping, "Saving" is this phone.
     val label = when {
         active.isEmpty() -> null
@@ -75,7 +74,7 @@ fun DownloadBanner(rows: List<RegionRow>, modifier: Modifier = Modifier) {
             else -> 0f
         }
     }.takeIf { it.isNotEmpty() }?.average()?.toFloat()
-    com.tracks.app.ui.components.ProgressPill(label = label, fraction = fraction, modifier = modifier)
+    return label?.let { StatusJob(it, fraction) }
 }
 
 /**

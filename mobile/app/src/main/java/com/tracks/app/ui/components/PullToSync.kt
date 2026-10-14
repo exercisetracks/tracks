@@ -2,10 +2,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 package com.tracks.app.ui.components
 
+import androidx.compose.foundation.layout.Box
+
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.pullToRefresh
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
@@ -23,9 +25,10 @@ import kotlinx.coroutines.launch
  *
  * ## Why this gesture syncs the *watch* and not the server
  *
- * Because of what these two pages are. The dashboard and the health page are
- * about what your body did, and every figure on either originates in a file the
- * watch is holding — steps, sleep, resting heart rate, the ride you finished an
+ * It wraps every page but the map (whose drag pans), and it began on the two
+ * that explain it best: the dashboard and the health page are about what your
+ * body did, and every figure on either originates in a file the watch is
+ * holding — steps, sleep, resting heart rate, the ride you finished an
  * hour ago. The server is downstream of all of it, and on the trips this app
  * exists for it is the half that is not there. Reaching for the nearest source
  * of new data means reaching for the wrist.
@@ -34,12 +37,12 @@ import kotlinx.coroutines.launch
  * and the pages redraw themselves from the mirror as soon as anything lands —
  * see [com.tracks.app.device.LocalDataSignal].
  *
- * ## Why the indicator is owned here
+ * ## Why the indicator lets go at once
  *
- * The spinner has to stop when the sync stops, which means somebody has to
- * await it. Driving it from the view model's `busy` flag instead would spin
- * this page for any action anywhere in the app, including ones the user
- * triggered on another screen.
+ * The pull is answered by the status pill at the top ([com.tracks.app.ui.status.StatusHost]),
+ * which shows the sync for as long as it runs. A spinner here as well would be
+ * two indicators for one operation. The `syncing` flag is still owned here, so
+ * a second pull during a running sync is ignored rather than queued.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -47,49 +50,51 @@ fun PullToSync(
     onSync: suspend () -> Unit,
     modifier: Modifier = Modifier,
     /**
-     * False with neither a watch nor a server: there is nothing to sync with,
-     * and a gesture that spins and changes nothing reads as broken.
+     * False with neither a watch nor a server, and on the map, whose drag is
+     * panning. Applied as a modifier rather than by leaving the box out, so
+     * switching it does not rebuild the pages inside — this wraps all of them.
      */
     enabled: Boolean = true,
     content: @Composable () -> Unit,
 ) {
-    if (!enabled) {
-        content()
-        return
-    }
     val scope = rememberCoroutineScope()
     var syncing by remember { mutableStateOf(false) }
     val state = rememberPullToRefreshState()
 
-    PullToRefreshBox(
-        isRefreshing = syncing,
-        onRefresh = {
-            // Guarded, because the gesture can be repeated while the first one
-            // is still going and a BLE conversation does not take two callers —
-            // see WatchSyncRunner's mutex, which would decline the second and
-            // leave this indicator spinning for a sync that never ran.
-            if (!syncing) {
-                syncing = true
-                scope.launch {
-                    try {
-                        onSync()
-                    } finally {
-                        syncing = false
+    Box(
+        modifier.fillMaxSize().pullToRefresh(
+            // The spinner lets go as soon as the pull is answered: the status
+            // pill at the top carries the sync from there, and two indicators
+            // for one sync is what the status guide exists to stop.
+            isRefreshing = false,
+            state = state,
+            enabled = enabled,
+            onRefresh = {
+                // Guarded, because the gesture can be repeated while the first
+                // one is still going and a BLE conversation does not take two
+                // callers — see WatchSyncRunner's mutex.
+                if (!syncing) {
+                    syncing = true
+                    scope.launch {
+                        try {
+                            onSync()
+                        } finally {
+                            syncing = false
+                        }
                     }
                 }
-            }
-        },
-        state = state,
-        modifier = modifier.fillMaxSize(),
-        indicator = {
+            },
+        ),
+    ) {
+        content()
+        if (enabled) {
             PullToRefreshDefaults.Indicator(
                 state = state,
-                isRefreshing = syncing,
+                isRefreshing = false,
                 modifier = Modifier.align(Alignment.TopCenter),
                 containerColor = MaterialTheme.colorScheme.surfaceVariant,
                 color = MaterialTheme.colorScheme.primary,
             )
-        },
-        content = { content() },
-    )
+        }
+    }
 }
