@@ -180,3 +180,69 @@ def is_gzip_vector(path: str | Path) -> bool:
         return header(path).get("tile_compression") == Compression.GZIP
     except Exception:
         return False
+
+
+def descendant_ranges(z0: int, x0: int, y0: int, minz: int, maxz: int) -> list[tuple[int, int]]:
+    """[start, end) tile-id ranges covering a tile's descendants at minz..maxz,
+    or its single ancestor at zooms above it.
+
+    PMTiles numbers each zoom along a Hilbert curve, and a Hilbert curve visits
+    every aligned square block in one run: the tiles under a z8 cell at z12 are
+    one contiguous id range, which starts at whichever corner the curve enters
+    by. So a cell's share of an archive is a handful of ranges, found without
+    listing the archive.
+    """
+    from pmtiles.tile import zxy_to_tileid
+    out = []
+    for z in range(minz, maxz + 1):
+        if z < z0:
+            shift = z0 - z
+            tid = zxy_to_tileid(z, x0 >> shift, y0 >> shift)
+            out.append((tid, tid + 1))
+            continue
+        k = 2 ** (z - z0)
+        bx, by = x0 * k, y0 * k
+        corners = [zxy_to_tileid(z, bx + dx, by + dy) for dx in (0, k - 1) for dy in (0, k - 1)]
+        start = min(corners)
+        out.append((start, start + k * k))
+    return out
+
+
+def bytes_in_ranges(path: str | Path, ranges: list[tuple[int, int]], cache: dict | None = None) -> int:
+    """Total bytes of the tiles whose ids fall in `ranges`, from the directories
+    alone: only the leaf directories the ranges touch are read. `cache` (keyed
+    by path) keeps parsed directories across calls for one archive."""
+    cache = {} if cache is None else cache
+    with open(path, "rb") as f:
+        get = MmapSource(f)
+        h = deserialize_header(get(0, 127))
+        dirs = cache.setdefault(str(path), {})
+
+        def directory(offset, length):
+            d = dirs.get((offset, length))
+            if d is None:
+                d = dirs[(offset, length)] = deserialize_directory(get(offset, length))
+            return d
+
+        def walk(entries, lo, hi):
+            total = 0
+            import bisect
+            ids = [e.tile_id for e in entries]
+            i = max(bisect.bisect_right(ids, lo) - 1, 0)
+            while i < len(entries):
+                e = entries[i]
+                if e.tile_id >= hi:
+                    break
+                if e.run_length == 0:
+                    nxt = entries[i + 1].tile_id if i + 1 < len(entries) else float("inf")
+                    if nxt > lo:
+                        total += walk(directory(h["leaf_directory_offset"] + e.offset, e.length), lo, hi)
+                else:
+                    a, b = max(e.tile_id, lo), min(e.tile_id + e.run_length, hi)
+                    if b > a:
+                        total += e.length * (b - a)
+                i += 1
+            return total
+
+        root = directory(h["root_offset"], h["root_length"])
+        return sum(walk(root, lo, hi) for lo, hi in ranges)

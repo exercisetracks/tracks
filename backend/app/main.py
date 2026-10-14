@@ -32,7 +32,7 @@ from app.calculators.user_stats import recalculate_auto_values
 from app.config import settings
 from app.database import SessionLocal, engine
 from app.middleware.caching import CacheControlMiddleware
-from app.routes import capabilities, contours, fonts, sprite, map_style, regions, routes_api, tiles, poi as poi_routes, gnis as gnis_routes, trail_logos, courses_api, version as version_routes
+from app.routes import capabilities, contours, fonts, sprite, map_style, map_packs, regions, routes_api, tiles, poi as poi_routes, gnis as gnis_routes, trail_logos, courses_api, version as version_routes
 from app.models.activity import User
 from app.models.user_settings import UserSettings
 from app.seed import seed_all
@@ -507,6 +507,7 @@ app.include_router(music.music_sync_router)   # sync-agent token guarded, like c
 app.include_router(garmin_api.router,        dependencies=_auth_dep)
 app.include_router(workouts.router,          dependencies=_auth_dep)
 app.include_router(regions.router,            dependencies=_auth_dep)
+app.include_router(map_packs.router,          dependencies=_auth_dep)
 app.include_router(poi_routes.router,          dependencies=_auth_dep)
 app.include_router(routes_api.router,          dependencies=_auth_dep)
 app.include_router(courses_api.router,          dependencies=_auth_dep)
