@@ -88,6 +88,15 @@ async function _send(method, path, body, { signal } = {}) {
   const data = await res.json().catch(() => ({}));
 
   if (!res.ok) {
+    // The login still stands but the key that opens this account's encrypted
+    // data has gone: it lives in Redis on a shorter, sliding timer, and a
+    // restart (every update) drops it. Everything encrypted — activity
+    // details, GPS tracks, the heatmap — fails until a password re-opens it,
+    // so say so once, app-wide (auth/VaultUnlock.jsx) rather than leaving
+    // each page to show itself empty.
+    if (res.status === 401 && data.detail === "session_expired" && typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent(VAULT_LOCKED_EVENT));
+    }
     const err = new Error(data.detail ?? `HTTP ${res.status}`);
     err.status = res.status;
     throw err;
@@ -95,6 +104,9 @@ async function _send(method, path, body, { signal } = {}) {
 
   return data;
 }
+
+/** Fired when the server says the encrypted-data key has expired; see _send. */
+export const VAULT_LOCKED_EVENT = "tracks:vault-locked";
 
 const get   = (path, opts)       => request("GET",    path, undefined, opts);
 const post  = (path, body, opts) => request("POST",   path, body, opts);

@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { api, TOKEN_KEY } from "../api/client";
 import { setAccountZone } from "../lib/today";
+import VaultUnlock from "./VaultUnlock";
 
 const AuthContext = createContext(null);
 
@@ -111,6 +112,7 @@ export function AuthProvider({ children }) {
   return (
     <AuthContext.Provider value={{ authStatus, user, login, setup, logout, refreshUser, checkAuth, completeOnboarding }}>
       {children}
+      <VaultUnlock />
     </AuthContext.Provider>
   );
 }

@@ -21,6 +21,7 @@ import multiprocessing
 import os
 from collections import OrderedDict
 from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures.process import BrokenProcessPool
 from pathlib import Path
 from typing import Sequence
 
@@ -89,6 +90,48 @@ def _process_one_contour_tile(
             return (zxy_to_tileid(z, x, y), mvt_bytes)
     except Exception:
         return (zxy_to_tileid(z, x, y), None)
+
+
+
+# What one contour worker costs: a spawned interpreter with the app's imports,
+# numpy and the DEM tile cache it keeps. Measured at a few hundred MB on the
+# dev machine; budgeted generously, since the cost of guessing low is the
+# kernel killing a worker mid-build.
+_WORKER_BYTES = 450 * 1024 * 1024
+
+
+def _available_bytes() -> int | None:
+    """Memory this container can still use: the cgroup limit's headroom when
+    there is one, else the host's MemAvailable. None when neither is readable."""
+    try:
+        limit = Path("/sys/fs/cgroup/memory.max").read_text().strip()
+        if limit != "max":
+            used = int(Path("/sys/fs/cgroup/memory.current").read_text().strip())
+            return max(0, int(limit) - used)
+    except (OSError, ValueError):
+        pass
+    try:
+        for line in Path("/proc/meminfo").read_text().splitlines():
+            if line.startswith("MemAvailable:"):
+                return int(line.split()[1]) * 1024
+    except (OSError, ValueError, IndexError):
+        pass
+    return None
+
+
+def _worker_count(n_jobs: int) -> int:
+    """One worker per core, as many as memory allows, at most 32.
+
+    By cores alone, a many-core server with modest memory started more workers
+    than it could hold; the kernel killed one, and the whole build failed with
+    "A process in the process pool was terminated abruptly".
+    """
+    n = min(os.cpu_count() or 4, n_jobs, 32)
+    available = _available_bytes()
+    if available is not None:
+        # Leave a quarter for everything else running beside the build.
+        n = min(n, int(available * 0.75) // _WORKER_BYTES)
+    return max(1, n)
 
 
 def build_contours_pmtiles(
@@ -169,14 +212,12 @@ def build_contours_pmtiles(
     # dict), so peak memory stays bounded by the DEM tile size — not by the tile
     # count — even for a continent-scale DEM. tile_jobs is in clustered DEM order
     # and ex.map preserves input order, so the new tiles are written clustered.
-    n_workers = max(1, min(os.cpu_count() or 4, n_jobs, 32))
+    n_workers = _worker_count(n_jobs)
     logger.info("Generating contours for %d tiles with %d workers…",
                 n_jobs, n_workers)
 
     global _CONTOUR_DEM_PATH
     _CONTOUR_DEM_PATH = str(dem_path)
-    chunksize = max(1, n_jobs // (n_workers * 8))
-    processed = skipped = copied = 0
 
     header = {
         "tile_type":        TileType.MVT,
@@ -192,65 +233,82 @@ def build_contours_pmtiles(
         "center_zoom":      min_zoom,
     }
 
-    wrote_any = False
-    with pmtiles_write(str(tmp_output)) as writer:
-        # bbox-scoped regen keeps every tile outside the bbox by copying it across.
-        if bbox is not None and output_path.exists():
-            try:
-                with open(output_path, "rb") as ef:
-                    existing = Reader(MmapSource(ef))
-                    for (ez, ex_, ey), eraw in all_tiles(existing.get_bytes):
-                        if eraw:
-                            writer.write_tile(zxy_to_tileid(ez, ex_, ey), eraw)
-                            copied += 1
-            except Exception:
-                copied = 0
+    from app.services.download_cancel import DownloadCancelled
 
-        from app.services.download_cancel import DownloadCancelled
-        ctx = multiprocessing.get_context("spawn")
-        with ProcessPoolExecutor(max_workers=n_workers, mp_context=ctx,
-                                 initializer=_init_contour_worker,
-                                 initargs=(str(dem_path),)) as ex:
-            if cancel is not None:
-                cancel.add_pool(ex)   # watcher shuts the pool down on cancel
-            try:
-                for tile_id, mvt_bytes in ex.map(_contour_tile, tile_jobs, chunksize=chunksize):
-                    if cancel is not None and cancel.cancelled():
-                        raise DownloadCancelled()
-                    if mvt_bytes is not None:
-                        writer.write_tile(tile_id, mvt_bytes)
-                        processed += 1
-                    else:
-                        skipped += 1
-                    total = processed + skipped
-                    if total % 5000 == 0 or total == n_jobs:
-                        logger.info("  %d tiles written, %d skipped, %d/%d done",
-                                    processed, skipped, total, n_jobs)
-                    # ~100 evenly-spaced ticks regardless of job size, plus the
-                    # final one, so small regions get a smooth bar and huge jobs
-                    # don't spam.
-                    if progress_cb is not None and (total % max(1, n_jobs // 100) == 0 or total == n_jobs):
-                        try:
-                            progress_cb(total, n_jobs)
-                        except Exception:
-                            pass
-            except DownloadCancelled:
-                raise
-            except Exception:
-                # A watcher pool shutdown surfaces as a broken-pool error mid-map;
-                # if we're cancelling, report it as such rather than a build error.
-                if cancel is not None and cancel.cancelled():
-                    raise DownloadCancelled()
-                raise
-            finally:
-                if cancel is not None:
-                    cancel.discard_pool(ex)
+    # A worker the kernel kills (out of memory) breaks the whole pool. Rather
+    # than fail the build, start it again with half the workers, down to one:
+    # slower is fine, a map without contours is not.
+    while True:
+        chunksize = max(1, n_jobs // (n_workers * 8))
+        processed = skipped = copied = 0
+        try:
+            wrote_any = False
+            with pmtiles_write(str(tmp_output)) as writer:
+                # bbox-scoped regen keeps every tile outside the bbox by copying it across.
+                if bbox is not None and output_path.exists():
+                    try:
+                        with open(output_path, "rb") as ef:
+                            existing = Reader(MmapSource(ef))
+                            for (ez, ex_, ey), eraw in all_tiles(existing.get_bytes):
+                                if eraw:
+                                    writer.write_tile(zxy_to_tileid(ez, ex_, ey), eraw)
+                                    copied += 1
+                    except Exception:
+                        copied = 0
 
-        # finalize() indexes tile_entries[0]; skip it (and the file) if nothing
-        # was written, otherwise it raises on an empty archive.
-        if processed > 0 or copied > 0:
-            writer.finalize(header, metadata)
-            wrote_any = True
+                ctx = multiprocessing.get_context("spawn")
+                with ProcessPoolExecutor(max_workers=n_workers, mp_context=ctx,
+                                         initializer=_init_contour_worker,
+                                         initargs=(str(dem_path),)) as ex:
+                    if cancel is not None:
+                        cancel.add_pool(ex)   # watcher shuts the pool down on cancel
+                    try:
+                        for tile_id, mvt_bytes in ex.map(_contour_tile, tile_jobs, chunksize=chunksize):
+                            if cancel is not None and cancel.cancelled():
+                                raise DownloadCancelled()
+                            if mvt_bytes is not None:
+                                writer.write_tile(tile_id, mvt_bytes)
+                                processed += 1
+                            else:
+                                skipped += 1
+                            total = processed + skipped
+                            if total % 5000 == 0 or total == n_jobs:
+                                logger.info("  %d tiles written, %d skipped, %d/%d done",
+                                            processed, skipped, total, n_jobs)
+                            # ~100 evenly-spaced ticks regardless of job size, plus the
+                            # final one, so small regions get a smooth bar and huge jobs
+                            # don't spam.
+                            if progress_cb is not None and (total % max(1, n_jobs // 100) == 0 or total == n_jobs):
+                                try:
+                                    progress_cb(total, n_jobs)
+                                except Exception:
+                                    pass
+                    except DownloadCancelled:
+                        raise
+                    except Exception:
+                        # A watcher pool shutdown surfaces as a broken-pool error mid-map;
+                        # if we're cancelling, report it as such rather than a build error.
+                        if cancel is not None and cancel.cancelled():
+                            raise DownloadCancelled()
+                        raise
+                    finally:
+                        if cancel is not None:
+                            cancel.discard_pool(ex)
+
+                # finalize() indexes tile_entries[0]; skip it (and the file) if nothing
+                # was written, otherwise it raises on an empty archive.
+                if processed > 0 or copied > 0:
+                    writer.finalize(header, metadata)
+                    wrote_any = True
+            break
+        except BrokenProcessPool:
+            if cancel is not None and cancel.cancelled():
+                raise DownloadCancelled()
+            if n_workers <= 1:
+                raise
+            n_workers = max(1, n_workers // 2)
+            logger.warning("A contour worker died (out of memory?) — starting again with %d workers", n_workers)
+            tmp_output.unlink(missing_ok=True)
 
     if not wrote_any:
         logger.warning("No contour tiles generated — DEM may be empty or all-ocean")
