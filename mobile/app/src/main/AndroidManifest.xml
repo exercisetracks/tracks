@@ -3,7 +3,8 @@
   SPDX-FileCopyrightText: 2026 Hawk Fugagli
   SPDX-License-Identifier: AGPL-3.0-or-later
 -->
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -101,6 +102,12 @@
       and runs under the same type: see BackupWriteService.
     -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <!--
+      Saving map packs on Android 14+ runs as a user-initiated data transfer
+      job: the platform's API for a large download the person started, with no
+      six-hour foreground-service cap. See map/packs/PackJobs.
+    -->
+    <uses-permission android:name="android.permission.RUN_USER_INITIATED_JOBS" />
 
     <!--
       Held only while a backup is written, so the CPU does not sleep under it
@@ -349,9 +356,14 @@
           and stands itself down.
         -->
         <service
-            android:name=".map.MapDownloadService"
+            android:name=".map.packs.PackJobService"
             android:exported="false"
-            android:foregroundServiceType="dataSync" />
+            android:permission="android.permission.BIND_JOB_SERVICE" />
+        <!-- WorkManager's foreground service, for PackWorker below Android 14. -->
+        <service
+            android:name="androidx.work.impl.foreground.SystemForegroundService"
+            android:foregroundServiceType="dataSync"
+            tools:node="merge" />
 
         <!--
           Keeps a backup running after the person leaves the app, with its

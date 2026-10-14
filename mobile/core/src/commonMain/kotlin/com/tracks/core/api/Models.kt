@@ -1076,3 +1076,41 @@ data class CourseUpdate(
     val hidden: Boolean? = null,
     @SerialName("load_to_device") val loadToDevice: Boolean? = null,
 )
+
+
+/**
+ * What a phone needs to hold an area offline: one pack per z8 cell and layer,
+ * plus the shared packs every phone holds once. See the server's
+ * services/map_packs.py for the layout.
+ */
+@Serializable
+data class PackManifest(
+    @SerialName("cell_zoom") val cellZoom: Int = 8,
+    val cells: List<PackCell> = emptyList(),
+    val shared: Map<String, PackEntry> = emptyMap(),
+    @SerialName("total_bytes") val totalBytes: Long = 0,
+)
+
+@Serializable
+data class PackCell(
+    /** "8/x/y" */
+    val cell: String,
+    /** [west, south, east, north] */
+    val bounds: List<Double> = emptyList(),
+    /** Whether the server has downloaded ground here; off it only the basemap is offered. */
+    val covered: Boolean = false,
+    val layers: Map<String, PackEntry> = emptyMap(),
+)
+
+@Serializable
+data class PackEntry(
+    val version: String,
+    /** Exact once built (`ready`), else an estimate from the server's directories. */
+    val bytes: Long = 0,
+    val sha256: String? = null,
+    val url: String,
+    val ready: Boolean = false,
+)
+
+/** How a pack download answered. */
+data class PackResponse(val status: Int, val etag: String?, val contentLength: Long?)

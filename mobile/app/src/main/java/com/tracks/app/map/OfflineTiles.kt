@@ -19,45 +19,14 @@ import org.maplibre.android.offline.OfflineTilePyramidRegionDefinition
 import kotlin.coroutines.resume
 
 /**
- * Tiles on the phone, for a map that works with the radio off.
+ * Areas saved the old way: MapLibre offline regions, fetched tile by tile into
+ * MapLibre's own database.
  *
- * ## Why this is a second download
- *
- * Asking the server for a region and getting tiles onto a phone are different
- * jobs, and only doing the first is the trap. `POST /maps/regions/download`
- * makes the server extract an area out of the planet archives into the master
- * files its tile endpoint serves — after which the phone can *fetch* that area,
- * over the network, exactly as before. Nothing has been stored locally. A map
- * that needs the server is not an offline map, and the failure only shows up
- * where it matters most: in a valley, with no signal, which is the entire
- * premise of carrying it.
- *
- * So a region download is two phases. The server extracts (minutes of
- * tippecanoe over gigabytes — not phone work), and then the phone pulls the
- * result into MapLibre's own offline database. The order is not optional: pull
- * first and the phone caches the blank tiles that exist before the extraction
- * ran, and caches them as legitimately empty.
- *
- * ## What MapLibre stores
- *
- * Everything the style references for the given bounds and zoom range —
- * vector tiles, glyphs, the sprite — keyed by URL in a SQLite database it
- * manages. Once a region is complete the normal map draws from it without
- * knowing: there is no offline mode to switch into, which is why the Map tab
- * needs no separate offline UI beyond saying what is stored.
- *
- * It wants a style *URL*, not the document the live map is handed, because it
- * re-fetches the style and walks it to find what to download. Everything it
- * needs — style, tiles, glyphs, sprite — is served publicly, so none of this
- * carries the user's token.
- *
- * ## What a download does when something goes wrong
- *
- * Almost nothing, and that is the point — see [troubleOf]. MapLibre's downloader
- * skips what is missing and retries what timed out, entirely on its own, so the
- * job of this class during trouble is to describe it rather than to intervene.
- * The one intervention that matters is [resumeIncomplete], because the single
- * thing MapLibre does *not* do by itself is come back after the process died.
+ * Replaced by map packs (map/packs). What is left here is what moving them
+ * over needs — list the regions, and delete each once its area has been saved
+ * again as packs (RegionsViewModel.migrateLegacy). A region keeps serving its
+ * tiles until then: MapLibre reads its offline database before the network,
+ * so nothing goes blank during the move.
  */
 class OfflineTiles(context: Context) {
 
@@ -159,97 +128,6 @@ class OfflineTiles(context: Context) {
         data class Failed(val reason: String) : Progress
     }
 
-    /**
-     * Pull a region onto the phone, or pick up one that was interrupted.
-     *
-     * Emits progress until the region completes or genuinely fails, then closes.
-     * The download keeps running if the collector goes away — MapLibre owns it,
-     * not this flow — which is deliberate: leaving a tab should not abandon a
-     * half-downloaded region, and reopening the sheet picks the status back up
-     * through [stored].
-     *
-     * ## Why this resumes rather than starts
-     *
-     * Asking for an area the phone is already holding used to create a *second*
-     * offline region over the same ground. The resources are shared and
-     * reference-counted underneath, so it was not a second copy of the bytes —
-     * but it was a second row, a second progress bar, and a list that grew a
-     * duplicate every time somebody retried something that had stalled. Since
-     * retrying a stalled download is exactly what a person does, the duplicates
-     * arrived precisely when the list most needed to be readable.
-     */
-    fun download(
-        name: String,
-        serverRegionId: Int?,
-        bounds: LatLngBounds,
-        styleUrl: String,
-        minZoom: Double = MIN_ZOOM,
-        maxZoom: Double = MAX_ZOOM,
-    ): Flow<Progress> = callbackFlow {
-        val definition = OfflineTilePyramidRegionDefinition(
-            styleUrl,
-            bounds,
-            minZoom,
-            maxZoom,
-            appContext.resources.displayMetrics.density,
-        )
-        val metadata = Metadata(
-            name = name,
-            serverRegionId = serverRegionId,
-            createdAt = System.currentTimeMillis(),
-        )
-
-        val region = existing(serverRegionId, bounds)
-            ?.also { adopt(it, metadata) }
-            ?: create(definition, metadata).getOrElse { failure ->
-                trySend(Progress.Failed(failure.message ?: "The phone would not open a download"))
-                channel.close()
-                return@callbackFlow awaitClose { }
-            }
-
-        region.setObserver(observer(send = { trySend(it) }, close = { channel.close() }))
-        region.setDownloadState(OfflineRegion.STATE_ACTIVE)
-
-        awaitClose {
-            // The observer, not the download. Detaching the callback stops this
-            // flow leaking a reference; the region keeps downloading.
-            region.setObserver(null)
-        }
-    }
-
-    /**
-     * Set every unfinished region downloading again.
-     *
-     * ## Why this has to exist
-     *
-     * MapLibre's download state is not persisted. Every region in the database
-     * is inactive when the process starts, whatever it was doing when the
-     * process ended — and a phone that spends a download in somebody's pocket
-     * gets its process ended routinely. So an area interrupted by a swipe-away,
-     * a low-memory kill, or a reboot stayed exactly as interrupted as it was,
-     * for good, while the sheet went on describing it as though it were saving.
-     * Nothing in the app ever asked it to continue.
-     *
-     * Resuming is cheap and safe. Everything already in the database is found
-     * there and counted without a request, so a region that is actually
-     * finished settles back to complete in seconds having fetched nothing, and
-     * one that is not picks up where it stopped.
-     *
-     * @return how many regions were asked to continue.
-     */
-    suspend fun resumeIncomplete(): Int {
-        val regions = allRegions()
-        var resumed = 0
-        regions.forEach { region ->
-            val status = statusOf(region) ?: return@forEach
-            if (finished(status) || status.downloadState == OfflineRegion.STATE_ACTIVE) return@forEach
-            Log.i(TAG, "resuming offline region ${region.id}")
-            region.setDownloadState(OfflineRegion.STATE_ACTIVE)
-            resumed++
-        }
-        return resumed
-    }
-
     /** Every region on the phone, with how far along each one is. */
     suspend fun stored(): List<Stored> = allRegions().mapNotNull { region ->
         val definition = region.definition as? OfflineTilePyramidRegionDefinition
@@ -296,60 +174,8 @@ class OfflineTiles(context: Context) {
         }
     }
 
-    /**
-     * Make the phone ask again about tiles it already has an answer for.
-     *
-     * Run when the server's coverage changes, alongside refetching the style —
-     * which is the part that actually matters, since a region landing adds
-     * whole sources to the style and raises the basemap's maxzoom from 12 to
-     * 15. This is the smaller, second half of the same problem: the answers the
-     * phone kept from *before* that happened.
-     *
-     * Not about 404s. MapLibre never writes an errored response to its cache
-     * (`OfflineDatabase::putInternal` returns early on `response.error`), so a
-     * tile that did not exist yesterday is re-requested today by itself. It is
-     * about the successful ones — including the deliberately empty tiles the
-     * archives answer with — because the basemap's URL carries no version
-     * parameter, by design, so nothing about it changes when new detail lands
-     * underneath it.
-     *
-     * Invalidating marks the cached entries as needing revalidation rather than
-     * deleting them, so nothing already correct is re-fetched: the tiles that
-     * still say the same thing come back as a cheap 304. Stored regions are a
-     * separate table and are not touched.
-     */
-    suspend fun invalidateAmbientCache(): Boolean = suspendCancellableCoroutine { cont ->
-        manager.invalidateAmbientCache(object : OfflineManager.FileSourceCallback {
-            override fun onSuccess() = cont.resume(true)
-            override fun onError(message: String) {
-                Log.w(TAG, "could not invalidate the ambient cache: $message")
-                cont.resume(false)
-            }
-        })
-    }
-
     /** Total bytes the phone is holding for maps. */
     suspend fun storedBytes(): Long = stored().sumOf { it.bytes }
-
-    /**
-     * The region already covering this download, if the phone has one.
-     *
-     * Matched on the server's id first, because that is an identity rather than
-     * a guess. Bounds are the fallback for a region stored before the phone
-     * knew the server's id for it, and compared with a tolerance: the box comes
-     * from screen coordinates through a projection, so two attempts at "the
-     * same area" agree to about a metre and never to the bit.
-     */
-    private suspend fun existing(serverRegionId: Int?, bounds: LatLngBounds): OfflineRegion? =
-        allRegions().firstOrNull { region ->
-            val metadata = readMetadata(region)
-            val definition = region.definition as? OfflineTilePyramidRegionDefinition
-            when {
-                serverRegionId != null && metadata?.serverRegionId == serverRegionId -> true
-                definition?.bounds?.matches(bounds) == true -> true
-                else -> false
-            }
-        }
 
     /**
      * Teach a region it already had which server area it belongs to.
@@ -370,21 +196,6 @@ class OfflineTiles(context: Context) {
                 override fun onError(error: String) {
                     Log.w(TAG, "could not link region ${region.id} to its server area: $error")
                 }
-            },
-        )
-    }
-
-    private suspend fun create(
-        definition: OfflineTilePyramidRegionDefinition,
-        metadata: Metadata,
-    ): Result<OfflineRegion> = suspendCancellableCoroutine { cont ->
-        manager.createOfflineRegion(
-            definition,
-            metadata.toBytes(),
-            object : OfflineManager.CreateOfflineRegionCallback {
-                override fun onCreate(created: OfflineRegion) = cont.resume(Result.success(created))
-                override fun onError(error: String) =
-                    cont.resume(Result.failure(IllegalStateException(error)))
             },
         )
     }

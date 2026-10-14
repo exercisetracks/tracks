@@ -86,3 +86,9 @@ path = "mobile/core/src/jvmTest/resources/schema/*.sql"
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 Hawk Fugagli"
 SPDX-License-Identifier = "AGPL-3.0-or-later"
+
+[[annotations]]
+path = "mobile/app/src/test/resources/pmtiles/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Hawk Fugagli"
+SPDX-License-Identifier = "AGPL-3.0-or-later"

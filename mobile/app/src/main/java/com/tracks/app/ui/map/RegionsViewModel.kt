@@ -5,9 +5,10 @@ package com.tracks.app.ui.map
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tracks.app.AppContainer
-import com.tracks.app.map.MapDownloadService
-import com.tracks.app.map.OfflineEstimate
 import com.tracks.app.map.OfflineRoutingData
+import com.tracks.app.map.packs.PackJobs
+import com.tracks.app.map.packs.PackStore
+import com.tracks.core.api.PackManifest
 import com.tracks.app.map.OfflineTiles
 import com.tracks.app.map.PendingRegions
 import com.tracks.core.api.MapRegion
@@ -44,11 +45,11 @@ sealed interface DownloadPhase {
      */
     data object ServerOnly : DownloadPhase
 
-    /** The server is done; the phone is pulling the tiles into its own store. */
+    /** The server is done; the phone is fetching the area's map packs. */
     data class Storing(
         val fraction: Float,
         val bytes: Long,
-        /** Set while MapLibre is retrying something: no connection, usually. */
+        /** Why it is not moving right now: no Wi-Fi, usually. */
         val waiting: String? = null,
     ) : DownloadPhase
 
@@ -106,6 +107,8 @@ data class RegionRow(
     val coverage: Coverage = Coverage.Building,
     /** This phone asked for it and is waiting to store it (see [PendingRegions]). */
     val requestedHere: Boolean = false,
+    /** The saved area on this phone (see [PackStore.Area]), when it is one. */
+    val areaId: String? = null,
 )
 
 data class RegionsUiState(
@@ -118,15 +121,17 @@ data class RegionsUiState(
     val estimating: Boolean = false,
     /** The framed area is beyond what is sensible to extract or store. */
     val tooLarge: Boolean = false,
-    /**
-     * What the framed area would cost *this phone*, worked out locally.
-     *
-     * Answered instantly and without the network, because it is arithmetic —
-     * see [OfflineEstimate]. It appears while the server's byte estimate is
-     * still being computed, which matters: the phone's number is the one that
-     * decides whether a box is a sensible thing to ask for.
-     */
-    val phoneCost: OfflineEstimate.Weight? = null,
+    /** Map packs on this phone, and the most they may take (see [PackStore.budget]). */
+    val usedBytes: Long = 0,
+    val budgetBytes: Long = 0,
+    val freeBytes: Long = 0,
+    /** Storage the packs can live on: the phone's own, then SD cards. */
+    val volumes: Int = 1,
+    val volume: Int = 0,
+    val wifiOnly: Boolean = true,
+    /** Bytes of newer packs the server has for saved areas; 0 when current. */
+    val updateBytes: Long = 0,
+    val checkingUpdates: Boolean = false,
     /**
      * Fraction of the routing-data pull, or null when none is running.
      *
@@ -149,43 +154,26 @@ data class RegionsUiState(
 )
 
 /**
- * Downloading an area for offline use, in the two halves it really takes.
+ * Saving areas for offline use, in the two halves it really takes.
  *
- * The server extracts a bbox out of the planet archives into the master files
- * its tile endpoint serves; the phone then pulls that area into MapLibre's own
- * store. Both are needed and the order matters — see [OfflineTiles] for why
- * doing only the first looks like it works right up until there is no signal.
+ * The server builds the area into its map archives (minutes, polled — there is
+ * nothing to subscribe to); the phone then fetches the area's map packs as
+ * files (map/packs). A request is written down before the server's wait
+ * ([PendingRegions]) so it survives the process; the packs are fetched by a
+ * job ([PackJobs]) that survives the screen; and the list is rebuilt from the
+ * pack registry as packs land, with no polling of the phone's own half.
  *
- * The server half is polled rather than pushed. It is minutes of tippecanoe and
- * the API is a status endpoint, so there is nothing to subscribe to; polling
- * stops as soon as every region is settled, so an idle sheet costs nothing.
- *
- * ## What this now does that it did not
- *
- * Three things, all of them about a download surviving contact with a real
- * phone: it [resumes][OfflineTiles.resumeIncomplete] anything a killed process
- * left half-finished, it remembers across restarts which areas were *asked*
- * for so the hand-off from server to phone cannot be lost in a dead coroutine
- * (see [PendingRegions]), and it notices when the server's own coverage changes
- * so the map picks up detail that arrived while nobody was looking.
+ * What the phone saves is exactly the box the person framed, however large the
+ * server's area around it, within the storage limit they chose.
  */
 class RegionsViewModel(
     private val container: AppContainer,
-    private val offline: OfflineTiles,
+    /** MapLibre's offline regions from before map packs: read to move them over, then removed. */
+    private val legacy: OfflineTiles,
     /**
-     * Called when the ground the server can serve at full detail changes, so
-     * the map can pick up the new style.
-     *
-     * The served style is narrowed to the archives on disk, so a region landing
-     * does not merely add tiles — it adds whole *sources and layers*: contours
-     * and the OSM overlay simply are not in the style until the first region
-     * exists. A map holding the previous document renders the new area with
-     * none of the detail that was just downloaded, which looks like the
-     * download failed.
-     *
-     * Fires for regions built anywhere, not only for downloads started here. An
-     * area cut from the browser is the case that used to go unnoticed on the
-     * phone entirely.
+     * Called when the ground the server serves at full detail changes, so the
+     * map picks up the new style: the served style is narrowed to the archives
+     * on disk, so the first area adds whole sources and layers to it.
      */
     private val onCoverageChanged: () -> Unit = {},
 ) : ViewModel() {
@@ -193,675 +181,391 @@ class RegionsViewModel(
     private val _state = MutableStateFlow(RegionsUiState())
     val state: StateFlow<RegionsUiState> = _state.asStateFlow()
 
+    private val packs: PackStore get() = container.packs
+
     private var poller: Job? = null
     private var estimateJob: Job? = null
-
-    /** Server region ids whose phone half this view model is already running. */
-    private val storing = mutableSetOf<Int>()
-
-    /** Per-region retry notes from MapLibre, merged into the phase on reload. */
-    private val waiting = mutableMapOf<Int, String>()
-
-    /**
-     * Whether the map is actually on screen, set by [MapScreen] from the
-     * lifecycle. Read at the top of each poll rather than latched, so backing
-     * out mid-download slows the next wait rather than the one after it.
-     */
+    private var server: List<MapRegion> = emptyList()
     private var onScreen = true
-
-    /** See [BACKGROUND_POLL_MS] — this is the whole of the power discipline. */
-    private val pollMs: Long
-        get() = if (onScreen) POLL_MS else BACKGROUND_POLL_MS
-
-    /** Whether this screen has been shown once already — see [setOnScreen]. */
     private var shownBefore = false
+    private var lastUpdateCheck = 0L
 
     /** Called with `true` on ON_START and `false` on ON_STOP. */
     fun setOnScreen(value: Boolean) {
         onScreen = value
         if (!value) return
-        // Coming *back* is the interesting case: an area may have been cut in
-        // the browser, or a download killed with the app, while this was away.
-        // The first appearance is already covered by the constructor, and
-        // refreshing twice on one open would resume every region twice.
         if (shownBefore) refresh()
         shownBefore = true
     }
 
     init {
+        // The list follows the packs as they land, with no polling of its own.
+        viewModelScope.launch { packs.state.collect { rebuild() } }
         refresh()
     }
 
     fun refresh() {
         viewModelScope.launch {
             _state.update { it.copy(loading = true) }
-            // Before the first listing, so what it reports is already the
-            // resumed state rather than a snapshot of the interruption.
-            runCatching { offline.resumeIncomplete() }
-                .onSuccess { if (it > 0) MapDownloadService.start(container.appContext) }
-            reload()
+            reloadServer()
             _state.update { it.copy(loading = false) }
-            startPollingIfBusy()
+            pickUpRequests()
+            migrateLegacy()
+            PackJobs.schedule(container.appContext, userInitiated = onScreen)
+            startPollingIfBuilding()
+            checkUpdatesIfDue()
         }
     }
 
+    // ── Framing an area ──────────────────────────────────────────────────────
+
     /**
-     * What the visible area would cost, and what to call it.
+     * What the visible area would take on this phone, and what to call it.
      *
-     * Asked as the user frames a download rather than after: the answer spans
-     * tens of megabytes to several gigabytes depending on terrain, which on a
-     * phone is the difference between "go ahead" and "wait for wifi". The name
-     * comes from the server's geocoder so nobody has to type one.
+     * From the pack manifest: exact for ground the server already has, and for
+     * the rest the server's extract estimate stands in. Asked as the person
+     * frames, because tens of megabytes and tens of gigabytes are different
+     * decisions.
      */
     fun estimate(bounds: LatLngBounds) {
-        // Cancelled and debounced, because this fires on every frame of a
-        // corner drag. Without it a single resize queues a dozen requests that
-        // each take about four seconds, they finish out of order, and the size
-        // shown ends up describing a box the user has already moved on from.
         estimateJob?.cancel()
-
-        // Not debounced, because it costs nothing: a few hundred multiplications
-        // against the tile pyramid, with no network in sight. It is also the
-        // number that decides whether this box is sensible at all, so it should
-        // never be the one that arrives last.
-        val cost = OfflineEstimate.weigh(bounds)
-
         if (bounds.tooLargeToDownload()) {
-            _state.update {
-                it.copy(
-                    estimating = false, estimateBytes = null, tooLarge = true,
-                    phoneCost = cost, error = null,
-                )
-            }
+            _state.update { it.copy(estimating = false, estimateBytes = null, tooLarge = true, error = null) }
             return
         }
-
         estimateJob = viewModelScope.launch {
-            _state.update {
-                it.copy(
-                    estimating = true, estimateBytes = null, tooLarge = false,
-                    phoneCost = cost, error = null,
-                )
-            }
+            _state.update { it.copy(estimating = true, estimateBytes = null, tooLarge = false, error = null) }
             delay(ESTIMATE_DEBOUNCE_MS)
             val client = container.client()
             val bbox = bounds.toBbox()
-
-            // Together, not one after the other. The size is a dry run across
-            // three archives and the name is a call out to a geocoder; they
-            // have nothing to do with each other, and running them in sequence
-            // made choosing an area feel broken for five seconds.
-            val size = async { runCatching { client.regionEstimate(bbox).bytes }.getOrNull() }
+            val manifest = async { runCatching { client.packManifest(bbox) }.getOrNull() }
+            val extract = async { runCatching { client.regionEstimate(bbox).bytes }.getOrNull() }
             val name = async { runCatching { client.suggestRegionName(bbox).name }.getOrNull() }
-
+            val m = manifest.await()
+            val fullyCovered = m != null && m.cells.all { it.covered }
+            val bytes = when {
+                m == null -> extract.await()
+                fullyCovered -> newBytes(m)
+                // Ground the server has not built yet: its packs do not exist,
+                // so the extract size (terrain and detail, the bulk) stands in.
+                else -> newBytes(m) + (extract.await() ?: 0)
+            }
             _state.update {
-                it.copy(
-                    estimating = false,
-                    estimateBytes = size.await(),
-                    suggestedName = name.await()?.takeIf(String::isNotBlank),
-                    error = null,
-                )
+                it.copy(estimating = false, estimateBytes = bytes,
+                        suggestedName = name.await()?.takeIf(String::isNotBlank), error = null)
             }
         }
     }
 
     fun clearEstimate() {
-        _state.update {
-            it.copy(
-                estimateBytes = null, suggestedName = null, tooLarge = false,
-                phoneCost = null, error = null,
-            )
-        }
+        _state.update { it.copy(estimateBytes = null, suggestedName = null, tooLarge = false, error = null) }
     }
 
     /**
-     * Download the framed area, server first and then onto the phone.
-     *
-     * Returns immediately; both halves are watched from here so the sheet can
-     * be closed and reopened without losing a download.
+     * Save the framed area: built on the server first when it has to be, then
+     * its packs fetched onto this phone.
      */
     fun download(bounds: LatLngBounds, name: String) {
-        // Refused here rather than trusted to the UI. The server applies no
-        // size limit of its own — `parse_bbox` checks only that the corners are
-        // the right way round — so a request framed at world zoom would set it
-        // extracting the planet out of the archives and filling its disk. That
-        // is a destructive operation reachable from one tap, and the guard
-        // belongs on the side that knows what was framed.
         if (bounds.tooLargeToDownload()) {
             _state.update { it.copy(tooLarge = true) }
             return
         }
-        val cost = OfflineEstimate.weigh(bounds)
+        val bbox = listOf(bounds.longitudeWest, bounds.latitudeSouth, bounds.longitudeEast, bounds.latitudeNorth)
         viewModelScope.launch {
             val client = container.client()
-            val started = runCatching {
-                client.downloadRegion(bounds.toBbox(), name)
-            }.getOrElse { e ->
-                _state.update {
-                    it.copy(notice = null, error = "Could not start the download: ${e.message}")
-                }
+            val started = runCatching { client.downloadRegion(bounds.toBbox(), name) }.getOrElse { e ->
+                _state.update { it.copy(notice = null, error = "Could not start the download: ${e.message}") }
                 return@launch
             }
-
             clearEstimate()
-            val serverId = started.region?.id
-            val serverName = started.region?.name ?: "That area"
-            // The server answers "exists" when an area it already holds covers
-            // what was framed. Nothing is extracted a second time, so the only
-            // work left is the phone's half — which the rest of this function
-            // does unchanged, because an already-installed region satisfies
-            // awaitServerReady immediately.
-            _state.update {
-                it.copy(
-                    error = null,
-                    notice = when {
-                        cost.level == OfflineEstimate.Level.BeyondPhone -> beyondPhoneNotice(cost)
-                        started.status == "exists" ->
-                            "$serverName is already on the server — copying it to this phone."
-                        else -> null
-                    },
-                )
-            }
-
-            // Written before the wait, not after it. This is the whole point of
-            // the record: the process may not survive the extraction, and the
-            // intention has to.
-            if (serverId != null && cost.level != OfflineEstimate.Level.BeyondPhone) {
-                PendingRegions.want(container.appContext, serverId)
-            }
-            reload()
-            startPollingIfBusy()
-
-            // The phone's half waits for the server's. Pulling now would cache
-            // the empty tiles that exist before the extraction has run — and
-            // cache them as legitimately empty, which is indistinguishable from
-            // a downloaded area with nothing in it.
-            if (serverId == null) return@launch
-            val ready = awaitServerReady(serverId, bounds) ?: run {
-                _state.update { it.copy(error = "The server could not finish $serverName.") }
+            val region = started.region
+            if (region == null) {
+                _state.update { it.copy(error = "The server did not say which area it is building") }
                 return@launch
             }
-            // Before the tile pull, not after: MapLibre re-fetches the style
-            // itself to work out what to download, so the map and the offline
-            // store should both be looking at the version that includes the new
-            // sources.
-            coverageChanged()
-            if (cost.level == OfflineEstimate.Level.BeyondPhone) {
-                reload()
-                return@launch
-            }
-            // Cancelled here while the server was still building.
-            if (serverId !in PendingRegions.wanted(container.appContext)) {
-                reload()
-                return@launch
-            }
-            if (ready.id != serverId) {
-                // Folded into an older area that overlapped it (see
-                // awaitServerReady). The phone keeps what was framed, as an
-                // area of its own: the survivor can be a whole state, and
-                // tying this piece to it would label a few valleys with the
-                // state's name and offer to delete the state with them.
-                PendingRegions.settled(container.appContext, serverId)
-                storeOnPhone(ready, bounds, key = serverId, name = serverName, serverRegionId = null)
+            if (started.status == "exists" || region.isReady) {
+                saveOnPhone(name, bbox, region.id)
             } else {
-                storeOnPhone(ready, bounds)
+                // Written before the wait: the process may not outlive the
+                // server's build, and the intention has to.
+                PendingRegions.want(container.appContext, region.id, name, bbox)
+                reloadServer()
+                startPollingIfBuilding()
             }
         }
     }
 
-    /**
-     * Pull a region the server already has onto the phone, or pick up one that
-     * stopped part-way.
-     *
-     * Needed more often than it sounds. A region downloaded from the browser
-     * has no phone copy at all; so does one whose phone half was interrupted,
-     * or one built before this client knew what "installed" meant. Without this
-     * the only way to get those tiles was to delete the region and download it
-     * again from scratch, re-running minutes of server work for data that was
-     * already sitting there.
-     */
+    /** "Save to phone" on an area the server has: the whole area. */
     fun storeExisting(row: RegionRow) {
-        val serverId = row.serverId
-        val bounds = row.bounds
-        if (serverId == null || bounds == null) {
-            // Reachable in principle — a region whose bbox this client could
-            // not parse — but silently doing nothing looked exactly like a
-            // broken button, found the hard way testing this on a real area.
-            _state.update { it.copy(error = "That area has no known bounds to save — try re-adding it.") }
-            return
-        }
-        viewModelScope.launch {
-            val region = runCatching { container.client().mapRegion(serverId) }
-                .getOrElse { e ->
-                    _state.update { it.copy(error = "Could not reach the server: ${e.message}") }
-                    return@launch
-                }
-            if (!region.isReady) {
-                _state.update {
-                    it.copy(error = "${region.name} is not finished building on the server yet.")
-                }
-                return@launch
-            }
-            PendingRegions.want(container.appContext, serverId)
-            storeOnPhone(region, bounds)
-        }
+        val bounds = row.bounds ?: return
+        val bbox = listOf(bounds.longitudeWest, bounds.latitudeSouth, bounds.longitudeEast, bounds.latitudeNorth)
+        viewModelScope.launch { saveOnPhone(row.name, bbox, row.serverId) }
     }
 
-    /**
-     * Take the area off this phone, or stop waiting to store it.
-     *
-     * Never the server's area: that is shared by every account and device on
-     * the server, and this used to delete it for all of them from a "Cancel"
-     * on a row that was only saving here. Deleting it is the web app's job.
-     */
-    fun delete(row: RegionRow) {
-        viewModelScope.launch {
-            row.storedId?.let { offline.delete(it) }
-            row.serverId?.let { id ->
-                // Settled first: download() checks this once the build is done,
-                // so a cancel while the server is still building is honoured.
-                PendingRegions.settled(container.appContext, id)
-                waiting.remove(id)
-            }
-            reload()
-        }
-    }
+    /** Take an area off this phone (or stop waiting for one). Never the server's. */
+    fun delete(row: RegionRow) = removeFromPhone(row)
 
-    /** Take the phone's copy off, leaving the area on the server. */
     fun removeFromPhone(row: RegionRow) {
-        val storedId = row.storedId ?: return
         viewModelScope.launch {
-            offline.delete(storedId)
+            row.areaId?.let { packs.removeArea(it) }
+            row.storedId?.let { runCatching { legacy.delete(it) } }
             row.serverId?.let { PendingRegions.settled(container.appContext, it) }
-            reload()
+            rebuild()
         }
+    }
+
+    fun retryFailed() {
+        packs.retryFailed()
+        PackJobs.schedule(container.appContext)
     }
 
     fun dismissMessages() {
         _state.update { it.copy(error = null, notice = null) }
     }
 
-    /**
-     * Poll the server until this region is built.
-     *
-     * Null when it fails or vanishes — the caller must not then start the
-     * phone's half, which is the whole reason this is awaited rather than
-     * fired alongside.
-     */
-    private suspend fun awaitServerReady(serverId: Int, framed: LatLngBounds? = null): MapRegion? {
-        while (true) {
-            val fetched = runCatching { container.client().mapRegion(serverId) }
-            val region = fetched.getOrNull()
-            when {
-                // Gone is not always failed. When a new area overlaps one the
-                // server already has, the server builds it and then folds it
-                // into the older area, deleting the new id (region_registry.
-                // merge_regions). This used to end the wait as a failure, so a
-                // download near any existing area was built on the server and
-                // never reached the phone. The area it went into is the
-                // installed one that now covers what was framed.
-                region == null && framed != null &&
-                    (fetched.exceptionOrNull() as? ServerErrorException)?.status == 404 ->
-                    return absorbedInto(framed)
-                // A blip in signal is not an answer: keep waiting.
-                region == null && fetched.exceptionOrNull() !is ServerErrorException -> {
-                    delay(pollMs)
-                    continue
-                }
-                region == null -> return null
-                region.isReady -> return region
-                region.isFailed -> return null
-                // A build with no worker left behind it will never finish, and
-                // waiting on it forever would leave the row spinning.
-                region.stale -> return null
-            }
-            reload()
-            delay(pollMs)
-        }
+    // ── Settings ─────────────────────────────────────────────────────────────
+
+    fun setWifiOnly(value: Boolean) {
+        packs.setSettings { it.copy(wifiOnly = value) }
+        // Rescheduled with the new network constraint.
+        PackJobs.schedule(container.appContext)
     }
 
-    /** The installed area that now covers [framed], after a merge took its own id. */
-    private suspend fun absorbedInto(framed: LatLngBounds): MapRegion? {
-        val server = runCatching { container.client().mapRegions() }.getOrNull() ?: return null
-        val center = framed.center
-        return server.filter { it.isReady }.firstOrNull { region ->
-            region.bbox.toBounds()?.contains(center) == true
-        }
+    fun setBudget(bytes: Long) {
+        packs.setSettings { it.copy(budgetBytes = bytes) }
+        packs.retryFailed()
+        PackJobs.schedule(container.appContext)
     }
 
     /**
-     * Run the phone's half for one region, start to finish.
-     *
-     * Guarded against running twice for the same area, because there are now
-     * three doors into it — a fresh download, the button on a server-only row,
-     * and the automatic pick-up of a request that outlived its process — and
-     * two of them firing together would have MapLibre downloading one region
-     * against two observers.
+     * Move the packs to another volume. Only while nothing is saved there yet:
+     * moving gigabytes between volumes is a job of its own, and a half-moved
+     * set is worse than asking the person to remove and save again.
      */
-    private suspend fun storeOnPhone(
-        region: MapRegion,
-        bounds: LatLngBounds,
-        /** What guards against a second run; the server id, or the absorbed one's. */
-        key: Int = region.id,
-        name: String = region.name,
-        /** Null for an area kept on the phone on its own (see [download]). */
-        serverRegionId: Int? = region.id,
-    ) {
-        // The guard belongs here rather than only at the download button,
-        // because there are three ways in and the other two carry the *server
-        // region's* box rather than a framed one. "Save to phone" on an area
-        // covering a state is one tap away from a million tile requests, and
-        // the whole area is by definition already served at full detail.
-        val cost = OfflineEstimate.weigh(bounds)
-        if (cost.level == OfflineEstimate.Level.BeyondPhone) {
-            PendingRegions.settled(container.appContext, key)
-            _state.update { it.copy(error = null, notice = beyondPhoneNotice(cost)) }
+    fun setVolume(index: Int) {
+        if (packs.state.value.packs.values.any { it.file != null }) {
+            _state.update { it.copy(error = "Remove the saved areas first, then choose where new ones go.") }
             return
         }
-        if (!storing.add(key)) return
-        MapDownloadService.start(container.appContext)
-        try {
-            val styleUrl = container.client().mapStyleUrl()
-            offline.download(
-                name = name,
-                serverRegionId = serverRegionId,
-                bounds = bounds,
-                styleUrl = styleUrl,
-            ).collect { progress ->
-                when (progress) {
-                    // Deliberately not a reload: MapLibre reports progress every
-                    // few dozen resources, and a listing request per report was
-                    // thousands of calls to the server over one download. The
-                    // poller already re-reads the local status on its own.
-                    is OfflineTiles.Progress.Running -> waiting.remove(key)
+        packs.setSettings { it.copy(volume = index) }
+        rebuild()
+    }
 
-                    is OfflineTiles.Progress.Waiting -> {
-                        waiting[key] = progress.reason
-                        _state.update { it.copy(rows = it.rows.map(::redecorate)) }
-                    }
+    // ── Updates ──────────────────────────────────────────────────────────────
 
-                    is OfflineTiles.Progress.Failed -> {
-                        waiting.remove(key)
-                        _state.update {
-                            it.copy(error = "Could not store it on the phone: ${progress.reason}")
-                        }
-                        reload()
-                    }
+    /** Fetch newer packs for every saved area (the person said yes). */
+    fun applyUpdates() {
+        viewModelScope.launch {
+            val client = container.client()
+            packs.state.value.areas.forEach { area ->
+                runCatching { packs.applyManifest(client.packManifest(area.bbox.joinToString(","))) }
+            }
+            _state.update { it.copy(updateBytes = 0) }
+            PackJobs.schedule(container.appContext)
+        }
+    }
 
-                    is OfflineTiles.Progress.Done -> {
-                        waiting.remove(key)
-                        PendingRegions.settled(container.appContext, key)
-                        reload()
+    private fun checkUpdatesIfDue() {
+        val now = System.currentTimeMillis()
+        if (now - lastUpdateCheck < UPDATE_CHECK_MS || packs.state.value.areas.isEmpty()) return
+        lastUpdateCheck = now
+        viewModelScope.launch {
+            _state.update { it.copy(checkingUpdates = true) }
+            val client = container.client()
+            val held = packs.state.value.packs
+            var bytes = 0L
+            packs.state.value.areas.forEach { area ->
+                val m = runCatching { client.packManifest(area.bbox.joinToString(",")) }.getOrNull() ?: return@forEach
+                m.cells.forEach { c ->
+                    c.layers.forEach { (layer, e) ->
+                        val p = held["${c.cell}/$layer"]
+                        if (p != null && p.version != e.version) bytes += e.bytes
                     }
                 }
+                m.shared.forEach { (name, e) ->
+                    val p = held["shared/$name"]
+                    if (p != null && p.version != e.version) bytes += e.bytes
+                }
             }
-            storeRoutingData(bounds)
-            // Best-effort and silent, unlike routing data: a missing offline
-            // search index costs nothing the user would notice as a failure —
-            // the search box just falls back to asking the server, which is
-            // exactly what it already did before this existed.
-            runCatching {
-                container.offlinePoiData().download(
-                    client = container.client(),
-                    west = bounds.longitudeWest,
-                    south = bounds.latitudeSouth,
-                    east = bounds.longitudeEast,
-                    north = bounds.latitudeNorth,
-                )
-            }
-            // As silent as the search index, and for the same reason: a gap
-            // here costs a tap that says nothing back rather than a wrong
-            // number, and the point-elevation feature already falls back to
-            // asking the server when it has signal to.
-            runCatching {
-                container.offlineDem().prefetch(
-                    client = container.client(),
-                    west = bounds.longitudeWest,
-                    south = bounds.latitudeSouth,
-                    east = bounds.longitudeEast,
-                    north = bounds.latitudeNorth,
-                )
-            }
-        } finally {
-            storing.remove(key)
+            _state.update { it.copy(checkingUpdates = false, updateBytes = bytes) }
         }
     }
 
+    // ── Internals ────────────────────────────────────────────────────────────
+
+    /** Bytes a manifest would add to what is held at the current versions. */
+    private fun newBytes(m: PackManifest): Long {
+        val held = packs.state.value.packs
+        fun extra(key: String, version: String, bytes: Long) =
+            if (held[key]?.current == true && held[key]?.version == version) 0 else bytes
+        return m.cells.sumOf { c -> c.layers.entries.sumOf { (l, e) -> extra("${c.cell}/$l", e.version, e.bytes) } } +
+            m.shared.entries.sumOf { (n, e) -> extra("shared/$n", e.version, e.bytes) }
+    }
+
     /**
-     * Bring down the routing segments for the area too.
+     * Fetch the manifest, check the budget, and queue the packs.
      *
-     * After the tiles rather than alongside, and non-fatal if it fails. The map
-     * is the thing the user asked for and it is complete without this; routing
-     * data is an extra tens of megabytes on a 5° grid that may already be on
-     * the phone from a neighbouring region. A failure here leaves a perfectly
-     * good offline map that falls back to server routing, so it is reported as
-     * a note and not as "the download failed".
+     * Refused, with the numbers, when the area would not fit: in the budget,
+     * or on the volume with its reserve kept free. A download that fails a
+     * third of the way through for want of space is the one thing worse than
+     * being told before it starts.
      */
-    private suspend fun storeRoutingData(bounds: LatLngBounds) {
-        val routing = container.offlineRoutingData()
-        routing.download(
-            client = container.client(),
-            west = bounds.longitudeWest,
-            south = bounds.latitudeSouth,
-            east = bounds.longitudeEast,
-            north = bounds.latitudeNorth,
-        ).collect { progress ->
-            when (progress) {
-                is OfflineRoutingData.Progress.Running ->
-                    _state.update { it.copy(routingProgress = progress.fraction) }
-                is OfflineRoutingData.Progress.Done ->
-                    _state.update { it.copy(routingProgress = null, routingBytes = progress.bytes) }
-                is OfflineRoutingData.Progress.Failed ->
-                    _state.update {
-                        it.copy(
-                            routingProgress = null,
-                            error = "The map is saved, but offline routing data " +
-                                "is not: ${progress.reason}",
-                        )
-                    }
+    private suspend fun saveOnPhone(name: String, bbox: List<Double>, serverId: Int?) {
+        val m = runCatching { container.client().packManifest(bbox.joinToString(",")) }.getOrElse { e ->
+            _state.update { it.copy(error = "Could not ask the server what to save: ${e.message}") }
+            return
+        }
+        val need = newBytes(m)
+        val room = minOf(packs.budget() - packs.state.value.usedBytes,
+                         packs.freeBytes() - packs.reserveBytes())
+        if (need > room) {
+            _state.update {
+                it.copy(error = "$name needs ${formatBytes(need)} and there is room for " +
+                    "${formatBytes(room.coerceAtLeast(0))}. Raise the storage limit or remove an area.")
+            }
+            return
+        }
+        packs.addArea(name, bbox, m, serverId)
+        serverId?.let { PendingRegions.settled(container.appContext, it) }
+        PackJobs.schedule(container.appContext, userInitiated = onScreen)
+        rebuild()
+    }
+
+    /** Requests whose server build has finished: save them now. */
+    private suspend fun pickUpRequests() {
+        val requests = PendingRegions.requests(container.appContext)
+        if (requests.isEmpty()) return
+        val byId = server.associateBy { it.id }
+        requests.forEach { (id, req) ->
+            val region = byId[id]
+            when {
+                region == null -> PendingRegions.settled(container.appContext, id)   // removed on the server
+                region.isReady -> saveOnPhone(req.name, req.bbox, id)
+                else -> Unit
             }
         }
     }
 
     /**
-     * Rebuild the list from both sides.
+     * Move areas saved the old way (MapLibre offline regions) to packs.
      *
-     * A region can exist on the server and not the phone (downloaded in the
-     * browser), or on the phone and not the server (removed there since). Both
-     * are legitimate and both are shown — joined on the server id the phone
-     * stores in its own metadata.
+     * Each becomes a saved area over the same box, fetched as packs on Wi-Fi.
+     * The old region keeps working until its packs are all in, and is deleted
+     * only then; once none are left, MapLibre's offline database goes too.
      */
-    private suspend fun reload() {
-        val stored = runCatching { offline.stored() }.getOrDefault(emptyList())
-        // Kept as a Result, not flattened to a list. An empty listing and a
-        // failed one look identical afterwards, and treating "the phone has no
-        // signal" as "the server has no regions" would erase the remembered
-        // coverage and then announce it as new again the moment the signal came
-        // back — a style reload every time somebody walked out of a tunnel.
+    private suspend fun migrateLegacy() {
+        val old = runCatching { legacy.stored() }.getOrDefault(emptyList())
+        if (old.isEmpty()) return
+        val areas = packs.state.value.areas
+        old.forEach { region ->
+            val b = region.bounds
+            val bbox = listOf(b.longitudeWest, b.latitudeSouth, b.longitudeEast, b.latitudeNorth)
+            val area = areas.firstOrNull { it.bbox == bbox }
+            when {
+                area == null -> runCatching {
+                    val m = container.client().packManifest(bbox.joinToString(","))
+                    packs.addArea(region.metadata.name, bbox, m, region.metadata.serverRegionId)
+                }
+                packs.state.value.packsFor(area).all { it.current } -> runCatching { legacy.delete(region.id) }
+            }
+        }
+    }
+
+    private suspend fun reloadServer() {
         val listing = runCatching { container.client().mapRegions() }
-        val server = listing.getOrDefault(emptyList())
-        val storedByServerId = stored.associateBy { it.metadata.serverRegionId }
-        val wanted = PendingRegions.wanted(container.appContext)
-
-        val rows = buildList {
-            server.forEach { region ->
-                val phone = storedByServerId[region.id]
-                val phase = phaseFor(region, phone, region.id in wanted)
-                add(
-                    RegionRow(
-                        name = region.name,
-                        serverId = region.id,
-                        storedId = phone?.id,
-                        bounds = region.bbox.toBounds() ?: phone?.bounds,
-                        shape = region.shapeGeoJson,
-                        phase = phase,
-                        coverage = coverageOf(phase, serverReady = region.isReady),
-                        requestedHere = region.id in wanted,
-                    )
-                )
+        listing.onSuccess { list ->
+            server = list
+            val installed = list.filter { it.isReady }.map { it.id }.toSet()
+            if (installed != PendingRegions.lastServerCoverage(container.appContext)) {
+                PendingRegions.rememberServerCoverage(container.appContext, installed)
+                onCoverageChanged()
             }
-            stored.filter { it.metadata.serverRegionId == null ||
-                server.none { region -> region.id == it.metadata.serverRegionId } }
-                .forEach { orphan ->
-                    val phase = when {
-                        orphan.complete -> DownloadPhase.Ready(orphan.bytes)
-                        orphan.downloading -> DownloadPhase.Storing(orphan.fraction, orphan.bytes)
-                        else -> DownloadPhase.Paused(orphan.fraction, orphan.bytes)
-                    }
-                    add(
-                        RegionRow(
-                            name = orphan.metadata.name,
-                            storedId = orphan.id,
-                            bounds = orphan.bounds,
-                            phase = phase,
-                            coverage = coverageOf(phase, serverReady = false),
-                        )
+        }
+        rebuild()
+    }
+
+    /** The list, from the packs on this phone and the areas on the server. */
+    private fun rebuild() {
+        val snap = packs.state.value
+        val requests = PendingRegions.requests(container.appContext)
+        val rows = buildList {
+            snap.areas.forEach { area ->
+                val mine = snap.packsFor(area)
+                val total = mine.sumOf { it.bytes }.coerceAtLeast(1)
+                val done = mine.sumOf { if (it.current) it.fileBytes else it.done }
+                val failed = mine.firstOrNull { it.state == PackStore.State.FAILED }
+                val phase = when {
+                    mine.isNotEmpty() && mine.all { it.current } -> DownloadPhase.Ready(mine.sumOf { it.fileBytes })
+                    failed != null -> DownloadPhase.Failed(failed.error ?: "Could not save part of this area")
+                    else -> DownloadPhase.Storing(
+                        (done.toFloat() / total).coerceIn(0f, 1f), done,
+                        waiting = if (snap.settings.wifiOnly && !onUnmeteredNetwork()) "Waiting for Wi-Fi" else null,
                     )
                 }
+                add(RegionRow(
+                    name = area.name, phase = phase, serverId = area.serverId,
+                    bounds = area.bbox.toBounds(), coverage = coverageOf(phase, serverReady = true),
+                    areaId = area.id,
+                ))
+            }
+            val savedServerIds = snap.areas.mapNotNull { it.serverId }.toSet()
+            server.forEach { region ->
+                val requested = region.id in requests
+                if (region.id in savedServerIds && !requested) return@forEach
+                val phase = when {
+                    region.isFailed -> DownloadPhase.Failed(region.error ?: "The server could not build this area")
+                    region.stale -> DownloadPhase.Failed("The server stopped working on this area")
+                    region.isWorking -> DownloadPhase.Extracting(percentToFraction(region.progress), region.detail)
+                    else -> DownloadPhase.ServerOnly
+                }
+                add(RegionRow(
+                    name = requests[region.id]?.name ?: region.name, phase = phase, serverId = region.id,
+                    bounds = region.bbox.toBounds(), shape = region.shapeGeoJson,
+                    coverage = coverageOf(phase, serverReady = region.isReady),
+                    requestedHere = requested,
+                ))
+            }
         }
         _state.update {
             it.copy(
                 rows = rows,
-                storedBytes = stored.sumOf { s -> s.bytes },
-                routingBytes = runCatching {
-                    container.offlineRoutingData().storedBytes()
-                }.getOrDefault(0),
+                storedBytes = snap.usedBytes,
+                usedBytes = snap.usedBytes,
+                budgetBytes = packs.budget(),
+                freeBytes = packs.freeBytes(),
+                volumes = packs.volumes().size,
+                volume = snap.settings.volume,
+                wifiOnly = snap.settings.wifiOnly,
+                routingBytes = runCatching { container.offlineRoutingData().storedBytes() }.getOrDefault(0),
             )
         }
-
-        if (listing.isSuccess) {
-            noticeCoverage(server)
-            pickUpUnfinished(server, storedByServerId, wanted)
-        }
     }
 
-    /**
-     * Start the phone's half for an area that was asked for and never got one.
-     *
-     * The recovery half of [PendingRegions]. If the process died during the
-     * server's extraction — which takes long enough that this is ordinary
-     * rather than unlucky — nothing else would ever start the pull, and the
-     * area would sit on the server looking like a finished download.
-     */
-    private fun pickUpUnfinished(
-        server: List<MapRegion>,
-        phoneByServerId: Map<Int?, OfflineTiles.Stored>,
-        wanted: Set<Int>,
-    ) {
-        server.forEach { region ->
-            if (region.id !in wanted || !region.isReady) return@forEach
-            if (region.id in storing) return@forEach
-            val phone = phoneByServerId[region.id]
-            if (phone?.complete == true) {
-                PendingRegions.settled(container.appContext, region.id)
-                return@forEach
-            }
-            // Already moving under its own steam: MapLibre is downloading it
-            // after a resume, and a second observer would add nothing.
-            if (phone?.downloading == true) return@forEach
-            val bounds = region.bbox.toBounds() ?: phone?.bounds ?: return@forEach
-            viewModelScope.launch { storeOnPhone(region, bounds) }
-        }
-    }
+    private fun onUnmeteredNetwork(): Boolean = runCatching {
+        val cm = container.appContext.getSystemService(android.net.ConnectivityManager::class.java)
+        val caps = cm.getNetworkCapabilities(cm.activeNetwork)
+        caps?.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_NOT_METERED) == true
+    }.getOrDefault(true)
 
-    /**
-     * Notice when the ground the server serves at full detail has changed.
-     *
-     * Compared against what this phone last saw rather than against the last
-     * poll, so an area cut from the browser while the app was closed counts as
-     * a change the first time the app looks again. That is the case worth
-     * catching: the phone is then holding a style with no contour or overlay
-     * source in it and a cache full of "there is nothing there" for exactly the
-     * ground that just gained detail.
-     */
-    private fun noticeCoverage(server: List<MapRegion>) {
-        val installed = server.filter { it.isReady }.map { it.id }.toSet()
-        val previous = PendingRegions.lastServerCoverage(container.appContext)
-        if (installed == previous) return
-        PendingRegions.rememberServerCoverage(container.appContext, installed)
-        coverageChanged()
-    }
-
-    /** Refetch the style, and stop believing the old answers about those tiles. */
-    private fun coverageChanged() {
-        onCoverageChanged()
-        viewModelScope.launch { offline.invalidateAmbientCache() }
-    }
-
-    /** Re-apply the current retry notes to rows already built. */
-    private fun redecorate(row: RegionRow): RegionRow {
-        val phase = row.phase
-        if (phase !is DownloadPhase.Storing) return row
-        return row.copy(phase = phase.copy(waiting = row.serverId?.let(waiting::get)))
-    }
-
-    private fun phaseFor(
-        region: MapRegion,
-        phone: OfflineTiles.Stored?,
-        wanted: Boolean,
-    ): DownloadPhase = when {
-        region.isFailed -> DownloadPhase.Failed(region.error ?: "The server could not build this area")
-        region.stale -> DownloadPhase.Failed("The server stopped working on this area")
-        // The server counts in percent and this phase carries a fraction. Handed
-        // over undivided, every download past 1% drew as a full bar — the work
-        // looked finished the moment it started, for the several minutes it
-        // actually took.
-        region.isWorking ->
-            DownloadPhase.Extracting(percentToFraction(region.progress), region.detail)
-        // Server done. Whether it is stored here is now the phone's answer, and
-        // an area the phone was never asked to hold is not an unfinished
-        // download — it is one the server covers, which since the server serves
-        // full detail over the network is a perfectly good state to be in.
-        phone == null -> if (wanted) DownloadPhase.Storing(0f, 0) else DownloadPhase.ServerOnly
-        phone.complete -> DownloadPhase.Ready(phone.bytes)
-        phone.downloading ->
-            DownloadPhase.Storing(phone.fraction, phone.bytes, waiting[region.id])
-        else -> DownloadPhase.Paused(phone.fraction, phone.bytes)
-    }
-
-    private fun startPollingIfBusy() {
+    private fun startPollingIfBuilding() {
         if (poller?.isActive == true) return
         poller = viewModelScope.launch {
-            // Any unfinished row, not just server-side ones. Stopping at the
-            // hand-off left the phone's own progress bar frozen at whatever it
-            // read when the server finished — the half that actually takes the
-            // time on a slow connection.
-            while (_state.value.rows.any { it.phase is DownloadPhase.Extracting ||
-                    it.phase is DownloadPhase.Storing }) {
-                delay(pollMs)
-                reload()
+            while (server.any { it.isWorking } || PendingRegions.requests(container.appContext).isNotEmpty()) {
+                delay(if (onScreen) POLL_MS else BACKGROUND_POLL_MS)
+                reloadServer()
+                pickUpRequests()
             }
         }
     }
 
-    private fun beyondPhoneNotice(cost: OfflineEstimate.Weight): String =
-        "That area is too big to store on the phone — about " +
-            "${cost.resources / 1000}k tiles. The server holds it either way, " +
-            "and serves it at full detail whenever you have signal."
-
     private companion object {
-        /**
-         * Slow enough not to hammer a server doing heavy work, fast enough that
-         * a progress bar moves. The pipeline reports in coarse stages anyway.
-         */
+        /** Slow enough not to hammer a server doing heavy work, fast enough that a bar moves. */
         const val POLL_MS = 3000L
-
-        /**
-         * The same poll, once the screen nobody is looking at.
-         *
-         * A region download is tens of minutes of tippecanoe, and the phone is
-         * in a pocket for most of it. The poll cannot simply stop — it is what
-         * hands the download over to the phone's own tile pull when the server
-         * finishes — but at three seconds it holds the radio up roughly twenty
-         * times an hour for a progress bar on a screen that is off. Waking a
-         * cellular radio is among the most expensive things a phone does, and it
-         * stays up for seconds after each request whether or not there was
-         * anything to say. Ten times fewer wakeups; the download still lands.
-         */
+        /** The same poll with the screen off: the radio is expensive to wake. */
         const val BACKGROUND_POLL_MS = 30_000L
-
-        /** Long enough to outlast a drag, short enough not to feel laggy. */
         const val ESTIMATE_DEBOUNCE_MS = 400L
+        /** Saved areas are checked for newer packs at most this often. */
+        const val UPDATE_CHECK_MS = 6 * 3600_000L
     }
 }
 
@@ -934,7 +638,7 @@ internal fun LatLngBounds.toBbox(): String =
  * continent is its own kind of slow.
  *
  * This bounds the *server's* work. What the phone can hold is a much smaller
- * number and a different calculation — see [OfflineEstimate].
+ * number and a different calculation — see [PackStore.budget].
  *
  * The side cap survives as a much looser sanity bound, so a band one degree
  * tall wrapped most of the way round the planet is still refused.
@@ -948,10 +652,11 @@ internal fun LatLngBounds.tooLargeToDownload(): Boolean {
 }
 
 /**
- * Square degrees. Around 100 is several states — two such states together are
- * roughly 60 — which is the case this exists to allow.
+ * Square degrees. About 1,500 is the contiguous United States: with map packs
+ * the phone holds whatever its owner gives storage to, so this only stops a
+ * box framed at world zoom from setting the server extracting the planet.
  */
-private const val MAX_REGION_SQ_DEGREES = 100.0
+private const val MAX_REGION_SQ_DEGREES = 1500.0
 
 /** A sanity bound on either side, not a size limit. */
-private const val MAX_REGION_DEGREES = 20.0
+private const val MAX_REGION_DEGREES = 60.0

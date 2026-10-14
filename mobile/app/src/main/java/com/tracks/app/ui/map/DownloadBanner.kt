@@ -91,8 +91,8 @@ internal fun phaseDetail(phase: DownloadPhase): String = when (phase) {
         phase.waiting != null -> "${phase.waiting} · ${megabytes(phase.bytes)}"
         phase.bytes > 0 -> "Saving to this phone · ${megabytes(phase.bytes)}"
         // It used to say "keep the app open", which was the honest instruction
-        // at the time and is no longer true: the pull runs under a foreground
-        // service now and survives the screen going off. See MapDownloadService.
+        // at the time and is no longer true: packs are fetched by a background
+        // job that survives the screen going off. See map/packs/PackJobs.
         else -> "Saving to this phone…"
     }
     is DownloadPhase.Paused -> "Paused · ${megabytes(phase.bytes)}"

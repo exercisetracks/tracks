@@ -81,7 +81,7 @@ Each stage is shippable on its own and leaves the app working.
 - [x] F18: contours rebuild into a temp file, then replace.
 - [x] Web app: deleting a server area asks for confirmation, admin only (the server refuses non-admins).
 
-### Stage 2: server robustness
+### Stage 2: server robustness — done (74c0143)
 
 - The DB-backed build queue with heartbeat (F12, F14, F15, F23). "Stale"
   becomes a dead heartbeat, not 20 quiet minutes.
@@ -92,7 +92,14 @@ Each stage is shippable on its own and leaves the app working.
   cover for boxes crossing borders, and a monthly refresh (F21). Disk-space
   preflight (F22).
 
-### Stage 3: masters only
+### Stage 3: masters only — done (74c0143)
+
+One deviation, for a reason found while building it: the overlay keeps one
+part per area (about 15% of a map's size). Its tiles mix features from
+neighbouring areas, so removing an area needs to know which features were its.
+Each part is cut to the ground its area *owns* (its box minus what installed
+areas covered), so parts never overlap and nothing is drawn twice. The other
+85% — basemap detail, terrain, contours — is masters only.
 
 - Build → publish → delete parts, delete by rebuild-without, and the k-way
   master merge. Tile counts come from headers, with no `pmtiles cluster` pass
@@ -100,7 +107,7 @@ Each stage is shippable on its own and leaves the app working.
 - Physical merging is removed. Areas are registry outlines, grouped for display.
 - A one-time migration publishes existing regions' parts and deletes them.
 
-### Stage 4: packs on the server
+### Stage 4: packs on the server — done (8cce8bf)
 
 - `GET /api/maps/packs/manifest?bbox=…` with the cell, layers, bytes, sha256 and version.
 - The pack builder, the size-capped LRU cache, and Caddy `file_server` with
@@ -109,7 +116,10 @@ Each stage is shippable on its own and leaves the app working.
   overlay z6–7.
 - A style-assets bundle (glyphs and sprite).
 
-### Stage 5: packs on the phone
+### Stage 5: packs on the phone — built, unverified on a device
+
+The registry is an atomic JSON file rather than SQLDelight: it is Android-only
+bookkeeping, and a file written whole and renamed needs no schema migration.
 
 - **Registry and areas** in SQLDelight, with a schema bump, migration and
   snapshot. The sheet lists the user's areas; coverage outlines come from the
@@ -130,6 +140,11 @@ Each stage is shippable on its own and leaves the app working.
   are removed.
 
 ### Stage 6: speed
+
+Measured after stages 2-5: reading a small area out of a cached state
+extract takes about ten seconds, so pre-splitting the OSM extracts would save
+little and is not done. Contours are retraced only along the border (the
+ring in map_builds), since areas are no longer merged.
 
 - The OSM extract is pre-split into a grid, so a download reads only its cells.
 - Contours are retraced only along the border.

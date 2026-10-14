@@ -48,14 +48,20 @@ class RegionLimitTest {
         assertFalse(box(-165.0, 35.0, -150.0, 37.0).tooLargeToDownload())
     }
 
+    /** Map packs hold what storage allows: a whole country is a fair ask now. */
+    @Test
+    fun `a whole country fits`() {
+        assertFalse(box(-125.0, 25.0, -66.0, 49.0).tooLargeToDownload())
+    }
+
     @Test
     fun `a continent is refused`() {
-        assertTrue(box(-125.0, 25.0, -66.0, 49.0).tooLargeToDownload())
+        assertTrue(box(-170.0, 10.0, -50.0, 72.0).tooLargeToDownload())
     }
 
     /** Area alone would let this through; the side bound is why it does not. */
     @Test
     fun `a thin band round the planet is refused`() {
-        assertTrue(box(-180.0, 40.0, -60.0, 40.5).tooLargeToDownload())
+        assertTrue(box(-180.0, 40.0, 0.0, 40.5).tooLargeToDownload())
     }
 }

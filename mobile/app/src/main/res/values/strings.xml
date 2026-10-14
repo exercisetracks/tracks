@@ -14,7 +14,7 @@
     <string name="watch_sync_title">Syncing watch</string>
     <string name="watch_sync_connecting">Connecting…</string>
 
-    <!-- Offline map downloads. See MapDownloadService. -->
+    <!-- Offline map downloads. See map/packs/PackJobs. -->
     <string name="backup_progress_channel">Backups</string>
     <string name="backup_progress_channel_description">Progress while a backup is being written, and how it ended</string>
     <string name="backup_progress_title">Backing up</string>

@@ -24,24 +24,33 @@ import android.content.Context
  * area and erased when the phone actually holds it, which makes the pair of
  * them a promise rather than a coincidence of timing.
  *
- * Server ids rather than names or boxes: the id is the thing both halves agree
- * on, and it is what the phone's own region metadata is keyed by.
+ * Keyed by the server's id, which is what the build is watched by, and
+ * carrying the box and name the person framed: with packs the phone saves
+ * exactly what was framed (see map/packs), which may be a small piece of a
+ * large server area.
  */
 internal object PendingRegions {
 
-    /** Areas whose phone copy has been asked for and not yet finished. */
-    fun wanted(context: Context): Set<Int> =
-        prefs(context).getStringSet(KEY_WANTED, emptySet())
-            .orEmpty()
-            .mapNotNull(String::toIntOrNull)
-            .toSet()
+    data class Request(val name: String, val bbox: List<Double>)
 
-    fun want(context: Context, serverRegionId: Int) {
-        write(context, wanted(context) + serverRegionId)
+    /** Areas whose phone copy has been asked for and not yet started. */
+    fun requests(context: Context): Map<Int, Request> = runCatching {
+        val o = org.json.JSONObject(prefs(context).getString(KEY_REQUESTS, "{}") ?: "{}")
+        o.keys().asSequence().associate { k ->
+            val r = o.getJSONObject(k)
+            k.toInt() to Request(r.getString("name"),
+                                 r.getJSONArray("bbox").let { b -> (0 until b.length()).map(b::getDouble) })
+        }
+    }.getOrDefault(emptyMap())
+
+    fun wanted(context: Context): Set<Int> = requests(context).keys
+
+    fun want(context: Context, serverRegionId: Int, name: String, bbox: List<Double>) {
+        write(context, requests(context) + (serverRegionId to Request(name, bbox)))
     }
 
     fun settled(context: Context, serverRegionId: Int) {
-        write(context, wanted(context) - serverRegionId)
+        write(context, requests(context) - serverRegionId)
     }
 
     /**
@@ -67,16 +76,18 @@ internal object PendingRegions {
             .apply()
     }
 
-    private fun write(context: Context, ids: Set<Int>) {
-        prefs(context).edit()
-            .putStringSet(KEY_WANTED, ids.map(Int::toString).toSet())
-            .apply()
+    private fun write(context: Context, requests: Map<Int, Request>) {
+        val o = org.json.JSONObject()
+        requests.forEach { (id, r) ->
+            o.put(id.toString(), org.json.JSONObject().put("name", r.name).put("bbox", org.json.JSONArray(r.bbox)))
+        }
+        prefs(context).edit().putString(KEY_REQUESTS, o.toString()).apply()
     }
 
     private fun prefs(context: Context) =
         context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
     private const val PREFS = "tracks_offline_maps"
-    private const val KEY_WANTED = "wanted_region_ids"
+    private const val KEY_REQUESTS = "requested_areas"
     private const val KEY_COVERAGE = "server_coverage_ids"
 }

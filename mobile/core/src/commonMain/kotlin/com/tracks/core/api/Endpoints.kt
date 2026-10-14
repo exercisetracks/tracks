@@ -52,6 +52,8 @@ object Endpoints {
     const val REGION_DOWNLOAD = "/maps/regions/download"
     const val REGION_ESTIMATE = "/maps/regions/estimate"
     const val REGION_SUGGEST_NAME = "/maps/regions/suggest-name"
+    // Map packs: the files a phone stores an area in (see PackManifest).
+    const val PACK_MANIFEST = "/maps/packs/manifest"
 
     // Inspecting a point, finding a place, and snapping a line to real trails.
     const val MAP_POINT = "/maps/point"
@@ -270,7 +272,7 @@ object Endpoints {
         SYNC_PUSH, SYNC_PULL, SYNC_BLOB, ACTIVITY_DETAIL, ACTIVITY_TRACK, ACTIVITY_LAPS,
         HEATMAP, TRACKS_GEOJSON, MAP_STYLE, MAP_BACKDROP,
         REGIONS, REGION_BY_ID, REGION_PROGRESS, REGION_DOWNLOAD,
-        REGION_ESTIMATE, REGION_SUGGEST_NAME,
+        REGION_ESTIMATE, REGION_SUGGEST_NAME, PACK_MANIFEST,
         MAP_POINT, POI_SEARCH, POI_OFFLINE, ROUTE_SNAP,
         ROUTE_ELEVATION,
         COURSES, WAYPOINTS,

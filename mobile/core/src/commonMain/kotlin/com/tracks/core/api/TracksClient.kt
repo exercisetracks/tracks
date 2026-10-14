@@ -22,6 +22,7 @@ import io.ktor.client.request.post
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
+import io.ktor.client.request.prepareGet
 import io.ktor.client.statement.bodyAsChannel
 import io.ktor.client.statement.bodyAsText
 import io.ktor.utils.io.readAvailable
@@ -1516,6 +1517,63 @@ class TracksClient(
             total += read
             onProgress(total)
         }
+    }
+
+    /** The packs that would hold `bbox` offline, and their sizes. */
+    suspend fun packManifest(bbox: String): PackManifest = request { token ->
+        http.get(url(Endpoints.PACK_MANIFEST)) {
+            bearer(token)
+            parameter("bbox", bbox)
+        }
+    }
+
+    /**
+     * Stream one map pack into [sink], starting at byte [from].
+     *
+     * Streamed with `prepareGet`/`execute`: a plain `get` reads the whole body
+     * into memory first, which for a pack of several hundred megabytes is an
+     * out-of-memory crash, not a download. With [from] > 0 the request carries
+     * `Range` and, given [ifRange] (the ETag the partial file came from),
+     * `If-Range`, so the server answers 206 with the rest only if the pack is
+     * still the same bytes, and 200 with all of it otherwise — the caller
+     * checks [PackResponse.status] to know whether to append or start over.
+     * A 409 means the pack was rebuilt: refetch the manifest.
+     */
+    suspend fun downloadPack(
+        path: String,
+        from: Long,
+        ifRange: String?,
+        /** Told the status before any body: 200 means start the file over, 206 append. */
+        onStatus: (status: Int, etag: String?) -> Unit = { _, _ -> },
+        sink: suspend (ByteArray, Int) -> Unit,
+    ): PackResponse {
+        suspend fun attempt(token: String): PackResponse? =
+            http.prepareGet(url(path)) {
+                bearer(token)
+                if (from > 0) {
+                    header(HttpHeaders.Range, "bytes=$from-")
+                    if (ifRange != null) header(HttpHeaders.IfRange, ifRange)
+                }
+            }.execute { resp ->
+                val code = resp.status.value
+                if (code == 401) return@execute null
+                val answer = PackResponse(code, resp.headers[HttpHeaders.ETag], resp.headers[HttpHeaders.ContentLength]?.toLongOrNull())
+                if (code != 200 && code != 206) return@execute answer
+                onStatus(code, resp.headers[HttpHeaders.ETag])
+                val channel = resp.bodyAsChannel()
+                val buffer = ByteArray(DOWNLOAD_CHUNK)
+                while (!channel.isClosedForRead) {
+                    val read = channel.readAvailable(buffer, 0, buffer.size)
+                    if (read <= 0) continue
+                    sink(buffer, read)
+                }
+                answer
+            }
+        attempt(token())?.let { return it }
+        // Expired token: recover once, as every other call does.
+        val probe = authorized { token -> http.get(url(Endpoints.PACK_MANIFEST)) { bearer(token); parameter("bbox", "0,0,0.0001,0.0001") } }
+        if (probe.status == HttpStatusCode.Unauthorized) throw NotAuthenticatedException()
+        return attempt(token()) ?: throw NotAuthenticatedException()
     }
 
     /**

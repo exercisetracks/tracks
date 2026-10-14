@@ -64,6 +64,7 @@ class TracksApplication : Application() {
         GBApplication.init(this)
         raiseMapTileConcurrency()
         container = AppContainer(this)
+        container.watchPacksForConnectivity()
         // Read the screens' last figures now, so the first screen has them.
         container.snapshots
         // Enqueued unconditionally: the worker itself decides whether there is
@@ -139,7 +140,15 @@ class TracksApplication : Application() {
             maxRequests = 48
             maxRequestsPerHost = 24
         }
-        HttpRequestUtil.setOkHttpClient(OkHttpClient.Builder().dispatcher(dispatcher).build())
+        HttpRequestUtil.setOkHttpClient(
+            OkHttpClient.Builder()
+                .dispatcher(dispatcher)
+                // Saved map packs answer first; see PackInterceptor.
+                .addInterceptor(com.tracks.app.map.packs.PackInterceptor {
+                    if (::container.isInitialized) container.packs else null
+                })
+                .build()
+        )
     }
 }
 
@@ -857,6 +866,46 @@ class AppContainer(private val context: Context) {
 
     fun offlineTiles(): com.tracks.app.map.OfflineTiles = tiles
 
+    /** The map packs on this phone — see [com.tracks.app.map.packs.PackStore]. */
+    val packs: com.tracks.app.map.packs.PackStore by lazy {
+        com.tracks.app.map.packs.PackStore(context).also { it.verifyFiles() }
+    }
+
+    val packDownloader: com.tracks.app.map.packs.PackDownloader by lazy {
+        com.tracks.app.map.packs.PackDownloader(
+            packs,
+            { url, from, ifRange, onStatus, sink -> client().downloadPack(url, from, ifRange, onStatus, sink) },
+        ) { pack ->
+            // Rebuilt on the server since its manifest: ask again for every
+            // area that needs it, which queues the new version.
+            val s = packs.state.value
+            val cell = com.tracks.app.map.packs.PackStore.cellOf(pack.key)
+            s.areas.filter { pack.key.startsWith("shared/") || cell in it.cells }.forEach { area ->
+                packs.applyManifest(client().packManifest(area.bbox.joinToString(",")))
+            }
+        }
+    }
+
+    /**
+     * MapLibre holds requests back while it believes the phone is offline,
+     * which would keep them from ever reaching the packs. Once any pack is
+     * held, it is told the network is there; a request no pack answers then
+     * fails at once instead of waiting, which is what offline should look like.
+     */
+    private val packScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + Dispatchers.IO)
+
+    fun watchPacksForConnectivity() {
+        packScope.launch {
+            packs.state.collect { s ->
+                if (s.packs.values.any { it.file != null }) {
+                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                        org.maplibre.android.MapLibre.setConnected(true)
+                    }
+                }
+            }
+        }
+    }
+
     /**
      * The phone's routing data, and the engine that reads it.
      *
@@ -889,7 +938,7 @@ class AppContainer(private val context: Context) {
 
     /** Point elevation with no server to ask. Lazy for the same reason as [offlinePoi]. */
     private val dem: com.tracks.app.map.OfflineDem by lazy {
-        com.tracks.app.map.OfflineDem(context)
+        com.tracks.app.map.OfflineDem(context) { packs }
     }
 
     fun offlineDem(): com.tracks.app.map.OfflineDem = dem

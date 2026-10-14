@@ -11812,6 +11812,107 @@
         ]
       }
     },
+    "/maps/packs/manifest": {
+      "get": {
+        "tags": [
+          "maps"
+        ],
+        "summary": "Pack Manifest",
+        "operationId": "pack_manifest_maps_packs_manifest_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "bbox",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Bbox"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/maps/packs/{key}": {
+      "get": {
+        "tags": [
+          "maps"
+        ],
+        "summary": "Pack",
+        "operationId": "pack_maps_packs__key__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Key"
+            }
+          },
+          {
+            "name": "v",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "The version from the manifest",
+              "title": "V"
+            },
+            "description": "The version from the manifest"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/maps/poi/search": {
       "get": {
         "tags": [
@@ -11866,6 +11967,18 @@
               "title": "Bbox"
             },
             "description": "Viewport bounds: w,s,e,n \u2014 biases results toward visible area"
+          },
+          {
+            "name": "in_view",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "A category query answers with everything of that kind inside bbox",
+              "default": false,
+              "title": "In View"
+            },
+            "description": "A category query answers with everything of that kind inside bbox"
           }
         ],
         "responses": {
@@ -12425,7 +12538,7 @@
           "maps"
         ],
         "summary": "Point Hourly",
-        "description": "The hour-by-hour forecast for one day at one point.\n\nSplit from ``/point`` rather than folded into it because the two are asked\nat very different rates: every tap on the map fetches point info, and almost\nnone of those taps go on to open a day. Carrying 168 hourly readings in that\nresponse would multiply the cost of the common case several times over to\npre-answer a question usually never asked.\n\n``forecast_days`` is stretched to reach the requested date because\nOpen-Meteo counts days forward from today rather than taking a range, and\nthe daily strip this is opened from runs a week out.\n\nThe phone now asks Open-Meteo itself (mobile core/weather/OpenMeteo.kt);\nthis stays for phones on releases from before that.",
+        "description": "The hour-by-hour forecast for one day at one point.\n\nSplit from ``/point`` rather than folded into it because the two are asked\nat very different rates: every tap on the map fetches point info, and almost\nnone of those taps go on to open a day. Carrying 168 hourly readings in that\nresponse would multiply the cost of the common case several times over to\npre-answer a question usually never asked.\n\n``forecast_days`` is stretched to reach the requested date because\nOpen-Meteo counts days forward from today rather than taking a range, and\nthe daily strip this is opened from runs a week out.\n\nThe phone now asks Open-Meteo itself (mobile core/weather/OpenMeteo.kt);\nthis serves the web app's point panel, and phones on releases from before\nthat.",
         "operationId": "point_hourly_maps_point_hourly_get",
         "security": [
           {
@@ -15474,17 +15587,6 @@
             ],
             "title": "Color"
           },
-          "sport": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Sport"
-          },
           "source": {
             "anyOf": [
               {
@@ -15506,6 +15608,28 @@
             "type": "boolean",
             "title": "Load To Device",
             "default": false
+          },
+          "folder_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Folder Id"
+          },
+          "activity_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Activity Id"
           },
           "coords": {
             "anyOf": [
@@ -15533,7 +15657,8 @@
           }
         },
         "type": "object",
-        "title": "CourseCreate"
+        "title": "CourseCreate",
+        "description": "A new track. No sport: choosing one was not a useful step, so the\ncolumn is filled internally \u2014 the traced activity's sport, or hiking \u2014\nwhere course files and turn checks still read it. A client that still\nsends one is ignored rather than refused."
       },
       "CourseMerge": {
         "properties": {
@@ -15558,17 +15683,6 @@
               }
             ],
             "title": "Color"
-          },
-          "sport": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Sport"
           },
           "sources": {
             "items": {
@@ -15617,17 +15731,6 @@
               }
             ],
             "title": "Color"
-          },
-          "sport": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Sport"
           },
           "notes": {
             "anyOf": [
@@ -23069,6 +23172,17 @@
             "type": "boolean",
             "title": "Load To Device",
             "default": false
+          },
+          "folder_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Folder Id"
           }
         },
         "type": "object",
@@ -23172,6 +23286,22 @@
               }
             ],
             "title": "Load To Device"
+          },
+          "folder_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Folder Id"
+          },
+          "clear_folder": {
+            "type": "boolean",
+            "title": "Clear Folder",
+            "default": false
           }
         },
         "type": "object",

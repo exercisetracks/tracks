@@ -39,7 +39,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.tracks.app.map.OfflineEstimate
 import com.tracks.app.ui.components.ButtonRow
 import com.tracks.app.ui.components.DangerButton
 import com.tracks.app.ui.components.NeutralButton
@@ -101,6 +100,8 @@ fun RegionsSheet(
 
             HorizontalDivider()
             SavedAreas(vm, state, onShowOnMap)
+            HorizontalDivider()
+            StorageSettings(vm, state)
 
             state.notice?.let { notice ->
                 Text(
@@ -165,20 +166,17 @@ fun SelectionBar(
                 else MaterialTheme.colorScheme.onSurface,
             )
 
-            // The second line is the phone's own answer, and it is the one that
-            // decides. The server's byte count says what the *server* must cut;
-            // the phone fetches every tile individually, and the gap between
-            // those two numbers is what used to turn a reasonable-looking box
-            // into a download that ran for an afternoon and got deleted.
-            phoneCostLine(state)?.let { line ->
+            // Whether it fits, said before the tap: in the storage limit the
+            // person chose, with the volume's reserve kept free.
+            state.estimateBytes?.let { bytes ->
+                val room = (state.budgetBytes - state.usedBytes).coerceAtLeast(0)
                 Text(
-                    line,
+                    if (bytes > room) "More than your offline-map limit leaves room for " +
+                        "(${formatBytes(room)}). Raise the limit in Offline maps, or remove an area."
+                    else "Room for it: ${formatBytes(room)} left of your ${formatBytes(state.budgetBytes)} limit.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = if (state.phoneCost?.level == OfflineEstimate.Level.BeyondPhone) {
-                        MaterialTheme.colorScheme.error
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    },
+                    color = if (bytes > room) MaterialTheme.colorScheme.error
+                    else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
 
@@ -198,7 +196,7 @@ fun SelectionBar(
                     // will serve it at full detail — but nothing is coming down
                     // to this phone, and a button that says "Download" there is
                     // a promise the app cannot keep.
-                    if (state.phoneCost?.level == OfflineEstimate.Level.BeyondPhone) "Build on server" else "Download",
+                    "Download",
                     onClick = {
                         bounds?.let {
                             vm.download(it, name.ifBlank { state.suggestedName ?: "Saved area" })
@@ -288,6 +286,7 @@ private fun SavedAreas(
                     onSaveToPhone = { vm.storeExisting(row) },
                     onRemoveFromPhone = { vm.removeFromPhone(row) },
                     onShowOnMap = { onShowOnMap(row) },
+                    onRetry = { vm.retryFailed() },
                 )
             }
         }
@@ -301,6 +300,7 @@ private fun RegionRowItem(
     onSaveToPhone: () -> Unit,
     onRemoveFromPhone: () -> Unit,
     onShowOnMap: () -> Unit,
+    onRetry: () -> Unit = {},
 ) {
     // The whole row, not a button on it. Names like "Oregon" and "Hood River"
     // tell you very little about which rectangle is which — and nothing about
@@ -339,6 +339,9 @@ private fun RegionRowItem(
                 row.phase is DownloadPhase.Paused ->
                     TonalButton("Resume", onClick = onSaveToPhone, small = true)
 
+                row.phase is DownloadPhase.Failed && row.areaId != null ->
+                    TonalButton("Retry", onClick = onRetry, small = true)
+
                 // Stored here and on the server. Freeing the phone's copy is a
                 // different decision from giving the area up altogether, now
                 // that the server serves it at full detail either way.
@@ -352,7 +355,7 @@ private fun RegionRowItem(
             // it, and a "Cancel" here used to delete it for all of them, with
             // no confirmation; deleting it is the web app's job now.
             val waitingHere = row.phase is DownloadPhase.Extracting && row.requestedHere
-            if (row.storedId != null || waitingHere) {
+            if (row.storedId != null || row.areaId != null || waitingHere) {
                 DangerButton(if (row.phase is DownloadPhase.Ready) "Remove" else "Cancel", onClick = onDelete, small = true)
             }
         }
@@ -450,29 +453,6 @@ private fun progressOf(phase: DownloadPhase): Float? = when (phase) {
 }
 
 /**
- * What this box would cost the phone, in the terms that matter.
- *
- * Tiles rather than bytes, because the count is what the wait is made of: the
- * phone fetches them one request at a time and the size of each is the server's
- * business. Null while there is nothing to say — a box small enough to finish
- * in a few minutes needs no warning label.
- */
-private fun phoneCostLine(state: RegionsUiState): String? {
-    val cost = state.phoneCost ?: return null
-    val thousands = cost.resources / 1000
-    return when (cost.level) {
-        OfflineEstimate.Level.Fine -> null
-        OfflineEstimate.Level.Long ->
-            "About ${thousands}k tiles for this phone — leave it on wifi and " +
-                "give it a while."
-        OfflineEstimate.Level.BeyondPhone ->
-            "Too big to store on the phone (about ${thousands}k tiles). The " +
-                "server will still build it and serve full detail whenever you " +
-                "have signal."
-    }
-}
-
-/**
  * Bytes, rounded the way someone deciding whether to wait for wifi reads them.
  *
  * No decimal below a gigabyte: "480 MB" is the answer to the question being
@@ -485,3 +465,58 @@ internal fun formatBytes(bytes: Long): String = when {
     bytes >= 1_000 -> "${bytes / 1_000} KB"
     else -> "$bytes B"
 }
+
+
+/**
+ * Where saved maps go and how much they may take.
+ *
+ * The limit is the person's: map packs use as much storage as they allow, up
+ * to what the volume can spare with its reserve kept free (see PackStore).
+ */
+@Composable
+private fun StorageSettings(vm: RegionsViewModel, state: RegionsUiState) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Text("Storage", style = MaterialTheme.typography.labelLarge)
+        Text(
+            "${formatBytes(state.usedBytes)} used of a ${formatBytes(state.budgetBytes)} limit · " +
+                "${formatBytes(state.freeBytes)} free on this phone",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        val choices = BUDGET_STEPS.filter { it < state.freeBytes + state.usedBytes } + (state.freeBytes + state.usedBytes)
+        val index = choices.indexOfFirst { it >= state.budgetBytes }.let { if (it < 0) choices.lastIndex else it }
+        // Applied when the thumb is let go: each change reschedules downloads.
+        var dragging by androidx.compose.runtime.remember(index) { androidx.compose.runtime.mutableFloatStateOf(index.toFloat()) }
+        androidx.compose.material3.Slider(
+            value = dragging,
+            onValueChange = { dragging = it },
+            onValueChangeFinished = { vm.setBudget(choices[dragging.toInt().coerceIn(0, choices.lastIndex)]) },
+            valueRange = 0f..choices.lastIndex.coerceAtLeast(1).toFloat(),
+            steps = (choices.size - 2).coerceAtLeast(0),
+        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("Download on Wi-Fi only", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+            com.tracks.app.ui.components.TracksSwitch(checked = state.wifiOnly, onCheckedChange = vm::setWifiOnly)
+        }
+        if (state.volumes > 1) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                (0 until state.volumes).forEach { i ->
+                    androidx.compose.material3.FilterChip(
+                        selected = state.volume == i,
+                        onClick = { vm.setVolume(i) },
+                        label = { Text(if (i == 0) "This phone" else "SD card${if (state.volumes > 2) " $i" else ""}") },
+                    )
+                }
+            }
+        }
+        if (state.updateBytes > 0) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Newer maps for your saved areas: ${formatBytes(state.updateBytes)}",
+                     style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
+                TonalButton("Update", onClick = vm::applyUpdates, small = true)
+            }
+        }
+    }
+}
+
+private val BUDGET_STEPS = listOf(1L, 2, 5, 10, 20, 50, 100, 200, 500).map { it * 1_000_000_000L }

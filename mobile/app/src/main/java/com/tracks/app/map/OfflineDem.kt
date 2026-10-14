@@ -43,7 +43,11 @@ import kotlin.math.floor
  * own `elevation_sampler.py` does when a finer tile is not held — the DEM
  * archive's regional detail runs z8-z12; nothing here promises worldwide z12.
  */
-class OfflineDem(context: Context) {
+class OfflineDem(
+    context: Context,
+    /** Saved map packs, read first: a saved area's terrain is already in them. */
+    private val packs: () -> com.tracks.app.map.packs.PackStore? = { null },
+) {
 
     private val dir = File(context.applicationContext.filesDir, "dem")
 
@@ -133,7 +137,10 @@ class OfflineDem(context: Context) {
 
     private suspend fun loadTile(client: TracksClient, zoom: Int, x: Int, y: Int): Bitmap? {
         val file = File(dir, "$zoom/$x/$y.webp")
-        val bytes = withContext(Dispatchers.IO) { runCatching { file.readBytes() }.getOrNull() }
+        val bytes = withContext(Dispatchers.IO) {
+            runCatching { packs()?.tile("master_dem", zoom, x, y) }.getOrNull()
+                ?: runCatching { file.readBytes() }.getOrNull()
+        }
             ?: runCatching { client.demTile(zoom, x, y) }
                 .onFailure { Log.w(TAG, "DEM tile $zoom/$x/$y fetch failed", it) }
                 .getOrNull()?.also { fresh -> withContext(Dispatchers.IO) { store(file, fresh) } }
