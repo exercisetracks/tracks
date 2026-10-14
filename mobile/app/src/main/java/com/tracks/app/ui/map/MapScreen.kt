@@ -125,6 +125,10 @@ fun MapScreen(
     var map by remember { mutableStateOf<org.maplibre.android.maps.MapLibreMap?>(null) }
     var style by remember { mutableStateOf<org.maplibre.android.maps.Style?>(null) }
     var showDownloads by remember { mutableStateOf(false) }
+    // The area picked with "show on map" in the downloads sheet: its own
+    // outline is drawn inside the combined one until the sheet opens again.
+    var highlightedArea by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(showDownloads) { if (showDownloads) highlightedArea = null }
     var showLibrary by remember { mutableStateOf(false) }
     // The map's symbols, for the editor's symbol picker.
     var editorSprite by remember { mutableStateOf<SpriteSheet?>(null) }
@@ -501,8 +505,8 @@ fun MapScreen(
 
                 // Redrawn on every change to the list, so a region appears the
                 // moment its download starts and firms up when it finishes.
-                LaunchedEffect(style, regions.rows) {
-                    style?.let { drawRegions(it, regions.rows) }
+                LaunchedEffect(style, regions.rows, highlightedArea) {
+                    style?.let { drawRegions(it, regions.rows, highlightedArea) }
                 }
 
                 // Fetched when the map opens, not when the library sheet does.
@@ -933,6 +937,9 @@ fun MapScreen(
                     choosingArea = true
                 },
                 onShowOnMap = { row ->
+                    // Its own box, drawn inside the combined outline, until
+                    // the downloads sheet is opened again.
+                    highlightedArea = rowKey(row)
                     row.bounds?.let { bounds ->
                         // Closes the sheet, because the sheet is what is in the
                         // way of seeing the answer.
@@ -1503,7 +1510,7 @@ private const val BUILDING_BORDER = "#94a3b8"
  * Dashed, because these are not features of the world. Nothing is there on the
  * ground, and a solid line at this weight reads like a boundary that is.
  */
-internal fun drawRegions(style: Style, rows: List<RegionRow>) {
+internal fun drawRegions(style: Style, rows: List<RegionRow>, highlighted: String? = null) {
     // A style object is only valid until a newer one starts loading, and every
     // accessor on it throws afterwards rather than returning null. These are
     // called from effects keyed on data that keeps arriving — a download's
@@ -1512,17 +1519,20 @@ internal fun drawRegions(style: Style, rows: List<RegionRow>) {
     // against is normal, not exceptional.
     if (!style.isFullyLoaded) return
 
-    val features = rows.mapNotNull { row ->
-        val bounds = row.bounds ?: return@mapNotNull null
-        // The merged shape where there is one, the box otherwise. Two
-        // overlapping downloads fold into one area whose box is the envelope of
-        // both, and an L-shaped pair leaves a corner inside that envelope which
-        // no tile covers — outlining it would claim coverage that is not there.
-        (row.shape?.let(::outlineOf) ?: rectangle(bounds)).apply {
-            // What the line is allowed to claim. An area still being built is
-            // drawn faintly, because an outline promising coverage that is not
-            // there yet is the one lie this feature cannot afford.
+    // One combined outline per kind of coverage (AreaOutline): where areas of
+    // the same kind overlap, the lines inside the overlap are gone. The web
+    // draws the same. An area's own box is drawn only while it is the one
+    // picked in the downloads sheet.
+    val features = rows.filter { it.bounds != null }.groupBy { it.coverage }.mapNotNull { (coverage, group) ->
+        val segments = AreaOutline.union(group.flatMap(::polygonsOf))
+        if (segments.isEmpty()) return@mapNotNull null
+        Feature.fromGeometry(org.maplibre.geojson.MultiLineString.fromLngLats(segments.map { (a, b) ->
+            listOf(Point.fromLngLat(a.first, a.second), Point.fromLngLat(b.first, b.second))
+        })).apply { addStringProperty("coverage", coverage.name.lowercase()) }
+    } + rows.filter { highlighted != null && rowKey(it) == highlighted && it.bounds != null }.mapNotNull { row ->
+        (row.shape?.let(::outlineOf) ?: rectangle(row.bounds!!)).apply {
             addStringProperty("coverage", row.coverage.name.lowercase())
+            addBooleanProperty("own", true)
         }
     }
     val collection = FeatureCollection.fromFeatures(features)
@@ -1540,7 +1550,9 @@ internal fun drawRegions(style: Style, rows: List<RegionRow>) {
                             Expression.stop("server", Expression.literal(SERVER_BORDER)),
                         )
                     ),
-                    PropertyFactory.lineWidth(2f),
+                    PropertyFactory.lineWidth(
+                        Expression.switchCase(Expression.has("own"), Expression.literal(3.5f), Expression.literal(2f))
+                    ),
                     PropertyFactory.lineDasharray(arrayOf(4f, 4f)),
                     PropertyFactory.lineOpacity(
                         Expression.match(
@@ -1553,6 +1565,19 @@ internal fun drawRegions(style: Style, rows: List<RegionRow>) {
                 ),
             )
         }
+}
+
+/** An area as polygons for [AreaOutline]: its shape where it has one, else its box. */
+private fun polygonsOf(row: RegionRow): List<AreaPolygon> {
+    val shape = row.shape?.let(::outlineOf)?.geometry()
+    fun ring(points: List<Point>): AreaRing = points.map { it.longitude() to it.latitude() }
+    return when (shape) {
+        is Polygon -> listOf(shape.coordinates().map(::ring))
+        is org.maplibre.geojson.MultiPolygon -> shape.coordinates().map { poly -> poly.map(::ring) }
+        else -> row.bounds?.let { b ->
+            listOf(AreaOutline.box(b.longitudeWest, b.latitudeSouth, b.longitudeEast, b.latitudeNorth))
+        }.orEmpty()
+    }
 }
 
 /** The plain box, as a feature. */

@@ -1,5 +1,6 @@
 // SPDX-FileCopyrightText: 2026 Hawk Fugagli
 // SPDX-License-Identifier: AGPL-3.0-or-later
+import { areaPolygons, unionOutline } from "../utils/areaOutline";
 import { useState, useCallback, useRef, useEffect } from "react";
 import { api } from "../../../api/client";
 import {
@@ -128,37 +129,58 @@ export function useRegionDownload(map) {
     }));
 
     const geojson = { type: "FeatureCollection", features };
+    // Drawn as one combined shape (utils/areaOutline): where areas overlap,
+    // the lines inside the overlap are gone and the shading is not doubled.
+    // An area's own box shows only while it is highlighted from the list.
+    const union = unionOutline(installed.flatMap(areaPolygons));
+    const combined = {
+      type: "FeatureCollection",
+      features: [
+        { type: "Feature", properties: { part: "fill" }, geometry: { type: "MultiPolygon", coordinates: union.cells } },
+        { type: "Feature", properties: { part: "line" }, geometry: { type: "MultiLineString", coordinates: union.lines } },
+      ],
+    };
+    const layers = ["regions-fill", "regions-union-fill", "regions-border-solid", "regions-border-dash",
+                    "regions-own-solid", "regions-own-dash"];
 
     if (!map.getSource("regions")) {
       map.addSource("regions", { type: "geojson", data: geojson });
+      map.addSource("regions-union", { type: "geojson", data: combined });
       const hover = (on, off) => ["case", ["boolean", ["feature-state", "hover"], false], on, off];
       map.addLayer({
-        id: "regions-fill",
-        type: "fill",
-        source: "regions",
-        paint: { "fill-color": "#3b82f6", "fill-opacity": hover(0.18, 0.04) },
+        id: "regions-union-fill", type: "fill", source: "regions-union",
+        filter: ["==", ["get", "part"], "fill"],
+        paint: { "fill-color": "#3b82f6", "fill-opacity": 0.04, "fill-antialias": false },
       });
       map.addLayer({
-        id: "regions-border-solid",
-        type: "line",
-        source: "regions",
-        paint: { "line-color": "#3b82f6", "line-width": hover(3, 2), "line-opacity": hover(0.6, 0.25) },
+        id: "regions-fill", type: "fill", source: "regions",
+        paint: { "fill-color": "#3b82f6", "fill-opacity": hover(0.14, 0) },
       });
       map.addLayer({
-        id: "regions-border-dash",
-        type: "line",
-        source: "regions",
-        paint: { "line-color": hover("#2563eb", "#60a5fa"), "line-width": hover(3, 2), "line-opacity": 1, "line-dasharray": [4, 4] },
+        id: "regions-border-solid", type: "line", source: "regions-union",
+        filter: ["==", ["get", "part"], "line"],
+        paint: { "line-color": "#3b82f6", "line-width": 2, "line-opacity": 0.25 },
+      });
+      map.addLayer({
+        id: "regions-border-dash", type: "line", source: "regions-union",
+        filter: ["==", ["get", "part"], "line"],
+        paint: { "line-color": "#60a5fa", "line-width": 2, "line-opacity": 1, "line-dasharray": [4, 4] },
+      });
+      // The highlighted area's own outline, inside the combined one.
+      map.addLayer({
+        id: "regions-own-solid", type: "line", source: "regions",
+        paint: { "line-color": "#3b82f6", "line-width": 3, "line-opacity": hover(0.6, 0) },
+      });
+      map.addLayer({
+        id: "regions-own-dash", type: "line", source: "regions",
+        paint: { "line-color": "#2563eb", "line-width": 3, "line-opacity": hover(1, 0), "line-dasharray": [4, 4] },
       });
     } else if (features.length > 0) {
       map.getSource("regions").setData(geojson);
-      ["regions-fill", "regions-border-solid", "regions-border-dash"].forEach(
-        (id) => { try { map.setLayoutProperty(id, "visibility", "visible"); } catch {} }
-      );
+      map.getSource("regions-union")?.setData(combined);
+      layers.forEach((id) => { try { map.setLayoutProperty(id, "visibility", "visible"); } catch {} });
     } else {
-      ["regions-fill", "regions-border-solid", "regions-border-dash"].forEach(
-        (id) => { try { map.setLayoutProperty(id, "visibility", "none"); } catch {} }
-      );
+      layers.forEach((id) => { try { map.setLayoutProperty(id, "visibility", "none"); } catch {} });
     }
   }, [map, regions]);
 
