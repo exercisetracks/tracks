@@ -293,3 +293,39 @@ class TestStreetReindexEndpoint:
 
     def test_it_requires_authentication(self, client, headers):
         assert client.post("/maps/poi/streets/reindex").status_code == 401
+
+
+class TestCategoriesOnTheMap:
+    """A category searched with the map open marks every match in view, as a
+    map search does — "campgrounds" is a request to see them, not a list."""
+
+    def test_plurals_and_near_misses_are_still_the_category(self):
+        from app.routes.poi.categories import match_category
+        assert "camp_site" in match_category("campgrounds")
+        assert "fuel" in match_category("gas stations")
+        assert "restaurant" in match_category("resteraunts")
+        # A name a letter or two off a category stays a name.
+        assert match_category("coffee creek") is None
+
+    def test_in_view_returns_everything_of_the_kind_inside_the_box(self, client, headers, db):
+        for i in range(15):
+            _poi(db, f"Camp {i}", kind="camp_site", lat=40.0 + i * 0.005, lng=-150.25)
+        _poi(db, "Far Camp", kind="camp_site", lat=45.0, lng=-150.25)
+        _poi(db, "Shell", kind="fuel", lat=40.02, lng=-150.25)
+        resp = client.get(f"/maps/poi/search?q=campgrounds&in_view=true&{_BBOX}", headers=headers)
+        body = resp.json()
+        assert body["category"] == "campgrounds"
+        names = _texts(resp)
+        assert len(names) == 15
+        assert "Far Camp" not in names and "Shell" not in names
+
+    def test_every_branch_of_a_chain_is_marked(self, client, headers, db):
+        for i in range(5):
+            _poi(db, "Shell", kind="fuel", lat=40.0 + i * 0.01, lng=-150.25)
+        resp = client.get(f"/maps/poi/search?q=gas&in_view=true&{_BBOX}", headers=headers)
+        assert len(resp.json()["features"]) == 5
+
+    def test_a_name_search_says_it_is_not_a_category(self, client, headers, db):
+        _poi(db, "Granite Peak", kind="peak")
+        resp = client.get(f"/maps/poi/search?q=Granite%20Peak&in_view=true&{_BBOX}", headers=headers)
+        assert "category" not in resp.json()

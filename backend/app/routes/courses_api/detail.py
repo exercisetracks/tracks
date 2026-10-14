@@ -33,7 +33,6 @@ def get_course(track_id: int, user: User = Depends(require_auth), db: Session = 
 class CourseUpdate(BaseModel):
     name: str | None = None
     color: str | None = None
-    sport: str | None = None
     notes: str | None = None
     turn_by_turn: bool | None = None
     load_to_device: bool | None = None
@@ -55,8 +54,6 @@ def update_course(track_id: int, body: CourseUpdate,
         t.name = body.name.strip()[:_MAX_NAME] or t.name
     if body.color is not None:
         t.color = body.color
-    if body.sport is not None:
-        t.sport = body.sport.lower()
     if body.notes is not None:
         t.notes = body.notes
     if body.hidden is not None:

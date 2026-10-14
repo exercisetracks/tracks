@@ -113,7 +113,11 @@ class PublicLandLabelRank(private val scope: CoroutineScope) {
         for (candidate in candidates) {
             if (ceil(candidate.grade.toDouble()).toInt() > zoom) continue
             val key = cellKey(candidate.lng, candidate.lat, zoom, CELL_PX)
-            if (!taken.add(key)) continue
+            // Its neighbours too, not just its own cell: a wrapped area name
+            // is about a cell wide, so two in adjacent cells print into each
+            // other. The web does the same (usePublicLandLabelRank.js).
+            if (neighbourhood(key).any { it in taken }) continue
+            taken += key
             granted[candidate.name] = Grant(zoom, candidate.lng, candidate.lat)
         }
 
@@ -127,6 +131,12 @@ class PublicLandLabelRank(private val scope: CoroutineScope) {
                 ),
             ),
         )
+    }
+
+    /** A cell key and its eight neighbours. */
+    private fun neighbourhood(key: String): List<String> {
+        val (x, y) = key.split(':').map { it.toLong() }
+        return (-1L..1L).flatMap { dx -> (-1L..1L).map { dy -> "${x + dx}:${y + dy}" } }
     }
 
     /**
@@ -153,7 +163,7 @@ class PublicLandLabelRank(private val scope: CoroutineScope) {
         const val CELL_PX = 120.0
 
         const val MIN_ZOOM = 6
-        const val MAX_ZOOM = 16
+        const val MAX_ZOOM = 17
         const val DEFAULT_GRADE = 9
         const val WORLD_PX = 512.0
         const val DEBOUNCE_MS = 250L

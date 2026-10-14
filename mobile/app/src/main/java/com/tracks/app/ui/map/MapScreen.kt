@@ -26,6 +26,9 @@ import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.IconButton
+import androidx.compose.foundation.layout.Row
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Text
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -456,6 +459,26 @@ fun MapScreen(
                     }
                 }
 
+                // A searched category's marks: drawn whenever they change, and
+                // asked for again when the map settles somewhere new, so they
+                // follow the view as a map search's do.
+                LaunchedEffect(style, tools.marked) {
+                    val loaded = style ?: return@LaunchedEffect
+                    drawSearchMarks(loaded, tools.marked?.hits.orEmpty())
+                }
+                DisposableEffect(map) {
+                    val ready = map
+                    if (ready == null) {
+                        onDispose {}
+                    } else {
+                        val idle = MapLibreMap.OnCameraIdleListener {
+                            toolsVm.refreshMarked(ready.projection.visibleRegion.latLngBounds)
+                        }
+                        ready.addOnCameraIdleListener(idle)
+                        onDispose { ready.removeOnCameraIdleListener(idle) }
+                    }
+                }
+
                 // Grants public-land area names (BLM, wilderness, national
                 // forest/park) their turn to print — see [PublicLandLabelRank]
                 // for why the layer shows nothing on its own until this runs
@@ -492,11 +515,35 @@ fun MapScreen(
                 // the phone fed it, so the "Activity Tracks" toggle showed
                 // nothing at all.
                 LaunchedEffect(Unit) { toolsVm.loadActivityTracks() }
-                val activityColor = MaterialTheme.colorScheme.primary
-                LaunchedEffect(style, tools.activityGeoJson, activityColor) {
+                // Drawn as the dashboard's heatmap draws them — light that adds
+                // up where routes overlap — rather than as flat lines, which
+                // piled into one colour over anywhere often run. The served
+                // style's lines stay for what they are still good at: being
+                // tapped (see drawActivityTracks).
+                val glowScope = rememberCoroutineScope()
+                val glowDensity = androidx.compose.ui.platform.LocalDensity.current.density
+                // In the theme's accent, as these lines always were: orange
+                // ink is lost among the basemap's orange roads.
+                val activityInk = MaterialTheme.colorScheme.primary.toArgb() and 0xFFFFFF
+                val activityGlow = remember(activityInk) {
+                    com.tracks.app.ui.dashboard.HeatmapGlow(
+                        glowScope, glowDensity,
+                        maxPixels = com.tracks.app.ui.dashboard.HeatmapGlow.MAP_MAX_PIXELS,
+                        frequencyIntensity = com.tracks.app.ui.dashboard.HeatmapGlow.MAP_INTENSITY,
+                        widthScale = com.tracks.app.ui.dashboard.HeatmapGlow.MAP_WIDTH,
+                        ink = activityInk,
+                    )
+                }
+                DisposableEffect(activityGlow) { onDispose { activityGlow.detach() } }
+                LaunchedEffect(map, style, tools.activityGeoJson, hiddenGroups) {
+                    val ready = map ?: return@LaunchedEffect
                     val loaded = style ?: return@LaunchedEffect
                     val geo = tools.activityGeoJson ?: return@LaunchedEffect
-                    drawActivityTracks(loaded, geo, activityColor.toArgb())
+                    drawActivityTracks(loaded, geo)
+                    // Under the selected-activity highlight and everything saved.
+                    activityGlow.attach(ready, loaded, below = "activity_tracks_hover")
+                    val shown = "activity_tracks" !in hiddenGroups
+                    activityGlow.setRoutes(if (shown) geo else NO_ROUTES, dark = false, valueColoured = false)
                 }
 
                 LaunchedEffect(map, tools.focus) {
@@ -763,6 +810,30 @@ fun MapScreen(
                 message = tools.notice,
                 onDismiss = toolsVm::dismissNotice,
             )
+            // What is marked, and the way to unmark it.
+            tools.marked?.let { marked ->
+                Surface(
+                    shape = RoundedCornerShape(Tokens.Radius.xl),
+                    color = MaterialTheme.colorScheme.surface,
+                    tonalElevation = 3.dp,
+                    shadowElevation = 2.dp,
+                    modifier = Modifier.padding(top = 6.dp),
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 12.dp)) {
+                        Text(
+                            when {
+                                marked.hits.isEmpty() -> "No ${marked.category} in view"
+                                marked.capped -> "${marked.hits.size}+ ${marked.category} — zoom in for the rest"
+                                else -> "${marked.hits.size} ${marked.category}"
+                            },
+                            style = MaterialTheme.typography.labelMedium,
+                        )
+                        IconButton(onClick = toolsVm::clearMarked, modifier = Modifier.size(32.dp)) {
+                            Icon(Icons.Filled.Close, contentDescription = "Clear the marked places", modifier = Modifier.size(16.dp))
+                        }
+                    }
+                }
+            }
         }
 
         tools.selected?.let { selection ->
@@ -804,6 +875,11 @@ fun MapScreen(
                     toolsVm.clearSearch()
                 },
                 onDismiss = {
+                    showSearch = false
+                    toolsVm.clearSearch()
+                },
+                onMarkAll = { query ->
+                    map?.let { toolsVm.markOnMap(query, it.projection.visibleRegion.latLngBounds) }
                     showSearch = false
                     toolsVm.clearSearch()
                 },
@@ -1031,7 +1107,7 @@ private const val MAX_PITCH = 75.0
 
 /** The browser's zoom window (`useMapInit.js`), for the same reasons. */
 private const val MIN_ZOOM = 1.0
-private const val MAX_ZOOM = 16.0
+private const val MAX_ZOOM = 17.0
 
 /** Close enough to see the place, far enough to see what is around it. */
 private const val SEARCH_RESULT_ZOOM = 13.0
@@ -1601,7 +1677,7 @@ private fun MapLibreMap.activityAt(point: LatLng): Selection.Activity? {
     val screen = projection.toScreenLocation(point)
     val slop = TAP_SLOP_PX
     val box = android.graphics.RectF(screen.x - slop, screen.y - slop, screen.x + slop, screen.y + slop)
-    val f = runCatching { queryRenderedFeatures(box, "activity_tracks_hit", "activity_tracks_line") }
+    val f = runCatching { queryRenderedFeatures(box, "activity_tracks_hit") }
         .getOrDefault(emptyList()).firstOrNull() ?: return null
     val uid = f.getStringProperty("uid") ?: return null
     fun str(key: String) = runCatching { f.getStringProperty(key) }.getOrNull()
@@ -1616,15 +1692,65 @@ private fun MapLibreMap.activityAt(point: LatLng): Selection.Activity? {
 }
 
 /**
- * Feed the served style's `activity_tracks` source, and colour its line in the
- * theme's accent as the web does. The layers' visibility stays the layer
- * toggle's business.
+ * Feed the served style's `activity_tracks` source, which the glow does not
+ * need but a tap does: [activityAt] finds the activity under a finger in its
+ * wide hit line.
+ *
+ * That line is drawn at 1 % rather than the style's 0 because MapLibre Native,
+ * unlike the web's MapLibre, leaves a layer it does not draw out of
+ * `queryRenderedFeatures` — at 0 a tap only ever found the thin visible line,
+ * which is how tapping an activity came to seem not to work. 1 % of black
+ * over a line's width is not something an eye can see.
  */
-private fun drawActivityTracks(style: org.maplibre.android.maps.Style, geoJson: String, color: Int) {
+private fun drawActivityTracks(style: org.maplibre.android.maps.Style, geoJson: String) {
     if (!style.isFullyLoaded) return
     (style.getSource("activity_tracks") as? GeoJsonSource)?.setGeoJson(geoJson) ?: return
-    style.getLayer("activity_tracks_line")?.setProperties(PropertyFactory.lineColor(color))
+    style.getLayer("activity_tracks_hit")?.setProperties(PropertyFactory.lineOpacity(0.01f))
 }
+
+private const val SEARCH_MARKS_SOURCE = "tracks_search_marks"
+private const val SEARCH_MARKS_DOT = "tracks_search_marks_dot"
+private const val SEARCH_MARKS_LABEL = "tracks_search_marks_label"
+
+/**
+ * A searched category's matches as red dots with their names, over
+ * everything but the saved places. Names may drop where crowded; the dots
+ * never do — they are what was asked for.
+ */
+private fun drawSearchMarks(style: org.maplibre.android.maps.Style, hits: List<com.tracks.core.api.PoiHit>) {
+    if (!style.isFullyLoaded) return
+    val fc = FeatureCollection.fromFeatures(hits.map { h ->
+        Feature.fromGeometry(Point.fromLngLat(h.lng, h.lat)).apply { addStringProperty("name", h.name) }
+    })
+    (style.getSource(SEARCH_MARKS_SOURCE) as? GeoJsonSource)?.setGeoJson(fc) ?: run {
+        style.addSource(GeoJsonSource(SEARCH_MARKS_SOURCE, fc))
+        style.addLayer(
+            CircleLayer(SEARCH_MARKS_DOT, SEARCH_MARKS_SOURCE).withProperties(
+                PropertyFactory.circleRadius(7f),
+                PropertyFactory.circleColor("#dc2626"),
+                PropertyFactory.circleStrokeColor("#ffffff"),
+                PropertyFactory.circleStrokeWidth(2f),
+            ),
+        )
+        style.addLayer(
+            SymbolLayer(SEARCH_MARKS_LABEL, SEARCH_MARKS_SOURCE).withProperties(
+                // Named explicitly: see LABEL_FONT.
+                PropertyFactory.textFont(LABEL_FONT),
+                PropertyFactory.textField(Expression.get("name")),
+                PropertyFactory.textSize(11f),
+                PropertyFactory.textAnchor(Property.TEXT_ANCHOR_TOP),
+                PropertyFactory.textOffset(arrayOf(0f, 0.8f)),
+                PropertyFactory.textColor("#991b1b"),
+                PropertyFactory.textHaloColor("#ffffff"),
+                PropertyFactory.textHaloWidth(1.4f),
+                PropertyFactory.textOptional(true),
+            ),
+        )
+    }
+}
+
+/** An empty collection: the glow with the Activity Tracks layer switched off. */
+private const val NO_ROUTES = """{"type":"FeatureCollection","features":[]}"""
 
 /**
  * Keep [into] holding this composable's position on screen.

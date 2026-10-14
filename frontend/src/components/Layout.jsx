@@ -4,7 +4,7 @@
 // (the NAV table below), the account menu, global indicators (e.g. import
 // progress), and an <Outlet> where the routed page renders. This is the frame
 // that stays put while pages swap underneath it.
-import { Outlet, NavLink } from "react-router-dom";
+import { Outlet, NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { useState, useEffect } from "react";
 import WatchSyncModal from "./sync/WatchSyncModal";
@@ -123,6 +123,9 @@ const linkClass = ({ isActive }) =>
 
 export default function Layout() {
   const { logout } = useAuth();
+  // The map fills the page, so a banner above it pushed the whole viewport
+  // down (and off the bottom); there the banners float over the map instead.
+  const overMap = useLocation().pathname.startsWith("/maps");
   // What the server is doing for this user — see sync/SidebarStatus.jsx.
   const status = useServerActivity();
   // One-button watch sync modal; autoDevice is set when a previously
@@ -203,9 +206,11 @@ export default function Layout() {
       </nav>
 
       {/* Page content */}
-      <main className="flex-1 overflow-y-auto bg-slate-100 dark:bg-slate-950">
-        <ServerUpdateBanner />
-        <DonateBanner />
+      <main className="relative flex-1 overflow-y-auto bg-slate-100 dark:bg-slate-950">
+        <div className={overMap ? "absolute top-0 inset-x-0 z-40 shadow-md" : undefined}>
+          <ServerUpdateBanner />
+          <DonateBanner />
+        </div>
         <Outlet />
       </main>
 

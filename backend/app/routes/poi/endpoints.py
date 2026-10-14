@@ -108,6 +108,7 @@ def search_poi(
     q: str = Query(..., min_length=1, max_length=200),
     limit: int = Query(10, ge=1, le=50),
     bbox: str | None = Query(None, description="Viewport bounds: w,s,e,n — biases results toward visible area"),
+    in_view: bool = Query(False, description="A category query answers with everything of that kind inside bbox"),
 ):
     """Search for a place, a kind of place, a coordinate or a street corner.
 
@@ -159,8 +160,16 @@ def search_poi(
 
         # 4. A category: what the thing *is*, rather than what it is called.
         kinds = match_category(subject)
+        if kinds and in_view and box is not None and not near:
+            # "campgrounds" with the map open is a request to see them all on
+            # it, as a map search would mark them — not the nearest ten.
+            out = _collection(_category_in_view(db, kinds, box))
+            out["category"] = subject
+            return out
         if kinds:
-            return _collection(_category_search(db, kinds, anchor, limit))
+            out = _collection(_category_search(db, kinds, anchor, limit))
+            out["category"] = subject
+            return out
 
         # 5. A name.
         return _collection(_name_search(db, subject or raw, anchor, limit))
@@ -288,8 +297,12 @@ def _set_trigram_thresholds(db, fuzz: float, wfuzz: float) -> None:
 _MAX_PER_NAME = 3
 
 
-def _features_from(rows, limit: int) -> list[dict]:
-    """Rows → Carmen GeoJSON, deduplicated and kept varied."""
+def _features_from(rows, limit: int, vary: bool = True) -> list[dict]:
+    """Rows → Carmen GeoJSON, deduplicated and kept varied.
+
+    `vary` caps how many share a name, so a list is not ten branches of one
+    chain; a map of everything in view wants every branch, and turns it off.
+    """
     features: list[dict] = []
     seen: set[tuple] = set()
     per_name: dict[str, int] = {}
@@ -307,7 +320,7 @@ def _features_from(rows, limit: int) -> list[dict]:
         seen.add(dedup_key)
 
         key = name.lower()
-        if key:
+        if key and vary:
             if per_name.get(key, 0) >= _MAX_PER_NAME:
                 continue
             per_name[key] = per_name.get(key, 0) + 1
@@ -407,6 +420,32 @@ def _category_search(db, kinds: tuple[str, ...], anchor, limit: int) -> list[dic
     statement = text(sql).bindparams(bindparam("kinds", expanding=True))
     rows = db.execute(statement, params).fetchall()
     return _features_from(rows, limit)
+
+
+# The most a category marks on the map at once: past this the markers are a
+# carpet, and the client says to zoom in rather than drawing them all.
+_IN_VIEW_CAP = 300
+
+
+def _category_in_view(db, kinds: tuple[str, ...], box) -> list[dict]:
+    """Everything of a kind inside the viewport, most notable first, capped.
+
+    Importance (min_zoom) rather than distance: the whole view is the answer,
+    and when it has to be cut, the well-known ones are the ones to keep.
+    """
+    w, s, e, n = box
+    params = {"kinds": tuple(k.lower() for k in kinds), "w": w, "s": s, "e": e, "n": n,
+              "limit": _IN_VIEW_CAP * 2}
+    sql = """
+        SELECT name, kind, kind_detail, lat, lng, source, min_zoom, ele_ft
+        FROM poi_search
+        WHERE (LOWER(kind) IN :kinds OR LOWER(kind_detail) IN :kinds)
+          AND lng BETWEEN :w AND :e AND lat BETWEEN :s AND :n
+        ORDER BY COALESCE(min_zoom, 99) ASC, name
+        LIMIT :limit
+    """
+    statement = text(sql).bindparams(bindparam("kinds", expanding=True))
+    return _features_from(db.execute(statement, params).fetchall(), _IN_VIEW_CAP, vary=False)
 
 
 def _intersection_search(db, first: str, second: str, anchor, limit: int) -> list[dict]:

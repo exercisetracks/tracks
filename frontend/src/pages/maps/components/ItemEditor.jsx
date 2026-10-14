@@ -13,8 +13,6 @@ import ElevationProfileCard from "./ElevationProfileCard";
 import { CollectionPicker, ColorRow, SymbolPicker } from "./ItemBits";
 import { DEFAULT_PLACE_COLOR, pointAlong, profileOf } from "../utils/mapItems";
 
-const SPORTS = ["hiking", "running", "cycling", "walking"];
-
 export default function ItemEditor({ editor, folders, atlas, imperial, onCreateFolder }) {
   if (!editor.open) return null;
   const { isPlace, kind, handles, stats, line } = editor;
@@ -31,27 +29,30 @@ export default function ItemEditor({ editor, folders, atlas, imperial, onCreateF
             : isPlace ? "A place — click again to make a track"
               : "Click to extend · drag a point to move it · click one for options";
 
-  const title = kind === "place" ? "Edit place" : kind === "track" ? "Edit track"
-    : isPlace ? "New place" : handles.length ? "New track" : "Draw";
+  const showProfile = !isPlace && line?.length > 1;
 
   return (
     <div className="absolute bottom-0 left-2 right-2 sm:left-[11rem] sm:right-[5rem] z-30 pointer-events-none">
-      <div className="pointer-events-auto w-full max-w-[52rem] mx-auto px-3.5 py-2.5 space-y-2
+      {/* Wide and short: the profile on the left, everything else in a
+          column beside it, so the panel takes as little of the map's height
+          as it can. */}
+      <div className={`pointer-events-auto w-full mx-auto px-3.5 py-2.5 flex gap-4 items-stretch
                       bg-white/90 dark:bg-slate-900/90 backdrop-blur-md
                       border border-b-0 border-slate-200/70 dark:border-slate-700/70 rounded-t-xl
-                      shadow-[0_-4px_20px_rgba(0,0,0,0.10)]">
-        <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">{title}</div>
-
+                      shadow-[0_-4px_20px_rgba(0,0,0,0.10)] ${showProfile ? "max-w-[72rem]" : "max-w-[34rem]"}`}>
         {/* The shape of the climbing, not just its total. */}
-        {!isPlace && line?.length > 1 && (
-          <ElevationProfileCard
-            profile={profileOf(line)} imperial={imperial} grade height={120}
-            onScrub={(at) => editor.scrub(at == null ? null : pointAlong(line, at))}
-          />
+        {showProfile && (
+          <div className="flex-1 min-w-0 self-center">
+            <ElevationProfileCard
+              profile={profileOf(line)} imperial={imperial} grade height={150}
+              onScrub={(at) => editor.scrub(at == null ? null : pointAlong(line, at))}
+            />
+          </div>
         )}
 
-        <div className="flex items-end gap-2 flex-wrap">
-          <label className="block flex-1 min-w-[12rem]">
+        <div className={`space-y-2 ${showProfile ? "w-[30rem] shrink-0" : "flex-1 min-w-0"}`}>
+        <div className="flex items-end gap-2">
+          <label className="block flex-1 min-w-0">
             <span className="field-label">{isPlace ? "Place name" : "Track name"}</span>
             <input
               className="field field-sm" value={editor.name} placeholder={isPlace ? "Place" : "Track"}
@@ -60,14 +61,6 @@ export default function ItemEditor({ editor, folders, atlas, imperial, onCreateF
             />
           </label>
           <CollectionPicker value={editor.folderId} folders={folders} onChange={editor.setFolder} onCreate={onCreateFolder} />
-          {!isPlace && kind !== "track" && (
-            <label className="block">
-              <span className="field-label">Sport</span>
-              <select className="field field-sm" value={editor.sport} onChange={(e) => editor.setSport(e.target.value)}>
-                {SPORTS.map((s) => <option key={s} value={s}>{s[0].toUpperCase() + s.slice(1)}</option>)}
-              </select>
-            </label>
-          )}
         </div>
 
         <ColorRow value={editor.color || (isPlace ? DEFAULT_PLACE_COLOR : null)} onChange={editor.setColor} />
@@ -79,7 +72,7 @@ export default function ItemEditor({ editor, folders, atlas, imperial, onCreateF
         {/* Refine a recorded or imported line: fewer points, same shape, previewed as it moves. */}
         {!isPlace && editor.originalLine && (
           <div className="flex items-center gap-3 text-[11px] text-slate-600 dark:text-slate-300">
-            <span className="w-40 shrink-0">
+            <span className="w-36 shrink-0">
               {editor.simplify === 0 ? "Simplify" : `Simplify ${editor.simplify}% · ${editor.baseLine?.length ?? 0} pts`}
             </span>
             <input
@@ -115,6 +108,7 @@ export default function ItemEditor({ editor, folders, atlas, imperial, onCreateF
           <button type="button" className="btn btn-primary btn-sm" disabled={!editor.canSave} onClick={editor.save}>
             {editor.saving ? "Saving…" : "Save"}
           </button>
+        </div>
         </div>
       </div>
     </div>

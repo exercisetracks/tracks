@@ -460,10 +460,14 @@ const mercY = (lat) => {
 // Colours are what the line shows — the glow in dark mode, the ink in light;
 // the additive shader takes the ink's complement itself when it subtracts,
 // and the averaged modes need the ink as it is.
-export function buildHeatmapVerts(tracks, mode, theme = "dark") {
+//
+// `color` ([r, g, b], 0–255) replaces frequency's orange — the map page's
+// activities, which would be lost in orange among its orange roads.
+export function buildHeatmapVerts(tracks, mode, theme = "dark", { color } = {}) {
   if (!tracks?.length) return { verts: new Float32Array(0), count: 0 };
   const light = theme === "light";
-  const ORANGE = light ? LIGHT_INKS.frequency.map((c) => c / 255) : ORANGE_GLOW;
+  const ORANGE = color ? color.map((c) => c / 255)
+    : light ? LIGHT_INKS.frequency.map((c) => c / 255) : ORANGE_GLOW;
   const SPEED_STOPS = light ? LIGHT_INKS.speed : SPEED_GLOW;
   const GRAD_STOPS = light ? LIGHT_INKS.grad : GRAD_GLOW;
   const rgbFromStops = rgbFromStopsRaw;
@@ -537,6 +541,12 @@ export function glowStyleForMode(mode) {
   if (mode === "frequency") return { halfWidthPx: 2.75, intensity: 0.18, average: false };
   return { halfWidthPx: 2.5, intensity: 0.55, average: true };
 }
+
+// Activities on the map page: wider and much stronger per pass than the
+// dashboard's. There the glow is the whole picture, on a plain ground; here it
+// is one layer on a busy basemap, and a single run at the dashboard's faint
+// 0.18 could not be seen at all among the roads and trails.
+export const MAP_ACTIVITY_GLOW = { halfWidthPx: 4.5, intensity: 0.45, average: false };
 
 // The averaged modes' composite: how fast colour turns opaque with weight
 // (one route about half, two most of the way), how much a pile of routes

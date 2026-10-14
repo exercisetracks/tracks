@@ -207,9 +207,11 @@ export const api = {
     get(`/maps/route/${id}${section ? `?section=${encodeURIComponent(section)}` : ""}`),
   getPointInfo:    (lat, lon) => get(`/maps/point?lat=${lat}&lon=${lon}`, { noCache: true }),
   getGlobalDownloads:()    => get("/maps/global-downloads", { noCache: true }),
-  searchPoi:       (q, limit = 10, bbox = null) => {
+  searchPoi:       (q, limit = 10, bbox = null, { inView = false } = {}) => {
     let url = `/maps/poi/search?q=${encodeURIComponent(q)}&limit=${limit}`;
     if (bbox) url += `&bbox=${encodeURIComponent(bbox)}`;
+    // A category ("campgrounds") answers with everything of it in bbox.
+    if (inView) url += "&in_view=true";
     return get(url, { noCache: true });
   },
   getPoiFeatures:  (bbox, zoom = 12, { signal } = {}) => get(`/maps/poi/features?bbox=${encodeURIComponent(bbox)}&zoom=${zoom}`, { noCache: true, signal }),

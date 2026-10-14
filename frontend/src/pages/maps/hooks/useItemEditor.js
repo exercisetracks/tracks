@@ -61,7 +61,7 @@ function densify(a, b, stepM = 90, maxPts = 600) {
 
 const CLOSED = {
   open: false, kind: null, id: null, handles: [], snap: true,
-  name: "", color: null, icon: "marker", folderId: null, sport: "hiking", activityId: null,
+  name: "", color: null, icon: "marker", folderId: null, activityId: null,
   baseLine: null, baseHandles: [], originalLine: null, simplify: 0,
   // Whether the line or spot has been touched. An edit that only renames a
   // track must not send its line back: the server takes a new line as a new
@@ -304,7 +304,7 @@ export function useItemEditor(map, { atlas, onSaved } = {}) {
   }, []);
 
   /** A new track along a line that already exists — an activity, or tracks combined. */
-  const startFromLine = useCallback((coords, { name = "", color, activityId = null, folderId = null, sport } = {}) => {
+  const startFromLine = useCallback((coords, { name = "", color, activityId = null, folderId = null } = {}) => {
     const lineIn = (coords || []).filter((c) => c && c[0] != null && c[1] != null);
     const handles = handlesFromLine(lineIn);
     if (handles.length < 2) return false;
@@ -312,7 +312,7 @@ export function useItemEditor(map, { atlas, onSaved } = {}) {
     setError(null); setMenu(null);
     setDraft({
       ...CLOSED, open: true, kind: "new", handles, snap: false,
-      name, color: color || randomTrackColor(), activityId, folderId, sport: sport || "hiking",
+      name, color: color || randomTrackColor(), activityId, folderId,
       baseLine: lineIn, baseHandles: handleIndices(handles, lineIn), originalLine: lineIn,
     });
     return true;
@@ -333,7 +333,7 @@ export function useItemEditor(map, { atlas, onSaved } = {}) {
       ...CLOSED, open: true, kind: "track", id: detail.id, handles,
       // Re-routing simplified points would move the whole line.
       snap: saved ? !!saved.snapToTrails : false,
-      name: detail.name, color: detail.color, folderId: detail.folder_id ?? null, sport: detail.sport || "hiking",
+      name: detail.name, color: detail.color, folderId: detail.folder_id ?? null,
       // Kept only when the handles came from the line itself; a line re-routed
       // between stored handles is rebuilt.
       baseLine: saved ? null : stored,
@@ -412,7 +412,7 @@ export function useItemEditor(map, { atlas, onSaved } = {}) {
           saved = await api.updateCourse(d.id, d.folderId != null ? { ...body, folder_id: d.folderId } : { ...body, clear_folder: true });
         } else {
           saved = await api.createCourse(folder({
-            name: d.name.trim() || "Track", color: d.color, sport: d.sport, coords,
+            name: d.name.trim() || "Track", color: d.color, coords,
             source: d.activityId != null ? "activity" : "builder",
             ...(d.activityId != null ? { activity_id: d.activityId } : {}),
           }));
@@ -434,7 +434,6 @@ export function useItemEditor(map, { atlas, onSaved } = {}) {
     setColor: (color) => update({ color }),
     setIcon: (icon) => update({ icon }),
     setFolder: (folderId) => update({ folderId }),
-    setSport: (sport) => update({ sport }),
     setSnap: (snap) => update({ snap, dirty: true }),
     startNew, startFromLine, editTrack, editPlace, save, close,
     handleAt: (i) => draft.handles[i],

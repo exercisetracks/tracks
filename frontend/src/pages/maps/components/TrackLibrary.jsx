@@ -375,7 +375,6 @@ export default function TrackLibrary({
       <div className="flex-1 min-w-0 flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl overflow-hidden">
         <div className="flex items-center gap-2 px-3 pt-2.5 pb-1.5">
           <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-100 flex-1">My Tracks</h2>
-          <button type="button" className="btn btn-tonal btn-sm" onClick={onDraw} title="Click the map to draw a track or drop a place">Draw</button>
           <button type="button" className="btn btn-neutral btn-sm" disabled={busy} onClick={() => fileRef.current?.click()}>+GPX</button>
           <input ref={fileRef} type="file" accept=".gpx,.fit" multiple className="hidden" onChange={onImportFile} />
           <button type="button" className="icon-btn" title="Close" onClick={onClose}>×</button>

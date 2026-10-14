@@ -521,6 +521,9 @@ data class PoiHit(
     val lng: Double,
 )
 
+/** A search's hits, and the category the query was read as, if it was one. */
+data class PoiSearch(val category: String?, val hits: List<PoiHit>)
+
 /**
  * The compact export behind offline place search — see [Endpoints.POI_OFFLINE].
  *

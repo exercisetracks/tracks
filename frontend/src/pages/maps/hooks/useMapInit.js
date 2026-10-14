@@ -72,7 +72,7 @@ export function useMapInit(containerRef) {
       center: [-98.5, 39.8],
       zoom: 4,
       minZoom: 1,
-      maxZoom: 16,
+      maxZoom: 17,
       // This is a US-focused app that never pans across the antimeridian, so we
       // don't need MapLibre to render the wrapped-around duplicate world copies it
       // draws by default at low zoom — dropping them cuts tile requests and draw

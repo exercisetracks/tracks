@@ -35,7 +35,6 @@ class MergeSource(BaseModel):
 class CourseMerge(BaseModel):
     name: str | None = None
     color: str | None = None
-    sport: str | None = None
     sources: list[MergeSource]
     create_activity: bool = True   # also produce a non-contributing "merged trip" activity
     hide_sources: bool = True      # hide source tracks (kept, just removed from the map)
@@ -93,7 +92,7 @@ def merge_courses(body: CourseMerge, user: User = Depends(require_auth),
         user_id=user.id,
         name=(body.name or "Merged Track").strip()[:_MAX_NAME] or "Merged Track",
         color=body.color or _random_color(),
-        sport=(body.sport or fallback_sport or "hiking").lower(),
+        sport=(fallback_sport or "hiking").lower(),
         source="merged",
     )
     _apply_stats(track, merged)

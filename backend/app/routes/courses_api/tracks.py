@@ -50,9 +50,12 @@ def courses_geojson(user: User = Depends(require_auth), db: Session = Depends(ge
 
 
 class CourseCreate(BaseModel):
+    """A new track. No sport: choosing one was not a useful step, so the
+    column is filled internally — the traced activity's sport, or hiking —
+    where course files and turn checks still read it. A client that still
+    sends one is ignored rather than refused."""
     name: str | None = None
     color: str | None = None
-    sport: str | None = None
     source: str | None = "builder"
     turn_by_turn: bool = False
     load_to_device: bool = False
@@ -87,7 +90,7 @@ def create_course(body: CourseCreate, user: User = Depends(require_auth),
         user_id=user.id,
         name=(body.name or "Custom Track").strip()[:_MAX_NAME] or "Custom Track",
         color=body.color or _random_color(),
-        sport=(body.sport or "hiking").lower(),
+        sport="hiking",
         source=body.source or "builder",
         turn_by_turn=bool(body.turn_by_turn),
         load_to_device=bool(body.load_to_device),
@@ -108,6 +111,7 @@ def create_course(body: CourseCreate, user: User = Depends(require_auth),
         # since the track itself is still theirs.
         if act is not None and act.user_id in (None, user.id):
             t.activity_id = act.id
+            t.sport = (act.sport or "hiking").lower()
     _apply_stats(t, coords)
     _refresh_turns(t)
     db.add(t)

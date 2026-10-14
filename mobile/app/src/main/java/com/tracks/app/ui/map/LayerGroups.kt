@@ -122,8 +122,10 @@ val LAYER_GROUPS: List<LayerGroup> = listOf(
         onByDefault = true,
         toggleable = true,
         layers = listOf(
-            "activity_tracks_hit", "activity_tracks_hover", "activity_tracks_line",
-            "activity_tracks_arrows",
+            // The routes themselves are the heatmap glow, shown and hidden
+            // with this group in MapScreen; these are its hit line and the
+            // selected activity's highlight.
+            "activity_tracks_hit", "activity_tracks_hover",
         ),
     ),
     LayerGroup(

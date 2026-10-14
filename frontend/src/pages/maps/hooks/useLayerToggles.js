@@ -87,7 +87,9 @@ const LAYER_GROUPS = [
     id: "activity_tracks",
     label: "Activity Tracks",
     // Past activities as theme-coloured lines (data fed by useActivityTracks).
-    layers: ["activity_tracks_hit", "activity_tracks_hover", "activity_tracks_line", "activity_tracks_arrows"],
+    // The routes are the heatmap glow, which useActivityTracks shows and hides
+    // with this group; these are its hit line and highlight.
+    layers: ["activity_tracks_hit", "activity_tracks_hover"],
     default: true,
   },
   {

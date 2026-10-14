@@ -16,7 +16,7 @@
 // densifies around the winners; panning changes nothing. Features that never
 // find a free cell by MAX_Z stay hidden — an honest "wouldn't fit legibly".
 const WORLD_PX = 512; // MapLibre tile size: world width in px at z0
-const MAX_Z = 16; // map's maxZoom — grids beyond it can never be seen
+const MAX_Z = 17; // map's maxZoom — grids beyond it can never be seen
 const CHANNELS = [
   // ~footprint of one icon / one short name+halo, in screen px. Bigger cell =
   // sparser channel. Text floor 12 matches the old "names from z12" step.

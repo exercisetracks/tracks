@@ -22,6 +22,7 @@ promise the search cannot keep.
 
 from __future__ import annotations
 
+import difflib
 import re
 
 # Phrase → the kind/kind_detail values it should match.
@@ -230,10 +231,38 @@ def match_category(q: str) -> tuple[str, ...] | None:
     stripped = _strip_filler(_normalise(q))
     if not stripped:
         return None
-    for key in _ORDERED_KEYS:
-        if stripped == key:
-            return _CATEGORIES[key]
+    for candidate in _forms(stripped):
+        if candidate in _CATEGORIES:
+            return _CATEGORIES[candidate]
+    # A near miss on the whole phrase — "resteraunt", "campgound". Tight, so
+    # a place name a letter from a category is still a name: a long word may
+    # be a transposition or a dropped letter off (0.8), a short one hardly at
+    # all (0.9), since "bar" and "car" are both real words.
+    for candidate in _forms(stripped):
+        cutoff = 0.8 if len(candidate) >= 8 else 0.9
+        close = difflib.get_close_matches(candidate, _ORDERED_KEYS, n=1, cutoff=cutoff)
+        if close:
+            return _CATEGORIES[close[0]]
     return None
+
+
+def _forms(phrase: str) -> list[str]:
+    """The phrase, and the phrase with its last word made singular.
+
+    People search in the plural — "campgrounds", "gas stations" — and the
+    table is keyed in the singular. Only the last word: "gas stations" is
+    "gas station", not "ga station".
+    """
+    words = phrase.split()
+    last = words[-1]
+    singular = []
+    if last.endswith("ies") and len(last) > 4:
+        singular.append(last[:-3] + "y")
+    if last.endswith("es") and len(last) > 4:
+        singular.append(last[:-2])
+    if last.endswith("s") and not last.endswith("ss") and len(last) > 3:
+        singular.append(last[:-1])
+    return [phrase] + [" ".join(words[:-1] + [w]) for w in singular]
 
 
 def category_terms() -> list[str]:

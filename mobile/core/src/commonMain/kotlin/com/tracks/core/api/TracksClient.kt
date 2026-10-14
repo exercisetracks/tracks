@@ -1355,7 +1355,15 @@ class TracksClient(
      * than modelled in full. Parsed leniently: a hit missing its geometry is
      * dropped rather than failing the search.
      */
-    suspend fun searchPoi(query: String, lat: Double? = null, lon: Double? = null): List<PoiHit> {
+    suspend fun searchPoi(query: String, lat: Double? = null, lon: Double? = null): List<PoiHit> =
+        searchPoiDetailed(query, lat, lon).hits
+
+    /**
+     * [searchPoi], plus whether the server read the query as a category
+     * ("campgrounds") rather than a name — which is when the search sheet
+     * offers to mark every one on the map.
+     */
+    suspend fun searchPoiDetailed(query: String, lat: Double? = null, lon: Double? = null): PoiSearch {
         val body: JsonObject = request { token ->
             http.get(url(Endpoints.POI_SEARCH)) {
                 bearer(token)
@@ -1369,7 +1377,29 @@ class TracksClient(
                 }
             }
         }
-        return body["features"]?.jsonArray.orEmpty().mapNotNull { feature ->
+        return PoiSearch(body["category"]?.jsonPrimitive?.contentOrNull, poiHits(body))
+    }
+
+    /**
+     * Everything of a category inside the box (west, south, east, north),
+     * capped by the server at a few hundred, most notable first — to mark on
+     * the map, as a map search does. Null category: the query named a place.
+     */
+    suspend fun searchPoiInView(query: String, west: Double, south: Double, east: Double, north: Double): PoiSearch {
+        val body: JsonObject = request { token ->
+            http.get(url(Endpoints.POI_SEARCH)) {
+                bearer(token)
+                parameter("q", query)
+                parameter("limit", 50)
+                parameter("bbox", "$west,$south,$east,$north")
+                parameter("in_view", true)
+            }
+        }
+        return PoiSearch(body["category"]?.jsonPrimitive?.contentOrNull, poiHits(body))
+    }
+
+    private fun poiHits(body: JsonObject): List<PoiHit> =
+        body["features"]?.jsonArray.orEmpty().mapNotNull { feature ->
             val obj = feature as? JsonObject ?: return@mapNotNull null
             val properties = obj["properties"] as? JsonObject
             val centre = (obj["geometry"] as? JsonObject)
@@ -1388,7 +1418,6 @@ class TracksClient(
                 lng = lng,
             )
         }
-    }
 
     /**
      * Everything named in [bbox], for a phone to index and search for itself.

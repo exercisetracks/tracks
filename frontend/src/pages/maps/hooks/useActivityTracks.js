@@ -2,6 +2,27 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { useEffect, useRef, useCallback } from "react";
 import { api } from "../../../api/client";
+import { HeatmapGlowLayer, MAP_ACTIVITY_GLOW, buildHeatmapVerts } from "../../../components/map/HeatmapGlowLayer";
+
+const GLOW_ID = "activity_tracks_glow";
+
+// The theme's accent as [r, g, b]: the activities' colour, as their lines
+// always were — distinct from the basemap's orange roads and red trails.
+function accentRgb() {
+  try {
+    const v = getComputedStyle(document.documentElement).getPropertyValue("--accent-600").trim();
+    const parts = v.split(/[\s,]+/).map(Number);
+    if (parts.length >= 3 && parts.every((n) => Number.isFinite(n))) return parts.slice(0, 3);
+  } catch { /* default below */ }
+  return [37, 99, 235];
+}
+
+// GeoJSON LineStrings ([lng, lat]) → the glow's tracks ([lat, lng]).
+function tracksOf(gj) {
+  return (gj?.features || [])
+    .map((f) => f?.geometry?.type === "LineString" ? f.geometry.coordinates.map((c) => [c[1], c[0]]) : null)
+    .filter((t) => t && t.length > 1);
+}
 
 const HOVER_SRC = { source: "activity_tracks" };
 
@@ -14,21 +35,46 @@ let _cache = null;        // last geojson
 let _cacheAt = 0;         // ms timestamp
 const _STALE_MS = 30_000;
 
-// Feeds the `activity_tracks` GeoJSON source (past activities as queryable lines)
-// and paints them in the user's theme accent. Data loads the first time the layer
-// is toggled on; visibility itself is handled by the generic layer toggle.
-function accentRgb(level = 500) {
-  try {
-    const v = getComputedStyle(document.documentElement).getPropertyValue(`--accent-${level}`).trim();
-    if (v) return `rgb(${v})`;
-  } catch { /* ignore */ }
-  return "#10b981";
-}
-
-export function useActivityTracks(map, ready, enabled, accent) {
+// Feeds the `activity_tracks` GeoJSON source (past activities as queryable
+// lines, for clicking and the hover halo) and draws the routes themselves as
+// the dashboard's heatmap: the glow layer, in its light-map form — ink that
+// deepens where routes overlap — since the map page's basemap is pale. Data
+// loads the first time the layer is toggled on; the glow is shown and hidden
+// with the "Activity Tracks" toggle, the hit line by the generic toggle.
+export function useActivityTracks(map, ready, enabled) {
   const fetchingRef = useRef(false);
   const dataRef = useRef(_cache);   // seed from the cross-mount cache
   const hoveredRef = useRef(null);
+  const glowRef = useRef(null);
+  const enabledRef = useRef(enabled);
+  enabledRef.current = enabled;
+
+  // The glow: added under the hover halo, fed while the layer is on, and put
+  // back after a style reload, which drops custom layers.
+  const syncGlow = useCallback(() => {
+    if (!map) return;
+    try {
+      if (!enabledRef.current || !dataRef.current) {
+        if (map.getLayer(GLOW_ID)) map.removeLayer(GLOW_ID);
+        glowRef.current = null;
+        return;
+      }
+      if (!map.getLayer(GLOW_ID)) {
+        const layer = new HeatmapGlowLayer(GLOW_ID);
+        layer.setStyle(MAP_ACTIVITY_GLOW);
+        layer.setSubtractive(true);
+        map.addLayer(layer, map.getLayer("activity_tracks_hover") ? "activity_tracks_hover" : undefined);
+        glowRef.current = layer;
+        glowRef.current.fedWith = null;
+      }
+      const layer = glowRef.current || map.getLayer(GLOW_ID)?.implementation;
+      if (layer && layer.fedWith !== dataRef.current) {
+        const built = buildHeatmapVerts(tracksOf(dataRef.current), "frequency", "light", { color: accentRgb() });
+        layer.setData(built.verts, built.count);
+        layer.fedWith = dataRef.current;
+      }
+    } catch { /* style mid-reload; styledata calls again */ }
+  }, [map]);
 
   // Set the `hover` feature-state on one activity (clearing the previous). Driven
   // by both the on-map mousemove below and the point-info "Nearby activities" list.
@@ -67,11 +113,8 @@ export function useActivityTracks(map, ready, enabled, accent) {
     if (!ready || !map || !enabled) return;
     const feed = (gj) => {
       dataRef.current = gj;
-      try {
-        map.getSource("activity_tracks")?.setData(gj);
-        // Apply the accent colour now that data + theme vars are live (arrows stay white).
-        map.setPaintProperty("activity_tracks_line", "line-color", accentRgb(500));
-      } catch { /* not ready */ }
+      try { map.getSource("activity_tracks")?.setData(gj); } catch { /* not ready */ }
+      syncGlow();
     };
 
     if (_cache) feed(_cache);   // instant from cache
@@ -83,20 +126,22 @@ export function useActivityTracks(map, ready, enabled, accent) {
         .catch(() => { /* keep showing cache */ })
         .finally(() => { fetchingRef.current = false; });
     }
-  }, [map, ready, enabled]);
+  }, [map, ready, enabled, syncGlow]);
 
-  // Paint the line + arrows in the theme accent (re-applies on accent change and
-  // after a style reload, which also drops geojson data — re-feed it then).
+  // Off: the glow goes with the toggle.
+  useEffect(() => { if (ready && map && !enabled) syncGlow(); }, [map, ready, enabled, syncGlow]);
+
+  // After a style reload, which drops geojson data and custom layers: re-feed both.
   useEffect(() => {
-    if (!ready || !map) return;
+    if (!ready || !map) return undefined;
     const apply = () => {
-      try { map.setPaintProperty("activity_tracks_line", "line-color", accentRgb(500)); } catch { /* not added */ }
       if (dataRef.current) { try { map.getSource("activity_tracks")?.setData(dataRef.current); } catch { /* ignore */ } }
+      if (!map.getLayer(GLOW_ID)) glowRef.current = null;
+      syncGlow();
     };
-    apply();
     map.on("styledata", apply);
     return () => map.off("styledata", apply);
-  }, [map, ready, accent]);
+  }, [map, ready, syncGlow]);
 
   return { setHoveredActivity };
 }

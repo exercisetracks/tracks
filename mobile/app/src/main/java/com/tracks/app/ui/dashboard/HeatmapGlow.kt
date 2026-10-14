@@ -69,7 +69,18 @@ import kotlin.math.sqrt
  * segment covers exactly its own stretch, as the web's quads do, and the sums
  * are floats.
  */
-internal class HeatmapGlow(private val scope: CoroutineScope, private val density: Float) {
+internal class HeatmapGlow(
+    private val scope: CoroutineScope,
+    private val density: Float,
+    /** The biggest image drawn, in pixels; past it, the image is drawn smaller and scaled. */
+    private val maxPixels: Double = MAX_PIXELS,
+    /** How strong one pass is in frequency mode; see [MAP_INTENSITY]. */
+    private val frequencyIntensity: Float = FREQUENCY_INTENSITY,
+    /** Line width, as a multiple of the dashboard's. */
+    private val widthScale: Double = 1.0,
+    /** Frequency's colour on a light map, in place of the orange ink. */
+    private val ink: Int? = null,
+) {
 
     private class Line(val xs: DoubleArray, val ys: DoubleArray, val glow: Int, val ink: Int) {
         val minX = xs.min()
@@ -93,7 +104,9 @@ internal class HeatmapGlow(private val scope: CoroutineScope, private val densit
      * Per pixel: how much route passes ([weight]), and that weight times each
      * colour channel. Kept between draws, since they are tens of megabytes and
      * a redraw follows every pan; [buffers] keeps a cancelled draw that has not
-     * yet noticed from sharing them with its replacement.
+     * yet noticed from sharing them with its replacement. The colour sums are
+     * only kept in the value modes: frequency is one colour, and on a
+     * full-screen map they would be three quarters of the memory for nothing.
      */
     private var weight = FloatArray(0)
     private var red = FloatArray(0)
@@ -101,8 +114,12 @@ internal class HeatmapGlow(private val scope: CoroutineScope, private val densit
     private var blue = FloatArray(0)
     private val buffers = Mutex()
 
-    /** Install on a freshly loaded style; a theme switch loads a new one. */
-    fun attach(map: MapLibreMap, style: Style) {
+    /**
+     * Install on a freshly loaded style; a theme switch loads a new one.
+     * [below] names the layer to draw under — on the map page, the activity
+     * highlight and everything saved — and is otherwise on top.
+     */
+    fun attach(map: MapLibreMap, style: Style, below: String? = null) {
         if (this.map !== map) {
             this.map?.removeOnCameraIdleListener(onIdle)
             map.addOnCameraIdleListener(onIdle)
@@ -112,14 +129,14 @@ internal class HeatmapGlow(private val scope: CoroutineScope, private val densit
         if (style.getSource(SOURCE) == null) {
             val blank = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
             style.addSource(ImageSource(SOURCE, LatLngQuad(LatLng(1.0, 0.0), LatLng(1.0, 1.0), LatLng(0.0, 1.0), LatLng(0.0, 0.0)), blank))
-            style.addLayer(
-                RasterLayer(LAYER, SOURCE).withProperties(
-                    // Each redraw replaces the image; a fade would flash the
-                    // routes out and back in every time the camera settled.
-                    PropertyFactory.rasterFadeDuration(0f),
-                    PropertyFactory.rasterResampling(Property.RASTER_RESAMPLING_LINEAR),
-                ),
+            val layer = RasterLayer(LAYER, SOURCE).withProperties(
+                // Each redraw replaces the image; a fade would flash the
+                // routes out and back in every time the camera settled.
+                PropertyFactory.rasterFadeDuration(0f),
+                PropertyFactory.rasterResampling(Property.RASTER_RESAMPLING_LINEAR),
             )
+            if (below != null && style.getLayer(below) != null) style.addLayerBelow(layer, below)
+            else style.addLayer(layer)
         }
     }
 
@@ -200,24 +217,30 @@ internal class HeatmapGlow(private val scope: CoroutineScope, private val densit
         // [MAX_PIXELS] — a tablet, not a phone.
         val fullW = view.widthPx + left + right
         val fullH = view.heightPx + top + bottom
-        val k = min(1.0, sqrt(MAX_PIXELS / (fullW * fullH)))
+        val k = min(1.0, sqrt(maxPixels / (fullW * fullH)))
         val bw = (fullW * k).roundToInt().coerceAtLeast(1)
         val bh = (fullH * k).roundToInt().coerceAtLeast(1)
         val sx = bw / (rx1 - rx0)
         val sy = bh / (ry1 - ry0)
 
         val n = bw * bh
-        if (weight.size < n) {
-            weight = FloatArray(n); red = FloatArray(n); green = FloatArray(n); blue = FloatArray(n)
-        } else {
-            weight.fill(0f, 0, n); red.fill(0f, 0, n); green.fill(0f, 0, n); blue.fill(0f, 0, n)
+        if (weight.size < n) weight = FloatArray(n) else weight.fill(0f, 0, n)
+        if (valueColoured) {
+            if (red.size < n) {
+                red = FloatArray(n); green = FloatArray(n); blue = FloatArray(n)
+            } else {
+                red.fill(0f, 0, n); green.fill(0f, 0, n); blue.fill(0f, 0, n)
+            }
+        } else if (red.isNotEmpty()) {
+            // Let a value mode's colour buffers go when it is left.
+            red = FloatArray(0); green = FloatArray(0); blue = FloatArray(0)
         }
 
         // The web's widths, which widen as the map zooms out so a city's
         // worth of short dense segments does not thin to nothing.
         val baseHalf = if (valueColoured) VALUE_HALF_WIDTH else FREQUENCY_HALF_WIDTH
         val halfDp = min(baseHalf + max(0.0, 11 - view.zoom) * ZOOM_WIDENING, MAX_HALF_WIDTH)
-        val radius = halfDp * density * k
+        val radius = halfDp * widthScale * density * k
         // Points closer than this on screen add nothing a line can show.
         val minStep = 0.75 / sx
 
@@ -238,7 +261,7 @@ internal class HeatmapGlow(private val scope: CoroutineScope, private val densit
                 if (i < count - 1 && abs(x - lastX) < minStep && abs(y - lastY) < minStep) continue
                 splat(
                     (lastX - rx0) * sx, (lastY - ry0) * sy, (x - rx0) * sx, (y - ry0) * sy,
-                    radius, bw, bh, cr, cg, cb,
+                    radius, bw, bh, cr, cg, cb, valueColoured,
                 )
                 lastX = x
                 lastY = y
@@ -246,12 +269,28 @@ internal class HeatmapGlow(private val scope: CoroutineScope, private val densit
         }
 
         coroutineContext.ensureActive()
-        val pixels = IntArray(n)
-        for (i in 0 until n) {
-            val w = weight[i]
-            if (w > 0f) pixels[i] = tone(w, red[i] / w, green[i] / w, blue[i] / w, dark, valueColoured)
+        // Frequency is one colour: every line carries the same.
+        val one = (if (!dark) ink else null) ?: lines.firstOrNull()?.let { if (dark) it.glow else it.ink } ?: 0xFF660D
+        val fr = ((one shr 16) and 0xFF) / 255f
+        val fg = ((one shr 8) and 0xFF) / 255f
+        val fb = (one and 0xFF) / 255f
+        // Written a row at a time rather than from one array the size of the
+        // image, which on a full-screen map was another tens of megabytes.
+        val bitmap = Bitmap.createBitmap(bw, bh, Bitmap.Config.ARGB_8888)
+        val row = IntArray(bw)
+        for (y in 0 until bh) {
+            val base = y * bw
+            for (x in 0 until bw) {
+                val i = base + x
+                val w = weight[i]
+                row[x] = when {
+                    w <= 0f -> 0
+                    valueColoured -> tone(w, red[i] / w, green[i] / w, blue[i] / w, dark, true)
+                    else -> tone(w, fr, fg, fb, dark, false, frequencyIntensity)
+                }
+            }
+            bitmap.setPixels(row, 0, bw, 0, y, bw, 1)
         }
-        val bitmap = Bitmap.createBitmap(pixels, bw, bh, Bitmap.Config.ARGB_8888)
 
         val quad = LatLngQuad(
             LatLng(lat(ry0), lng(rx0)), LatLng(lat(ry0), lng(rx1)),
@@ -276,7 +315,7 @@ internal class HeatmapGlow(private val scope: CoroutineScope, private val densit
      */
     private fun splat(
         ax: Double, ay: Double, bx: Double, by: Double, r: Double,
-        bw: Int, bh: Int, cr: Float, cg: Float, cb: Float,
+        bw: Int, bh: Int, cr: Float, cg: Float, cb: Float, colour: Boolean,
     ) {
         val len = hypot(bx - ax, by - ay)
         if (len < 1e-6) return
@@ -312,15 +351,18 @@ internal class HeatmapGlow(private val scope: CoroutineScope, private val densit
                 val w = (edge * edge).toFloat()
                 val i = row + x
                 weight[i] += w
-                red[i] += w * cr
-                green[i] += w * cg
-                blue[i] += w * cb
+                if (colour) {
+                    red[i] += w * cr
+                    green[i] += w * cg
+                    blue[i] += w * cb
+                }
             }
         }
     }
 
-    private companion object {
-        const val SOURCE = "tracks_heat_glow"
+    companion object {
+        private const val SOURCE = "tracks_heat_glow"
+        /** The raster layer it draws into, for anything that has to sit above or below it. */
         const val LAYER = "tracks_heat_glow_layer"
 
         /**
@@ -336,6 +378,23 @@ internal class HeatmapGlow(private val scope: CoroutineScope, private val densit
          * once 2 M, which drew a phone's at 78 % and the map visibly soft.
          */
         const val MAX_PIXELS = 3_000_000.0
+
+        /**
+         * The full-screen map's: a phone screen with its margin is about 6.5 M
+         * pixels, drawn at ~80 % — the glow is soft enough not to show it, and
+         * the buffers stay near the dashboard's (weight plus bitmap, ~32 MB).
+         */
+        const val MAP_MAX_PIXELS = 4_000_000.0
+
+        /**
+         * Activities on the map page: much stronger per pass, and wider (see
+         * [MAP_WIDTH]), than on the dashboard. There the glow is the whole
+         * picture on a plain ground; here it is one layer on a busy basemap,
+         * where one run at the dashboard's 0.18 could not be seen among the
+         * roads and trails. The web's MAP_ACTIVITY_GLOW.
+         */
+        const val MAP_INTENSITY = 0.45f
+        const val MAP_WIDTH = 1.6
 
         // The web's half-widths are device pixels on a desktop screen; in dp
         // on a phone they read heavy on a card a third the size, hence 0.6×.
@@ -377,9 +436,12 @@ internal class HeatmapGlow(private val scope: CoroutineScope, private val densit
          * density makes it more opaque and somewhat brighter (darker on a
          * light map), never a different colour.
          */
-        fun tone(w: Float, r: Float, g: Float, b: Float, dark: Boolean, valueColoured: Boolean): Int {
+        fun tone(
+            w: Float, r: Float, g: Float, b: Float, dark: Boolean, valueColoured: Boolean,
+            intensity: Float = FREQUENCY_INTENSITY,
+        ): Int {
             if (!valueColoured) {
-                val i = w * FREQUENCY_INTENSITY
+                val i = w * intensity
                 val sr = min(1f, r * i)
                 val sg = min(1f, g * i)
                 val sb = min(1f, b * i)

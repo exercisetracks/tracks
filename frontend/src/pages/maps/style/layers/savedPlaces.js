@@ -48,6 +48,10 @@ export function buildSavedPlaces() {
       id: "saved_places_label",
       ...SRC,
       type: "symbol",
+      // Collision-placed (see COLLIDE in style/index.js): the marks are never
+      // dropped, but their names are where they would print over each other —
+      // a cluster of campsites stacked a dozen names into one smudge.
+      metadata: { "tracks:collide": true },
       layout: {
         "visibility": "none",
         // Named explicitly: a font stack the glyph endpoint does not serve
@@ -58,6 +62,9 @@ export function buildSavedPlaces() {
         "text-anchor": "top",
         "text-offset": ["case", ["get", "pin"], ["literal", [0, 0.25]], ["literal", [0, 1.1]]],
         "text-optional": true,
+        "text-allow-overlap": false,
+        "text-ignore-placement": false,
+        "text-padding": 4,
       },
       paint: {
         "text-color": "#1f2937",

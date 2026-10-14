@@ -68,6 +68,7 @@ import com.tracks.app.AppContainer
 import com.tracks.app.ui.components.DangerButton
 import com.tracks.app.ui.components.NeutralButton
 import com.tracks.app.ui.components.PrimaryButton
+import com.tracks.app.ui.components.TonalButton
 import com.tracks.app.ui.components.axisFormat
 import com.tracks.app.ui.components.chartScale
 import com.tracks.app.ui.components.drawYAxis
@@ -619,6 +620,8 @@ fun SearchSheet(
     near: LatLng?,
     onPick: (PoiHit) -> Unit,
     onDismiss: () -> Unit,
+    /** A category query: mark every one in view on the map, and close. */
+    onMarkAll: (String) -> Unit = {},
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var query by remember { mutableStateOf("") }
@@ -640,6 +643,16 @@ fun SearchSheet(
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
+
+            // A category ("campgrounds", "gas stations") is a request to see
+            // them on the map, as a map search does, more than a list of ten.
+            state.searchCategory?.takeIf { query.isNotBlank() && !state.searching }?.let { category ->
+                TonalButton(
+                    "Show all $category on the map",
+                    onClick = { onMarkAll(query.trim()) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
 
             when {
                 state.searching -> Text(

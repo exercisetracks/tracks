@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../../api/client";
-import { useTheme } from "../../context/ThemeContext";
 import { useMapInit } from "./hooks/useMapInit";
 import { useWheelZoom } from "./hooks/useWheelZoom";
 import { useMapSettings } from "./hooks/useMapSettings";
@@ -71,7 +70,6 @@ import MapLegend from "./components/MapLegend";
 export default function MapView() {
   const containerRef = useRef(null);
   const gridCanvasRef = useRef(null);
-  const { accent } = useTheme();
   // Opened from a race plan ("Draw on map"): the next saved track becomes
   // that race's course, and the user is taken back to the plan.
   const [searchParams] = useSearchParams();
@@ -125,7 +123,10 @@ export default function MapView() {
     } : null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor.open, editor.kind, editor.id, items.setEditing]);
-  usePoiSearch(map, ready);
+  // Typing a search puts the place-details panel away: it sits right under the
+  // search box and covered the results.
+  const pointCloseRef = useRef(null);
+  const search = usePoiSearch(map, ready, { onTyping: () => pointCloseRef.current?.() });
   usePoiFeatures(map, ready);
   // Grid-ranks the public-land area names (grant-once, pan-stable) — the layer
   // starts filtered to nothing and this hook owns its filter.
@@ -144,6 +145,7 @@ export default function MapView() {
   const pointInfo = usePointInfo(map, ready,
     !editor.open && !region.drawing && (!mergeMode || mergeSources.length === 0),
     useCallback((routeId, sectionId) => { setRouteDetail({ routeId, sectionId }); setSelected(null); }, []));
+  pointCloseRef.current = pointInfo.close;
   // Light up long-trail segments on hover (pointer cursor) to signal clickability.
   useRouteHover(map, ready);
 
@@ -161,7 +163,7 @@ export default function MapView() {
     [pointInfo.point]);
 
   // Past-activity tracks layer (theme-coloured lines; toggle in the layer panel).
-  const { setHoveredActivity } = useActivityTracks(map, ready, toggles.activity_tracks, accent);
+  const { setHoveredActivity } = useActivityTracks(map, ready, toggles.activity_tracks);
 
   // Clicking a saved track or place selects it → the detail panel.
   const selectItem = useCallback((sel) => {
@@ -260,7 +262,7 @@ export default function MapView() {
     }
     editor.startFromLine(joined, {
       name: list.map((t) => t.name).join(" + ").slice(0, 80),
-      color: list[0]?.color, sport: list[0]?.sport,
+      color: list[0]?.color,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor.startFromLine]);
@@ -375,7 +377,7 @@ export default function MapView() {
         .map((p) => (p.altitude != null ? [p.lng, p.lat, p.altitude] : [p.lng, p.lat]));
       editor.startFromLine(line, {
         name: act?.name || selectedActivity?.name || "Track",
-        activityId, sport: act?.sport ? String(act.sport).toLowerCase() : undefined,
+        activityId,
       });
     } finally { setCreatingFromActivity(false); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -458,6 +460,16 @@ export default function MapView() {
         onHoverActivity={setHoveredActivity}
         onSavePlace={(pt, name) => { pointInfo.close(); editor.startNew([pt.lng, pt.lat], { name }); }}
       />
+
+      {/* How many of a searched category are marked — and when the view holds
+          more than are drawn, that zooming in shows the rest. */}
+      {search.marked && (
+        <div className="absolute top-[0.9rem] left-[16.5rem] z-10 px-2.5 py-1 rounded-full bg-white/95 dark:bg-slate-900/95 shadow border border-slate-200 dark:border-slate-700 text-[11px] text-slate-600 dark:text-slate-300">
+          {search.marked.count === 0 ? `No ${search.marked.category} in view`
+            : search.capped ? `${search.marked.count}+ ${search.marked.category} — zoom in for the rest`
+              : `${search.marked.count} ${search.marked.category} in view`}
+        </div>
+      )}
 
       {/* Fire detail card (same slot as PointInfoPanel; usePointInfo skips fire clicks). */}
       {selectedFire && <WildfirePanel fire={selectedFire} onClose={closeFire} />}

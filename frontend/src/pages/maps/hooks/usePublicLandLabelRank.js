@@ -23,7 +23,7 @@ import { cellKey } from "../utils/labelRank";
 const LAYER_ID = "publiclands_labels";
 const CELL_PX = 120; // ~footprint of one wrapped area name + halo, screen px
 const MIN_Z = 6; // publiclands_labels minzoom
-const MAX_Z = 16;
+const MAX_Z = 17;
 const DEF_GRADE = 9; // grade assumed when a feature lacks min_zoom
 const IS_CENTER_LABEL = ["all",
   ["==", ["geometry-type"], "Point"], ["==", ["get", "label"], 1]];

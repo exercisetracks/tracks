@@ -190,6 +190,10 @@ data class MapToolsUiState(
     val weatherLoading: Boolean = false,
     val searchResults: List<PoiHit> = emptyList(),
     val searching: Boolean = false,
+    /** What the server read the query as, when it was a category ("campgrounds"). */
+    val searchCategory: String? = null,
+    /** A category's matches marked on the map, until cleared; see [MapToolsViewModel.markOnMap]. */
+    val marked: MarkedSearch? = null,
     val route: RouteDraft = RouteDraft(),
     /** The saved thing the user tapped or picked, if any. */
     val selected: Selection? = null,
@@ -836,22 +840,59 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
     fun search(query: String, near: LatLng?) {
         searchJob?.cancel()
         if (query.isBlank()) {
-            _state.update { it.copy(searchResults = emptyList(), searching = false) }
+            _state.update { it.copy(searchResults = emptyList(), searching = false, searchCategory = null) }
             return
         }
         searchJob = viewModelScope.launch {
             delay(SEARCH_DEBOUNCE_MS)
             _state.update { it.copy(searching = true) }
-            val hits = runCatching {
-                container.client().searchPoi(query, near?.latitude, near?.longitude)
-            }.getOrNull() ?: container.offlinePoiData().search(query)
-            _state.update { it.copy(searching = false, searchResults = hits) }
+            val found = runCatching {
+                container.client().searchPoiDetailed(query, near?.latitude, near?.longitude)
+            }.getOrNull() ?: com.tracks.core.api.PoiSearch(null, container.offlinePoiData().search(query))
+            _state.update { it.copy(searching = false, searchResults = found.hits, searchCategory = found.category) }
         }
     }
 
     fun clearSearch() {
         searchJob?.cancel()
-        _state.update { it.copy(searchResults = emptyList(), searching = false) }
+        _state.update { it.copy(searchResults = emptyList(), searching = false, searchCategory = null) }
+    }
+
+    private var markJob: kotlinx.coroutines.Job? = null
+
+    /**
+     * Mark every match of a category inside [bounds] on the map, as a map
+     * search does — "campgrounds" is a request to see them, not a list of the
+     * nearest ten. The marks follow the map: [refreshMarked] asks again for
+     * whatever is in view after it moves. Needs the server; offline there is
+     * nothing to ask, and the list stays the answer.
+     */
+    fun markOnMap(query: String, bounds: org.maplibre.android.geometry.LatLngBounds) {
+        markJob?.cancel()
+        markJob = viewModelScope.launch {
+            val found = runCatching {
+                container.client().searchPoiInView(
+                    query, bounds.longitudeWest, bounds.latitudeSouth, bounds.longitudeEast, bounds.latitudeNorth,
+                )
+            }.getOrNull()
+            val category = found?.category
+            _state.update {
+                it.copy(
+                    marked = if (category == null) null else MarkedSearch(query, category, found.hits),
+                    notice = if (found == null) "Marking places needs a connection to the server" else it.notice,
+                )
+            }
+        }
+    }
+
+    fun refreshMarked(bounds: org.maplibre.android.geometry.LatLngBounds) {
+        val marked = _state.value.marked ?: return
+        markOnMap(marked.query, bounds)
+    }
+
+    fun clearMarked() {
+        markJob?.cancel()
+        _state.update { it.copy(marked = null) }
     }
 
     // ── Routing ──────────────────────────────────────────────────────────────
@@ -2028,3 +2069,8 @@ private const val EARTH_RADIUS_M = 6_371_000.0
 /** How long a removal may go unconfirmed before its row is shown again. */
 private const val LEAVING_TIMEOUT_MS = 120_000L
 
+/** A category's matches in view, marked on the map; [hits] is capped by the server. */
+data class MarkedSearch(val query: String, val category: String, val hits: List<PoiHit>) {
+    /** The server's cap: reaching it means the view holds more than are drawn. */
+    val capped: Boolean get() = hits.size >= 300
+}
