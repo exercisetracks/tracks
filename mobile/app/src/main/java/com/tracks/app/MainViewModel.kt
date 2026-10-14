@@ -200,12 +200,19 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
             refreshFromCache()
             _state.update { current -> current.copy(
                 deviceKeyEnrolled = container.tokens.load().canSelfUnlock,
-                session = if (container.tokens.load().isAuthenticated) {
-                    SessionState.Active
-                } else {
-                    SessionState.LoggedOut
-                },
             ) }
+            // Into the shared flow, not only this screen's state. The flow
+            // starts out LoggedOut, and a StateFlow does not emit a value equal
+            // to the one it holds: so when the session was only copied into
+            // _state here, signing out set the flow to the LoggedOut it already
+            // held, nothing was emitted, and every screen went on showing the
+            // signed-in controls (sync, sign out, change password) with no way
+            // to connect again short of restarting the app.
+            // Only over the initial value: a VaultLocked a request reported
+            // during startup is the more current answer.
+            if (container.tokens.load().isAuthenticated) {
+                container.sessionState.compareAndSet(SessionState.LoggedOut, SessionState.Active)
+            }
             // The account's own preferences — units and accent — before
             // anything is drawn that formats a distance, and again once a pull
             // may have brought another device's choice.
