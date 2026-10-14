@@ -52,7 +52,7 @@ grep -q "versionName = \"${VERSION}\"" mobile/app/build.gradle.kts || die "mobil
 # the version bump (AGENTS.md, Releasing). Checked before anything is built,
 # so a missing summary costs nothing to fix.
 notes="docs/release-notes/${VERSION}.md"
-[ -s "$notes" ] || die "no release notes at $notes — write a short summary of the changes since the last release (AGENTS.md, Releasing)"
+[ -s "$notes" ] || die "no release notes at $notes — write a bulleted summary of the changes since the last release (AGENTS.md, Releasing)"
 
 bundle=mobile/app/src/main/assets/watchapp/index.json
 [ -f "$bundle" ] || die "no watch app bundle — run watchapp/build.sh all"
