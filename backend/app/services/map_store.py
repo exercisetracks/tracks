@@ -119,31 +119,46 @@ def drop_area(name: str, area, remaining) -> int:
     `area` and `remaining` are shapely geometries in lon/lat; `remaining` may be
     None (nothing else is installed). A tile on the border of both stays as it
     is: for these layers its content does not depend on which area fetched it.
+
+    The tiles to drop are worked out as tile-id ranges, per zoom, by the same
+    quadtree cover the size estimate uses (remote_estimate.rect_ranges), and
+    each tile is then a binary search away from its answer. Testing every
+    tile's bounds against the shapes in Python took 17 s for a state's 737,000
+    basemap tiles, on one core.
     """
-    master = master_path(name)
-    if not master.exists():
-        return 0
-    from pmtiles.tile import tileid_to_zxy
+    import bisect
+
     from shapely.geometry import box
     from shapely.prepared import prep
 
-    aw, as_, ae, an = area.bounds
-    area_p = prep(area)
-    remaining_p = prep(remaining) if remaining is not None and not remaining.is_empty else None
+    from app.services.remote_estimate import rect_ranges
+
+    master = master_path(name)
+    if not master.exists():
+        return 0
+    h = tile_archives.header(master)
+    held = prep(remaining) if remaining is not None and not remaining.is_empty else None
+    # Area envelopes are safe here: any tile inside an envelope but outside
+    # the area's own shape was put there by another area, which `remaining`
+    # protects.
+    skip = (lambda w, s, e, n: held.contains(box(w, s, e, n))) if held else None
+    skip_tile = (lambda w, s, e, n: held.intersects(box(w, s, e, n))) if held else None
+    ranges = sorted(r for z in range(int(h["min_zoom"]), int(h["max_zoom"]) + 1)
+                    for r in rect_ranges(area.bounds, z, skip, skip_tile))
+    if not ranges:
+        # Nothing only this area touched (it lay inside others): no rewrite.
+        logger.info("Nothing to drop from %s", name)
+        return tile_archives.tile_count(master)
+    starts = [lo for lo, _ in ranges]
     dropped = 0
 
     def keep(tid: int) -> bool:
         nonlocal dropped
-        w, s, e, n = tile_bounds(*tileid_to_zxy(tid))
-        if e < aw or w > ae or n < as_ or s > an:
-            return True
-        tile = box(w, s, e, n)
-        if not area_p.intersects(tile):
-            return True
-        if remaining_p is not None and remaining_p.intersects(tile):
-            return True
-        dropped += 1
-        return False
+        i = bisect.bisect_right(starts, tid) - 1
+        if i >= 0 and tid < ranges[i][1]:
+            dropped += 1
+            return False
+        return True
 
     n = tile_archives.merge([master], master, keep=keep)
     logger.info("Dropped %d tiles from %s (%d remain)", dropped, name, n)

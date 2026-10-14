@@ -61,6 +61,7 @@ def reg(monkeypatch, tmp_path):
     monkeypatch.setattr(region_registry, "mark_deleted", lambda rid: rows.rows[rid].update(status="deleted"))
     monkeypatch.setattr(map_store, "write_reload_trigger", lambda: None)
     monkeypatch.setattr(map_builds, "preflight_disk", lambda bbox: None)
+    monkeypatch.setattr(map_builds, "PARALLEL", False)
     return rows
 
 
@@ -178,6 +179,7 @@ class TestBuild:
 
         def cancel_during(name, part, **k):
             phases.append(("publish", name))
+            map_store.master_path(name).write_bytes(b"published")
             reg.rows[1]["status"] = "cancelling"
         monkeypatch.setattr(map_store, "publish", cancel_during)
         monkeypatch.setattr(download_cancel.CancelToken, "raise_if_cancelled",
@@ -257,6 +259,7 @@ def test_only_one_process_builds_at_a_time(monkeypatch):
     from app.database import engine
     monkeypatch.setattr(map_builds, "migrate_legacy_parts", lambda: None)
     monkeypatch.setattr(map_builds, "recover_missing_masters", lambda: None)
+    monkeypatch.setattr(map_builds, "sweep_orphan_pois", lambda: None)
     monkeypatch.setattr(map_builds, "next_job", lambda: None)
     with engine.connect().execution_options(isolation_level="AUTOCOMMIT") as other:
         other.execute(text("SELECT pg_advisory_lock(:k)"), {"k": map_builds.LOCK_KEY})

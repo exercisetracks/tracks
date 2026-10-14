@@ -41,6 +41,8 @@ export function useRegionDownload(map) {
   // a size: a source the server cannot read used to come back as 0 bytes and
   // read as "<1 MB", and the download that followed failed with no word why.
   const [estimateError, setEstimateError] = useState(null);
+  // Installed area ids at the last draw, to notice one being removed.
+  const installedIdsRef = useRef(new Set());
   const [regions, setRegions] = useState([]);
   const [pending, setPending] = useState(false);
   // The saved area that already covered the last box drawn, if one did.
@@ -109,6 +111,28 @@ export function useRegionDownload(map) {
     }
 
     const installed = regions.filter((r) => r.status === "installed");
+
+    // An area removed since the last look: what the browser holds for it must
+    // go too. The close-up basemap is never reloaded by the tile-version
+    // watcher (so it does not flash on every download), and the map engine
+    // keeps its tiles in memory — so a removed area went on showing its detail
+    // until the page was reloaded. Its places of interest are fetched again
+    // as well (the server has removed them).
+    const nowIds = new Set(installed.map((r) => r.id));
+    const removed = [...installedIdsRef.current].some((id) => !nowIds.has(id));
+    installedIdsRef.current = nowIds;
+    if (removed) {
+      try {
+        const src = map.getSource("basemap");
+        const tiles = src?.tiles || src?._options?.tiles;
+        if (src?.setTiles && tiles) {
+          const stamp = Date.now();
+          src.setTiles(tiles.map((u) => u.replace(/([?&])r=\d+/, "").replace(/\?$/, "")
+            + (u.includes("?") ? "&" : "?") + `r=${stamp}`));
+        }
+      } catch {}
+      try { map.fire("moveend"); } catch {}
+    }
 
     const features = installed.map((r) => ({
       type: "Feature",

@@ -69,13 +69,19 @@ logger = logging.getLogger(__name__)
 
 # PostgreSQL advisory lock id for "the map writer" (ASCII "tmap").
 LOCK_KEY = 0x746D6170
-# How often an idle builder checks the queue; a new request also wakes the
-# builder in its own process at once (kick).
-POLL_S = 10.0
+# How often an idle builder checks the queue. A new request wakes the builder
+# in its own process at once (kick), but the lock may be held by another
+# worker's builder, which only notices on its next check — at 10 s that was
+# most of a small area's removal time.
+POLL_S = 3.0
 HEARTBEAT_S = 10.0
 # A build that has started this many times without finishing stops trying: one
 # that kills its process every time (out of memory, say) must not loop forever.
 MAX_ATTEMPTS = 3
+
+# Master rewrites run in their own processes (_start_parallel). The tests turn
+# it off: their stand-in functions cannot cross into a spawned process.
+PARALLEL = True
 
 PHASES = ("extract", "overlay", "dem", "contours", "basemap", "publish")
 
@@ -132,6 +138,7 @@ def drain() -> bool:
         try:
             migrate_legacy_parts()
             recover_missing_masters()
+            sweep_orphan_pois()
             upgrade_overlays()
             while True:
                 job = next_job()
@@ -205,6 +212,16 @@ def build(job: dict) -> None:
     cancel = download_cancel.CancelToken(rid)
     cancel.start_watching()
     phase = "start"
+    basemap_job = None
+    basemap_pool = None
+
+    def settle_basemap():
+        # Whatever happens to the build, the background publish finishes (or
+        # fails) before anything else touches that master.
+        nonlocal basemap_job
+        if basemap_pool is not None:
+            basemap_pool.shutdown(wait=True)
+        basemap_job = None
 
     high = [0.0]
 
@@ -251,6 +268,17 @@ def build(job: dict) -> None:
 
             size = sum(p.stat().st_size for p in work.glob("*.pmtiles"))
 
+            # The basemap detail is published in a process of its own while
+            # the terrain and contours are done here: separate files, and
+            # neither waits on the other.
+            src = work / "source.pmtiles"
+            if "basemap" not in done and src.exists() and PARALLEL:
+                import multiprocessing
+                from concurrent.futures import ProcessPoolExecutor
+                basemap_pool = ProcessPoolExecutor(max_workers=1, mp_context=multiprocessing.get_context("spawn"),
+                                                   initializer=child_logging)
+                basemap_job = basemap_pool.submit(map_store.publish, map_store.MASTER_BASEMAP, str(src))
+
             phase = "dem"
             if phase not in done:
                 if (work / "dem.pmtiles").exists():
@@ -269,11 +297,15 @@ def build(job: dict) -> None:
 
             phase = "basemap"
             if phase not in done:
-                src = work / "source.pmtiles"
-                if src.exists():
+                if basemap_job is not None:
+                    status("merging", 50, "Adding map detail…")
+                    basemap_job.result()
+                    settle_basemap()
+                elif src.exists():
                     status("merging", 0, "Adding map detail…")
                     map_store.publish(map_store.MASTER_BASEMAP, src,
                                       progress=lambda f: status("merging", f * 90, f"Adding map detail… {f:.0%}"))
+                if src.exists():
                     status("merging", 95, "Indexing places…")
                     _index_pois(src)
                 finish(phase)
@@ -302,14 +334,17 @@ def build(job: dict) -> None:
         map_store.write_reload_trigger()
         logger.info("Area %s (%s) installed", rid, job["name"])
     except download_cancel.DownloadCancelled:
+        settle_basemap()
         logger.info("Area %s cancelled during %s", rid, phase)
         region_registry.update_status(rid, "cancelling", progress=0.0, detail="Cancelling…")
         teardown(region_registry.get(rid) or job)
     except Exception as e:
+        settle_basemap()
         logger.exception("Area %s failed during %s", rid, phase)
         region_registry.update_status(rid, "error", error=f"{_PHASE_LABEL.get(phase, phase)}: {e}")
         map_store.write_reload_trigger()
     finally:
+        settle_basemap()
         cancel.stop_watching()
 
 
@@ -395,6 +430,42 @@ def preflight_disk(bbox: list[float]) -> None:
             f"free and {free / 1e9:.1f} GB is")
 
 
+# ── Parallel work ────────────────────────────────────────────────────────────
+
+def child_logging() -> None:
+    """A spawned process starts with no logging set up; give it the server's."""
+    import logging
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(name)s] %(levelname)s: %(message)s")
+
+
+def _start_parallel(calls: list[tuple]):
+    """Run (function, *args) calls in separate processes; returns at once, and
+    calling the result waits for them all (raising any failure).
+
+    The masters are separate files, so rewriting several at once is safe, and
+    each rewrite is Python-bound — threads would share one core under the GIL.
+    Spawned rather than forked: this runs on a thread of a multi-threaded
+    server, where a fork can inherit a lock some other thread held.
+    """
+    import multiprocessing
+    from concurrent.futures import ProcessPoolExecutor
+    if not calls:
+        return lambda: []
+    if not PARALLEL:
+        results = [fn(*args) for fn, *args in calls]
+        return lambda: results
+    pool = ProcessPoolExecutor(max_workers=len(calls), mp_context=multiprocessing.get_context("spawn"),
+                               initializer=child_logging)
+    futures = [pool.submit(fn, *args) for fn, *args in calls]
+
+    def wait():
+        try:
+            return [f.result() for f in futures]
+        finally:
+            pool.shutdown(wait=True)
+    return wait
+
+
 # ── Teardown ─────────────────────────────────────────────────────────────────
 
 def teardown(job: dict) -> None:
@@ -406,16 +477,22 @@ def teardown(job: dict) -> None:
                                           else "deleting", progress=10.0, detail="Removing…")
             area = region_registry.region_geom(job)
             remaining = region_registry.coverage(exclude_id=rid, include_partial=True)
-            for name in map_store.AREA_INDEPENDENT:
-                map_store.drop_area(name, area, remaining)
-
-            parts = map_store.overlay_parts(rid)
-            if parts:
-                region_registry.update_status(rid, job["status"], progress=50.0,
-                                              detail="Rebuilding trails for neighbouring areas…")
-                _hand_over_ground(job, remaining)
-            shutil.rmtree(map_store.area_dir(rid), ignore_errors=True)
-            map_store.rebuild_overlay()
+            # The three tile masters at once, each in its own process, while
+            # the overlay is rebuilt here: nothing of one waits on the others.
+            drops = _start_parallel([(map_store.drop_area, name, area, remaining)
+                                     for name in map_store.AREA_INDEPENDENT
+                                     if map_store.master_path(name).exists()])
+            try:
+                parts = map_store.overlay_parts(rid)
+                if parts:
+                    region_registry.update_status(rid, job["status"], progress=50.0,
+                                                  detail="Rebuilding trails for neighbouring areas…")
+                    _hand_over_ground(job, remaining)
+                shutil.rmtree(map_store.area_dir(rid), ignore_errors=True)
+                map_store.rebuild_overlay()
+            finally:
+                drops()
+            drop_pois(area, remaining)
             shutil.rmtree(map_store.work_dir(rid), ignore_errors=True)
         region_registry.mark_deleted(rid)
         map_store.write_reload_trigger()
@@ -516,6 +593,57 @@ def upgrade_overlays() -> None:
                                       detail="Updating trails and public lands…")
         logger.info("Area %s: rebuilding its overlay (built by version %s, now %s)",
                     r["id"], built, OVERLAY_VERSION)
+
+
+def drop_pois(area, remaining) -> int:
+    """Remove the places an area's build indexed, except where another area
+    still covers them.
+
+    Only the places an area's build indexed — from its OSM data ('osm_poi')
+    and its basemap ('pois'); GNIS and Natural Earth are global imports, kept
+    everywhere. Left behind,
+    a removed area's places went on appearing as map icons and search results
+    over ground with no map under them.
+    """
+    from shapely.geometry import Point
+    from shapely.prepared import prep
+
+    from app.database import SessionLocal
+    w, s, e, n = area.bounds
+    inside = prep(area)
+    keep = prep(remaining) if remaining is not None and not remaining.is_empty else None
+    db = SessionLocal()
+    try:
+        rows = db.execute(text(
+            "SELECT id, lng, lat FROM poi_search WHERE source IN ('osm_poi', 'pois') "
+            "AND point(lng, lat) <@ box(point(:w, :s), point(:e, :n))"),
+            {"w": w, "s": s, "e": e, "n": n}).fetchall()
+        doomed = [r.id for r in rows
+                  if inside.covers(Point(r.lng, r.lat)) and not (keep and keep.covers(Point(r.lng, r.lat)))]
+        for i in range(0, len(doomed), 5000):
+            db.execute(text("DELETE FROM poi_search WHERE id = ANY(:ids)"), {"ids": doomed[i:i + 5000]})
+        db.commit()
+        if doomed:
+            logger.info("Removed %d places indexed for a removed area", len(doomed))
+        return len(doomed)
+    finally:
+        db.close()
+
+
+_orphans_swept = False
+
+
+def sweep_orphan_pois() -> None:
+    """Once per process: places left by areas removed before drop_pois existed."""
+    global _orphans_swept
+    if _orphans_swept:
+        return
+    _orphans_swept = True
+    from shapely.geometry import box
+    try:
+        drop_pois(box(-180, -90, 180, 90), region_registry.coverage(include_partial=True))
+    except Exception:
+        logger.exception("Sweeping orphaned places failed")
 
 
 def recover_missing_masters() -> None:
