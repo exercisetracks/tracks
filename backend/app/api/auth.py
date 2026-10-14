@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Hawk Fugagli
 # SPDX-License-Identifier: AGPL-3.0-or-later
+import jwt
 import logging
 import secrets
 import time
@@ -283,6 +284,7 @@ def login(
     request: Request,
     db: Session = Depends(get_db),
     x_tracks_client: str | None = Header(None),
+    x_tracks_install: str | None = Header(None),
 ):
     ip = _client_ip(request)
     _check_rate_limit(ip)
@@ -313,7 +315,7 @@ def login(
     if body.issue_refresh_token:
         refresh, _ = refresh_tokens.issue(
             db, user.id, sid, device_label=body.device_label,
-            client_version=x_tracks_client,
+            client_version=x_tracks_client, install_id=x_tracks_install,
         )
         db.commit()
 
@@ -481,6 +483,7 @@ def device_unlock(
     request: Request,
     db: Session = Depends(get_db),
     x_tracks_client: str | None = Header(None),
+    x_tracks_install: str | None = Header(None),
 ):
     """Open a fresh crypto session using an enrolled device secret.
 
@@ -538,6 +541,7 @@ def device_unlock(
         refresh, _ = refresh_tokens.issue(
             db, user.id, sid, device_label=row.label,
             client_version=x_tracks_client, device_key_id=row.id,
+            install_id=x_tracks_install,
         )
     db.commit()
 
@@ -550,6 +554,7 @@ def refresh(
     body: RefreshRequest,
     db: Session = Depends(get_db),
     x_tracks_client: str | None = Header(None),
+    x_tracks_install: str | None = Header(None),
 ):
     """Exchange a refresh token for a fresh access token and a new refresh token.
 
@@ -604,6 +609,7 @@ def refresh(
         # that sends nothing keeps what was last recorded.
         client_version=x_tracks_client or row.client_version,
         device_key_id=row.device_key_id,
+        install_id=row.install_id or x_tracks_install,
     )
     db.commit()
 
@@ -681,8 +687,13 @@ def revoke_session(
         crypto_context.drop_session_key(row.sid)
 
 
+class LogoutRequest(BaseModel):
+    refresh_token: str | None = None
+
+
 @router.post("/logout", status_code=204)
 def logout(
+    body: LogoutRequest | None = None,
     credentials: HTTPAuthorizationCredentials | None = Depends(_BEARER),
     db: Session = Depends(get_db),
 ):
@@ -692,10 +703,23 @@ def logout(
     otherwise that chain could mint fresh tokens for the sid once its
     revocation row has aged out. Best-effort: an invalid/missing/
     already-expired token is not an error, there's simply nothing to end."""
+    # The refresh token the phone holds names its chain directly, whatever
+    # state its access token is in.
+    if body and body.refresh_token:
+        row = db.query(RefreshToken).filter_by(
+            token_hash=refresh_tokens.hash_token(body.refresh_token)).first()
+        if row is not None:
+            refresh_tokens.revoke_family(db, row.family_id)
+            db.commit()
     if credentials is None:
         return
     try:
-        payload = decode_token(credentials.credentials)
+        # Expiry is not checked here — the signature is. Signing out only
+        # takes access away, and a phone signing out after weeks offline holds
+        # an expired token: refusing it left the session live, and the phone
+        # was listed again at its next sign-in.
+        payload = jwt.decode(credentials.credentials, settings.jwt_secret,
+                             algorithms=["HS256"], options={"verify_exp": False})
     except Exception:
         return
     sid = payload.get("sid")

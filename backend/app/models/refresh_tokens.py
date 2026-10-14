@@ -78,6 +78,11 @@ class RefreshToken(Base):
     # listed under Signed-in devices, at whatever app version it last saw,
     # beside the device's current entry, until it expired.
     device_key_id = Column(Integer, ForeignKey("device_keys.id", ondelete="SET NULL"), nullable=True)
+    # The app install that signed in (its `X-Tracks-Install` header): stable
+    # for the life of an install, across sign-outs, updates and password
+    # sign-ins. A fresh sign-in from the same install replaces its earlier
+    # sessions (issue), so one phone is one entry in the web's device lists.
+    install_id   = Column(String(64), nullable=True, index=True)
     created_at   = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     last_used_at = Column(DateTime(timezone=True), nullable=True)
     expires_at   = Column(DateTime(timezone=True), nullable=False)
@@ -124,6 +129,7 @@ def issue(
     family_id: str | None = None,
     client_version: str | None = None,
     device_key_id: int | None = None,
+    install_id: str | None = None,
 ) -> tuple[str, RefreshToken]:
     """Mint a refresh token. Returns (plaintext, row) — the plaintext is the
     only copy that will ever exist, so the caller must return it to the client.
@@ -131,6 +137,11 @@ def issue(
     Pass `family_id` when rotating so the new token stays in the chain; omit it
     on a fresh login to start one.
     """
+    install_id = clean_install_id(install_id)
+    if install_id and family_id is None:
+        # A fresh sign-in, not a rotation: the install's earlier sessions are
+        # this same phone, and left live each is another entry in the list.
+        revoke_install_families(db, user_id, install_id, device_label)
     token = secrets.token_urlsafe(48)
     row = RefreshToken(
         user_id=user_id,
@@ -140,6 +151,7 @@ def issue(
         device_label=(device_label or "").strip()[:100] or None,
         client_version=clean_client_version(client_version),
         device_key_id=device_key_id,
+        install_id=install_id,
         expires_at=datetime.now(timezone.utc) + timedelta(days=REFRESH_TOKEN_TTL_DAYS),
     )
     db.add(row)
@@ -154,6 +166,32 @@ def revoke_family(db, family_id: str) -> int:
         .filter(RefreshToken.family_id == family_id, RefreshToken.revoked_at.is_(None))
         .update({RefreshToken.revoked_at: now}, synchronize_session=False)
     )
+
+
+def clean_install_id(value: str | None) -> str | None:
+    value = (value or "").strip()
+    return value[:64] if value and all(c.isalnum() or c in "-_" for c in value) else None
+
+
+def revoke_install_families(db, user_id: int, install_id: str, device_label: str | None) -> int:
+    """Revoke the live sessions an install already holds — and the ones its
+    phone made before installs had ids: same account, same device name, no
+    install id, from an app (it reported a version). Phones signed in again on
+    every update or reconnect without ever ending the old session (a sign-out
+    whose access token had expired revoked nothing), so the web listed one
+    phone seven times. The cost of the legacy rule: two identical phones on one
+    account from before this change share a name, and the other signs in again
+    with its device key, getting an install id of its own."""
+    from sqlalchemy import and_, or_
+    label = (device_label or "").strip()[:100] or None
+    match = RefreshToken.install_id == install_id
+    if label:
+        match = or_(match, and_(RefreshToken.install_id.is_(None),
+                                RefreshToken.device_label == label,
+                                RefreshToken.client_version.isnot(None)))
+    families = {f for (f,) in db.query(RefreshToken.family_id).filter(
+        RefreshToken.user_id == user_id, RefreshToken.revoked_at.is_(None), match)}
+    return sum(revoke_family(db, f) for f in families)
 
 
 def revoke_device_families(db, device_key_id: int) -> int:

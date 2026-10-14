@@ -119,6 +119,7 @@ def change_password(
     db: Session = Depends(get_db),
     credentials: HTTPAuthorizationCredentials | None = Depends(_BEARER),
     x_tracks_client: str | None = Header(None),
+    x_tracks_install: str | None = Header(None),
 ):
     us = _get_or_create_settings(db, user.id)
     if us.password_hash is None or not verify_password(body.current_password, us.password_hash):
@@ -178,7 +179,7 @@ def change_password(
     if body.issue_refresh_token and current_sid:
         refresh, _ = refresh_tokens.issue(
             db, user.id, current_sid, device_label=body.device_label,
-            client_version=x_tracks_client,
+            client_version=x_tracks_client, install_id=x_tracks_install,
         )
         db.commit()
 

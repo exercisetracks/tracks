@@ -125,6 +125,22 @@
               ],
               "title": "X-Tracks-Client"
             }
+          },
+          {
+            "name": "x-tracks-install",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Tracks-Install"
+            }
           }
         ],
         "requestBody": {
@@ -343,6 +359,22 @@
               ],
               "title": "X-Tracks-Client"
             }
+          },
+          {
+            "name": "x-tracks-install",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Tracks-Install"
+            }
           }
         ],
         "requestBody": {
@@ -402,6 +434,22 @@
                 }
               ],
               "title": "X-Tracks-Client"
+            }
+          },
+          {
+            "name": "x-tracks-install",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Tracks-Install"
             }
           }
         ],
@@ -519,9 +567,36 @@
         "summary": "Logout",
         "description": "Ends this session: drops its cached decryption key from Redis, lists\nits `sid` as revoked so the access token stops authenticating anywhere\n(app.auth.token_is_live), and revokes any refresh chain pinned to it \u2014\notherwise that chain could mint fresh tokens for the sid once its\nrevocation row has aged out. Best-effort: an invalid/missing/\nalready-expired token is not an error, there's simply nothing to end.",
         "operationId": "logout_auth_logout_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/LogoutRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
         "responses": {
           "204": {
             "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -3941,6 +4016,22 @@
                 }
               ],
               "title": "X-Tracks-Client"
+            }
+          },
+          {
+            "name": "x-tracks-install",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Tracks-Install"
             }
           }
         ],
@@ -11833,6 +11924,16 @@
               "type": "string",
               "title": "Bbox"
             }
+          },
+          {
+            "name": "prebuild",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": true,
+              "title": "Prebuild"
+            }
           }
         ],
         "responses": {
@@ -18013,6 +18114,23 @@
           "password"
         ],
         "title": "LoginRequest"
+      },
+      "LogoutRequest": {
+        "properties": {
+          "refresh_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Refresh Token"
+          }
+        },
+        "type": "object",
+        "title": "LogoutRequest"
       },
       "MarkDeleted": {
         "properties": {

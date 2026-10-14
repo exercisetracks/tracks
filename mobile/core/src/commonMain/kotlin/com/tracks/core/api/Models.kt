@@ -1114,3 +1114,7 @@ data class PackEntry(
 
 /** How a pack download answered. */
 data class PackResponse(val status: Int, val etag: String?, val contentLength: Long?)
+
+
+@Serializable
+data class LogoutRequest(@SerialName("refresh_token") val refreshToken: String? = null)

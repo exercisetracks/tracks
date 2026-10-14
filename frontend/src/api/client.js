@@ -154,6 +154,7 @@ export const api = {
   getSettings:     ()     => get("/users/me/settings"),
   getVersionStatus: ()    => get("/version", { noCache: true }),
   getSessions:     ()     => get("/auth/sessions", { noCache: true }),
+  revokeSession:   (id)   => del(`/auth/sessions/${id}`),
   updateSettings:  (data) => { _cacheDel("GET", "/users/me/settings"); _cacheDelPrefix("GET", "/coaching"); return patch("/users/me/settings", data); },
   recalculate:     ()     => { _cacheDel("GET", "/users/me/settings"); return post("/users/me/settings/recalculate"); },
   clearAllData:    ()     => del("/users/me/data"),

@@ -1031,6 +1031,18 @@ class AppContainer(private val context: Context) {
     private var cachedClient: Pair<String, TracksClient>? = null
 
     /**
+     * This install's id, made once and kept for the life of the install —
+     * through sign-outs and updates — so the server can tell a fresh sign-in
+     * from this phone apart from a new phone (TracksClient.installId).
+     */
+    val installId: String by lazy {
+        val prefs = context.getSharedPreferences("tracks_install", Context.MODE_PRIVATE)
+        prefs.getString("install_id", null) ?: java.util.UUID.randomUUID().toString().also {
+            prefs.edit().putString("install_id", it).apply()
+        }
+    }
+
+    /**
      * Rebuilt when the server URL changes, and only then. Ktor clients own a
      * connection pool and a thread pool, so one per call would leak both.
      */
@@ -1043,6 +1055,7 @@ class AppContainer(private val context: Context) {
             tokens = tokens,
             onSessionState = { sessionState.value = it },
             clientVersion = appVersion.let { (name, code) -> "android/$name ($code)" },
+            installId = installId,
         )
         cachedClient = url to fresh
         return fresh

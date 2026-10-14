@@ -233,3 +233,49 @@ class TestSessionManagement:
 
         headers = {"Authorization": f"Bearer {_login(client, refresh=False)['access_token']}"}
         assert client.delete(f"/auth/sessions/{row.id}", headers=headers).status_code == 404
+
+
+class TestOnePhoneOneEntry:
+    """A phone signing in again — after an update, a sign-out, a reconnect —
+    must replace its old session, not be listed beside it. The web showed one
+    Pixel 6 Pro seven times, at seven versions."""
+
+    def _login_as(self, client, install, label="Pixel 6 Pro", version="android/1.7.0 (10700)"):
+        r = client.post("/auth/login", json={"username": "admin", "password": "testpass123",
+                                              "issue_refresh_token": True, "device_label": label},
+                        headers={"X-Tracks-Install": install, "X-Tracks-Client": version} if install
+                        else {"X-Tracks-Client": version})
+        assert r.status_code == 200
+        return r.json()
+
+    def _phones(self, client, token):
+        return client.get("/auth/sessions", headers={"Authorization": f"Bearer {token}"}).json()
+
+    def test_signing_in_again_from_the_same_install_replaces_the_old_session(self, client, user, db):
+        _setup(client)
+        self._login_as(client, "install-a")
+        latest = self._login_as(client, "install-a")
+        assert len(self._phones(client, latest["access_token"])) == 1
+
+    def test_another_install_is_another_phone(self, client, user, db):
+        _setup(client)
+        self._login_as(client, "install-a")
+        latest = self._login_as(client, "install-b", label="Pixel 9")
+        assert len(self._phones(client, latest["access_token"])) == 2
+
+    def test_old_entries_from_before_install_ids_are_cleared_too(self, client, user, db):
+        _setup(client)
+        self._login_as(client, None, version="android/1.4.2 (10402)")
+        self._login_as(client, None, version="android/1.3.0 (10300)")
+        latest = self._login_as(client, "install-a")
+        assert len(self._phones(client, latest["access_token"])) == 1
+
+    def test_signing_out_with_an_expired_access_token_still_ends_the_session(self, client, user, db):
+        """A phone back from weeks offline signs out with an expired token;
+        that used to end nothing, and the session stayed listed."""
+        _setup(client)
+        stale = self._login_as(client, "install-a")
+        other = self._login_as(client, "install-b", label="Pixel 9")
+        client.post("/auth/logout", json={"refresh_token": stale["refresh_token"]},
+                    headers={"Authorization": "Bearer not-a-valid-token"})
+        assert [p["device_label"] for p in self._phones(client, other["access_token"])] == ["Pixel 9"]

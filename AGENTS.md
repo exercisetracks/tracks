@@ -270,7 +270,12 @@ Images are built with Docker's legacy builder, for amd64 only (there is no
    a bulleted summary of every change since the last release, grouped under a
    few short headings (offline maps, phone, web…), one plain-language line per
    change, for the people who run Tracks (what they will notice, what was
-   fixed, anything they need to do). Read `git log vPREVIOUS..HEAD` to
+   fixed, anything they need to do). `docs/release-notes/1.7.0.md` is the
+   style to follow. **Anything that breaks an install or needs the admin to
+   act — a command to run on the server, a manual migration, a removed or
+   renamed setting, a changed volume — goes first, under its own heading
+   (`### Before you update` or `### Breaking changes`), before any other
+   section.** Read `git log vPREVIOUS..HEAD` to
    cover it all. No install or update instructions and no changelog link:
    the README carries the instructions. `release.sh` refuses to run without
    the file.

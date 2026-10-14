@@ -61,6 +61,7 @@ const val CLIENT_API_VERSION: Int = 2
 
 /** See [TracksClient]'s `clientVersion`. */
 const val CLIENT_VERSION_HEADER = "X-Tracks-Client"
+const val INSTALL_HEADER = "X-Tracks-Install"
 
 /**
  * The Tracks HTTP client.
@@ -90,6 +91,12 @@ class TracksClient(
      * informational: the server decides nothing from it.
      */
     private val clientVersion: String? = null,
+    /**
+     * This app install's id, sent as `X-Tracks-Install`: stable across
+     * sign-outs and updates, so a fresh sign-in replaces this install's
+     * earlier sessions on the server instead of listing the phone again.
+     */
+    private val installId: String? = null,
     configure: HttpClientConfig<*>.() -> Unit = {},
 ) {
     private val http: HttpClient = run {
@@ -124,7 +131,10 @@ class TracksClient(
             // decide how to recover, and an exception would erase the detail
             // string that says which kind of 401 it is.
             expectSuccess = false
-            clientVersion?.let { v -> defaultRequest { header(CLIENT_VERSION_HEADER, v) } }
+            defaultRequest {
+                clientVersion?.let { header(CLIENT_VERSION_HEADER, it) }
+                installId?.let { header(INSTALL_HEADER, it) }
+            }
             configure()
         }
         if (engine != null) HttpClient(engine, config) else HttpClient(config)
@@ -243,7 +253,18 @@ class TracksClient(
                     http.delete(url(Endpoints.deviceKey(key.id))) { bearer(access); signOutTimeout() }
                 }
             }
-            runCatching { http.post(url(Endpoints.LOGOUT)) { bearer(access); signOutTimeout() } }
+        }
+        // The refresh token names this phone's session on its own, so the
+        // server ends it even when the access token has long expired (a
+        // sign-out that only sent the access token then ended nothing, and the
+        // phone was listed again at its next sign-in).
+        runCatching {
+            http.post(url(Endpoints.LOGOUT)) {
+                access?.let { bearer(it) }
+                signOutTimeout()
+                contentType(ContentType.Application.Json)
+                setBody(LogoutRequest(stored.refreshToken))
+            }
         }
         tokens.clear()
         onSessionState(SessionState.LoggedOut)

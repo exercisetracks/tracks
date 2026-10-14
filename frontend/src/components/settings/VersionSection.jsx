@@ -19,6 +19,7 @@ import { useAuth } from "../../auth/AuthContext";
 import { isNewer, versionOf } from "../../lib/versions";
 import { Section } from "./primitives";
 import UpdateCommand from "./UpdateCommand";
+import ConfirmDialog from "../ConfirmDialog";
 
 function Status({ tone, children }) {
   const tones = {
@@ -29,7 +30,7 @@ function Status({ tone, children }) {
   return <span className={`badge ${tones[tone]}`}>{children}</span>;
 }
 
-function Row({ label, sub, version, status }) {
+function Row({ label, sub, version, status, action }) {
   return (
     <div className="flex items-center justify-between gap-3">
       <div className="min-w-0">
@@ -39,6 +40,7 @@ function Row({ label, sub, version, status }) {
       <div className="flex shrink-0 items-center gap-2">
         {status}
         <span className="font-mono text-sm text-slate-700 dark:text-slate-200">{version ?? "—"}</span>
+        {action}
       </div>
     </div>
   );
@@ -65,13 +67,32 @@ export default function VersionSection() {
   const { user } = useAuth();
   const [status, setStatus] = useState(null);
   const [phones, setPhones] = useState([]);
+  const [signingOut, setSigningOut] = useState(null);
+  const [error, setError] = useState("");
+
+  const loadPhones = () => api.getSessions()
+    .then(rows => setPhones((rows ?? []).filter(r => r.client_version)))
+    .catch(() => setPhones([]));
 
   useEffect(() => {
     api.getVersionStatus().then(setStatus).catch(() => setStatus(null));
-    api.getSessions()
-      .then(rows => setPhones((rows ?? []).filter(r => r.client_version)))
-      .catch(() => setPhones([]));
+    loadPhones();
   }, []);
+
+  // Signs the phone out on the server: its session and the access it already
+  // holds end at once (DELETE /auth/sessions), and it leaves this list. The
+  // phone keeps its data and can sign in again.
+  async function signOutPhone() {
+    const target = signingOut;
+    setSigningOut(null);
+    setError("");
+    try {
+      await api.revokeSession(target.id);
+      await loadPhones();
+    } catch {
+      setError("Could not sign that phone out — try again.");
+    }
+  }
 
   const server = status?.server_version;
   const latest = status?.latest?.version;
@@ -111,9 +132,26 @@ export default function VersionSection() {
                 sub={p.last_used_at ? `Last seen ${new Date(p.last_used_at).toLocaleDateString()}` : null}
                 version={app}
                 status={s && <Status tone={s.tone}>{s.text}</Status>}
+                action={
+                  <button type="button" onClick={() => setSigningOut(p)}
+                    className="btn btn-neutral btn-sm" title="Sign this phone out">
+                    Sign out
+                  </button>
+                }
               />
             );
           })}
+          {error && <p className="alert-error text-xs">{error}</p>}
+          {signingOut && (
+            <ConfirmDialog
+              title="Sign this phone out?"
+              message={`${signingOut.device_label || "This phone"} will be signed out of this server and removed from the list. It keeps its data and can sign in again.`}
+              confirmLabel="Sign out"
+              danger
+              onConfirm={signOutPhone}
+              onCancel={() => setSigningOut(null)}
+            />
+          )}
           <p className="text-xs text-slate-400 dark:text-slate-500">
             As each phone last reported on sync. Get the app from the{" "}
             <a href={status?.releases_url ?? "https://github.com/exercisetracks/tracks/releases"}
