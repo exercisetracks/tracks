@@ -133,3 +133,18 @@ def test_eviction_never_takes_a_pack_being_built_or_in_use(server, monkeypatch):
     map_packs.evict()
     assert piece.exists(), "a build in progress is not the cache's to clear"
     assert built.exists(), "nor is a pack a phone is fetching right now"
+
+
+def test_a_layer_with_nothing_in_a_cell_is_not_offered(server):
+    """A cell can touch installed ground and hold none of a layer; offered, its
+    pack had nothing to cut and the phone failed the area on the 404."""
+    from app.services import map_store
+    # The overlay holds tiles only under 8/44/90; cell 8/45/90 is covered by
+    # an area reaching into it but has no overlay tiles.
+    server["rows"][0]["bbox"] = [server["cell"][0] + 0.1, server["cell"][1] + 0.1,
+                                 server["cell"][2] + 0.5, server["cell"][3] - 0.1]
+    w, s, e, n = map_packs.cell_bounds(45, 90)
+    cell = next(c for c in map_packs.manifest([w + 0.01, s + 0.01, e - 0.01, n - 0.01])["cells"]
+                if c["cell"] == "8/45/90")
+    assert cell["covered"] is True
+    assert "overlay" not in cell["layers"]

@@ -235,6 +235,9 @@ class PackStore(private val context: Context) {
 
     fun markQueued(key: String) = updatePack(key) { it.copy(state = State.QUEUED) }
 
+    /** A pack the server has nothing for: no longer part of any area's needs. */
+    fun forget(key: String) = update { s -> s.copy(packs = s.packs - key) }
+
     /** Failed packs get another go (the person pressed retry). */
     fun retryFailed() = update { s ->
         s.copy(packs = s.packs.mapValues { (_, p) ->

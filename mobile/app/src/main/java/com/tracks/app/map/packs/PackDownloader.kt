@@ -61,12 +61,29 @@ class PackDownloader(
             coroutineScope {
                 for (pack in batch) launch {
                     runCatching { fetch(pack, onProgress) }.onFailure { e ->
-                        if (e is kotlinx.coroutines.CancellationException) throw e
+                        // The job being stopped (the system pausing it when
+                        // Wi-Fi drops, the person cancelling) surfaces from
+                        // the HTTP read as an IOException ("Job is still new
+                        // or active"), not a CancellationException. Either
+                        // way it is not the pack's fault: no attempt counted.
+                        if (e is kotlinx.coroutines.CancellationException ||
+                            kotlinx.coroutines.currentCoroutineContext()[kotlinx.coroutines.Job]?.isActive == false) {
+                            store.markQueued(pack.key)
+                            throw e
+                        }
                         Log.w(TAG, "Pack ${pack.key} failed", e)
-                        val network = e is IOException && e !is ServerStatus
-                        if (network) synchronized(this@PackDownloader) { offline++ }
-                        // Room is not made by trying again; anything else may be.
-                        store.markFailed(pack.key, e.message ?: e.javaClass.simpleName, retry = e !is RoomException)
+                        when {
+                            // Connection lost: the bytes so far stay, and the
+                            // job resumes when the network returns. Counting
+                            // these gave up on a large area after five blips.
+                            e is IOException && e !is ServerStatus -> {
+                                synchronized(this@PackDownloader) { offline++ }
+                                store.markQueued(pack.key)
+                            }
+                            // Room is not made by trying again.
+                            e is RoomException -> store.markFailed(pack.key, e.message ?: "No room", retry = false)
+                            else -> store.markFailed(pack.key, e.message ?: e.javaClass.simpleName, retry = true)
+                        }
                     }
                 }
             }
@@ -126,9 +143,12 @@ class PackDownloader(
                 return false
             }
             404 -> {
+                // Nothing to cut for this layer here (an older server offers
+                // layers a cell does not have): not a failure — the area is
+                // complete without it.
                 part.delete(); etagFile.delete()
-                store.markFailed(pack.key, "The server no longer has this part of the map", retry = false)
-                return false
+                store.forget(pack.key)
+                return true
             }
             else -> throw ServerStatus(response.status)
         }

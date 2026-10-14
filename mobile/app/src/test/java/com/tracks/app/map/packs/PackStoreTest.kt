@@ -221,4 +221,27 @@ class PackStoreTest {
         get("/api/tiles/master_overlay/12/700/1400.mvt").use { assertEquals(204, it.code) }
         assertEquals(1, reachedNetwork)
     }
+
+    /** A layer the server has nothing for is dropped, not failed: the area completes. */
+    @Test
+    fun a_pack_the_server_has_nothing_for_is_dropped_not_failed() = runBlocking {
+        store.addArea("A", listOf(0.0, 0.0, 1.0, 1.0), manifest("8/4/4" to "v1", shared = null))
+        assertTrue(downloader(FakeServer(ByteArray(1), "x", status = 404)).run())
+        assertFalse("8/4/4/basemap" in store.state.value.packs)
+    }
+
+    /** Wi-Fi blips on a large download are waited out, never counted toward giving up. */
+    @Test
+    fun repeated_dropped_connections_never_fail_a_pack() = runBlocking {
+        store.addArea("A", listOf(0.0, 0.0, 1.0, 1.0), manifest("8/4/4" to "v1", shared = null))
+        val body = fixture.readBytes()
+        val server = FakeServer(body, sha(body))
+        repeat(PackStore.MAX_FAILURES + 2) {
+            server.dropAfter = 7
+            downloader(server).run()
+        }
+        val p = store.state.value.packs.getValue("8/4/4/basemap")
+        assertEquals(PackStore.State.QUEUED, p.state)
+        assertTrue(downloader(server).run())
+    }
 }

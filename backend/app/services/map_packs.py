@@ -177,7 +177,13 @@ def manifest(bbox: list[float]) -> dict:
             if layer == "overlay" and not map_store.master_path(map_store.MASTER_OVERLAY).exists():
                 continue
             v = cell_version(layer, x, y, areas)
-            layers[layer] = _entry(f"{CELL_ZOOM}/{x}/{y}/{layer}", v, lambda: _estimate_cell(layer, x, y, dir_cache))
+            entry = _entry(f"{CELL_ZOOM}/{x}/{y}/{layer}", v, lambda: _estimate_cell(layer, x, y, dir_cache))
+            # A cell can touch installed ground and still hold none of a
+            # layer — trails over open water, a box that only clips its edge.
+            # Offered anyway, its pack had nothing to cut, the request was a
+            # 404, and the phone failed the area for good.
+            if entry["bytes"] > 0:
+                layers[layer] = entry
         cells.append({"cell": f"{CELL_ZOOM}/{x}/{y}", "bounds": cell_bounds(x, y),
                       "covered": on_ground, "layers": layers})
     shared = {}
