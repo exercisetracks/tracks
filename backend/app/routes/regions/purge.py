@@ -18,13 +18,14 @@ logger = logging.getLogger(__name__)
 def purge_region(region_id: int) -> None:
     """Delete a region's tile files, rebuild every master without it, then mark it
     deleted. Shared by user delete and download-cancel cleanup. Files are removed
-    first so the rebuilds exclude them (_source_paths skips missing files);
-    mark_installed=False so the rebuild never flips a *concurrently* downloading
-    region to 'installed'. mark_deleted (in finally) retires the list entry/wheel.
+    first so the rebuilds exclude them (_source_paths skips missing files). The
+    rebuild never touches another region's status, so one downloading
+    alongside stays in progress. mark_deleted (in finally) retires the list
+    entry/wheel.
     """
     region_registry.delete_region_files(region_id)
     try:
-        region_merger.rebuild_master(mark_installed=False)
+        region_merger.rebuild_master()
         if settings.dem_source_url:
             region_merger.rebuild_master_dem()
             region_merger.rebuild_master_contours()

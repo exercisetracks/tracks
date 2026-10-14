@@ -347,9 +347,14 @@ private fun RegionRowItem(
 
                 else -> Unit
             }
-            // One word for both halves, because to the user they are one
-            // thing: an area they no longer want anywhere.
-            DangerButton(if (row.phase is DownloadPhase.Ready) "Delete" else "Cancel", onClick = onDelete, small = true)
+            // The phone only ever removes its own copy, or stops waiting for
+            // one. The server's area is shared by every account and device on
+            // it, and a "Cancel" here used to delete it for all of them, with
+            // no confirmation; deleting it is the web app's job now.
+            val waitingHere = row.phase is DownloadPhase.Extracting && row.requestedHere
+            if (row.storedId != null || waitingHere) {
+                DangerButton(if (row.phase is DownloadPhase.Ready) "Remove" else "Cancel", onClick = onDelete, small = true)
+            }
         }
 
         Row(

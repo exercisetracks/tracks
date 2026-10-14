@@ -121,9 +121,9 @@ def _generate_mvt_features(elev_m: np.ndarray, interval_ft: int, pad: int = 0) -
             pts = np.round((line - pad) * PX_TO_MVT).astype(np.int32)
             pts[:, 0] = np.clip(pts[:, 0], -buf, MVT_EXTENT + buf)
             pts[:, 1] = np.clip(pts[:, 1], -buf, MVT_EXTENT + buf)
-            coords = [(int(p[0]), int(p[1])) for p in pts]
-            if len(coords) < 2:
-                continue
+            # Kept as an (N, 2) array: mvt.encode_contours takes it whole, and
+            # a list of tuples per point was a Python loop over every vertex.
+            coords = pts
             features.append({
                 "geometry": {"type": "LineString", "coordinates": coords},
                 "properties": {

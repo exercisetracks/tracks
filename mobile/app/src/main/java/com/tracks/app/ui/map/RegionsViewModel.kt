@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.maplibre.android.geometry.LatLng
+import com.tracks.core.api.ServerErrorException
 import org.maplibre.android.geometry.LatLngBounds
 
 /**
@@ -103,6 +104,8 @@ data class RegionRow(
     val shape: String? = null,
     /** What that outline claims — see [Coverage]. */
     val coverage: Coverage = Coverage.Building,
+    /** This phone asked for it and is waiting to store it (see [PendingRegions]). */
+    val requestedHere: Boolean = false,
 )
 
 data class RegionsUiState(
@@ -374,7 +377,10 @@ class RegionsViewModel(
             // cache them as legitimately empty, which is indistinguishable from
             // a downloaded area with nothing in it.
             if (serverId == null) return@launch
-            val ready = awaitServerReady(serverId) ?: return@launch
+            val ready = awaitServerReady(serverId, bounds) ?: run {
+                _state.update { it.copy(error = "The server could not finish $serverName.") }
+                return@launch
+            }
             // Before the tile pull, not after: MapLibre re-fetches the style
             // itself to work out what to download, so the map and the offline
             // store should both be looking at the version that includes the new
@@ -384,7 +390,22 @@ class RegionsViewModel(
                 reload()
                 return@launch
             }
-            storeOnPhone(ready, bounds)
+            // Cancelled here while the server was still building.
+            if (serverId !in PendingRegions.wanted(container.appContext)) {
+                reload()
+                return@launch
+            }
+            if (ready.id != serverId) {
+                // Folded into an older area that overlapped it (see
+                // awaitServerReady). The phone keeps what was framed, as an
+                // area of its own: the survivor can be a whole state, and
+                // tying this piece to it would label a few valleys with the
+                // state's name and offer to delete the state with them.
+                PendingRegions.settled(container.appContext, serverId)
+                storeOnPhone(ready, bounds, key = serverId, name = serverName, serverRegionId = null)
+            } else {
+                storeOnPhone(ready, bounds)
+            }
         }
     }
 
@@ -426,17 +447,21 @@ class RegionsViewModel(
         }
     }
 
-    /** Forget an area: the phone's tiles, and the server's extraction with it. */
+    /**
+     * Take the area off this phone, or stop waiting to store it.
+     *
+     * Never the server's area: that is shared by every account and device on
+     * the server, and this used to delete it for all of them from a "Cancel"
+     * on a row that was only saving here. Deleting it is the web app's job.
+     */
     fun delete(row: RegionRow) {
         viewModelScope.launch {
             row.storedId?.let { offline.delete(it) }
             row.serverId?.let { id ->
+                // Settled first: download() checks this once the build is done,
+                // so a cancel while the server is still building is honoured.
                 PendingRegions.settled(container.appContext, id)
                 waiting.remove(id)
-                runCatching { container.client().deleteRegion(id) }
-                    .onFailure { e ->
-                        _state.update { it.copy(error = "Could not remove it from the server: ${e.message}") }
-                    }
             }
             reload()
         }
@@ -463,10 +488,26 @@ class RegionsViewModel(
      * phone's half, which is the whole reason this is awaited rather than
      * fired alongside.
      */
-    private suspend fun awaitServerReady(serverId: Int): MapRegion? {
+    private suspend fun awaitServerReady(serverId: Int, framed: LatLngBounds? = null): MapRegion? {
         while (true) {
-            val region = runCatching { container.client().mapRegion(serverId) }.getOrNull()
+            val fetched = runCatching { container.client().mapRegion(serverId) }
+            val region = fetched.getOrNull()
             when {
+                // Gone is not always failed. When a new area overlaps one the
+                // server already has, the server builds it and then folds it
+                // into the older area, deleting the new id (region_registry.
+                // merge_regions). This used to end the wait as a failure, so a
+                // download near any existing area was built on the server and
+                // never reached the phone. The area it went into is the
+                // installed one that now covers what was framed.
+                region == null && framed != null &&
+                    (fetched.exceptionOrNull() as? ServerErrorException)?.status == 404 ->
+                    return absorbedInto(framed)
+                // A blip in signal is not an answer: keep waiting.
+                region == null && fetched.exceptionOrNull() !is ServerErrorException -> {
+                    delay(pollMs)
+                    continue
+                }
                 region == null -> return null
                 region.isReady -> return region
                 region.isFailed -> return null
@@ -479,6 +520,15 @@ class RegionsViewModel(
         }
     }
 
+    /** The installed area that now covers [framed], after a merge took its own id. */
+    private suspend fun absorbedInto(framed: LatLngBounds): MapRegion? {
+        val server = runCatching { container.client().mapRegions() }.getOrNull() ?: return null
+        val center = framed.center
+        return server.filter { it.isReady }.firstOrNull { region ->
+            region.bbox.toBounds()?.contains(center) == true
+        }
+    }
+
     /**
      * Run the phone's half for one region, start to finish.
      *
@@ -488,7 +538,15 @@ class RegionsViewModel(
      * two of them firing together would have MapLibre downloading one region
      * against two observers.
      */
-    private suspend fun storeOnPhone(region: MapRegion, bounds: LatLngBounds) {
+    private suspend fun storeOnPhone(
+        region: MapRegion,
+        bounds: LatLngBounds,
+        /** What guards against a second run; the server id, or the absorbed one's. */
+        key: Int = region.id,
+        name: String = region.name,
+        /** Null for an area kept on the phone on its own (see [download]). */
+        serverRegionId: Int? = region.id,
+    ) {
         // The guard belongs here rather than only at the download button,
         // because there are three ways in and the other two carry the *server
         // region's* box rather than a framed one. "Save to phone" on an area
@@ -496,17 +554,17 @@ class RegionsViewModel(
         // the whole area is by definition already served at full detail.
         val cost = OfflineEstimate.weigh(bounds)
         if (cost.level == OfflineEstimate.Level.BeyondPhone) {
-            PendingRegions.settled(container.appContext, region.id)
+            PendingRegions.settled(container.appContext, key)
             _state.update { it.copy(error = null, notice = beyondPhoneNotice(cost)) }
             return
         }
-        if (!storing.add(region.id)) return
+        if (!storing.add(key)) return
         MapDownloadService.start(container.appContext)
         try {
             val styleUrl = container.client().mapStyleUrl()
             offline.download(
-                name = region.name,
-                serverRegionId = region.id,
+                name = name,
+                serverRegionId = serverRegionId,
                 bounds = bounds,
                 styleUrl = styleUrl,
             ).collect { progress ->
@@ -515,15 +573,15 @@ class RegionsViewModel(
                     // few dozen resources, and a listing request per report was
                     // thousands of calls to the server over one download. The
                     // poller already re-reads the local status on its own.
-                    is OfflineTiles.Progress.Running -> waiting.remove(region.id)
+                    is OfflineTiles.Progress.Running -> waiting.remove(key)
 
                     is OfflineTiles.Progress.Waiting -> {
-                        waiting[region.id] = progress.reason
+                        waiting[key] = progress.reason
                         _state.update { it.copy(rows = it.rows.map(::redecorate)) }
                     }
 
                     is OfflineTiles.Progress.Failed -> {
-                        waiting.remove(region.id)
+                        waiting.remove(key)
                         _state.update {
                             it.copy(error = "Could not store it on the phone: ${progress.reason}")
                         }
@@ -531,8 +589,8 @@ class RegionsViewModel(
                     }
 
                     is OfflineTiles.Progress.Done -> {
-                        waiting.remove(region.id)
-                        PendingRegions.settled(container.appContext, region.id)
+                        waiting.remove(key)
+                        PendingRegions.settled(container.appContext, key)
                         reload()
                     }
                 }
@@ -565,7 +623,7 @@ class RegionsViewModel(
                 )
             }
         } finally {
-            storing.remove(region.id)
+            storing.remove(key)
         }
     }
 
@@ -638,6 +696,7 @@ class RegionsViewModel(
                         shape = region.shapeGeoJson,
                         phase = phase,
                         coverage = coverageOf(phase, serverReady = region.isReady),
+                        requestedHere = region.id in wanted,
                     )
                 )
             }

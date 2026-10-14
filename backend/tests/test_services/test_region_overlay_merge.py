@@ -161,3 +161,19 @@ class TestClipBoundingBox:
         tippecanoe_writer.build_overlay({"trails": layer}, tmp_path / "overlay.pmtiles")
 
         assert not any(c.startswith("--clip-bounding-box") for c in seen["cmd"])
+
+
+def test_rebuilding_the_basemap_master_never_marks_a_region_installed(monkeypatch):
+    """Only a region's own pipeline may call it installed. The startup recovery
+    rebuilt this master right after queuing resumed builds, and the rebuild
+    marked every one of them installed while they were still extracting, so a
+    phone pulled them half-built (audit F19)."""
+    from app.services import region_merger, region_registry
+
+    monkeypatch.setattr(region_registry, "list_active",
+                        lambda: [{"id": 1, "status": "downloading"}, {"id": 2, "status": "trails"}])
+    monkeypatch.setattr(region_merger, "_assemble", lambda *a, **k: 0)
+    changed = []
+    monkeypatch.setattr(region_registry, "update_status", lambda *a, **k: changed.append((a, k)))
+    region_merger.rebuild_master(write_trigger=False)
+    assert changed == []

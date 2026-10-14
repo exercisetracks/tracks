@@ -161,12 +161,80 @@ def merge_overlays(sources: list[str], output_path: str | Path, progress_cb=None
         if len(srcs) == 1:
             shutil.copy2(srcs[0], str(tmp))
         else:
-            _run(["tile-join", "-o", str(tmp), "--force", "--no-tile-size-limit", *srcs],
-                 "tile-join overlay", progress_cb=progress_cb, cancel=cancel)
+            _join_shared_only(srcs, tmp, progress_cb=progress_cb, cancel=cancel)
         os.replace(str(tmp), str(output_path))
     finally:
         tmp.unlink(missing_ok=True)
     return len(srcs)
+
+
+def _join_shared_only(srcs: list[str], output: Path, progress_cb=None, cancel=None) -> None:
+    """tile-join only the tiles two or more regions share; byte-copy the rest.
+
+    A tile only one region has needs no union — its bytes already are the
+    answer — and that is nearly every tile: regions share only the band along a
+    common edge and the coarse zooms where one tile spans several. tile-joining
+    everything decoded and re-encoded every tile of every region on every
+    download, so adding a 20 km square beside a state-sized area spent 6.4 of its
+    7.7 minutes re-joining the state (measured 2026-10-14). Now the shared tiles
+    are pulled into small per-region archives, tile-joined, and laid over a
+    byte-copy merge of everything, last so their union wins.
+    """
+    from pmtiles.reader import MmapSource, Reader, all_tiles
+    from pmtiles.tile import zxy_to_tileid
+    from pmtiles.writer import write as pmtiles_write
+
+    from app.services import custom_merge
+
+    owners: dict[int, int] = {}
+    shared: set[int] = set()
+    for src in srcs:
+        with open(src, "rb") as f:
+            reader = Reader(MmapSource(f))
+            for (z, x, y), _ in all_tiles(reader.get_bytes):
+                tid = zxy_to_tileid(z, x, y)
+                owners[tid] = owners.get(tid, 0) + 1
+                if owners[tid] == 2:
+                    shared.add(tid)
+    del owners
+    if cancel is not None:
+        cancel.raise_if_cancelled()
+
+    work = output.with_name(output.stem + ".shared")
+    shutil.rmtree(work, ignore_errors=True)
+    work.mkdir(parents=True)
+    try:
+        parts: list[str] = []
+        for i, src in enumerate(srcs):
+            part = work / f"part{i}.pmtiles"
+            wrote = 0
+            with open(src, "rb") as f:
+                reader = Reader(MmapSource(f))
+                header, metadata = reader.header(), reader.metadata()
+                with pmtiles_write(str(part)) as writer:
+                    for (z, x, y), data in all_tiles(reader.get_bytes):
+                        tid = zxy_to_tileid(z, x, y)
+                        if tid in shared:
+                            writer.write_tile(tid, data)
+                            wrote += 1
+                    # finalize() needs at least one tile.
+                    if wrote:
+                        writer.finalize(header, metadata)
+            if wrote:
+                parts.append(str(part))
+            else:
+                part.unlink(missing_ok=True)
+
+        layers = list(srcs)
+        if len(parts) >= 2:
+            joined = work / "joined.pmtiles"
+            _run(["tile-join", "-o", str(joined), "--force", "--no-tile-size-limit", *parts],
+                 "tile-join shared overlay tiles", progress_cb=progress_cb, cancel=cancel)
+            layers.append(str(joined))
+        logger.info("Overlay merge: %d sources, %d shared tiles tile-joined", len(srcs), len(shared))
+        custom_merge.merge_archives(layers, str(output), prototype=srcs[-1])
+    finally:
+        shutil.rmtree(work, ignore_errors=True)
 
 
 def _run(cmd: list[str], label: str, progress_cb=None, timeout: int = 7200,

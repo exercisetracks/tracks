@@ -282,7 +282,7 @@ def merge_regions(constituent_ids: list[int], progress_cb=None) -> dict | None:
 
     _step(total - 1, 0.0, "Publishing…")
     from app.services import region_merger
-    region_merger.rebuild_master(write_trigger=False, mark_installed=False)
+    region_merger.rebuild_master(write_trigger=False)
     region_merger.rebuild_master_dem(write_trigger=False)
     region_merger.rebuild_master_overlay(write_trigger=False)
     region_merger.write_reload_trigger()

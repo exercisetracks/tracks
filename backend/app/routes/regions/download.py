@@ -61,14 +61,13 @@ def download_and_merge(region_id: int, bbox: list[float]) -> None:
             return
 
         # ── Basemap & DEM merges (serialised by merge lock) ──────────────
-        # mark_installed=False / defer_contours=True keep the region in-progress
-        # so the trail + contour phases below report their own progress before
-        # the region flips to "installed".
+        # The master rebuilds never change a region's status, so the region
+        # stays in progress through the trail + contour phases below and flips
+        # to "installed" only at the end of this pipeline.
         region_registry.update_status(region_id, "merging", progress=0.0,
                                       detail="Assembling tiles…")
         src = region_registry.source_dir(region_id) / "source.pmtiles"
-        region_merger.rebuild_master(index_source=str(src), write_trigger=False,
-                                     mark_installed=False)
+        region_merger.rebuild_master(index_source=str(src), write_trigger=False)
         if settings.dem_source_url:
             region_merger.rebuild_master_dem(write_trigger=False)
 

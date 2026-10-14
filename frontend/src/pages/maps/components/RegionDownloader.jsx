@@ -9,6 +9,8 @@
 // drives it purely through the on* callbacks passed in as props.
 import { useEffect, useState } from "react";
 import { api } from "../../../api/client";
+import { useAuth } from "../../../auth/AuthContext";
+import ConfirmDialog from "../../../components/ConfirmDialog";
 
 // Per-phase label + colour for the active-region progress card. Full literal
 // class strings (no interpolation) so Tailwind keeps them at build time.
@@ -77,17 +79,49 @@ export default function RegionDownloader({
   const installed = regions.filter((r) => r.status === "installed");
   const errored = regions.filter((r) => r.status === "error");
 
-  async function handleDelete(id) {
+  // A server area is shared by every account and device on this server, so
+  // removing one is an admin's call, and asked twice: it used to go on one
+  // click, from here or from a phone, for everyone at once.
+  const { user } = useAuth() || {};
+  const [confirming, setConfirming] = useState(null);
+
+  function handleDelete(id) {
     setDeleteError("");
+    if (!user?.is_admin) {
+      setDeleteError("Only an admin can remove areas from the server.");
+      return;
+    }
+    setConfirming(regions.find((r) => r.id === id) || { id });
+  }
+
+  async function confirmDelete() {
+    const target = confirming;
+    setConfirming(null);
     try {
-      await onDelete(id);
+      await onDelete(target.id);
     } catch {
       setDeleteError("Delete failed — try again.");
     }
   }
 
+  const confirmingBuild = confirming && confirming.status && confirming.status !== "installed"
+    && confirming.status !== "error";
+
   return (
     <div className="p-2.5 space-y-2">
+      {confirming && (
+        <ConfirmDialog
+          title={confirmingBuild ? "Cancel this download?" : "Remove this area?"}
+          message={`${confirming.name || "This area"} will be removed from the server for every account and device using it${
+            confirming.size_bytes ? ` (${(confirming.size_bytes / 1e9).toFixed(1)} GB)` : ""
+          }. Phones keep any copy they have already saved.`}
+          confirmLabel={confirmingBuild ? "Cancel download" : "Remove"}
+          cancelLabel="Keep"
+          danger
+          onConfirm={confirmDelete}
+          onCancel={() => setConfirming(null)}
+        />
+      )}
       {!drawing ? (
         <button
           onClick={onStart}

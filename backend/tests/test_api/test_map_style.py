@@ -62,6 +62,24 @@ class TestServesTheStyle:
         assert map_style._VERSION_PLACEHOLDER not in client.get("/maps/style.json").text
 
 
+    def test_a_native_clients_tile_urls_carry_no_version(self, client):
+        """MapLibre's offline store keys a saved tile by its full URL. A version
+        that moves with every download or delete anywhere on the server
+        orphaned every tile the phone had saved, so offline it drew the
+        basemap and nothing else."""
+        style = client.get(
+            "/maps/style.json", params={"base_url": "https://tracks.example.com"}
+        ).json()
+        urls = [u for src in style["sources"].values() for u in src.get("tiles", [])]
+        assert urls and not any("?v=" in u for u in urls)
+
+    def test_the_browser_keeps_its_versioned_urls(self, client):
+        """Same-origin requests still cache-bust, which is what lets Caddy
+        cache their tiles forever."""
+        text = client.get("/maps/style.json").text
+        assert "?v=" in text
+
+
 class TestBaseUrlRewrite:
     def test_same_origin_by_default(self, client):
         style = client.get("/maps/style.json").json()

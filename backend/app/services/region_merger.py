@@ -51,23 +51,21 @@ _merge_lock = threading.Lock()
 
 # ── Public assembly entry points ──────────────────────────────────────────────
 
-def rebuild_master(index_source: str | None = None, write_trigger: bool = True,
-                   mark_installed: bool = True) -> None:
+def rebuild_master(index_source: str | None = None, write_trigger: bool = True) -> None:
     """Assemble ``master_basemap_detail`` from active regions' z13-15 detail.
 
-    ``mark_installed=False`` keeps regions in their in-progress status so the
-    download pipeline can run later phases (trails, contours) with their own
-    progress before flipping to "installed". If ``index_source`` (a region's
-    source.pmtiles) is given, its z13+ POIs are indexed asynchronously.
+    Never changes a region's status: only the pipeline building a region marks
+    it installed, once its last phase is done. This used to mark every
+    non-error region installed by default, and the startup recovery called it
+    that way right after resume_interrupted() had queued builds — so areas
+    still re-extracting were announced as finished, and a phone pulled them
+    half-built and recorded the holes as complete (audit F19). If
+    ``index_source`` (a region's source.pmtiles) is given, its z13+ POIs are
+    indexed asynchronously.
     """
     with _merge_lock:
         active = region_registry.list_active()
         _assemble(MASTER_BASEMAP_DETAIL_NAME, "source.pmtiles", active)
-
-        if mark_installed:
-            for r in active:
-                if r["status"] not in ("error", "deleting"):
-                    region_registry.update_status(r["id"], "installed")
 
     if index_source and Path(index_source).exists():
         threading.Thread(target=_safe_index_pois, args=(index_source,),
@@ -111,7 +109,11 @@ def rebuild_master_overlay(write_trigger: bool = True) -> None:
 
     tile-join concatenates rather than de-duplicating, so it depends on the
     regions' archives not holding the same feature twice; see ``build_overlay``'s
-    ``clip_bbox`` for how that is guaranteed."""
+    ``clip_bbox`` for how that is guaranteed.
+
+    Only the tiles two regions share are actually tile-joined; a tile one region
+    alone has is copied as it is (tippecanoe_writer._join_shared_only), which is
+    the same union at a fraction of the cost."""
     with _merge_lock:
         _assemble_overlay(region_registry.list_active())
     if write_trigger:

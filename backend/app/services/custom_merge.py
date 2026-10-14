@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 def merge_archives(sources: list[str], output: str, min_zoom: int | None = None,
-                   max_zoom: int | None = None) -> int:
+                   max_zoom: int | None = None, prototype: str | None = None) -> int:
     """Merge archives (newest source wins on overlap) into ``output``.
 
     When ``min_zoom`` is given, tiles below that zoom are dropped. This is used
@@ -35,6 +35,12 @@ def merge_archives(sources: list[str], output: str, min_zoom: int | None = None,
     tiles out on their own before a real tile-join, since last-wins here would be
     unsafe for tiles two regions both cover). Returns the number of unique tiles
     written (0 if nothing matched — no file is produced).
+
+    The header and metadata come from ``prototype`` (default: the last source),
+    except the bounds and zoom range, which are the union of every source's: a
+    last source that covers only part of the ground — the shared tiles
+    tippecanoe_writer.merge_overlays puts last — must not narrow what the whole
+    archive claims to hold.
     """
     cleaned = [s for s in sources if Path(s).exists() and Path(s).stat().st_size > 0]
 
@@ -42,11 +48,12 @@ def merge_archives(sources: list[str], output: str, min_zoom: int | None = None,
         logger.info("No non-empty sources — skipping merge")
         return 0
 
-    last = cleaned[-1]
-    with open(last, "rb") as f:
-        prototype = Reader(MmapSource(f))
-        header = prototype.header()
-        metadata = prototype.metadata()
+    proto_path = prototype if prototype and Path(prototype).exists() else cleaned[-1]
+    with open(proto_path, "rb") as f:
+        proto = Reader(MmapSource(f))
+        header = proto.header()
+        metadata = proto.metadata()
+    _union_extent(header, cleaned)
 
     new_output = Path(str(output) + ".new")
 
@@ -87,6 +94,20 @@ def merge_archives(sources: list[str], output: str, min_zoom: int | None = None,
     )
 
     return len(seen)
+
+
+def _union_extent(header: dict, sources: list[str]) -> None:
+    """Widen ``header``'s bounds and zoom range to cover every source's."""
+    for src in sources:
+        try:
+            with open(src, "rb") as f:
+                h = Reader(MmapSource(f)).header()
+        except Exception:
+            continue
+        for key, pick in (("min_zoom", min), ("min_lon_e7", min), ("min_lat_e7", min),
+                          ("max_zoom", max), ("max_lon_e7", max), ("max_lat_e7", max)):
+            if key in h and key in header:
+                header[key] = pick(header[key], h[key])
 
 
 def _pick_tile_type(sources: list[str]) -> TileType | None:

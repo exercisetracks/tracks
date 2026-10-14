@@ -135,3 +135,48 @@ def test_merge_overlays_no_sources(tmp_path):
     out = tmp_path / "master_overlay.pmtiles"
     assert tw.merge_overlays([], out) == 0
     assert not out.exists()
+
+
+@pytest.mark.skipif(not HAS_TILEJOIN, reason="tile-join not installed")
+@pytest.mark.skipif(not HAS_TIPPECANOE, reason="tippecanoe not installed")
+def test_joining_only_shared_tiles_matches_a_full_tile_join(tmp_path):
+    """The shared-tiles-only merge is a speed-up, not a different answer: every
+    tile, shared or not, decodes to the same features as tile-joining it all —
+    the seam along a common edge included."""
+    import gzip
+    import subprocess
+
+    import mapbox_vector_tile
+    from pmtiles.reader import MmapSource, Reader, all_tiles
+
+    def _overlay(name, line):
+        nd = tmp_path / f"{name}.ndjson"
+        tw.features_to_ndjson([(LineString(line), {"kind": "path"}, 6)], nd)
+        out = tmp_path / f"{name}.pmtiles"
+        tw.build_overlay({"trails": nd}, out, max_zoom=12)
+        return str(out)
+
+    # Two areas side by side: they share low-zoom tiles and the edge band.
+    a = _overlay("a", [(-121.40, 44.00), (-121.21, 44.10)])
+    b = _overlay("b", [(-121.19, 44.00), (-121.00, 44.10)])
+    full = tmp_path / "full.pmtiles"
+    subprocess.run(["tile-join", "-o", str(full), "--force", "--no-tile-size-limit", a, b],
+                   check=True, capture_output=True)
+    hybrid = tmp_path / "hybrid.pmtiles"
+    tw.merge_overlays([a, b], hybrid)
+
+    def tiles(path):
+        with open(path, "rb") as f:
+            out = {}
+            for zxy, data in all_tiles(Reader(MmapSource(f)).get_bytes):
+                layers = mapbox_vector_tile.decode(gzip.decompress(data))
+                out[zxy] = sorted(
+                    (name, str(feat["geometry"])) for name, layer in layers.items() for feat in layer["features"]
+                )
+            return out
+
+    expected, got = tiles(full), tiles(hybrid)
+    assert got.keys() == expected.keys()
+    assert any(len(v) > 1 for v in expected.values()), "the areas should share a tile"
+    for zxy in expected:
+        assert got[zxy] == expected[zxy], zxy

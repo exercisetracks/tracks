@@ -177,6 +177,16 @@ def _serve(path: Path, base_url: str | None) -> Response:
             detail="Map style has not been built — run frontend/scripts/build-map-style.mjs",
         )
 
+    if base_url:
+        # A native client — the phone — gets tile URLs with no version on them.
+        # MapLibre's offline store keys a saved tile by its full URL, so a
+        # version that moves with every download, delete, merge or contour
+        # rebuild anywhere on the server orphaned every tile the phone had
+        # saved: offline, a "Ready" area drew the basemap and nothing else, no
+        # trails, contours or terrain. Unversioned URLs are revalidated instead
+        # (Caddy sends them no-cache; go-pmtiles answers 304 by ETag), which
+        # is what the browser's versioning was standing in for.
+        raw = raw.replace("?v=" + _VERSION_PLACEHOLDER, "")
     raw = raw.replace(_VERSION_PLACEHOLDER, _tile_version())
 
     # Parsed rather than text-substituted, unlike the two rewrites around it:

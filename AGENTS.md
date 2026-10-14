@@ -137,6 +137,12 @@ under it is `choice`; a setting that applies at once is `Switch`, one that is
 submitted with a form is `Checkbox`. `src/test/StyleKit.test.js` fails when a
 copy of a kit piece reappears.
 
+**The phone reports background work in one pill.** Sync, watch, download and
+backup progress, and every result, go through `StatusBoard` and are drawn by
+`StatusHost`. There are no snackbars, toasts or per-feature pills.
+[docs/mobile-status-ui.md](docs/mobile-status-ui.md) has the rules and how to
+word a message; `OneStatusVoiceTest` fails when a screen reports its own way.
+
 **Every file carries SPDX headers.** `REUSE.toml` covers the exceptions.
 
 ```
@@ -182,6 +188,11 @@ worth more than the code they explain:
 - [docs/offline-first.md](docs/offline-first.md) — the design for a phone
   that never needs a server, and for several writers syncing through one.
   Its decisions were made deliberately; ask before departing from them.
+- [docs/offline-maps-plan.md](docs/offline-maps-plan.md) — the plan of
+  record for offline maps (packs on the phone, masters only on the server),
+  with the audit behind it in
+  [docs/offline-maps-audit.md](docs/offline-maps-audit.md). Read both before
+  touching region downloads on either side.
 - [docs/map-screenshot-testing.md](docs/map-screenshot-testing.md) — driving
   the map headlessly, which is the only way to see what a tile change did.
 - [mobile/README.md](mobile/README.md) — module layout and what is verified on

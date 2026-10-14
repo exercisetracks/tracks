@@ -25,14 +25,14 @@ from concurrent.futures.process import BrokenProcessPool
 from pathlib import Path
 from typing import Sequence
 
-import mapbox_vector_tile
 from pmtiles.reader import MmapSource, Reader, all_tiles
 from pmtiles.tile import Compression, TileType, zxy_to_tileid
 from pmtiles.writer import write as pmtiles_write
 
 from .constants import CONTOUR_PAD_PX, INTERVAL_FT, TILE_PX, logger
 from .contours import _generate_mvt_features
-from .dem import _decode_terrarium, _padded_elevation
+from .dem import CachedReader, _decode_terrarium, _decode_tile, _padded_elevation
+from .mvt import encode_contours
 from .tiling import _bbox_overlaps, _tile_bounds
 
 # DEM archive path seeded into each spawned worker via the pool initializer (spawn
@@ -53,41 +53,51 @@ def _contour_tile(job: tuple[int, int, int]) -> tuple[int, bytes | None]:
     return _process_one_contour_tile(_CONTOUR_DEM_PATH, z, x, y, INTERVAL_FT.get(z, 100))
 
 
+# Per worker process: the open DEM, its parsed directories, and the tiles
+# decoded so far. Jobs reach a worker in contiguous runs of clustered (Hilbert)
+# order, so a tile's neighbours were mostly decoded for the tile before it —
+# each DEM tile used to be decoded nine times, once per tile that borders it.
+_WORKER_DEM: dict[str, tuple] = {}
+# 48 tiles of 512² float32 is ~50 MB, well inside _WORKER_BYTES.
+_WORKER_CACHE_TILES = 48
+
+
+def _worker_dem(dem_path_str: str):
+    state = _WORKER_DEM.get(dem_path_str)
+    if state is None:
+        f = open(dem_path_str, "rb")
+        state = (f, CachedReader(MmapSource(f)), OrderedDict())
+        _WORKER_DEM.clear()
+        _WORKER_DEM[dem_path_str] = state
+    return state[1], state[2]
+
+
 def _process_one_contour_tile(
     dem_path_str: str, z: int, x: int, y: int, interval_ft: int,
 ) -> tuple[int, bytes | None]:
     """Process a single DEM tile and return (tile_id, gzip_mvt_bytes | None).
 
-    Runs in a worker process — each opens its own mmap over the DEM file. Multiple
-    mmaps of the same file share the kernel page cache, so there is no extra I/O.
+    Runs in a worker process, which keeps its own mmap over the DEM (see
+    _worker_dem). Multiple mmaps of the same file share the kernel page cache,
+    so there is no extra I/O.
     """
     try:
-        with open(dem_path_str, "rb") as f:
-            reader = Reader(MmapSource(f))
-            raw = reader.get(z, x, y)
-            if not raw:
-                return (zxy_to_tileid(z, x, y), None)
+        reader, cache = _worker_dem(dem_path_str)
+        elev_m = _decode_tile(reader, z, x, y, cache, _WORKER_CACHE_TILES)
+        if elev_m is None:
+            return (zxy_to_tileid(z, x, y), None)
 
-            elev_m = _decode_terrarium(raw)
-            if elev_m is None:
-                return (zxy_to_tileid(z, x, y), None)
-            if elev_m.shape[0] != TILE_PX or elev_m.shape[1] != TILE_PX:
-                return (zxy_to_tileid(z, x, y), None)
+        padded = _padded_elevation(reader, z, x, y, CONTOUR_PAD_PX, cache, elev_m,
+                                   _WORKER_CACHE_TILES)
 
-            cache: OrderedDict = OrderedDict()
-            cache[(z, x, y)] = elev_m
-            padded = _padded_elevation(reader, z, x, y, CONTOUR_PAD_PX, cache, elev_m)
+        features = _generate_mvt_features(padded, interval_ft, pad=CONTOUR_PAD_PX)
+        if not features:
+            return (zxy_to_tileid(z, x, y), None)
 
-            features = _generate_mvt_features(padded, interval_ft, pad=CONTOUR_PAD_PX)
-            if not features:
-                return (zxy_to_tileid(z, x, y), None)
-
-            mvt_bytes = mapbox_vector_tile.encode(
-                [{"name": "contours", "features": features}],
-                y_coord_down=True,
-            )
-            mvt_bytes = gzip.compress(mvt_bytes)
-            return (zxy_to_tileid(z, x, y), mvt_bytes)
+        mvt_bytes = encode_contours(features)
+        if not mvt_bytes:
+            return (zxy_to_tileid(z, x, y), None)
+        return (zxy_to_tileid(z, x, y), gzip.compress(mvt_bytes))
     except Exception:
         return (zxy_to_tileid(z, x, y), None)
 
@@ -164,8 +174,11 @@ def build_contours_pmtiles(
     tmp_output = output_path.with_name(output_path.name + ".tmp")
     if tmp_output.exists():
         tmp_output.unlink()
-    if output_path.exists():
-        output_path.unlink()
+    # The previous archive stays in service until the new one replaces it
+    # (os.replace at the end). Unlinking it here meant a retrace that failed or
+    # was killed left the area with no contours at all, and made the
+    # bbox-scoped path below — which copies the old tiles outside the box —
+    # dead code, since the old archive was always gone by then.
 
     logger.info(
         "Building contours %s → %s (z%d–z%d)",

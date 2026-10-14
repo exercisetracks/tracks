@@ -198,9 +198,17 @@
 		# here is versioned (planet_dem_z7 is not, nor an archive whose
 		# version is still 0 because it has not been built), and a 404 for one
 		# of those cached as immutable would outlast the file appearing.
-		header Cache-Control "public, max-age=31536000, immutable" {
+		#
+		# Only a URL that carries its version may be cached forever. The phone's
+		# style has none (see map_style._serve: a moving version orphaned every
+		# tile it had saved offline), so its tiles are revalidated every time —
+		# cheap, go-pmtiles answers 304 by ETag — and a rebuilt region shows.
+		@versioned_tile query v=*
+		header @versioned_tile Cache-Control "public, max-age=31536000, immutable" {
 			match status 2xx
 		}
+		@unversioned_tile not query v=*
+		header @unversioned_tile Cache-Control "no-cache"
 		uri strip_prefix /api/tiles
 		reverse_proxy {$TRACKS_TILES:go-pmtiles:8080}
 	}

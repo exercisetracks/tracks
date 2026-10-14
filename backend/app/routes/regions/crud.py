@@ -15,6 +15,7 @@ from concurrent.futures import ThreadPoolExecutor
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.auth import require_auth
+from app.models.activity import User
 
 from app.config import settings
 from app.services import (
@@ -207,7 +208,12 @@ def get_region(region_id: int):
 
 
 @router.delete("/regions/{region_id}")
-def delete_region(region_id: int):
+def delete_region(region_id: int, user: User = Depends(require_auth)):
+    # Admin only. A region is shared by every account and device on the
+    # server; any signed-in user — or a phone's "Cancel" on a row it was only
+    # saving locally — used to delete it for all of them (audit F4).
+    if not user.is_admin:
+        raise HTTPException(403, "Only an admin can remove map areas from the server")
     r = region_registry.get(region_id)
     if not r:
         raise HTTPException(404, "Region not found")
