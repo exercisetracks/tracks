@@ -4,7 +4,18 @@
 
 import hashlib
 
+import pytest
+
+from app.services import map_packs
 from tests.test_services.test_map_packs import server  # noqa: F401  (fixture)
+
+
+@pytest.fixture(autouse=True)
+def no_background_prebuild(monkeypatch):
+    """The manifest starts cutting packs in a background thread; in tests that
+    thread could outlive its test and cut packs against the next one's state,
+    which made the stale-version test flaky in the full suite."""
+    monkeypatch.setattr(map_packs, "prebuild", lambda doc: None)
 
 
 def _overlay_entry(client, cell_bounds):

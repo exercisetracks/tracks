@@ -25,7 +25,7 @@ Bump `MIN_CLIENT_API_VERSION` only when you remove something old clients
 depend on — that's a deliberate act of dropping support, not a side effect.
 """
 
-SERVER_VERSION = "1.6.0"
+SERVER_VERSION = "1.7.0"
 
 # 2: /sync/push + /sync/pull replace /sync/delta and the old offline write
 # paths outright (docs/offline-first.md: no backwards compatibility), so a
@@ -36,5 +36,9 @@ SERVER_VERSION = "1.6.0"
 # this, so a bump would have every 1.5.0 phone refuse every older server as
 # "too old". Against an older server a place's collection is simply refused
 # as an unknown field and the rest of the row syncs.
+#
+# Nor for 1.7.0's map packs (/maps/packs/*) and the queued region status:
+# additive too. A 1.7.0 phone against an older server finds no manifest and
+# saves no packs; nothing else changes.
 API_VERSION = 2
 MIN_CLIENT_API_VERSION = 2
