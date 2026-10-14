@@ -173,6 +173,9 @@ class WatchManager(
      */
     suspend fun pullAll(): List<PulledFile> = integration.pullAll().also { reblockWifiUploadsIfSeen() }
 
+    /** Files the watch refused to send during the last [pullAll]; 0 off a Garmin. */
+    fun takeRefusedDownloads(): Int = (integration as? GarminIntegration)?.takeRefusedDownloads() ?: 0
+
     /**
      * An activity arrived already flagged synced, recorded since the last check
      * — the watch's own Wi-Fi upload is on again (a factory reset, a firmware

@@ -678,3 +678,29 @@ entry), and on every later connection the watch registers GFDI over Tracks'
 own bond. So "Connect's bond" is refused, "a Tracks bond" is accepted, and the
 way from one to the other is forgetting the watch once. `GarminIntegration`
 says so when a bonded watch never finishes its handshake.
+
+## A watch that refuses every download (measured 2026-10-13)
+
+After a day of factory resets, a Garmin Connect setup (for a Wi-Fi capture) and
+many Explore sessions, the fenix 6X stopped sending files. Each sync it still
+*listed* everything pending — 49 files: activity, monitoring, sleep, HRV — but
+answered every `FileRequest` with `FileResponse { status: 3 }` (failure) within
+about 150 ms, for hours. Every sync logged a clean "pulled 0 file(s)", and no
+activity or health data reached the phone.
+
+What it was not:
+
+- Not an Explore session in the way. Refusals came with no session open (the
+  last had finished, "ok", half an hour before), and from a watch-announced new
+  file between syncs as well as during them.
+- Not the phone's request. `FileSyncServiceHandler.requestFile` was unchanged,
+  and the same requests succeeded straight afterwards.
+
+Restarting the watch cleared it: the next sync pulled all 38 pending files.
+The cause is on the watch's side and not yet known.
+
+Since nothing the phone sends fixes it, Tracks detects it instead. GarminSupport
+counts refused downloads; when a pull refuses everything it listed,
+`WatchSyncRunner.pullReport` fails the PULL step, the sync screen says to
+restart the watch, and a notification says so for background syncs. The
+notification goes away on the next sync that gets files.

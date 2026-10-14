@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 package com.tracks.app.device
 
+import com.tracks.app.WatchSyncNotifications
+
 import android.util.Log
 import com.tracks.app.AppContainer
 import com.tracks.device.PulledFile
@@ -181,10 +183,14 @@ class WatchSyncRunner(private val container: AppContainer) {
 
         // ── pull ── needs the link
         _progress.value = Progress("Reading the watch")
+        var refused = 0
         val pulled = try {
             container.watch.pullAll().also {
-                phases += PhaseReport(Phase.PULL, RAN, "${it.size} file(s)")
-                Log.i(TAG, "pulled ${it.size} file(s): ${it.groupingBy { f -> f.kind }.eachCount()}")
+                refused = container.watch.takeRefusedDownloads()
+                phases += pullReport(it.size, refused)
+                Log.i(TAG, "pulled ${it.size} file(s): ${it.groupingBy { f -> f.kind }.eachCount()}" +
+                    if (refused > 0) "; the watch refused $refused" else "")
+                WatchSyncNotifications.watchRefusing(container.appContext, if (it.isEmpty()) refused else 0)
             }
         } catch (e: CancellationException) {
             // Never swallowed. The service being destroyed mid-sync must stop the
@@ -280,6 +286,7 @@ class WatchSyncRunner(private val container: AppContainer) {
         return Outcome(
             pushed = pushed, pulled = pulled, imported = imported, health = health,
             notRegistered = notRegistered, uploadResult = uploadResult, phases = phases,
+            refusedByWatch = if (pulled.isEmpty()) refused else 0,
         )
     }
 
@@ -298,6 +305,11 @@ class WatchSyncRunner(private val container: AppContainer) {
         val uploadResult: WatchManager.UploadResult? = null,
         /** What each phase did, in the order it happened. */
         val phases: List<PhaseReport> = emptyList(),
+        /**
+         * Files the watch listed and then refused to send, when it refused
+         * every one — the state only a restart of the watch clears. 0 otherwise.
+         */
+        val refusedByWatch: Int = 0,
     ) {
         /** True when nothing outright failed — skipped phases are not failures. */
         val clean: Boolean get() = phases.none { it.status == FAILED }
@@ -324,8 +336,25 @@ class WatchSyncRunner(private val container: AppContainer) {
         override fun toString() = "$phase: $status" + (detail?.let { " ($it)" } ?: "")
     }
 
-    private companion object {
+    internal companion object {
         const val TAG = "TracksWatchSync"
+
+        /**
+         * The PULL step, given what came off and what the watch refused.
+         *
+         * Refusing *everything* it listed is a failure, not "0 files": measured
+         * 2026-10-13, the fenix answered every file request with status 3 for
+         * hours — no activity, no sleep, no steps — while each sync reported a
+         * clean pull of nothing. A restart of the watch cleared it. Some
+         * refused among some delivered is the watch's ordinary hiccup, and the
+         * next sync asks again.
+         */
+        fun pullReport(pulled: Int, refused: Int): PhaseReport = when {
+            pulled == 0 && refused > 0 ->
+                PhaseReport(Phase.PULL, FAILED, "the watch refused all $refused file(s); restart the watch")
+            refused > 0 -> PhaseReport(Phase.PULL, RAN, "$pulled file(s), $refused refused")
+            else -> PhaseReport(Phase.PULL, RAN, "$pulled file(s)")
+        }
 
         /**
          * Everything a watch records that is not an activity or a saved item.

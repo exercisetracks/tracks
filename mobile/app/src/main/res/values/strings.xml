@@ -34,6 +34,11 @@
     <string name="watch_sync_already_running">Already syncing</string>
     <string name="watch_sync_not_paired">No watch paired</string>
     <string name="watch_sync_nothing_new">Nothing new from the watch</string>
+    <string name="watch_attention_channel_name">Watch needs attention</string>
+    <string name="watch_attention_channel_description">When the watch needs something done before it can sync, like a restart</string>
+    <string name="watch_refusing_title">Restart your watch</string>
+    <string name="watch_refusing_text">Your watch is refusing to send its %1$d file(s) — activities and health stay on it until it is restarted. Hold LIGHT, choose Power Off, turn it back on, and sync again.</string>
+    <string name="watch_sync_refused">The watch refused to send its files — restart the watch and sync again</string>
     <string name="watch_sync_not_registered">Pulled %1$d file(s) — sign in to finish setup</string>
     <string name="watch_sync_result">Pulled %1$d, delivered %2$d</string>
     <string name="backup_reminder_channel_name">Backup reminders</string>

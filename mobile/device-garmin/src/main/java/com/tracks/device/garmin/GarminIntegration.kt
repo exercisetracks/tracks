@@ -740,6 +740,9 @@ class GarminIntegration(private val context: Context) : DeviceIntegration {
 
     override suspend fun pullAll(): List<PulledFile> {
         val support = requireConnected()
+        // Refusals counted from this run only: one from a watch-announced file
+        // between syncs is not this run's answer.
+        support.takeRefusedDownloads()
         val signal = CompletableDeferred<Unit>()
         synchronized(pulledThisRun) { pulledThisRun.clear() }
         syncSignal = signal
@@ -916,6 +919,9 @@ class GarminIntegration(private val context: Context) : DeviceIntegration {
      */
     @Volatile
     private var forceLegacyPush = false
+
+    /** Downloads the watch refused during the last pull; see GarminSupport.takeRefusedDownloads. */
+    fun takeRefusedDownloads(): Int = support?.takeRefusedDownloads() ?: 0
 
     /** See GarminSupport.takeActivitiesSyncedElsewhere. */
     fun takeActivitiesSyncedElsewhere(): Int = support?.takeActivitiesSyncedElsewhere() ?: 0

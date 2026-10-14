@@ -838,6 +838,7 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
             final FileDownloadedDeviceEvent event = (FileDownloadedDeviceEvent) deviceEvent;
             if (!event.success) {
                 LOG.warn("Download failed for {}", event.directoryEntry);
+                refusedDownloads.incrementAndGet();
                 return;
             }
             // Deliberately *not* archived on the watch here, which is where
@@ -2607,6 +2608,25 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
     }
 
     private static final String PREF_RECOVERY_DONE_AT = "garmin_activity_recovery_done_at";
+
+    /**
+     * Downloads the watch refused ({@code FileResponse} status non-zero) since
+     * last taken.
+     *
+     * <p>Measured 2026-10-13 on the fenix 6X: after a day of factory resets,
+     * Garmin Connect setup and Explore sessions, the watch listed every pending
+     * file and answered each request with status 3 — every sync, for hours, a
+     * clean "0 files" — until the watch was restarted, after which the same
+     * files came straight off. The cause is the watch's; this count is how
+     * Tracks notices the state and asks for the restart
+     * (WatchSyncRunner).
+     */
+    private final java.util.concurrent.atomic.AtomicInteger refusedDownloads =
+            new java.util.concurrent.atomic.AtomicInteger();
+
+    public int takeRefusedDownloads() {
+        return refusedDownloads.getAndSet(0);
+    }
 
     /** See {@link #takeActivitiesSyncedElsewhere}. */
     private final java.util.concurrent.atomic.AtomicInteger syncedElsewhere =

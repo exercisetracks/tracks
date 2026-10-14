@@ -314,6 +314,15 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
             files + schedule
         } ?: ""
 
+        if (outcome.refusedByWatch > 0) {
+            // Not "nothing new": the watch has files and will not send them
+            // until it is restarted (see WatchSyncRunner.pullReport).
+            _state.update { current ->
+                current.copy(message = pushNote + "Your watch refused to send its ${outcome.refusedByWatch} file(s). " +
+                    "Restart the watch (hold LIGHT, Power Off, then on) and sync again.")
+            }
+            return
+        }
         if (outcome.pulled.isEmpty()) {
             _state.update { current -> current.copy(message = pushNote + "Watch had nothing new.") }
             return

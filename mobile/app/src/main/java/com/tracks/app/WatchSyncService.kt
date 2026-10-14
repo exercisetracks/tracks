@@ -145,6 +145,7 @@ class WatchSyncService : Service() {
     private fun summarize(outcome: WatchSyncRunner.Outcome): String = when {
         outcome.alreadyRunning -> getString(R.string.watch_sync_already_running)
         !outcome.paired -> getString(R.string.watch_sync_not_paired)
+        outcome.refusedByWatch > 0 -> getString(R.string.watch_sync_refused)
         outcome.pulled.isEmpty() -> getString(R.string.watch_sync_nothing_new)
         outcome.notRegistered -> getString(R.string.watch_sync_not_registered, outcome.pulled.size)
         else -> getString(

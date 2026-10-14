@@ -35,6 +35,16 @@ object WatchSyncNotifications {
      */
     const val LINK_ID = 1002
 
+    /** "Restart your watch" — see [watchRefusing]. */
+    const val REFUSING_ID = 1003
+
+    /**
+     * Its own channel, at default importance: unlike sync progress, this one
+     * asks the person to do something, and nothing reaches the phone until
+     * they do.
+     */
+    const val ATTENTION_CHANNEL_ID = "watch_attention"
+
     /**
      * Idempotent by construction — `createNotificationChannel` with the same ID
      * updates rather than duplicates, so calling this on every service start
@@ -101,5 +111,52 @@ object WatchSyncNotifications {
             .setOnlyAlertOnce(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .build()
+    }
+
+    /**
+     * Tell the person their watch is refusing to send its files, or take the
+     * notice down once it is not ([refused] 0).
+     *
+     * The state is the watch's (measured 2026-10-13: every file request
+     * answered "failure" for hours, cleared by restarting the watch), and
+     * nothing Tracks can send fixes it — so the notice says what will. One
+     * notice, replaced in place and silent after the first alert, however many
+     * background syncs find the watch still refusing.
+     */
+    fun watchRefusing(context: Context, refused: Int) {
+        val manager = context.getSystemService(NotificationManager::class.java) ?: return
+        if (refused <= 0) {
+            manager.cancel(REFUSING_ID)
+            return
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            manager.createNotificationChannel(
+                NotificationChannel(
+                    ATTENTION_CHANNEL_ID,
+                    context.getString(R.string.watch_attention_channel_name),
+                    NotificationManager.IMPORTANCE_DEFAULT,
+                ).apply {
+                    description = context.getString(R.string.watch_attention_channel_description)
+                }
+            )
+        }
+        val openApp = PendingIntent.getActivity(
+            context, 0,
+            Intent(context, MainActivity::class.java),
+            PendingIntent.FLAG_IMMUTABLE,
+        )
+        val text = context.getString(R.string.watch_refusing_text, refused)
+        val notification = NotificationCompat.Builder(context, ATTENTION_CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.stat_notify_error)
+            .setContentTitle(context.getString(R.string.watch_refusing_title))
+            .setContentText(text)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(text))
+            .setContentIntent(openApp)
+            .setAutoCancel(true)
+            .setOnlyAlertOnce(true)
+            .build()
+        // Without the notification permission this is a no-op, and the sync
+        // screen's own message still says it.
+        runCatching { manager.notify(REFUSING_ID, notification) }
     }
 }
