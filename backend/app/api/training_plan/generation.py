@@ -309,8 +309,25 @@ def _plan_workout_dicts(db: Session, goal: TrainingGoal, user_id: int,
                 goal=goal, ctl=ctl, atl=atl, anchor=_goal_anchor(goal),
                 activity_frequencies=(us.activity_frequency if us else None) or {}, **common)
         else:
+            # Fitness overall and in this sport: the sport's own sets where
+            # the plan starts, overall how fast it may build (build_ramp).
+            from app.api.coaching.helpers import _sport_and_overall_ctl
+            overall_ctl, sport_ctl = _sport_and_overall_ctl(db, user_id, us, today, family)
             vdot, workout_dicts = generate_training_plan(
-                goal=goal, max_hr=_effective_max_hr(us), **common)
+                goal=goal, max_hr=_effective_max_hr(us),
+                overall_ctl=overall_ctl, sport_ctl=sport_ctl, **common)
+
+    # The next few days answer the fatigue they will be done in: shortened,
+    # moved or dropped (calculators/plan/adapt.py). Before the injections, so
+    # a stretch flow attached to a run follows it when it moves.
+    if workout_dicts:
+        from app.api.coaching.helpers import _fatigue_inputs
+        from app.calculators.plan.adapt import adapt_to_fatigue
+        us_f = db.query(UserSettings).filter_by(user_id=user_id).first()
+        f_ctl, f_atl, f_recent = _fatigue_inputs(db, user_id, us_f, today)
+        workout_dicts = adapt_to_fatigue(
+            workout_dicts, today=today, ctl=f_ctl, atl=f_atl, recent=f_recent,
+            imperial=bool(us_f and us_f.units == "imperial"))
 
     # Honor the goal's persisted schedule_tests flag so the background path
     # produces identical output to the explicit /plan/generate endpoint.

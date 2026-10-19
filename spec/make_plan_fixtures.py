@@ -349,6 +349,20 @@ def plan_cases() -> list:
     add("fitness_ignored_by_cycling", mon,
         {"event_date": mon + timedelta(days=56), "event_sport": "cycling", "event_distance_meters": 100000.0},
         [], [], running_fitness=measured)
+    # Overall fitness sets how fast volume builds (base.build_ramp): a
+    # cyclist training for a 5k, a runner who is only a runner, and a hiker
+    # fitter on the bike than on foot. Their own Random, so the cases above
+    # keep theirs.
+    ramp_rng = Random("plan-ramp")
+    add("five_k_for_a_cyclist", mon, {"event_date": mon + timedelta(weeks=10), "event_sport": "running",
+        "event_distance_meters": 5000.0}, _history(mon, ramp_rng, ["running"]), [],
+        overall_ctl=70.0, sport_ctl=20.0)
+    add("five_k_for_a_runner", mon, {"event_date": mon + timedelta(weeks=10), "event_sport": "running",
+        "event_distance_meters": 5000.0}, _history(mon, ramp_rng, ["running"]), [],
+        overall_ctl=40.0, sport_ctl=38.0)
+    add("long_ride_for_a_runner", mon, {"event_date": mon + timedelta(weeks=12), "event_sport": "cycling",
+        "event_distance_meters": 100000.0}, _history(mon, ramp_rng, ["cycling"]), [],
+        overall_ctl=60.0, sport_ctl=15.0)
     return cases
 
 

@@ -128,6 +128,38 @@ class LocalMetrics(private val library: LocalLibrary, private val sources: Local
         }
     }
 
+    /**
+     * What the plan's fatigue step reads (PlanAdapt), as the server's
+     * `_fatigue_inputs`: today's CTL and ATL, and each activity of the last
+     * [days] days with its sport and load, scored as the fitness chart scores it.
+     */
+    suspend fun fatigueInputs(today: CivilDate, thresholdHr: Double?, days: Long = 3):
+        Triple<Double, Double, List<com.tracks.core.plan.PlanAdapt.Recent>> = cpu {
+        val all = rows()
+        val discipline = sources.mtbDiscipline()
+        val calibration = TrainingLoad.loadCalibration(all, thresholdHr, discipline)
+        val tss = TrainingLoad.tssByDate(all, thresholdHr, discipline, calibration)
+        val (ctl, atl, _) = TrainingLoad.ctlAtlToday(tss, today)
+        val since = today.epochDay - (days - 1)
+        val recent = all.filter { it.date.epochDay in since..today.epochDay }.map {
+            com.tracks.core.plan.PlanAdapt.Recent(it.date, it.sport, TrainingLoad.estimateTss(it, thresholdHr, discipline, calibration))
+        }
+        Triple(ctl, atl, recent)
+    }
+
+    /** (overall CTL, CTL from [family]'s load alone), as the server's `_sport_and_overall_ctl`. */
+    suspend fun sportAndOverallCtl(today: CivilDate, thresholdHr: Double?, family: String): Pair<Double, Double> = cpu {
+        val all = rows()
+        val discipline = sources.mtbDiscipline()
+        val calibration = TrainingLoad.loadCalibration(all, thresholdHr, discipline)
+        val overall = TrainingLoad.tssByDate(all, thresholdHr, discipline, calibration)
+        val mine = TrainingLoad.tssByDate(
+            all.filter { com.tracks.core.plan.PlanBase.sportFamily((it.sport ?: "").lowercase()) == family },
+            thresholdHr, discipline, calibration,
+        )
+        TrainingLoad.ctlAtlToday(overall, today).first to TrainingLoad.ctlAtlToday(mine, today).first
+    }
+
     /** Today's (CTL, ATL) from the same rows the dashboard's fitness chart reads. */
     suspend fun ctlAtl(today: CivilDate, thresholdHr: Double?): Pair<Double, Double> = cpu {
         val tss = TrainingLoad.tssByDate(rows(), thresholdHr, sources.mtbDiscipline())

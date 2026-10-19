@@ -305,22 +305,32 @@ object PlanBase {
      * `_weekly_volume_km`: 3:1 (or 2:1) build/recovery with a Bosquet taper.
      * `1.10 ** n` goes through the platform `pow`, as Python's goes through C's.
      */
+    /** `build_ramp`: the sport's fitness sets the start, overall fitness the climb. See the Python. */
+    fun buildRamp(family: String, overallCtl: Double?, sportCtl: Double?): Double {
+        if (overallCtl == null || overallCtl == 0.0 || sportCtl == null ||
+            overallCtl < AEROBICALLY_AHEAD * maxOf(sportCtl, 1.0)
+        ) return 1.10
+        return if (family == "running" || family == "hiking") 1.12 else 1.15
+    }
+
+    const val AEROBICALLY_AHEAD = 1.25
+
     fun weeklyVolumeKm(
         weekNum: Long, totalWeeks: Long, startKm: Double, maxKm: Double,
-        weeksRemaining: Double, cycleLenIn: Long = 4,
+        weeksRemaining: Double, cycleLenIn: Long = 4, ramp: Double = 1.10,
     ): Double {
         val cycleLen = maxOf(2L, cycleLenIn)
         val recoveryPos = cycleLen - 1
         val taperW = minOf(3L, maxOf(1L, totalWeeks / 5))
         val nonTaperW = maxOf(1L, totalWeeks - taperW)
         val lastBw = nonTaperW - 1
-        val peakKm = pyMin(startKm * 1.10.pow((lastBw - lastBw.floorDiv(cycleLen)).toDouble()), maxKm)
+        val peakKm = pyMin(startKm * ramp.pow((lastBw - lastBw.floorDiv(cycleLen)).toDouble()), maxKm)
         if (weeksRemaining <= 1) return pyMax(peakKm * 0.40, 5.0)
         if (weeksRemaining <= 2) return pyMax(peakKm * 0.60, 10.0)
         if (weeksRemaining <= 3) return pyMax(peakKm * 0.75, 15.0)
         val cyclePos = weekNum.mod(cycleLen)
         val buildWeek = weekNum - weekNum.floorDiv(cycleLen)
-        var target = pyMin(startKm * 1.10.pow(buildWeek.toDouble()), maxKm)
+        var target = pyMin(startKm * ramp.pow(buildWeek.toDouble()), maxKm)
         if (cyclePos == recoveryPos) target *= 0.75
         return PyMath.round(target, 1)
     }

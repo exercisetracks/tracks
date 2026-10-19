@@ -95,6 +95,55 @@ def _build_tss_by_date(db: Session, user_id: int, us: UserSettings | None) -> di
     return tss_by_date
 
 
+def _fatigue_inputs(db: Session, user_id: int, us: UserSettings | None, today: date,
+                    days: int = 3) -> tuple[float, float, list[tuple[date, str | None, float]]]:
+    """(CTL, ATL, recent) for the plan's fatigue step
+    (calculators/plan/adapt.py): the dashboard's own fitness and fatigue, and
+    each activity of the last ``days`` days as (local day, sport, TSS) --
+    scored exactly as ``_build_tss_by_date`` scores them."""
+    threshold_hr = _effective_threshold_hr(us)
+    tz = us.timezone if us else None
+    q = db.query(Activity).filter(Activity.started_at.isnot(None))
+    q = q.filter(Activity.device_id.in_(_claimed_device_ids(db, user_id)))
+    activities = q.order_by(Activity.started_at).all()
+    discipline = active_mtb_discipline(db, user_id)
+    calibration = load_calibration(activities, threshold_hr, discipline, tz)
+    tss_by_date: dict[date, float] = {}
+    recent: list[tuple[date, str | None, float]] = []
+    since = today - timedelta(days=days - 1)
+    for act in activities:
+        d = activity_local_date(act.started_at, tz)
+        tss = estimate_tss(act, threshold_hr, discipline, calibration)
+        tss_by_date[d] = tss_by_date.get(d, 0.0) + tss
+        if since <= d <= today:
+            recent.append((d, act.sport, tss))
+    ctl, atl, _ = _ctl_atl_today(tss_by_date, today)
+    return ctl, atl, recent
+
+
+def _sport_and_overall_ctl(db: Session, user_id: int, us: UserSettings | None, today: date,
+                           family: str) -> tuple[float, float]:
+    """(overall CTL, CTL from this sport family's load alone), each activity
+    scored as `_build_tss_by_date` scores it."""
+    from app.calculators.plan.base import _sport_family
+    threshold_hr = _effective_threshold_hr(us)
+    tz = us.timezone if us else None
+    q = db.query(Activity).filter(Activity.started_at.isnot(None))
+    q = q.filter(Activity.device_id.in_(_claimed_device_ids(db, user_id)))
+    activities = q.order_by(Activity.started_at).all()
+    discipline = active_mtb_discipline(db, user_id)
+    calibration = load_calibration(activities, threshold_hr, discipline, tz)
+    overall: dict[date, float] = {}
+    mine: dict[date, float] = {}
+    for act in activities:
+        d = activity_local_date(act.started_at, tz)
+        tss = estimate_tss(act, threshold_hr, discipline, calibration)
+        overall[d] = overall.get(d, 0.0) + tss
+        if _sport_family((act.sport or "").lower()) == family:
+            mine[d] = mine.get(d, 0.0) + tss
+    return _ctl_atl_today(overall, today)[0], _ctl_atl_today(mine, today)[0]
+
+
 def _ctl_atl_today(tss_by_date: dict[date, float], today: date) -> tuple[float, float, float | None]:
     """Return (ctl, atl, ctl_7d_ago).
 

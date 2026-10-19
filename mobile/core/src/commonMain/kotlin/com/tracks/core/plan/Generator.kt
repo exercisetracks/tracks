@@ -644,6 +644,9 @@ object PlanGenerator {
         activityFrequency: String? = null,
         /** Today's running fitness ([RunningFitness]); see [runningVdots]. */
         runningFitness: RunningFitness.Estimate? = null,
+        /** Fitness overall and in this sport alone; see [PlanBase.buildRamp]. */
+        overallCtl: Double? = null,
+        sportCtl: Double? = null,
     ): Generated {
         val raceDate = goal.eventDate
         // `goal.event_distance_meters or 42195`: a float column, else an int.
@@ -726,7 +729,10 @@ object PlanGenerator {
             val weekEnd = if (isRaceWeek) raceDate else CivilDate.fromEpochDay(weekStart.epochDay + 6)
             val weeksRemaining = (raceDate.epochDay - weekStart.epochDay) / 7.0
             val phase = PlanBase.phaseForWeek(weekNum, totalWeeks)
-            var volKm = PlanBase.weeklyVolumeKm(weekNum, totalWeeks, startKm, maxKm, weeksRemaining, cycleLen)
+            var volKm = PlanBase.weeklyVolumeKm(
+                weekNum, totalWeeks, startKm, maxKm, weeksRemaining, cycleLen,
+                ramp = PlanBase.buildRamp(family, overallCtl, sportCtl),
+            )
 
             if (weekNum > 0 && buildIdx > 0 && (phase == "build" || phase == "peak")) {
                 val prevVol = weeklyVolumes.lastOrNull() ?: volKm

@@ -36,6 +36,7 @@ from app.calculators.plan.base import (
     _sport_family,
     _target_peak_long_km,
     _weekly_volume_km,
+    build_ramp,
     vdot_to_paces,
 )
 from app.calculators.plan.generator.week import (
@@ -112,9 +113,15 @@ def generate_training_plan(
     threshold_hr: int | None = None,
     activity_frequency: str | None = None,
     running_fitness: dict | None = None,
+    overall_ctl: float | None = None,
+    sport_ctl: float | None = None,
 ) -> tuple[float | None, list[dict]]:
     """
     Generate a full day-by-day training plan.
+
+    ``overall_ctl`` and ``sport_ctl`` are the dashboard's fitness overall and
+    in this sport alone; together they set how fast volume may build
+    (``build_ramp``). Without them the ramp is the default 10%.
 
     ``activity_frequency`` is how often the person does this sport (a
     calculators/plan/starting.py level), read only when there is no history.
@@ -230,7 +237,8 @@ def generate_training_plan(
         weeks_remaining = (race_date - week_start).days / 7
         phase  = _phase_for_week(week_num, total_weeks)
         vol_km = _weekly_volume_km(week_num, total_weeks, start_km, max_km,
-                                   weeks_remaining, cycle_len=cycle_len)
+                                   weeks_remaining, cycle_len=cycle_len,
+                                   ramp=build_ramp(family, overall_ctl, sport_ctl))
 
         # ── Volume-intensity coupling: cap volume ramp when building intensity ──
         # When build_idx advanced in the previous week (new quality introduced),

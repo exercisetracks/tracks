@@ -403,9 +403,32 @@ def _phase_for_week(week_num: int, total_weeks: int) -> str:
 # Volume progression (3:1 cycle)
 # ─────────────────────────────────────────
 
+def build_ramp(family: str, overall_ctl: float | None, sport_ctl: float | None) -> float:
+    """Weekly volume growth in build weeks: the sport's own fitness sets
+    where a plan starts (its recent weekly volume), overall fitness how fast it
+    may climb from there.
+
+    10% a week is the default (Foster's consensus for amateurs). An athlete
+    whose overall CTL is well above their CTL in this sport -- a cyclist
+    training for a 5k -- has the heart and lungs for more and is held back
+    only by sport-specific tissue: they get 12% a week in impact sports
+    (running, hiking: bone and tendon adapt slower than the cardiovascular
+    system, and Nielsen et al. 2014 found injury risk rising past roughly 30%
+    in two weeks), 15% in low-impact ones. See docs/adaptive-plan-research.md.
+    """
+    if not overall_ctl or sport_ctl is None or overall_ctl < AEROBICALLY_AHEAD * max(sport_ctl, 1.0):
+        return 1.10
+    return 1.12 if family in ("running", "hiking") else 1.15
+
+
+#: Overall CTL this many times the sport's own marks an athlete fitter than
+#: their sport history says.
+AEROBICALLY_AHEAD = 1.25
+
+
 def _weekly_volume_km(week_num: int, total_weeks: int, start_km: float,
                       max_km: float, weeks_remaining: float,
-                      cycle_len: int = 4) -> float:
+                      cycle_len: int = 4, ramp: float = 1.10) -> float:
     """
     Volume per week with 3:1 build/recovery cycling.
 
@@ -419,13 +442,13 @@ def _weekly_volume_km(week_num: int, total_weeks: int, start_km: float,
     taper_w     = min(3, max(1, total_weeks // 5))
     non_taper_w = max(1, total_weeks - taper_w)
     last_bw     = non_taper_w - 1
-    peak_km     = min(start_km * (1.10 ** (last_bw - last_bw // cycle_len)), max_km)
+    peak_km     = min(start_km * (ramp ** (last_bw - last_bw // cycle_len)), max_km)
     if weeks_remaining <= 1: return max(peak_km * 0.40, 5.0)
     if weeks_remaining <= 2: return max(peak_km * 0.60, 10.0)
     if weeks_remaining <= 3: return max(peak_km * 0.75, 15.0)
     cycle_pos  = week_num % cycle_len
     build_week = week_num - (week_num // cycle_len)
-    target = min(start_km * (1.10 ** build_week), max_km)
+    target = min(start_km * (ramp ** build_week), max_km)
     if cycle_pos == recovery_pos:
         target *= 0.75
     return round(target, 1)

@@ -121,6 +121,11 @@ class LocalPlanning(
         // The VDOT every running pace comes from — the same estimate the race
         // predictions read (LocalRunningEvidence), as on the server.
         val runningFitness = LocalRunningEvidence(sources, library).fitness(today)
+        // Fitness overall and in this sport alone (PlanBase.buildRamp), as the
+        // server's `_sport_and_overall_ctl`.
+        val (ctlOverall, ctlSport) = LocalMetrics(library, sources).sportAndOverallCtl(
+            today, thresholds.thresholdHr, PlanBase.sportFamily((goal.eventSport ?: "running").lowercase()),
+        )
         val generated = if (fitness) {
             // Load as the dashboard shows it (LocalMetrics), so the plan builds
             // from the fitness number the person sees — as the server does.
@@ -150,9 +155,19 @@ class LocalPlanning(
                 baseEffectiveWeeks = baseEffectiveWeeks,
                 activityFrequency = frequency,
                 runningFitness = runningFitness,
+                overallCtl = ctlOverall,
+                sportCtl = ctlSport,
             )
         }
         var workouts = generated.workouts.toMutableList()
+        // The next few days answer the fatigue they will be done in
+        // (PlanAdapt), before the injections, as the server does.
+        if (workouts.isNotEmpty()) {
+            val (fCtl, fAtl, recent) = LocalMetrics(library, sources).fatigueInputs(today, thresholds.thresholdHr)
+            @Suppress("UNCHECKED_CAST")
+            workouts = com.tracks.core.plan.PlanAdapt.adaptToFatigue(workouts, today, fCtl, fAtl, recent, imperial)
+                .map { it as MutableMap<String, Any?> }.toMutableList()
+        }
         if (goal.scheduleTests == true) workouts = PlanAssembly.injectFieldTests(workouts, goal.eventSport)
         // Then what the server injects, in its order: strength and mobility
         // sessions (with the user's own workouts), then a stretch flow after

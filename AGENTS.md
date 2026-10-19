@@ -201,6 +201,10 @@ worth more than the code they explain:
   one running-fitness number every pace comes from is estimated, the
   literature behind it, which coefficients are still unverified, and how it
   relates to the other fitness numbers (CTL, watch VO2max, auto thresholds).
+- [docs/adaptive-plan-research.md](docs/adaptive-plan-research.md) — how the
+  plan answers training it did not plan: fatigue shortening, moving or
+  dropping the next sessions, and overall fitness setting how fast a sport
+  may build. The thresholds and the research behind them.
 - [docs/training-intensity-distribution-research.md](docs/training-intensity-distribution-research.md)
   — a summary of the research on how endurance training should split across
   intensity zones, for designing training plans.

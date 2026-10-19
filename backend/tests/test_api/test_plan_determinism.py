@@ -96,7 +96,8 @@ def test_a_rebuild_after_an_import_reads_fresh_thresholds_and_the_imports_key(db
     calls = []
     monkeypatch.setattr("app.calculators.user_stats.recalculate_auto_values",
                         lambda _db, uid: calls.append(("recalculate", uid)))
-    monkeypatch.setattr("app.api.training_plan.refresh_plans_for_user",
+    # The forced rebuild: an import always rebuilds (see fit_import).
+    monkeypatch.setattr("app.api.training_plan.refresh_plans_for_user_force",
                         lambda uid: calls.append(("refresh", uid, crypto_context._current_key.get())))
     material = object()
 
