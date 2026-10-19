@@ -33,6 +33,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -628,7 +629,16 @@ fun SearchSheet(
 
     LaunchedEffect(query) { vm.search(query, near) }
 
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, dragHandle = { CompactDragHandle() }) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        dragHandle = { CompactDragHandle() },
+        // The map's one window look (MapPanel), not a full-width slab.
+        modifier = Modifier.padding(MapPanel.margin),
+        shape = MapPanel.shape,
+        containerColor = MaterialTheme.colorScheme.surface,
+        tonalElevation = MapPanel.tonalElevation,
+    ) {
         Column(
             Modifier
                 .fillMaxWidth()
@@ -809,10 +819,11 @@ fun RouteBar(
     val drawing = !editing && route.waypoints.isNotEmpty()
 
     Surface(
-        modifier = modifier.fillMaxWidth().padding(8.dp),
-        shape = RoundedCornerShape(Tokens.Radius.xl),
+        modifier = modifier.fillMaxWidth().padding(MapPanel.margin),
+        shape = MapPanel.shape,
         color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 4.dp,
+        tonalElevation = MapPanel.tonalElevation,
+        shadowElevation = MapPanel.shadowElevation,
     ) {
         Column(Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             // The shape of the climbing, not just its total. "↑340 m" says

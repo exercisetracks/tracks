@@ -60,9 +60,20 @@ class RunCues(context: Context) {
                     // Whatever the phone is set to. A split time read out in the
                     // wrong language is worse than one not read out at all.
                     runCatching { tts?.language = Locale.getDefault() }
+                    // Spoken as guidance, which plays at media volume and dips
+                    // any music under it, rather than at the default stream.
+                    runCatching {
+                        tts?.setAudioAttributes(
+                            android.media.AudioAttributes.Builder()
+                                .setUsage(android.media.AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE)
+                                .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SPEECH)
+                                .build(),
+                        )
+                    }
                     val waiting = synchronized(pending) { pending.toList().also { pending.clear() } }
                     waiting.forEach(::say)
                 } else {
+                    android.util.Log.w("TracksCues", "speech engine did not start (status $status); cues are silent")
                     synchronized(pending) { pending.clear() }
                 }
             }

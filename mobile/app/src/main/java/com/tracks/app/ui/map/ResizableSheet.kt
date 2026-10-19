@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -60,14 +61,16 @@ fun ResizableSheet(
         Surface(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
+                .windowInsetsPadding(WindowInsets.navigationBars)
+                .padding(MapPanel.margin)
                 .fillMaxWidth()
                 .height(with(LocalDensity.current) { (screenPx * live).toDp() }),
-            shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
+            shape = MapPanel.shape,
             color = MaterialTheme.colorScheme.surface,
-            tonalElevation = 3.dp,
-            shadowElevation = 8.dp,
+            tonalElevation = MapPanel.tonalElevation,
+            shadowElevation = MapPanel.shadowElevation,
         ) {
-            Column(Modifier.windowInsetsPadding(WindowInsets.navigationBars)) {
+            Column {
                 Box(
                     Modifier
                         .fillMaxWidth()
@@ -138,13 +141,17 @@ fun ContentSheet(onDismiss: () -> Unit, content: @Composable ColumnScope.() -> U
     BackHandler(onBack = onDismiss)
     Box(Modifier.fillMaxSize()) {
         Surface(
-            modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
-            shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .windowInsetsPadding(WindowInsets.navigationBars)
+                .padding(MapPanel.margin)
+                .fillMaxWidth(),
+            shape = MapPanel.shape,
             color = MaterialTheme.colorScheme.surface,
-            tonalElevation = 3.dp,
-            shadowElevation = 8.dp,
+            tonalElevation = MapPanel.tonalElevation,
+            shadowElevation = MapPanel.shadowElevation,
         ) {
-            Column(Modifier.windowInsetsPadding(WindowInsets.navigationBars)) {
+            Column {
                 Box(
                     Modifier
                         .fillMaxWidth()
@@ -169,3 +176,17 @@ fun ContentSheet(onDismiss: () -> Unit, content: @Composable ColumnScope.() -> U
     }
 }
 
+/**
+ * The one look every window on the map wears: the track editor's. Inset from
+ * the screen's edges, rounded on every corner, raised with a shadow, so it
+ * reads as a window floating over the map rather than a slab bolted to the
+ * bottom of it. Each sheet here used its own (full width, top corners only,
+ * different elevations), which is why the place details looked like a
+ * different app from the editor beside it.
+ */
+object MapPanel {
+    val margin = 8.dp
+    val shape = RoundedCornerShape(com.tracks.app.ui.theme.Tokens.Radius.xl)
+    val tonalElevation = 4.dp
+    val shadowElevation = 8.dp
+}

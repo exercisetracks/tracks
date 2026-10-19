@@ -172,6 +172,15 @@
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
         </intent>
+        <!--
+          The speech engine, for spoken cues (RunCues). From Android 11 an app
+          sees only the services it declares here; without this the engine
+          never bound, initialisation failed quietly, and every run, strength
+          and flexibility session was silent.
+        -->
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE" />
+        </intent>
     </queries>
 
     <!--

@@ -25,6 +25,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -69,7 +70,16 @@ fun RegionsSheet(
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, dragHandle = { CompactDragHandle() }) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        dragHandle = { CompactDragHandle() },
+        // The map's one window look (MapPanel), not a full-width slab.
+        modifier = Modifier.padding(MapPanel.margin),
+        shape = MapPanel.shape,
+        containerColor = MaterialTheme.colorScheme.surface,
+        tonalElevation = MapPanel.tonalElevation,
+    ) {
         Column(
             Modifier
                 .fillMaxWidth()

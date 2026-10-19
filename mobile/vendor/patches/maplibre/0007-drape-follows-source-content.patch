@@ -1,0 +1,67 @@
+diff --git a/include/mbgl/renderer/render_target.hpp b/include/mbgl/renderer/render_target.hpp
+index f0c057a..34dc183 100644
+--- a/include/mbgl/renderer/render_target.hpp
++++ b/include/mbgl/renderer/render_target.hpp
+@@ -194,6 +194,9 @@ protected:
+     // per-target (not global), an unrelated tile loading elsewhere no longer forces
+     // this target to re-scan. Unset until the target has been evaluated once.
+     std::optional<std::size_t> bakedSignature;
++    // Tracks: frames a "worse" coverage has been held back; see render().
++    uint32_t worseHeldFrames = 0;
++    static constexpr uint32_t kWorseHoldFrames = 20;
+ };
+ 
+ } // namespace mbgl
+diff --git a/src/mbgl/renderer/render_target.cpp b/src/mbgl/renderer/render_target.cpp
+index d0d3e0d..5e5b994 100644
+--- a/src/mbgl/renderer/render_target.cpp
++++ b/src/mbgl/renderer/render_target.cpp
+@@ -180,6 +180,17 @@ RenderTarget::DrapeCoverage RenderTarget::computeDrapeCoverage(RenderOrchestrato
+             util::hash_combine(tileHash, unwrapped.canonical.z);
+             util::hash_combine(tileHash, unwrapped.canonical.x);
+             util::hash_combine(tileHash, unwrapped.canonical.y);
++            // Tracks: and the bucket, as the per-target signature already does
++            // (renderer_impl). Without it a GeoJSON source re-fed in place - a
++            // route being drawn - kept the same covering tiles, so the scan the
++            // signature change triggered found "same content" and the drape kept
++            // the old line: a route started in 3D never appeared. Excluded for
++            // hillshade, for the reason given there.
++            if (drawable.getName() != "hillshade") {
++                if (const auto& bucket = drawable.getBucket()) {
++                    util::hash_combine(tileHash, bucket->getID().id());
++                }
++            }
+             coverage.contentHash += tileHash;
+         });
+         if (haveExactOrDescendant || bestAncestor) {
+@@ -325,6 +336,7 @@ RenderTarget::RenderResult RenderTarget::render(RenderOrchestrator& orchestrator
+         // behaviour (render a terrain tile's texture only when its stack changes).
+         if (coverage.sameContentAs(bakedCoverage)) {
+             bakedSignature = targetSignature;
++            worseHeldFrames = 0;
+             return RenderResult::Skipped;
+         }
+ 
+@@ -337,13 +349,16 @@ RenderTarget::RenderResult RenderTarget::render(RenderOrchestrator& orchestrator
+         // "worse" and falls through to re-render. The target's lifetime bounds
+         // staleness: when its terrain tile leaves the cover it is destroyed.
+         if (coverage.worseThan(bakedCoverage)) {
+-            // Keeping the already-baked (better) content: record that at this
+-            // signature the decision was to hold, so future identical frames skip
+-            // the scan too. A real change (drawable set, zoom, properties) moves the
+-            // signature and re-opens evaluation, preserving the anti-flicker intent.
+-            bakedSignature = targetSignature;
+-            return RenderResult::Skipped;
++            // Tracks: held for a few frames only. A layer that genuinely emptied
++            // (a route cancelled, a GeoJSON source cleared) also looks "worse",
++            // and holding that forever left the old line drawn on the terrain.
++            // Eviction flicker resolves within a few frames; Deferred keeps
++            // frames coming until either the content recovers or the hold ends.
++            if (++worseHeldFrames <= kWorseHoldFrames) {
++                return RenderResult::Deferred;
++            }
+         }
++        worseHeldFrames = 0;
+ 
+         // Drape render budget: this target needs a re-render, but if the per-frame cap is
+         // exhausted (canRerender == false) and it already has a baked texture, defer to a
