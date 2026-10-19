@@ -537,6 +537,7 @@ private fun TrainingLocationsCard(
                 .clip(RoundedCornerShape(Tokens.Radius.xl)),
         ) {
             MapLibreView(
+                embedded = true,
                 styleJson = styleJson,
                 modifier = Modifier.fillMaxSize(),
                 onMapReady = { map, style ->

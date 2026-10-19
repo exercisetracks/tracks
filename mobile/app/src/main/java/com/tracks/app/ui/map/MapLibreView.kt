@@ -54,6 +54,16 @@ fun MapLibreView(
      * tiles and changes nothing about the line.
      */
     terrain: Boolean = false,
+    /**
+     * Draw into a TextureView rather than a SurfaceView. A SurfaceView draws
+     * in a layer of its own, outside the screen's: when a screen holding one
+     * fades out on Back, the map does not fade with it but sits on screen
+     * until the view is torn down -- the activity map that lingered for an
+     * instant after leaving an activity. A TextureView is part of the screen
+     * and leaves with it. For the small embedded maps; the full map page keeps
+     * the faster surface.
+     */
+    embedded: Boolean = false,
     onMapReady: (MapLibreMap, Style) -> Unit = { _, _ -> },
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -66,7 +76,13 @@ fun MapLibreView(
     // the life of the view rather than once per document.
     val terrain3D = remember(terrain) { if (terrain) Terrain3D() else null }
 
-    val mapView = remember { MapView(context) }
+    val mapView = remember {
+        if (embedded) {
+            MapView(context, org.maplibre.android.maps.MapLibreMapOptions.createFromAttributes(context, null).textureMode(true))
+        } else {
+            MapView(context)
+        }
+    }
     val lifecycleOwner = LocalLifecycleOwner.current
 
     // onCreate exactly once, here rather than in the observer below.

@@ -4,6 +4,15 @@
 
 package com.tracks.app.ui.screens
 
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.IconButton
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -213,43 +222,115 @@ fun ActivityListActions(
     modifier: Modifier = Modifier,
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
-    var menuOpen by remember { mutableStateOf(false) }
+    var filterOpen by remember { mutableStateOf(false) }
+    var sortOpen by remember { mutableStateOf(false) }
+    var searching by remember { mutableStateOf(false) }
     val counts = remember(activities) { sportTypeCounts(activities) }
+    val filters = state.types.size + (if (state.window != ActivityWindow.All) 1 else 0)
+    val focus = remember { androidx.compose.ui.focus.FocusRequester() }
+    val screen = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp.dp
 
     Row(
         modifier.padding(end = 6.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(
-            Modifier.tourAnchor("activities-sort"),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            ActivitySort.entries.forEach { option ->
-                BarPill(
-                    text = option.label,
-                    selected = option == state.sort,
-                    onClick = { vm.setSort(option) },
+        if (searching) {
+            // Over the whole line while typing: the title and the sort make
+            // room, and come back when the field is closed.
+            androidx.compose.material3.OutlinedTextField(
+                value = state.query,
+                onValueChange = vm::setQuery,
+                placeholder = { Text("Search by name") },
+                singleLine = true,
+                textStyle = MaterialTheme.typography.bodyMedium,
+                trailingIcon = {
+                    IconButton(onClick = { vm.setQuery(""); searching = false }) {
+                        Icon(Icons.Filled.Close, contentDescription = "Close search")
+                    }
+                },
+                modifier = Modifier.width(screen - 120.dp).heightIn(max = 52.dp).focusRequester(focus),
+            )
+            LaunchedEffect(Unit) { focus.requestFocus() }
+        } else {
+            IconButton(onClick = { searching = true }, modifier = Modifier.tourAnchor("activities-search")) {
+                Icon(
+                    Icons.Filled.Search, contentDescription = "Search",
+                    tint = if (state.query.isNotBlank()) MaterialTheme.colorScheme.primary else LocalContentColor.current,
                 )
+            }
+            // One pill for the sort: its field and direction. Tapping flips
+            // the direction; the caret picks the field. Nine fields as pills
+            // would never fit a phone's bar.
+            Box(Modifier.tourAnchor("activities-sort")) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    BarPill(
+                        text = "${state.sort.label} ${if (state.descending) "↓" else "↑"}",
+                        selected = true,
+                        onClick = vm::flipDirection,
+                    )
+                    IconButton(onClick = { sortOpen = true }, modifier = Modifier.size(32.dp)) {
+                        Icon(Icons.Filled.ArrowDropDown, contentDescription = "Sort by")
+                    }
+                }
+                DropdownMenu(expanded = sortOpen, onDismissRequest = { sortOpen = false }) {
+                    ActivitySort.entries.forEach { option ->
+                        DropdownMenuItem(
+                            text = { Text(option.label) },
+                            onClick = { vm.setSort(option); sortOpen = false },
+                            trailingIcon = {
+                                if (option == state.sort) Text(if (state.descending) "↓" else "↑")
+                            },
+                        )
+                    }
+                }
             }
         }
 
         Box(Modifier.tourAnchor("activities-type")) {
-            BarPill(
-                text = if (state.types.isEmpty()) "Type" else "Type · ${state.types.size}",
-                selected = state.types.isNotEmpty(),
-                onClick = { menuOpen = true },
-            )
-            TypeMenu(
-                expanded = menuOpen,
+            IconButton(onClick = { filterOpen = true }) {
+                androidx.compose.material3.BadgedBox(badge = {
+                    if (filters > 0) androidx.compose.material3.Badge { Text("$filters") }
+                }) {
+                    Icon(com.tracks.app.ui.map.EyeIcons.Filter, contentDescription = "Filter")
+                }
+            }
+            FilterMenu(
+                expanded = filterOpen,
+                window = state.window,
+                onWindow = vm::setWindow,
                 counts = counts,
                 selected = state.types,
                 onToggle = vm::toggleType,
-                onClear = { vm.clearTypes(); menuOpen = false },
-                onDismiss = { menuOpen = false },
+                onClear = { vm.clearTypes(); vm.setWindow(ActivityWindow.All); filterOpen = false },
+                onDismiss = { filterOpen = false },
             )
         }
+    }
+}
+
+/** When, then which types: the filter icon's menu. */
+@Composable
+private fun FilterMenu(
+    expanded: Boolean,
+    window: ActivityWindow,
+    onWindow: (ActivityWindow) -> Unit,
+    counts: List<SportTypeCount>,
+    selected: Set<String>,
+    onToggle: (String) -> Unit,
+    onClear: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    DropdownMenu(expanded = expanded, onDismissRequest = onDismiss) {
+        ActivityWindow.entries.forEach { w ->
+            DropdownMenuItem(
+                text = { Text(w.label) },
+                onClick = { onWindow(w) },
+                leadingIcon = { androidx.compose.material3.RadioButton(selected = w == window, onClick = null) },
+            )
+        }
+        HorizontalDivider()
+        TypeMenuItems(counts, selected, onToggle, onClear)
     }
 }
 
@@ -262,43 +343,39 @@ fun ActivityListActions(
  * confirm button should do.
  */
 @Composable
-private fun TypeMenu(
-    expanded: Boolean,
+private fun androidx.compose.foundation.layout.ColumnScope.TypeMenuItems(
     counts: List<SportTypeCount>,
     selected: Set<String>,
     onToggle: (String) -> Unit,
     onClear: () -> Unit,
-    onDismiss: () -> Unit,
 ) {
-    DropdownMenu(expanded = expanded, onDismissRequest = onDismiss) {
+    DropdownMenuItem(
+        text = { Text("All types") },
+        onClick = onClear,
+        trailingIcon = {
+            if (selected.isEmpty()) {
+                Icon(Icons.Filled.Check, contentDescription = null)
+            }
+        },
+    )
+    HorizontalDivider()
+    counts.forEach { entry ->
         DropdownMenuItem(
-            text = { Text("All types") },
-            onClick = onClear,
+            text = { Text(sportLabel(entry.type)) },
+            onClick = { onToggle(entry.type) },
+            leadingIcon = {
+                // Not clickable itself: the whole row is the target, and a
+                // checkbox that swallows the tap makes the label dead.
+                Checkbox(checked = entry.type in selected, onCheckedChange = null)
+            },
             trailingIcon = {
-                if (selected.isEmpty()) {
-                    Icon(Icons.Filled.Check, contentDescription = null)
-                }
+                Text(
+                    "${entry.count}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             },
         )
-        HorizontalDivider()
-        counts.forEach { entry ->
-            DropdownMenuItem(
-                text = { Text(sportLabel(entry.type)) },
-                onClick = { onToggle(entry.type) },
-                leadingIcon = {
-                    // Not clickable itself: the whole row is the target, and a
-                    // checkbox that swallows the tap makes the label dead.
-                    Checkbox(checked = entry.type in selected, onCheckedChange = null)
-                },
-                trailingIcon = {
-                    Text(
-                        "${entry.count}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                },
-            )
-        }
     }
 }
 

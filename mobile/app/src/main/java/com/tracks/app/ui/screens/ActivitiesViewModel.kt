@@ -34,13 +34,37 @@ import kotlinx.coroutines.withContext
  * of the two actually finishes the job, so the type control became a filter and
  * the ordering stayed chronological underneath it. See [ActivitiesUiState.types].
  */
-enum class ActivitySort(val label: String) {
+/**
+ * What the list is ordered by -- the desktop list's columns, and the
+ * direction each starts in (newest, longest, fastest first; names A to Z).
+ */
+enum class ActivitySort(val label: String, val descendingFirst: Boolean = true) {
     Date("Date"),
-    Name("Name"),
+    Name("Name", descendingFirst = false),
+    Distance("Distance"),
+    Duration("Time"),
+    Speed("Speed"),
+    MaxHr("Max HR"),
+    AvgHr("Avg HR"),
+    Elevation("Climb"),
+    Calories("Calories"),
+}
+
+/** How far back the list goes. */
+enum class ActivityWindow(val label: String, val days: Long?) {
+    All("Any time", null),
+    Week("Last 7 days", 7),
+    Month("Last 30 days", 30),
+    Year("Last 12 months", 365),
 }
 
 data class ActivitiesUiState(
     val sort: ActivitySort = ActivitySort.Date,
+    /** Biggest first unless flipped; see [ActivitySort.descendingFirst]. */
+    val descending: Boolean = true,
+    /** Name search, case-insensitive, matching anywhere in the name. */
+    val query: String = "",
+    val window: ActivityWindow = ActivityWindow.All,
     /**
      * Sport types to show. Empty is "all of them", not "none of them".
      *
@@ -115,7 +139,17 @@ class ActivitiesViewModel(private val container: AppContainer) : ViewModel() {
         }
     }
 
-    fun setSort(sort: ActivitySort) = _state.update { it.copy(sort = sort) }
+    /** A new sort starts in its natural direction; the same sort again flips it. */
+    fun setSort(sort: ActivitySort) = _state.update {
+        if (it.sort == sort) it.copy(descending = !it.descending)
+        else it.copy(sort = sort, descending = sort.descendingFirst)
+    }
+
+    fun flipDirection() = _state.update { it.copy(descending = !it.descending) }
+
+    fun setQuery(query: String) = _state.update { it.copy(query = query) }
+
+    fun setWindow(window: ActivityWindow) = _state.update { it.copy(window = window) }
 
     /**
      * Add or remove one sport type from the filter.
@@ -210,21 +244,52 @@ class ActivitiesViewModel(private val container: AppContainer) : ViewModel() {
         activities: List<ActivitySummary>,
         state: ActivitiesUiState,
     ): List<ActivitySummary> {
-        val kept = if (state.types.isEmpty()) {
-            activities
-        } else {
-            activities.filter { sportType(it.sport, it.subSport) in state.types }
+        val q = state.query.trim().lowercase()
+        val since = state.window.days?.let { java.time.LocalDate.now().minusDays(it).toString() }
+        val kept = activities.filter { a ->
+            (state.types.isEmpty() || sportType(a.sport, a.subSport) in state.types) &&
+                (q.isEmpty() || (a.name ?: "").lowercase().contains(q)) &&
+                (since == null || (a.startedAt ?: "") >= since)
         }
-        return when (state.sort) {
-            ActivitySort.Date -> kept.sortedByDescending { it.startedAt ?: "" }
-            // Case-insensitive, and unnamed activities sort last rather than
-            // clumping at the top under an empty string.
-            ActivitySort.Name -> kept.sortedWith(
-                compareBy(
-                    { it.name.isNullOrBlank() },
-                    { it.name?.lowercase() ?: "" },
-                )
-            )
-        }
+        return sortActivities(kept, state.sort, state.descending)
     }
 }
+
+/**
+ * [activities] in [sort] order. An activity with no value for the field (a
+ * swim with no heart rate, an indoor ride with no climb) goes last in either
+ * direction rather than counting as zero; ties fall back to newest first.
+ */
+internal fun sortActivities(
+    activities: List<ActivitySummary>,
+    sort: ActivitySort,
+    descending: Boolean,
+): List<ActivitySummary> {
+    if (sort == ActivitySort.Name) {
+        val named = activities.filter { !it.name.isNullOrBlank() }.sortedBy { it.name!!.lowercase() }
+        return (if (descending) named.reversed() else named) + activities.filter { it.name.isNullOrBlank() }
+    }
+    val key: (ActivitySummary) -> Double? = when (sort) {
+        ActivitySort.Date -> { a -> a.startedAt?.let { 0.0 } }
+        ActivitySort.Distance -> { a -> a.distanceMeters?.takeIf { it > 0 } }
+        ActivitySort.Duration -> { a -> a.durationSeconds?.toDouble()?.takeIf { it > 0 } }
+        ActivitySort.Speed -> { a -> a.avgSpeed?.takeIf { it > 0 } }
+        ActivitySort.MaxHr -> { a -> a.maxHeartRate?.toDouble()?.takeIf { it > 0 } }
+        ActivitySort.AvgHr -> { a -> a.avgHeartRate?.toDouble()?.takeIf { it > 0 } }
+        ActivitySort.Elevation -> { a -> a.totalAscent?.takeIf { it > 0 } }
+        ActivitySort.Calories -> { a -> a.totalCalories?.toDouble()?.takeIf { it > 0 } }
+        ActivitySort.Name -> { _ -> null }
+    }
+    if (sort == ActivitySort.Date) {
+        val dated = activities.filter { it.startedAt != null }.sortedBy { it.startedAt }
+        return (if (descending) dated.reversed() else dated) + activities.filter { it.startedAt == null }
+    }
+    val newestFirst = compareByDescending<ActivitySummary> { it.startedAt ?: "" }
+    val (with, without) = activities.partition { key(it) != null }
+    val ordered = with.sortedWith(
+        (if (descending) compareByDescending<ActivitySummary> { key(it)!! } else compareBy { key(it)!! })
+            .then(newestFirst),
+    )
+    return ordered + without.sortedWith(newestFirst)
+}
+

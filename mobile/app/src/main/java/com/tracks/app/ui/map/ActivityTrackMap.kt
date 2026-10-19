@@ -80,6 +80,7 @@ fun ActivityTrackMap(
             .clip(RoundedCornerShape(Tokens.Radius.xl)),
     ) {
         MapLibreView(
+            embedded = true,
             styleJson = styleJson,
             modifier = Modifier.fillMaxSize(),
         ) { map, style -> loaded = map to style }
