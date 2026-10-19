@@ -71,6 +71,16 @@ fun HealthScreen(vm: HealthViewModel, modifier: Modifier = Modifier) {
     val hasDevice = com.tracks.app.ui.components.LocalHasDevice.current
     val showMeasured = hasDevice || state.days.any { it.hasMeasurements() }
 
+    // The watch streams its heart rate while this page is in front, and stops
+    // when it is not (see HealthViewModel.liveHeartRate).
+    if (hasDevice) {
+        androidx.lifecycle.compose.LifecycleStartEffect(Unit) {
+            vm.liveHeartRate(true)
+            onStopOrDispose { vm.liveHeartRate(false) }
+        }
+    }
+    val liveHr = rememberLiveHeartRate()
+
     Column(
         modifier
             .fillMaxSize()
@@ -125,6 +135,7 @@ fun HealthScreen(vm: HealthViewModel, modifier: Modifier = Modifier) {
                     windowStart = state.range.startDate(),
                     metrics = listOf(
                         sleepMetric(state, vm::selectNight),
+                        heartRateMetric(state, liveHr),
                         HealthMetric(
                             label = "Resting HR",
                             longLabel = "Resting heart rate",
@@ -353,6 +364,80 @@ private fun caloriesMetric(state: HealthUiState): HealthMetric {
  * would stop matching the arc if it were counted, and the hypnogram behind the
  * dial shows every break in the night anyway.
  */
+/**
+ * The watch's heart rate now, and the minutes of it this page has seen: null
+ * and empty with no stream. Re-read every few seconds so a stream that stops
+ * (watch out of range) leaves the dial rather than freezing on it.
+ */
+@Composable
+private fun rememberLiveHeartRate(): LiveHr {
+    val reading by com.tracks.device.garmin.live.LiveHeartRate.reading.collectAsStateWithLifecycle()
+    val recent by com.tracks.device.garmin.live.LiveHeartRate.recent.collectAsStateWithLifecycle()
+    var tick by androidx.compose.runtime.remember { androidx.compose.runtime.mutableIntStateOf(0) }
+    androidx.compose.runtime.LaunchedEffect(reading) {
+        kotlinx.coroutines.delay(com.tracks.device.garmin.live.LiveHeartRate.STALE_MS + 500)
+        tick++
+    }
+    @Suppress("UNUSED_EXPRESSION") tick
+    val now = com.tracks.device.garmin.live.LiveHeartRate.current()
+    return LiveHr(now?.bpm, recent)
+}
+
+private data class LiveHr(val bpm: Int?, val recent: List<com.tracks.device.garmin.live.LiveHeartRate.Reading>)
+
+/**
+ * Heart rate: live on the dial while the watch streams it, today's average
+ * otherwise; behind it, the whole day minute by minute from the watch's own
+ * monitoring files, with this page's live minutes laid over today.
+ */
+@Composable
+private fun heartRateMetric(state: HealthUiState, live: LiveHr): HealthMetric {
+    val averages = state.series { it.avgHr }
+    val days = remember(state.heartRate, live.recent) { withLiveMinutes(state.heartRate, live.recent) }
+    return HealthMetric(
+        label = "Heart rate",
+        trend = averages,
+        unit = "bpm",
+        scale = MetricScale.Bands(HEART_RATE_ZONES),
+        info = Explain.HeartRate,
+        live = live.bpm?.toDouble(),
+        chart = {
+            IntradayHistoryPanel(
+                days = days,
+                averages = averages,
+                windowStart = state.range.startDate(),
+                zones = HEART_RATE_ZONES,
+                lo = HEART_RATE_ZONES.first().min,
+                hi = HEART_RATE_ZONES.last().max,
+                noun = "heart rate",
+                emptyText = "No heart rate in this window. The watch records it all day while worn.",
+            )
+        },
+        scaleUnderChart = true,
+    )
+}
+
+/** Today's curve with the live readings filed into it by minute of day. */
+internal fun withLiveMinutes(
+    days: List<com.tracks.core.api.StressDay>,
+    recent: List<com.tracks.device.garmin.live.LiveHeartRate.Reading>,
+    nowElapsed: Long = android.os.SystemClock.elapsedRealtime(),
+    nowLocal: java.time.LocalDateTime = java.time.LocalDateTime.now(),
+): List<com.tracks.core.api.StressDay> {
+    if (recent.isEmpty()) return days
+    val today = nowLocal.toLocalDate().toString()
+    val nowMinute = nowLocal.hour * 60 + nowLocal.minute
+    val live = recent.mapNotNull { r ->
+        val minute = nowMinute - ((nowElapsed - r.at) / 60_000L).toInt()
+        if (minute < 0) null else minute to r.bpm
+    }.toMap()
+    val existing = days.firstOrNull { it.date == today }
+    val merged = (existing?.points.orEmpty().mapNotNull { p -> p.getOrNull(0)?.let { it to (p.getOrNull(1) ?: return@mapNotNull null) } }.toMap() + live)
+        .toSortedMap().map { (m, v) -> listOf(m, v) }
+    val todayDay = com.tracks.core.api.StressDay(today, merged)
+    return days.filter { it.date != today } + todayDay
+}
+
 @Composable
 private fun sleepMetric(state: HealthUiState, onSelectNight: (String) -> Unit): HealthMetric {
     // Last night, and only while it *is* last night. The stages painted on

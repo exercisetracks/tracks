@@ -207,6 +207,8 @@ data class HealthUiState(
      * the daily averages on [days] are both the readable chart and free.
      */
     val stress: List<StressDay> = emptyList(),
+    /** All-day heart rate, per day, on the same windows as [stress]. */
+    val heartRate: List<StressDay> = emptyList(),
     val injuries: List<Injury> = emptyList(),
     val medications: List<Medication> = emptyList(),
     val medicationLog: List<MedicationLog> = emptyList(),
@@ -445,6 +447,15 @@ class HealthViewModel(private val container: AppContainer) : ViewModel() {
     }
 
     /**
+     * The watch's live heart rate, for as long as the Health page is on
+     * screen: switched on when it appears and off when it goes, because the
+     * stream costs the watch battery and nothing else wants it.
+     */
+    fun liveHeartRate(on: Boolean) {
+        runCatching { container.watch.setLiveHeartRate(on) }
+    }
+
+    /**
      * The stress curve for the window, where the window is short enough to
      * draw one. A window with no curve — a year, a lifetime — clears what a
      * shorter window showed, since a month of readings drawn across a year of
@@ -453,7 +464,9 @@ class HealthViewModel(private val container: AppContainer) : ViewModel() {
     private fun loadStress() {
         val range = _state.value.range
         if (!range.intraday) {
-            if (_state.value.stress.isNotEmpty()) _state.update { it.copy(stress = emptyList()) }
+            if (_state.value.stress.isNotEmpty() || _state.value.heartRate.isNotEmpty()) {
+                _state.update { it.copy(stress = emptyList(), heartRate = emptyList()) }
+            }
             return
         }
         viewModelScope.launch {
@@ -461,6 +474,13 @@ class HealthViewModel(private val container: AppContainer) : ViewModel() {
                 runCatching { container.metrics.stress(range.afterDate()) }.getOrDefault(emptyList())
             }
             publishStress(range, days)
+            val hr = withContext(Dispatchers.Default) {
+                runCatching { container.metrics.heartRate(range.afterDate()) }.getOrDefault(emptyList())
+            }
+            if (_state.value.range == range) {
+                val cutoff = range.afterDate()
+                _state.update { it.copy(heartRate = if (cutoff == null) hr else hr.filter { d -> d.date >= cutoff }) }
+            }
         }
     }
 

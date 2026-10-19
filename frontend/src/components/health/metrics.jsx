@@ -9,12 +9,12 @@ import {
   ACTIVE_CALORIE_GOAL, ACTIVE_COLOR, BODY_BATTERY_ZONES, CALORIE_COLOR, FRESH_DAYS, SLEEP_FRESH_DAYS,
   HRV_COLOR, HYDRATION_COLOR, HYDRATION_GOAL_ML, RESPIRATION_ZONES, RESTING_COLOR,
   RESTING_HR_ZONES, SLEEP_COLOR, SLEEP_GOAL_HOURS, SLEEP_ZONES, SPO2_ZONES, STEP_COLOR,
-  STEP_GOAL, STRESS_ZONES, WEIGHT_COLOR, activityZones, currentOf, isFresh, series,
+  STEP_GOAL, STRESS_ZONES, HEART_RATE_ZONES, WEIGHT_COLOR, activityZones, currentOf, isFresh, series,
 } from "./scales";
 import { SLEEP_COLORS } from "./constants";
 import { EXPLAIN } from "./explain";
 import { SleepTrendChart } from "./HistoryCharts";
-import StressHistory from "./StressHistory";
+import StressHistory, { IntradayHistory } from "./StressHistory";
 import { eatenSeries } from "./food";
 
 const KG_TO_LB = 2.20462;
@@ -136,8 +136,9 @@ export function sleepMetric(days, start) {
  * the intraday curve (empty on windows too long to draw one); `food` the meal
  * log, which is what the Eaten dial counts — see food.js.
  */
-export function healthGroups({ days, imperial, start, stress, food = [] }) {
+export function healthGroups({ days, imperial, start, stress, heartRate = [], food = [] }) {
   const stressAverages = series(days, d => d.avg_stress_level);
+  const hrAverages = series(days, d => d.avg_hr);
 
   const activity = {
     title: "Activity",
@@ -175,6 +176,21 @@ export function healthGroups({ days, imperial, start, stress, food = [] }) {
     missingHint: "Worn overnight, the watch records these while you sleep.",
     metrics: [
       sleepMetric(days, start),
+      {
+        // The day's average on the web: a live reading would mean the server
+        // relaying a stream it has no business carrying (the phone shows it).
+        key: "heart_rate", label: "Heart rate", unit: "bpm",
+        trend: hrAverages,
+        scale: { kind: "bands", zones: HEART_RATE_ZONES },
+        info: EXPLAIN.heartRate,
+        chart: () => (
+          <IntradayHistory days={heartRate} averages={hrAverages} start={start}
+            zones={HEART_RATE_ZONES} lo={30} hi={210} ticks={[30, 60, 100, 140, 170, 210]} id="hr"
+            empty="No heart rate in this window. The watch records it all day while worn."
+            label="Heart rate history chart" />
+        ),
+        scaleUnderChart: true,
+      },
       {
         key: "resting_hr", label: "Resting HR", longLabel: "Resting heart rate", unit: "bpm",
         trend: series(days, d => d.resting_hr),

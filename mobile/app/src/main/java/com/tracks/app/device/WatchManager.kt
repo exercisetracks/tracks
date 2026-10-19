@@ -173,6 +173,11 @@ class WatchManager(
      */
     suspend fun pullAll(): List<PulledFile> = integration.pullAll().also { reblockWifiUploadsIfSeen() }
 
+    /** Stream the watch's heart rate into LiveHeartRate, or stop; a no-op with no link. */
+    fun setLiveHeartRate(on: Boolean) {
+        (integration as? GarminIntegration)?.setLiveHeartRate(on)
+    }
+
     /** Ask the watch whether it is recording; the answer lands in LiveActivity. */
     fun requestActivityStatus() {
         (integration as? GarminIntegration)?.requestActivityStatus()

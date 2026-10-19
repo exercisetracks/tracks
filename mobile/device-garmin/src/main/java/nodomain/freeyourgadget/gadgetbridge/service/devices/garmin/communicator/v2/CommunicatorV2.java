@@ -647,6 +647,12 @@ public class CommunicatorV2 implements ICommunicator {
     // visible when debugging a connection.
     private void broadcastRealtimeActivity(final int hr, final int steps) {
         LOG.debug("Realtime activity: hr={} steps={} (not persisted; Tracks uploads FIT files)", hr, steps);
+        // PATCHED FOR TRACKS (vendor/patches/0016-communicatorv2-live-heart-rate.patch):
+        // the Health page's live HR dial. Nothing is stored; the reading only
+        // lives in memory while the page asks for it.
+        if (hr > 0) {
+            mSupport.onRealtimeHeartRate(hr);
+        }
     }
 
     private enum RequestType {

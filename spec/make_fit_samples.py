@@ -469,6 +469,9 @@ def sample_monitoring() -> bytes:
             "activity_type": kind,
             "cycles": (steps[kind] if kind in steps else rng.randint(10, 90)) * (1 if kind in steps else 2),
             "active_calories": cal[kind], "duration_min": ((t + offset) % 86400) // 60,
+            # All-day heart rate, with the watch's 0 for "not measured" and a
+            # glitch no person has, both of which the parsers drop.
+            "heart_rate": 0 if i % 11 == 0 else 250 if i % 23 == 0 else 52 + (i * 7) % 40,
         }
         if i % 4 == 0:
             w.message(2, "monitoring", {"timestamp": fit_ts(t), **fields})

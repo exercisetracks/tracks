@@ -54,6 +54,7 @@ import nodomain.freeyourgadget.gadgetbridge.model.NotificationSpec;
 import nodomain.freeyourgadget.gadgetbridge.proto.garmin.GdiCore;
 import nodomain.freeyourgadget.gadgetbridge.proto.garmin.GdiDeviceStatus;
 import com.tracks.device.garmin.live.LiveActivity;
+import com.tracks.device.garmin.live.LiveHeartRate;
 import nodomain.freeyourgadget.gadgetbridge.proto.garmin.GdiFileSyncService;
 import com.google.protobuf.ByteString;
 import nodomain.freeyourgadget.gadgetbridge.proto.garmin.GdiInstalledAppsService;
@@ -3046,6 +3047,26 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
         // requestSync rather than sending blind: a session already open gets a
         // follow-up instead of a second session interleaved with it.
         exploreSession().requestSync();
+    }
+
+    /**
+     * Stream the watch's heart rate to the phone, or stop. Only while the
+     * Health page is open (the live HR dial): the watch spends battery on the
+     * stream, and nothing else wants it.
+     */
+    public void setRealtimeHeartRate(final boolean enabled) {
+        final ICommunicator comm = communicator;
+        if (comm instanceof CommunicatorV2) {
+            ((CommunicatorV2) comm).onEnableRealtimeHeartRateMeasurement(enabled);
+        }
+        if (!enabled) {
+            LiveHeartRate.INSTANCE.clear();
+        }
+    }
+
+    /** A live reading from the realtime stream (vendor patch 0016). */
+    public void onRealtimeHeartRate(final int bpm) {
+        LiveHeartRate.INSTANCE.onReading(bpm);
     }
 
     /** Ask whether an activity is recording; answered in {@link #onActivityStatus}. */

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 package com.tracks.app.ui.health
 
+import com.tracks.app.ui.dashboard.GaugeZone
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
@@ -120,6 +121,29 @@ fun StressHistoryPanel(
     averages: Trend,
     windowStart: LocalDate?,
     modifier: Modifier = Modifier,
+) = IntradayHistoryPanel(
+    days = days, averages = averages, windowStart = windowStart,
+    zones = STRESS_ZONES, lo = 0.0, hi = STRESS_MAX, noun = "stress",
+    emptyText = "No stress readings in this window.", modifier = modifier,
+)
+
+/**
+ * A reading taken all day, drawn reading by reading on short windows and as
+ * daily averages on long ones, in its own fixed scale -- the stress chart,
+ * which all-day heart rate now shares. Everything in [StressHistoryPanel]'s
+ * notes applies; [lo]..[hi] is the fixed axis the [zones] are drawn against.
+ */
+@Composable
+fun IntradayHistoryPanel(
+    days: List<StressDay>,
+    averages: Trend,
+    windowStart: LocalDate?,
+    zones: List<GaugeZone>,
+    lo: Double,
+    hi: Double,
+    noun: String,
+    emptyText: String,
+    modifier: Modifier = Modifier,
 ) {
     val axisColor = MaterialTheme.colorScheme.onSurfaceVariant
     val gridColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)
@@ -163,7 +187,7 @@ fun StressHistoryPanel(
 
     if (samples.isEmpty() || dayAxis == null) {
         Text(
-            "No stress readings in this window.",
+            emptyText,
             style = MaterialTheme.typography.bodySmall,
             color = axisColor,
             modifier = modifier,
@@ -177,7 +201,7 @@ fun StressHistoryPanel(
     // The bands mean fixed numbers — 25 is where Low starts — and a chart that
     // rescaled itself to a calm fortnight would put the same 30 in a different
     // colour from one week to the next.
-    val scale = remember { chartScale(0.0, STRESS_MAX, anchorZero = true) }
+    val scale = remember(lo, hi) { chartScale(lo, hi, anchorZero = lo == 0.0) }
     val format = remember(scale) { axisFormat(scale) }
     val gutter = remember(scale, labelStyle) {
         measureGutter(scale, measurer, labelStyle, format)
@@ -197,11 +221,12 @@ fun StressHistoryPanel(
     // hard edges. One brush, used twice: at full strength for the line and
     // faded for what is under it. See the header — this is the dashboard's
     // form line by the same route.
-    val zoneStops = remember {
-        STRESS_ZONES.reversed().flatMap { band ->
+    val zoneStops = remember(zones, scale) {
+        // Against the axis actually drawn, which rounds [lo]..[hi] outwards.
+        zones.sortedByDescending { it.max }.flatMap { band ->
             listOf(
-                (1.0 - band.max / STRESS_MAX).toFloat().coerceIn(0f, 1f) to band.color,
-                (1.0 - band.min / STRESS_MAX).toFloat().coerceIn(0f, 1f) to band.color,
+                (1.0 - scale.fraction(band.max)).toFloat().coerceIn(0f, 1f) to band.color,
+                (1.0 - scale.fraction(band.min)).toFloat().coerceIn(0f, 1f) to band.color,
             )
         }
     }
@@ -223,7 +248,7 @@ fun StressHistoryPanel(
             // The bands, faint, behind everything. Ground rather than figure:
             // they say what a height *means* in the stretches where there is
             // no line, and the line's own colour says it everywhere else.
-            STRESS_ZONES.forEach { band ->
+            zones.forEach { band ->
                 val top = y(band.max)
                 drawRect(
                     color = band.color.copy(alpha = BAND_ALPHA),
@@ -377,11 +402,11 @@ fun StressHistoryPanel(
                     } else {
                         day.format(INSPECT_DAY)
                     }
-                    val band = STRESS_ZONES.firstOrNull { level >= it.min && level <= it.max } ?: STRESS_ZONES.last()
+                    val band = zones.firstOrNull { level >= it.min && level <= it.max } ?: zones.last()
                     drawInspection(
                         measurer, labelStyle,
                         x = columnX(column), y = y(level), plotHeight = plotHeight,
-                        text = "$whenText · stress ${level.roundToInt()}",
+                        text = "$whenText · $noun ${level.roundToInt()}",
                         dot = band.color, colors = popup,
                     )
                 }

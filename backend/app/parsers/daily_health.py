@@ -312,6 +312,20 @@ class DailyHealthParser(BaseParser):
                     minute = _minute_of_day(when, offset)
                     if minute is not None:
                         day["elapsed"] = max(day["elapsed"] or 0, minute)
+                    # All-day heart rate, about a reading a minute. Kept by
+                    # the clock like stress, for the same reason: a day's
+                    # heart rate is a curve, and the Health page's HR dial
+                    # draws it. 0 is the watch's "not measured" (off the
+                    # wrist); anything outside a human range is a sensor
+                    # glitch rather than a reading.
+                    bpm = get(frame, "heart_rate")
+                    if bpm is not None and minute is not None:
+                        try:
+                            b = int(bpm)
+                            if _HR_MIN <= b <= _HR_MAX:
+                                day["hr_at"][minute] = b
+                        except (TypeError, ValueError):
+                            pass
 
                 elif frame.name == "stress_level":
                     # Its own message, not a field on `monitoring`. A Fenix
@@ -542,6 +556,11 @@ def _resolve_timestamp(ts16, last):
 # ── Days ─────────────────────────────────────────────────────────────────────
 
 
+# A heart rate a person can have. Outside it is a sensor's noise.
+_HR_MIN = 25
+_HR_MAX = 240
+
+
 def _new_day() -> dict:
     return {
         "metrics": {},
@@ -551,6 +570,8 @@ def _new_day() -> dict:
         # because a day is described by several files that overlap, and the
         # same minute arriving twice is one reading, not two.
         "stress_at": {},
+        # Minute of local day -> heart rate, by the same rule.
+        "hr_at": {},
         "steps": {}, "calories": {},
         "elapsed": None, "last_at": None,
     }
@@ -597,4 +618,5 @@ def _finish_day(date, day: dict, resting_rate: int | None,
         "date": date,
         "metrics": metrics,
         "stress_series": [[m, v] for m, v in sorted(day["stress_at"].items())],
+        "hr_series": [[m, v] for m, v in sorted(day["hr_at"].items())],
     }

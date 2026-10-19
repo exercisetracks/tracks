@@ -183,7 +183,7 @@
           "auth"
         ],
         "summary": "Setup",
-        "description": "Create the initial admin account. Only works when no admin with a password\nexists \u2014 once configured, all new accounts must be created by the admin.",
+        "description": "Create the initial admin account. Only works when no admin with a password\nexists — once configured, all new accounts must be created by the admin.",
         "operationId": "setup_auth_setup_post",
         "requestBody": {
           "content": {
@@ -253,7 +253,7 @@
           "auth"
         ],
         "summary": "Enrol Device Key",
-        "description": "Wrap this user's DEK under a fresh device secret, returned exactly once.\n\nRequires a live crypto session, not just a token \u2014 the key material has to\nbe unwrapped to be re-wrapped, so a device key can never grant access the\nenroling session did not already have.\n\nThe secret is the whole credential. It is never stored server-side in any\nrecoverable form, exactly like the recovery phrase, so a caller that loses\nit enrols again rather than recovering it.",
+        "description": "Wrap this user's DEK under a fresh device secret, returned exactly once.\n\nRequires a live crypto session, not just a token — the key material has to\nbe unwrapped to be re-wrapped, so a device key can never grant access the\nenroling session did not already have.\n\nThe secret is the whole credential. It is never stored server-side in any\nrecoverable form, exactly like the recovery phrase, so a caller that loses\nit enrols again rather than recovering it.",
         "operationId": "enrol_device_key_auth_device_keys_post",
         "requestBody": {
           "content": {
@@ -300,7 +300,7 @@
           "auth"
         ],
         "summary": "Revoke Device Key",
-        "description": "Stop a device being able to unlock the vault. This is the answer to a\nlost phone, and it is why device keys are worth their risk \u2014 a password\ncannot be revoked without changing it everywhere.",
+        "description": "Stop a device being able to unlock the vault. This is the answer to a\nlost phone, and it is why device keys are worth their risk — a password\ncannot be revoked without changing it everywhere.",
         "operationId": "revoke_device_key_auth_device_keys__key_id__delete",
         "security": [
           {
@@ -417,7 +417,7 @@
           "auth"
         ],
         "summary": "Refresh",
-        "description": "Exchange a refresh token for a fresh access token and a new refresh token.\n\nRotation is mandatory: the presented token is consumed. Presenting an\nalready-consumed one is treated as a replay and revokes the whole family\n(see app.models.refresh_tokens) \u2014 there is no way from here to distinguish\na stolen token from a duplicated request, and only one of those is safe to\nguess wrong about.\n\nNote what this does NOT do: it does not unlock the vault. The new access\ntoken carries the original `sid`, so if that crypto session is still cached\nthe client keeps decrypting seamlessly; if it has lapsed, encrypted\nendpoints keep returning `session_expired` until the user enters their\npassword. Refreshing an access token cannot re-derive a DEK, because that\nrequires the password itself.",
+        "description": "Exchange a refresh token for a fresh access token and a new refresh token.\n\nRotation is mandatory: the presented token is consumed. Presenting an\nalready-consumed one is treated as a replay and revokes the whole family\n(see app.models.refresh_tokens) — there is no way from here to distinguish\na stolen token from a duplicated request, and only one of those is safe to\nguess wrong about.\n\nNote what this does NOT do: it does not unlock the vault. The new access\ntoken carries the original `sid`, so if that crypto session is still cached\nthe client keeps decrypting seamlessly; if it has lapsed, encrypted\nendpoints keep returning `session_expired` until the user enters their\npassword. Refreshing an access token cannot re-derive a DEK, because that\nrequires the password itself.",
         "operationId": "refresh_auth_refresh_post",
         "parameters": [
           {
@@ -493,7 +493,7 @@
           "auth"
         ],
         "summary": "List Sessions",
-        "description": "Devices holding a live refresh token for this account.\n\nOnly the newest token of each family is shown \u2014 the rotated-away ones are\nthe same device, and listing every rotation would turn \"my phone\" into a\nscrolling history of itself.",
+        "description": "Devices holding a live refresh token for this account.\n\nOnly the newest token of each family is shown — the rotated-away ones are\nthe same device, and listing every rotation would turn \"my phone\" into a\nscrolling history of itself.",
         "operationId": "list_sessions_auth_sessions_get",
         "responses": {
           "200": {
@@ -524,7 +524,7 @@
           "auth"
         ],
         "summary": "Revoke Session",
-        "description": "Sign a device out. Revokes the whole rotation chain, not just the leaf \u2014\notherwise the device's next refresh would simply mint a replacement.\n\nAlso drops the crypto session the chain was pinned to, which is the half\nthat actually protects anything. Revoking refresh tokens alone only stops\nthe device minting a *new* access token; the one already in its hands stays\nvalid for up to _TOKEN_EXPIRE_DAYS, and while its `sid` was still cached\nthat token could keep decrypting health data. A user pressing \"sign out\" on\na phone they have lost means \"stop reading my data\", not \"stop renewing\".\n\nAnd it lists the `sid` as revoked, which is what ends the access token the\ndevice already holds: on its own, a stateless JWT stays valid until it\nexpires and kept reaching every endpoint that touches no encrypted data \u2014\nmedications, meals, settings. See app.auth.token_is_live.",
+        "description": "Sign a device out. Revokes the whole rotation chain, not just the leaf —\notherwise the device's next refresh would simply mint a replacement.\n\nAlso drops the crypto session the chain was pinned to, which is the half\nthat actually protects anything. Revoking refresh tokens alone only stops\nthe device minting a *new* access token; the one already in its hands stays\nvalid for up to _TOKEN_EXPIRE_DAYS, and while its `sid` was still cached\nthat token could keep decrypting health data. A user pressing \"sign out\" on\na phone they have lost means \"stop reading my data\", not \"stop renewing\".\n\nAnd it lists the `sid` as revoked, which is what ends the access token the\ndevice already holds: on its own, a stateless JWT stays valid until it\nexpires and kept reaching every endpoint that touches no encrypted data —\nmedications, meals, settings. See app.auth.token_is_live.",
         "operationId": "revoke_session_auth_sessions__session_id__delete",
         "security": [
           {
@@ -565,7 +565,7 @@
           "auth"
         ],
         "summary": "Logout",
-        "description": "Ends this session: drops its cached decryption key from Redis, lists\nits `sid` as revoked so the access token stops authenticating anywhere\n(app.auth.token_is_live), and revokes any refresh chain pinned to it \u2014\notherwise that chain could mint fresh tokens for the sid once its\nrevocation row has aged out. Best-effort: an invalid/missing/\nalready-expired token is not an error, there's simply nothing to end.",
+        "description": "Ends this session: drops its cached decryption key from Redis, lists\nits `sid` as revoked so the access token stops authenticating anywhere\n(app.auth.token_is_live), and revokes any refresh chain pinned to it —\notherwise that chain could mint fresh tokens for the sid once its\nrevocation row has aged out. Best-effort: an invalid/missing/\nalready-expired token is not an error, there's simply nothing to end.",
         "operationId": "logout_auth_logout_post",
         "requestBody": {
           "content": {
@@ -612,7 +612,7 @@
           "auth"
         ],
         "summary": "Sync Pending Imports",
-        "description": "Queue processing of this user's not-yet-processed PendingImport rows,\nsame as login/setup already do (see _create_authenticated_token) \u2014 but\ncallable again without a fresh login. A sync agent's ingest isn't tied\nto any particular browser session, so a user who stays logged in while\ntheir watch syncs would otherwise see nothing new until they log out\nand back in; the frontend polls this periodically while authenticated\n(see AuthContext.jsx) to close that gap. Cheap to poll: just a JWT\ndecode plus an enqueue \u2014 the task itself no-ops fast when there's\nnothing pending (see app.services.fit_import.process_pending_imports_for_user).",
+        "description": "Queue processing of this user's not-yet-processed PendingImport rows,\nsame as login/setup already do (see _create_authenticated_token) — but\ncallable again without a fresh login. A sync agent's ingest isn't tied\nto any particular browser session, so a user who stays logged in while\ntheir watch syncs would otherwise see nothing new until they log out\nand back in; the frontend polls this periodically while authenticated\n(see AuthContext.jsx) to close that gap. Cheap to poll: just a JWT\ndecode plus an enqueue — the task itself no-ops fast when there's\nnothing pending (see app.services.fit_import.process_pending_imports_for_user).",
         "operationId": "sync_pending_imports_auth_sync_pending_imports_post",
         "responses": {
           "202": {
@@ -829,7 +829,7 @@
           "activities"
         ],
         "summary": "Heatmap",
-        "description": "Anonymous simplified track geometry for the heatmap layer.\n\nUnbounded, this returns the caller's entire GPS history in one body \u2014 fine\nfor a desktop on a LAN, hostile to a phone on cellular. `bbox` and `zoom`\nexist to bound it: the first drops tracks outside the viewport, the second\ndrops detail too fine to see at that scale.\n\nBoth are applied *after* decryption rather than in SQL. `data_points.lat/lng`\nare AES-GCM columns with a random nonce per value, so they can't be compared\nor indexed by the database (see app.models.encrypted_columns). That means\nneither filter saves the server any work \u2014 but both save the client a great\ndeal of transfer, which is the actual constraint. It also means bbox queries\ncan still be served from the cached full payload, which is why the cache\nlookup below happens before the filtering rather than being skipped.",
+        "description": "Anonymous simplified track geometry for the heatmap layer.\n\nUnbounded, this returns the caller's entire GPS history in one body — fine\nfor a desktop on a LAN, hostile to a phone on cellular. `bbox` and `zoom`\nexist to bound it: the first drops tracks outside the viewport, the second\ndrops detail too fine to see at that scale.\n\nBoth are applied *after* decryption rather than in SQL. `data_points.lat/lng`\nare AES-GCM columns with a random nonce per value, so they can't be compared\nor indexed by the database (see app.models.encrypted_columns). That means\nneither filter saves the server any work — but both save the client a great\ndeal of transfer, which is the actual constraint. It also means bbox queries\ncan still be served from the cached full payload, which is why the cache\nlookup below happens before the filtering rather than being skipped.",
         "operationId": "heatmap_activities_heatmap_get",
         "security": [
           {
@@ -914,10 +914,10 @@
                   "type": "null"
                 }
               ],
-              "description": "Viewport as min_lng,min_lat,max_lng,max_lat \u2014 returns only tracks passing through it",
+              "description": "Viewport as min_lng,min_lat,max_lng,max_lat — returns only tracks passing through it",
               "title": "Bbox"
             },
-            "description": "Viewport as min_lng,min_lat,max_lng,max_lat \u2014 returns only tracks passing through it"
+            "description": "Viewport as min_lng,min_lat,max_lng,max_lat — returns only tracks passing through it"
           },
           {
             "name": "zoom",
@@ -1037,7 +1037,7 @@
           "activities"
         ],
         "summary": "Backfill Metrics",
-        "description": "Recompute EF, aerobic decoupling, effective_tss, and power/pace bests for\nall of `user`'s own activities. Safe to call multiple times \u2014 fully idempotent.",
+        "description": "Recompute EF, aerobic decoupling, effective_tss, and power/pace bests for\nall of `user`'s own activities. Safe to call multiple times — fully idempotent.",
         "operationId": "backfill_metrics_activities_backfill_metrics_post",
         "responses": {
           "200": {
@@ -1064,7 +1064,7 @@
           "activities"
         ],
         "summary": "Backfill Summaries",
-        "description": "Fill feel and perceived effort into activities imported before the\nparser read them (app.services.fit_import.backfill_activity_summaries_for_user).\n\nLogin queues this already; the endpoint is for running it again without\none. Only null columns are\nfilled and nothing else on an activity changes, so it is safe to repeat,\nand a repeat with nothing left to read is one query. Queued rather than\nrun inline, because the first run unseals a file per older activity \u2014 and\nby session id, never key material, as every such task is.",
+        "description": "Fill feel and perceived effort into activities imported before the\nparser read them (app.services.fit_import.backfill_activity_summaries_for_user).\n\nLogin queues this already; the endpoint is for running it again without\none. Only null columns are\nfilled and nothing else on an activity changes, so it is safe to repeat,\nand a repeat with nothing left to read is one query. Queued rather than\nrun inline, because the first run unseals a file per older activity — and\nby session id, never key material, as every such task is.",
         "operationId": "backfill_summaries_activities_summaries_backfill_post",
         "responses": {
           "202": {
@@ -1544,7 +1544,7 @@
           "activities"
         ],
         "summary": "Get Outline",
-        "description": "The route's shape for the activity list's thumbnail, or null without GPS.\n\nOne small request per row rather than every track at once\n(``/tracks-geojson``): the list asks for a row's outline only when the row\nis on screen, a few at a time, so thumbnails fill in one by one and never\nhold up the table. Only the normalised shape leaves the server \u2014 see\ncalculators/track_outline.py for why that matters to where it is cached.",
+        "description": "The route's shape for the activity list's thumbnail, or null without GPS.\n\nOne small request per row rather than every track at once\n(``/tracks-geojson``): the list asks for a row's outline only when the row\nis on screen, a few at a time, so thumbnails fill in one by one and never\nhold up the table. Only the normalised shape leaves the server — see\ncalculators/track_outline.py for why that matters to where it is cached.",
         "operationId": "get_outline_activities__activity_id__outline_get",
         "security": [
           {
@@ -1590,7 +1590,7 @@
           "activities"
         ],
         "summary": "Get Track",
-        "description": "Return the activity's data points, downsampled via LTTB to the cap\ndefined by the user's chart_resolution setting.  Long activities can\nhave 25K+ samples \u2014 LTTB preserves the visual shape of all metrics\nwhile cutting the payload to a configurable limit.\n\n`?max_points=` overrides that setting per-request. Clients that can't\nafford the user's configured resolution need this: `chart_resolution`\nis a *server-side* preference, and `\"raw\"` means no cap at all, so a\n12-hour ride would otherwise send 40K+ objects to a phone with no way\nfor the caller to ask for less.",
+        "description": "Return the activity's data points, downsampled via LTTB to the cap\ndefined by the user's chart_resolution setting.  Long activities can\nhave 25K+ samples — LTTB preserves the visual shape of all metrics\nwhile cutting the payload to a configurable limit.\n\n`?max_points=` overrides that setting per-request. Clients that can't\nafford the user's configured resolution need this: `chart_resolution`\nis a *server-side* preference, and `\"raw\"` means no cap at all, so a\n12-hour ride would otherwise send 40K+ objects to a phone with no way\nfor the caller to ask for less.",
         "operationId": "get_track_activities__activity_id__track_get",
         "security": [
           {
@@ -1952,7 +1952,7 @@
           "coaching"
         ],
         "summary": "Recommended Event Date",
-        "description": "When this person could be ready for an event of this sport and\ndistance \u2014 the date the new-goal form starts from, with its reasons.\nThe phone computes the same offline (calculators/event_date.py).",
+        "description": "When this person could be ready for an event of this sport and\ndistance — the date the new-goal form starts from, with its reasons.\nThe phone computes the same offline (calculators/event_date.py).",
         "operationId": "recommended_event_date_coaching_goals_recommended_date_get",
         "security": [
           {
@@ -2156,7 +2156,7 @@
           "coaching"
         ],
         "summary": "Get Predicted Time",
-        "description": "Quick predicted finish time for the goal card badge \u2014 all sports.",
+        "description": "Quick predicted finish time for the goal card badge — all sports.",
         "operationId": "get_predicted_time_coaching_goals__goal_id__predicted_time_get",
         "security": [
           {
@@ -2445,7 +2445,7 @@
           "coaching"
         ],
         "summary": "Course From Track",
-        "description": "Use a saved (or just-drawn) map track as the race course \u2014 the same\nresult as uploading it as GPX.",
+        "description": "Use a saved (or just-drawn) map track as the race course — the same\nresult as uploading it as GPX.",
         "operationId": "course_from_track_coaching_goals__goal_id__race_plan_course_from_track__track_id__post",
         "security": [
           {
@@ -2623,7 +2623,7 @@
           "devices"
         ],
         "summary": "Claim Device",
-        "description": "Link this device to the current user.\n\nRefused while another account holds the device. A watch belongs to one\nperson; the sync agents file its data by that one claim (two claims make\nthe watch unsyncable rather than guessing), so a second claim would only\never be a mistake \u2014 or someone reaching for another person's data. The\nholder releases it first.",
+        "description": "Link this device to the current user.\n\nRefused while another account holds the device. A watch belongs to one\nperson; the sync agents file its data by that one claim (two claims make\nthe watch unsyncable rather than guessing), so a second claim would only\never be a mistake — or someone reaching for another person's data. The\nholder releases it first.",
         "operationId": "claim_device_devices__device_id__claim_post",
         "security": [
           {
@@ -3401,7 +3401,7 @@
           "metrics"
         ],
         "summary": "Activity Load",
-        "description": "Per-activity TSS values for overlaying as dots on the fitness chart.\nUses the best available TSS: device-provided \u2192 effective_tss (power/hr) \u2192 estimated.",
+        "description": "Per-activity TSS values for overlaying as dots on the fitness chart.\nUses the best available TSS: device-provided → effective_tss (power/hr) → estimated.",
         "operationId": "activity_load_metrics_activity_load_get",
         "security": [
           {
@@ -4170,7 +4170,7 @@
           "users"
         ],
         "summary": "Clear User Data",
-        "description": "Delete all activity/training data, ingested FIT blobs, and devices for\nthe current user \u2014 only theirs; the admin wipes below reach everyone's.",
+        "description": "Delete all activity/training data, ingested FIT blobs, and devices for\nthe current user — only theirs; the admin wipes below reach everyone's.",
         "operationId": "clear_user_data_users_me_data_delete",
         "responses": {
           "204": {
@@ -4266,7 +4266,7 @@
           "users"
         ],
         "summary": "Admin Reset Password",
-        "description": "Admin only: set another account's password.\n\n## Why this can cost the account its data\n\nEach account's data is encrypted under a key that only its own password\n(or its recovery key) unwraps \u2014 by design, an admin cannot read anyone\nelse's GPS tracks, files or injury notes. So an admin who does not know the\nold password cannot carry that key over to a new one. Two ways out:\n\n* **With the recovery key**, the key is unwrapped with it and re-wrapped\n  under the new password. Nothing is lost.\n* **Without it** (``discard_data``), the account gets new keys, and the\n  data under the old ones is deleted: kept, it would be ciphertext nobody\n  can ever open, and every page reading it would fail. The account and\n  its settings stay. The response carries the new recovery key, to hand\n  to the user.\n\nEither way the account is signed out everywhere, as a self-service change\nsigns out every other session. Your own password is changed under\nSecurity, with your current one.",
+        "description": "Admin only: set another account's password.\n\n## Why this can cost the account its data\n\nEach account's data is encrypted under a key that only its own password\n(or its recovery key) unwraps — by design, an admin cannot read anyone\nelse's GPS tracks, files or injury notes. So an admin who does not know the\nold password cannot carry that key over to a new one. Two ways out:\n\n* **With the recovery key**, the key is unwrapped with it and re-wrapped\n  under the new password. Nothing is lost.\n* **Without it** (``discard_data``), the account gets new keys, and the\n  data under the old ones is deleted: kept, it would be ciphertext nobody\n  can ever open, and every page reading it would fail. The account and\n  its settings stay. The response carries the new recovery key, to hand\n  to the user.\n\nEither way the account is signed out everywhere, as a self-service change\nsigns out every other session. Your own password is changed under\nSecurity, with your current one.",
         "operationId": "admin_reset_password_users__user_id__password_post",
         "security": [
           {
@@ -4412,7 +4412,7 @@
           "users"
         ],
         "summary": "Admin Factory Reset",
-        "description": "Admin only: every account and its data, the caller's included. The\nserver is back at first-run setup afterwards \u2014 the setup-complete flag is\ncleared, and the next visitor creates the admin. Map tiles are not\npersonal and are kept (Settings has its own button for them).",
+        "description": "Admin only: every account and its data, the caller's included. The\nserver is back at first-run setup afterwards — the setup-complete flag is\ncleared, and the next visitor creates the admin. Map tiles are not\npersonal and are kept (Settings has its own button for them).",
         "operationId": "admin_factory_reset_users_admin_factory_reset_post",
         "requestBody": {
           "content": {
@@ -4546,7 +4546,7 @@
           "sync-agents"
         ],
         "summary": "List Sync Agents",
-        "description": "Household agents are visible to everyone (any user benefits from\nknowing a shared dock exists); personal agents are visible only to their\nowner \u2014 except admins, who see everyone's, for account management.",
+        "description": "Household agents are visible to everyone (any user benefits from\nknowing a shared dock exists); personal agents are visible only to their\nowner — except admins, who see everyone's, for account management.",
         "operationId": "list_sync_agents_sync_agents__get",
         "responses": {
           "200": {
@@ -4840,7 +4840,7 @@
           "training-plan"
         ],
         "summary": "Create Planned Workout",
-        "description": "Add a workout to the calendar that no plan prescribed.\n\nDeliberately not attached to a plan. Both paths `generate_plan` deletes\nthrough filter on `plan_id`, so a null one is what stops a regeneration\nthrowing away the session somebody added by hand \u2014 no special case, and\nnothing to remember when that code next changes.\n\nEvery field is stamped by the server as it is written (app.sync.store), so\na later edit from anywhere merges against it field by field.",
+        "description": "Add a workout to the calendar that no plan prescribed.\n\nDeliberately not attached to a plan. Both paths `generate_plan` deletes\nthrough filter on `plan_id`, so a null one is what stops a regeneration\nthrowing away the session somebody added by hand — no special case, and\nnothing to remember when that code next changes.\n\nEvery field is stamped by the server as it is written (app.sync.store), so\na later edit from anywhere merges against it field by field.",
         "operationId": "create_planned_workout_coaching_plan_workouts_post",
         "requestBody": {
           "content": {
@@ -5297,7 +5297,7 @@
           "health"
         ],
         "summary": "Injury Activities",
-        "description": "Return activities in the window:\n  [start_date - window_days, end_date + window_days]\nFalls back to start_date when no end_date is set.\n\nRequires a crypto session even though the response never surfaces\nbody_part/injury_type/notes \u2014 SQLAlchemy hydrates every mapped column\nwhen the Injury row loads, so decrypting is unavoidable at load time.",
+        "description": "Return activities in the window:\n  [start_date - window_days, end_date + window_days]\nFalls back to start_date when no end_date is set.\n\nRequires a crypto session even though the response never surfaces\nbody_part/injury_type/notes — SQLAlchemy hydrates every mapped column\nwhen the Injury row loads, so decrypting is unavoidable at load time.",
         "operationId": "injury_activities_health_injuries__injury_id__activities_get",
         "security": [
           {
@@ -5412,7 +5412,7 @@
           "health"
         ],
         "summary": "Sleep Night",
-        "description": "One night's sleep stages, in order.\n\nReturns an empty list rather than 404 for a night with no timeline: a night\nwhose totals exist but whose stages were never stored \u2014 every night imported\nbefore the importer began keeping them \u2014 is a normal, expected answer, and a\nclient should draw the summary rather than an error.",
+        "description": "One night's sleep stages, in order.\n\nReturns an empty list rather than 404 for a night with no timeline: a night\nwhose totals exist but whose stages were never stored — every night imported\nbefore the importer began keeping them — is a normal, expected answer, and a\nclient should draw the summary rather than an error.",
         "operationId": "sleep_night_health_sleep__metric_date__get",
         "security": [
           {
@@ -5461,7 +5461,7 @@
           "health"
         ],
         "summary": "Stress Detail",
-        "description": "Stress reading by reading, for every day in the window that has any.\n\n## Why this is not on the daily metric\n\nBecause a day is roughly five hundred readings and a month of daily\nmetrics is thirty rows. Folding the series in would multiply the size of\nthe one request the health page makes on every load by two orders of\nmagnitude, to serve a chart nobody has opened yet.\n\n## Why the window is capped\n\nThe curve is only worth drawing while a day is still a distinguishable\npart of the picture \u2014 over a year it is a solid block of ink, and the\ndaily averages already on the metric rows are the readable answer at that\nscale. So the client asks for this on short windows only, and the cap is\nwhat stops a hand-written request for a lifetime from serving a hundred\nmegabytes of three-minute samples.\n\nDays with no series come back not at all rather than as an empty list:\nabsence of a curve and a flat curve are different things, and every night\nimported before the parser kept the series is the former.",
+        "description": "Stress reading by reading, for every day in the window that has any.\n\n## Why this is not on the daily metric\n\nBecause a day is roughly five hundred readings and a month of daily\nmetrics is thirty rows. Folding the series in would multiply the size of\nthe one request the health page makes on every load by two orders of\nmagnitude, to serve a chart nobody has opened yet.\n\n## Why the window is capped\n\nThe curve is only worth drawing while a day is still a distinguishable\npart of the picture — over a year it is a solid block of ink, and the\ndaily averages already on the metric rows are the readable answer at that\nscale. So the client asks for this on short windows only, and the cap is\nwhat stops a hand-written request for a lifetime from serving a hundred\nmegabytes of three-minute samples.\n\nDays with no series come back not at all rather than as an empty list:\nabsence of a curve and a flat curve are different things, and every night\nimported before the parser kept the series is the former.",
         "operationId": "stress_detail_health_stress_get",
         "security": [
           {
@@ -5515,6 +5515,83 @@
                     "$ref": "#/components/schemas/StressDayOut"
                   },
                   "title": "Response Stress Detail Health Stress Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health/heart-rate": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Heart Rate Detail",
+        "description": "All-day heart rate, minute by minute, for every day in the window that\nhas any. Off the daily metric, and capped, for the reasons\n[stress_detail] gives; the points are `[minute of local day, bpm]`.",
+        "operationId": "heart_rate_detail_health_heart_rate_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "after",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "After"
+            }
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Before"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StressDayOut"
+                  },
+                  "title": "Response Heart Rate Detail Health Heart Rate Get"
                 }
               }
             }
@@ -5591,7 +5668,7 @@
           "ics"
         ],
         "summary": "Get User Ics Feed",
-        "description": "Public user-level .ics feed \u2014 every active planned goal's workouts in one calendar.",
+        "description": "Public user-level .ics feed — every active planned goal's workouts in one calendar.",
         "operationId": "get_user_ics_feed_ics_user__token__get",
         "parameters": [
           {
@@ -5634,7 +5711,7 @@
           "ics"
         ],
         "summary": "Get Ics Feed",
-        "description": "Per-goal .ics feed (legacy \u2014 kept for existing subscriptions).",
+        "description": "Per-goal .ics feed (legacy — kept for existing subscriptions).",
         "operationId": "get_ics_feed_ics__token__get",
         "parameters": [
           {
@@ -5961,7 +6038,7 @@
           "garmin-sync"
         ],
         "summary": "Get Schedule Bundle",
-        "description": "The cable counterpart of /device-sync/schedule-bundle.\n\nA schedule on its own only fills the calendar for workouts whose files\narrive with it. Measured on a fenix 6X on 2026-08-27: a schedule naming\nsixteen workouts went into GARMIN/NewFiles beside two workout files, and\nexactly two calendar entries appeared \u2014 the two whose files were in that\nbatch. The other fourteen were already sitting in GARMIN/Workouts from\nearlier syncs and resolved to nothing.\n\nSo the cable path needs what BLE already does: send every workout the\nschedule names, every time, however many of them the watch already holds.",
+        "description": "The cable counterpart of /device-sync/schedule-bundle.\n\nA schedule on its own only fills the calendar for workouts whose files\narrive with it. Measured on a fenix 6X on 2026-08-27: a schedule naming\nsixteen workouts went into GARMIN/NewFiles beside two workout files, and\nexactly two calendar entries appeared — the two whose files were in that\nbatch. The other fourteen were already sitting in GARMIN/Workouts from\nearlier syncs and resolved to nothing.\n\nSo the cable path needs what BLE already does: send every workout the\nschedule names, every time, however many of them the watch already holds.",
         "operationId": "get_schedule_bundle_training_plan_sync_schedule_bundle_get",
         "parameters": [
           {
@@ -6117,7 +6194,7 @@
           "garmin-sync"
         ],
         "summary": "Get Import Status",
-        "description": "Return whether any of *this user's* FIT imports are still queued.\nPolled by the frontend to show the import progress spinner. Reflects\nPendingImport rows awaiting a decryption key (see app.services.fit_import)\nrather than a live in-process \"currently parsing\" counter \u2014 there isn't\none of those anymore now that processing runs per-user, on login.\n\nThis router is mounted without a blanket auth dependency (most of its\nroutes are guarded by require_sync_agent instead), so the dependency has\nto be declared per-route here. It previously had neither, which made an\ninstance-wide \"is anyone importing right now\" signal readable by anyone\nwho could reach the port. Scoping to the caller fixes the leak and makes\nthe answer correct on a multi-user instance, where another user's queue\nwould otherwise spin this user's UI.",
+        "description": "Return whether any of *this user's* FIT imports are still queued.\nPolled by the frontend to show the import progress spinner. Reflects\nPendingImport rows awaiting a decryption key (see app.services.fit_import)\nrather than a live in-process \"currently parsing\" counter — there isn't\none of those anymore now that processing runs per-user, on login.\n\nThis router is mounted without a blanket auth dependency (most of its\nroutes are guarded by require_sync_agent instead), so the dependency has\nto be declared per-route here. It previously had neither, which made an\ninstance-wide \"is anyone importing right now\" signal readable by anyone\nwho could reach the port. Scoping to the caller fixes the leak and makes\nthe answer correct on a multi-user instance, where another user's queue\nwould otherwise spin this user's UI.",
         "operationId": "get_import_status_training_plan_sync_import_status_get",
         "responses": {
           "200": {
@@ -6194,7 +6271,7 @@
           "garmin-sync"
         ],
         "summary": "Record Sync Abort",
-        "description": "Called by garmin-sync when a sync attempt dies (watch unplugged\nmid-sync, worker crash) so the status does not wait out its 5-minute\nheartbeat \u2014 that left the sidebar stuck on \"Syncing watch\u2026\" after an unplug.",
+        "description": "Called by garmin-sync when a sync attempt dies (watch unplugged\nmid-sync, worker crash) so the status does not wait out its 5-minute\nheartbeat — that left the sidebar stuck on \"Syncing watch…\" after an unplug.",
         "operationId": "record_sync_abort_training_plan_sync_abort_post",
         "parameters": [
           {
@@ -6298,7 +6375,7 @@
           "garmin-sync"
         ],
         "summary": "Get Sync Status",
-        "description": "What the sidebar shows: what is actually under way for this user.\n\n``activity`` is the whole answer (see app.services.activity_status for why\nit replaced a queue count and a global flag). Imports are split three\nways, because only one of them is work happening:\n\n* ``importing`` \u2014 the worker is on it, ``{done, total}``;\n* ``waiting``   \u2014 queued files this session cannot open, because the\n  vault is shut. They wait for the next sign-in; no spinner;\n* ``failed``    \u2014 files that were tried and could not be parsed.\n\nA queue with the vault open and no worker on it is started from here (at\nmost once a minute), so it drains in seconds rather than at the next\n90-second poll \u2014 and is then reported as importing, which it is.\n\nThe older top-level fields stay for the phone and anything else reading them.",
+        "description": "What the sidebar shows: what is actually under way for this user.\n\n``activity`` is the whole answer (see app.services.activity_status for why\nit replaced a queue count and a global flag). Imports are split three\nways, because only one of them is work happening:\n\n* ``importing`` — the worker is on it, ``{done, total}``;\n* ``waiting``   — queued files this session cannot open, because the\n  vault is shut. They wait for the next sign-in; no spinner;\n* ``failed``    — files that were tried and could not be parsed.\n\nA queue with the vault open and no worker on it is started from here (at\nmost once a minute), so it drains in seconds rather than at the next\n90-second poll — and is then reported as importing, which it is.\n\nThe older top-level fields stay for the phone and anything else reading them.",
         "operationId": "get_sync_status_training_plan_sync_status_get",
         "security": [
           {
@@ -6369,7 +6446,7 @@
           "garmin-sync"
         ],
         "summary": "Should Trigger Sync",
-        "description": "Polled by a sync agent to check for a pending \"sync now\" request.\nConsumes the flag on a positive read \u2014 one trigger, one immediate sync.\n\nDELETE returns the number of keys it removed, which makes read-and-consume\na single atomic operation. That matters now that the flag is shared: two\nagents (or two workers serving one agent's retry) polling at the same\ninstant must not both come away believing they own the trigger.",
+        "description": "Polled by a sync agent to check for a pending \"sync now\" request.\nConsumes the flag on a positive read — one trigger, one immediate sync.\n\nDELETE returns the number of keys it removed, which makes read-and-consume\na single atomic operation. That matters now that the flag is shared: two\nagents (or two workers serving one agent's retry) polling at the same\ninstant must not both come away believing they own the trigger.",
         "operationId": "should_trigger_sync_training_plan_sync_should_trigger_get",
         "parameters": [
           {
@@ -6411,7 +6488,7 @@
           "sync-ingest"
         ],
         "summary": "Get Pubkey",
-        "description": "Returns the target user's ingestion public key \u2014 not secret, safe to\nhand to any authenticated sync agent. 404 if the device isn't claimed by\nanyone yet (see /sync/register-device).",
+        "description": "Returns the target user's ingestion public key — not secret, safe to\nhand to any authenticated sync agent. 404 if the device isn't claimed by\nanyone yet (see /sync/register-device).",
         "operationId": "get_pubkey_sync_pubkey_get",
         "parameters": [
           {
@@ -6463,7 +6540,7 @@
           "sync-ingest"
         ],
         "summary": "Register Device",
-        "description": "Registers device metadata only \u2014 no activity data \u2014 so a brand-new,\nnot-yet-claimed device shows up in the Devices UI for the user to claim.\nMirrors the old filesystem watcher's auto-register-on-first-import\nbehavior without needing to parse (and therefore decrypt) anything\nfirst. A phone's agent claims the watch for the phone's owner \u2014 it is\npaired to that phone, and claiming it the moment it appears leaves no\nwindow for anyone else to. A shared dock leaves it unclaimed for the\nfirst person to claim it, unless the instance has only one account (see\nsync_agent_auth.auto_claimant). Never a second claim on a held watch.",
+        "description": "Registers device metadata only — no activity data — so a brand-new,\nnot-yet-claimed device shows up in the Devices UI for the user to claim.\nMirrors the old filesystem watcher's auto-register-on-first-import\nbehavior without needing to parse (and therefore decrypt) anything\nfirst. A phone's agent claims the watch for the phone's owner — it is\npaired to that phone, and claiming it the moment it appears leaves no\nwindow for anyone else to. A shared dock leaves it unclaimed for the\nfirst person to claim it, unless the instance has only one account (see\nsync_agent_auth.auto_claimant). Never a second claim on a held watch.",
         "operationId": "register_device_sync_register_device_post",
         "parameters": [
           {
@@ -6566,7 +6643,7 @@
           "sync-ingest"
         ],
         "summary": "Ingest Missing",
-        "description": "Which of these files the server does not hold yet.\n\nExists because a phone re-sends its whole library whenever it meets a\nserver it has not uploaded to (a new install, a restore, a recreated\nserver), and through /ingest every file the server already had still\ncrossed the network in full \u2014 sealed, base64'd \u2014 only to be answered\n\"duplicate\". Asking first turns thousands of those round trips into one.\n\nOnly hashes go up, never content, and they are answered for the agent's\nown user only, so this tells an agent nothing it could not learn by\nuploading the file.",
+        "description": "Which of these files the server does not hold yet.\n\nExists because a phone re-sends its whole library whenever it meets a\nserver it has not uploaded to (a new install, a restore, a recreated\nserver), and through /ingest every file the server already had still\ncrossed the network in full — sealed, base64'd — only to be answered\n\"duplicate\". Asking first turns thousands of those round trips into one.\n\nOnly hashes go up, never content, and they are answered for the agent's\nown user only, so this tells an agent nothing it could not learn by\nuploading the file.",
         "operationId": "ingest_missing_sync_ingest_missing_post",
         "parameters": [
           {
@@ -6618,7 +6695,7 @@
           "sync-ingest"
         ],
         "summary": "Ingest Sealed Batch",
-        "description": "Many sealed files in one request \u2014 /ingest, amortised.\n\nA phone with years of history was sending one file per round trip, each\npaying the network's latency plus two commits here (the agent's\nlast-seen stamp and the insert), which held a first upload to about two\nfiles a second however fast the link. One request now carries a batch\nunder one auth check and one commit.\n\nEach file gets its own status, in order, and a bad one does not sink the\nrest: a client deciding which files to mark sent needs to know exactly\nwhich were taken. All files resolve to one user \u2014 the batch's\n`device_serial` \u2014 since a phone uploads for one person; a per-file serial\nis ignored rather than allowed to scatter one request across accounts.",
+        "description": "Many sealed files in one request — /ingest, amortised.\n\nA phone with years of history was sending one file per round trip, each\npaying the network's latency plus two commits here (the agent's\nlast-seen stamp and the insert), which held a first upload to about two\nfiles a second however fast the link. One request now carries a batch\nunder one auth check and one commit.\n\nEach file gets its own status, in order, and a bad one does not sink the\nrest: a client deciding which files to mark sent needs to know exactly\nwhich were taken. All files resolve to one user — the batch's\n`device_serial` — since a phone uploads for one person; a per-file serial\nis ignored rather than allowed to scatter one request across accounts.",
         "operationId": "ingest_sealed_batch_sync_ingest_batch_post",
         "parameters": [
           {
@@ -6826,7 +6903,7 @@
           "fit"
         ],
         "summary": "Upload Fit Files",
-        "description": "Upload one or more .fit files. Each is encrypted under the current\nsession's key before it's persisted anywhere, then parsed and inserted\nimmediately \u2014 there's a live key right here, no need to queue and wait\nfor a future login the way sync-agent ingestion does.",
+        "description": "Upload one or more .fit files. Each is encrypted under the current\nsession's key before it's persisted anywhere, then parsed and inserted\nimmediately — there's a live key right here, no need to queue and wait\nfor a future login the way sync-agent ingestion does.",
         "operationId": "upload_fit_files_fit_upload_post",
         "requestBody": {
           "content": {
@@ -6871,7 +6948,7 @@
           "fit"
         ],
         "summary": "Precheck Fit Files",
-        "description": "Given filenames+sizes visible on a device, report which have already been\nimported so browser-based device sync can skip transferring them.\n\nMatching is filename + size against past imports' extra JSON; a filename\nrecorded without a size (legacy rows) matches on name alone. This is a\ntransfer-saving heuristic only \u2014 anything uploaded anyway is still\ndeduplicated by content hash.",
+        "description": "Given filenames+sizes visible on a device, report which have already been\nimported so browser-based device sync can skip transferring them.\n\nMatching is filename + size against past imports' extra JSON; a filename\nrecorded without a size (legacy rows) matches on name alone. This is a\ntransfer-saving heuristic only — anything uploaded anyway is still\ndeduplicated by content hash.",
         "operationId": "precheck_fit_files_fit_precheck_post",
         "requestBody": {
           "content": {
@@ -6961,7 +7038,7 @@
           "device-sync"
         ],
         "summary": "Watch Weather",
-        "description": "The forecast to push to the watch, for a phone that has no other source.\n\nThe watch asks for weather roughly once a minute and Tracks had nothing to\nanswer with unless a separate weather app was configured to broadcast to it\n\u2014 an arrangement that is invisible when it is not set up, since the watch\nsimply shows an empty glance forever.\n\nLocation is where the phone last was, as it synced it into the settings\nrow \u2014 the same position the phone forecasts for when it asks Open-Meteo\nitself. Failing that (no phone has been opened with location permission\nyet), the start of the most recent activity with GPS: very nearly the\nright answer for \"where does this person train\", and a stale-by-one-trip\nforecast still beats an empty glance.\n\n404 rather than an empty body when there is nothing to say, so the client can\ntell \"no forecast for you\" from \"a forecast of nothing\".\n\nCurrent phones locate and fetch this forecast themselves (mobile\ncore/weather/OpenMeteo.kt), so it works where the phone has signal but no\nroute to this server. They call this only as a fallback, when none of the\nphone's own files has a position; older releases call it every time.",
+        "description": "The forecast to push to the watch, for a phone that has no other source.\n\nThe watch asks for weather roughly once a minute and Tracks had nothing to\nanswer with unless a separate weather app was configured to broadcast to it\n— an arrangement that is invisible when it is not set up, since the watch\nsimply shows an empty glance forever.\n\nLocation is where the phone last was, as it synced it into the settings\nrow — the same position the phone forecasts for when it asks Open-Meteo\nitself. Failing that (no phone has been opened with location permission\nyet), the start of the most recent activity with GPS: very nearly the\nright answer for \"where does this person train\", and a stale-by-one-trip\nforecast still beats an empty glance.\n\n404 rather than an empty body when there is nothing to say, so the client can\ntell \"no forecast for you\" from \"a forecast of nothing\".\n\nCurrent phones locate and fetch this forecast themselves (mobile\ncore/weather/OpenMeteo.kt), so it works where the phone has signal but no\nroute to this server. They call this only as a fallback, when none of the\nphone's own files has a position; older releases call it every time.",
         "operationId": "watch_weather_device_sync_weather_get",
         "responses": {
           "200": {
@@ -6986,7 +7063,7 @@
           "device-sync"
         ],
         "summary": "Browser Upload List",
-        "description": "Everything waiting to be pushed to a watch, tagged with its folder.\n\n``bluetooth=true`` changes exactly one thing: clearing every saved place\narrives as an empty Locations.fit to write, rather than as an entry on the\ndelete list. The two transports differ in what they can physically do \u2014\nUSB removes the file, BLE has no delete at all \u2014 and this is the flag that\nsays which one is asking.\n\nDeclared rather than inferred from the order the caller does things in. The\nbrowser happens to process deletions before uploads, which would make the\ndistinction work by accident today and break silently the day that changed.",
+        "description": "Everything waiting to be pushed to a watch, tagged with its folder.\n\n``bluetooth=true`` changes exactly one thing: clearing every saved place\narrives as an empty Locations.fit to write, rather than as an entry on the\ndelete list. The two transports differ in what they can physically do —\nUSB removes the file, BLE has no delete at all — and this is the flag that\nsays which one is asking.\n\nDeclared rather than inferred from the order the caller does things in. The\nbrowser happens to process deletions before uploads, which would make the\ndistinction work by accident today and break silently the day that changed.",
         "operationId": "browser_upload_list_device_sync_upload_list_get",
         "security": [
           {
@@ -7035,7 +7112,7 @@
           "device-sync"
         ],
         "summary": "Browser Mark Uploaded",
-        "description": "payload: {\"items\": [{\"type\", \"id\", \"filename\"}]} \u2014 types as returned\nby /device-sync/upload-list (workout | race_plan | course | waypoint).\n\nA waypoint item also echoes the `ids` it was offered with: Locations.fit is\none file covering every saved place, so what got delivered is that list, not\nthe item's own id.",
+        "description": "payload: {\"items\": [{\"type\", \"id\", \"filename\"}]} — types as returned\nby /device-sync/upload-list (workout | race_plan | course | waypoint).\n\nA waypoint item also echoes the `ids` it was offered with: Locations.fit is\none file covering every saved place, so what got delivered is that list, not\nthe item's own id.",
         "operationId": "browser_mark_uploaded_device_sync_mark_uploaded_post",
         "requestBody": {
           "content": {
@@ -7082,7 +7159,7 @@
           "device-sync"
         ],
         "summary": "Browser Schedule Fit",
-        "description": "Training-calendar schedule FIT. Fetch AFTER marking uploads \u2014 it only\nincludes workouts whose upload has been recorded.",
+        "description": "Training-calendar schedule FIT. Fetch AFTER marking uploads — it only\nincludes workouts whose upload has been recorded.",
         "operationId": "browser_schedule_fit_device_sync_schedule_fit_get",
         "responses": {
           "200": {
@@ -7107,7 +7184,7 @@
           "device-sync"
         ],
         "summary": "Browser Schedule Bundle",
-        "description": "The schedule together with every workout it names \u2014 what Garmin Connect\nsends, in the order it sends it. Unlike `/schedule-fit` this needs no prior\nmarking: the workouts come back whether or not the server believes the watch\nalready has them, because a schedule that names a file from an earlier\nsession does not build a calendar. See `_schedule_bundle_for_user`.",
+        "description": "The schedule together with every workout it names — what Garmin Connect\nsends, in the order it sends it. Unlike `/schedule-fit` this needs no prior\nmarking: the workouts come back whether or not the server believes the watch\nalready has them, because a schedule that names a file from an earlier\nsession does not build a calendar. See `_schedule_bundle_for_user`.",
         "operationId": "browser_schedule_bundle_device_sync_schedule_bundle_get",
         "responses": {
           "200": {
@@ -7156,7 +7233,7 @@
           "device-sync"
         ],
         "summary": "Browser Mark Deleted",
-        "description": "payload: {\"items\": [{\"type\", \"id\"}]} \u2014 types from /device-sync/delete-list\n(workout | pending | course | waypoint).",
+        "description": "payload: {\"items\": [{\"type\", \"id\"}]} — types from /device-sync/delete-list\n(workout | pending | course | waypoint).",
         "operationId": "browser_mark_deleted_device_sync_mark_deleted_post",
         "requestBody": {
           "content": {
@@ -9356,7 +9433,7 @@
           "music"
         ],
         "summary": "Upload Tracks",
-        "description": "Upload audio, normalise it, and add it to the library.\n\nEach file is converted to a form the watch will actually index before it is\nstored \u2014 see app.services.music_transcode for why that is not optional.\nDuplicates are recognised by the hash of the *normalised* bytes, so the same\nsong uploaded twice in different source formats still collapses to one row.",
+        "description": "Upload audio, normalise it, and add it to the library.\n\nEach file is converted to a form the watch will actually index before it is\nstored — see app.services.music_transcode for why that is not optional.\nDuplicates are recognised by the hash of the *normalised* bytes, so the same\nsong uploaded twice in different source formats still collapses to one row.",
         "operationId": "upload_tracks_music_tracks_post",
         "requestBody": {
           "content": {
@@ -9500,7 +9577,7 @@
           "music"
         ],
         "summary": "Set Load",
-        "description": "Bulk flag/unflag tracks for the watch \u2014 how the UI's checkboxes commit.",
+        "description": "Bulk flag/unflag tracks for the watch — how the UI's checkboxes commit.",
         "operationId": "set_load_music_tracks_load_post",
         "requestBody": {
           "content": {
@@ -9989,7 +10066,7 @@
           "music"
         ],
         "summary": "Clear Server",
-        "description": "Forget the server. Tracks already imported from it stay in the library \u2014\nthey keep whatever audio was cached, and simply cannot be re-fetched.",
+        "description": "Forget the server. Tracks already imported from it stay in the library —\nthey keep whatever audio was cached, and simply cannot be re-fetched.",
         "operationId": "clear_server_music_server_delete",
         "responses": {
           "200": {
@@ -10056,7 +10133,7 @@
           "music"
         ],
         "summary": "Probe Server",
-        "description": "Find a music server from a partial address \u2014 scheme and default port\nfilled in (services/subsonic.discover, which says why this is safe to\noffer). The form shows the login fields only once this has found one.",
+        "description": "Find a music server from a partial address — scheme and default port\nfilled in (services/subsonic.discover, which says why this is safe to\noffer). The form shows the login fields only once this has found one.",
         "operationId": "probe_server_music_server_probe_post",
         "requestBody": {
           "content": {
@@ -10101,7 +10178,7 @@
           "music"
         ],
         "summary": "Watch Config",
-        "description": "What the phone hands the on-watch music app: the server, and how to log in.\n\nThis is the one place the music-server password leaves Tracks in the clear,\nand it is deliberate. The watch talks to the music server itself \u2014 over its\nown Wi-Fi, with no Tracks server in the path \u2014 and Navidrome's own API,\nwhich the watch needs because Subsonic's cannot page a playlist into pieces\na watch can hold, is only reachable through a login. The phone forwards\nthis straight to the watch over Bluetooth and keeps nothing.\n\nOnly the session that owns the settings can ask, over the same TLS channel\nthat carried the password in.",
+        "description": "What the phone hands the on-watch music app: the server, and how to log in.\n\nThis is the one place the music-server password leaves Tracks in the clear,\nand it is deliberate. The watch talks to the music server itself — over its\nown Wi-Fi, with no Tracks server in the path — and Navidrome's own API,\nwhich the watch needs because Subsonic's cannot page a playlist into pieces\na watch can hold, is only reachable through a login. The phone forwards\nthis straight to the watch over Bluetooth and keeps nothing.\n\nOnly the session that owns the settings can ask, over the same TLS channel\nthat carried the password in.",
         "operationId": "watch_config_music_server_watch_config_get",
         "responses": {
           "200": {
@@ -10297,7 +10374,7 @@
           "music"
         ],
         "summary": "Smart Kinds",
-        "description": "The derived playlists on offer, and which are already carried.\n\nSubsonic has no smart playlists of its own \u2014 these are query shapes Tracks\nresolves against the server, so the list is fixed rather than fetched.",
+        "description": "The derived playlists on offer, and which are already carried.\n\nSubsonic has no smart playlists of its own — these are query shapes Tracks\nresolves against the server, so the list is fixed rather than fetched.",
         "operationId": "smart_kinds_music_server_smart_get",
         "responses": {
           "200": {
@@ -10378,7 +10455,7 @@
           "music"
         ],
         "summary": "Drop Smart",
-        "description": "Stop carrying a derived playlist.\n\nIts member tracks are unloaded too \u2014 they were only there because the\nplaylist chose them \u2014 but tracks that some *other* carried playlist also\nnames are left alone.",
+        "description": "Stop carrying a derived playlist.\n\nIts member tracks are unloaded too — they were only there because the\nplaylist chose them — but tracks that some *other* carried playlist also\nnames are left alone.",
         "operationId": "drop_smart_music_server_smart__kind__delete",
         "security": [
           {
@@ -10861,7 +10938,7 @@
           "garmin"
         ],
         "summary": "Set Primary Device",
-        "description": "Set the user's primary device. Stores the Garmin product_id (not the\ndevice row PK) on users.primary_device_product_id \u2014 confirmations are\nkeyed by product_id so the lookup is portable across different physical\nunits of the same watch model.",
+        "description": "Set the user's primary device. Stores the Garmin product_id (not the\ndevice row PK) on users.primary_device_product_id — confirmations are\nkeyed by product_id so the lookup is portable across different physical\nunits of the same watch model.",
         "operationId": "set_primary_device_garmin_devices_primary_put",
         "requestBody": {
           "content": {
@@ -11884,7 +11961,7 @@
           "maps"
         ],
         "summary": "Reset Basemap",
-        "description": "Delete every basemap tile on this server, and fetch it again if map\ndownloads are on.\n\nFor a basemap that has gone wrong \u2014 a truncated archive, a region whose\ntiles no longer match its record \u2014 where deleting areas one by one does not\nreach the files that are broken. Admin-only, because the tiles are the\ninstance's, shared by every account on it.\n\nRefused while anything is downloading: the pipelines write these files as\nthey go, and deleting underneath one would leave it writing into a file\nthat no longer exists. Each region keeps its record and is rebuilt from\nits own bounding box, so the areas come back as they were; with downloads\noff they are marked for re-download instead, which is what startup\nrecovery does for a region whose files are missing.",
+        "description": "Delete every basemap tile on this server, and fetch it again if map\ndownloads are on.\n\nFor a basemap that has gone wrong — a truncated archive, a region whose\ntiles no longer match its record — where deleting areas one by one does not\nreach the files that are broken. Admin-only, because the tiles are the\ninstance's, shared by every account on it.\n\nRefused while anything is downloading: the pipelines write these files as\nthey go, and deleting underneath one would leave it writing into a file\nthat no longer exists. Each region keeps its record and is rebuilt from\nits own bounding box, so the areas come back as they were; with downloads\noff they are marked for re-download instead, which is what startup\nrecovery does for a region whose files are missing.",
         "operationId": "reset_basemap_maps_basemap_reset_post",
         "responses": {
           "200": {
@@ -12020,7 +12097,7 @@
           "maps"
         ],
         "summary": "Search Poi",
-        "description": "Search for a place, a kind of place, a coordinate or a street corner.\n\nFour shapes of question reach this one box, and answering all of them as\n\"find a place whose name looks like this\" is what makes a search feel dumb:\n\n  39.75,-150.22     a position \u2192 a pin, no lookup at all\n  Maple and Cedar   a street corner \u2192 where those two actually cross\n  coffee            a category \u2192 cafes, nearest first\n  coffee near Fairview  a category somewhere else \u2192 cafes near that place\n  Granite Peak      a name \u2192 the existing full-text/fuzzy search\n\nThey are tried in that order, cheapest and most specific first, and each\nfalls through to the next when it does not apply. Anything unrecognised is\na name search, which is what this endpoint always did.",
+        "description": "Search for a place, a kind of place, a coordinate or a street corner.\n\nFour shapes of question reach this one box, and answering all of them as\n\"find a place whose name looks like this\" is what makes a search feel dumb:\n\n  39.75,-150.22     a position → a pin, no lookup at all\n  Maple and Cedar   a street corner → where those two actually cross\n  coffee            a category → cafes, nearest first\n  coffee near Fairview  a category somewhere else → cafes near that place\n  Granite Peak      a name → the existing full-text/fuzzy search\n\nThey are tried in that order, cheapest and most specific first, and each\nfalls through to the next when it does not apply. Anything unrecognised is\na name search, which is what this endpoint always did.",
         "operationId": "search_poi_maps_poi_search_get",
         "security": [
           {
@@ -12064,10 +12141,10 @@
                   "type": "null"
                 }
               ],
-              "description": "Viewport bounds: w,s,e,n \u2014 biases results toward visible area",
+              "description": "Viewport bounds: w,s,e,n — biases results toward visible area",
               "title": "Bbox"
             },
-            "description": "Viewport bounds: w,s,e,n \u2014 biases results toward visible area"
+            "description": "Viewport bounds: w,s,e,n — biases results toward visible area"
           },
           {
             "name": "in_view",
@@ -12170,7 +12247,7 @@
           "maps"
         ],
         "summary": "Offline Poi",
-        "description": "Every POI in `bbox`, compact, for the phone's own offline search index.\n\nUnlike `/search` this carries no ranking and no viewport bias \u2014 there is no\nlive database behind an offline query to widen a search against later, so\nthe export has to be everything a phone might plausibly want to find, not\njust what today's map viewport would draw. `id` is `poi_search`'s own\nprimary key, carried so the phone can de-duplicate a point that two\noverlapping region downloads both happen to cover.",
+        "description": "Every POI in `bbox`, compact, for the phone's own offline search index.\n\nUnlike `/search` this carries no ranking and no viewport bias — there is no\nlive database behind an offline query to widen a search against later, so\nthe export has to be everything a phone might plausibly want to find, not\njust what today's map viewport would draw. `id` is `poi_search`'s own\nprimary key, carried so the phone can de-duplicate a point that two\noverlapping region downloads both happen to cover.",
         "operationId": "offline_poi_maps_poi_offline_get",
         "security": [
           {
@@ -12480,7 +12557,7 @@
           "maps"
         ],
         "summary": "Route Elevation",
-        "description": "Sample DEM elevation (metres) at each [lng, lat] \u2014 for un-snapped routes\nwhose geometry has no elevation (BRouter-snapped routes already carry it).",
+        "description": "Sample DEM elevation (metres) at each [lng, lat] — for un-snapped routes\nwhose geometry has no elevation (BRouter-snapped routes already carry it).",
         "operationId": "route_elevation_maps_route_elevation_post",
         "requestBody": {
           "content": {
@@ -12589,7 +12666,7 @@
           "maps"
         ],
         "summary": "Wildfires",
-        "description": "Active wildfire incident points + current perimeters (NIFC WFIGS,\nnationwide \u2014 no location is sent upstream). Cached server-side 10 min.",
+        "description": "Active wildfire incident points + current perimeters (NIFC WFIGS,\nnationwide — no location is sent upstream). Cached server-side 10 min.",
         "operationId": "wildfires_maps_wildfires_get",
         "responses": {
           "200": {
@@ -12708,7 +12785,7 @@
           "maps"
         ],
         "summary": "Point Weather",
-        "description": "Just the forecast for a point.\n\nSeparate from ``/point`` so a client can put a panel on screen before this\nhas answered. The forecast is the one part of point info that leaves the\nbuilding \u2014 Open-Meteo, over the internet, from a server that may itself be\non a slow link \u2014 and bundling it meant the elevation and the place name,\nboth of which are local lookups measured in milliseconds, arrived at the\nspeed of the slowest thing in the response.\n\nOnly phones on older releases call this; current ones ask Open-Meteo\ndirectly.",
+        "description": "Just the forecast for a point.\n\nSeparate from ``/point`` so a client can put a panel on screen before this\nhas answered. The forecast is the one part of point info that leaves the\nbuilding — Open-Meteo, over the internet, from a server that may itself be\non a slow link — and bundling it meant the elevation and the place name,\nboth of which are local lookups measured in milliseconds, arrived at the\nspeed of the slowest thing in the response.\n\nOnly phones on older releases call this; current ones ask Open-Meteo\ndirectly.",
         "operationId": "point_weather_maps_point_weather_get",
         "security": [
           {
@@ -13060,7 +13137,7 @@
           "courses"
         ],
         "summary": "Merge Courses",
-        "description": "Concatenate several tracks/activities (in order) into one new Custom Track.\n\nOptionally also creates a \"merged trip\" Activity carrying only the combined\ntotals \u2014 it has device_id=NULL and is_merged=True so it shows in the activity\nlist but is excluded from every training metric. Source tracks are hidden\n(not deleted) so the originals remain available.",
+        "description": "Concatenate several tracks/activities (in order) into one new Custom Track.\n\nOptionally also creates a \"merged trip\" Activity carrying only the combined\ntotals — it has device_id=NULL and is_merged=True so it shows in the activity\nlist but is excluded from every training metric. Source tracks are hidden\n(not deleted) so the originals remain available.",
         "operationId": "merge_courses_maps_courses_merge_post",
         "requestBody": {
           "content": {
@@ -13808,7 +13885,7 @@
           "garmin-sync"
         ],
         "summary": "Waypoint Ingest",
-        "description": "garmin-sync hands over the watch's own Locations.fit, bytes and all.\n\nOne file rather than a filename inventory like courses use, because there\nis only ever one \u2014 a listing would be a round trip to learn a name we\nalready know.",
+        "description": "garmin-sync hands over the watch's own Locations.fit, bytes and all.\n\nOne file rather than a filename inventory like courses use, because there\nis only ever one — a listing would be a round trip to learn a name we\nalready know.",
         "operationId": "waypoint_ingest_maps_sync_waypoint_ingest_post",
         "parameters": [
           {
@@ -14893,7 +14970,7 @@
           "id"
         ],
         "title": "ActivityDetail",
-        "description": "Full activity record \u2014 returned for a single activity view."
+        "description": "Full activity record — returned for a single activity view."
       },
       "ActivityLoadPoint": {
         "properties": {
@@ -15081,7 +15158,7 @@
           "id"
         ],
         "title": "ActivitySummary",
-        "description": "Returned in list views \u2014 enough to render a table row or summary card."
+        "description": "Returned in list views — enough to render a table row or summary card."
       },
       "ActivityUpdate": {
         "properties": {
@@ -15354,7 +15431,7 @@
           "limits"
         ],
         "title": "CapabilitiesOut",
-        "description": "The negotiation contract, declared rather than implied.\n\nThis endpoint returned a bare dict until a mobile-side shape test went\nlooking for its schema and found `{}`. That is worse here than anywhere\nelse in the API: every other endpoint is called by a client that already\ndecided it can talk to this server, and this is the one that makes that\ndecision. An undeclared response means no generated client can check it and\nno contract test can catch it drifting \u2014 precisely the skew that appears\nonce an app ships through a store and update timing stops being ours."
+        "description": "The negotiation contract, declared rather than implied.\n\nThis endpoint returned a bare dict until a mobile-side shape test went\nlooking for its schema and found `{}`. That is worse here than anywhere\nelse in the API: every other endpoint is called by a client that already\ndecided it can talk to this server, and this is the one that makes that\ndecision. An undeclared response means no generated client can check it and\nno contract test can catch it drifting — precisely the skew that appears\nonce an app ships through a store and update timing stops being ours."
       },
       "CapabilityLimits": {
         "properties": {
@@ -15759,7 +15836,7 @@
         },
         "type": "object",
         "title": "CourseCreate",
-        "description": "A new track. No sport: choosing one was not a useful step, so the\ncolumn is filled internally \u2014 the traced activity's sport, or hiking \u2014\nwhere course files and turn checks still read it. A client that still\nsends one is ignored rather than refused."
+        "description": "A new track. No sport: choosing one was not a useful step, so the\ncolumn is filled internally — the traced activity's sport, or hiking —\nwhere course files and turn checks still read it. A client that still\nsends one is ignored rather than refused."
       },
       "CourseMerge": {
         "properties": {
@@ -16414,6 +16491,39 @@
             ],
             "title": "Avg Stress Level"
           },
+          "avg_hr": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Hr"
+          },
+          "min_hr": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Hr"
+          },
+          "max_hr": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Hr"
+          },
           "avg_respiration_rate": {
             "anyOf": [
               {
@@ -16530,7 +16640,7 @@
           "date"
         ],
         "title": "DailyMetricOut",
-        "description": "One day's health summary \u2014 sleep, HRV, resting HR, and manual entries."
+        "description": "One day's health summary — sleep, HRV, resting HR, and manual entries."
       },
       "DailyMetricPatch": {
         "properties": {
@@ -17076,7 +17186,7 @@
           "description"
         ],
         "title": "ExerciseOut",
-        "description": "An exercise as returned by GET /exercises \u2014 a library row or a user's\ncustom exercise, enriched with the caller's preference + animation state."
+        "description": "An exercise as returned by GET /exercises — a library row or a user's\ncustom exercise, enriched with the caller's preference + animation state."
       },
       "FolderBody": {
         "properties": {
@@ -18977,7 +19087,7 @@
           "title"
         ],
         "title": "PlannedWorkoutCreate",
-        "description": "A workout somebody added themselves, rather than one a plan prescribed.\n\nBelongs to no plan: `plan_id` stays null, so regeneration \u2014 which deletes\nby plan \u2014 leaves it alone."
+        "description": "A workout somebody added themselves, rather than one a plan prescribed.\n\nBelongs to no plan: `plan_id` stays null, so regeneration — which deletes\nby plan — leaves it alone."
       },
       "PlannedWorkoutOut": {
         "properties": {
@@ -19234,7 +19344,7 @@
         },
         "type": "object",
         "title": "PlannedWorkoutUpdate",
-        "description": "A patch to one planned workout, from a live client (the web app).\n\n`exclude_unset` semantics: a field left out is not touched, a field set to\nnull is cleared. Each written field is stamped by the server as it lands \u2014\nsee app.sync.store \u2014 so it merges with phone edits field by field. Phones\ndo not use this; they push through /sync/push with their own stamps."
+        "description": "A patch to one planned workout, from a live client (the web app).\n\n`exclude_unset` semantics: a field left out is not touched, a field set to\nnull is cleared. Each written field is stamped by the server as it lands —\nsee app.sync.store — so it merges with phone edits field by field. Phones\ndo not use this; they push through /sync/push with their own stamps."
       },
       "PlaylistBody": {
         "properties": {
@@ -20661,7 +20771,7 @@
           "date"
         ],
         "title": "SleepNightOut",
-        "description": "One night, as the watch recorded it minute by minute.\n\nSeparate from the daily metric rather than a field on it: the totals are\nseven numbers and this is a few dozen spans, so folding it into the daily\nlist would multiply the size of the one request the health page makes on\nevery load, for a chart that shows one night at a time.\n\n`stages` is empty for any night recorded before the importer began keeping\nthe timeline, which is not an error \u2014 the summary numbers are still there."
+        "description": "One night, as the watch recorded it minute by minute.\n\nSeparate from the daily metric rather than a field on it: the totals are\nseven numbers and this is a few dozen spans, so folding it into the daily\nlist would multiply the size of the one request the health page makes on\nevery load, for a chart that shows one night at a time.\n\n`stages` is empty for any night recorded before the importer began keeping\nthe timeline, which is not an error — the summary numbers are still there."
       },
       "SleepStage": {
         "properties": {
@@ -20747,7 +20857,7 @@
           "avg_duration_minutes"
         ],
         "title": "SportBreakdownOut",
-        "description": "Per-sport totals \u2014 one row per sport, for pie/bar charts."
+        "description": "Per-sport totals — one row per sport, for pie/bar charts."
       },
       "StatusResponse": {
         "properties": {
@@ -20882,7 +20992,7 @@
           "date"
         ],
         "title": "StressDayOut",
-        "description": "One day of stress, reading by reading.\n\n``points`` is a list of ``[minute_of_local_day, level]`` pairs \u2014 a pair\nrather than an object because a Fenix writes a reading every three\nminutes, so a day is some five hundred of them and the field names would\nbe most of the payload.\n\nSeparate from the daily metric for the same reason the sleep timeline is:\nthe day's *average* is one number on a row that a month's chart wants\nthirty of, and this is the curve behind it, wanted only when somebody\nopens the stress history. Empty for any day recorded before the parser\nbegan keeping the series \u2014 the average is still there."
+        "description": "One day of stress, reading by reading.\n\n``points`` is a list of ``[minute_of_local_day, level]`` pairs — a pair\nrather than an object because a Fenix writes a reading every three\nminutes, so a day is some five hundred of them and the field names would\nbe most of the payload.\n\nSeparate from the daily metric for the same reason the sleep timeline is:\nthe day's *average* is one number on a row that a month's chart wants\nthirty of, and this is the curve behind it, wanted only when somebody\nopens the stress history. Empty for any day recorded before the parser\nbegan keeping the series — the average is still there."
       },
       "SyncAgentOut": {
         "properties": {
@@ -21138,7 +21248,7 @@
           "recorded_at"
         ],
         "title": "TrackPoint",
-        "description": "A single time-series sample from an activity \u2014 used for maps and charts."
+        "description": "A single time-series sample from an activity — used for maps and charts."
       },
       "TrainingGoalCreate": {
         "properties": {
@@ -21811,7 +21921,7 @@
         },
         "type": "object",
         "title": "TrainingGoalUpdate",
-        "description": "Partial update \u2014 any subset of fields, including is_active to toggle focus."
+        "description": "Partial update — any subset of fields, including is_active to toggle focus."
       },
       "TrainingLoadPoint": {
         "properties": {

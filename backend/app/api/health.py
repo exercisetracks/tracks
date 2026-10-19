@@ -255,6 +255,11 @@ def stress_detail(
     absence of a curve and a flat curve are different things, and every night
     imported before the parser kept the series is the former.
     """
+    return _series_days(db, user, after, before, "stress_series")
+
+
+def _series_days(db, user, after, before, key: str) -> list[dict]:
+    """The days in a capped window that carry the series ``key`` in extra."""
     end = before or user_today(db, user.id)
     start = after or (end - timedelta(days=_STRESS_DEFAULT_DAYS))
     start = max(start, end - timedelta(days=_STRESS_MAX_DAYS))
@@ -271,10 +276,26 @@ def stress_detail(
     )
     out = []
     for row in rows:
-        points = (row.extra or {}).get("stress_series") or []
+        points = (row.extra or {}).get(key) or []
         if points:
             out.append({"date": row.date, "points": points})
     return out
+
+
+
+
+@router.get("/heart-rate", response_model=list[StressDayOut])
+def heart_rate_detail(
+    after: date | None = None,
+    before: date | None = None,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_auth),
+):
+    """All-day heart rate, minute by minute, for every day in the window that
+    has any. Off the daily metric, and capped, for the reasons
+    [stress_detail] gives; the points are `[minute of local day, bpm]`.
+    """
+    return _series_days(db, user, after, before, "hr_series")
 
 
 # A month either way of the ask, and no more. See [stress_detail].

@@ -112,6 +112,20 @@ export function stressRuns(samples, columns) {
 }
 
 export default function StressHistory({ days, averages, start }) {
+  return (
+    <IntradayHistory days={days} averages={averages} start={start}
+      zones={STRESS_ZONES} lo={0} hi={100} ticks={[0, 25, 50, 75, 100]} id="stress"
+      empty="No stress readings in this window." label="Stress history chart" />
+  );
+}
+
+/**
+ * A reading taken all day -- stress, and all-day heart rate -- drawn reading
+ * by reading on short windows and as daily averages on long ones, in its own
+ * fixed scale (`lo`..`hi`), the bands drawn into it. Everything said about
+ * stress above applies.
+ */
+export function IntradayHistory({ days, averages, start, zones, lo, hi, ticks, id, empty, label }) {
   const [ref, width] = useWidth(640);
   const { intraday, samples, span, from } = useMemo(
     () => stressSamples({ days, averages, start }),
@@ -123,7 +137,7 @@ export default function StressHistory({ days, averages, start }) {
     // readings arrive and the chart replaces this line.
     return (
       <div ref={ref}>
-        <p className="py-10 text-center text-sm text-slate-400">No stress readings in this window.</p>
+        <p className="py-10 text-center text-sm text-slate-400">{empty}</p>
       </div>
     );
   }
@@ -136,13 +150,14 @@ export default function StressHistory({ days, averages, start }) {
   // Fixed 0–100, never fitted to the window: the bands mean fixed numbers, and
   // a chart that rescaled to a calm fortnight would put the same 30 in a
   // different place from one week to the next.
-  const y = level => PLOT_H * (1 - level / 100);
+  const y = level => PLOT_H * (1 - (level - lo) / (hi - lo));
   const xOf = c => GUTTER + ((c + 0.5) / columns) * plotW;
   const runPath = run => run.map((p, i) => `${i ? "L" : "M"}${xOf(p.c).toFixed(1)},${y(p.level).toFixed(1)}`).join("");
 
-  const stops = [...STRESS_ZONES].reverse().flatMap(z => [
-    { offset: 1 - z.max / 100, color: z.color },
-    { offset: 1 - z.min / 100, color: z.color },
+  const frac = v => Math.min(1, Math.max(0, 1 - (v - lo) / (hi - lo)));
+  const stops = [...zones].sort((a, b) => b.max - a.max).flatMap(z => [
+    { offset: frac(z.max), color: z.color },
+    { offset: frac(z.min), color: z.color },
   ]);
 
   // Midnights, while they are few enough to read as midnights. They are what
@@ -153,24 +168,24 @@ export default function StressHistory({ days, averages, start }) {
 
   return (
     <div ref={ref} className="space-y-2">
-      <svg width={width} height={TOP + PLOT_H + AXIS_H} role="img" aria-label="Stress history chart">
+      <svg width={width} height={TOP + PLOT_H + AXIS_H} role="img" aria-label={label}>
         <g transform={`translate(0 ${TOP})`}>
         <defs>
-          <linearGradient id="stress-line" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2={PLOT_H}>
+          <linearGradient id={`${id}-line`} gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2={PLOT_H}>
             {stops.map((s, i) => <stop key={i} offset={s.offset} stopColor={s.color} />)}
           </linearGradient>
-          <linearGradient id="stress-fill" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2={PLOT_H}>
+          <linearGradient id={`${id}-fill`} gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2={PLOT_H}>
             {stops.map((s, i) => <stop key={i} offset={s.offset} stopColor={s.color} stopOpacity={FILL_ALPHA} />)}
           </linearGradient>
         </defs>
 
         {/* The bands, faint: ground rather than figure. They say what a height
             means in the stretches where there is no line. */}
-        {STRESS_ZONES.map(z => (
-          <rect key={z.label} x={GUTTER} y={y(z.max)} width={plotW} height={y(z.min) - y(z.max)}
+        {zones.map(z => (
+          <rect key={z.label} x={GUTTER} y={y(Math.min(z.max, hi))} width={plotW} height={y(Math.max(z.min, lo)) - y(Math.min(z.max, hi))}
             fill={z.color} fillOpacity={BAND_ALPHA} />
         ))}
-        {[0, 25, 50, 75, 100].map(t => (
+        {ticks.map(t => (
           <g key={t}>
             <line x1={GUTTER} x2={width} y1={y(t)} y2={y(t)} stroke="#94a3b8" strokeOpacity={0.2} />
             <text x={GUTTER - 6} y={y(t)} dy="0.32em" textAnchor="end" fontSize={10} fill="#94a3b8">{t}</text>
@@ -185,13 +200,13 @@ export default function StressHistory({ days, averages, start }) {
           <g key={i}>
             <path
               d={`${runPath(run)}L${xOf(run[run.length - 1].c).toFixed(1)},${PLOT_H}L${xOf(run[0].c).toFixed(1)},${PLOT_H}Z`}
-              fill="url(#stress-fill)" />
-            <path d={runPath(run)} fill="none" stroke="url(#stress-line)" strokeWidth={2}
+              fill={`url(#${id}-fill)`} />
+            <path d={runPath(run)} fill="none" stroke={`url(#${id}-line)`} strokeWidth={2}
               strokeLinejoin="round" strokeLinecap="round" />
           </g>
         ) : (
           // A single worn hour in a blank week is still there, as a dot.
-          <circle key={i} cx={xOf(run[0].c)} cy={y(run[0].level)} r={2.5} fill="url(#stress-line)" />
+          <circle key={i} cx={xOf(run[0].c)} cy={y(run[0].level)} r={2.5} fill={`url(#${id}-line)`} />
         ))}
 
         {/* The window's average — a reference, not a reading. */}

@@ -242,11 +242,12 @@ class LocalImporter(
                     .filterKeys { it in DAILY_FIELDS }
                 val stages = LocalJson.of(day["stages"] ?: emptyList<Any>()) as JsonArray
                 val stress = LocalJson.of(day["stress_series"] ?: emptyList<Any>()) as JsonArray
+                val hr = LocalJson.of(day["hr_series"] ?: emptyList<Any>()) as JsonArray
                 val current = library.q.selectDay(date).executeAsOneOrNull()
                 val merged = mergeDay(
                     current?.let { TracksJson.parseToJsonElement(it.metrics).jsonObject },
                     current?.let { TracksJson.parseToJsonElement(it.extra).jsonObject },
-                    incoming, stages, stress,
+                    incoming, stages, stress, hr,
                 )
                 library.q.upsertDay(date, merged.first.toString(), merged.second.toString())
             }
@@ -291,6 +292,7 @@ class LocalImporter(
             incoming: Map<String, JsonElement>,
             stages: JsonArray,
             stress: JsonArray,
+            hr: JsonArray = JsonArray(emptyList()),
         ): Pair<JsonObject, JsonObject> {
             val m = LinkedHashMap(metrics ?: JsonObject(emptyMap()))
             // The sleep totals follow the timeline that wins (see the server's
@@ -316,6 +318,10 @@ class LocalImporter(
             }
             if (stress.isNotEmpty()) {
                 x["stress_series"] = mergeStress(x["stress_series"] as? JsonArray, stress)
+            }
+            // All-day heart rate, merged by the minute the same way.
+            if (hr.isNotEmpty()) {
+                x["hr_series"] = mergeStress(x["hr_series"] as? JsonArray, hr)
             }
             return JsonObject(m) to JsonObject(x)
         }

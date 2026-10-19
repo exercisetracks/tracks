@@ -224,6 +224,13 @@ if one stops applying, rather than silently shipping an unpatched refresh.
     see docs/garmin-explore-sync.md, "The live activity". Not yet verified on
     a watch.
 
+16. **`CommunicatorV2`** (its realtime broadcast, already reduced to a log
+    line by patch 1) — a live heart-rate reading is handed to
+    `GarminSupport.onRealtimeHeartRate`, which feeds
+    `com.tracks.device.garmin.live.LiveHeartRate` for the Health page's live
+    HR dial. The stream is switched on only while that page is open, and
+    nothing is stored. Not yet verified on a watch.
+
 Patches 7–12 record edits that were made in place between August and
 September 2026 and found on 2026-09-30; until then a refresh would have
 reverted every one of them silently.

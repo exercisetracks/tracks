@@ -573,6 +573,10 @@ data class DailyMetricFull(
      */
     @SerialName("resting_calories") val restingCalories: Int? = null,
     @SerialName("avg_stress_level") val avgStressLevel: Double? = null,
+    /** The day's heart rate, off its all-day series (the server's `avg_hr` etc.). */
+    @SerialName("avg_hr") val avgHr: Double? = null,
+    @SerialName("min_hr") val minHr: Int? = null,
+    @SerialName("max_hr") val maxHr: Int? = null,
     @SerialName("avg_respiration_rate") val avgRespirationRate: Double? = null,
     val spo2: Double? = null,
     /**

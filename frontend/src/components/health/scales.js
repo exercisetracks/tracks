@@ -82,6 +82,19 @@ export const RESPIRATION_ZONES = [
   zone("Elevated", 20, 30, ORANGE),
 ];
 
+/**
+ * Heart rate across a whole day, workouts included -- so not a resting scale.
+ * The words say what the number is like, not whether it is good. Matches the
+ * phone's HEART_RATE_ZONES.
+ */
+export const HEART_RATE_ZONES = [
+  zone("Resting", 30, 60, TEAL),
+  zone("Normal",  60, 100, GREEN),
+  zone("Active",  100, 140, AMBER),
+  zone("Hard",    140, 170, ORANGE),
+  zone("Max",     170, 210, RED),
+];
+
 export const STRESS_ZONES = [
   zone("Rest",   0, 25, TEAL),
   zone("Low",    25, 50, GREEN),

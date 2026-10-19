@@ -57,6 +57,11 @@ class DailyMetricOut(BaseModel):
     active_calories: int | None = None
     resting_calories: int | None = None
     avg_stress_level: float | None = None
+    # The day's heart rate, read off its all-day series (see
+    # app.models.metrics): what the Health page's HR dial shows on the web.
+    avg_hr: float | None = None
+    min_hr: int | None = None
+    max_hr: int | None = None
     avg_respiration_rate: float | None = None
     spo2: float | None = None
     # Body Battery as the watch computed it — see app.models.metrics for why

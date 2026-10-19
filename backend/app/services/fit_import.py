@@ -394,6 +394,8 @@ def _write_one_day(db, parsed: dict, device_id: int | None, user_id: int) -> Non
     # ``_merge_stress_series`` for why this one is merged per minute rather
     # than by whichever copy is longer.
     stress_series = parsed.get("stress_series") or []
+    # All-day heart rate, merged by the clock exactly as stress is.
+    hr_series = parsed.get("hr_series") or []
 
     existing = db.query(DailyMetric).filter_by(date=metric_date, user_id=user_id).first()
     if existing:
@@ -428,6 +430,9 @@ def _write_one_day(db, parsed: dict, device_id: int | None, user_id: int) -> Non
                 extra.get("stress_series"), stress_series,
             )
             changed = True
+        if hr_series:
+            extra["hr_series"] = _merge_stress_series(extra.get("hr_series"), hr_series)
+            changed = True
         if changed:
             existing.extra = extra
     else:
@@ -436,6 +441,8 @@ def _write_one_day(db, parsed: dict, device_id: int | None, user_id: int) -> Non
             extra["sleep_stages"] = stages
         if stress_series:
             extra["stress_series"] = stress_series
+        if hr_series:
+            extra["hr_series"] = hr_series
         db.add(DailyMetric(
             date=metric_date, user_id=user_id, device_id=device_id, extra=extra, **metrics,
         ))

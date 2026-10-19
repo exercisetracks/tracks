@@ -110,7 +110,7 @@
   {
    "file": "monitoring.fit",
    "parser": "DailyHealthParser",
-   "sha256": "b76cceb29b185408aef0b3c9d70ecefa8bd9253e4c680ccf07d034cd4c03d720",
+   "sha256": "dd591e3cc77099918b67168f50624f8d041bf3dd066f6d4206a2cc83c43bf5bd",
    "type": "daily"
   },
   {
@@ -122,6 +122,12 @@
    "file": "sleep.fit",
    "parser": "SleepParser",
    "sha256": "e86bc1101306d954763f1cae3d482fc1a3b83aecd01ac4544100e08261d978cd",
+   "type": "daily"
+  },
+  {
+   "file": "sleep_end_marked.fit",
+   "parser": "SleepParser",
+   "sha256": "d37ceb418435a7962a618f1beeeee90593bfd39469b1ee0bab68ec5623e10c82",
    "type": "daily"
   },
   {

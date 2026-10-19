@@ -192,6 +192,16 @@ object Explain {
             "stored exactly as reported and never recomputed here.",
     )
 
+    val HeartRate = MetricInfo(
+        "Heart rate",
+        "Your heart rate right now while the watch streams it, and today's average otherwise.",
+        "The watch measures heart rate all day while worn, about once a minute, and saves it in its " +
+            "monitoring files; the history behind this dial is those readings, minute by minute on short " +
+            "windows and as daily averages on long ones. With the Health page open, a paired watch also " +
+            "streams a live reading every few seconds. The bands describe the number, not whether it is " +
+            "good: a high reading during a workout is expected.",
+    )
+
     val RestingHr = MetricInfo(
         "Resting heart rate",
         "Your lowest sustained heart rate, usually measured overnight. It " +

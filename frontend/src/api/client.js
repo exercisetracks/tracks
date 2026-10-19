@@ -292,6 +292,7 @@ export const api = {
   // importer kept them), and the stress curve behind the daily averages.
   getSleepNight:       (date)   => get(`/health/sleep/${date}`),
   getStressDetail:     (p = {}) => get(`/health/stress${qs(p)}`),
+  getHeartRateDetail:  (p = {}) => get(`/health/heart-rate${qs(p)}`),
   patchDailyMetric:    (date, data) => { _cacheDelPrefix("GET", "/health/summary"); return patch(`/health/daily/${date}`, data); },
   getInjuries:         ()       => get("/health/injuries"),
   createInjury:        (data)   => { _cacheDel("GET", "/health/injuries"); return post("/health/injuries", data); },

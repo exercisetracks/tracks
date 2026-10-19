@@ -21,6 +21,7 @@ import com.tracks.core.metrics.Readiness
 import com.tracks.core.metrics.TrainingLoad
 import com.tracks.core.plan.EventDate
 import com.tracks.core.api.DailyMetricFull
+import com.tracks.core.parse.PyMath
 import com.tracks.core.api.SleepNight
 import com.tracks.core.api.StressDay
 import com.tracks.core.api.TracksJson
@@ -232,6 +233,14 @@ class LocalMetrics(private val library: LocalLibrary, private val sources: Local
             val stages = base?.extra?.get("sleep_stages") as? JsonArray
             (stages?.firstOrNull() as? JsonObject)?.get("start")?.let { fields["sleep_start"] = it }
             (stages?.lastOrNull() as? JsonObject)?.get("end")?.let { fields["sleep_end"] = it }
+            // As the server's model derives them from the same series.
+            val hr = (base?.extra?.get("hr_series") as? JsonArray).orEmpty()
+                .mapNotNull { ((it as? JsonArray)?.getOrNull(1) as? JsonPrimitive)?.content?.toDoubleOrNull()?.toInt() }
+            if (hr.isNotEmpty()) {
+                fields["avg_hr"] = JsonPrimitive(PyMath.round(hr.sum().toDouble() / hr.size, 1))
+                fields["min_hr"] = JsonPrimitive(hr.min())
+                fields["max_hr"] = JsonPrimitive(hr.max())
+            }
             TracksJson.decodeFromJsonElement(DailyMetricFull.serializer(), JsonObject(fields.mapValues { LocalJson.integral(it.value) }))
         }
     }
@@ -245,13 +254,18 @@ class LocalMetrics(private val library: LocalLibrary, private val sources: Local
         )
     }
 
+    /** `/health/heart-rate`: each day's all-day heart rate, in the stress curve's shape. */
+    suspend fun heartRate(after: String?): List<StressDay> = series("hr_series", after)
+
     /** `/metrics/stress`: the curve behind each day's average, for days that have one. */
-    suspend fun stress(after: String?): List<StressDay> = cpu {
+    suspend fun stress(after: String?): List<StressDay> = series("stress_series", after)
+
+    private suspend fun series(key: String, after: String?): List<StressDay> = cpu {
         library.days()
         .filter { after == null || it.date >= after }
         .sortedBy { it.date }
         .mapNotNull { d ->
-            val points = d.extra["stress_series"] as? JsonArray ?: return@mapNotNull null
+            val points = d.extra[key] as? JsonArray ?: return@mapNotNull null
             if (points.isEmpty()) return@mapNotNull null
             TracksJson.decodeFromJsonElement(
                 StressDay.serializer(),

@@ -82,6 +82,33 @@ class DailyMetric(Base, Synced):
     def sleep_end(self):
         return self._stage_edge(-1, "end")
 
+    # The day's heart rate from its all-day series. Derived rather than stored
+    # for the reason the sleep edges are: the series is the record, and a
+    # column beside it could only ever disagree with it.
+    @property
+    def avg_hr(self):
+        values = self._hr_values()
+        return round(sum(values) / len(values), 1) if values else None
+
+    @property
+    def min_hr(self):
+        values = self._hr_values()
+        return min(values) if values else None
+
+    @property
+    def max_hr(self):
+        values = self._hr_values()
+        return max(values) if values else None
+
+    def _hr_values(self) -> list[int]:
+        out = []
+        for point in (self.extra or {}).get("hr_series") or []:
+            try:
+                out.append(int(point[1]))
+            except (TypeError, ValueError, IndexError):
+                continue
+        return out
+
     def _stage_edge(self, index: int, key: str):
         stages = (self.extra or {}).get("sleep_stages") or []
         if not stages:

@@ -985,6 +985,11 @@ class GarminIntegration(private val context: Context) : DeviceIntegration {
     @Volatile
     private var forceLegacyPush = false
 
+    /** See GarminSupport.setRealtimeHeartRate; a no-op with no link. */
+    fun setLiveHeartRate(on: Boolean) {
+        support?.setRealtimeHeartRate(on)
+    }
+
     /** See GarminSupport.requestActivityStatus; a no-op with no link. */
     fun requestActivityStatus() {
         support?.requestActivityStatus()

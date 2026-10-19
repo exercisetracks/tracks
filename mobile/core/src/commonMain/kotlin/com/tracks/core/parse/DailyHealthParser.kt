@@ -91,6 +91,8 @@ internal object DailyHealthParser {
         val charged = ArrayList<Long>()
         val drained = ArrayList<Long>()
         val stressAt = HashMap<Long, Long>()
+        /** Minute of local day -> heart rate, as `hr_at`. */
+        val hrAt = HashMap<Long, Long>()
         val steps = LinkedHashMap<String, Long>()
         val calories = LinkedHashMap<String, Long>()
         var elapsed: Long? = null
@@ -161,7 +163,11 @@ internal object DailyHealthParser {
                     frame.get("duration_min")?.let { raw ->
                         Py.intOrNull(raw)?.let { n -> day.elapsed = maxOf(day.elapsed ?: 0L, n) }
                     }
-                    minuteOfDay(whenValue, offset)?.let { m -> day.elapsed = maxOf(day.elapsed ?: 0L, m) }
+                    val minute = minuteOfDay(whenValue, offset)
+                    minute?.let { m -> day.elapsed = maxOf(day.elapsed ?: 0L, m) }
+                    // All-day heart rate; see the Python for the range.
+                    val bpm = Py.intOrNull(frame.get("heart_rate"))
+                    if (bpm != null && minute != null && bpm in HR_MIN..HR_MAX) day.hrAt[minute] = bpm
                 }
 
                 "stress_level" -> {
@@ -249,6 +255,7 @@ internal object DailyHealthParser {
             "date" to date,
             "metrics" to metrics,
             "stress_series" to day.stressAt.keys.sorted().map { listOf(it, day.stressAt.getValue(it)) },
+            "hr_series" to day.hrAt.keys.sorted().map { listOf(it, day.hrAt.getValue(it)) },
         )
     }
 
@@ -294,6 +301,9 @@ internal object DailyHealthParser {
         val seconds = epoch(whenValue) ?: return null
         return CivilDate.fromEpochDay((seconds + offset).floorDiv(SECONDS_PER_DAY))
     }
+
+    private const val HR_MIN = 25L
+    private const val HR_MAX = 240L
 
     private fun minuteOfDay(whenValue: Any?, offset: Long): Long? {
         val seconds = epoch(whenValue) ?: return null

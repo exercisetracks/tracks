@@ -201,6 +201,12 @@ data class HealthMetric(
      * three times on one screen, counting the dial the sheet was opened from.
      */
     val headline: Boolean = true,
+    /**
+     * A reading from right now, shown on the dial in place of the trend's
+     * latest -- the live heart rate while the watch streams one. Null when
+     * there is none, and the dial falls back to the trend.
+     */
+    val live: Double? = null,
     /** See MetricHistorySheet's `scaleUnderChart`. */
     val scaleUnderChart: Boolean = false,
 )
@@ -329,7 +335,7 @@ private fun MeterTile(
     // all — see [HealthMetric.freshDays]. Everything below follows from it:
     // a null blanks the figure, drops the verdict word, and leaves the arc
     // showing its scale and nothing filled.
-    val latest = metric.trend.current(metric.freshDays)
+    val latest = metric.live ?: metric.trend.current(metric.freshDays)
     val verdict = metric.verdict?.let { zoneFor(latest, it) }
     Column(modifier) {
         RadialGauge(
@@ -340,7 +346,7 @@ private fun MeterTile(
             decimals = metric.decimals,
             size = size,
             stroke = STROKE,
-            caption = metric.caption ?: verdict?.label,
+            caption = if (metric.live != null) "Live" else metric.caption ?: verdict?.label,
             // Without this the word would take the colour of whichever band the
             // total happens to land in, which on a stacked arc is the last
             // stage or the dim remainder — "Good" printed in grey.
@@ -439,6 +445,19 @@ val RESPIRATION_ZONES = listOf(
     GaugeZone("Low", 5.0, 12.0, AMBER),
     GaugeZone("Normal", 12.0, 20.0, GREEN),
     GaugeZone("Elevated", 20.0, 30.0, ORANGE),
+)
+
+/**
+ * Heart rate across a whole day, workouts included -- so not a resting scale.
+ * The words say what the number is like, not whether it is good: 150 during a
+ * run is "Hard" and right.
+ */
+val HEART_RATE_ZONES = listOf(
+    GaugeZone("Resting", 30.0, 60.0, TEAL),
+    GaugeZone("Normal", 60.0, 100.0, GREEN),
+    GaugeZone("Active", 100.0, 140.0, AMBER),
+    GaugeZone("Hard", 140.0, 170.0, ORANGE),
+    GaugeZone("Max", 170.0, 210.0, RED),
 )
 
 /** Garmin's own bands, so the watch and the phone agree on the words. */
