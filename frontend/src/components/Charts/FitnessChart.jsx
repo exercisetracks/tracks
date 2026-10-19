@@ -53,7 +53,14 @@ import {
 } from "./fitness/FitnessChartParts";
 import { CHART_GRID } from "../../design/chartGrid";
 
-export default function FitnessChart({ data, xAxis }) {
+/**
+ * `sport` is the sport picked on the pie chart, if any: its own series from
+ * /metrics/training-load?sport= (`sport.data`), drawn in its slice colour --
+ * fitness solid, fatigue dashed, form dotted -- over the overall lines, which
+ * fade back. Overall fitness is what the body can absorb; a sport's own is
+ * how trained it is for that sport.
+ */
+export default function FitnessChart({ data, xAxis, sport = null }) {
   // Pre-filter clearly impossible values, then convert ISO date strings to ms
   // timestamps so we can drive both charts off a shared numeric X scale.
   const chartData = useMemo(() => {
@@ -62,9 +69,18 @@ export default function FitnessChart({ data, xAxis }) {
       (p.atl == null || Math.abs(p.atl) < 1000) &&
       (p.tsb == null || Math.abs(p.tsb) < 1000)
     );
+    const bySport = new Map((sport?.data ?? []).map(p => [p.date, p]));
     const thinned = thin(clean);
-    return thinned.map(p => ({ ...p, dateMs: new Date(p.date + "T00:00:00").getTime() }));
-  }, [data]);
+    return thinned.map(p => {
+      const s = bySport.get(p.date);
+      return {
+        ...p, dateMs: new Date(p.date + "T00:00:00").getTime(),
+        sctl: s?.ctl ?? null, satl: s?.atl ?? null, stsb: s?.tsb ?? null,
+      };
+    });
+  }, [data, sport]);
+  const showSport = !!sport?.data?.length;
+  const fade = showSport ? 0.3 : 1;
 
   const animKey = `${data?.[0]?.date ?? ''}-${data?.length ?? 0}`;
 
@@ -99,9 +115,11 @@ export default function FitnessChart({ data, xAxis }) {
     (props) => <ZoneBackgrounds {...props} />,
     [],
   );
+  // Faded behind a picked sport's form line; Recharts renders only its own
+  // children, so the fade goes inside the renderer, not around it.
   const ZoneLine = useCallback(
-    (props) => <ZoneColoredLine {...props} formData={chartData} />,
-    [chartData],
+    (props) => <g opacity={fade}><ZoneColoredLine {...props} formData={chartData} /></g>,
+    [chartData, fade],
   );
 
   // When the user scrubs WeeklyVolumeChart (weekly data), it broadcasts a
@@ -156,6 +174,12 @@ export default function FitnessChart({ data, xAxis }) {
             <span className="inline-block w-5 h-0.5 rounded shrink-0" style={{ background: "#a855f7" }} />
             Fatigue (ATL)
           </div>
+          {showSport && (
+            <div className="flex items-center gap-1.5 text-xs" style={{ color: sport.color }}>
+              <span className="inline-block w-5 h-0.5 rounded shrink-0" style={{ background: sport.color }} />
+              {sport.label}: fitness — fatigue ╌
+            </div>
+          )}
           <InfoTooltip>
             <p><strong className="text-slate-800 dark:text-white">Fitness (CTL)</strong> is a 42-day exponential moving average of your daily training stress. It rises slowly as you train consistently and decays gradually during rest.</p>
             <p><strong className="text-slate-800 dark:text-white">Fatigue (ATL)</strong> is a 7-day exponential moving average. It spikes quickly after hard sessions and drops rapidly during rest weeks.</p>
@@ -174,11 +198,21 @@ export default function FitnessChart({ data, xAxis }) {
             <Tooltip content={<LoadTooltip />} cursor={CURSOR} />
             <ReferenceLine x={TODAY_MS} stroke="#64748b60" strokeDasharray="4 2" />
             <Area type="monotone" dataKey="atl" stroke="#a855f7" fill="#a855f714"
+              strokeOpacity={fade} fillOpacity={fade}
               strokeWidth={1.5} dot={false} isAnimationActive={false}
               activeDot={{ r: 4, fill: "#a855f7", stroke: "#a855f740", strokeWidth: 3 }} />
             <Area type="monotone" dataKey="ctl" stroke="#10b981" fill="#10b98120"
+              strokeOpacity={fade} fillOpacity={fade}
               strokeWidth={2.5} dot={false} isAnimationActive={false}
               activeDot={{ r: 4, fill: "#10b981", stroke: "#10b98140", strokeWidth: 3 }} />
+            {showSport && (
+              <Line type="monotone" dataKey="sctl" stroke={sport.color} strokeWidth={2.5}
+                dot={false} isAnimationActive={false} connectNulls />
+            )}
+            {showSport && (
+              <Line type="monotone" dataKey="satl" stroke={sport.color} strokeWidth={1.5}
+                strokeDasharray="6 4" dot={false} isAnimationActive={false} connectNulls />
+            )}
           </ComposedChart>
         </ResponsiveContainer>
       </div>
@@ -248,6 +282,10 @@ export default function FitnessChart({ data, xAxis }) {
 
             {/* Zone-coloured TSB line */}
             <Customized component={ZoneLine} />
+            {showSport && (
+              <Line type="monotone" dataKey="stsb" stroke={sport.color} strokeWidth={2}
+                strokeDasharray="2 3" dot={false} isAnimationActive={false} connectNulls />
+            )}
           </ComposedChart>
         </ResponsiveContainer>
       </div>

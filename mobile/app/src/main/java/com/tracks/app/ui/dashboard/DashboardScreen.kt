@@ -113,7 +113,14 @@ fun DashboardScreen(
         TourAnchor("dashboard-upcoming") { UpcomingCard(state, onOpenWorkout) }
 
         SectionCard("Fitness", info = Explain.Fitness, modifier = Modifier.tourAnchor("dashboard-fitness")) {
-            FitnessChart(state.windowedLoad)
+            val sportLoad = state.selectedSport?.takeIf { state.sportLoad.isNotEmpty() }?.let { sport ->
+                SportLoad(
+                    label = sportLabel(sport),
+                    color = sportColor(state.bySport, sport) ?: MaterialTheme.colorScheme.primary,
+                    points = state.sportLoad,
+                )
+            }
+            FitnessChart(state.windowedLoad, sport = sportLoad)
         }
 
         SectionCard(

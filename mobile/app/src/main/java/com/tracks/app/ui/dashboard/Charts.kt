@@ -146,8 +146,14 @@ internal fun specColor(hex: String): Color {
  * [rememberZoneColoredLine]. Fitness and fatigue match the web app's palette
  * directly; see [FITNESS_COLOR].
  */
+/**
+ * One sport's own fitness, fatigue and form, drawn over the overall lines in
+ * the colour of its slice when a sport is picked under Sports.
+ */
+data class SportLoad(val label: String, val color: Color, val points: List<TrainingLoadPoint>)
+
 @Composable
-fun FitnessChart(points: List<TrainingLoadPoint>, modifier: Modifier = Modifier) {
+fun FitnessChart(points: List<TrainingLoadPoint>, modifier: Modifier = Modifier, sport: SportLoad? = null) {
     // The same sanity filter the web app applies. One corrupt row would
     // otherwise set the y range for the whole chart and flatten everything
     // real into the baseline.
@@ -163,11 +169,22 @@ fun FitnessChart(points: List<TrainingLoadPoint>, modifier: Modifier = Modifier)
         return
     }
 
+    // The sport's series on the overall one's days; a day before the sport
+    // was ever done is no load, which is what 0 says.
+    val aligned = remember(clean, sport) {
+        sport?.takeIf { it.points.isNotEmpty() }?.let { s ->
+            val byDate = s.points.associateBy { it.date }
+            clean.map { p -> byDate[p.date] ?: p.copy(tss = 0.0, ctl = 0.0, atl = 0.0, tsb = 0.0) }
+        }
+    }
     Column(modifier, verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        TrainingLoadChart(clean)
-        FormChart(clean)
+        TrainingLoadChart(clean, aligned, sport)
+        FormChart(clean, aligned, sport)
     }
 }
+
+/** How far the overall lines fade back behind a picked sport's. */
+private const val SPORT_FADE = 0.3f
 
 /** Beyond this a value is a data error, not a very fit athlete. */
 private const val LOAD_SANITY_LIMIT = 1000.0
@@ -197,9 +214,15 @@ private val FATIGUE_COLOR = Color(0xFFA855F7)
  * axis — which is legitimate here precisely because they share a unit.
  */
 @Composable
-private fun TrainingLoadChart(points: List<TrainingLoadPoint>) {
-    val ctlColor = FITNESS_COLOR
-    val atlColor = FATIGUE_COLOR
+private fun TrainingLoadChart(
+    points: List<TrainingLoadPoint>,
+    sportPoints: List<TrainingLoadPoint>? = null,
+    sport: SportLoad? = null,
+) {
+    // The overall lines fade back behind a picked sport's.
+    val fade = if (sportPoints != null) SPORT_FADE else 1f
+    val ctlColor = FITNESS_COLOR.copy(alpha = fade)
+    val atlColor = FATIGUE_COLOR.copy(alpha = fade)
 
     val producer = remember { CartesianChartModelProducer() }
     // Index on x, dates carried in the model's extras.
@@ -209,17 +232,24 @@ private fun TrainingLoadChart(points: List<TrainingLoadPoint>) {
     // inflated to ~250 against data peaking near 85. Vico spaces entries by
     // index and derives ranges from the model, so a 20,000-ish x per point
     // fights both.
-    LaunchedEffect(points) {
+    LaunchedEffect(points, sportPoints) {
         producer.runTransaction {
             lineSeries {
                 series(points.map { it.ctl })
                 series(points.map { it.atl })
+                if (sportPoints != null) {
+                    series(sportPoints.map { it.ctl })
+                    series(sportPoints.map { it.atl })
+                }
             }
             axisDates(points.map { it.date })
         }
     }
 
     val axis = remember(points) { niceAxis(0.0, points.maxOf { maxOf(it.ctl, it.atl) }) }
+    val sportLines = if (sportPoints != null && sport != null) {
+        listOf(lineSpec(sport.color, smooth = true), lineSpec(sport.color, smooth = true, dashed = true))
+    } else emptyList()
 
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(
@@ -231,6 +261,7 @@ private fun TrainingLoadChart(points: List<TrainingLoadPoint>) {
             Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                 LegendDot("Fitness", ctlColor)
                 LegendDot("Fatigue", atlColor)
+                if (sportLines.isNotEmpty() && sport != null) LegendDot(sport.label, sport.color)
             }
         }
         ProvideVicoTheme(tracksVicoTheme()) {
@@ -238,13 +269,18 @@ private fun TrainingLoadChart(points: List<TrainingLoadPoint>) {
                 chart = rememberCartesianChart(
                     rememberLineCartesianLayer(
                         lineProvider = LineCartesianLayer.LineProvider.series(
-                            lineSpec(ctlColor, filled = true, smooth = true),
-                            lineSpec(atlColor, filled = true, smooth = true),
+                            listOf(
+                                lineSpec(ctlColor, filled = true, smooth = true),
+                                lineSpec(atlColor, filled = true, smooth = true),
+                            ) + sportLines,
                         ),
                         rangeProvider = dataRange(axis),
                     ),
                     startAxis = sharedStartAxis(axis.step),
-                    marker = rememberChartMarker(listOf("Fitness", "Fatigue")),
+                    marker = rememberChartMarker(
+                        listOf("Fitness", "Fatigue") +
+                            if (sportLines.isNotEmpty() && sport != null) listOf("${sport.label} fitness", "${sport.label} fatigue") else emptyList(),
+                    ),
                     // No date axis here: the form chart below carries it for
                     // both, which is what keeps the two plot areas aligned —
                     // together with the pinned gutter, without which the two
@@ -275,11 +311,18 @@ private fun TrainingLoadChart(points: List<TrainingLoadPoint>) {
  * something that looks like a different metric during a quiet month.
  */
 @Composable
-private fun FormChart(points: List<TrainingLoadPoint>) {
+private fun FormChart(
+    points: List<TrainingLoadPoint>,
+    sportPoints: List<TrainingLoadPoint>? = null,
+    sport: SportLoad? = null,
+) {
     val producer = remember { CartesianChartModelProducer() }
-    LaunchedEffect(points) {
+    LaunchedEffect(points, sportPoints) {
         producer.runTransaction {
-            lineSeries { series(points.map { it.tsb }) }
+            lineSeries {
+                series(points.map { it.tsb })
+                if (sportPoints != null) series(sportPoints.map { it.tsb })
+            }
             axisDates(points.map { it.date })
         }
     }
@@ -307,7 +350,8 @@ private fun FormChart(points: List<TrainingLoadPoint>) {
     // to the data, a band stopping short of the frame read as a gap.
     val zones = rememberFormZones(axisMin, axisMax)
     val zeroLine = rememberZeroLine()
-    val zoneLine = rememberZoneColoredLine(axisMin, axisMax)
+    val zoneLine = rememberZoneColoredLine(axisMin, axisMax, alpha = if (sportPoints != null) SPORT_FADE else 1f)
+    val sportForm = if (sportPoints != null && sport != null) listOf(lineSpec(sport.color, smooth = true, dotted = true)) else emptyList()
 
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         // Just the label. The current band was named here too, which put
@@ -319,7 +363,7 @@ private fun FormChart(points: List<TrainingLoadPoint>) {
             CartesianChartHost(
                 chart = rememberCartesianChart(
                     rememberLineCartesianLayer(
-                        lineProvider = LineCartesianLayer.LineProvider.series(zoneLine),
+                        lineProvider = LineCartesianLayer.LineProvider.series(listOf(zoneLine) + sportForm),
                         rangeProvider = remember(axisMin, axisMax) {
                             CartesianLayerRangeProvider.fixed(minY = axisMin, maxY = axisMax)
                         },
@@ -400,6 +444,7 @@ private fun rememberFormZones(low: Double, high: Double): List<Decoration> =
 private fun rememberZoneColoredLine(
     axisMin: Double,
     axisMax: Double,
+    alpha: Float = 1f,
 ): LineCartesianLayer.Line {
     val span = (axisMax - axisMin).takeIf { it > 0.0 } ?: 1.0
     val colors = mutableListOf<Color>()
@@ -411,7 +456,7 @@ private fun rememberZoneColoredLine(
         val top = (band.max?.toDouble() ?: axisMax).coerceAtMost(axisMax)
         val bottom = (band.min?.toDouble() ?: axisMin).coerceAtLeast(axisMin)
         if (bottom >= top) return@forEach
-        val color = specColor(band.color)
+        val color = specColor(band.color).let { it.copy(alpha = it.alpha * alpha) }
         colors += color
         stops += ((axisMax - top) / span).toFloat().coerceIn(0f, 1f)
         colors += color
@@ -578,13 +623,29 @@ private fun dataRange(axis: NiceAxis): CartesianLayerRangeProvider =
     remember(axis) { CartesianLayerRangeProvider.fixed(minY = axis.min, maxY = axis.max) }
 
 @Composable
-private fun lineSpec(color: Color, filled: Boolean = false, smooth: Boolean = false): LineCartesianLayer.Line =
+private fun lineSpec(
+    color: Color,
+    filled: Boolean = false,
+    smooth: Boolean = false,
+    dashed: Boolean = false,
+    dotted: Boolean = false,
+): LineCartesianLayer.Line =
     LineCartesianLayer.rememberLine(
         fill = LineCartesianLayer.LineFill.single(fill(color)),
-        stroke = LineCartesianLayer.LineStroke.Continuous(
-            thicknessDp = LINE_THICKNESS_DP,
-            cap = android.graphics.Paint.Cap.ROUND,
-        ),
+        stroke = when {
+            dashed -> LineCartesianLayer.LineStroke.Dashed(
+                thicknessDp = LINE_THICKNESS_DP, cap = android.graphics.Paint.Cap.ROUND,
+                dashLengthDp = 6f, gapLengthDp = 4f,
+            )
+            dotted -> LineCartesianLayer.LineStroke.Dashed(
+                thicknessDp = LINE_THICKNESS_DP, cap = android.graphics.Paint.Cap.ROUND,
+                dashLengthDp = 1f, gapLengthDp = 4f,
+            )
+            else -> LineCartesianLayer.LineStroke.Continuous(
+                thicknessDp = LINE_THICKNESS_DP,
+                cap = android.graphics.Paint.Cap.ROUND,
+            )
+        },
         pointConnector = if (smooth) GentleConnector else LineCartesianLayer.PointConnector.Sharp,
         areaFill = if (filled) {
             LineCartesianLayer.AreaFill.single(

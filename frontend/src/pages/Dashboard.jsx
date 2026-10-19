@@ -18,7 +18,7 @@ import Vo2MaxWidget from "../components/Vo2MaxWidget";
 import ReadinessWidget from "../components/ReadinessWidget";
 import FitnessChart from "../components/Charts/FitnessChart";
 import ActivityCalendar from "../components/Charts/ActivityCalendar";
-import SportBreakdown from "../components/Charts/SportBreakdown";
+import SportBreakdown, { sportColor } from "../components/Charts/SportBreakdown";
 import PlannedWorkoutCard from "../components/PlannedWorkoutCard";
 import WeeklyVolumeChart from "../components/Charts/WeeklyVolumeChart";
 import WorkoutRecapModal from "../components/WorkoutRecapModal";
@@ -146,6 +146,26 @@ export default function Dashboard() {
   }, [period, selectedSport]);
 
   // Filter training load to the selected display window.
+  // The picked sport's own fitness, fatigue and form, for the lines the
+  // fitness chart draws over the overall ones in the slice's colour.
+  const [sportSeries, setSportSeries] = useState(null);
+  useEffect(() => {
+    if (!selectedSport) { setSportSeries(null); return undefined; }
+    let cancelled = false;
+    api.getTrainingLoad({ sport: selectedSport })
+      .then(d => { if (!cancelled) setSportSeries({ sport: selectedSport, data: d ?? [] }); })
+      .catch(() => { if (!cancelled) setSportSeries(null); });
+    return () => { cancelled = true; };
+  }, [selectedSport, refreshTick]);
+  const sportLoad = useMemo(() => {
+    if (!sportSeries || sportSeries.sport !== selectedSport) return null;
+    return {
+      label: selectedSport.charAt(0).toUpperCase() + selectedSport.slice(1).replace(/_/g, " "),
+      color: sportColor(sportData, selectedSport) ?? "#0ea5e9",
+      data: sportSeries.data,
+    };
+  }, [sportSeries, selectedSport, sportData]);
+
   // Memoized so FitnessChart only re-animates on genuine data changes.
   const filteredLoad = useMemo(() => {
     if (!allLoad?.length) return [];
@@ -258,7 +278,7 @@ export default function Dashboard() {
       {/* Fitness chart — display window follows the period selector */}
       <Section title={`Fitness${period !== "lifetime" ? ` — ${PERIODS.find(p => p.value === period)?.label}` : " — All time"}`}>
         <Card data-tour="dashboard-fitness">
-          <FitnessChart data={filteredLoad} xAxis={xAxisConfig} />
+          <FitnessChart data={filteredLoad} xAxis={xAxisConfig} sport={sportLoad} />
         </Card>
       </Section>
 

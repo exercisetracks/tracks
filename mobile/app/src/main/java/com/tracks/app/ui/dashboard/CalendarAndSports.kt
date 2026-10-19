@@ -479,6 +479,12 @@ private fun buildYearMatrix(points: List<ActivityCalendarPoint>): YearMatrixData
  * descending and take the colour at that index, so "your biggest sport is
  * cyan" holds on the phone and in the browser without a shared mapping.
  */
+/** The colour a sport is drawn in under Sports, so the fitness chart matches it. */
+internal fun sportColor(sports: List<com.tracks.core.api.SportBreakdown>, sport: String): androidx.compose.ui.graphics.Color? {
+    val index = sports.take(MAX_SPORTS).indexOfFirst { it.sport == sport }
+    return if (index < 0) null else SPORT_PALETTE[index % SPORT_PALETTE.size]
+}
+
 private val SPORT_PALETTE = listOf(
     "#06b6d4", "#22c55e", "#f97316", "#f59e0b",
     "#ef4444", "#a855f7", "#3b82f6", "#ec4899",

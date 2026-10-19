@@ -50,6 +50,8 @@ data class DashboardUiState(
     val weeklyVolume: List<WeeklyVolumePoint> = emptyList(),
     /** All-time, unfiltered. See [windowedLoad] for why. */
     val trainingLoad: List<TrainingLoadPoint> = emptyList(),
+    /** The selected sport's own load series, all-time; empty with no sport picked. */
+    val sportLoad: List<TrainingLoadPoint> = emptyList(),
     val coaching: DailyCoaching? = null,
     val upcoming: List<PlannedWorkout> = emptyList(),
     /**
@@ -359,6 +361,23 @@ class DashboardViewModel(private val container: AppContainer) : ViewModel() {
         _state.update { it.copy(selectedSport = if (it.selectedSport == sport) null else sport) }
         loadFiltered()
         loadRoutes()
+        loadSportLoad()
+    }
+
+    /** The picked sport's fitness, fatigue and form, for the fitness chart. */
+    private fun loadSportLoad() {
+        val sport = _state.value.selectedSport
+        if (sport == null) {
+            _state.update { it.copy(sportLoad = emptyList()) }
+            return
+        }
+        viewModelScope.launch {
+            val threshold = container.importThresholds().thresholdHr
+            val load = withContext(Dispatchers.Default) {
+                runCatching { container.metrics.sportTrainingLoad(today(), threshold, sport) }.getOrNull()
+            }
+            if (_state.value.selectedSport == sport) _state.update { it.copy(sportLoad = load.orEmpty()) }
+        }
     }
 
     fun refresh() {
@@ -457,6 +476,7 @@ class DashboardViewModel(private val container: AppContainer) : ViewModel() {
                 loadWindowed()
                 loadFiltered()
                 loadRoutes()
+                loadSportLoad()
             }
         }
     }

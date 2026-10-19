@@ -327,9 +327,17 @@ object TrainingLoad {
     fun trainingLoad(
         activities: List<MetricActivity>, thresholdHr: Double?, mtbDiscipline: String? = null,
         today: CivilDate? = null,
+        /**
+         * The whole history's calibration, for a caller passing only part of
+         * it -- one sport's activities, as the server's `?sport=` does.
+         */
+        calibration: Map<String, Double>? = null,
     ): List<LoadPoint> {
         if (activities.isEmpty()) return emptyList()
-        val sums = tssByDate(activities, thresholdHr, mtbDiscipline).toMutableMap()
+        val sums = (
+            if (calibration != null) tssByDate(activities, thresholdHr, mtbDiscipline, calibration)
+            else tssByDate(activities, thresholdHr, mtbDiscipline)
+            ).toMutableMap()
         if (today != null) {
             sums.putIfAbsent(today.epochDay, 0.0)
             sums.keys.removeAll { it > today.epochDay }

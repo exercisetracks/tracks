@@ -112,6 +112,22 @@ class LocalMetrics(private val library: LocalLibrary, private val sources: Local
         }
     }
 
+    /**
+     * One sport's own fitness, fatigue and form, as the server's
+     * `/metrics/training-load?sport=`: that sport's activities, each scored
+     * against the whole history's calibration so a ride counts the same here
+     * as in the overall series.
+     */
+    suspend fun sportTrainingLoad(today: CivilDate, thresholdHr: Double?, sport: String): List<TrainingLoadPoint> = cpu {
+        val all = rows()
+        val discipline = sources.mtbDiscipline()
+        val calibration = TrainingLoad.loadCalibration(all, thresholdHr, discipline)
+        val mine = all.filter { (it.sport ?: "").lowercase() == sport.lowercase() }
+        TrainingLoad.trainingLoad(mine, thresholdHr, discipline, today, calibration).map {
+            TrainingLoadPoint(it.date.isoformat(), it.tss, it.ctl, it.atl, it.tsb, it.ctlRamp)
+        }
+    }
+
     /** Today's (CTL, ATL) from the same rows the dashboard's fitness chart reads. */
     suspend fun ctlAtl(today: CivilDate, thresholdHr: Double?): Pair<Double, Double> = cpu {
         val tss = TrainingLoad.tssByDate(rows(), thresholdHr, sources.mtbDiscipline())

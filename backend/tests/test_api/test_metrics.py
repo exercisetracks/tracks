@@ -246,3 +246,24 @@ class TestPhoneOnlyLoad:
         assert full[day] == window[day] == dots[day]
         # And it was calibrated: these runs measure well above the estimate.
         assert full[day] > 70
+
+
+class TestSportLoad:
+    """A sport's own fitness, for the lines the dashboard draws when the pie
+    chart picks a sport: a week of riding is fitness, but not running fitness."""
+
+    def test_a_sport_counts_only_its_own_load(self, client, user, db):
+        day = datetime.now() - timedelta(days=3)
+        _make_activity(db, user, sport="running", started_at=day, training_stress_score=50.0)
+        _make_activity(db, user, sport="cycling", started_at=day + timedelta(hours=3),
+                       training_stress_score=200.0)
+        overall = client.get("/metrics/training-load", params={"after": "2000-01-01"}).json()
+        running = client.get("/metrics/training-load", params={"sport": "running"}).json()
+        ride_day = day.date().isoformat()
+        assert next(p for p in overall if p["date"] == ride_day)["tss"] == 250.0
+        assert next(p for p in running if p["date"] == ride_day)["tss"] == 50.0
+        assert running[-1]["ctl"] < overall[-1]["ctl"]
+
+    def test_a_sport_never_done_has_no_series(self, client, user, db):
+        _make_activity(db, user, started_at=datetime.now() - timedelta(days=1))
+        assert client.get("/metrics/training-load", params={"sport": "rowing"}).json() == []

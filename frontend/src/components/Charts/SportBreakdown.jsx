@@ -3,6 +3,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { PieChart, Pie, Cell, Sector, ResponsiveContainer } from "recharts";
 
+/** The colour a sport's slice is drawn in, so other charts can match it. */
+export function sportColor(data, sport) {
+  const i = (data ?? []).findIndex(d => d.sport === sport);
+  return i < 0 ? null : PALETTE[i % PALETTE.length];
+}
+
 const PALETTE = [
   "#06b6d4", "#22c55e", "#f97316", "#f59e0b",
   "#ef4444", "#a855f7", "#3b82f6", "#ec4899",

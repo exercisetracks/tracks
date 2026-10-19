@@ -2786,6 +2786,24 @@
               "title": "Before"
             },
             "description": "End date (inclusive)"
+          },
+          {
+            "name": "sport",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "One sport's own fitness, fatigue and form",
+              "title": "Sport"
+            },
+            "description": "One sport's own fitness, fatigue and form"
           }
         ],
         "responses": {
