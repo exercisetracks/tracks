@@ -39,6 +39,11 @@ data class GuidedStep(
     val detail: String? = null,
     val note: String? = null,
     val cues: List<String> = emptyList(),
+    /**
+     * How to do it, read at arm's length mid-hold: a stretch's numbered
+     * steps from the library. Shown large under the title, above the gauges.
+     */
+    val howTo: String? = null,
     /** Countdown target. Null means the step ends when the user says it does. */
     val seconds: Int? = null,
     /** Distance target, for a step a GPS recording can measure itself. */
@@ -208,6 +213,7 @@ private fun expandMobility(step: WorkoutStep, into: MutableList<GuidedStep>) {
                 detail = "${hold}s hold",
                 note = step.description ?: step.note,
                 cues = step.cues + listOfNotNull(step.breathCue),
+                howTo = step.instructions,
                 seconds = hold,
                 position = listOfNotNull(
                     side,

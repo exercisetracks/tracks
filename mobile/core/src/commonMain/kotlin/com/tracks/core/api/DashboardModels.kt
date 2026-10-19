@@ -304,6 +304,8 @@ data class WorkoutStep(
     val cues: List<String> = emptyList(),
     val description: String? = null,
     @SerialName("breath_cue") val breathCue: String? = null,
+    /** A stretch's how-to, from the library: shown large while it is held. */
+    val instructions: String? = null,
     @SerialName("primary_muscles") val primaryMuscles: List<String> = emptyList(),
     /**
      * The block this step belongs to — a repeat group or a superset — or null

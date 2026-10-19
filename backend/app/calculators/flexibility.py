@@ -122,6 +122,8 @@ class StretchCandidate:
     cues: tuple[str, ...] = field(default_factory=tuple)
     breath_cue: str | None = None
     position: str | None = None
+    # How to get into and hold the pose: shown large on the phone during the hold.
+    instructions: str | None = None
 
 
 def sport_target_muscles(sport: str, fallback: list[str] | None = None) -> list[str]:
@@ -281,6 +283,7 @@ def to_step(c: StretchCandidate) -> dict:
         "muscles": list(c.primary_muscles),
         "cues": list(c.cues),
         "breath_cue": c.breath_cue,
+        "instructions": c.instructions,
         "position": c.position,
         "garmin_category": c.garmin_category,
         "garmin_subtype": c.garmin_subtype,

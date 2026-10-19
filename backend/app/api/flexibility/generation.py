@@ -185,6 +185,7 @@ def _build_candidates(
             cues=tuple(getattr(r, "cues", None) or []),
             breath_cue=getattr(r, "breath_cue", None),
             position=getattr(r, "position", None),
+            instructions=getattr(r, "instructions", None),
         ))
 
     for r in library_rows:

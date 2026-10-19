@@ -76,6 +76,8 @@ data class StretchRow(
     val equipment: List<String>?,
     val cues: List<String>?,
     val breathCue: String?,
+    /** Numbered how-to steps, shown large under the pose while it is held. */
+    val instructions: String? = null,
     val position: String?,
 )
 
@@ -127,6 +129,7 @@ object StretchPlanning {
                 cues = r.cues.orEmpty(),
                 breathCue = r.breathCue,
                 position = r.position,
+                instructions = r.instructions,
             )
         }
         library.forEach { add(it, false) }

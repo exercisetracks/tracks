@@ -27,6 +27,8 @@ data class StretchCandidate(
     val cues: List<String> = emptyList(),
     val breathCue: String? = null,
     val position: String? = null,
+    /** How to get into and hold the pose, as the library writes it. */
+    val instructions: String? = null,
 )
 
 /**
@@ -249,6 +251,7 @@ object Flexibility {
         "muscles" to c.primaryMuscles,
         "cues" to c.cues,
         "breath_cue" to c.breathCue,
+        "instructions" to c.instructions,
         "position" to c.position,
         "garmin_category" to c.garminCategory,
         "garmin_subtype" to c.garminSubtype,

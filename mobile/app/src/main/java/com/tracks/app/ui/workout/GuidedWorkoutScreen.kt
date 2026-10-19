@@ -155,9 +155,17 @@ private fun StepPane(state: GuidedUiState, vm: GuidedWorkoutViewModel, onQuit: (
                 .padding(horizontal = 20.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            // What to do now, large -- then its gauges, as a run has.
+            // What to do now, large; how to do it, nearly as large -- a pose
+            // is read from across a mat -- then its gauges, as a run has.
             StageTitle(state)
             if (state.resizable) LengthSlider(state, vm::resize)
+            step.howTo?.takeIf { it.isNotBlank() && step.kind != StepKind.Rest }?.let {
+                Text(
+                    it,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            }
             StepGauges(state)
 
             if (step.seconds == null && state.begun) {

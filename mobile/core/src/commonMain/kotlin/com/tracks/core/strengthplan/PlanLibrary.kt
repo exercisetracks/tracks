@@ -56,5 +56,6 @@ object PlanLibrary {
         cues = r["cues"] as List<String>?,
         breathCue = r["breath_cue"] as String?,
         position = r["position"] as String?,
+        instructions = r["instructions"] as String?,
     )
 }

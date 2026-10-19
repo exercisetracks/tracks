@@ -69,7 +69,7 @@ def _library() -> dict:
 def _stretch_row(r: dict) -> SimpleNamespace:
     keys = ("name", "primary_muscles", "secondary_muscles", "movement_pattern", "difficulty",
             "duration_per_side_sec", "sets", "each_side", "description", "garmin_category",
-            "garmin_subtype", "equipment", "cues", "breath_cue", "position")
+            "garmin_subtype", "equipment", "cues", "breath_cue", "position", "instructions")
     return SimpleNamespace(**{k: r.get(k) for k in keys})
 
 
