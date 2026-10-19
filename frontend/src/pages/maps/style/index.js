@@ -64,6 +64,55 @@ function withFadeIn(layers) {
   });
 }
 
+// ── Per-feature fade-in ───────────────────────────────────────────────────────
+// withFadeIn softens a LAYER switching on. Roads and trails mostly appear
+// FEATURE by feature instead: each carries the zoom it first exists at
+// (`min_zoom`, the basemap's and the overlay's alike), so a minor road or a
+// side trail popped in whole at its zoom while the layer's own fade had
+// finished zooms earlier -- and the layer fades that did exist ramped over a
+// quarter of a zoom, which reads as a pop too. Here every road and trail line
+// fades in over the full zoom after the one it first appears at, as POI icons
+// do. The layer's own opacity curve stays as the ceiling (evaluated at each
+// integer zoom); opacities driven by feature-state or data are left alone.
+const FEATURE_FADE_SOURCE_LAYERS = new Set(["roads", "trails"]);
+
+/** A constant or plain zoom-interpolated opacity, evaluated at [z]; null for anything else. */
+function opacityAt(expr, z) {
+  if (expr === undefined) return 1;
+  if (typeof expr === "number") return expr;
+  if (!Array.isArray(expr) || expr[0] !== "interpolate" || JSON.stringify(expr[2]) !== '["zoom"]') return null;
+  const stops = expr.slice(3);
+  for (let i = 1; i < stops.length; i += 2) if (typeof stops[i] !== "number") return null;
+  if (z <= stops[0]) return stops[1];
+  for (let i = 2; i < stops.length; i += 2) {
+    if (z <= stops[i]) {
+      const [z0, v0, z1, v1] = [stops[i - 2], stops[i - 1], stops[i], stops[i + 1]];
+      return v0 + (v1 - v0) * (z - z0) / (z1 - z0);
+    }
+  }
+  return stops[stops.length - 1];
+}
+
+export function featureFade(base, from, to = 16) {
+  const out = ["interpolate", ["linear"], ["zoom"]];
+  for (let z = from; z <= to; z++) {
+    const ceiling = Math.round(opacityAt(base, z) * 1000) / 1000;
+    // Full from one zoom after the feature's first: 0 at its first zoom.
+    out.push(z, ["case", ["<=", ["ceil", ["coalesce", ["get", "min_zoom"], 0]], z - 1], ceiling, 0]);
+  }
+  return out;
+}
+
+function withFeatureFadeIn(layers) {
+  return layers.map((layer) => {
+    if (layer.type !== "line" || !FEATURE_FADE_SOURCE_LAYERS.has(layer["source-layer"])) return layer;
+    const cur = layer.paint?.["line-opacity"];
+    if (opacityAt(cur, 0) === null || (typeof cur === "number" && cur <= 0)) return layer;
+    const from = Math.max(3, Math.floor(layer.minzoom ?? 3));
+    return { ...layer, paint: { ...layer.paint, "line-opacity": featureFade(cur, from) } };
+  });
+}
+
 // ── Stable symbol placement ──────────────────────────────────────────────────
 // By default MapLibre runs viewport collision detection on every symbol layer:
 // as you pan/zoom, labels and icons fight for space and get culled, re-placed,
@@ -195,7 +244,7 @@ export function buildStyle(version = "", { includeDem = false, merged = false } 
     // HUD over the map by useGridOverlay (Grid toggle), so it isn't listed here.
   ];
 
-  const placed = withStablePlacement(withFadeIn(underLabels(layers, ACTIVITY_TRACK_LAYERS)));
+  const placed = withStablePlacement(withFeatureFadeIn(withFadeIn(underLabels(layers, ACTIVITY_TRACK_LAYERS))));
   const style = {
     version: 8,
     glyphs: "/api/fonts/{fontstack}/{range}.pbf",

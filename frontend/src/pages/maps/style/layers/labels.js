@@ -306,6 +306,13 @@ export function buildLabels() {
       source: "pois",
       "source-layer": "pois",
       type: "symbol",
+      // Collision-placed (see COLLIDE in style/index.js). The grid ranking
+      // (poi_tiles) thins these against each other, but it knows nothing of
+      // the basemap's park names, so a park's shelter or picnic site printed
+      // over the park's own name. Laid out after labels_parks (above), a
+      // clashing icon gives way to the park; text-optional keeps the icon
+      // when only its name has no room.
+      metadata: { "tracks:collide": true },
       // Exclude place-label kinds — they are already rendered by the basemap's
       // labels_place_locality/labels_place_county layers with correct coordinates.
       // Showing them here would produce duplicate labels at wrong positions.
@@ -329,11 +336,11 @@ export function buildLabels() {
         ...WATER_POI_KINDS,
       ]]]],
       layout: {
-        // Deterministic density: usePoiFeatures bakes an `icon_zoom` grade into
-        // every feature (utils/labelRank.js) — the zoom at which the icon wins a
-        // slot in a world-aligned grid, importance-first. Collision is disabled
-        // style-wide (withStablePlacement), so this gate is the only thinning,
-        // and unlike collision it never reshuffles as you pan.
+        // Deterministic density: the places archive bakes an `icon_zoom` grade
+        // into every feature (backend poi_tiles.rank) — the zoom at which the
+        // icon wins a slot in a world-aligned grid, importance-first. That gate
+        // does nearly all the thinning, so collision (on for this layer, see
+        // its metadata) has little left to do and seldom reshuffles on a pan.
         "icon-image": gateByMinZoom("icon_zoom", 5, ["match", ["get", "kind"],
           "peak",           "peak",
           "camp_site",      "campground",
@@ -494,6 +501,9 @@ export function buildLabels() {
       source: "basemap",
       "source-layer": "pois",
       type: "symbol",
+      // Collision-placed too, and above poi_db_icons so it is placed first:
+      // where a park and a point inside it compete, the park wins.
+      metadata: { "tracks:collide": true },
       minzoom: 9,
       filter: ["all", ["in", ["get", "kind"], ["literal", PARK_LABEL_KINDS]], ["has", "name"]],
       layout: {

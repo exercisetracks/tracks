@@ -321,3 +321,31 @@ describe('basemap trails under the overlay', () => {
     expect(labels.layout['text-max-angle']).toEqual(['interpolate', ['linear'], ['zoom'], 12, 40, 15, 70]);
   });
 });
+
+describe("features fade in and labels share space", () => {
+  const layers = buildStyle("").layers;
+
+  // Minor roads and side trails appear feature by feature (their min_zoom);
+  // they used to pop in whole. Each fades over the zoom after its first.
+  it("fades every road and trail line in per feature", () => {
+    const roadsAndTrails = layers.filter(
+      (l) => l.type === "line" && ["roads", "trails"].includes(l["source-layer"]) &&
+        typeof l.paint?.["line-opacity"] !== "number",
+    );
+    expect(roadsAndTrails.length).toBeGreaterThan(5);
+    const faded = roadsAndTrails.filter((l) => JSON.stringify(l.paint["line-opacity"]).includes('"min_zoom"'));
+    expect(faded.length).toBeGreaterThan(roadsAndTrails.length * 0.7);
+  });
+
+  // A park's shelter printed over the park's own name: both collide now, and
+  // the park is placed first (above), so the shelter is the one that yields.
+  it("places park names before the POIs inside them, with collision on", () => {
+    const park = layers.findIndex((l) => l.id === "labels_parks");
+    const pois = layers.findIndex((l) => l.id === "poi_db_icons");
+    expect(park).toBeGreaterThan(pois);
+    for (const i of [park, pois]) {
+      expect(layers[i].metadata?.["tracks:collide"]).toBe(true);
+      expect(layers[i].layout["text-allow-overlap"]).not.toBe(true);
+    }
+  });
+});
