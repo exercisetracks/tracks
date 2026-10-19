@@ -56,6 +56,8 @@ _AMENITY = ("ranger_station,place_of_worship,school,shelter,drinking_water,"
             "water_point,toilets,fuel,hospital")
 TAGS_FILTER_EXPR = [
     "nw/highway=path,track,footway,bridleway,steps,cycleway,trailhead,service,unclassified,tertiary,tertiary_link",
+    # Ski runs and nordic trails: mostly ways with no highway tag at all.
+    "w/piste:type",
     "nwr/waterway",
     f"nwr/natural={_NATURAL}",
     f"nwr/landuse={_LANDUSE}",
@@ -70,6 +72,14 @@ TAGS_FILTER_EXPR = [
     "nwr/aeroway=aerodrome",
     "r/route=hiking,foot",
 ]
+
+
+def tags_filter_stamp() -> str:
+    """What the cached slim extracts were filtered by. An extract made with a
+    different filter lacks what was added since (pistes were), so a mismatch
+    refreshes it in the background (osmium_runner.ensure_extract)."""
+    import hashlib
+    return hashlib.sha256("\n".join(TAGS_FILTER_EXPR).encode()).hexdigest()[:12]
 
 
 def _osm_dir() -> Path:

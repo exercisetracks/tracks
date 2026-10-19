@@ -16,6 +16,21 @@ import { COLORS } from "../palette";
 const fadeIn = (z, max = 1) => ["interpolate", ["linear"], ["zoom"], z, 0, z + 0.5, max];
 
 const TRAIL_FILTER = ["==", ["get", "kind"], "path"];
+
+/**
+ * How a trail name fits along its line, loosening as you zoom in, so that
+ * close in every named trail carries its name. A name is placed only where a
+ * stretch of the line is long and straight enough for it, and switchbacking
+ * singletrack -- most mountain-bike trails, and ski runs -- rarely has a
+ * stretch bending less than 40 degrees, so those went unnamed at every zoom.
+ * By z15 a bend of up to 70 degrees is accepted, names repeat more often and
+ * pack closer, which is what gets a short, twisting trail its name.
+ */
+export const TRAIL_NAME_FIT = {
+  "symbol-spacing": ["interpolate", ["linear"], ["zoom"], 12, 300, 15, 200, 17, 140],
+  "text-max-angle": ["interpolate", ["linear"], ["zoom"], 12, 40, 15, 70],
+  "text-padding": ["interpolate", ["linear"], ["zoom"], 12, 4, 15, 1],
+};
 const isDetail = (...vals) => ["in", ["get", "kind_detail"], ["literal", vals]];
 
 export function buildTrails() {
@@ -157,10 +172,8 @@ export function buildTrails() {
         "text-font": ["Noto Sans Italic"],
         "text-size": ["interpolate", ["linear"], ["zoom"], 13, 10.5, 16, 13.5],
         "symbol-placement": "line",
-        "symbol-spacing": 300,
-        "text-max-angle": 40,
+        ...TRAIL_NAME_FIT,
         "text-letter-spacing": 0.02,
-        "text-padding": 4,
       },
       paint: {
         "text-color": COLORS.trails.label,
@@ -170,4 +183,28 @@ export function buildTrails() {
       },
     },
   ];
+}
+
+/**
+ * The basemap trail layers' filters with every path wholly inside [areas] left
+ * out: inside a downloaded area the OSM overlay draws the same trails, richer
+ * (osmTrails.js), and the basemap's copy under it was a second line along the
+ * same ground -- arriving first, since basemap tiles load before the
+ * overlay's, then covered, its name competing with the overlay's for the same
+ * line. [areas] is MultiPolygon coordinates (the union of the downloaded
+ * areas, utils/areaOutline); empty gives the filters back unmasked.
+ *
+ * A path crossing an area's edge is not wholly inside, so it keeps its
+ * basemap line; the overlay ends at the edge, and a short doubled stretch
+ * there is better than a gap. The phone applies the same rule
+ * (BasemapTrailMask.kt), from the same areas.
+ */
+export function maskedTrailFilters(areas) {
+  const out = {};
+  for (const layer of buildTrails()) {
+    out[layer.id] = areas?.length
+      ? ["all", layer.filter, ["!", ["within", { type: "MultiPolygon", coordinates: areas }]]]
+      : layer.filter;
+  }
+  return out;
 }

@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Hawk Fugagli
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { areaPolygons, unionOutline } from "../utils/areaOutline";
+import { maskedTrailFilters } from "../style/layers/trails";
 import { useState, useCallback, useRef, useEffect } from "react";
 import { api } from "../../../api/client";
 import {
@@ -159,6 +160,10 @@ export function useRegionDownload(map) {
     // the lines inside the overlap are gone and the shading is not doubled.
     // An area's own box shows only while it is highlighted from the list.
     const union = unionOutline(installed.flatMap(areaPolygons));
+    // No basemap trail under the overlay's own (style/layers/trails.js).
+    for (const [id, filter] of Object.entries(maskedTrailFilters(union.cells))) {
+      try { if (map.getLayer(id)) map.setFilter(id, filter); } catch { /* style reloading */ }
+    }
     const combined = {
       type: "FeatureCollection",
       features: [

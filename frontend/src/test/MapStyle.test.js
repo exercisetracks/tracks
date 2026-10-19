@@ -293,3 +293,31 @@ describe('green spaces', () => {
     expect(ids).toContain('labels_parks');
   });
 });
+
+// Inside a downloaded area the basemap drew a second line under every trail,
+// and its name competed with the overlay's for the same line.
+describe('basemap trails under the overlay', () => {
+  it('leaves out basemap paths wholly inside the downloaded areas', async () => {
+    const { maskedTrailFilters, buildTrails } = await import('../pages/maps/style/layers/trails');
+    const areas = [[[[-117, 47], [-116, 47], [-116, 48], [-117, 48], [-117, 47]]]];
+    const masked = maskedTrailFilters(areas);
+    for (const layer of buildTrails()) {
+      expect(masked[layer.id]).toEqual(['all', layer.filter,
+        ['!', ['within', { type: 'MultiPolygon', coordinates: areas }]]]);
+    }
+    expect(maskedTrailFilters([])).toEqual(Object.fromEntries(buildTrails().map((l) => [l.id, l.filter])));
+  });
+
+  it('masks the layers the phone masks (BasemapTrailMask.kt)', async () => {
+    const { buildTrails } = await import('../pages/maps/style/layers/trails');
+    const fs = await import('node:fs');
+    const kt = fs.readFileSync('../mobile/app/src/main/java/com/tracks/app/ui/map/BasemapTrailMask.kt', 'utf8');
+    const listed = [...kt.match(/val LAYERS = listOf\(([\s\S]*?)\)/)[1].matchAll(/"([a-z_]+)"/g)].map((m) => m[1]);
+    expect(listed).toEqual(buildTrails().map((l) => l.id));
+  });
+
+  it('gives every named trail more room for its name close in', () => {
+    const labels = buildStyle().layers.find((l) => l.id === 'osm_trails_labels');
+    expect(labels.layout['text-max-angle']).toEqual(['interpolate', ['linear'], ['zoom'], 12, 40, 15, 70]);
+  });
+});

@@ -511,6 +511,15 @@ fun MapScreen(
                 // moment its download starts and firms up when it finishes.
                 LaunchedEffect(style, regions.rows, highlightedArea) {
                     style?.let { drawRegions(it, regions.rows, highlightedArea) }
+                    // No basemap trail under the overlay's own, wherever an
+                    // area has the overlay (BasemapTrailMask).
+                    style?.let { loaded ->
+                        BasemapTrailMask.apply(
+                            loaded,
+                            regions.rows.filter { it.coverage != Coverage.Building && it.bounds != null }
+                                .flatMap(::polygonsOf),
+                        )
+                    }
                 }
 
                 // Fetched when the map opens, not when the library sheet does.

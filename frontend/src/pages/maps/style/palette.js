@@ -113,6 +113,12 @@ export const COLORS = {
     trackInk:   "#5A3A1C",  // classic USGS 4×4 DOUBLE-track ink — dark sienna, the two parallel dashed rails
     steps:      "#5A4632",  // stairs — brown
     other:      "#555048",  // unclassified path — dark grey-brown
+    // Ski runs, in the North American trail-sign colours (OSM piste:difficulty).
+    pisteEasy:      "#1E9E3A",  // novice / easy — green circle
+    pisteMedium:    "#1F5FC4",  // intermediate — blue square
+    pisteHard:      "#111111",  // advanced / expert — black diamond
+    pisteFreeride:  "#E07800",  // freeride / extreme — orange, ungroomed
+    pisteNordic:    "#3D5BD9",  // nordic, ski touring, sled — a dashed blue
 
     // Structure
     casing:     "#FBF9F3",  // soft halo lifting trails off hillshade/landcover

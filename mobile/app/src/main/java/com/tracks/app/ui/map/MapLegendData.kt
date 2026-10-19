@@ -38,6 +38,12 @@ internal object LegendPalette {
     val moto = Color(0xFFB03A2B)
     val steps = Color(0xFF6B4A2A)
     val difficult = Color(0xFF8E44AD)
+    // Ski runs (palette.js trails.piste*): trail-sign colours, nordic dashed.
+    val pisteEasy = Color(0xFF1E9E3A)
+    val pisteMedium = Color(0xFF1F5FC4)
+    val pisteHard = Color(0xFF111111)
+    val pisteFreeride = Color(0xFFE07800)
+    val pisteNordic = Color(0xFF3D5BD9)
     val routeLine = Color(0xFF6D28D9)
 
     val national = Color(0xFF6B5B7B)
@@ -152,6 +158,11 @@ internal val LEGEND_LINES: List<Pair<String, List<LegendLineSpec>>> = listOf(
         LegendLineSpec("Steps / stairway", P.steps, 3f, floatArrayOf(1f, 2.5f)),
         LegendLineSpec("Difficult / technical", P.difficult, 2f, floatArrayOf(3f, 2f)),
         LegendLineSpec("Long-distance route", P.routeLine, 3f),
+        LegendLineSpec("Ski run: easy", P.pisteEasy, 2.6f),
+        LegendLineSpec("Ski run: intermediate", P.pisteMedium, 2.6f),
+        LegendLineSpec("Ski run: advanced", P.pisteHard, 2.6f),
+        LegendLineSpec("Ski run: freeride", P.pisteFreeride, 2.6f),
+        LegendLineSpec("Nordic / ski touring", P.pisteNordic, 2.2f, floatArrayOf(4f, 2f)),
     ),
     "Boundaries" to listOf(
         LegendLineSpec("National", P.national, 2f, floatArrayOf(6f, 2f, 1f, 2f)),

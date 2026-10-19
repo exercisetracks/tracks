@@ -20,6 +20,14 @@ TRAIL_HIGHWAYS = ("path", "track", "footway", "bridleway", "steps", "cycleway",
                   "service", "unclassified", "tertiary", "tertiary_link")
 _PAVED = {"asphalt", "paved", "concrete", "paving_stones", "sett", "metal", "wood"}
 
+# Ski runs and nordic trails (OSM piste:type). Most are ways with no highway
+# tag -- a downhill run is only a run -- so they are classified on their own
+# as kind "piste"; a summer trail that is also a winter piste stays a trail and
+# carries the piste tags as well.
+PISTE_TYPES = ("downhill", "nordic", "skitour", "sled", "hike", "snow_park", "sleigh", "fatbike")
+# piste:difficulty values, easiest first (OSM's scale).
+PISTE_DIFFICULTIES = ("novice", "easy", "intermediate", "advanced", "expert", "freeride", "extreme")
+
 # highway=service values that are parking/yard furniture, not roads worth showing.
 _SERVICE_SKIP = {"driveway", "parking_aisle", "alley", "drive-through"}
 
@@ -76,11 +84,14 @@ def classify(tags: dict, length_m: float = 0.0) -> tuple[dict, int]:
     by z11-12, keeping low-zoom tiles light.
     """
     hw = tags.get("highway")
-    name = tags.get("name") or ""
+    piste = tags.get("piste:type", "")
+    name = tags.get("name") or tags.get("piste:name") or ""
     surface = tags.get("surface") or ""
     tracktype = tags.get("tracktype", "")
 
-    if hw == "track":
+    if hw not in TRAIL_HIGHWAYS and piste:
+        kind = "piste"
+    elif hw == "track":
         graded = (tracktype in ("grade1", "grade2")
                   and tags.get("4wd_only") not in ("yes", "recommended"))
         kind = "service" if graded else "track"
@@ -104,10 +115,16 @@ def classify(tags: dict, length_m: float = 0.0) -> tuple[dict, int]:
         mz = 12
     elif kind == "steps":
         mz = 14
+    elif kind == "piste":
+        # A resort's runs read as a network from z11, like the trails; a long
+        # nordic loop a zoom earlier.
+        mz = 10 if length_m >= 1500 else 11
     else:
         mz = 12
     if name and kind in ("path", "track", "service", "lightduty", "bridleway", "cycleway"):
         mz = min(mz, 9)
+    elif name and kind == "piste":
+        mz = min(mz, 10)
 
     props = {
         "kind": kind,
@@ -122,6 +139,13 @@ def classify(tags: dict, length_m: float = 0.0) -> tuple[dict, int]:
         "oneway": 1 if tags.get("oneway") in ("yes", "true", "1", "-1") else 0,
         "min_zoom": mz,
     }
+    if piste in PISTE_TYPES:
+        props["piste_type"] = piste
+        difficulty = tags.get("piste:difficulty", "")
+        props["piste_difficulty"] = difficulty if difficulty in PISTE_DIFFICULTIES else ""
+        props["piste_grooming"] = tags.get("piste:grooming", "")
+    if kind == "piste":
+        props["use"] = "ski"
     return props, mz
 
 
@@ -129,7 +153,7 @@ def classify_feature(tags: dict, geom) -> tuple[dict, int] | None:
     """Streaming-path classify for ONE LineString trail/road way → (props,
     min_zoom) or None to skip. Used by the single-pass osmium-export builder."""
     hw = tags.get("highway")
-    if hw not in TRAIL_HIGHWAYS:
+    if hw not in TRAIL_HIGHWAYS and tags.get("piste:type") not in PISTE_TYPES:
         return None
     if tags.get("footway") in ("sidewalk", "crossing", "access_aisle", "traffic_island"):
         return None

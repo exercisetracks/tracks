@@ -24,7 +24,7 @@ from pathlib import Path
 import httpx
 
 from app.services.osm_source.config import (
-    TAGS_FILTER_EXPR, USER_AGENT, _osm_dir, logger, osmium_available,
+    TAGS_FILTER_EXPR, USER_AGENT, _osm_dir, logger, osmium_available, tags_filter_stamp,
 )
 from app.services.osm_source.geofabrik import find_extract
 
@@ -120,10 +120,25 @@ def ensure_extract(extract_id: str, url: str, cancel=None, progress=None) -> Pat
     with _lock_for(safe):
         if slim.exists() and slim.stat().st_size > 0:
             import time
-            if time.time() - slim.stat().st_mtime > REFRESH_AFTER_S:
+            if (time.time() - slim.stat().st_mtime > REFRESH_AFTER_S
+                    or _stamp_of(slim) != tags_filter_stamp()):
+                # Old, or filtered for less than is drawn now: the copy here
+                # serves until the fresh one lands.
                 _refresh_later(extract_id, url, slim)
             return slim
         return _fetch_and_slim(extract_id, url, slim, cancel=cancel, progress=progress)
+
+
+def _stamp_path(slim: Path) -> Path:
+    return slim.with_name(slim.name + ".filter")
+
+
+def _stamp_of(slim: Path) -> str | None:
+    """The filter a slim extract was made with; None for one made before stamps."""
+    try:
+        return _stamp_path(slim).read_text().strip()
+    except OSError:
+        return None
 
 
 _refreshing: set[str] = set()
@@ -140,6 +155,7 @@ def _refresh_later(extract_id: str, url: str, slim: Path) -> None:
             fresh = slim.with_name(slim.name.replace(".filtered.", ".refresh."))
             if _fetch_and_slim(extract_id, url, fresh) is not None:
                 fresh.replace(slim)
+                _stamp_path(fresh).replace(_stamp_path(slim))
                 logger.info("Refreshed OSM extract %s", extract_id)
         except Exception:
             logger.exception("Refreshing OSM extract %s failed", extract_id)
@@ -177,6 +193,7 @@ def _fetch_and_slim(extract_id: str, url: str, slim: Path, cancel=None, progress
         tmp.unlink(missing_ok=True)
         return None
     tmp.replace(slim)
+    _stamp_path(slim).write_text(tags_filter_stamp())
     logger.info("Cached slim extract %s (%.0f MB)", extract_id, slim.stat().st_size / 1e6)
     return slim
 

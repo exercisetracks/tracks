@@ -14,7 +14,7 @@ import time
 
 from app.services import osm_source
 from app.services.overpass_client import POLITE_DELAY_S, _overpass, _split_bbox
-from app.services.trail_classify import TRAIL_HIGHWAYS
+from app.services.trail_classify import PISTE_TYPES, TRAIL_HIGHWAYS
 
 logger = logging.getLogger(__name__)
 
@@ -27,9 +27,11 @@ def fetch_trail_ways(bbox: tuple[float, float, float, float], timeout: int = 180
     """
     w, s, e, n = bbox
     hw = "|".join(TRAIL_HIGHWAYS)
+    pistes = "|".join(PISTE_TYPES)
     q = (f'[out:json][timeout:120];'
          f'(way["highway"~"^({hw})$"]["footway"!~"^(sidewalk|crossing|access_aisle|traffic_island)$"]'
-         f'({s},{w},{n},{e}););out geom tags;')
+         f'({s},{w},{n},{e});'
+         f'way["piste:type"~"^({pistes})$"]({s},{w},{n},{e}););out geom tags;')
     return _overpass(q, timeout)
 
 
@@ -58,7 +60,11 @@ def fetch_trail_ways_chunked(bbox) -> list[dict]:
     """Trail ways over a bbox — local OSM extract if available, else Overpass cells."""
     reg = osm_source.region_elements(bbox)
     if reg is not None:
-        return osm_source.select(reg["ways"], "highway", set(TRAIL_HIGHWAYS))
+        ways = osm_source.select(reg["ways"], "highway", set(TRAIL_HIGHWAYS))
+        seen = {w.get("id") for w in ways}
+        # Ski runs, which mostly carry no highway tag.
+        return ways + [w for w in osm_source.select(reg["ways"], "piste:type", set(PISTE_TYPES))
+                       if w.get("id") not in seen]
     cells = _split_bbox(bbox)
     seen, out = set(), []
     for i, cell in enumerate(cells):

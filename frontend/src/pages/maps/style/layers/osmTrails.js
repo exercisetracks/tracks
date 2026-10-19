@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Hawk Fugagli
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { COLORS } from "../palette";
+import { TRAIL_NAME_FIT } from "./trails";
 
 // ── OSM rich trails (downloaded regions) ──────────────────────────────────────
 // Rendered from the trail_builder's per-region overlay `trails` tileset, which
@@ -36,6 +37,17 @@ const isFaint = ["in", ["get", "trail_visibility"], ["literal", ["bad", "horribl
 const isDifficult = ["in", ["get", "sac_scale"],
   ["literal", ["demanding_mountain_hiking", "alpine_hiking",
                "demanding_alpine_hiking", "difficult_alpine_hiking"]]];
+
+// Ski runs (OSM piste:type, trail_classify): a run is kind "piste"; a summer
+// trail that is a winter piste keeps its own kind and also carries piste_type.
+const isDownhill = ["==", ["get", "piste_type"], "downhill"];
+const isNordic = ["in", ["get", "piste_type"], ["literal", ["nordic", "skitour", "sled", "hike", "sleigh", "fatbike"]]];
+const PISTE_COLOR = ["match", ["get", "piste_difficulty"],
+  ["novice", "easy"], COLORS.trails.pisteEasy,
+  "intermediate", COLORS.trails.pisteMedium,
+  ["advanced", "expert"], COLORS.trails.pisteHard,
+  ["freeride", "extreme"], COLORS.trails.pisteFreeride,
+  COLORS.trails.pisteMedium];
 
 export function buildOsmTrails() {
   return [
@@ -184,6 +196,36 @@ export function buildOsmTrails() {
       },
     },
 
+    // ── Ski runs: solid, in the trail-sign colour of their difficulty ─────────
+    {
+      id: "osm_pistes_downhill",
+      ...OSM_SRC,
+      type: "line",
+      minzoom: 10,
+      filter: isDownhill,
+      layout: { "line-cap": "round", "line-join": "round" },
+      paint: {
+        "line-color": PISTE_COLOR,
+        "line-width": ["interpolate", ["exponential", 1.5], ["zoom"], 10, 1.2, 13, 2.4, 16, 4.2],
+        "line-opacity": ["interpolate", ["linear"], ["zoom"], 10, 0, 10.5, 0.9],
+      },
+    },
+    // ── Nordic trails, ski touring and sled runs: a dashed blue ───────────────
+    {
+      id: "osm_pistes_nordic",
+      ...OSM_SRC,
+      type: "line",
+      minzoom: 10,
+      filter: isNordic,
+      layout: { "line-cap": "butt", "line-join": "round" },
+      paint: {
+        "line-color": COLORS.trails.pisteNordic,
+        "line-width": ["interpolate", ["exponential", 1.5], ["zoom"], 10, 1.0, 13, 2.0, 16, 3.4],
+        "line-dasharray": [4, 2],
+        "line-opacity": ["interpolate", ["linear"], ["zoom"], 10, 0, 10.5, 0.85],
+      },
+    },
+
     // ── Trail names (OSM has far better coverage than the basemap) ────────────
     {
       id: "osm_trails_labels",
@@ -196,9 +238,7 @@ export function buildOsmTrails() {
         "text-font": ["Noto Sans Italic"],
         "text-size": ["interpolate", ["linear"], ["zoom"], 12, 10.5, 16, 13.5],
         "symbol-placement": "line",
-        "symbol-spacing": 300,
-        "text-max-angle": 40,
-        "text-padding": 4,
+        ...TRAIL_NAME_FIT,
       },
       paint: {
         "text-color": COLORS.trails.label,

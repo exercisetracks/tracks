@@ -211,6 +211,11 @@ const LINES = [
     [<Line color={t.steps} width={3} dash="1 2.5" />, "Steps / stairway"],
     [<Line color={t.difficult} width={2} dash="3 2" />, "Difficult / technical"],
     [<Line color={t.routeLine} width={3} />, "Long-distance route"],
+    [<Line color={t.pisteEasy} width={2.6} />, "Ski run: easy"],
+    [<Line color={t.pisteMedium} width={2.6} />, "Ski run: intermediate"],
+    [<Line color={t.pisteHard} width={2.6} />, "Ski run: advanced"],
+    [<Line color={t.pisteFreeride} width={2.6} />, "Ski run: freeride"],
+    [<Line color={t.pisteNordic} width={2.2} dash="4 2" />, "Nordic / ski touring"],
   ]],
   // NB: "Railroads & utilities" is rendered separately (RAIL_UTIL) — its rail/
   // power/pipeline swatches composite the live sprite glyphs so they stay in

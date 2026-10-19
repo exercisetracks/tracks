@@ -94,6 +94,7 @@ val LAYER_GROUPS: List<LayerGroup> = listOf(
             "osm_trails_bridge", "osm_trails_unpaved", "osm_trails_paved",
             "osm_trails_faint", "osm_trails_difficult", "osm_trails_steps",
             "osm_trails_oneway", "osm_trails_labels",
+            "osm_pistes_downhill", "osm_pistes_nordic",
         ),
     ),
     LayerGroup(
