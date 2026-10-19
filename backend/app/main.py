@@ -449,6 +449,10 @@ async def lifespan(app: FastAPI):
         from app.services.sprite_builder import build_sprite_async
         build_sprite_async()
 
+        # The places the map draws, as tiles (non-blocking; only when missing).
+        from app.services import poi_tiles
+        poi_tiles.ensure_built()
+
         # Build the region-independent global long-route overview if missing, so
         # long trails show everywhere (not only in downloaded regions).
         from app.services.global_routes import routes_path, start_global_routes_build

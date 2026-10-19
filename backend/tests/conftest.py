@@ -419,6 +419,18 @@ def silence_post_import_jobs(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def silence_poi_tile_builds(monkeypatch):
+    """A places-archive rebuild (app.services.poi_tiles) runs in a thread and
+    writes master_pois.pmtiles into the map-data directory -- the real one,
+    from the test database, minutes after the test that asked for it has
+    gone. Tests of the build call poi_tiles.build directly with a path of
+    their own."""
+    from app.services import poi_tiles
+    monkeypatch.setattr(poi_tiles, "request_rebuild", lambda *a, **kw: None)
+    monkeypatch.setattr(poi_tiles, "ensure_built", lambda: None)
+
+
+@pytest.fixture(autouse=True)
 def clear_global_state():
     """Reset auth state between tests so test ordering (the suite runs under
     pytest-randomly) can't cause cross-test bleed-through: the login

@@ -16,6 +16,7 @@ export const TILESET_NAMES = {
   // fills z8-12 in areas with no regional DEM downloaded (soft relief everywhere).
   dem_overview: "planet_dem_z7",
   contours: "master_contours",
+  pois: "master_pois",
   // The web map's merged vector source (style mergeSources), one request per
   // tile for every vector archive.
   tiles: "merged",
@@ -27,6 +28,7 @@ const TILE_EXT = {
   dem: ".webp",
   dem_overview: ".webp",
   contours: ".mvt",
+  pois: ".mvt",
   tiles: ".mvt",
 };
 
@@ -84,11 +86,6 @@ export function buildDemSources(version = "", overviewVersion = "") {
 export function buildSources(version = "") {
   const v = version ? `?v=${version}` : "";
   return {
-    // GeoJSON source populated dynamically by usePoiFeatures on moveend/zoomend
-    poi_features: {
-      type: "geojson",
-      data: EMPTY_FC,
-    },
     // User custom tracks (courses), fed by useMapItems. promoteId:"id" lets
     // feature-state (hover/selected) light a whole track on the GPU.
     custom_tracks: {
@@ -218,6 +215,18 @@ export function buildSources(version = "") {
       maxzoom: 12,
       tiles: [`/api/tiles/master_contours/{z}/{x}/{y}.mvt${v}`],
       attribution: "",
+    },
+    // Places of interest -- peaks, springs, campgrounds, trailheads -- ranked
+    // once on the server (backend app.services.poi_tiles), so which icon and
+    // name show at a zoom is baked in as icon_zoom / label_zoom. They used to
+    // arrive as GeoJSON fetched after every pan, capped per view. Archive is
+    // z4-13; maxzoom 13 so MapLibre overzooms it.
+    pois: {
+      type: "vector",
+      tiles: [`/api/tiles/master_pois/{z}/{x}/{y}.mvt${v}`],
+      minzoom: 4,
+      maxzoom: 13,
+      attribution: '<a href="https://www.usgs.gov/tools/geographic-names-information-system-gnis">USGS GNIS</a>',
     },
   };
 }

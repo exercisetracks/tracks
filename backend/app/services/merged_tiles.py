@@ -26,6 +26,9 @@ tile with both lists. Two things stop it being only that:
   the child's grid and clipped with a margin ([_overzoom]). Lines keep their
   full shape across the cut because the margin is wider than any stroke.
 
+Places of interest come in the same tile (master_pois, prefix po_; see
+poi_tiles), which also ended a GeoJSON request after every pan.
+
 The phone keeps its separate sources: its offline packs answer tile requests
 archive by archive (PackInterceptor), and a merged tile has no archive.
 
@@ -58,6 +61,7 @@ SOURCES: list[tuple[str, str, int, int]] = [
     ("master_overlay", "ov_", 6, 15),
     ("master_routes", "rt_", 3, 12),
     ("master_contours", "ct_", 9, 12),
+    ("master_pois", "po_", 4, 13),
 ]
 PREFIXES = {name: prefix for name, prefix, _, _ in SOURCES}
 

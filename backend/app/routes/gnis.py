@@ -40,6 +40,8 @@ def trigger_download():
             if data:
                 count = import_gnis_to_db(data)
                 logger.info("GNIS import complete: %d features", count)
+                from app.services import poi_tiles
+                poi_tiles.request_rebuild(delay_s=0)
             else:
                 logger.error("GNIS download failed")
         finally:

@@ -299,6 +299,9 @@ def flush_rows(bbox: tuple[float, float, float, float], rows: dict) -> int:
             db.close()
 
     logger.info("Indexed %d OSM POIs for bbox %s", inserted, bbox)
+    # The map draws places from their own archive, made from this index.
+    from app.services import poi_tiles
+    poi_tiles.request_rebuild()
     return inserted
 
 

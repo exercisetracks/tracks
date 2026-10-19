@@ -10,7 +10,6 @@ import { useDownloadStatus } from "./hooks/useDownloadStatus";
 import { useLayerToggles } from "./hooks/useLayerToggles";
 import { useRegionDownload } from "./hooks/useRegionDownload";
 import { usePoiSearch } from "./hooks/usePoiSearch";
-import { usePoiFeatures } from "./hooks/usePoiFeatures";
 import { usePublicLandLabelRank } from "./hooks/usePublicLandLabelRank";
 import { useGridOverlay } from "./hooks/useGridOverlay";
 import { use3D } from "./hooks/use3D";
@@ -131,7 +130,6 @@ export default function MapView() {
   // search box and covered the results.
   const pointCloseRef = useRef(null);
   const search = usePoiSearch(map, ready, { onTyping: () => pointCloseRef.current?.() });
-  usePoiFeatures(map, ready);
   // Grid-ranks the public-land area names (grant-once, pan-stable) — the layer
   // starts filtered to nothing and this hook owns its filter.
   usePublicLandLabelRank(map, ready);

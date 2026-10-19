@@ -150,7 +150,8 @@ export function buildLabels() {
     // than stacking.
     {
       id: "labels_water_gnis",
-      source: "poi_features",
+      source: "pois",
+      "source-layer": "pois",
       type: "symbol",
       minzoom: 11,
       metadata: { "tracks:collide": true },
@@ -302,7 +303,8 @@ export function buildLabels() {
     // Uses USGS quad-sheet style: raw symbol icons with name/elevation labels below.
     {
       id: "poi_db_icons",
-      source: "poi_features",
+      source: "pois",
+      "source-layer": "pois",
       type: "symbol",
       // Exclude place-label kinds — they are already rendered by the basemap's
       // labels_place_locality/labels_place_county layers with correct coordinates.
@@ -452,7 +454,8 @@ export function buildLabels() {
     // never get culled in dense terrain. Slightly larger, blue label ink.
     {
       id: "poi_water_icons",
-      source: "poi_features",
+      source: "pois",
+      "source-layer": "pois",
       type: "symbol",
       minzoom: 10,
       filter: ["in", ["get", "kind"], ["literal", ["spring", "well", "drinking_water"]]],
@@ -515,7 +518,8 @@ export function buildLabels() {
     },
     {
       id: "poi_trailhead_icons",
-      source: "poi_features",
+      source: "pois",
+      "source-layer": "pois",
       type: "symbol",
       minzoom: 10,
       filter: ["==", ["get", "kind"], "trailhead"],

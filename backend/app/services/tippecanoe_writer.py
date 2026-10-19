@@ -80,7 +80,8 @@ def features_to_ndjson(feats, path: str | Path, max_zoom: int = OVERLAY_MAX_ZOOM
 def build_overlay(layer_files: dict[str, str | Path], output_path: str | Path,
                   min_zoom: int = OVERLAY_MIN_ZOOM, max_zoom: int = OVERLAY_MAX_ZOOM,
                   progress_cb=None, cancel=None,
-                  clip_bbox: "Sequence[float] | None" = None) -> int:
+                  clip_bbox: "Sequence[float] | None" = None,
+                  extra_args: "Sequence[str]" = ()) -> int:
     """Run tippecanoe over per-layer NDJSON files → one multi-layer pmtiles.
 
     ``layer_files`` maps layer name → its NDJSON path; empty/missing files are
@@ -120,6 +121,7 @@ def build_overlay(layer_files: dict[str, str | Path], output_path: str | Path,
     if clip_bbox is not None:
         w, s, e, n = clip_bbox
         cmd.append(f"--clip-bounding-box={w},{s},{e},{n}")
+    cmd += list(extra_args)
     for name, p in layers.items():
         cmd += ["-L", f"{name}:{p}"]
     try:

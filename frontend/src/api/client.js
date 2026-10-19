@@ -227,7 +227,6 @@ export const api = {
     if (inView) url += "&in_view=true";
     return get(url, { noCache: true });
   },
-  getPoiFeatures:  (bbox, zoom = 12, { signal } = {}) => get(`/maps/poi/features?bbox=${encodeURIComponent(bbox)}&zoom=${zoom}`, { noCache: true, signal }),
   // Live wildfire + smoke overlays (opt-in; backend proxies NIFC / NOAA and
   // caches server-side — client cache only smooths quick toggle flips).
   getWildfires:     () => get("/maps/wildfires", { ttl: 300_000 }),

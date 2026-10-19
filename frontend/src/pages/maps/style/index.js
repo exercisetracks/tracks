@@ -253,7 +253,7 @@ export function underLabels(layers, moved) {
  * source reads the same URLs, which the browser has already cached.
  */
 export const MERGED_SOURCE = "tiles";
-export const MERGED_PREFIX = { basemap: "", basemap_overview: "", overlay: "ov_", routes_osm: "rt_", contours: "ct_" };
+export const MERGED_PREFIX = { basemap: "", basemap_overview: "", overlay: "ov_", routes_osm: "rt_", contours: "ct_", pois: "po_" };
 
 /**
  * Where a source's layer lives on this map: under its own name, or inside the
@@ -269,7 +269,7 @@ export function vectorRef(map, source, sourceLayer) {
 export function mergeSources(style, version = "") {
   const url = `/api/tiles/merged/{z}/{x}/{y}.mvt${version ? `?v=${version}` : ""}`;
   const sources = { ...style.sources };
-  for (const id of ["basemap", "overlay", "routes_osm", "contours"]) delete sources[id];
+  for (const id of ["basemap", "overlay", "routes_osm", "contours", "pois"]) delete sources[id];
   sources[MERGED_SOURCE] = {
     type: "vector",
     tiles: [url],

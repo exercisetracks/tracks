@@ -23,6 +23,7 @@ tiles under it and any number of them sit side by side on a phone.
 | `overlay` | 8-15 | master_overlay |
 | `contours` | 9-12 | master_contours |
 | `dem` | 6-12 | planet_dem_z7 z6-7 (the cell's parents) + master_dem z8-12 |
+| `pois` | 8-13 | master_pois (poi_tiles): the map's places, ranked |
 
 Below z8 a tile spans many cells, so those zooms come as **shared** packs, one
 of each per phone: `world` (basemap z0-7), `world-dem` (terrain z0-5),
@@ -58,7 +59,7 @@ from app.services import map_store, region_registry, tile_archives
 logger = logging.getLogger(__name__)
 
 CELL_ZOOM = 8
-CELL_LAYERS = ("basemap", "overlay", "contours", "dem")
+CELL_LAYERS = ("basemap", "overlay", "contours", "dem", "pois")
 SHARED = ("world", "world-dem", "overlay-low", "routes", "assets")
 # The cache keeps at most this share of the masters' size, and never less than
 # the floor — enough for a few states being saved at once.
@@ -126,6 +127,10 @@ def cell_version(layer: str, x: int, y: int, areas: list[dict]) -> str:
         parts.append(_file_identity(_planet("planet_basemap")))
     if layer == "dem":
         parts.append(_file_identity(_planet("planet_dem_z7")))
+    if layer == "pois":
+        # Rebuilt whole when the index changes anywhere (poi_tiles), so its
+        # own identity is what moves.
+        parts.append(_file_identity(_planet("master_pois")))
     return hashlib.sha256("|".join(parts).encode()).hexdigest()[:16]
 
 
@@ -175,6 +180,8 @@ def manifest(bbox: list[float]) -> dict:
             if layer == "contours" and not map_store.master_path(map_store.MASTER_CONTOURS).exists():
                 continue
             if layer == "overlay" and not map_store.master_path(map_store.MASTER_OVERLAY).exists():
+                continue
+            if layer == "pois" and not _planet("master_pois").exists():
                 continue
             v = cell_version(layer, x, y, areas)
             entry = _entry(f"{CELL_ZOOM}/{x}/{y}/{layer}", v, lambda: _estimate_cell(layer, x, y, dir_cache))
@@ -236,6 +243,7 @@ def _cell_sources(layer: str) -> list[tuple[Path, int, int]]:
         "contours": [(map_store.master_path(map_store.MASTER_CONTOURS), 9, 12)],
         "dem": [(_planet("planet_dem_z7"), 6, 7),
                 (map_store.master_path(map_store.MASTER_DEM), 8, 12)],
+        "pois": [(_planet("master_pois"), 8, 13)],
     }[layer]
 
 

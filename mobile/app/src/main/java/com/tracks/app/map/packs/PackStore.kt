@@ -268,6 +268,8 @@ class PackStore(private val context: Context) {
             "master_overlay" -> listOf(if (z < CELL_ZOOM) "shared/overlay-low" else cellKey(z, x, y, "overlay"))
             "master_contours" -> if (z < CELL_ZOOM) emptyList() else listOf(cellKey(z, x, y, "contours"))
             "master_dem" -> if (z < CELL_ZOOM) emptyList() else listOf(cellKey(z, x, y, "dem"))
+            // Places (poi_tiles): offline from the cell packs, z8 and closer.
+            "master_pois" -> if (z < CELL_ZOOM) emptyList() else listOf(cellKey(z, x, y, "pois"))
             "master_routes" -> listOf("shared/routes")
             "planet_dem_z7" -> when {
                 z <= 5 -> listOf("shared/world-dem")

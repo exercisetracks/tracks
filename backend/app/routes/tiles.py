@@ -21,7 +21,8 @@ router = APIRouter(prefix="/tiles", tags=["tiles"])
 # fetched fresh on the next zoom-in, so the basemap never visibly reloads.
 # planet_dem_z7 is listed so the browser's z0-7 relief URL carries a version
 # too and is cached for good, instead of revalidated tile by tile.
-TILESETS = ["master_dem", "master_contours", "master_overlay", "master_routes", "planet_dem_z7"]
+TILESETS = ["master_dem", "master_contours", "master_overlay", "master_routes", "planet_dem_z7",
+            "master_pois"]
 
 
 @router.get("/merged/{z}/{x}/{y}.mvt")
