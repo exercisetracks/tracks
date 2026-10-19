@@ -898,6 +898,12 @@ object ExploreBridge {
     interface Library {
         fun wanted(): Pair<List<DesiredCourse>, List<DesiredWaypoint>>?
         fun onReport(report: ReconcileReport)
+        /**
+         * The session's own account of itself, also kept by the app (the
+         * watch-sync trace): logcat is gone long before a failed session is
+         * noticed, and a failure that recurs needs its sessions side by side.
+         */
+        fun log(message: String) {}
     }
 
     @Volatile

@@ -64,8 +64,10 @@ Once the pill has gone, the news lives in the drawer, below Settings, under
 **Status**:
 
 - each running job, one per source, with its progress;
-- the last 5 results, newest first, each with when it happened ("4 min ago")
-  and a × to dismiss;
+- the results, newest first, each with when it happened ("4 min ago") and a ×
+  to dismiss. Failures stay until dismissed or answered (below). Of
+  successes only the newest is kept, and only for a minute (changed
+  2026-10-19: a list of things that went fine is not news);
 - **Sync now**.
 
 A row is one line until tapped, then shows all of its words.
@@ -104,6 +106,11 @@ A result from a source:
 - ends a "…" job that source posted;
 - answers that source's earlier failures. A watch sync that worked removes
   "Restart your watch".
+
+Work that recovers with nothing to say calls `StatusBoard.resolve(source,
+prefix)`, which clears only the failure it names: a course-and-place session
+that works removes "The watch couldn't finish syncing courses and places",
+and leaves "Restart your watch" alone.
 
 It never ends a runner's progress, which clears itself when the runner stops.
 

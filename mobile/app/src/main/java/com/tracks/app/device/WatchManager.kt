@@ -869,6 +869,12 @@ class WatchManager(
         } else {
             Log.w(TAG, "the watch could not finish syncing courses and places")
         }
+        // Reported here rather than by the map, so it is heard off the map
+        // too; and answered by the next session that works, even one with
+        // nothing to say, so it does not outlive the trouble.
+        val board = containerProvider().status
+        if (report.failed) board.post(EXPLORE_FAILED, com.tracks.app.ui.status.StatusSource.Watch, failed = true)
+        else board.resolve(com.tracks.app.ui.status.StatusSource.Watch, EXPLORE_FAILED)
         refreshWatchLibrary()
         _courseChanges.tryEmit(report)
     }
@@ -882,6 +888,10 @@ class WatchManager(
         if (integration is GarminIntegration) {
             ExploreBridge.library = object : ExploreBridge.Library {
                 override fun wanted() = wantedOnWatch
+                override fun log(message: String) {
+                    SyncTrace.note(containerProvider().appContext, "explore: $message")
+                }
+
                 override fun onReport(report: ReconcileReport) {
                     scope.launch {
                         runCatching { applyWatchReport(report) }
@@ -1705,3 +1715,6 @@ internal fun scheduleDigest(schedule: ByteArray, workouts: List<WatchPushFile>):
     }
     return md.digest().joinToString("") { "%02x".format(it) }
 }
+
+/** The status board's words for a failed course-and-place session; see applyWatchReport. */
+private const val EXPLORE_FAILED = "The watch couldn’t finish syncing courses and places — it will try again"

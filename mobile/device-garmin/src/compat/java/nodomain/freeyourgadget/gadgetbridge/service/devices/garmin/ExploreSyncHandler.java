@@ -65,6 +65,8 @@ public class ExploreSyncHandler {
             @Override
             public void log(final String message) {
                 LOG.info("ExploreSync: {}", message);
+                final ExploreBridge.Library bridge = ExploreBridge.INSTANCE.getLibrary();
+                if (bridge != null) bridge.log(message);
             }
 
             @Override

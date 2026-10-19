@@ -308,7 +308,9 @@ class AppContainer(private val context: Context) {
     val lastBackupAt = MutableStateFlow(prefs().getLong(KEY_LAST_BACKUP, 0L).takeIf { it > 0 })
 
     /** Everything running and every result, for the one status pill — see StatusBoard. */
-    val status = com.tracks.app.ui.status.StatusBoard()
+    val status = com.tracks.app.ui.status.StatusBoard(
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Default),
+    )
 
     private val _backupProgress = MutableStateFlow<com.tracks.app.backup.BackupProgress?>(null)
 

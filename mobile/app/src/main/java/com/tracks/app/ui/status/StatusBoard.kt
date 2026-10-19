@@ -7,6 +7,7 @@ import androidx.compose.runtime.setValue
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 /**
  * Everything the app is doing out of sight, and what came of it — the one
@@ -20,7 +21,13 @@ import kotlinx.coroutines.flow.update
  * [StatusSource], and a result from a source settles that source's slot, so
  * the same operation cannot be on screen twice.
  */
-class StatusBoard {
+class StatusBoard(
+    /**
+     * Where a success's one-minute expiry runs. Null (tests) leaves expiry to
+     * [expireSuccesses].
+     */
+    private val scope: kotlinx.coroutines.CoroutineScope? = null,
+) {
 
     private val _jobs = MutableStateFlow<Map<StatusSource, StatusJob>>(emptyMap())
 
@@ -29,7 +36,12 @@ class StatusBoard {
 
     private val _notes = MutableStateFlow<List<StatusNote>>(emptyList())
 
-    /** Results, newest first: failures until dismissed, successes briefly. */
+    /**
+     * Results, newest first. Failures stay until dismissed or answered by a
+     * later success from the same source; of successes only the newest is
+     * kept, and only for [SUCCESS_TTL_MS] — a list of things that went fine
+     * is not news worth a drawer.
+     */
     val notes: StateFlow<List<StatusNote>> = _notes
 
     private var nextId = 1L
@@ -64,13 +76,37 @@ class StatusBoard {
         // A result ends the "…" this source posted, never the progress a
         // runner is reporting: that one clears itself when the runner stops.
         _jobs.update { jobs -> if (jobs[source]?.posted == true) jobs - source else jobs }
+        val note = StatusNote(nextId++, source, message, failed)
         _notes.update { notes ->
-            val kept = if (failed || source == StatusSource.App) notes
+            var kept = if (failed || source == StatusSource.App) notes
             else notes.filterNot { it.source == source && it.failed }
+            // One success at a time: a newer one replaces it.
+            if (!failed) kept = kept.filter { it.failed }
             // The same words again are the same news, not a second item.
-            (listOf(StatusNote(nextId++, source, message, failed)) + kept.filterNot { it.text == message })
-                .take(MAX_NOTES)
+            (listOf(note) + kept.filterNot { it.text == message }).take(MAX_NOTES)
         }
+        if (!failed) scope?.launch {
+            kotlinx.coroutines.delay(SUCCESS_TTL_MS)
+            dismiss(note.id)
+        }
+    }
+
+    /**
+     * [source]'s trouble is over, with nothing to say about it: its failures
+     * go, quietly. For work that succeeds without news — an Explore session
+     * that had nothing to change — which would otherwise leave "it will try
+     * again" up long after it had. [startingWith] narrows it to one kind of
+     * failure, so a clean course sync does not clear "restart your watch".
+     */
+    fun resolve(source: StatusSource, startingWith: String? = null) {
+        _notes.update { notes ->
+            notes.filterNot { it.source == source && it.failed && (startingWith == null || it.text.startsWith(startingWith)) }
+        }
+    }
+
+    /** Drop successes older than [SUCCESS_TTL_MS] as of [now]. */
+    fun expireSuccesses(now: Long = System.currentTimeMillis()) {
+        _notes.update { notes -> notes.filterNot { !it.failed && now - it.at >= SUCCESS_TTL_MS } }
     }
 
     private val _seenUpTo = MutableStateFlow(0L)
@@ -106,6 +142,7 @@ class StatusBoard {
 
     companion object {
         const val MAX_NOTES = 6
+        const val SUCCESS_TTL_MS = 60_000L
 
         /**
          * Whether a message reports a failure, read from its words because the

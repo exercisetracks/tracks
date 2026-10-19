@@ -63,4 +63,41 @@ class StatusBoardTest {
         assertFalse(StatusBoard.isFailure("Imported 4 places"))
         assertFalse(StatusBoard.isFailure("Signed out. This phone's data was kept."))
     }
+
+    /** A drawer full of "done" was noise: only the newest success is kept. */
+    @Test
+    fun only_the_newest_success_is_kept() {
+        val board = StatusBoard()
+        board.post("Could not save that place")
+        board.post("Imported 4 places")
+        board.post("“Loop” is on the watch")
+        assertEquals(listOf("“Loop” is on the watch", "Could not save that place"), board.notes.value.map { it.text })
+    }
+
+    /** Successes go after a minute; failures stay. */
+    @Test
+    fun successes_expire_after_a_minute_and_failures_stay() {
+        val board = StatusBoard()
+        board.post("Could not save that place")
+        board.post("Imported 4 places")
+        val posted = board.notes.value.first().at
+        board.expireSuccesses(posted + StatusBoard.SUCCESS_TTL_MS - 1)
+        assertEquals(2, board.notes.value.size)
+        board.expireSuccesses(posted + StatusBoard.SUCCESS_TTL_MS)
+        assertEquals(listOf("Could not save that place"), board.notes.value.map { it.text })
+    }
+
+    /**
+     * A course sync that works with nothing to change used to leave "it will
+     * try again" up for good; it clears that one failure and no other.
+     */
+    @Test
+    fun a_quiet_recovery_clears_only_its_own_failure() {
+        val board = StatusBoard()
+        board.post("Your watch refused to send its 3 file(s). Restart the watch and sync again.", StatusSource.Watch)
+        board.post("The watch couldn’t finish syncing courses and places — it will try again", StatusSource.Watch)
+        board.resolve(StatusSource.Watch, "The watch couldn’t finish syncing courses")
+        assertEquals(1, board.notes.value.size)
+        assertTrue(board.notes.value.single().text.startsWith("Your watch refused"))
+    }
 }

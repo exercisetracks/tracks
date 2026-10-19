@@ -267,7 +267,6 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
                 val names = _state.value.courses.associate { it.id to it.name }
                 val places = _state.value.waypoints.associate { it.id to it.name }
                 val said = listOfNotNull(
-                    "The watch couldn’t finish syncing — it will try again".takeIf { report.failed },
                     // Only what this sync changed — see ReconcileReport.changedOn.
                     receipt(report.changedOn.size + report.changedPlacesOn.size, "on",
                         report.changedOn.firstNotNullOfOrNull { names[it] } ?: report.changedPlacesOn.firstNotNullOfOrNull { places[it] }),
