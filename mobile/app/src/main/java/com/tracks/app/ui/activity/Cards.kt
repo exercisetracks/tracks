@@ -33,16 +33,20 @@ import com.tracks.core.format.elapsed
 import com.tracks.core.format.elevation
 import com.tracks.core.format.pace
 
+/** Below this content width a [StatGrid] row holds two stats, not three. */
+private val TWO_UP_BELOW = 300.dp
+
 /** One figure and its label, as a layout hands it to [StatGrid]. */
 data class Stat(val value: String, val label: String)
 
 /**
- * Stats in rows of three.
+ * Stats in rows of three, or two on a narrow phone.
  *
- * Fixed at three rather than a responsive grid: these are short strings at a
- * known size, three fits every phone width this app targets, and a `LazyGrid`
- * inside the detail screen's scroll would nest two scrollables — which Compose
- * allows and which behaves badly under a finger.
+ * Plain rows rather than a `LazyGrid`: one inside the detail screen's scroll
+ * would nest two scrollables, which Compose allows and which behaves badly
+ * under a finger. Three stopped fitting every phone once values like
+ * "42.7 km/h" arrived; the figures shrink to fit ([StatValue]) and below
+ * [TWO_UP_BELOW] there are two to a row, as on the health page.
  */
 @Composable
 fun StatGrid(stats: List<Stat>, modifier: Modifier = Modifier) {
@@ -53,17 +57,17 @@ fun StatGrid(stats: List<Stat>, modifier: Modifier = Modifier) {
             containerColor = MaterialTheme.colorScheme.surfaceVariant,
         ),
     ) {
-        Column(
-            Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(18.dp),
-        ) {
-            stats.chunked(3).forEach { row ->
-                Row(Modifier.fillMaxWidth()) {
-                    row.forEach { stat ->
-                        StatValue(stat.value, stat.label, Modifier.weight(1f))
+        androidx.compose.foundation.layout.BoxWithConstraints(Modifier.padding(16.dp)) {
+            val columns = if (maxWidth < TWO_UP_BELOW) 2 else 3
+            Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
+                stats.chunked(columns).forEach { row ->
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        row.forEach { stat ->
+                            StatValue(stat.value, stat.label, Modifier.weight(1f))
+                        }
+                        // Pad the last row so two stats do not stretch to fill it.
+                        repeat(columns - row.size) { Column(Modifier.weight(1f)) {} }
                     }
-                    // Pad the last row so two stats do not stretch to fill it.
-                    repeat(3 - row.size) { Column(Modifier.weight(1f)) {} }
                 }
             }
         }

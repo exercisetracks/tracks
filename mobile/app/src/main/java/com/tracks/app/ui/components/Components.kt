@@ -14,8 +14,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.tracks.app.ui.theme.statLabel
@@ -40,10 +44,65 @@ fun StatValue(
         horizontalAlignment = if (centered) Alignment.CenterHorizontally else Alignment.Start,
     ) {
         val align = if (centered) androidx.compose.ui.text.style.TextAlign.Center else null
-        Text(value, style = statValue, color = MaterialTheme.colorScheme.onSurface, textAlign = align)
-        Text(label, style = statLabel, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = align)
+        FittedStat(value, align)
+        Text(
+            label, style = statLabel, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = align,
+            maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+        )
     }
 }
+
+/**
+ * A figure on one line, its unit small, shrunk until it fits its cell.
+ *
+ * Long values ("42.7 km/h", "1:02:33") used to wrap inside a third of the
+ * screen, the unit landing alone on a second line. The unit now reads as a
+ * unit — about half the figure's size — and the whole thing scales down in
+ * steps until it fits, so it looks right on any phone and any field.
+ * (Compose's own `TextAutoSize` arrives in foundation 1.8; this app is on 1.7.)
+ */
+@Composable
+private fun FittedStat(value: String, align: androidx.compose.ui.text.style.TextAlign?) {
+    val (figure, unit) = splitUnit(value)
+    val text = androidx.compose.ui.text.buildAnnotatedString {
+        append(figure)
+        if (unit != null) {
+            withStyle(androidx.compose.ui.text.SpanStyle(fontSize = statValue.fontSize * UNIT_SCALE)) {
+                append(" ")
+                append(unit)
+            }
+        }
+    }
+    var scale by androidx.compose.runtime.remember(value) { androidx.compose.runtime.mutableFloatStateOf(1f) }
+    var fitted by androidx.compose.runtime.remember(value) { androidx.compose.runtime.mutableStateOf(false) }
+    Text(
+        text,
+        style = statValue.copy(fontSize = statValue.fontSize * scale),
+        color = MaterialTheme.colorScheme.onSurface,
+        textAlign = align,
+        maxLines = 1,
+        softWrap = false,
+        onTextLayout = { layout ->
+            if (layout.hasVisualOverflow && scale > MIN_SCALE) scale *= SHRINK_STEP else fitted = true
+        },
+        // Not drawn until it fits, so a long value never flashes at full size.
+        modifier = Modifier.drawWithContent { if (fitted) drawContent() },
+    )
+}
+
+/**
+ * "42.7 km/h" → ("42.7", "km/h"); "5:23 /km" → ("5:23", "/km"). A value
+ * that is not a figure and a short unit ("Strong", "1h 02m") stays whole.
+ */
+internal fun splitUnit(value: String): Pair<String, String?> {
+    val m = UNIT_PATTERN.matchEntire(value.trim()) ?: return value to null
+    return m.groupValues[1] to m.groupValues[2]
+}
+
+private val UNIT_PATTERN = Regex("""^([−+-]?\d[\d.,:]*)\s*([\p{L}%/°][^\s]{0,7})$""")
+private const val UNIT_SCALE = 0.55f
+private const val SHRINK_STEP = 0.92f
+private const val MIN_SCALE = 0.5f
 
 /**
  * What a screen shows instead of nothing.

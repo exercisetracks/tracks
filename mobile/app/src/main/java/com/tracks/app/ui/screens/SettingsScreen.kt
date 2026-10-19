@@ -150,12 +150,11 @@ fun SettingsScreen(
                 WorkoutReminderRow(container)
                 if (profile.loaded) {
                     SectionDivider()
-                    // The account's: the same on every phone. Unset, it follows
-                    // whether this phone has a watch (the watch records its own).
+                    // The account's: the same on every phone. On unless turned off.
                     ToggleRow(
                         "Start activity button",
                         "On the dashboard, start a run, ride, strength or flexibility session that is not on your plan.",
-                        profile.bool("start_activity_button", !com.tracks.app.ui.components.LocalHasDevice.current),
+                        profile.bool("start_activity_button", true),
                     ) { onSet("start_activity_button", it) }
                 }
             }

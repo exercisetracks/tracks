@@ -94,9 +94,11 @@ fun DashboardScreen(
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
     val startSetting by vm.startButton.collectAsStateWithLifecycle()
-    val hasDevice = com.tracks.app.ui.components.LocalHasDevice.current
-    // Automatic unless chosen: a phone with a watch has the watch to record.
-    val showStart = startSetting ?: !hasDevice
+    // Shown unless turned off. It used to hide itself on phones with a watch
+    // (the watch records its own), but strength, flexibility and free-form
+    // sessions start on the phone either way, and a hidden button was a
+    // feature nobody could find.
+    val showStart = startSetting ?: true
     var starting by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     if (starting) {
@@ -562,23 +564,32 @@ private fun TrainingLocationsCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-        }
-
-        // Pills, like the window's at the top, rather than a segmented bar:
-        // the same kind of choice, so the same piece.
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
-        ) {
-            HeatmapMode.entries.forEach { m ->
-                com.tracks.app.ui.components.BarPill(
-                    text = m.shortLabel(),
-                    selected = m == mode,
-                    onClick = { onMode(m) },
-                )
+            // The modes and their legend float on the map's foot rather than
+            // sitting under it: the page keeps the height, and the controls
+            // sit on the thing they change. Pills, like the window's at the
+            // top: the same kind of choice, so the same piece.
+            Column(
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(Tokens.Space.s3)
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.88f), RoundedCornerShape(Tokens.Radius.xl))
+                    .padding(horizontal = Tokens.Space.s3, vertical = Tokens.Space.s2),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    HeatmapMode.entries.forEach { m ->
+                        com.tracks.app.ui.components.BarPill(
+                            text = m.shortLabel(),
+                            selected = m == mode,
+                            onClick = { onMode(m) },
+                        )
+                    }
+                }
+                HeatmapLegend(mode)
             }
         }
-        HeatmapLegend(mode)
+
 
         // Applied outside onMapReady: that callback fires as soon as the style
         // parses, which is before the routes arrive, so a camera framed there

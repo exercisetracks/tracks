@@ -136,8 +136,18 @@ fun ActivitiesScreen(
         return
     }
 
-    val visible = remember(state.activities, local.sort, local.types) {
+    // Keyed on every input of [ActivitiesViewModel.visible]. It was keyed on
+    // the sort field and types only, so a search, a flipped direction or a
+    // new window changed nothing until something else (leaving and coming
+    // back) recomputed the list — which read as search not working at all.
+    val visible = remember(state.activities, local.sort, local.descending, local.types, local.query, local.window) {
         vm.visible(state.activities, local)
+    }
+    // A new order or filter starts at its top: the first thing anyone wants
+    // after "oldest first" is the oldest one.
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+    LaunchedEffect(local.sort, local.descending, local.types, local.query, local.window) {
+        listState.scrollToItem(0)
     }
 
     Column(modifier.fillMaxSize()) {
@@ -154,10 +164,11 @@ fun ActivitiesScreen(
         }
 
         if (visible.isEmpty()) {
+            val searched = local.query.isNotBlank()
             EmptyState(
-                title = "Nothing of that type",
-                body = "No activities match the types you picked. Clear the filter " +
-                    "to see everything again.",
+                title = if (searched) "No activity called “${local.query.trim()}”" else "Nothing of that type",
+                body = if (searched) "Nothing's name has that in it. Clear the search to see everything again."
+                else "No activities match the types you picked. Clear the filter to see everything again.",
                 modifier = Modifier.fillMaxSize(),
             )
             return@Column
@@ -173,6 +184,7 @@ fun ActivitiesScreen(
         }
 
         LazyColumn(
+            state = listState,
             modifier = Modifier.weight(1f).fillMaxWidth(),
             contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
             verticalArrangement = Arrangement.spacedBy(5.dp),
@@ -244,6 +256,8 @@ fun ActivityListActions(
                 placeholder = { Text("Search by name") },
                 singleLine = true,
                 textStyle = MaterialTheme.typography.bodyMedium,
+                // A pill, like the sort beside it and every control in the bar.
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(percent = 50),
                 trailingIcon = {
                     IconButton(onClick = { vm.setQuery(""); searching = false }) {
                         Icon(Icons.Filled.Close, contentDescription = "Close search")
