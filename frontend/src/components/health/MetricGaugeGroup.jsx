@@ -142,7 +142,7 @@ function MetricHistory({ metric, start, onClose }) {
       zones={zones}
       // A custom chart brings its own legend, and a duration scale under a
       // chart of something else would describe the wrong picture.
-      strip={!metric.chart}
+      strip={!metric.chart || metric.scaleUnderChart}
       verdict={metric.verdict}
       unit={metric.unit}
       decimals={metric.decimals ?? 0}

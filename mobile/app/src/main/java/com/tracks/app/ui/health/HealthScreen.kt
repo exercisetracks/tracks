@@ -177,6 +177,9 @@ fun HealthScreen(vm: HealthViewModel, modifier: Modifier = Modifier) {
                                     windowStart = state.range.startDate(),
                                 )
                             },
+                            // Drawn in the same bands, so the shared strip is
+                            // its legend.
+                            scaleUnderChart = true,
                         ),
                     ),
                     missingHint = "Worn overnight, the watch records these while you sleep.",

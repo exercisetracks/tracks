@@ -21,6 +21,7 @@
 import {
   ComposedChart, Area, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ReferenceLine, ResponsiveContainer,
+  ReferenceArea,
 } from "recharts";
 import { localIso, SLEEP_COLOR, SCORE_COLOR, SLEEP_GOAL_HOURS, verdictFor } from "./scales";
 import { gaugeFigure } from "../RadialGauge";
@@ -124,11 +125,49 @@ function TooltipBox({ title, children }) {
   );
 }
 
-/** One metric over the window, coloured by the band its latest reading sits in. */
+/** A round step (1, 2 or 5 × a power of ten) near `raw`, for axis ticks. */
+function niceStep(raw) {
+  if (!(raw > 0)) return 1;
+  const p = 10 ** Math.floor(Math.log10(raw));
+  const m = raw / p;
+  return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 5 ? 5 : 10) * p;
+}
+
+/**
+ * Stops for a gradient laid over a path whose box runs from `top` down to
+ * `bottom` (in data units), so each zone's stretch is its own colour with hard
+ * edges -- the stress chart's way of drawing a scale into the line.
+ */
+export function zoneStops(zones, top, bottom) {
+  const span = top - bottom;
+  if (!zones?.length || !(span > 0)) return null;
+  const at = v => Math.min(1, Math.max(0, (top - v) / span));
+  return [...zones].sort((a, b) => b.max - a.max)
+    .flatMap(z => [{ offset: at(z.max), color: z.color }, { offset: at(z.min), color: z.color }]);
+}
+
+/**
+ * One metric over the window, drawn in its scale: each band a faint stripe
+ * behind the plot, and the line and fill taking the colour of the band they
+ * pass through. The scale strip under the chart is the same bands, so a colour
+ * on the line reads straight off it. Without zones, one colour.
+ */
 export function MetricHistoryChart({ trend, start, color, zones, unit, decimals, anchorZero }) {
   const rows = dailyRows(start, { v: trend });
   if (!rows.length) return null;
   const gradientId = `hist-${color.replace("#", "")}`;
+  const values = rows.map(r => r.v).filter(v => v != null);
+  const vMin = Math.min(...values);
+  const vMax = Math.max(...values);
+  const pad = (vMax - vMin || Math.abs(vMax) || 1) * 0.12;
+  // An explicit domain, so the gradient's stops (measured against the drawn
+  // path's box) and the bands (against the axis) describe the same numbers.
+  const step = niceStep(((vMax + pad) - (anchorZero ? 0 : vMin - pad)) / 4);
+  const lo = anchorZero ? 0 : Math.floor((vMin - pad) / step) * step;
+  const hi = Math.ceil((vMax + pad) / step) * step;
+  const yTicks = Array.from({ length: Math.round((hi - lo) / step) + 1 }, (_, i) => +(lo + i * step).toFixed(6));
+  const lineStops = zoneStops(zones, vMax, vMin);
+  const fillStops = zoneStops(zones, vMax, lo);
 
   const tooltip = ({ active, payload }) => {
     const row = payload?.[0]?.payload;
@@ -149,10 +188,20 @@ export function MetricHistoryChart({ trend, start, color, zones, unit, decimals,
       <ComposedChart data={rows} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
         <defs>
           <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={color} stopOpacity={0.28} />
-            <stop offset="100%" stopColor={color} stopOpacity={0.02} />
+            {fillStops
+              ? fillStops.map((s, i) => <stop key={i} offset={s.offset} stopColor={s.color} stopOpacity={0.22} />)
+              : <><stop offset="0%" stopColor={color} stopOpacity={0.28} /><stop offset="100%" stopColor={color} stopOpacity={0.02} /></>}
           </linearGradient>
+          {lineStops && (
+            <linearGradient id={`${gradientId}-line`} x1="0" y1="0" x2="0" y2="1">
+              {lineStops.map((s, i) => <stop key={i} offset={s.offset} stopColor={s.color} />)}
+            </linearGradient>
+          )}
         </defs>
+        {(zones ?? []).map(z => (
+          <ReferenceArea key={z.label} y1={Math.max(z.min, lo)} y2={Math.min(z.max, hi)}
+            fill={z.color} fillOpacity={0.06} stroke="none" ifOverflow="hidden" />
+        ))}
         <CartesianGrid {...CHART_GRID} />
         {dayMarks(rows)}
         <XAxis dataKey="dateMs" type="number" scale="time"
@@ -162,11 +211,11 @@ export function MetricHistoryChart({ trend, start, color, zones, unit, decimals,
         <YAxis
           // Counted things start at zero: 9,000 steps against 10,000 is not
           // "nearly nothing", which is what a floor at 8,900 would show.
-          domain={anchorZero ? [0, "auto"] : ["auto", "auto"]}
+          domain={[lo, hi]} ticks={yTicks}
           tick={AXIS} axisLine={false} tickLine={false} width={44}
           tickFormatter={v => gaugeFigure(v, decimals)} />
         <Tooltip content={tooltip} />
-        <Area type="linear" dataKey="v" stroke={color} strokeWidth={2}
+        <Area type="linear" dataKey="v" stroke={lineStops ? `url(#${gradientId}-line)` : color} strokeWidth={2}
           fill={`url(#${gradientId})`} connectNulls={false}
           dot={loneDot("v", color, rows)} activeDot={{ r: 4 }} isAnimationActive={false} />
       </ComposedChart>

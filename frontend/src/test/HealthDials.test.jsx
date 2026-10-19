@@ -14,7 +14,7 @@ import {
   nightClock, clockScale, clockLabel, laneOf, sleepNights, hoursMinutes,
 } from "../components/health/sleepClock";
 import { healthGroups, sleepMetric, caloriesMetric } from "../components/health/metrics";
-import { dailyRows } from "../components/health/HistoryCharts";
+import { dailyRows, zoneStops } from "../components/health/HistoryCharts";
 import { stressSamples } from "../components/health/StressHistory";
 import { ScaleStrip } from "../components/health/HistoryModal";
 import MetricGaugeGroup from "../components/health/MetricGaugeGroup";
@@ -286,3 +286,23 @@ describe("the history charts", () => {
     expect(screen.queryByText("2,049")).toBeNull();
   });
 });
+
+describe("history charts drawn in their scale", () => {
+  it("test_each_band_is_its_own_colour_with_hard_edges", () => {
+    const zones = [
+      { label: "Good", min: 50, max: 58, color: "green" },
+      { label: "High", min: 58, max: 75, color: "red" },
+    ];
+    // A line from 54 up to 62: the top half red, the bottom half green, and
+    // the change exactly at 58, not blended across it.
+    const stops = zoneStops(zones, 62, 54);
+    expect(stops.map(s => s.color)).toEqual(["red", "red", "green", "green"]);
+    expect(stops[1].offset).toBeCloseTo(0.5);
+    expect(stops[2].offset).toBeCloseTo(0.5);
+  });
+
+  it("test_a_flat_line_has_no_gradient_to_draw", () => {
+    expect(zoneStops([{ min: 0, max: 1, color: "x" }], 5, 5)).toBeNull();
+  });
+});
+

@@ -72,6 +72,20 @@ class FeedbackScreenshotTest {
         popup(SyncProgress(SyncProgress.Step.Files, 412, 2994))
     }
 
+    @Test
+    fun history_chart_bands_light() = shoot("history_chart_bands_light", ThemeMode.Light) {
+        val today = java.time.LocalDate.now()
+        val values = listOf(52.0, 54.0, 57.0, 60.0, 63.0, 59.0, 55.0, 51.0, 49.0, 53.0, 61.0, 67.0, 64.0, 58.0)
+        com.tracks.app.ui.health.HistoryChart(
+            points = values.mapIndexed { i, v ->
+                com.tracks.app.ui.dashboard.HistoryPoint(today.minusDays((values.size - 1 - i).toLong()).toString(), v)
+            },
+            color = androidx.compose.ui.graphics.Color.Gray,
+            zones = com.tracks.app.ui.health.RESTING_HR_ZONES,
+            modifier = Modifier.padding(16.dp),
+        )
+    }
+
     @Composable
     private fun musicAccount() = androidx.compose.foundation.layout.Column(Modifier.padding(16.dp)) {
         SettingsCard("Music server", MetricInfo("Music server", "Navidrome for the watch app.")) {

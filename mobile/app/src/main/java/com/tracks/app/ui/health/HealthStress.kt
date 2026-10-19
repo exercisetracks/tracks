@@ -410,23 +410,9 @@ fun StressHistoryPanel(
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
         )
 
-        // The bands named, since behind a line they are too faint to carry
-        // their own labels and the words are the verdict people came for.
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            STRESS_ZONES.forEach { band ->
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Surface(Modifier.size(8.dp), shape = RoundedCornerShape(Tokens.Radius.sm), color = band.color) {}
-                    Text(
-                        band.label,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = axisColor,
-                    )
-                }
-            }
-        }
+        // The bands are named by the sheet's scale strip under this chart,
+        // the same legend every other history sheet ends in. A row of
+        // swatches of its own made stress the one sheet that looked different.
     }
 }
 

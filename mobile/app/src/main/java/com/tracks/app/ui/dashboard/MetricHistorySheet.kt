@@ -87,6 +87,12 @@ fun MetricHistorySheet(
      */
     chart: (@Composable () -> Unit)? = null,
     /**
+     * Keep the scale strip under a [chart] of the metric's own. True where
+     * that chart is drawn in the same bands -- stress -- so the strip is its
+     * legend, and every history sheet ends in the same one.
+     */
+    scaleUnderChart: Boolean = false,
+    /**
      * The day the window opens on — the left edge of the chart, data or not.
      *
      * Null falls back to the earliest reading, which is what the dashboard's
@@ -201,6 +207,9 @@ fun MetricHistorySheet(
                     // "nearly nothing", which is what a floor at 8,900 shows.
                     anchorZero = zones.firstOrNull()?.min == 0.0,
                     windowStart = windowStart,
+                    // The bands the legend below describes: the verdict's
+                    // where the arc's own zones are a composition.
+                    zones = verdict ?: zones,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -211,9 +220,9 @@ fun MetricHistorySheet(
             // A chart of the metric's own brings its own legend, and a second
             // scale under it describes the wrong picture — sleep's duration
             // bands beneath a chart of stages — so it is dropped there.
-            if (chart == null) {
+            if (chart == null || scaleUnderChart) {
                 HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
-                ScaleStrip(zones = zones, value = latest, decimals = decimals)
+                ScaleStrip(zones = verdict ?: zones, value = latest, decimals = decimals)
             }
 
             if (breakdown.isNotEmpty()) {

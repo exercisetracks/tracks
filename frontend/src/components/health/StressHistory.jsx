@@ -208,14 +208,8 @@ export default function StressHistory({ days, averages, start }) {
         {/* Said out loud: a spike is twenty minutes in one, a whole day in the other. */}
         avg {Math.round(average)} · {intraday ? "every reading" : "daily average"}
       </p>
-      <div className="flex justify-center gap-3 text-[11px] text-slate-500 dark:text-slate-400">
-        {STRESS_ZONES.map(z => (
-          <span key={z.label} className="flex items-center gap-1">
-            <span className="inline-block w-2 h-2 rounded-sm" style={{ background: z.color }} />
-            {z.label}
-          </span>
-        ))}
-      </div>
+      {/* The bands are named by the modal's scale strip under this chart, the
+          legend every other history ends in. */}
     </div>
   );
 }

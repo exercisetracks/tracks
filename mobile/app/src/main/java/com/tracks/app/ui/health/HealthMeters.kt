@@ -201,6 +201,8 @@ data class HealthMetric(
      * three times on one screen, counting the dial the sheet was opened from.
      */
     val headline: Boolean = true,
+    /** See MetricHistorySheet's `scaleUnderChart`. */
+    val scaleUnderChart: Boolean = false,
 )
 
 /**
@@ -299,6 +301,7 @@ fun MetricMeterGroup(
             breakdown = metric.breakdown,
             info = metric.info,
             chart = metric.chart,
+            scaleUnderChart = metric.scaleUnderChart,
             windowStart = windowStart,
             freshDays = metric.freshDays,
             headline = metric.headline,

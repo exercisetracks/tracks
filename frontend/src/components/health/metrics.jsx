@@ -207,6 +207,8 @@ export function healthGroups({ days, imperial, start, stress, food = [] }) {
         scale: { kind: "bands", zones: STRESS_ZONES },
         info: EXPLAIN.stress,
         chart: () => <StressHistory days={stress} averages={stressAverages} start={start} />,
+        // Drawn in the same bands, so the shared strip is its legend.
+        scaleUnderChart: true,
       },
     ],
   };

@@ -88,6 +88,14 @@ fun HistoryChart(
      * end and look like a month of daily measurement.
      */
     windowStart: LocalDate? = null,
+    /**
+     * The metric's scale, drawn into the chart as the stress chart draws its
+     * own: each band a faint stripe behind the plot, and the line and fill
+     * taking the colour of the band they pass through, with hard edges. The
+     * legend under the chart is the same bands as a strip, so a colour on the
+     * line reads straight off it. Empty draws the plain [color] line.
+     */
+    zones: List<com.tracks.app.ui.dashboard.GaugeZone> = emptyList(),
 ) {
     if (points.isEmpty()) return
 
@@ -162,6 +170,40 @@ fun HistoryChart(
             fun x(reading: Reading) = plotLeft + plotWidth * reading.fraction
             fun y(value: Double) = plotHeight * (1f - scale.fraction(value))
 
+            // The bands, faint, behind everything; clamped to the plot, since
+            // a scale's outer bands usually run past the data's range.
+            zones.forEach { band ->
+                val top = y(band.max).coerceIn(0f, plotHeight)
+                val bottom = y(band.min).coerceIn(0f, plotHeight)
+                if (bottom - top < 0.5f) return@forEach
+                drawRect(
+                    color = band.color.copy(alpha = ZONE_BAND_ALPHA),
+                    topLeft = Offset(gutter, top),
+                    size = androidx.compose.ui.geometry.Size(size.width - gutter, bottom - top),
+                )
+            }
+            // One brush over the whole plot, stops doubled at each boundary so
+            // the colour changes at the edge rather than fading across it.
+            val zoneStops = zones.sortedByDescending { it.max }.flatMap { band ->
+                listOf(
+                    (y(band.max) / plotHeight).coerceIn(0f, 1f) to band.color,
+                    (y(band.min) / plotHeight).coerceIn(0f, 1f) to band.color,
+                )
+            }.toTypedArray()
+            val lineBrush = if (zoneStops.size >= 2) {
+                Brush.verticalGradient(colorStops = zoneStops, startY = 0f, endY = plotHeight)
+            } else null
+            val fillBrush = if (zoneStops.size >= 2) {
+                Brush.verticalGradient(
+                    colorStops = zoneStops.map { it.first to it.second.copy(alpha = 0.22f) }.toTypedArray(),
+                    startY = 0f, endY = plotHeight,
+                )
+            } else null
+            fun colorAt(value: Double): Color =
+                zones.firstOrNull { value >= it.min && value < it.max }?.color
+                    ?: zones.minByOrNull { minOf(kotlin.math.abs(value - it.min), kotlin.math.abs(value - it.max)) }?.color
+                    ?: color
+
             if (markDays) {
                 // On the day itself rather than between two, because that is
                 // where the readings are: this chart puts a point *on* its
@@ -185,7 +227,7 @@ fun HistoryChart(
                     // Drawn rather than skipped: "here is the one thing
                     // recorded that week" is a real answer, and the only one.
                     drawCircle(
-                        color = color,
+                        color = colorAt(run[0].value),
                         radius = POINT_RADIUS.toPx(),
                         center = Offset(x(run[0]), y(run[0].value)),
                     )
@@ -207,13 +249,13 @@ fun HistoryChart(
                 }
                 drawPath(
                     path = area,
-                    brush = Brush.verticalGradient(
+                    brush = fillBrush ?: Brush.verticalGradient(
                         listOf(color.copy(alpha = 0.28f), color.copy(alpha = 0.02f)),
                     ),
                 )
                 drawPath(
                     path = line,
-                    color = color,
+                    brush = lineBrush ?: androidx.compose.ui.graphics.SolidColor(color),
                     style = Stroke(
                         width = 2.dp.toPx(),
                         cap = StrokeCap.Round,
@@ -227,7 +269,7 @@ fun HistoryChart(
             // right edge is exactly how long ago that was.
             val latest = placed.last()
             drawCircle(
-                color = color,
+                color = colorAt(latest.value),
                 radius = LATEST_RADIUS.toPx(),
                 center = Offset(x(latest), y(latest.value)),
             )
@@ -238,7 +280,7 @@ fun HistoryChart(
                     measurer, labelStyle,
                     x = x(nearest), y = y(nearest.value), plotHeight = plotHeight,
                     text = "${nearest.day.format(INSPECT_DAY)} · ${wholeOrOneDecimal(nearest.value)}",
-                    dot = color, colors = popup,
+                    dot = colorAt(nearest.value), colors = popup,
                 )
             }
 
@@ -306,3 +348,6 @@ private val DATE_LABEL_GAP = 3.dp
 /** The larger of the two markers, and so the inset the plot needs at each end. */
 private val POINT_RADIUS = 4.dp
 private val LATEST_RADIUS = 3.dp
+
+/** The bands behind the plot: there, but ground rather than figure. */
+private const val ZONE_BAND_ALPHA = 0.06f
