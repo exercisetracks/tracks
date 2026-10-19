@@ -124,6 +124,43 @@ class LocalImporter(
         return updated
     }
 
+    /**
+     * Redraw every stored night with the current sleep parser.
+     *
+     * The import keeps a night's first totals and its longer timeline, so a
+     * parser fix never reaches nights already read. This one has to: until
+     * 2026-10-18 a fenix 6's stage records were read as stage starts when they
+     * mark stage ends (see SleepParser.asStageStarts), and every night drew the
+     * wrong shape. Here each sleep file replaces its night's timeline and its
+     * sleep fields outright. Returns how many nights were redrawn.
+     */
+    suspend fun redrawSleep(shas: List<String>, file: suspend (sha256: String) -> ByteArray?): Int {
+        var redrawn = 0
+        for (sha in shas) {
+            val bytes = file(sha) ?: continue
+            if (FitParsing.select(bytes) != FitParsing.Kind.Sleep) continue
+            @Suppress("UNCHECKED_CAST")
+            val parsed = runCatching { FitParsing.parse(FitParsing.Kind.Sleep, bytes) as Map<String, Any?> }.getOrNull() ?: continue
+            val date = parsed["date"]?.let { LocalJson.of(it) as? JsonPrimitive }?.content ?: continue
+            @Suppress("UNCHECKED_CAST")
+            val sleep = LocalJson.obj((parsed["metrics"] as? Map<String, Any?>).orEmpty())
+                .filterKeys { it.startsWith("sleep_") && it in DAILY_FIELDS }
+            val stages = LocalJson.of(parsed["stages"] ?: emptyList<Any>()) as JsonArray
+            if (stages.isEmpty()) continue
+            library.locked {
+                val current = library.q.selectDay(date).executeAsOneOrNull() ?: return@locked
+                val metrics = TracksJson.parseToJsonElement(current.metrics).jsonObject
+                val extra = TracksJson.parseToJsonElement(current.extra).jsonObject
+                val m = JsonObject(metrics + sleep)
+                val x = JsonObject(extra + ("sleep_stages" to stages))
+                library.q.upsertDay(date, m.toString(), x.toString())
+                redrawn++
+            }
+        }
+        if (redrawn > 0) library.changed()
+        return redrawn
+    }
+
     // ── Activities ──────────────────────────────────────────────────────────
 
     @Suppress("UNCHECKED_CAST")
@@ -256,10 +293,15 @@ class LocalImporter(
             stress: JsonArray,
         ): Pair<JsonObject, JsonObject> {
             val m = LinkedHashMap(metrics ?: JsonObject(emptyMap()))
+            // The sleep totals follow the timeline that wins (see the server's
+            // `_write_one_day`): a grown sleep file brings its hours with it.
+            val sleepWins = stages.isNotEmpty() &&
+                stages.size >= ((extra?.get("sleep_stages") as? JsonArray)?.size ?: 0)
             for ((field, value) in incoming) {
                 if (value is JsonNull) continue
                 val cur = m[field]
                 m[field] = when {
+                    sleepWins && field.startsWith("sleep_") -> value
                     cur == null || cur is JsonNull -> value
                     field in LATEST -> value
                     field in MAX -> if (num(value) > num(cur)) value else cur

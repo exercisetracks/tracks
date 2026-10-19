@@ -68,6 +68,8 @@ internal object SleepParser {
         var assessment: Map<String, Double?> = emptyMap()
         var summary: Summary? = null
         var sleepDate: Any? = null
+        var sessionStart: FitDateTime? = null
+        var sessionEnd: FitDateTime? = null
 
         for (frame in FitReader(bytes).messages()) {
             when (frame.name) {
@@ -80,6 +82,14 @@ internal object SleepParser {
                     val ts = frame.get("timestamp")
                     val level = Py.asStr(frame.get("sleep_level"))
                     if (ts != null && level != null) stream.add(ts to level)
+                }
+                "event" -> if (Py.intOrNull(frame.get("event")) == SLEEP_EVENT.toLong()) {
+                    // The watch's own session start and stop; named or numbered.
+                    val ts = frame.get("timestamp") as? FitDateTime
+                    when (Py.asStr(frame.get("event_type"))) {
+                        "start", "0" -> if (sessionStart == null) sessionStart = ts
+                        "stop", "1" -> if (ts != null) sessionEnd = ts
+                    }
                 }
                 SLEEP_SUMMARY -> {
                     // The longest session wins; a nap must not rename the night.
@@ -102,7 +112,8 @@ internal object SleepParser {
             }
         }
 
-        val levels = summary?.let { clip(stream, it.start, it.end) } ?: stream
+        val opened = asStageStarts(stream, sessionStart ?: summary?.start, sessionEnd ?: summary?.end)
+        val levels = summary?.let { clip(opened, it.start, it.end) } ?: opened
 
         if (levels.isNotEmpty()) {
             val last = levels.last().first
@@ -138,6 +149,34 @@ internal object SleepParser {
         if (Py.truthy(summary.awake)) out["sleep_awake_hours"] = PyMath.round(summary.awake!!, 2)
         if (Py.truthy(summary.score)) out["sleep_score"] = summary.score!!.toDouble()
         return out
+    }
+
+    private const val SLEEP_EVENT = 74
+    private const val END_MARK_TOLERANCE_S = 60L
+
+    /**
+     * `_as_stage_starts`: on a watch whose records mark where each stage
+     * *ended* (the fenix 6: the last record sits on the session's stop), each
+     * record becomes one opening its stage at the previous record's time. The
+     * Python says why at length.
+     */
+    private fun asStageStarts(
+        levels: List<Pair<Any, String>>,
+        start: FitDateTime?,
+        end: FitDateTime?,
+    ): List<Pair<Any, String>> {
+        if (levels.isEmpty() || start == null || end == null) return levels
+        val last = levels.last().first as? FitDateTime ?: return levels
+        if (kotlin.math.abs(last.epochMicros - end.epochMicros) > END_MARK_TOLERANCE_S * 1_000_000L) return levels
+        val opened = ArrayList<Pair<Any, String>>()
+        var previous: FitDateTime = start
+        for ((ts, level) in levels) {
+            val at = instant(ts)
+            if (at.epochMicros > previous.epochMicros) opened.add(previous to level)
+            previous = at
+        }
+        if (opened.isNotEmpty()) opened.add(previous to opened.last().second)
+        return opened
     }
 
     /** `_clip`: the stream cut to the window, the straddling record moved up to its opening. */

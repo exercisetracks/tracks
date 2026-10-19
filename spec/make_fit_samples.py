@@ -548,6 +548,28 @@ def _sleep(summary: bool, nap: bool) -> bytes:
     return w.to_bytes()
 
 
+def sample_sleep_end_marked() -> bytes:
+    """A night as a fenix 6 writes it: each sleep_level record marks where a
+    stage *ended*, and the last one sits on the sleep session's stop event
+    (event 74). Measured on real nights 2026-10-18; see app.parsers.sleep."""
+    w = FitWriter()
+    night_start = START - 8 * 3600
+    file_id(w, 49, created=night_start)
+    stop = night_start
+    stages = [(27, "light"), (19, "deep"), (34, "light"), (7, "awake"), (46, "light"),
+              (17, "deep"), (36, "light"), (16, "rem"), (14, "light"), (18, "rem")]
+    stop += sum(m for m, _ in stages) * 60
+    w.message(2, "event", {"timestamp": fit_ts(night_start), "event": Raw("enum", 74),
+                           "event_type": enum("event_type", "start")})
+    w.message(2, "event", {"timestamp": fit_ts(stop), "event": Raw("enum", 74),
+                           "event_type": enum("event_type", "stop")})
+    t = night_start
+    for minutes, level in stages:
+        t += minutes * 60
+        w.message(1, "sleep_level", {"timestamp": fit_ts(t), "sleep_level": enum("sleep_level", level)})
+    return w.to_bytes()
+
+
 def sample_edges() -> bytes:
     """Decoder corners: odd sizes, 64-bit, NaN, bools, time-of-day, undeclared dev fields."""
     w = FitWriter()
@@ -611,6 +633,7 @@ SAMPLES = {
     "hrv.fit": sample_hrv,
     "sleep.fit": lambda: _sleep(summary=True, nap=True),
     "sleep_stream_only.fit": lambda: _sleep(summary=False, nap=False),
+    "sleep_end_marked.fit": sample_sleep_end_marked,
     "edges.fit": sample_edges,
     "hr_messages.fit": sample_hr_messages,
     "hr_before_start.fit": sample_hr_before_start,

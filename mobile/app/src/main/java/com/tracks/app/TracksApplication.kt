@@ -251,6 +251,17 @@ class AppContainer(private val context: Context) {
             runCatching { files.backfillSummaries() }
                 .onSuccess { if (it > 0) android.util.Log.i("TracksImport", "filled newer summary fields into $it activities") }
                 .onFailure { android.util.Log.w("TracksImport", "summary backfill failed", it) }
+            // Once per install: nights read before the fenix 6's stage records
+            // were understood as stage ends (LocalImporter.redrawSleep).
+            val prefs = context.getSharedPreferences("tracks_migrations", android.content.Context.MODE_PRIVATE)
+            if (!prefs.getBoolean(SLEEP_STAGE_ENDS, false)) {
+                runCatching { files.redrawSleep() }
+                    .onSuccess {
+                        android.util.Log.i("TracksImport", "redrew $it night(s) of sleep")
+                        prefs.edit().putBoolean(SLEEP_STAGE_ENDS, true).apply()
+                    }
+                    .onFailure { android.util.Log.w("TracksImport", "sleep redraw failed", it) }
+            }
             // Same once-per-launch, no-op-when-current shape: see repairUtcDayMatches.
             runCatching {
                 matching.repairUtcDayMatches(
@@ -1152,3 +1163,6 @@ data class OnboardingProgress(
     val restored: Boolean,
     val hasDevice: Boolean,
 )
+
+/** Migration flag for [AppContainer.backfillActivitySummaries]'s one-time sleep redraw. */
+private const val SLEEP_STAGE_ENDS = "sleep_stage_ends_v1"

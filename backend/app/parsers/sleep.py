@@ -118,6 +118,8 @@ class SleepParser(BaseParser):
         """
         device_info = {}
         sleep_levels = []   # list of (datetime, level_str)
+        session_start = None   # the watch's own sleep events, where it wrote them
+        session_end = None
         assessment = {}
         summary = None
         sleep_date = None
@@ -138,6 +140,15 @@ class SleepParser(BaseParser):
                     level = as_str(get(frame, "sleep_level"))
                     if ts is not None and level is not None:
                         sleep_levels.append((ts, level))
+
+                elif frame.name == "event" and _as_int(get(frame, "event")) == _SLEEP_EVENT:
+                    ts = get(frame, "timestamp")
+                    # fitdecode names the type ("start"/"stop"); by number too.
+                    kind = as_str(get(frame, "event_type"))
+                    if ts is not None and kind in ("start", "0") and session_start is None:
+                        session_start = ts
+                    elif ts is not None and kind in ("stop", "1"):
+                        session_end = ts
 
                 elif frame.name == _SLEEP_SUMMARY:
                     # One per session, and a file can hold a nap as well as a
@@ -165,6 +176,12 @@ class SleepParser(BaseParser):
                         "resting_hr":  _to_float(get(frame, "resting_heart_rate")),
                         "hrv":         _to_float(hrv),
                     }
+
+        sleep_levels = _as_stage_starts(
+            sleep_levels,
+            session_start if session_start is not None else (summary or {}).get("start"),
+            session_end if session_end is not None else (summary or {}).get("end"),
+        )
 
         # Everything outside the watch's own session is lying in bed, not
         # sleeping in it. Clipped before anything is totalled or drawn, so the
@@ -221,6 +238,57 @@ def _summary_metrics(summary: dict) -> dict:
     if summary.get("score"):
         out["sleep_score"] = float(summary["score"])
     return out
+
+
+# FIT `event` 74 is the sleep session's own start (event_type 0) and stop (1).
+# fitdecode does not name the value.
+_SLEEP_EVENT = 74
+
+# How close the last stage record must sit to the session's end to say the
+# records mark where stages *end*. A minute: the fenix 6 writes them to the
+# second.
+_END_MARK_TOLERANCE_S = 60
+
+
+def _as_stage_starts(levels: list, start, end) -> list:
+    """The stage stream as records that each *open* a stage.
+
+    Everything below reads a record as the start of a stage that the next
+    record ends. That is not what a fenix 6 writes. Its records mark where a
+    stage *ended*: measured 2026-10-18 on five nights pulled over USB, the last
+    record of every night sits exactly on the sleep session's stop event, the
+    first sits 1 to 27 minutes after its start, and the last stage named is
+    usually REM -- the stage people wake from. Read as starts, every stage was
+    shifted one slot: a night the watch scored 100 for awake time drew 15
+    minutes awake, and a typical night of mostly light sleep, deep early and
+    REM late came out as long awake spans with deep throughout. The totals
+    looked right only because they come from the watch's summary.
+
+    So when the stream shows that signature -- its last record on the
+    session's end -- each record is turned into one that opens its stage at
+    the previous record's time (the session's start for the first). A stream
+    without the signature is left as it is: the synthetic and older files this
+    parser was built on use the opening convention, and nothing measured says
+    other watches do otherwise.
+    """
+    if not levels or start is None or end is None:
+        return levels
+    last = levels[-1][0]
+    if not hasattr(last, "timestamp") or not hasattr(end, "timestamp"):
+        return levels
+    if abs(last.timestamp() - end.timestamp()) > _END_MARK_TOLERANCE_S:
+        return levels
+    opened = []
+    previous = start
+    for ts, level in levels:
+        if ts > previous:
+            opened.append((previous, level))
+        previous = ts
+    # A closing record at the end, so the final stage has a length; it is a
+    # boundary only (see `_clip` and `_stage_segments`).
+    if opened:
+        opened.append((previous, opened[-1][1]))
+    return opened
 
 
 def _clip(levels: list, start, end) -> list:

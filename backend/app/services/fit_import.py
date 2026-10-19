@@ -397,8 +397,17 @@ def _write_one_day(db, parsed: dict, device_id: int | None, user_id: int) -> Non
 
     existing = db.query(DailyMetric).filter_by(date=metric_date, user_id=user_id).first()
     if existing:
+        # The sleep totals follow the timeline. A watch re-offers a sleep file
+        # that has grown since a mid-night pull; the longer copy replaces the
+        # timeline below, and its totals must come with it, or the chart shows
+        # the whole night beside the fragment's hours.
+        sleep_wins = bool(stages) and len(stages) >= len(((existing.extra or {}).get("sleep_stages") or []))
         for field, value in metrics.items():
             if value is None:
+                continue
+            if sleep_wins and field.startswith("sleep_"):
+                if value != getattr(existing, field):
+                    setattr(existing, field, value)
                 continue
             merged = _merge_daily_value(field, getattr(existing, field), value)
             if merged != getattr(existing, field):
