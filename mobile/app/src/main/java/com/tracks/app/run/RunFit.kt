@@ -239,6 +239,66 @@ object RunFit {
         return FitFile(records).outgoingMessage
     }
 
+    /**
+     * A session with no track: yoga, climbing, anything timed and done in one
+     * place. The same file as a run's, less the GPS -- start and stop, one lap,
+     * one session in the right sport -- so it enters the activity list and the
+     * fitness model by the same door, its load estimated from sport and time.
+     */
+    fun encodeTimed(
+        startedAtMs: Long,
+        elapsedMs: Long,
+        movingMs: Long,
+        sport: Int,
+        subSport: Int = 0,
+    ): ByteArray? {
+        if (movingMs <= 0) return null
+        val startSec = startedAtMs / 1000L
+        val endSec = startSec + (elapsedMs / 1000L)
+        val movingSec = movingMs / 1000.0
+        val records = mutableListOf<RecordData>()
+        records += FitFileId.Builder().apply {
+            setType(FileType.FILETYPE.ACTIVITY)
+            setManufacturer(MANUFACTURER_DEVELOPMENT)
+            setProduct(1)
+            setSerialNumber(startSec)
+            setTimeCreated(startSec)
+        }.build(LOCAL_FILE_ID)
+        records += FitFileCreator.Builder().apply { setSoftwareVersion(1) }.build(LOCAL_CREATOR)
+        records += timerEvent(startSec, EVENT_TYPE_START)
+        records += timerEvent(endSec, EVENT_TYPE_STOP_ALL)
+        records += FitLap.Builder().apply {
+            setTimestamp(endSec)
+            setMessageIndex(0)
+            setStartTime(startSec)
+            setSport(sport)
+            setSubSport(subSport)
+            setTotalElapsedTime(elapsedMs / 1000.0)
+            setTotalTimerTime(movingSec)
+        }.build(LOCAL_LAP)
+        records += AbstractFitSession.Builder().apply {
+            setTimestamp(endSec)
+            setMessageIndex(0)
+            setStartTime(startSec)
+            setSport(sport)
+            setSubSport(subSport)
+            setTotalElapsedTime(elapsedMs / 1000L)
+            setTotalTimerTime(movingSec)
+            setFirstLapIndex(0)
+            setNumLaps(1)
+        }.build(LOCAL_SESSION)
+        records += FitActivity.Builder().apply {
+            setTimestamp(endSec)
+            setTotalTimerTime(movingMs / 1000L)
+            setNumSessions(1)
+            setType(0)
+            setEvent(26)
+            setEventType(1)
+            setLocalTimestamp(endSec)
+        }.build(LOCAL_ACTIVITY)
+        return FitFile(records).outgoingMessage
+    }
+
     private fun timerEvent(timestampSec: Long, eventType: Int): FitEvent =
         FitEvent.Builder().apply {
             setTimestamp(timestampSec)

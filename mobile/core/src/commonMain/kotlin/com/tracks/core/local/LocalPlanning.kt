@@ -364,6 +364,101 @@ class LocalPlanning(
         )
     }
 
+    /**
+     * A flexibility flow built on the spot (QuickSession): the "Start
+     * activity" button's, and a planned flow resized before it starts. From
+     * the same pool the plan draws on -- this user's exclusions, customs and
+     * preferences included.
+     */
+    suspend fun quickFlexibility(
+        minutes: Int,
+        intensity: com.tracks.core.strengthplan.QuickSession.Intensity,
+        emphasis: List<String>,
+        seed: String,
+        equipmentFree: Boolean = false,
+        base: List<String> = com.tracks.core.strengthplan.Flexibility.FULL_BODY_MOBILITY_MUSCLES,
+    ): List<MutableMap<String, Any?>> =
+        com.tracks.core.strengthplan.QuickSession.flexibility(
+            stretchCandidates(), minutes, intensity, emphasis, seed, equipmentFree, base,
+        )
+
+    /**
+     * A strength session built on the spot, from the library and this user's
+     * customs, minus what they excluded and what their equipment rules out.
+     */
+    @Suppress("UNCHECKED_CAST")
+    suspend fun quickStrength(
+        minutes: Int,
+        intensity: com.tracks.core.strengthplan.QuickSession.Intensity,
+        emphasis: List<String>,
+        seed: String,
+        base: List<String> = com.tracks.core.strengthplan.QuickSession.STRENGTH_MUSCLES,
+    ): List<MutableMap<String, Any?>> {
+        val p = prefs("exercise_preference")
+        val excluded = p.filterValues { it == "excluded" }.keys
+        val equipment = (sources.replica.rows("settings").firstOrNull()
+            ?.let { (it.fields["equipment_available"] as? JsonArray)?.mapNotNull { e -> (e as? JsonPrimitive)?.content } }
+            ?.takeIf { it.isNotEmpty() } ?: listOf("bodyweight", "dumbbell")).toSet() + "bodyweight"
+        // Keyed by name; the entries do not carry it.
+        val exercises = PlanLibrary.exercises.mapNotNull { (name, ex) ->
+            if (name in excluded) return@mapNotNull null
+            val needs = (ex["equipment"] as? List<String>).orEmpty().ifEmpty { listOf("bodyweight") }
+            if (needs.none { it in equipment }) return@mapNotNull null
+            com.tracks.core.strengthplan.QuickSession.QuickExercise(
+                name = name,
+                primaryMuscles = (ex["primary_muscles"] as? List<String>).orEmpty(),
+                isCompound = ex["is_compound"] != false,
+                difficulty = (ex["difficulty"] as? Number)?.toInt() ?: 1,
+            )
+        }
+        return com.tracks.core.strengthplan.QuickSession.strength(exercises, minutes, intensity, emphasis, seed, base)
+    }
+
+    /**
+     * A planned flexibility or strength session rebuilt to [minutes] for this
+     * once -- the "I have ten minutes, not fifteen" slider. It keeps what the
+     * session was for: the same muscles (read off its stretches or lifts in
+     * the library), at the same intensity (its hold length or set count).
+     * Null for any other kind of session.
+     */
+    @Suppress("UNCHECKED_CAST")
+    suspend fun resized(workout: com.tracks.core.api.PlannedWorkout, minutes: Int): List<com.tracks.core.api.WorkoutStep>? {
+        val seed = "resize-${workout.id}"
+        val mobility = workout.steps.filter { it.type == "mobility_exercise" }
+        val strength = workout.steps.filter { it.type == "strength_exercise" }
+        return when {
+            mobility.isNotEmpty() -> {
+                val byName = PlanLibrary.stretches.associateBy { it.name }
+                val muscles = mobility.flatMap { s -> byName[s.name]?.primaryMuscles.orEmpty() }.distinct()
+                val hold = mobility.mapNotNull { it.durationSeconds }.average().takeIf { !it.isNaN() } ?: 45.0
+                val intensity = when {
+                    hold <= 35 -> com.tracks.core.strengthplan.QuickSession.Intensity.Low
+                    hold <= 50 -> com.tracks.core.strengthplan.QuickSession.Intensity.Medium
+                    else -> com.tracks.core.strengthplan.QuickSession.Intensity.High
+                }
+                workoutSteps(quickFlexibility(minutes, intensity, emptyList(), seed, base = muscles))
+            }
+            strength.isNotEmpty() -> {
+                val muscles = strength.flatMap { s ->
+                    (PlanLibrary.exercises[s.name]?.get("primary_muscles") as? List<String>).orEmpty()
+                }.distinct()
+                val sets = strength.mapNotNull { it.sets }.average().takeIf { !it.isNaN() } ?: 3.0
+                val intensity = when {
+                    sets <= 2.5 -> com.tracks.core.strengthplan.QuickSession.Intensity.Low
+                    sets <= 3.5 -> com.tracks.core.strengthplan.QuickSession.Intensity.Medium
+                    else -> com.tracks.core.strengthplan.QuickSession.Intensity.High
+                }
+                workoutSteps(quickStrength(minutes, intensity, emptyList(), seed, base = muscles))
+            }
+            else -> null
+        }
+    }
+
+    /** Generator steps as the planned-workout model the guided runner reads. */
+    fun workoutSteps(steps: List<Map<String, Any?>>): List<com.tracks.core.api.WorkoutStep> = steps.map {
+        com.tracks.core.api.TracksJson.decodeFromJsonElement(com.tracks.core.api.WorkoutStep.serializer(), LocalJson.obj(it))
+    }
+
     /** Everything `_inject_strength_workouts` reads, from this phone's own rows. */
     @Suppress("UNCHECKED_CAST")
     private suspend fun strengthInputs(goal: TrainingGoal, today: CivilDate): StrengthInputs {

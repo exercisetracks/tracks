@@ -160,6 +160,57 @@ data class DashboardUiState(
 @OptIn(FlowPreview::class)
 class DashboardViewModel(private val container: AppContainer) : ViewModel() {
 
+    /**
+     * The "Start activity" setting: true or false as chosen, null for
+     * automatic (shown without a watch, hidden with one -- the watch records
+     * its own).
+     */
+    private val _startButton = kotlinx.coroutines.flow.MutableStateFlow<Boolean?>(null)
+    val startButton: kotlinx.coroutines.flow.StateFlow<Boolean?> = _startButton
+
+    private fun loadStartButton() {
+        viewModelScope.launch {
+            _startButton.value = runCatching { container.sources.setting("start_activity_button") }
+                .getOrNull()?.toBooleanStrictOrNull()
+        }
+    }
+
+    /**
+     * Build the workout a [com.tracks.app.ui.workout.StartChoice] describes
+     * and return the id the guided screen opens it by. Built sessions come from
+     * the same libraries the plan uses (LocalPlanning.quickFlexibility, quickStrength).
+     */
+    suspend fun buildStart(choice: com.tracks.app.ui.workout.StartChoice): Int {
+        val kind = choice.kind
+        val today = java.time.LocalDate.now().toString()
+        val seed = "quick-${System.currentTimeMillis()}"
+        val planning = com.tracks.core.local.LocalPlanning(container.sources, container.library)
+        val steps = when (kind) {
+            com.tracks.app.ui.workout.StartKind.Flexibility ->
+                planning.quickFlexibility(choice.minutes, choice.intensity, choice.emphasis.toList(), seed)
+            com.tracks.app.ui.workout.StartKind.Strength ->
+                planning.quickStrength(choice.minutes, choice.intensity, choice.emphasis.toList(), seed)
+            else -> emptyList()
+        }
+        val title = when {
+            choice.targetKm != null -> "${kind.label} ${com.tracks.core.format.distance(choice.targetKm * 1000)}"
+            choice.targetMinutes != null -> "${kind.label} ${choice.targetMinutes} min"
+            kind.group == com.tracks.app.ui.workout.StartKind.Group.Built -> "${kind.label} · ${choice.minutes} min"
+            else -> kind.label
+        }
+        val workout = com.tracks.core.api.PlannedWorkout(
+            id = 0,
+            scheduledDate = today,
+            sport = kind.sport,
+            workoutType = if (kind.group == com.tracks.app.ui.workout.StartKind.Group.Built) kind.sport else "free",
+            title = title,
+            durationMinutes = choice.targetMinutes ?: choice.minutes.takeIf { kind.group == com.tracks.app.ui.workout.StartKind.Group.Built },
+            distanceMeters = choice.targetKm?.let { it * 1000 },
+            steps = planning.workoutSteps(steps),
+        )
+        return com.tracks.app.ui.workout.AdHocWorkouts.add(workout)
+    }
+
     private val _state = MutableStateFlow(DashboardUiState())
     val state: StateFlow<DashboardUiState> = _state.asStateFlow()
 
@@ -172,6 +223,7 @@ class DashboardViewModel(private val container: AppContainer) : ViewModel() {
         loadRoutes()
         watchLocalImports()
         keepSnapshot()
+        loadStartButton()
     }
 
     /**
@@ -472,6 +524,7 @@ class DashboardViewModel(private val container: AppContainer) : ViewModel() {
     private fun watchLocalImports() {
         viewModelScope.launch {
             container.localData.revision.drop(1).collect {
+                loadStartButton()
                 loadAllTime()
                 loadWindowed()
                 loadFiltered()

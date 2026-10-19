@@ -22581,6 +22581,17 @@
             "title": "Setup Complete",
             "default": false
           },
+          "start_activity_button": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Activity Button"
+          },
           "tour_seen": {
             "additionalProperties": true,
             "type": "object",
@@ -23114,6 +23125,17 @@
               }
             ],
             "title": "Setup Complete"
+          },
+          "start_activity_button": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Activity Button"
           },
           "tour_seen": {
             "anyOf": [

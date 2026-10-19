@@ -114,6 +114,10 @@ class UserSettings(Base, Synced):
     # First-time admin creation sets this to True automatically; new users
     # created after the fact must go through onboarding on first login.
     setup_complete       = Column(Boolean, nullable=False, default=False)
+    # The phone dashboard's "Start activity" button. Null is automatic: shown
+    # on a phone with no watch, hidden on one with a watch (which records its
+    # own). True or false is the person's own choice, the same on every phone.
+    start_activity_button = Column(Boolean, nullable=True)
 
     # In-app guided tutorial (the per-page "tips" tour). tour_seen is an object
     # map of {tourId: true} for tours the user has finished or dismissed, so each

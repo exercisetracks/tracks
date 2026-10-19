@@ -148,6 +148,16 @@ fun SettingsScreen(
                 SectionDivider()
                 // This phone's own switch, not the account's (WorkoutReminderRow).
                 WorkoutReminderRow(container)
+                if (profile.loaded) {
+                    SectionDivider()
+                    // The account's: the same on every phone. Unset, it follows
+                    // whether this phone has a watch (the watch records its own).
+                    ToggleRow(
+                        "Start activity button",
+                        "On the dashboard, start a run, ride, strength or flexibility session that is not on your plan.",
+                        profile.bool("start_activity_button", !com.tracks.app.ui.components.LocalHasDevice.current),
+                    ) { onSet("start_activity_button", it) }
+                }
             }
             SettingsCard("Strength") { StrengthForm(profile, onSet) }
         }

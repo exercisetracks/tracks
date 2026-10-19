@@ -157,6 +157,7 @@ private fun StepPane(state: GuidedUiState, vm: GuidedWorkoutViewModel, onQuit: (
         ) {
             // What to do now, large -- then its gauges, as a run has.
             StageTitle(state)
+            if (state.resizable) LengthSlider(state, vm::resize)
             StepGauges(state)
 
             if (step.seconds == null && state.begun) {
@@ -199,6 +200,32 @@ private fun StepPane(state: GuidedUiState, vm: GuidedWorkoutViewModel, onQuit: (
                 }
             }
         }
+    }
+}
+
+/**
+ * How long this session should be, before it starts: a flow planned at fifteen
+ * minutes, after a run with only ten to spare -- or forty-five on a sore day.
+ * Rebuilt when the slider is let go, around the same muscles.
+ */
+@Composable
+private fun LengthSlider(state: GuidedUiState, onResize: (Int) -> Unit) {
+    val planned = state.workout?.durationMinutes
+        ?: (state.steps.sumOf { it.seconds ?: 45 } / 60).coerceAtLeast(5)
+    var minutes by remember(state.workout?.id) { mutableStateOf(((planned + 2) / 5 * 5).coerceIn(5, 90).toFloat()) }
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Text(
+            "Length: ${minutes.toInt()} min",
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        androidx.compose.material3.Slider(
+            value = minutes,
+            onValueChange = { minutes = ((it / 5).toInt() * 5).coerceIn(5, 90).toFloat() },
+            onValueChangeFinished = { onResize(minutes.toInt()) },
+            valueRange = 5f..90f,
+            steps = 16,
+        )
     }
 }
 

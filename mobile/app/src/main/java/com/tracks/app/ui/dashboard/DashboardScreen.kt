@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 package com.tracks.app.ui.dashboard
 
+import androidx.compose.material.icons.filled.PlayArrow
+import kotlinx.coroutines.launch
 import com.tracks.core.format.distance
 import com.tracks.app.ui.components.dayLabel
 import com.tracks.app.ui.theme.Tokens
@@ -91,6 +93,24 @@ fun DashboardScreen(
     banner: @Composable () -> Unit = {},
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
+    val startSetting by vm.startButton.collectAsStateWithLifecycle()
+    val hasDevice = com.tracks.app.ui.components.LocalHasDevice.current
+    // Automatic unless chosen: a phone with a watch has the watch to record.
+    val showStart = startSetting ?: !hasDevice
+    var starting by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    if (starting) {
+        com.tracks.app.ui.workout.StartActivitySheet(
+            onDismiss = { starting = false },
+            onStart = { choice ->
+                scope.launch {
+                    val id = vm.buildStart(choice)
+                    starting = false
+                    onOpenWorkout(id)
+                }
+            },
+        )
+    }
 
     Column(
         modifier
@@ -100,6 +120,16 @@ fun DashboardScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         banner()
+        // At the very top: an activity not on any plan, started by hand. See
+        // StartActivitySheet; the setting is under Settings > Training.
+        if (showStart) {
+            com.tracks.app.ui.components.PrimaryButton(
+                "Start activity",
+                onClick = { starting = true },
+                icon = androidx.compose.material.icons.Icons.Filled.PlayArrow,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
         state.error?.let { message ->
             Text(
                 message,

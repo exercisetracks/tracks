@@ -64,6 +64,14 @@ data class GuidedUiState(
     val step: GuidedStep? get() = steps.getOrNull(index)
     val next: GuidedStep? get() = steps.getOrNull(index + 1)
 
+    /**
+     * Whether the session can be resized before it starts: a flexibility flow
+     * or a strength session, rebuilt for a different length (see
+     * [GuidedWorkoutViewModel.resize]).
+     */
+    val resizable: Boolean
+        get() = !begun && workout?.steps?.any { it.type == "mobility_exercise" || it.type == "strength_exercise" } == true
+
     /** The workout's sport family (PlanBase.sportFamily), lower case. */
     val family: String
         get() = com.tracks.core.plan.PlanBase.sportFamily((workout?.sport ?: "running").lowercase())
@@ -181,7 +189,8 @@ class GuidedWorkoutViewModel(
     /** The workout is a row in this phone's replica; nothing to fetch. */
     private fun load() {
         viewModelScope.launch {
-            val workout = runCatching { container.sources.get("planned_workout", workoutId, PlannedWorkout.serializer()) }.getOrNull()
+            val workout = if (AdHocWorkouts.isAdHoc(workoutId)) AdHocWorkouts.get(workoutId)
+            else runCatching { container.sources.get("planned_workout", workoutId, PlannedWorkout.serializer()) }.getOrNull()
             if (workout != null) apply(listOf(workout), stillLoading = false)
             else _state.update { it.copy(loading = false) }
             if (workout != null && workout.workoutType == "race") raceLegs(workout)
@@ -252,6 +261,28 @@ class GuidedWorkoutViewModel(
             )
         }
         _state.update { if (it.begun) it else it.copy(steps = steps, index = 0, remaining = 0) }
+    }
+
+    /**
+     * Rebuild the session for [minutes] -- ten minutes instead of the planned
+     * fifteen, or forty-five on a sore day -- keeping its muscles and its
+     * intensity (LocalPlanning.resized). For this session only: the plan's
+     * entry is left as it was.
+     */
+    fun resize(minutes: Int) {
+        val workout = _state.value.workout ?: return
+        if (_state.value.begun) return
+        viewModelScope.launch {
+            val steps = runCatching {
+                com.tracks.core.local.LocalPlanning(container.sources, container.library).resized(workout, minutes)
+            }.getOrNull() ?: return@launch
+            if (steps.isEmpty() || _state.value.begun) return@launch
+            val resized = workout.copy(steps = steps, durationMinutes = minutes)
+            val guided = guidedSteps(resized)
+            _state.update {
+                it.copy(workout = resized, steps = guided, index = 0, remaining = guided.firstOrNull()?.seconds ?: 0)
+            }
+        }
     }
 
     // ── The step cursor ──────────────────────────────────────────────────────
@@ -470,7 +501,8 @@ class GuidedWorkoutViewModel(
             runCatching {
                 container.training.logSession(
                     WorkoutSessionIn(
-                        plannedWorkoutId = workout.id,
+                        // A session started by hand is on no plan.
+                        plannedWorkoutId = workout.id.takeIf { !AdHocWorkouts.isAdHoc(it) },
                         exercises = completedExercises(),
                         sessionRpe = rpe,
                         notes = workout.title.takeIf { it.isNotBlank() },
@@ -479,6 +511,17 @@ class GuidedWorkoutViewModel(
                     completedAt = java.time.OffsetDateTime.now(java.time.ZoneOffset.UTC).toString(),
                 )
             }.onFailure { Log.w(TAG, "session not logged", it) }
+            // A timed activity started by hand -- yoga, climbing -- is also an
+            // activity, so it counts toward fitness like any other: a FIT file
+            // with no track, in its sport, going in by the same door.
+            if (AdHocWorkouts.isAdHoc(workout.id) && !isLoggedAsSession(workout.sport) && state.elapsedS > 0) {
+                val (sport, sub) = RunFit.fitSport(workout.sport)
+                val ms = state.elapsedS * 1000L
+                RunFit.encodeTimed(System.currentTimeMillis() - ms, ms, ms, sport, sub)?.let { bytes ->
+                    runCatching { container.files.add(bytes) }.onFailure { Log.w(TAG, "activity not stored", it) }
+                    runCatching { container.uploadFiles() }
+                }
+            }
             markCompleteLocally(workout)
             _state.update { it.copy(saving = false, saved = true, queued = false) }
             ActiveWorkout.end(key)
@@ -604,8 +647,16 @@ class GuidedWorkoutViewModel(
         ActiveWorkout.end(key)
     }
 
+    /** Strength and flexibility are logged as sessions, not as activities. */
+    private fun isLoggedAsSession(sport: String?): Boolean =
+        (sport ?: "").lowercase() in setOf("strength_training", "strength", "flexibility_training", "flexibility", "mobility")
+
     /** Tick the workout off — a one-field local edit that syncs by field. */
     private suspend fun markCompleteLocally(workout: PlannedWorkout) {
+        if (AdHocWorkouts.isAdHoc(workout.id)) {
+            _state.update { it.copy(workout = it.workout?.copy(isComplete = true)) }
+            return
+        }
         runCatching { container.sources.setValues("planned_workout", workout.id, mapOf("is_complete" to true)) }
         _state.update { it.copy(workout = it.workout?.copy(isComplete = true)) }
     }

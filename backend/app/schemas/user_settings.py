@@ -86,6 +86,8 @@ class UserSettingsOut(BaseModel):
 
     # Onboarding — the user hasn't completed the setup wizard yet
     setup_complete: bool = False
+    # See the model: null is automatic.
+    start_activity_button: bool | None = None
 
     # In-app guided tutorial state. tour_seen maps {tourId: true} for tours the
     # user has finished/dismissed; tour_enabled is the master "show tips" switch.
@@ -206,6 +208,7 @@ class UserSettingsUpdate(BaseModel):
     activity_frequency: dict[str, Literal["never", "occasional", "1_2", "3_4", "5_plus"]] | None = None
     experience_suggestion_dismissed: bool | None = None
     setup_complete: bool | None = None
+    start_activity_button: bool | None = None
     tour_seen: dict | None = None
     tour_enabled: bool | None = None
     weather_enabled: bool | None = None
