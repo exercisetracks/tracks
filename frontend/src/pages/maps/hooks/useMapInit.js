@@ -51,6 +51,23 @@ self.addProtocol('${PMT_PROTOCOL}', async (params, abortController) => {
 });
 `;
 
+/**
+ * The planning style as the browser loads it.
+ *
+ * - One vector source for every archive (mergeSources): a tile on screen is
+ *   one request, not four.
+ * - The sprite as an absolute URL. MapLibre 6 refuses a relative one ("must
+ *   be absolute") and carries on without it, so from the upgrade on the web map
+ *   had no icons at all -- no peaks, no POIs, no vegetation patterns -- and a
+ *   saved place's symbol (binoculars for a viewpoint) fell back to something
+ *   else, while the phone, whose served style is made absolute by the backend,
+ *   drew them. Glyph URLs are resolved differently and work relative.
+ */
+export function webStyle(origin = window.location.origin) {
+  const style = buildStyle("", { merged: true });
+  return { ...style, sprite: new URL(style.sprite, origin).href };
+}
+
 export function useMapInit(containerRef) {
   const [map, setMap] = useState(null);
   const [ready, setReady] = useState(false);
@@ -69,9 +86,7 @@ export function useMapInit(containerRef) {
 
     const instance = new maplibregl.Map({
       container: containerRef.current,
-      // One vector source for every archive (mergeSources): a tile on screen is
-      // one request, not four.
-      style: buildStyle("", { merged: true }),
+      style: webStyle(),
       center: [-98.5, 39.8],
       zoom: 4,
       minZoom: 1,

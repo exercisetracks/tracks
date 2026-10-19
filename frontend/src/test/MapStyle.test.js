@@ -268,3 +268,14 @@ describe('activity tracks under the labels', () => {
     expect(ids.findIndex((id) => id.startsWith('custom_tracks'))).toBeGreaterThan(lastLabel);
   });
 });
+
+// MapLibre 6 drops a relative sprite URL without a word, and the web map lost
+// every icon (peaks, POIs, a saved place's symbol) for weeks.
+describe('the style the browser loads', () => {
+  it('names its sprite by an absolute URL', async () => {
+    const { webStyle } = await import('../pages/maps/hooks/useMapInit');
+    const style = webStyle('https://maps.example.org');
+    expect(style.sprite).toBe('https://maps.example.org/api/sprite/usgs');
+    expect(() => new URL(style.sprite)).not.toThrow();
+  });
+});
