@@ -6,7 +6,7 @@ import { buildBackground } from "./layers/background";
 // at runtime once master_dem.pmtiles is confirmed present. See buildStyle.
 import { buildHillshade } from "./layers/hillshade";
 import { buildLandcover } from "./layers/landcover";
-import { buildLanduse } from "./layers/landuse";
+import { buildLanduse, buildParks, buildReserves } from "./layers/landuse";
 import { buildPublicLands, buildPublicLandLabels, buildPublicLandBoundaryLabels } from "./layers/publiclands";
 import { buildVegetation } from "./layers/vegetation";
 import { buildWater } from "./layers/water";
@@ -126,6 +126,8 @@ export function buildStyle(version = "", { includeDem = false, merged = false } 
     : buildSources(version);
   const layers = [
     ...buildBackground(),
+    // Nature reserves under the water, so a reserve's lakes stay blue (landuse.js).
+    ...buildReserves(),
     ...buildWater(),
     ...buildLandcover(),
     ...buildLanduse(),
@@ -139,6 +141,9 @@ export function buildStyle(version = "", { includeDem = false, merged = false } 
     // peaks ("mountains clipping through the wilderness tint"). The wash is
     // ≤22% alpha, so the veg patterns still read through it.
     ...buildPublicLands(),
+    // City parks, gardens and fields: green over the land washes, which dim
+    // them otherwise (landuse.js).
+    ...buildParks(),
     // Relief goes ON TOP of every area fill and under all the line work, which
     // is where landcover.js always said it was ("a soft tint under the
     // hillshade"). Under the fills it is invisible at the zooms that matter:

@@ -61,6 +61,11 @@ const WATER_NAME = ["coalesce", ["get", "name:en"], ["get", "name"]];
 // Water bodies the POI index holds (from GNIS); drawn as water names, not POIs.
 const WATER_POI_KINDS = ["lake", "reservoir", "bay", "sea", "strait", "gulf"];
 
+// Green spaces named from the basemap's own points (labels_parks). Not nature
+// reserves: inside downloaded areas those are named by the public-lands layer,
+// once per area, and a second name would sit beside it.
+const PARK_LABEL_KINDS = ["park", "garden", "golf_course", "dog_park", "recreation_ground", "village_green"];
+
 export function buildLabels() {
   return [
     // ── Water names ─────────────────────────────────────────────────────────
@@ -481,6 +486,33 @@ export function buildLabels() {
     // The single most important navigation POI for a hiker — give it the same
     // always-on-top, overlap-allowed treatment as water sources so trailheads
     // are never dropped to icon collision in dense areas.
+    {
+      id: "labels_parks",
+      source: "basemap",
+      "source-layer": "pois",
+      type: "symbol",
+      minzoom: 9,
+      filter: ["all", ["in", ["get", "kind"], ["literal", PARK_LABEL_KINDS]], ["has", "name"]],
+      layout: {
+        // A zoom ahead of the basemap's own grade, so parks are among the first
+        // names a city shows: what someone planning a walk looks for.
+        "text-field": gateByMinZoom("min_zoom", 15, ["get", "name"], { from: 9, lead: 1 }),
+        "text-font": ["Noto Sans Italic"],
+        "text-size": ["interpolate", ["linear"], ["zoom"], 10, 11, 14, 12.5, 16, 14],
+        "text-max-width": 7,
+        "icon-image": gateByMinZoom("min_zoom", 15, "park", { from: 9, lead: 1 }),
+        "icon-size": ["interpolate", ["linear"], ["zoom"], 10, 0.75, 14, 0.95],
+        "text-anchor": "top",
+        "text-offset": [0, 0.9],
+        // Bigger parks (an earlier basemap grade) on top where they overlap.
+        "symbol-sort-key": ["get", "min_zoom"],
+      },
+      paint: {
+        "text-color": COLORS.labels.park,
+        "text-halo-color": COLORS.background,
+        "text-halo-width": 1.5,
+      },
+    },
     {
       id: "poi_trailhead_icons",
       source: "poi_features",

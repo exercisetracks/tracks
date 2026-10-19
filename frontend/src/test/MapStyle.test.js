@@ -279,3 +279,17 @@ describe('the style the browser loads', () => {
     expect(() => new URL(style.sprite)).not.toThrow();
   });
 });
+
+// A city park used to read only as a place with no roads.
+describe('green spaces', () => {
+  it('fills parks green above the land washes, and names them', () => {
+    const layers = buildStyle().layers;
+    const ids = layers.map((l) => l.id);
+    const parks = layers.find((l) => l.id === 'landuse_parks');
+    expect(parks.filter[2][1]).toEqual(expect.arrayContaining(['park', 'golf_course', 'pitch', 'grass', 'garden']));
+    for (const wash of ['landcover_overview', 'public_lands_fill']) {
+      if (ids.includes(wash)) expect(ids.indexOf('landuse_parks'), wash).toBeGreaterThan(ids.indexOf(wash));
+    }
+    expect(ids).toContain('labels_parks');
+  });
+});

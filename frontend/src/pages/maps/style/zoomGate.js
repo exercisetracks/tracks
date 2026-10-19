@@ -25,10 +25,11 @@
 //   from/to integer zoom range to enumerate (clamp to the layer's own range;
 //           below `from` the `from` case applies)
 //   hidden  emitted when the feature doesn't qualify ("" = no text/icon)
-export function gateByMinZoom(prop, def, value, { from = 3, to = 16, hidden = "" } = {}) {
+//   lead    zooms ahead of its grade a feature shows (parks: one ahead)
+export function gateByMinZoom(prop, def, value, { from = 3, to = 16, hidden = "", lead = 0 } = {}) {
   const valueAt = typeof value === "function" ? value : () => value;
   const caseFor = (z) =>
-    ["case", ["<=", ["coalesce", ["get", prop], def], z], valueAt(z), hidden];
+    ["case", ["<=", ["coalesce", ["get", prop], def], z + lead], valueAt(z), hidden];
   const step = ["step", ["zoom"], caseFor(from)];
   for (let z = from + 1; z <= to; z++) step.push(z, caseFor(z));
   return step;

@@ -33,7 +33,7 @@ export const COLORS = {
 
   // ── Landuse ──
   landuse: {
-    park:            "#D0E4BF",
+    park:            "#B5D896",
     national_park:   "#CDE0BA",
     nature_reserve:  "#C5DCB2",
     cemetery:        "#D5DFC9",
@@ -57,7 +57,7 @@ export const COLORS = {
     farmland:        "#F0EDE0",
     forest:          "#BDD6AC",
     grassland:       "#E3EDD2",
-    golf_course:     "#D4E6C4",
+    golf_course:     "#BEDCA3",
     recreation_ground: "#D8E7CB",
     pitch:           "#DDE8D2",
     zoo:             "#D2E4C4",
@@ -194,6 +194,9 @@ export const COLORS = {
     region:          "#5B5346",
     // USGS topographic contour brown (VanDyke/sienna).
     contour:         "#9C5B26",
+    // Park and green-space names: a deep leaf green that reads as "park" at a
+    // glance, as on most street maps, and stays legible on the green fill.
+    park:            "#2F6B2A",
   },
 
 };
