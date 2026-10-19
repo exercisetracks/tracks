@@ -99,7 +99,23 @@ sealed interface SessionState {
 class VaultLockedException(message: String = "Vault is locked") : Exception(message)
 
 /** Thrown when credentials are gone or rejected and the user must log in. */
-class NotAuthenticatedException(message: String = "Not authenticated") : Exception(message)
+open class NotAuthenticatedException(message: String = "Not authenticated") : Exception(message)
+
+/**
+ * A password sign-in the server turned down, with what it said. Separate from
+ * a lapsed session because the user is looking at the sign-in form and needs
+ * to know which of very different things happened: a wrong password (401), a
+ * lockout after too many tries (429), or something between the phone and the
+ * server answering instead of Tracks. All three used to read "Sign-in
+ * required." on the very form that had just been filled in.
+ */
+class LoginRefusedException(val status: Int, detail: String?) : NotAuthenticatedException(
+    when {
+        status == 401 -> "Wrong username or password."
+        !detail.isNullOrBlank() -> detail
+        else -> "The server refused the sign-in (HTTP $status)."
+    },
+)
 
 /** A password change refused because the current password was wrong. */
 class WrongPasswordException(message: String = "Current password is incorrect") : Exception(message)

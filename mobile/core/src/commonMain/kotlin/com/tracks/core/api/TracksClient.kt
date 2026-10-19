@@ -185,7 +185,7 @@ class TracksClient(
             contentType(ContentType.Application.Json)
             setBody(LoginRequest(username, password, deviceLabel = deviceLabel))
         }
-        if (resp.status != HttpStatusCode.OK) throw NotAuthenticatedException("Login failed")
+        if (resp.status != HttpStatusCode.OK) throw LoginRefusedException(resp.status.value, errorDetail(resp))
 
         val body: TokenResponse = resp.body()
         val existing = tokens.load()

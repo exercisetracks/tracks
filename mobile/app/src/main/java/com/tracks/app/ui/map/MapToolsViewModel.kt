@@ -1555,6 +1555,12 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
         return true
     }
 
+    /** Terrain height for a tap in 3D ([TerrainTap]): packs and cached tiles first, as the profile. */
+    suspend fun groundElevation(lat: Double, lng: Double): Double? {
+        val client = runCatching { container.client() }.getOrNull() ?: return null
+        return runCatching { container.offlineDem().elevation(client, lat, lng) }.getOrNull()
+    }
+
     fun selectWaypoint(waypoint: Waypoint) {
         _state.update { it.copy(selected = Selection.Place(waypoint), notice = null) }
     }

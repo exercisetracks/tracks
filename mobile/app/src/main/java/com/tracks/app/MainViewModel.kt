@@ -23,6 +23,7 @@ import com.tracks.core.api.SessionState
 import com.tracks.core.replica.LinkResult
 import com.tracks.core.api.ServerNotFoundException
 import com.tracks.core.api.VaultLockedException
+import com.tracks.core.api.LoginRefusedException
 import com.tracks.core.api.discoverApiBase
 import com.tracks.core.api.RemotePlaylistList
 import com.tracks.core.api.probeForTracks
@@ -1203,7 +1204,13 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
                 _state.update { current -> current.copy(
                     message = "Your data is locked. Sign in again to unlock it.",
                 ) }
+            } catch (e: LoginRefusedException) {
+                android.util.Log.w("Tracks", "$label: sign-in refused (HTTP ${e.status})")
+                _state.update { current -> current.copy(message = e.message) }
             } catch (e: NotAuthenticatedException) {
+                // Logged because a release build says nothing else: this
+                // message alone could not tell a lost token from a refusal.
+                android.util.Log.w("Tracks", "$label: not authenticated", e)
                 _state.update { current -> current.copy(message = "Sign-in required.") }
             } catch (e: WrongPasswordException) {
                 _state.update { current -> current.copy(message = "That is not your current password.") }
@@ -1212,6 +1219,7 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
             } catch (e: IncompatibleServerException) {
                 _state.update { current -> current.copy(message = e.message) }
             } catch (e: Exception) {
+                android.util.Log.w("Tracks", "$label failed", e)
                 _state.update { current -> current.copy(message = "$label failed: ${e.message}") }
             } finally {
                 _state.update { current -> current.copy(busy = false) }

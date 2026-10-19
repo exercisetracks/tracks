@@ -1,0 +1,37 @@
+diff --git a/src/mbgl/renderer/render_terrain.cpp b/src/mbgl/renderer/render_terrain.cpp
+index 78d7787..a09c3b4 100644
+--- a/src/mbgl/renderer/render_terrain.cpp
++++ b/src/mbgl/renderer/render_terrain.cpp
+@@ -104,7 +104,16 @@ std::set<UnwrappedTileID> RenderTerrain::computeMeshCover(
+     // (gl-js's terrain-cover convention) until the first DEM tile is decoded. The cover is
+     // still the elevation-aware ideal cover from the view, not the DEM's loaded tile set.
+     const uint16_t terrainCoverTileSize = demDim > 0 ? static_cast<uint16_t>(demDim) : 512;
+-    const Range<uint8_t> zoomRange{0, demSource->getMaxZoom()};
++    // Tracks: the mesh follows the view's zoom, not the DEM's. Each mesh tile
++    // is one drape target, so clamping the cover at the DEM's maxzoom (z12 for
++    // a typical regional DEM) stretched one target over 8x8 screen tiles at
++    // z15 - every draped layer went soft, worse the closer you zoomed, while
++    // the flat map stayed sharp. Past the DEM's maxzoom a mesh tile samples
++    // its DEM ancestor (the fallback below), as maplibre-gl-js's terrain does
++    // with its own maxzoom of 22.
++    const uint8_t meshMaxZoom = static_cast<uint8_t>(std::clamp<double>(
++        std::ceil(state.getMaxZoom()), demSource->getMaxZoom(), 22.0));
++    const Range<uint8_t> zoomRange{0, meshMaxZoom};
+ 
+     // LOD parameters from the frame drive the same near-high/far-low zoom
+     // selection every other source uses, so the near field drapes at a higher
+@@ -427,7 +436,13 @@ void RenderTerrain::update(RenderOrchestrator& orchestrator,
+                 }
+             } else {
+                 ancestorEntry->lastUsed = demUpdateCounter;
+-                demTier = 1;
++                // Tracks: an ancestor at the DEM's own maxzoom is the best this
++                // tile will ever get (it is deeper than the DEM), so it is final,
++                // not a stand-in waiting for an exact tile that cannot come.
++                demTier = ancestorID->canonical.z >=
++                                  std::min<int>(unwrapped.canonical.z, demSource->getMaxZoom())
++                              ? 2
++                              : 1;
+                 demTileUsed = ancestorID;
+                 const auto off = demSubTileOffset(unwrapped.canonical, ancestorID->canonical);
+                 demCoords = {{1.0f / (util::EXTENT * off.scale),

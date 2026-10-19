@@ -300,4 +300,24 @@ class SessionRecoveryTest {
         assertFailsWith<NotAuthenticatedException> { client.login("alex", "wrong") }
         assertEquals("a1", store.load().accessToken)
     }
+
+    /**
+     * The sign-in form showed "Sign-in required." for a wrong password, a
+     * lockout and a proxy's error page alike, so a user could not tell which
+     * to fix. What the server said has to reach the form.
+     */
+    @Test
+    fun `a refused sign-in says why`() = runTest {
+        val (wrong, _) = clientWith(InMemoryTokenStore()) { _, _ ->
+            HttpStatusCode.Unauthorized to """{"detail":"Invalid credentials"}"""
+        }
+        val e401 = assertFailsWith<LoginRefusedException> { wrong.login("alex", "wrong") }
+        assertEquals("Wrong username or password.", e401.message)
+
+        val (locked, _) = clientWith(InMemoryTokenStore()) { _, _ ->
+            HttpStatusCode.TooManyRequests to """{"detail":"Too many failed login attempts — try again in 15 minutes"}"""
+        }
+        val e429 = assertFailsWith<LoginRefusedException> { locked.login("alex", "pw") }
+        assertEquals("Too many failed login attempts — try again in 15 minutes", e429.message)
+    }
 }

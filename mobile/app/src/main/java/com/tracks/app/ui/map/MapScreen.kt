@@ -392,13 +392,18 @@ fun MapScreen(
                 // mode before expressing it loses the point you were pointing
                 // at. Pressing again while already drawing simply adds a
                 // waypoint, so the gesture means one thing throughout.
+                // Taps in 3D are moved onto the ground under the finger
+                // ([TerrainTap]), which may need a terrain tile: hence a
+                // coroutine. The checks on the screen point stay synchronous.
+                val tapScope = rememberCoroutineScope()
                 LaunchedEffect(map) {
                     val ready = map ?: return@LaunchedEffect
-                    ready.addOnMapLongClickListener { point ->
+                    ready.addOnMapLongClickListener { tapped ->
                         if (!boxUp.value && !dragging.value &&
-                            !chromeSnapshot.value.covers(ready, point) &&
-                            ready.handleNear(point, handles.value) == null
-                        ) {
+                            !chromeSnapshot.value.covers(ready, tapped) &&
+                            ready.handleNear(tapped, handles.value) == null
+                        ) tapScope.launch {
+                            val point = ready.groundAt(tapped, toolsVm::groundElevation)
                             if (currentTool.value != MapTool.Route) {
                                 // A new drawing gets the screen: whatever sheet
                                 // was open (a place's details, the library, a
@@ -419,10 +424,11 @@ fun MapScreen(
 
                 LaunchedEffect(map) {
                     val ready = map ?: return@LaunchedEffect
-                    ready.addOnMapClickListener { point ->
+                    ready.addOnMapClickListener { tapped ->
                         if (!boxUp.value && !dragging.value &&
-                            !chromeSnapshot.value.covers(ready, point)
-                        ) {
+                            !chromeSnapshot.value.covers(ready, tapped)
+                        ) tapScope.launch {
+                            val point = ready.groundAt(tapped, toolsVm::groundElevation)
                             when (currentTool.value) {
                                 // A saved thing under the finger wins over the
                                 // ground under it. Tapping your own track used
@@ -443,7 +449,7 @@ fun MapScreen(
                                 // A tap on a handle is the handle's, and the
                                 // overlay has already opened its menu.
                                 MapTool.Route ->
-                                    if (ready.handleNear(point, handles.value) == null) {
+                                    if (ready.handleNear(tapped, handles.value) == null) {
                                         toolsVm.addWaypoint(point)
                                     }
                             }
@@ -558,10 +564,46 @@ fun MapScreen(
                     val loaded = style ?: return@LaunchedEffect
                     val geo = tools.activityGeoJson ?: return@LaunchedEffect
                     drawActivityTracks(loaded, geo)
-                    // Under the selected-activity highlight and everything saved.
-                    activityGlow.attach(ready, loaded, below = "activity_tracks_hover")
+                    // Under every label and the selected-activity highlight —
+                    // found in the style rather than assumed, because a style
+                    // cached from an older server has its activity layers
+                    // above the labels.
+                    activityGlow.attach(ready, loaded, below = ActivityLines3D.labelAnchor(loaded))
+                    ActivityLines3D.install(loaded, activityInk)
                     val shown = "activity_tracks" !in hiddenGroups
+                    // The camera listener below may have run before these
+                    // layers existed (a map reopened tilted).
+                    val camera = ready.cameraPosition
+                    ActivityLines3D.apply(
+                        loaded, shown, ActivityLines3D.isFlat(camera.tilt, camera.bearing),
+                        com.tracks.app.ui.dashboard.HeatmapGlow.LAYER,
+                    )
                     activityGlow.setRoutes(if (shown) geo else NO_ROUTES, dark = false, valueColoured = false)
+                }
+                // Glow when flat and north-up, lines on the ground otherwise:
+                // see [ActivityLines3D]. On every camera move, so the swap
+                // happens with the tilt rather than after it.
+                DisposableEffect(map, style, tools.activityGeoJson, hiddenGroups) {
+                    val ready = map
+                    val loaded = style
+                    if (ready == null || loaded == null) {
+                        onDispose {}
+                    } else {
+                        val shown = "activity_tracks" !in hiddenGroups
+                        var flat: Boolean? = null
+                        val sync = {
+                            val camera = ready.cameraPosition
+                            val now = ActivityLines3D.isFlat(camera.tilt, camera.bearing)
+                            if (now != flat) {
+                                flat = now
+                                ActivityLines3D.apply(loaded, shown, now, com.tracks.app.ui.dashboard.HeatmapGlow.LAYER)
+                            }
+                        }
+                        sync()
+                        val move = MapLibreMap.OnCameraMoveListener { sync() }
+                        ready.addOnCameraMoveListener(move)
+                        onDispose { ready.removeOnCameraMoveListener(move) }
+                    }
                 }
 
                 LaunchedEffect(map, tools.focus) {
@@ -2258,4 +2300,10 @@ private tailrec fun android.content.Context.findActivity(): android.app.Activity
     is android.app.Activity -> this
     is android.content.ContextWrapper -> baseContext.findActivity()
     else -> null
+}
+
+/** [point] moved onto the terrain under it when the map is tilted: see [TerrainTap]. */
+private suspend fun MapLibreMap.groundAt(point: LatLng, elevation: suspend (Double, Double) -> Double?): LatLng {
+    val camera = TerrainTap.camera(this) ?: return point
+    return TerrainTap.ground(point, camera) { elevation(it.latitude, it.longitude) }
 }
