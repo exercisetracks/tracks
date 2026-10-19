@@ -112,7 +112,6 @@ import java.time.temporal.ChronoUnit
 fun TrainingScreen(
     vm: PlanViewModel,
     onOpenWorkout: (Int) -> Unit,
-    onSyncWatch: () -> Unit,
     modifier: Modifier = Modifier,
     /** Open the new-goal form as soon as the page has loaded — a first run's plan. */
     openNewGoal: Boolean = false,
@@ -137,7 +136,6 @@ fun TrainingScreen(
             onGoalSheet = vm::loadEventLoad,
             onDaysPerWeek = vm::setDaysPerWeek,
             onIntensity = vm::setIntensity,
-            onSyncWatch = onSyncWatch,
             onCopyLink = vm::fetchIcsUrl,
             onActivate = vm::activate,
             onSaveGoal = vm::saveGoal,
@@ -168,7 +166,6 @@ data class TrainingActions(
     val onGoalSheet: () -> Unit = {},
     val onDaysPerWeek: (Int) -> Unit = {},
     val onIntensity: (Double) -> Unit = {},
-    val onSyncWatch: () -> Unit = {},
     val onCopyLink: () -> Unit = {},
     val onActivate: (TrainingGoal) -> Unit = {},
     val onSaveGoal: (GoalDraft) -> Unit = {},
@@ -517,12 +514,8 @@ private fun EventGoalCard(
     phase?.let { PhaseTimeline(it) }
 
     // No Regenerate: every change that would leave the plan stale rebuilds
-    // it (PlanStaleness). The subscription link lives in the goal sheet.
-    if (com.tracks.app.ui.components.LocalHasDevice.current) {
-        ButtonRow {
-            TonalButton("Sync to watch", onClick = actions.onSyncWatch)
-        }
-    }
+    // it (PlanStaleness). The subscription link lives in the goal sheet. No
+    // "Sync to watch" either: pulling down from the top syncs, on every page.
 }
 
 /** The web's phase colours: base in the accent, then blue, amber, red. */
@@ -607,11 +600,6 @@ private fun FitnessGoalCard(goal: TrainingGoal, actions: TrainingActions, onEdit
         style = MaterialTheme.typography.labelLarge,
         color = rampColor(ramp),
     )
-    if (com.tracks.app.ui.components.LocalHasDevice.current) {
-        ButtonRow {
-            TonalButton("Sync to watch", onClick = actions.onSyncWatch)
-        }
-    }
 }
 
 @Composable

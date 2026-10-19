@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -474,7 +475,14 @@ private fun TrainingLocationsCard(
     val styleJson = if (dark) backdropDark else backdropLight
     if (styleJson == null || routesGeoJson == null) return
 
-    SectionCard("Training locations", subtitle = "Drag to pan, pinch to zoom") {
+    // No card: the box around the map spent its margins on chrome. The map
+    // runs to the screen's edges, past the page's own padding, and takes most
+    // of a screen's height -- it is the one card that is better as more of
+    // itself.
+    val config = androidx.compose.ui.platform.LocalConfiguration.current
+    val mapWidth = config.screenWidthDp.dp
+    val mapHeight = (config.screenHeightDp * HEATMAP_SCREEN_FRACTION).dp
+    SectionCard("Training locations", subtitle = "Drag to pan, pinch to zoom", bare = true) {
         var loaded by remember { mutableStateOf<Pair<MapLibreMap, Style>?>(null) }
         val scope = rememberCoroutineScope()
         val density = LocalDensity.current.density
@@ -485,8 +493,10 @@ private fun TrainingLocationsCard(
 
         Box(
             Modifier
-                .fillMaxWidth()
-                .height(320.dp)
+                // Wider than the column: requiredWidth centres the overflow,
+                // so the page's even padding is spent on both sides alike.
+                .requiredWidth(mapWidth)
+                .height(mapHeight)
                 .clip(RoundedCornerShape(Tokens.Radius.xl)),
         ) {
             MapLibreView(
@@ -516,11 +526,20 @@ private fun TrainingLocationsCard(
             }
         }
 
-        SegmentedChoice(
-            options = HeatmapMode.entries.map { it.name to it.shortLabel() },
-            selected = mode.name,
-            onSelect = { onMode(HeatmapMode.valueOf(it)) },
-        )
+        // Pills, like the window's at the top, rather than a segmented bar:
+        // the same kind of choice, so the same piece.
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+        ) {
+            HeatmapMode.entries.forEach { m ->
+                com.tracks.app.ui.components.BarPill(
+                    text = m.shortLabel(),
+                    selected = m == mode,
+                    onClick = { onMode(m) },
+                )
+            }
+        }
         HeatmapLegend(mode)
 
         // Applied outside onMapReady: that callback fires as soon as the style
@@ -541,6 +560,9 @@ private fun TrainingLocationsCard(
         }
     }
 }
+
+/** About this much of the screen's height goes to the heatmap. */
+private const val HEATMAP_SCREEN_FRACTION = 0.6f
 
 /** Four of these share a row, so heart rate is the one that is shortened. */
 private fun HeatmapMode.shortLabel(): String = if (this == HeatmapMode.HeartRate) "HR" else label
@@ -626,6 +648,8 @@ private fun SectionCard(
      * directly above the thing somebody opened the app to read.
      */
     dense: Boolean = false,
+    /** No card around the content: the heatmap, which is better as more map. */
+    bare: Boolean = false,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
@@ -661,6 +685,10 @@ private fun SectionCard(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+        }
+        if (bare) {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) { content() }
+            return@Column
         }
         Card(
             Modifier.fillMaxWidth(),

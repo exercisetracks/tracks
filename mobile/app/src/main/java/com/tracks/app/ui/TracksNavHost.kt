@@ -602,7 +602,6 @@ fun TracksNavHost(
                 TrainingScreen(
                     vm = planVm,
                     onOpenWorkout = { id -> navController.navigate("workout/$id") },
-                    onSyncWatch = { vm.syncWatch() },
                     openNewGoal = firstPlan,
                     onNewGoalClosed = { firstPlan = false },
                 )
