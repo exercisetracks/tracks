@@ -582,6 +582,15 @@ class DashboardViewModel(private val container: AppContainer) : ViewModel() {
         const val UPCOMING_DAYS = 14
         const val READINESS_MAX_DAYS = 365
     }
+
+    /** How many of each startable kind are in the history: the sheet's "Frequent". */
+    suspend fun startKindCounts(): Map<com.tracks.app.ui.workout.StartKind, Int> =
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+            runCatching { container.sources.activities() }.getOrDefault(emptyList())
+                .mapNotNull { com.tracks.app.ui.workout.StartKind.of(it.sport, it.subSport) }
+                .groupingBy { it }.eachCount()
+        }
+
 }
 
 private const val SNAPSHOT = "dashboard"

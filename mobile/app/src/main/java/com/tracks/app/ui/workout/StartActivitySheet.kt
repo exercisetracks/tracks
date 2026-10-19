@@ -55,11 +55,42 @@ enum class StartKind(val sport: String, val label: String, val group: Group) {
     Paddle("kayaking", "Paddle", Group.Recorded),
     Strength("strength_training", "Strength", Group.Built),
     Flexibility("flexibility_training", "Flexibility", Group.Built),
-    Yoga("yoga", "Yoga", Group.Timed),
     Climbing("rock_climbing", "Climbing", Group.Timed),
     Other("generic", "Other", Group.Timed);
 
     enum class Group { Recorded, Built, Timed }
+
+    companion object {
+        /**
+         * Which kind an activity in the history counts as, for "Frequent".
+         * Yoga and pilates are flexibility here: a flexibility session is
+         * yoga, which is why yoga is no longer a kind of its own.
+         */
+        fun of(sport: String?, subSport: String?): StartKind? {
+            val s = sport?.lowercase().orEmpty()
+            val sub = subSport?.lowercase().orEmpty()
+            return when {
+                s == "running" -> Run
+                s == "walking" -> Walk
+                s == "hiking" -> Hike
+                s == "cycling" || s == "mountain_biking" -> if (s == "mountain_biking" || sub == "mountain") Mtb else Ride
+                s == "cross_country_skiing" -> XcSki
+                s == "rowing" -> Row
+                s in setOf("kayaking", "paddling", "stand_up_paddleboarding") -> Paddle
+                s == "strength_training" || sub == "strength_training" -> Strength
+                s in setOf("flexibility_training", "yoga", "pilates") ||
+                    sub in setOf("flexibility_training", "yoga", "pilates") -> Flexibility
+                s in setOf("rock_climbing", "climbing") || sub in setOf("bouldering", "indoor_climbing") -> Climbing
+                else -> null
+            }
+        }
+
+        /** The kinds done most, most first (at most [max]), from per-kind counts. */
+        fun frequent(counts: Map<StartKind, Int>, max: Int = 4): List<StartKind> =
+            counts.filterValues { it > 0 }.entries
+                .sortedWith(compareByDescending<Map.Entry<StartKind, Int>> { it.value }.thenBy { it.key.ordinal })
+                .take(max).map { it.key }
+    }
 }
 
 /** What the sheet asks for once a kind is picked. */
@@ -82,9 +113,16 @@ data class StartChoice(
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-fun StartActivitySheet(onDismiss: () -> Unit, onStart: (StartChoice) -> Unit) {
+fun StartActivitySheet(
+    onDismiss: () -> Unit,
+    onStart: (StartChoice) -> Unit,
+    /** How often each kind appears in the history, for "Frequent" and the preselection. */
+    counts: Map<StartKind, Int> = emptyMap(),
+) {
     val sheet = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    var kind by remember { mutableStateOf<StartKind?>(null) }
+    val frequent = remember(counts) { StartKind.frequent(counts) }
+    // The usual one, ready to go; a run for someone with no history.
+    var kind by remember(frequent) { mutableStateOf<StartKind?>(frequent.firstOrNull() ?: StartKind.Run) }
     var target by remember { mutableStateOf("none") }
     var distanceKm by remember { mutableFloatStateOf(5f) }
     var targetMin by remember { mutableFloatStateOf(30f) }
@@ -99,10 +137,12 @@ fun StartActivitySheet(onDismiss: () -> Unit, onStart: (StartChoice) -> Unit) {
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             Text("Start an activity", style = MaterialTheme.typography.titleLarge)
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                StartKind.entries.forEach { k ->
-                    BarPill(text = k.label, selected = k == kind, onClick = { kind = k })
-                }
+            // What you usually do first, from your own history; then the rest.
+            if (frequent.isNotEmpty()) {
+                KindGroup("Frequent", frequent, kind) { kind = it }
+                KindGroup("Other options", StartKind.entries - frequent.toSet(), kind) { kind = it }
+            } else {
+                KindGroup(null, StartKind.entries, kind) { kind = it }
             }
             val k = kind
             when (k?.group) {
@@ -125,22 +165,22 @@ fun StartActivitySheet(onDismiss: () -> Unit, onStart: (StartChoice) -> Unit) {
                 StartKind.Group.Built -> {
                     Text("Length: ${minutes.toInt()} min", style = MaterialTheme.typography.labelLarge)
                     Slider(minutes, { minutes = ((it / 5).toInt() * 5).coerceIn(5, 90).toFloat() }, valueRange = 5f..90f, steps = 16)
-                    Text("Intensity", style = MaterialTheme.typography.labelLarge)
-                    val words = if (k == StartKind.Flexibility) listOf("Gentle", "Moderate", "Deep") else listOf("Light", "Moderate", "Hard")
-                    SegmentedChoice(
-                        options = QuickSession.Intensity.entries.mapIndexed { i, it -> it.name to words[i] },
-                        selected = intensity.name,
-                        onSelect = { intensity = QuickSession.Intensity.valueOf(it) },
+                    val words = if (k == StartKind.Flexibility) FLEX_WORDS else STRENGTH_WORDS
+                    val levels = QuickSession.Intensity.entries
+                    Text("Intensity: ${words[intensity.ordinal]}", style = MaterialTheme.typography.labelLarge)
+                    // Five steps on a slider rather than three buttons: finer,
+                    // and one thumb-width control instead of a row of words.
+                    Slider(
+                        value = intensity.ordinal.toFloat(),
+                        onValueChange = { intensity = levels[it.toInt().coerceIn(0, levels.lastIndex)] },
+                        valueRange = 0f..levels.lastIndex.toFloat(),
+                        steps = levels.size - 2,
                     )
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        NeutralButton(if (picking) "Hide muscles" else "Focus on muscles", onClick = { picking = !picking }, small = true)
-                        Text(
-                            if (emphasis.isEmpty()) "Optional: a balanced full-body session"
-                            else "${emphasis.size} chosen, about 2 in 5 picks",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
+                    NeutralButton(
+                        if (picking) "Hide muscles" else if (emphasis.isEmpty()) "Focus on muscles?" else "Focus on muscles (${emphasis.size})",
+                        onClick = { picking = !picking },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
                     if (picking) MusclePicker(selected = emphasis, onSelectedChange = { emphasis = it })
                 }
                 StartKind.Group.Timed -> Text(
@@ -169,5 +209,40 @@ fun StartActivitySheet(onDismiss: () -> Unit, onStart: (StartChoice) -> Unit) {
                 modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
             )
         }
+    }
+}
+
+private val FLEX_WORDS = listOf("Very gentle", "Gentle", "Moderate", "Deep", "Very deep")
+private val STRENGTH_WORDS = listOf("Very light", "Light", "Moderate", "Hard", "Very hard")
+
+/** One group of kinds under its heading, as pills large enough to hit. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun KindGroup(title: String?, kinds: List<StartKind>, selected: StartKind?, onPick: (StartKind) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        title?.let {
+            Text(it, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            kinds.forEach { k -> KindPill(k.label, k == selected) { onPick(k) } }
+        }
+    }
+}
+
+/**
+ * The bar's pill, bigger and outlined when not chosen: on the sheet's own
+ * surface the bar pill's faint fill was the same colour as the sheet, in both
+ * themes, so the choices did not read as pills at all.
+ */
+@Composable
+private fun KindPill(text: String, selected: Boolean, onClick: () -> Unit) {
+    androidx.compose.material3.Surface(
+        onClick = onClick,
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(percent = 50),
+        color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest,
+        contentColor = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+        border = if (selected) null else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+    ) {
+        Text(text, Modifier.padding(horizontal = 16.dp, vertical = 9.dp), style = MaterialTheme.typography.labelLarge)
     }
 }

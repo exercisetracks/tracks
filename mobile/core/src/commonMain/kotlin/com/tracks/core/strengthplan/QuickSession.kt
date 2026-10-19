@@ -25,7 +25,8 @@ import com.tracks.core.parse.PyRandom
  */
 object QuickSession {
 
-    enum class Intensity { Low, Medium, High }
+    /** Five steps, the dashboard's slider: very gentle/light ... very deep/hard. */
+    enum class Intensity { VeryLow, Low, Medium, High, VeryHigh }
 
     /** A lift from the library, as much of it as choosing needs. */
     data class QuickExercise(
@@ -42,15 +43,21 @@ object QuickSession {
     const val TRANSITION_S = 10
 
     /** Hold, seconds, and sets, by intensity: gentle, moderate, deep. */
-    private val HOLD_S = mapOf(Intensity.Low to 30, Intensity.Medium to 45, Intensity.High to 60)
-    private val STRETCH_SETS = mapOf(Intensity.Low to 1, Intensity.Medium to 1, Intensity.High to 2)
+    private val HOLD_S = mapOf(
+        Intensity.VeryLow to 20, Intensity.Low to 30, Intensity.Medium to 45, Intensity.High to 60, Intensity.VeryHigh to 90,
+    )
+    private val STRETCH_SETS = mapOf(
+        Intensity.VeryLow to 1, Intensity.Low to 1, Intensity.Medium to 1, Intensity.High to 2, Intensity.VeryHigh to 1,
+    )
 
     /** Sets, reps, rest (s) and target RPE, by intensity: light, moderate, hard. */
     private data class Dose(val sets: Int, val reps: Int, val restS: Int, val rpe: Double)
     private val DOSE = mapOf(
+        Intensity.VeryLow to Dose(2, 15, 45, 5.0),
         Intensity.Low to Dose(2, 12, 60, 6.0),
         Intensity.Medium to Dose(3, 10, 90, 7.0),
         Intensity.High to Dose(4, 6, 120, 8.0),
+        Intensity.VeryHigh to Dose(5, 4, 150, 9.0),
     )
 
     /** About how long one working set takes, and setting up for an exercise. */
@@ -184,7 +191,7 @@ object QuickSession {
             // session another day.
             val pool = byMuscle[muscle].orEmpty().filter { it.name !in seen }
                 .sortedWith(compareBy<QuickExercise>({ if (it.isCompound) 0 else 1 },
-                    { if (intensity == Intensity.Low) it.difficulty else -it.difficulty }, { it.name }))
+                    { if (intensity <= Intensity.Low) it.difficulty else -it.difficulty }, { it.name }))
                 .toMutableList()
             if (pool.isEmpty()) continue
             val top = pool.take(3).toMutableList()
