@@ -49,6 +49,8 @@ data class GuidedUiState(
     val paces: Map<String, Double>? = null,
     /** Paused is a timer that is not running, not a fourth phase. */
     val running: Boolean = false,
+    /** Seconds the step runner has been running, pauses excluded. */
+    val elapsedS: Int = 0,
     /** Whether the first step has ever been started — a pause is not a start. */
     val begun: Boolean = false,
     /** Walked past the last step. */
@@ -62,17 +64,29 @@ data class GuidedUiState(
     val step: GuidedStep? get() = steps.getOrNull(index)
     val next: GuidedStep? get() = steps.getOrNull(index + 1)
 
+    /** The workout's sport family (PlanBase.sportFamily), lower case. */
+    val family: String
+        get() = com.tracks.core.plan.PlanBase.sportFamily((workout?.sport ?: "running").lowercase())
+
     /**
-     * Whether this workout is recorded rather than merely counted down.
-     *
-     * Running only, and that is a limit of the encoder rather than of the idea:
-     * [RunFit] writes `sport = running` into every file it builds, so recording
-     * a planned ride through it would file the ride as a run. Everything else
-     * gets the step runner, which is what the plan describes anyway — the
-     * generator gives non-running sports prose and durations, not routes.
+     * Whether this workout is recorded with GPS rather than merely counted down:
+     * any sport done by moving across the ground or water. Running only until
+     * [RunFit] learned to write other sports; strength, flexibility and the
+     * like get the step runner and a logged session.
      */
     val isRecorded: Boolean
-        get() = workout != null && sportType(workout.sport) == "running"
+        get() = workout != null && (
+            family in GPS_FAMILIES || (workout.sport ?: "").lowercase() in GPS_SPORTS
+            )
+
+    /** Whether the main figure is speed rather than pace: anything on wheels or skis. */
+    val bySpeed: Boolean get() = family in SPEED_FAMILIES
+
+    companion object {
+        val GPS_FAMILIES = setOf("running", "hiking", "cycling", "mountain_biking", "nordic_skiing", "rowing")
+        val GPS_SPORTS = setOf("walking", "kayaking", "paddling", "stand_up_paddleboarding", "trail_running")
+        val SPEED_FAMILIES = setOf("cycling", "mountain_biking", "nordic_skiing")
+    }
 }
 
 /**
@@ -262,6 +276,7 @@ class GuidedWorkoutViewModel(
             )
         )
         if (!_state.value.isRecorded) {
+            runClock()
             if (sessionCues == null) sessionCues = com.tracks.app.run.RunCues(container.appContext)
             if (first) {
                 sessionCues?.announceStart(
@@ -277,6 +292,22 @@ class GuidedWorkoutViewModel(
         val running = _state.value.running
         _state.update { it.copy(running = !running) }
         if (running) timer?.cancel() else if (!_state.value.isRecorded) tick()
+        if (!running && !_state.value.isRecorded) runClock()
+    }
+
+    private var clockJob: Job? = null
+
+    /** The step runner's session clock: one second at a time while running. */
+    private fun runClock() {
+        if (clockJob?.isActive == true) return
+        clockJob = viewModelScope.launch {
+            while (true) {
+                delay(1000)
+                val state = _state.value
+                if (!state.running || state.done) return@launch
+                _state.update { it.copy(elapsedS = it.elapsedS + 1) }
+            }
+        }
     }
 
     /** Skip whatever is on screen — a step you cannot do, or a rest cut short. */
@@ -511,6 +542,8 @@ class GuidedWorkoutViewModel(
                     startedAtMs = RunRecorder.startedAt(),
                     cumulativeM = RunRecorder.cumulativeM(),
                     runningMs = run.runningMs,
+                    sport = RunFit.fitSport(workout.sport).first,
+                    subSport = RunFit.fitSport(workout.sport).second,
                 )
             }.getOrElse {
                 Log.e(TAG, "could not encode the run", it)
@@ -579,6 +612,7 @@ class GuidedWorkoutViewModel(
 
     override fun onCleared() {
         timer?.cancel()
+        clockJob?.cancel()
         sessionCues?.release()
         sessionCues = null
         super.onCleared()

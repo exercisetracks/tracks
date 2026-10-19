@@ -72,14 +72,31 @@ fun RunGauges(state: GuidedUiState, run: RunUiState) {
     val step = state.step
     val target = paceTarget(step?.paceZone, state.paces, averageMps)
     val current = run.speedMps.takeIf { it > MIN_SPEED }
+    val bySpeed = state.bySpeed
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        // What to do now, readable at a glance from arm's length -- the one
+        // thing worth looking down for. See [StageTitle].
+        StageTitle(state)
+
         HealthCard {
             BoxWithConstraints(Modifier.fillMaxWidth()) {
                 val big = ((maxWidth - GAP) / 2 - SLACK).coerceAtMost(BIG_MAX)
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(GAP)) {
-                    DistanceDial(state, run, planned, averageMps, big, Modifier.weight(1f))
-                    PaceDial(current, target, "Pace", big, BIG_STROKE, MaterialTheme.typography.headlineMedium, Modifier.weight(1f))
+                    // The current stage large, where distance used to be: what
+                    // the runner should be doing is the question a glance asks.
+                    // A session with one stage has none to show, and keeps
+                    // distance there.
+                    if (structured && step != null) {
+                        StepDial(state, step, big, Modifier.weight(1f), BIG_STROKE, MaterialTheme.typography.headlineMedium)
+                    } else {
+                        DistanceDial(state, run, planned, averageMps, big, Modifier.weight(1f), BIG_STROKE, MaterialTheme.typography.headlineMedium)
+                    }
+                    if (bySpeed) {
+                        SpeedDial(current, averageMps, "Speed", big, BIG_STROKE, MaterialTheme.typography.headlineMedium, Modifier.weight(1f))
+                    } else {
+                        PaceDial(current, target, "Pace", big, BIG_STROKE, MaterialTheme.typography.headlineMedium, Modifier.weight(1f))
+                    }
                 }
             }
             // What comes after this section — the one line of the old step
@@ -107,21 +124,21 @@ fun RunGauges(state: GuidedUiState, run: RunUiState) {
                 val lapMps = if (state.stepMs > 0) state.stepCoveredM / (state.stepMs / 1000.0) else 0.0
                 val dials = buildList<@Composable (Modifier) -> Unit> {
                     when {
-                        structured && step != null -> add { m -> StepDial(state, step, small, m) }
+                        structured -> add { m -> DistanceDial(state, run, planned, averageMps, small, m, SMALL_STROKE, MaterialTheme.typography.titleMedium) }
                         planned != null -> add { m -> ToGoDial(run, planned, small, m) }
                     }
                     add { m ->
-                        if (structured) {
-                            PaceDial(lapMps.takeIf { it > MIN_SPEED }, target, "Lap pace", small, SMALL_STROKE, MaterialTheme.typography.titleMedium, m)
-                        } else {
-                            PaceDial(averageMps.takeIf { it > MIN_SPEED }, target, "Avg pace", small, SMALL_STROKE, MaterialTheme.typography.titleMedium, m)
+                        when {
+                            bySpeed -> SpeedDial(averageMps.takeIf { it > MIN_SPEED }, averageMps, "Avg speed", small, SMALL_STROKE, MaterialTheme.typography.titleMedium, m)
+                            structured -> PaceDial(lapMps.takeIf { it > MIN_SPEED }, target, "Lap pace", small, SMALL_STROKE, MaterialTheme.typography.titleMedium, m)
+                            else -> PaceDial(averageMps.takeIf { it > MIN_SPEED }, target, "Avg pace", small, SMALL_STROKE, MaterialTheme.typography.titleMedium, m)
                         }
                     }
                     add { m ->
                         SmallDial(run.movingMs.toDouble(), single(timeScale, TIME_COLOR, "Moving"),
                             clock(run.movingMs), "Moving time", small, m)
                     }
-                    add { m -> SmallDial(current, speedZones(averageMps), speed(current), "Speed", small, m) }
+                    if (!bySpeed) add { m -> SmallDial(current, speedZones(averageMps), speed(current), "Speed", small, m) }
                     add { m -> ClimbDial(run.ascentM, run.descentM, small, m) }
                     add { m ->
                         SmallDial(run.elapsedMs.toDouble(), single(timeScale, TIME_COLOR.copy(alpha = 0.7f), "Total"),
@@ -143,6 +160,60 @@ fun RunGauges(state: GuidedUiState, run: RunUiState) {
 }
 
 /**
+ * The current stage's name, large and bold above everything else, so what to
+ * be doing reads in a glance at a phone in a hand or an armband: "Run · 2 of
+ * 6". A session with one stage shows its target ("Run 5 km") or, with none,
+ * the activity itself.
+ */
+@Composable
+fun StageTitle(state: GuidedUiState) {
+    val step = state.step
+    val text = when {
+        state.done -> "Finished"
+        step != null && state.steps.size > 1 -> listOfNotNull(step.title, step.position).joinToString(" · ")
+        step != null -> listOfNotNull(step.title, step.detail).joinToString(" ")
+        else -> state.workout?.title?.takeIf { it.isNotBlank() } ?: "Workout"
+    }
+    Text(
+        text,
+        style = MaterialTheme.typography.headlineLarge,
+        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+        color = step?.let { kindColor(it.kind) } ?: MaterialTheme.colorScheme.onSurface,
+        textAlign = TextAlign.Center,
+        maxLines = 2,
+        modifier = Modifier.fillMaxWidth(),
+    )
+}
+
+/**
+ * Speed, for sports judged by it: the needle on a scale centred on the
+ * session's own average, faster to the right. A ride's pace in minutes per
+ * kilometre is a number nobody on a bike thinks in.
+ */
+@Composable
+private fun SpeedDial(
+    mps: Double?,
+    averageMps: Double,
+    label: String,
+    size: Dp,
+    stroke: Dp,
+    figureStyle: androidx.compose.ui.text.TextStyle,
+    modifier: Modifier,
+) {
+    RadialGauge(
+        value = mps,
+        zones = speedZones(averageMps),
+        label = label,
+        figure = speed(mps),
+        caption = if (averageMps > MIN_SPEED) "${speed(averageMps)} avg" else null,
+        figureStyle = figureStyle,
+        size = size,
+        stroke = stroke,
+        modifier = modifier,
+    )
+}
+
+/**
  * Distance run, against the plan cut into its sections.
  *
  * One band per section, coloured by what it is, laid end to end — see
@@ -150,7 +221,11 @@ fun RunGauges(state: GuidedUiState, run: RunUiState) {
  * has nothing to cut, and keeps the plain "started, halfway, last stretch" scale.
  */
 @Composable
-private fun DistanceDial(state: GuidedUiState, run: RunUiState, planned: Double?, averageMps: Double, size: Dp, modifier: Modifier) {
+private fun DistanceDial(
+    state: GuidedUiState, run: RunUiState, planned: Double?, averageMps: Double, size: Dp, modifier: Modifier,
+    stroke: Dp = BIG_STROKE,
+    figureStyle: androidx.compose.ui.text.TextStyle = MaterialTheme.typography.headlineMedium,
+) {
     val segments = if (state.steps.size > 1) {
         distanceSegments(state.steps, state.index, state.stepStartsM, run.distanceM, planned, state.paces, averageMps)
     } else {
@@ -178,9 +253,9 @@ private fun DistanceDial(state: GuidedUiState, run: RunUiState, planned: Double?
         // Coloured by the section the run is in, so the caption doubles as
         // the legend for whichever band the fill has reached.
         caption = of,
-        figureStyle = MaterialTheme.typography.headlineMedium,
+        figureStyle = figureStyle,
         size = size,
-        stroke = BIG_STROKE,
+        stroke = stroke,
         modifier = modifier,
     )
 }
@@ -249,7 +324,11 @@ private fun PaceDial(
 
 /** The section the run is on, counting down in its own unit, the arc showing how much is done. */
 @Composable
-private fun StepDial(state: GuidedUiState, step: GuidedStep, size: Dp, modifier: Modifier) {
+private fun StepDial(
+    state: GuidedUiState, step: GuidedStep, size: Dp, modifier: Modifier,
+    stroke: Dp = SMALL_STROKE,
+    figureStyle: androidx.compose.ui.text.TextStyle = MaterialTheme.typography.titleMedium,
+) {
     val done = stepDone(step, state.stepCoveredM, state.remaining)
     val left = when {
         step.metres != null -> distance((step.metres - state.stepCoveredM).coerceAtLeast(0.0))
@@ -264,9 +343,9 @@ private fun StepDial(state: GuidedUiState, step: GuidedStep, size: Dp, modifier:
         figure = left,
         caption = if (step.metres != null || step.seconds != null) "left · $word" else word,
         captionColor = kindColor(step.kind),
-        figureStyle = MaterialTheme.typography.titleMedium,
+        figureStyle = figureStyle,
         size = size,
-        stroke = SMALL_STROKE,
+        stroke = stroke,
         modifier = modifier,
     )
 }

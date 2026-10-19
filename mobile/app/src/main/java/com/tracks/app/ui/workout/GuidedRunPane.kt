@@ -6,6 +6,8 @@ import android.Manifest
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.ui.draw.alpha
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -175,7 +177,12 @@ fun GuidedRunPane(state: GuidedUiState, vm: GuidedWorkoutViewModel, onQuit: () -
         // the step you are actually on off the screen. Once it is running,
         // the distance dial's sections and the "Next" line answer "now and
         // next", which is all a moving runner can read anyway.
-        if (run.phase == RunPhase.Idle && state.steps.isNotEmpty()) PlanList(state)
+        // The whole session, before it starts and while it runs: the shape of
+        // what is left is worth a glance mid-run too, with the step you are
+        // on marked so "where am I in this" is answered at a look.
+        if (run.phase != RunPhase.Finished && state.steps.isNotEmpty()) {
+            PlanList(state, current = if (run.phase == RunPhase.Idle) null else state.index)
+        }
     }
 }
 
@@ -224,7 +231,7 @@ private const val CONFIRM_WINDOW_MS = 4_000L
  * the calendar.
  */
 @Composable
-private fun PlanList(state: GuidedUiState) {
+internal fun PlanList(state: GuidedUiState, current: Int? = null) {
     Card(
         Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(Tokens.Radius.xl),
@@ -239,7 +246,7 @@ private fun PlanList(state: GuidedUiState) {
                 color = MaterialTheme.colorScheme.primary,
             )
 
-            state.workout?.description?.takeIf { it.isNotBlank() }?.let {
+            if (current == null) state.workout?.description?.takeIf { it.isNotBlank() }?.let {
                 Text(
                     it,
                     style = MaterialTheme.typography.bodySmall,
@@ -248,8 +255,17 @@ private fun PlanList(state: GuidedUiState) {
             }
 
             state.steps.forEachIndexed { index, step ->
+                val here = index == current
+                val past = current != null && index < current
                 Row(
-                    Modifier.fillMaxWidth(),
+                    Modifier
+                        .fillMaxWidth()
+                        .then(
+                            if (here) Modifier.background(
+                                kindColor(step.kind).copy(alpha = 0.16f), RoundedCornerShape(Tokens.Radius.md),
+                            ).padding(horizontal = 6.dp, vertical = 4.dp) else Modifier,
+                        )
+                        .alpha(if (past) 0.45f else 1f),
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     // Numbered, because "step 7 of 24" is what the runner says

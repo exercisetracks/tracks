@@ -59,7 +59,31 @@ object RunFit {
     private const val MANUFACTURER_DEVELOPMENT = 255
 
     /** `sport` in the FIT profile. 1 is running. */
-    private const val SPORT_RUNNING = 1
+    const val SPORT_RUNNING = 1
+
+    /**
+     * A Tracks sport name as FIT's (sport, sub_sport), from the profile's own
+     * tables -- what the importer reads back, so a recorded ride is a ride.
+     */
+    fun fitSport(sport: String?): Pair<Int, Int> = when ((sport ?: "running").lowercase()) {
+        "running", "run" -> 1 to 0
+        "trail_running" -> 1 to 3
+        "cycling", "road_biking", "road_cycling" -> 2 to 7
+        "mountain_biking" -> 2 to 8
+        "gravel_cycling" -> 2 to 0
+        "walking", "walk" -> 11 to 0
+        "hiking" -> 17 to 0
+        "cross_country_skiing", "nordic_skiing", "backcountry_skiing" -> 12 to 0
+        "rowing" -> 15 to 0
+        "kayaking" -> 41 to 0
+        "paddling" -> 19 to 0
+        "stand_up_paddleboarding" -> 37 to 0
+        "rock_climbing", "climbing", "bouldering" -> 31 to 0
+        "strength_training", "strength" -> 10 to 20
+        "flexibility_training", "flexibility", "mobility" -> 10 to 19
+        "yoga" -> 10 to 43
+        else -> 0 to 0
+    }
 
     /** `event_type`: 0 starts the timer, 4 stops everything. */
     private const val EVENT_TIMER = 0
@@ -104,6 +128,13 @@ object RunFit {
         cumulativeM: List<Double>? = null,
         /** Moving time less the walk, for average speed; null uses [movingMs]. */
         runningMs: Long? = null,
+        /**
+         * FIT `sport` and `sub_sport` ([fitSport]). Running unless said: every
+         * recording used to be filed as a run, which is why only runs could be
+         * recorded at all.
+         */
+        sport: Int = SPORT_RUNNING,
+        subSport: Int = 0,
     ): ByteArray? {
         if (fixes.isEmpty()) return null
 
@@ -164,7 +195,8 @@ object RunFit {
             setTimestamp(endSec)
             setMessageIndex(0)
             setStartTime(startSec)
-            setSport(SPORT_RUNNING)
+            setSport(sport)
+            setSubSport(subSport)
             setStartLat(first.lat)
             setStartLong(first.lng)
             setEndLat(last.lat)
@@ -180,8 +212,8 @@ object RunFit {
             setTimestamp(endSec)
             setMessageIndex(0)
             setStartTime(startSec)
-            setSport(SPORT_RUNNING)
-            setSubSport(0)
+            setSport(sport)
+            setSubSport(subSport)
             setStartLatitude(first.lat)
             setStartLongitude(first.lng)
             setTotalDistance(distanceM)

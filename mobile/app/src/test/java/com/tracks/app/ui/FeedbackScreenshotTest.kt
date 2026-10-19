@@ -86,6 +86,54 @@ class FeedbackScreenshotTest {
         )
     }
 
+    private fun intervals(sport: String) = com.tracks.app.ui.workout.GuidedUiState(
+        loading = false,
+        workout = com.tracks.core.api.PlannedWorkout(id = 1, scheduledDate = "2026-10-19", sport = sport, title = "Intervals", distanceMeters = 6000.0, durationMinutes = 45),
+        steps = listOf(
+            com.tracks.app.ui.workout.GuidedStep("Warm-up", detail = "10 min", seconds = 600, kind = com.tracks.app.ui.workout.StepKind.Warmup),
+            com.tracks.app.ui.workout.GuidedStep("Run", detail = "800 m", metres = 800.0, position = "2 of 4", paceZone = "threshold"),
+            com.tracks.app.ui.workout.GuidedStep("Recovery", seconds = 90, kind = com.tracks.app.ui.workout.StepKind.Rest),
+            com.tracks.app.ui.workout.GuidedStep("Cool-down", detail = "10 min", seconds = 600, kind = com.tracks.app.ui.workout.StepKind.Cooldown),
+        ),
+        index = 1, begun = true, running = true, stepCoveredM = 320.0, stepMs = 80_000,
+        stepStartsM = listOf(0.0, 2100.0),
+    )
+
+    @Test
+    fun guided_run_light() = shoot("guided_run_light", ThemeMode.Light) {
+        androidx.compose.foundation.layout.Column(Modifier.padding(16.dp)) {
+            com.tracks.app.ui.workout.RunGauges(intervals("running"),
+                com.tracks.app.run.RunUiState(phase = com.tracks.app.run.RunPhase.Recording, distanceM = 2420.0, movingMs = 900_000, runningMs = 700_000, elapsedMs = 930_000, speedMps = 3.4))
+        }
+    }
+
+    @Test
+    fun guided_ride_light() = shoot("guided_ride_light", ThemeMode.Light) {
+        androidx.compose.foundation.layout.Column(Modifier.padding(16.dp)) {
+            com.tracks.app.ui.workout.RunGauges(intervals("cycling"),
+                com.tracks.app.run.RunUiState(phase = com.tracks.app.run.RunPhase.Recording, distanceM = 12420.0, movingMs = 1_500_000, runningMs = 1_500_000, elapsedMs = 1_530_000, speedMps = 8.4))
+        }
+    }
+
+    @Test
+    fun guided_strength_light() = shoot("guided_strength_light", ThemeMode.Light) {
+        val state = com.tracks.app.ui.workout.GuidedUiState(
+            loading = false,
+            workout = com.tracks.core.api.PlannedWorkout(id = 2, scheduledDate = "2026-10-19", sport = "strength_training", title = "Strength"),
+            steps = listOf(
+                com.tracks.app.ui.workout.GuidedStep("Squat", detail = "8 reps · 60 kg", position = "Set 1 of 3", exercise = com.tracks.app.ui.workout.StrengthTarget("Squat", 8, 60.0)),
+                com.tracks.app.ui.workout.GuidedStep("Rest", seconds = 90, kind = com.tracks.app.ui.workout.StepKind.Rest),
+                com.tracks.app.ui.workout.GuidedStep("Squat", detail = "8 reps · 60 kg", position = "Set 2 of 3", exercise = com.tracks.app.ui.workout.StrengthTarget("Squat", 8, 60.0)),
+            ),
+            index = 1, remaining = 54, begun = true, running = true, elapsedS = 312,
+        )
+        androidx.compose.foundation.layout.Column(Modifier.padding(16.dp), verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp)) {
+            com.tracks.app.ui.workout.StageTitle(state)
+            com.tracks.app.ui.workout.StepGauges(state)
+            com.tracks.app.ui.workout.PlanList(state, current = 1)
+        }
+    }
+
     @Composable
     private fun musicAccount() = androidx.compose.foundation.layout.Column(Modifier.padding(16.dp)) {
         SettingsCard("Music server", MetricInfo("Music server", "Navidrome for the watch app.")) {

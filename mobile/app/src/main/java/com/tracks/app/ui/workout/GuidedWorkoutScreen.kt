@@ -148,48 +148,18 @@ private fun StepPane(state: GuidedUiState, vm: GuidedWorkoutViewModel, onQuit: (
     }
 
     Column(Modifier.fillMaxSize()) {
-        Progress(state)
-
         Column(
             Modifier
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp),
+                .padding(horizontal = 20.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            KindBadge(step.kind)
+            // What to do now, large -- then its gauges, as a run has.
+            StageTitle(state)
+            StepGauges(state)
 
-            Text(
-                step.title,
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            step.position?.let {
-                Text(
-                    it,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-            }
-            step.detail?.let {
-                Text(
-                    it,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-
-            if (step.seconds != null) {
-                Text(
-                    countdown(state.remaining),
-                    style = MaterialTheme.typography.displayLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.Center,
-                )
-            } else if (state.begun) {
+            if (step.seconds == null && state.begun) {
                 // A set has no clock — see [expandStrength]. Saying so beats an
                 // empty space where every other step has a number.
                 Text(
@@ -198,7 +168,6 @@ private fun StepPane(state: GuidedUiState, vm: GuidedWorkoutViewModel, onQuit: (
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-
             step.note?.takeIf { it.isNotBlank() }?.let {
                 Text(
                     it,
@@ -214,29 +183,8 @@ private fun StepPane(state: GuidedUiState, vm: GuidedWorkoutViewModel, onQuit: (
                 )
             }
 
-            state.next?.let { next ->
-                Card(
-                    Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(Tokens.Radius.xl),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    ),
-                ) {
-                    Column(Modifier.padding(12.dp)) {
-                        Text(
-                            "UP NEXT",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        Text(
-                            listOfNotNull(next.title, next.position, next.detail)
-                                .joinToString(" · "),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
-                    }
-                }
-            }
+            // The whole session, with this step marked: where you are in it.
+            PlanList(state, current = if (state.begun) state.index else null)
         }
 
         Controls(state, vm)
@@ -280,46 +228,6 @@ private fun OtherSessionPane(active: ActiveWorkout.Session, onOpenWorkout: (Int)
             )
             PrimaryButton("Back to it", onClick = { onOpenWorkout(active.workoutId) })
         }
-    }
-}
-
-/** Where the session is, as a bar and a count. */
-@Composable
-private fun Progress(state: GuidedUiState) {
-    Column(
-        Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        Text(
-            "Step ${state.index + 1} of ${state.steps.size}",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        LinearProgressIndicator(
-            progress = {
-                if (state.steps.isEmpty()) 0f
-                else (state.index + 1).toFloat() / state.steps.size
-            },
-            modifier = Modifier.fillMaxWidth(),
-        )
-    }
-}
-
-@Composable
-private fun KindBadge(kind: StepKind) {
-    val (label, color) = when (kind) {
-        StepKind.Warmup -> "Warm-up" to MaterialTheme.colorScheme.tertiary
-        StepKind.Work -> "Work" to MaterialTheme.colorScheme.primary
-        StepKind.Rest -> "Recovery" to MaterialTheme.colorScheme.secondary
-        StepKind.Cooldown -> "Cool-down" to MaterialTheme.colorScheme.tertiary
-    }
-    Surface(shape = RoundedCornerShape(Tokens.Radius.md), color = color.copy(alpha = 0.16f)) {
-        Text(
-            label.uppercase(),
-            Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-            style = MaterialTheme.typography.labelSmall,
-            color = color,
-        )
     }
 }
 
