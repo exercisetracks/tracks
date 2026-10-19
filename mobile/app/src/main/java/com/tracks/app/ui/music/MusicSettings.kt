@@ -3,6 +3,7 @@
 package com.tracks.app.ui.music
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -73,9 +74,11 @@ fun MusicSettings(vm: MainViewModel, music: MusicUiState) {
                 "instead. Neither can see the other's files.",
         ),
     ) {
+        // Compact by request: the account, one or two lines of buttons, and
+        // the longer lists (playlists, the watch's apps) in windows of their
+        // own. The explanations live behind the card's (i).
         MusicServerRow(music, vm)
-        WatchAppRows(music, vm, connected)
-        if (connected && music.watchPlaylists.isNotEmpty()) WatchPlaylists(music, vm)
+        MusicActions(music, vm, connected)
         if (music.message != null && !music.busy) {
             Text(music.message, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
         }
@@ -92,11 +95,6 @@ internal fun MusicServerRow(music: MusicUiState, vm: MainViewModel) {
     if (music.server?.configured == true) {
         MusicAccountRow(music.server?.username.orEmpty(), music.server?.url, music.busy) { vm.disconnectMusicServer() }
     } else {
-        Text(
-            "Connect your music server and the watch can play from it — no cable, no Garmin account.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
         PrimaryButton("Connect server", onClick = { connecting = true }, modifier = Modifier.fillMaxWidth())
     }
     if (connecting) {
@@ -256,61 +254,67 @@ internal fun MusicServerConnectSteps(
     }
 }
 
-/** Send the watch app (once there is a server for it), and manage what the watch has installed. */
-@Composable
-private fun WatchAppRows(music: MusicUiState, vm: MainViewModel, connected: Boolean) {
-    SubHeading("Watch app")
-    if (music.watchAppInstalled) {
-        Text(
-            "Tracks Music is on the watch — Music › Music Providers. It signs in to your server by itself.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.primary,
-        )
-        if (connected) ResendLogin(vm)
-    } else if (connected) {
-        Text(
-            "Sent straight from this phone over Bluetooth — no Connect IQ store. It will not show in " +
-                "the watch's file list; media apps are stored hidden. Find it under Music › Music Providers.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        PrimaryButton(
-            if (music.busy) "Sending…" else "Send music app to watch",
-            onClick = { vm.installWatchMusicApp() },
-            modifier = Modifier.fillMaxWidth(),
-            enabled = !music.busy,
-        )
-    } else {
-        Text(
-            "Connect a music server first — the app signs in to it.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-    // Offered signed in or not: removing the app is as much a reason to come
-    // here as installing it.
-    ManageApps(music, vm)
-}
-
 /**
- * The way to hand the watch a changed login. The phone answers the watch app's
- * request for it only for ten minutes after being asked to (WatchAppConfig),
- * and merely opening Settings no longer counts.
+ * Everything to do with the watch, as buttons on a line or two: send the app
+ * (or the login again), the playlists it keeps, and the apps it has. The
+ * lists open in windows of their own.
  */
 @Composable
-private fun ResendLogin(vm: MainViewModel) {
-    var sent by remember { mutableStateOf(false) }
-    TonalButton(
-        "Send the login to the watch again",
-        onClick = { vm.resendWatchMusicLogin(); sent = true },
-        modifier = Modifier.fillMaxWidth(),
-    )
-    if (sent) {
-        Text(
-            "Open Tracks Music on the watch in the next ten minutes to pick it up.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+private fun MusicActions(music: MusicUiState, vm: MainViewModel, connected: Boolean) {
+    var playlists by remember { mutableStateOf(false) }
+    var apps by remember { mutableStateOf(false) }
+    var loginSent by remember { mutableStateOf(false) }
+    androidx.compose.foundation.layout.FlowRow(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(Tokens.Space.s2),
+        verticalArrangement = Arrangement.spacedBy(Tokens.Space.s2),
+    ) {
+        when {
+            connected && !music.watchAppInstalled -> PrimaryButton(
+                if (music.busy) "Sending…" else "Send app to watch",
+                onClick = { vm.installWatchMusicApp() },
+                enabled = !music.busy,
+                small = true,
+            )
+            // The phone answers the watch app's request for the login only
+            // for ten minutes after this (WatchAppConfig).
+            connected -> TonalButton(
+                if (loginSent) "Login sent" else "Resend login",
+                onClick = { vm.resendWatchMusicLogin(); loginSent = true },
+                small = true,
+            )
+        }
+        if (connected && music.watchPlaylists.isNotEmpty()) {
+            TonalButton("Playlists", onClick = { playlists = true }, small = true)
+        }
+        // Offered signed in or not: removing an app is as much a reason to
+        // come here as installing one. Read only when opened (Bluetooth).
+        TonalButton("Watch apps", onClick = { apps = true; vm.loadInstalledApps() }, small = true)
+    }
+    if (playlists) MusicWindow("Playlists on the watch", onDismiss = { playlists = false }) { WatchPlaylists(music, vm) }
+    if (apps) MusicWindow("Music apps on the watch", onDismiss = { apps = false }) { ManageApps(music, vm) }
+}
+
+/** A list from the music card, in a window of its own: the card stays short. */
+@Composable
+private fun MusicWindow(title: String, onDismiss: () -> Unit, content: @Composable () -> Unit) {
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = MaterialTheme.shapes.extraLarge,
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            tonalElevation = 6.dp,
+        ) {
+            Column(
+                Modifier
+                    .verticalScroll(androidx.compose.foundation.rememberScrollState())
+                    .padding(Tokens.Space.s5),
+                verticalArrangement = Arrangement.spacedBy(Tokens.Space.s3),
+            ) {
+                Text(title, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface)
+                content()
+                NeutralButton("Close", onClick = onDismiss, modifier = Modifier.align(Alignment.End))
+            }
+        }
     }
 }
 
@@ -342,17 +346,8 @@ private fun ManageApps(music: MusicUiState, vm: MainViewModel) {
     }
 
     if (apps == null) {
-        TonalButton(
-            if (music.appsBusy) "Reading the watch…" else "Manage music apps on the watch",
-            onClick = { vm.loadInstalledApps() },
-            modifier = Modifier.fillMaxWidth(),
-            enabled = !music.appsBusy,
-        )
+        if (music.appsBusy) CircularProgressIndicator(Modifier.padding(4.dp))
         return
-    }
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-        SubHeading("Music apps on the watch")
-        TonalButton(if (music.appsBusy) "Refreshing…" else "Refresh", onClick = { vm.loadInstalledApps() }, enabled = !music.appsBusy)
     }
     if (apps.isEmpty()) {
         Text("No music apps on the watch.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -396,13 +391,6 @@ private fun appTypeLabel(type: Int): String = when (type) {
  */
 @Composable
 private fun WatchPlaylists(music: MusicUiState, vm: MainViewModel) {
-    SubHeading("Playlists on the watch")
-    Text(
-        "Optional — you can pick these on the watch too. \"Liked songs\" and \"Recently played\" follow " +
-            "what you listen to. The watch re-syncs them whenever it charges on Wi-Fi.",
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
     for (pl in music.watchPlaylists) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
             Checkbox(checked = pl.id in music.watchSelection, onCheckedChange = { vm.setWatchPlaylist(pl.id, it) })
@@ -415,10 +403,10 @@ private fun WatchPlaylists(music: MusicUiState, vm: MainViewModel) {
         }
     }
     SingleSongs(music, vm)
-    PrimaryButton("Send this selection to the watch", onClick = { vm.sendWatchPlaylists() }, modifier = Modifier.fillMaxWidth(), enabled = !music.busy)
-    if (music.watchSelectionPending) {
-        Text("Queued — open Tracks Music on the watch to pick it up.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
-    }
+    PrimaryButton(
+        if (music.watchSelectionPending) "Queued for the watch" else "Send to watch",
+        onClick = { vm.sendWatchPlaylists() }, modifier = Modifier.fillMaxWidth(), enabled = !music.busy,
+    )
 }
 
 /**
