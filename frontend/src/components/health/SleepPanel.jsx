@@ -50,9 +50,11 @@ const TOP = 8;
 const GUTTER = 52;
 
 export default function SleepPanel({ nights, start }) {
-  const [selected, setSelected] = useState(null);
+  // Opens on today, the most recent day. When last night has not synced,
+  // it says so rather than showing an older night as if it were last night's.
+  const [selected, setSelected] = useState(() => localIso());
   const [showInfo, setShowInfo] = useState(false);
-  const chosen = nights.find(n => n.date === selected) ?? nights[nights.length - 1] ?? null;
+  const chosen = nights.find(n => n.date === selected) ?? null;
 
   return (
     <section data-tour="health-sleep">
@@ -62,7 +64,7 @@ export default function SleepPanel({ nights, start }) {
       </div>
       <div className="card">
         {showInfo && <InfoPanel body={EXPLAIN.sleepStages.body} className="mb-4" />}
-        {!chosen ? (
+        {!nights.length ? (
           <p className="py-10 text-center text-sm text-slate-400 dark:text-slate-500">
             No sleep recorded in this window. Worn overnight, the watch records it while you sleep.
           </p>
@@ -70,12 +72,26 @@ export default function SleepPanel({ nights, start }) {
           // minmax(0, …): the charts draw at a measured pixel width, and an auto
           // minimum would let that width hold a column open past the card.
           <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] gap-6">
-            <SleepClockChart nights={nights} start={start} selected={chosen.date} onSelect={setSelected} />
-            <NightDetail night={chosen} />
+            <SleepClockChart nights={nights} start={start} selected={selected} onSelect={setSelected} />
+            {chosen ? <NightDetail night={chosen} /> : <NoNight date={selected} />}
           </div>
         )}
       </div>
     </section>
+  );
+}
+
+/** The chosen day has no night: said plainly, where the night would be. */
+function NoNight({ date }) {
+  const label = date === localIso()
+    ? "Last night"
+    : new Date(`${date}T12:00:00`).toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
+  return (
+    <div>
+      <div className="text-sm font-medium">{label}</div>
+      <div className="text-2xl text-slate-400 dark:text-slate-500 mt-1">No data</div>
+      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">No sleep has been synced for this night yet.</p>
+    </div>
   );
 }
 

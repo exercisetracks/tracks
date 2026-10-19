@@ -189,6 +189,9 @@ internal fun isFresh(
  */
 internal const val FRESH_DAYS = 1L
 
+/** Sleep is last night or nothing: only a night that ended today. */
+internal const val SLEEP_FRESH_DAYS = 0L
+
 data class HealthUiState(
     val loading: Boolean = true,
     val range: HealthRange = HealthRange.default,
@@ -518,7 +521,9 @@ class HealthViewModel(private val container: AppContainer) : ViewModel() {
         // gives way to the newest night once the fresh days are in.
         if (_state.value.selectedNight == null || nightFromSnapshot) {
             if (!stillLoading) nightFromSnapshot = false
-            _state.value.nights.lastOrNull()?.let { selectNight(it.date) }
+            // Today: the sleep history opens on the most recent day, and says
+            // "No data" when last night has not synced yet.
+            selectNight(LocalDate.now().toString())
         }
     }
 

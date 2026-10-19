@@ -355,8 +355,11 @@ private fun sleepMetric(state: HealthUiState, onSelectNight: (String) -> Unit): 
     // Last night, and only while it *is* last night. The stages painted on
     // the arc have to describe the same night the figure in the middle does,
     // and a week-old night left on the ring under an em dash would be the
-    // stale-reading problem wearing a different shape.
-    val last = state.nights.lastOrNull()?.takeIf { isFresh(it.date, FRESH_DAYS) }
+    // stale-reading problem wearing a different shape. Last night means the
+    // night that ended today: the day before's is the night before last, and
+    // the dial showed it as last night until this morning's sync, which read
+    // as if Tracks had the night when it did not.
+    val last = state.nights.lastOrNull()?.takeIf { isFresh(it.date, SLEEP_FRESH_DAYS) }
     val stages = listOfNotNull(
         last?.let { MetricScale.Stacked.Part("Deep", it.deep, DEEP) },
         last?.let { MetricScale.Stacked.Part("REM", it.rem, REM) },
@@ -379,6 +382,7 @@ private fun sleepMetric(state: HealthUiState, onSelectNight: (String) -> Unit): 
         // and its stacked bands describe two different nights.
         trend = state.series { day -> day.sleepHours?.takeIf { it > 0 } },
         unit = "h",
+        freshDays = SLEEP_FRESH_DAYS,
         scale = MetricScale.Stacked(stages, target = SLEEP_GOAL_HOURS),
         verdict = SLEEP_ZONES,
         info = Explain.Sleep,

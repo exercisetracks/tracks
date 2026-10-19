@@ -6,7 +6,7 @@
 // each dial means.
 
 import {
-  ACTIVE_CALORIE_GOAL, ACTIVE_COLOR, BODY_BATTERY_ZONES, CALORIE_COLOR, FRESH_DAYS,
+  ACTIVE_CALORIE_GOAL, ACTIVE_COLOR, BODY_BATTERY_ZONES, CALORIE_COLOR, FRESH_DAYS, SLEEP_FRESH_DAYS,
   HRV_COLOR, HYDRATION_COLOR, HYDRATION_GOAL_ML, RESPIRATION_ZONES, RESTING_COLOR,
   RESTING_HR_ZONES, SLEEP_COLOR, SLEEP_GOAL_HOURS, SLEEP_ZONES, SPO2_ZONES, STEP_COLOR,
   STEP_GOAL, STRESS_ZONES, WEIGHT_COLOR, activityZones, currentOf, isFresh, series,
@@ -94,7 +94,9 @@ export function sleepMetric(days, start) {
   // Only while it is last night: the stages on the arc have to describe the
   // same night as the figure, and a week-old night under an em dash would be
   // the stale-reading problem wearing a different shape.
-  const night = last && isFresh(last.date, FRESH_DAYS) ? last : null;
+  // Last night means the night that ended today; the night before last is
+  // not shown as if it were.
+  const night = last && isFresh(last.date, SLEEP_FRESH_DAYS) ? last : null;
   const parts = [];
   if (night) {
     const deep = night.sleep_deep_hours ?? 0;
@@ -119,6 +121,7 @@ export function sleepMetric(days, start) {
     trend: hours,
     unit: "h",
     decimals: 1,
+    freshDays: SLEEP_FRESH_DAYS,
     scale: { kind: "stacked", parts, target: SLEEP_GOAL_HOURS },
     verdict: SLEEP_ZONES,
     info: EXPLAIN.sleep,

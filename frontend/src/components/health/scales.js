@@ -245,6 +245,9 @@ function daysBetween(fromIso, toIso) {
  */
 export const FRESH_DAYS = 1;
 
+/** Sleep is last night or nothing: only a night that ended today. */
+export const SLEEP_FRESH_DAYS = 0;
+
 /**
  * Whether a reading taken on `date` is still a reading about now.
  *

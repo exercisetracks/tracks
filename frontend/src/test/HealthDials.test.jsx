@@ -193,6 +193,14 @@ describe("the dials", () => {
     expect(stale.scale.parts).toEqual([]);
   });
 
+  it("test_the_night_before_last_is_not_last_night", () => {
+    // Before this morning's sync, yesterday's row is the newest night -- and
+    // the dial used to show it as last night's.
+    const m = sleepMetric([{ date: daysAgo(1), sleep_hours: 7, sleep_deep_hours: 1 }]);
+    expect(m.scale.parts).toEqual([]);
+    expect(m.freshDays).toBe(0);
+  });
+
   it("test_an_unstaged_night_still_fills_the_arc", () => {
     const m = sleepMetric([{ date: daysAgo(0), sleep_hours: 6 }]);
     expect(m.scale.parts.find(p => p.label === "Asleep").amount).toBe(6);

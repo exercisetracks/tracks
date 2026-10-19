@@ -16,6 +16,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -119,8 +120,13 @@ fun SleepHistoryPanel(
     onSelect: (String) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
-    if (nights.isEmpty()) return
-    val chosen = nights.firstOrNull { it.date == selected } ?: nights.last()
+    // Opened on the most recent day, today, whatever was picked last time --
+    // and when today has no night yet, it says so rather than quietly showing
+    // an older one as if it were last night's.
+    val today = remember { LocalDate.now().toString() }
+    LaunchedEffect(Unit) { onSelect(today) }
+    val day = selected ?: today
+    val chosen = nights.firstOrNull { it.date == day }
     // Nights that parse and carry a clock, each with its place on the axis.
     // Anything with an unreadable date is dropped rather than drawn at
     // position zero.
@@ -146,12 +152,18 @@ fun SleepHistoryPanel(
         // behind the sheet — so tapping a bar looked like it did nothing at
         // all. Question and answer belong in the same place, and the answer
         // goes on top because it is the one somebody opened the sheet for.
-        SleepNightCard(
-            summary = chosen,
-            night = night?.takeIf { it.date == chosen.date && it.stages.isNotEmpty() },
-        )
+        if (chosen != null) {
+            SleepNightCard(
+                summary = chosen,
+                night = night?.takeIf { it.date == chosen.date && it.stages.isNotEmpty() },
+            )
+        } else {
+            NoNightCard(day)
+        }
 
-        if (placed.isEmpty() || dayAxis == null) {
+        if (nights.isEmpty()) {
+            // Nothing else to draw; the card above has said so.
+        } else if (placed.isEmpty() || dayAxis == null) {
             Text(
                 "No night in this window has recorded times yet.",
                 style = MaterialTheme.typography.bodySmall,
@@ -179,6 +191,28 @@ fun SleepHistoryPanel(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+    }
+}
+
+/** The chosen day has no night: said plainly, in the place the night would be. */
+@Composable
+private fun NoNightCard(date: String) {
+    val label = runCatching {
+        val d = LocalDate.parse(date)
+        if (d == LocalDate.now()) "Last night" else d.format(java.time.format.DateTimeFormatter.ofPattern("EEE d MMM"))
+    }.getOrDefault(date)
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(label, style = MaterialTheme.typography.titleSmall)
+        Text(
+            "No data",
+            style = MaterialTheme.typography.headlineSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            "No sleep has been synced for this night yet.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 
