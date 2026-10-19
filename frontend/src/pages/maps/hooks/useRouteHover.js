@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { useEffect } from "react";
 import { vectorRef } from "../style";
+import { onLayerHover } from "./hoverHub";
 
 // Hover feedback for long trails: as the cursor moves over a route line, the
 // whole section under it lights up and the cursor becomes a pointer — signalling
@@ -44,18 +45,10 @@ export function useRouteHover(map, ready) {
       }
     };
 
-    const existing = HIT_LAYERS.filter((l) => {
-      try { return !!map.getLayer(l); } catch { return false; }
-    });
-    existing.forEach((l) => {
-      map.on("mousemove", l, onMove);
-      map.on("mouseleave", l, clear);
-    });
+    // One shared, frame-throttled query (hoverHub), not a listener per layer.
+    const off = onLayerHover(map, HIT_LAYERS, { move: onMove, leave: clear });
     return () => {
-      existing.forEach((l) => {
-        map.off("mousemove", l, onMove);
-        map.off("mouseleave", l, clear);
-      });
+      off();
       clear();
     };
   }, [map, ready]);

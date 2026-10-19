@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { useState, useEffect, useRef, useCallback } from "react";
 import { api } from "../../../api/client";
+import { onLayerHover } from "./hoverHub";
 
 // useWildfires — feeds the live wildfire + smoke geojson sources and owns the
 // fire-detail selection. Fetching is double-gated: the account-level
@@ -92,16 +93,14 @@ export function useWildfires(map, ready, enabled, liveOn) {
       const hit = query(e.point)[0];
       if (hit) setSelected({ ...hit.properties });
     };
-    let hovering = false;
-    const onMove = (e) => {
-      const over = query(e.point).length > 0;
-      if (over === hovering) return;
-      hovering = over;
-      map.getCanvas().style.cursor = over ? "pointer" : "";
-    };
+    // The pointer over a fire, from the shared frame-throttled hover query
+    // (hoverHub) rather than a query of its own on every mouse event.
     map.on("click", onClick);
-    map.on("mousemove", onMove);
-    return () => { map.off("click", onClick); map.off("mousemove", onMove); };
+    const offHover = onLayerHover(map, hitLayers, {
+      move: () => { map.getCanvas().style.cursor = "pointer"; },
+      leave: () => { map.getCanvas().style.cursor = ""; },
+    });
+    return () => { map.off("click", onClick); offHover(); };
   }, [ready, map]);
 
   const close = useCallback(() => setSelected(null), []);

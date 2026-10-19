@@ -5,6 +5,7 @@ import maplibregl from "../../../lib/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { buildStyle } from "../style";
 import { installMissingTrailLogo } from "../trailBadge";
+import { MAX_PITCH } from "./use3D";
 
 const PMT_PROTOCOL = "pmt";
 
@@ -86,11 +87,10 @@ export function useMapInit(containerRef) {
       // zoom level — and the paper-map feel we want is for it to just BE there,
       // not shimmer in over 300ms while placement settles.
       fadeDuration: 0,
-      // Capped below a full 80° so the orbit gizmo can't drive the camera into
-      // the near-horizon band where the terrain tile-fan explodes — a cheap
-      // draw-distance limit that keeps tilted framerates sane. Kept in sync with
-      // MAX_PITCH in use3D.js.
-      maxPitch: 75,
+      // A draw-distance limit: past 60° the view reaches the horizon, where the
+      // terrain tile fan explodes and a laptop on battery could barely move the
+      // map. Kept in sync with MAX_PITCH in use3D.js and the phone's.
+      maxPitch: MAX_PITCH,
       // No maxTileCacheSize override: MapLibre's default cache is sized
       // dynamically from the current viewport's tile count, which is exactly
       // what we want in 3D — at high tilt the visible-tile set balloons, and a

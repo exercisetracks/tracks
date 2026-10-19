@@ -2,9 +2,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { useEffect, useRef, useCallback } from "react";
 import { api } from "../../../api/client";
+import { onLayerHover } from "./hoverHub";
 import { HeatmapGlowLayer, MAP_ACTIVITY_GLOW, buildHeatmapVerts } from "../../../components/map/HeatmapGlowLayer";
 
 const GLOW_ID = "activity_tracks_glow";
+const DRAPED_ID = "activity_tracks_draped";
 
 // The theme's accent as [r, g, b]: the activities' colour, as their lines
 // always were — distinct from the basemap's orange roads and red trails.
@@ -76,6 +78,22 @@ export function useActivityTracks(map, ready, enabled) {
     } catch { /* style mid-reload; styledata calls again */ }
   }, [map]);
 
+  // Glow on flat ground, draped lines over terrain (see activity_tracks_draped
+  // in the style for why the glow cannot follow the hills).
+  const syncDraped = useCallback(() => {
+    if (!map) return;
+    const terrain = !!map.getTerrain?.();
+    const on = enabledRef.current && !!dataRef.current;
+    try {
+      if (map.getLayer(DRAPED_ID)) {
+        map.setLayoutProperty(DRAPED_ID, "visibility", on && terrain ? "visible" : "none");
+        const [r, g, b] = accentRgb();
+        map.setPaintProperty(DRAPED_ID, "line-color", `rgb(${r}, ${g}, ${b})`);
+      }
+      if (map.getLayer(GLOW_ID)) map.setLayoutProperty(GLOW_ID, "visibility", terrain ? "none" : "visible");
+    } catch { /* style mid-reload; styledata calls again */ }
+  }, [map]);
+
   // Set the `hover` feature-state on one activity (clearing the previous). Driven
   // by both the on-map mousemove below and the point-info "Nearby activities" list.
   const setHoveredActivity = useCallback((id) => {
@@ -93,7 +111,6 @@ export function useActivityTracks(map, ready, enabled) {
   useEffect(() => {
     if (!ready || !map) return;
     const HIT = "activity_tracks_hit";
-    const hasLayer = () => { try { return !!map.getLayer(HIT); } catch { return false; } };
     const onMove = (e) => {
       const f = e.features && e.features[0];
       const id = f && f.id != null ? f.id : null;
@@ -101,10 +118,9 @@ export function useActivityTracks(map, ready, enabled) {
       setHoveredActivity(id);
     };
     const onLeave = () => { map.getCanvas().style.cursor = ""; setHoveredActivity(null); };
-    if (hasLayer()) { map.on("mousemove", HIT, onMove); map.on("mouseleave", HIT, onLeave); }
-    return () => {
-      try { map.off("mousemove", HIT, onMove); map.off("mouseleave", HIT, onLeave); } catch { /* ignore */ }
-    };
+    // One shared, frame-throttled query (hoverHub): this hover was the one
+    // that lagged in 3D.
+    return onLayerHover(map, [HIT], { move: onMove, leave: onLeave });
   }, [map, ready, setHoveredActivity]);
 
   // When enabled: feed the cached set immediately (no pause), then revalidate in the
@@ -115,6 +131,7 @@ export function useActivityTracks(map, ready, enabled) {
       dataRef.current = gj;
       try { map.getSource("activity_tracks")?.setData(gj); } catch { /* not ready */ }
       syncGlow();
+      syncDraped();
     };
 
     if (_cache) feed(_cache);   // instant from cache
@@ -126,10 +143,19 @@ export function useActivityTracks(map, ready, enabled) {
         .catch(() => { /* keep showing cache */ })
         .finally(() => { fetchingRef.current = false; });
     }
-  }, [map, ready, enabled, syncGlow]);
+  }, [map, ready, enabled, syncGlow, syncDraped]);
 
   // Off: the glow goes with the toggle.
-  useEffect(() => { if (ready && map && !enabled) syncGlow(); }, [map, ready, enabled, syncGlow]);
+  useEffect(() => {
+    if (ready && map && !enabled) { syncGlow(); syncDraped(); }
+  }, [map, ready, enabled, syncGlow, syncDraped]);
+
+  // Into and out of 3D: MapLibre fires `terrain` when the mesh is set or removed.
+  useEffect(() => {
+    if (!ready || !map) return undefined;
+    map.on("terrain", syncDraped);
+    return () => map.off("terrain", syncDraped);
+  }, [map, ready, syncDraped]);
 
   // After a style reload, which drops geojson data and custom layers: re-feed both.
   useEffect(() => {
@@ -138,10 +164,11 @@ export function useActivityTracks(map, ready, enabled) {
       if (dataRef.current) { try { map.getSource("activity_tracks")?.setData(dataRef.current); } catch { /* ignore */ } }
       if (!map.getLayer(GLOW_ID)) glowRef.current = null;
       syncGlow();
+      syncDraped();
     };
     map.on("styledata", apply);
     return () => map.off("styledata", apply);
-  }, [map, ready, syncGlow]);
+  }, [map, ready, syncGlow, syncDraped]);
 
   return { setHoveredActivity };
 }

@@ -13,6 +13,24 @@ const FALLBACK = "#10b981";
 
 export function buildActivityTracks() {
   return [
+    // The routes in 3D. The glow is a custom WebGL layer, and MapLibre drapes
+    // only its own layers over terrain: tilted, the glow stayed on the flat
+    // plane under the hills and slid against them as the camera moved, while
+    // the hover halo -- a plain line -- sat on the ground. So with terrain on,
+    // the hook hides the glow and shows this instead: faint lines that deepen
+    // where routes overlap, as the glow does. Hidden in 2D; the hook alone
+    // switches it (it is in no toggle group).
+    {
+      id: "activity_tracks_draped",
+      ...SRC,
+      type: "line",
+      layout: { "line-cap": "round", "line-join": "round", "visibility": "none" },
+      paint: {
+        "line-color": FALLBACK,
+        "line-width": ["interpolate", ["exponential", 1.4], ["zoom"], 6, 1.5, 12, 3, 16, 5],
+        "line-opacity": 0.35,
+      },
+    },
     {
       id: "activity_tracks_hit",
       ...SRC,

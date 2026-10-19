@@ -239,8 +239,10 @@ fun MapScreen(
 
     // Which groups the user has switched off. Hidden rather than shown, so a
     // style reloading (a region download changes it) leaves everything visible
-    // by default and only the explicit refusals survive.
-    var hiddenGroups by rememberSaveable { mutableStateOf(defaultHiddenGroups()) }
+    // by default and only the explicit refusals survive. Read from what was
+    // left last time (LayerChoices), and saved at every switch.
+    val layerContext = androidx.compose.ui.platform.LocalContext.current
+    var hiddenGroups by rememberSaveable { mutableStateOf(LayerChoices.load(layerContext)) }
 
     // Tell the downloads poller whether anyone is looking. It runs in a
     // ViewModel, which outlives this screen going away — a download started
@@ -320,9 +322,11 @@ fun MapScreen(
                         MapViewport.restore(context)?.let {
                             ready.moveCamera(CameraUpdateFactory.newCameraPosition(it))
                         }
-                        // Capped below a full 80 degrees, matching the browser's
-                        // MAX_PITCH: past that the terrain tile fan explodes and
-                        // the horizon costs more to draw than it is worth.
+                        // Capped at 60 degrees, matching the browser's MAX_PITCH:
+                        // past that the view reaches toward the horizon, where the
+                        // terrain tile fan explodes and costs more to draw than
+                        // it is worth. The phone has no fog to hide the far
+                        // ground, which is one more reason not to show it.
                         ready.setMaxPitchPreference(MAX_PITCH)
                         // The same zoom window the browser uses (useMapInit).
                         // Not cosmetic: past z16 there is no data left to show
@@ -934,6 +938,7 @@ fun MapScreen(
                 hidden = hiddenGroups,
                 onToggleLayer = { group, on ->
                     hiddenGroups = if (on) hiddenGroups - group.id else hiddenGroups + group.id
+                    LayerChoices.save(layerContext, group.id, on)
                 },
                 onOfflineMaps = {
                     showMenu = false
@@ -1143,11 +1148,8 @@ private fun MapControls(
  * Trails draws emblem badges across whole states and is opt-in there for the
  * same reason it should be here.
  */
-private fun defaultHiddenGroups(): Set<String> =
-    LAYER_GROUPS.filterNot { it.onByDefault }.map { it.id }.toSet()
-
 /** Matches the browser's MAX_PITCH (`use3D.js`) — see the note at the call site. */
-private const val MAX_PITCH = 75.0
+private const val MAX_PITCH = 60.0
 
 /** The browser's zoom window (`useMapInit.js`), for the same reasons. */
 private const val MIN_ZOOM = 1.0

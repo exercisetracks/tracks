@@ -7,7 +7,7 @@
 // layer, e.g. hillshade before DEM download, is a safe no-op).
 import { useState, useCallback } from "react";
 
-const LAYER_GROUPS = [
+export const LAYER_GROUPS = [
   {
     id: "hillshade",
     label: "Hillshade",
@@ -208,14 +208,40 @@ function setBadgeZoom(m, longTrailsOn) {
   } catch { /* layer not added yet */ }
 }
 
-export function useLayerToggles(map) {
-  const [toggles, setToggles] = useState(() => {
-    const state = {};
-    LAYER_GROUPS.forEach((g) => {
-      state[g.id] = g.default;
-    });
-    return state;
+// The layer choices, kept per browser so the map opens the way it was left.
+// Only what differs from a group's default is read back, and only for groups
+// that still exist, so a renamed or retired group cannot leave a stale switch.
+// Browser storage can be missing or throw (private windows, blocked site data);
+// the map then simply opens on the defaults.
+const STORAGE_KEY = "tracks.map.layers";
+
+function savedChoices() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+    return raw && typeof raw === "object" ? raw : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveChoice(groupId, visible) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...savedChoices(), [groupId]: visible }));
+  } catch { /* not kept; the map still works */ }
+}
+
+/** Each group's starting state: the saved choice if there is one, else its default. */
+export function initialToggles() {
+  const saved = savedChoices();
+  const state = {};
+  LAYER_GROUPS.forEach((g) => {
+    state[g.id] = typeof saved[g.id] === "boolean" ? saved[g.id] : g.default;
   });
+  return state;
+}
+
+export function useLayerToggles(map) {
+  const [toggles, setToggles] = useState(initialToggles);
 
   const setVisibility = useCallback(
     (groupId, visible) => {
@@ -229,6 +255,7 @@ export function useLayerToggles(map) {
         } catch {}
       });
       if (groupId === "long_trails") setBadgeZoom(map, visible);
+      saveChoice(groupId, visible);
       setToggles((prev) => ({ ...prev, [groupId]: visible }));
     },
     [map]
@@ -237,14 +264,15 @@ export function useLayerToggles(map) {
   const applyInitial = useCallback(
     (m) => {
       if (!m) return;
+      const start = initialToggles();
       LAYER_GROUPS.forEach((g) => {
-        const value = g.default ? "visible" : "none";
+        const value = start[g.id] ? "visible" : "none";
         g.layers.forEach((layerId) => {
           try {
             m.setLayoutProperty(layerId, "visibility", value);
           } catch {}
         });
-        if (g.id === "long_trails") setBadgeZoom(m, g.default);
+        if (g.id === "long_trails") setBadgeZoom(m, start[g.id]);
       });
     },
     []

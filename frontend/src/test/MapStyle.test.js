@@ -249,3 +249,22 @@ describe('buildStyle merged (the web map)', () => {
     expect(buildStyle('', { merged: true }).sources.tiles.promoteId).toEqual({ rt_routes: 'feat_key' });
   });
 });
+
+// A well-used trail's name was unreadable under its own activity tracks.
+describe('activity tracks under the labels', () => {
+  it('draws every base-map label above the activity tracks', () => {
+    const ids = buildStyle().layers.map((l) => l.id);
+    const types = Object.fromEntries(buildStyle().layers.map((l) => [l.id, l.type]));
+    const hover = ids.indexOf('activity_tracks_hover');
+    const custom = ids.indexOf('custom_tracks_line') >= 0 ? ids.indexOf('custom_tracks_line') : ids.findIndex((id) => id.startsWith('custom_tracks'));
+    const between = ids.slice(0, custom).filter((id) => types[id] === 'symbol');
+    expect(between.length).toBeGreaterThan(5);
+    for (const id of between) expect(ids.indexOf(id), id).toBeGreaterThan(hover);
+  });
+
+  it('keeps the courses and saved places above the labels, as before', () => {
+    const ids = buildStyle().layers.map((l) => l.id);
+    const lastLabel = Math.max(...buildStyle().layers.map((l, i) => (l.type === 'symbol' && !/custom|saved|fire|wildfire/.test(l.id) ? i : -1)));
+    expect(ids.findIndex((id) => id.startsWith('custom_tracks'))).toBeGreaterThan(lastLabel);
+  });
+});

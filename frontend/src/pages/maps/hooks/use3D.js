@@ -3,14 +3,40 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 
 // Pitch (camera tilt) applied when toggling 3D on via the pip.
-const PITCH_3D = 60;
+const PITCH_3D = 55;
 // Above this pitch the map counts as "3D" — lights the control and turns on the
 // terrain mesh. Small enough that a deliberate drag-tilt registers, large enough
 // that incidental wobble at pitch 0 doesn't.
 const PITCH_THRESHOLD = 5;
-// Hard cap on tilt. Kept a touch below a full 80° so the orbit gizmo can't drive
-// the camera into the near-horizon band where the terrain tile-fan explodes.
-export const MAX_PITCH = 75;
+// Hard cap on tilt: a draw distance. Past 60° the view reaches toward the
+// horizon, where the terrain tile fan explodes — 75° was usable plugged in and
+// barely movable on battery. The phone caps at the same (MapScreen MAX_PITCH).
+export const MAX_PITCH = 60;
+
+// Level of detail toward the horizon (MapLibre setSourceTileLodParams). Tiles
+// far from the camera are drawn from lower zooms the way a game swaps in
+// coarser models with distance: at most this many zoom levels on screen, so
+// the far ground drops to coarse tiles quickly (MapLibre's default is about 9,
+// barely any decay)...
+const LOD_ZOOM_LEVELS = 5;
+// ...and at most this many times the tiles of a flat view at the same zoom
+// (default 3).
+const LOD_TILE_RATIO = 2;
+// The source it applies to: the web map's one vector source (style mergeSources).
+const LOD_SOURCE = "tiles";
+
+// Distance fog, which is what makes that coarse far ground look intended rather
+// than blurry: it fades into the haze before it is close enough to read. The
+// colours are the paper map's background, so the fog reads as the map receding.
+const SKY = {
+  "sky-color": "#c9d8e6",
+  "horizon-color": "#F8F6F0",
+  "fog-color": "#F8F6F0",
+  "sky-horizon-blend": 0.6,
+  "horizon-fog-blend": 0.7,
+  "fog-ground-blend": 0.35,
+  "atmosphere-blend": 0,
+};
 // Vertical exaggeration of the terrain mesh. >1 makes relief read clearly at the
 // zoom levels people actually fly the map around at.
 const EXAGGERATION = 1.4;
@@ -91,6 +117,11 @@ export function use3D(map, ready) {
     const has = !!map.getTerrain();
     if (on && !has) {
       const source = pickDemSource(map);
+      // The vector map only. The terrain keeps MapLibre's own LOD: the
+      // regional DEM starts at z8, so far ground pushed below that by the
+      // faster decay went flat, a hard edge across the view.
+      try { if (map.getSource(LOD_SOURCE)) map.setSourceTileLodParams(LOD_ZOOM_LEVELS, LOD_TILE_RATIO, LOD_SOURCE); } catch {}
+      try { map.setSky(SKY); } catch {}
       if (source) {
         try { map.setTerrain({ source, exaggeration: EXAGGERATION }); } catch {}
       }

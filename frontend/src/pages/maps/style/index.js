@@ -190,7 +190,7 @@ export function buildStyle(version = "", { includeDem = false, merged = false } 
     // HUD over the map by useGridOverlay (Grid toggle), so it isn't listed here.
   ];
 
-  const placed = withStablePlacement(withFadeIn(layers));
+  const placed = withStablePlacement(withFadeIn(underLabels(layers, ACTIVITY_TRACK_LAYERS)));
   const style = {
     version: 8,
     glyphs: "/api/fonts/{fontstack}/{range}.pbf",
@@ -200,6 +200,39 @@ export function buildStyle(version = "", { includeDem = false, merged = false } 
     layers: placed,
   };
   return merged ? mergeSources(style) : style;
+}
+
+/** The activity heatmap's style layers: its 3D lines, hit line and hover halo. The glow
+ * itself is a custom layer the hook adds directly under the halo. */
+const ACTIVITY_TRACK_LAYERS = new Set(["activity_tracks_draped", "activity_tracks_hit", "activity_tracks_hover"]);
+
+/**
+ * [layers] with the [moved] ones lifted out and put back directly under the
+ * first label of the base map, so every name and icon of the map draws over
+ * them.
+ *
+ * The activity heatmap runs along the very trails it would otherwise cover:
+ * drawn above the labels, a well-used trail's name was unreadable under its
+ * own tracks. Labels are spread through the stack (contour heights sit with
+ * the contours, trail names with the trails), so "under the labels" alone
+ * would still leave those beneath; instead every base-map label after that
+ * point is gathered above the tracks, keeping its order among the labels,
+ * which is what decides which label wins a collision. The lines between them
+ * keep their order too.
+ *
+ * Only the base map: the user's own courses, saved places and live fires stay
+ * above, as they always were.
+ */
+export function underLabels(layers, moved) {
+  const lifted = layers.filter((l) => moved.has(l.id));
+  if (!lifted.length) return layers;
+  const rest = layers.filter((l) => !moved.has(l.id));
+  // The base map is everything below the moved layers' old place.
+  const baseEnd = layers.indexOf(lifted[0]);
+  const base = rest.slice(0, baseEnd);
+  const lines = base.filter((l) => l.type !== "symbol");
+  const labels = base.filter((l) => l.type === "symbol");
+  return [...lines, ...lifted, ...labels, ...rest.slice(baseEnd)];
 }
 
 /**

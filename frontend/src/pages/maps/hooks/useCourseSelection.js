@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Hawk Fugagli
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { useEffect, useRef } from "react";
+import { onLayerHover } from "./hoverHub";
 
 // Selection + hover for the user's tracks and places, by feature-state.
 // Clicking a place's mark or a track's wide invisible hit line selects it
@@ -64,6 +65,9 @@ export function useCourseSelection(map, ready, enabled, selected, onSelect) {
     };
     const onTrackMove = hoverOn(SOURCE.track);
     const onPlaceMove = hoverOn(SOURCE.place);
+    // Leaving one kind clears only its own hover: moving straight from a place
+    // onto a track must not have the place's leave put out the track's glow.
+    const leaveOf = (source) => () => { if (hovered?.source === source) clearHover(); };
 
     const onClick = (e) => {
       // Ctrl/⌘-click is reserved for merge multi-select (useMergeSelect).
@@ -86,21 +90,13 @@ export function useCourseSelection(map, ready, enabled, selected, onSelect) {
       onSelectRef.current(track != null ? { kind: "track", id: track } : null);
     };
 
-    if (has(HIT)) {
-      map.on("mousemove", HIT, onTrackMove);
-      map.on("mouseleave", HIT, clearHover);
-    }
-    for (const l of PLACE_LAYERS) {
-      if (!has(l)) continue;
-      map.on("mousemove", l, onPlaceMove);
-      map.on("mouseleave", l, clearHover);
-    }
+    // Shared, frame-throttled hover queries (hoverHub).
+    const offTrack = onLayerHover(map, [HIT], { move: onTrackMove, leave: leaveOf(SOURCE.track) });
+    const offPlace = onLayerHover(map, PLACE_LAYERS, { move: onPlaceMove, leave: leaveOf(SOURCE.place) });
     map.on("click", onClick);
     return () => {
-      try {
-        map.off("mousemove", HIT, onTrackMove); map.off("mouseleave", HIT, clearHover);
-        for (const l of PLACE_LAYERS) { map.off("mousemove", l, onPlaceMove); map.off("mouseleave", l, clearHover); }
-      } catch { /* ignore */ }
+      offTrack();
+      offPlace();
       map.off("click", onClick);
       clearHover();
     };
