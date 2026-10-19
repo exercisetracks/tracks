@@ -35,6 +35,7 @@ import com.tracks.app.ui.screens.FeedStatus
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.tracks.app.ui.theme.TracksTheme
 import com.tracks.device.CompanionPairing
+import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 
 /**
@@ -96,9 +97,82 @@ class MainActivity : ComponentActivity() {
 
             TracksTheme(mode = themeMode, accent = accent) {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    TracksApp(container, picker, permissions, feedPermissions)
+                    androidx.compose.foundation.layout.Box(Modifier.fillMaxSize()) {
+                        TracksApp(container, picker, permissions, feedPermissions)
+                        val locked by keyguardLocked.collectAsStateWithLifecycle()
+                        if (locked) com.tracks.app.ui.workout.LockedOverlay(onUnlock = ::askToUnlock)
+                    }
                 }
             }
+        }
+        showOverLockDuringWorkouts()
+    }
+
+    /**
+     * Whether this activity is showing over a locked keyguard: it then shows a
+     * workout to look at but takes no input (LockedOverlay).
+     */
+    private val keyguardLocked = kotlinx.coroutines.flow.MutableStateFlow(false)
+
+    private val keyguard: android.app.KeyguardManager
+        get() = getSystemService(android.app.KeyguardManager::class.java)
+
+    private fun refreshLocked() {
+        keyguardLocked.value = keyguard.isKeyguardLocked && sessionRunning()
+    }
+
+    private fun sessionRunning(): Boolean =
+        com.tracks.app.ui.workout.ActiveWorkout.current.value != null ||
+            com.tracks.app.ui.flexibility.FlowPlayback.state.value != null
+
+    /**
+     * A workout in progress shows over the lock screen, so a glance at the
+     * phone mid-run shows the current stage without unlocking it -- but only
+     * when Tracks was what was in front when the screen went off, which is
+     * what showWhenLocked means for an activity that is not on top. The
+     * controls and everything else need the phone unlocked (LockedOverlay).
+     */
+    private fun showOverLockDuringWorkouts() {
+        lifecycleScope.launch {
+            kotlinx.coroutines.flow.combine(
+                com.tracks.app.ui.workout.ActiveWorkout.current,
+                com.tracks.app.ui.flexibility.FlowPlayback.state,
+            ) { guided, flow -> guided != null || flow != null }
+                .collect { active ->
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O_MR1) {
+                        setShowWhenLocked(active)
+                    } else {
+                        @Suppress("DEPRECATION")
+                        if (active) window.addFlags(android.view.WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED)
+                        else window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED)
+                    }
+                    refreshLocked()
+                }
+        }
+        val screenEvents = object : android.content.BroadcastReceiver() {
+            override fun onReceive(context: android.content.Context?, intent: android.content.Intent?) = refreshLocked()
+        }
+        val filter = android.content.IntentFilter().apply {
+            addAction(android.content.Intent.ACTION_USER_PRESENT)
+            addAction(android.content.Intent.ACTION_SCREEN_ON)
+            addAction(android.content.Intent.ACTION_SCREEN_OFF)
+        }
+        androidx.core.content.ContextCompat.registerReceiver(
+            this, screenEvents, filter, androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED,
+        )
+        lifecycle.addObserver(object : androidx.lifecycle.DefaultLifecycleObserver {
+            override fun onResume(owner: androidx.lifecycle.LifecycleOwner) = refreshLocked()
+            override fun onDestroy(owner: androidx.lifecycle.LifecycleOwner) {
+                runCatching { unregisterReceiver(screenEvents) }
+            }
+        })
+    }
+
+    private fun askToUnlock() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            keyguard.requestDismissKeyguard(this, object : android.app.KeyguardManager.KeyguardDismissCallback() {
+                override fun onDismissSucceeded() = refreshLocked()
+            })
         }
     }
 

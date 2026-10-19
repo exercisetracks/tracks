@@ -89,6 +89,8 @@ fun GuidedRunPane(state: GuidedUiState, vm: GuidedWorkoutViewModel, onQuit: () -
         // cell-tower fixes is a run drawn wrong, and recording one would be
         // worse than refusing to start.
         if (granted[Manifest.permission.ACCESS_FINE_LOCATION] == true) {
+            // What it says and how it splits, before it starts saying it.
+            vm.prepareVoice()
             RunService.start(context)
         }
     }

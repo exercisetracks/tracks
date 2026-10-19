@@ -345,6 +345,16 @@
             android:exported="false"
             android:foregroundServiceType="location" />
 
+        <!-- See GuidedSessionService: a guided strength or mobility session kept running with the screen off. -->
+        <service
+            android:name=".ui.workout.GuidedSessionService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Guided strength and mobility timer with spoken cues while the screen is off" />
+        </service>
+
         <!-- See FlowPlayerService: a guided stretching flow, screen off, controlled from the lock screen. -->
         <service
             android:name=".ui.flexibility.FlowPlayerService"

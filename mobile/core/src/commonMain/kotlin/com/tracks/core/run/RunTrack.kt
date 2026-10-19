@@ -170,7 +170,8 @@ class RunTrack {
     }
 
     /**
-     * The whole-kilometre boundaries crossed so far, as (km, elapsedMs).
+     * The split boundaries crossed so far, as (split number, elapsedMs): every
+     * kilometre by default, or every [splitMetres] -- a mile, five on a bike.
      *
      * Interpolated across the fix that crossed the line rather than reported at
      * the first fix past it: at a second between fixes and four minutes a
@@ -178,10 +179,10 @@ class RunTrack {
      * off it is out by a second or so every time — always in the same direction,
      * so the errors accumulate down the list rather than cancelling.
      */
-    fun splits(): List<Pair<Int, Long>> {
+    fun splits(splitMetres: Double = SPLIT_METRES): List<Pair<Int, Long>> {
         val out = mutableListOf<Pair<Int, Long>>()
         var covered = 0.0
-        var nextMark = SPLIT_METRES
+        var nextMark = splitMetres
         for (i in 0 until _fixes.size - 1) {
             val from = _fixes[i]
             val to = _fixes[i + 1]
@@ -191,8 +192,8 @@ class RunTrack {
             while (covered + step >= nextMark) {
                 val fraction = (nextMark - covered) / step
                 val at = from.elapsedMs + ((to.elapsedMs - from.elapsedMs) * fraction).toLong()
-                out += (nextMark / SPLIT_METRES).toInt() to at
-                nextMark += SPLIT_METRES
+                out += kotlin.math.round(nextMark / splitMetres).toInt() to at
+                nextMark += splitMetres
             }
             covered += step
         }

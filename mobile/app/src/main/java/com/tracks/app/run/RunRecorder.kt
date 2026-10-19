@@ -82,6 +82,22 @@ object RunRecorder {
     /** Set by the service so the recorder can speak without knowing what a Context is. */
     var cues: RunCues? = null
 
+    /**
+     * What this recording is, for what it says: the sport (how it splits and
+     * what a split reports), the person's units, the opening line, and the
+     * name the closing line thanks. Set by the screen before the service
+     * starts it; the defaults are a run in kilometres.
+     */
+    data class Voice(
+        val sport: SpokenCues.Sport = SpokenCues.sport(null),
+        val imperial: Boolean = false,
+        val opening: String = SpokenCues.start(SpokenCues.sport(null), null),
+        val name: String? = null,
+    )
+
+    @Volatile
+    var voice: Voice = Voice()
+
     val fixes: List<RunFix> get() = track.fixes
     val isActive: Boolean
         get() = _state.value.phase == RunPhase.Recording || _state.value.phase == RunPhase.Paused
@@ -188,7 +204,7 @@ object RunRecorder {
      * that freezes between fixes reads as a crashed app.
      */
     fun tick() {
-        val splits = track.splits()
+        val splits = track.splits(SpokenCues.splitMetres(voice.sport, voice.imperial))
         _state.update {
             it.copy(
                 distanceM = track.distanceM,
@@ -215,9 +231,11 @@ object RunRecorder {
     private fun announceNewSplits() {
         val splits = _state.value.splits
         while (announcedSplits < splits.size) {
-            val (km, at) = splits[announcedSplits]
+            val (index, at) = splits[announcedSplits]
+            // That split alone, not the time at the mark: see SpokenCues.
+            val before = splits.getOrNull(announcedSplits - 1)?.second ?: 0L
             announcedSplits++
-            cues?.announceSplit(km, at)
+            cues?.announceSplit(SpokenCues.split(voice.sport, index, at - before, voice.imperial))
         }
     }
 

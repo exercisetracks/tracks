@@ -270,6 +270,31 @@ fun spokenStep(step: GuidedStep): String {
     return listOfNotNull(step.title, step.position, step.detail?.let(::spokenUnits)).joinToString(". ")
 }
 
+/**
+ * A step as the opening line names it: "Walk for 5 minutes" for a timed step,
+ * the way a coach would say it, and as [spokenStep] otherwise.
+ */
+fun openingStep(step: GuidedStep): String {
+    step.spoken?.let { return it }
+    val seconds = step.seconds
+    if (seconds != null && step.metres == null && step.kind != StepKind.Rest) {
+        return "${step.title} for ${spokenDuration(seconds)}"
+    }
+    return spokenStep(step)
+}
+
+/** "5 minutes", "1 minute 30 seconds", "45 seconds". */
+internal fun spokenDuration(seconds: Int): String {
+    val m = seconds / 60
+    val s = seconds % 60
+    fun n(v: Int, unit: String) = "$v $unit${if (v == 1) "" else "s"}"
+    return when {
+        m == 0 -> n(s, "second")
+        s == 0 -> n(m, "minute")
+        else -> "${n(m, "minute")} ${n(s, "second")}"
+    }
+}
+
 /** "30 second", "2 minute", "1 minute 30 second" — the form "… rest" wants. */
 internal fun spokenSeconds(seconds: Int): String {
     val m = seconds / 60

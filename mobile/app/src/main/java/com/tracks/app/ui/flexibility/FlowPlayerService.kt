@@ -44,6 +44,9 @@ class FlowPlayerService : Service() {
 
     private val scope = CoroutineScope(Dispatchers.Main)
 
+    /** Partial, while a flow plays: its countdown and cues must keep going with the screen off. */
+    private var wakeLock: android.os.PowerManager.WakeLock? = null
+
     override fun onCreate() {
         super.onCreate()
         val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -76,6 +79,11 @@ class FlowPlayerService : Service() {
                 ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
             } else 0,
         )
+        if (wakeLock == null) {
+            wakeLock = (getSystemService(Context.POWER_SERVICE) as android.os.PowerManager)
+                .newWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "tracks:flow-player")
+                .apply { acquire(4 * 60 * 60 * 1000L) }
+        }
         if (intent?.action == null) observe()
         // Not sticky: a flow cannot be resumed by a restarted service with no
         // session, and a notification for a flow that no longer exists is worse
@@ -141,6 +149,8 @@ class FlowPlayerService : Service() {
     )
 
     override fun onDestroy() {
+        wakeLock?.let { if (it.isHeld) it.release() }
+        wakeLock = null
         scope.cancel()
         super.onDestroy()
     }

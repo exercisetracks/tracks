@@ -70,6 +70,25 @@ class RunService : Service() {
     private var cues: RunCues? = null
     private var listening = false
 
+    /**
+     * Partial, for as long as a run is recorded. GPS fixes wake the CPU on
+     * their own, but between them the one-second clock -- which advances a
+     * guided run's timed steps and speaks them -- stalled with the screen off.
+     */
+    private var wakeLock: android.os.PowerManager.WakeLock? = null
+
+    private fun holdAwake() {
+        if (wakeLock?.isHeld == true) return
+        wakeLock = (getSystemService(Context.POWER_SERVICE) as android.os.PowerManager)
+            .newWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "tracks:run-recording")
+            .apply { acquire(MAX_RECORDING_MS) }
+    }
+
+    private fun letSleep() {
+        wakeLock?.let { if (it.isHeld) it.release() }
+        wakeLock = null
+    }
+
     private val locationManager: LocationManager?
         get() = getSystemService(Context.LOCATION_SERVICE) as? LocationManager
 
@@ -128,19 +147,22 @@ class RunService : Service() {
         startForegroundNotification()
         if (!RunRecorder.isActive) {
             RunRecorder.start()
-            cues?.announceStart()
+            cues?.announceStart(RunRecorder.voice.opening)
         }
         startListening()
         startTicking()
+        holdAwake()
         return START_STICKY
     }
 
     private fun finishRun() {
         val state = RunRecorder.state.value
         RunRecorder.finish()
-        cues?.announceFinish(state.distanceM, state.movingMs)
+        val voice = RunRecorder.voice
+        cues?.announceFinish(SpokenCues.finish(voice.sport, voice.name, (state.movingMs / 1000).toInt()))
         stopListening()
         ticker?.cancel()
+        letSleep()
         // The upload is the screen's job, not the service's: it needs the API
         // client and a place to show a failure, and a run that failed to upload
         // must stay on the phone rather than vanish with the notification.
@@ -158,6 +180,7 @@ class RunService : Service() {
         RunRecorder.reset()
         stopListening()
         ticker?.cancel()
+        letSleep()
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
         stopSelf()
     }
@@ -260,6 +283,7 @@ class RunService : Service() {
     override fun onDestroy() {
         stopListening()
         ticker?.cancel()
+        letSleep()
         scope.cancel()
         RunRecorder.cues = null
         cues?.release()
@@ -288,6 +312,9 @@ class RunService : Service() {
          * track for battery that a phone recording a run has already committed.
          */
         const val FIX_INTERVAL_MS = 1000L
+
+        /** The wake lock's ceiling, should a recording be abandoned: twelve hours. */
+        private const val MAX_RECORDING_MS = 12 * 60 * 60 * 1000L
 
         fun start(context: Context) {
             ContextCompat.startForegroundService(context, Intent(context, RunService::class.java))

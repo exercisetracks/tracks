@@ -38,6 +38,13 @@ class RunCues(context: Context) {
     private var tts: TextToSpeech? = null
     private var ready = false
 
+    /**
+     * Said before the engine was ready. The engine takes a moment to start, and
+     * the first cues -- "Starting run" above all -- come straight after this is
+     * built, so they were silently dropped; now they wait and go out in order.
+     */
+    private val pending = mutableListOf<String>()
+
     private val vibrator: Vibrator? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         (context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager)?.defaultVibrator
     } else {
@@ -53,14 +60,19 @@ class RunCues(context: Context) {
                     // Whatever the phone is set to. A split time read out in the
                     // wrong language is worse than one not read out at all.
                     runCatching { tts?.language = Locale.getDefault() }
+                    val waiting = synchronized(pending) { pending.toList().also { pending.clear() } }
+                    waiting.forEach(::say)
+                } else {
+                    synchronized(pending) { pending.clear() }
                 }
             }
         }
     }
 
-    fun announceStart() {
+    /** [text] is the whole opening line: "Starting run. Walk for 5 minutes." */
+    fun announceStart(text: String) {
         buzz(START_MS)
-        say("Run started.")
+        say(text)
     }
 
     fun announcePause() {
@@ -73,10 +85,10 @@ class RunCues(context: Context) {
         say("Resumed.")
     }
 
-    /** [at] is elapsed moving time at the kilometre mark. */
-    fun announceSplit(km: Int, at: Long) {
+    /** [text] is the split's line, from [SpokenCues.split]. */
+    fun announceSplit(text: String) {
         buzz(SPLIT_MS)
-        say("Kilometre $km. ${spokenClock(at)}.")
+        say(text)
     }
 
     /**
@@ -98,10 +110,10 @@ class RunCues(context: Context) {
     /** Just the words — for a caller that has already buzzed or means not to. */
     fun speak(text: String) = say(text)
 
-    fun announceFinish(distanceM: Double, movingMs: Long) {
+    /** [text] is the closing line, from [SpokenCues.finish]. */
+    fun announceFinish(text: String) {
         buzz(FINISH_MS)
-        val km = distanceM / 1000.0
-        say("Run finished. ${"%.2f".format(km)} kilometres in ${spokenClock(movingMs)}.")
+        say(text)
     }
 
     fun release() {
@@ -114,7 +126,11 @@ class RunCues(context: Context) {
     }
 
     private fun say(text: String) {
-        if (!ready) return
+        if (tts == null) return
+        if (!ready) {
+            synchronized(pending) { pending += text }
+            return
+        }
         // QUEUE_ADD, not FLUSH: two cues can land within a second of each other
         // at the end of a run, and flushing would drop the first one.
         runCatching { tts?.speak(text, TextToSpeech.QUEUE_ADD, null, text) }

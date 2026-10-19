@@ -122,9 +122,44 @@ class GuidedWorkoutViewModel(
     /** A race's course, for changing legs by position (RaceGuide.CourseProgress). */
     private var course: com.tracks.core.race.RaceGuide.CourseProgress? = null
 
+    /** The person's name, for the closing line ("Good work, Hawk"). */
+    private var athleteName: String? = null
+
+    /**
+     * The step runner's voice. A recording speaks through its service's cues
+     * ([RunRecorder.cues]); a strength or mobility session has no service of
+     * that kind and used to be silent, so it gets its own.
+     */
+    private var sessionCues: com.tracks.app.run.RunCues? = null
+
+    private val cues: com.tracks.app.run.RunCues?
+        get() = if (_state.value.isRecorded) RunRecorder.cues else sessionCues
+
+    /** How this session is spoken of: "run", "strength workout". */
+    private val spokenSport: com.tracks.app.run.SpokenCues.Sport
+        get() = com.tracks.app.run.SpokenCues.sport(
+            _state.value.workout?.sport?.let { com.tracks.core.plan.PlanBase.sportFamily(it.lowercase()) }
+                ?.takeIf { it != "generic" } ?: _state.value.workout?.sport?.lowercase(),
+        )
+
     init {
         load()
         watchRecording()
+        viewModelScope.launch { athleteName = runCatching { container.sources.setting("name") }.getOrNull() }
+    }
+
+    /**
+     * Before the recording service starts: what it says and how it splits.
+     * The service speaks the opening line the moment it begins.
+     */
+    fun prepareVoice() {
+        val sport = spokenSport
+        RunRecorder.voice = RunRecorder.Voice(
+            sport = sport,
+            imperial = com.tracks.core.format.Units.imperial,
+            opening = com.tracks.app.run.SpokenCues.start(sport, _state.value.steps.firstOrNull()?.let(::openingStep)),
+            name = athleteName,
+        )
     }
 
     // ── Loading ──────────────────────────────────────────────────────────────
@@ -218,6 +253,7 @@ class GuidedWorkoutViewModel(
     fun begin() {
         markStepStart()
         _state.update { it.copy(running = true, begun = true, error = null) }
+        val first = ActiveWorkout.current.value?.key != key
         ActiveWorkout.begin(
             ActiveWorkout.Session(
                 workoutId = workoutId,
@@ -225,7 +261,16 @@ class GuidedWorkoutViewModel(
                 key = key,
             )
         )
-        if (!_state.value.isRecorded) tick()
+        if (!_state.value.isRecorded) {
+            if (sessionCues == null) sessionCues = com.tracks.app.run.RunCues(container.appContext)
+            if (first) {
+                sessionCues?.announceStart(
+                    com.tracks.app.run.SpokenCues.start(spokenSport, _state.value.step?.let(::openingStep)),
+                )
+            }
+            GuidedSessionService.start(container.appContext, _state.value.workout?.title ?: "Workout")
+            tick()
+        }
     }
 
     fun togglePause() {
@@ -254,6 +299,11 @@ class GuidedWorkoutViewModel(
         if (next >= state.steps.size) {
             timer?.cancel()
             _state.update { it.copy(done = true, running = false, remaining = 0) }
+            if (!state.isRecorded) {
+                sessionCues?.announceFinish(
+                    com.tracks.app.run.SpokenCues.finish(spokenSport, athleteName, (System.currentTimeMillis() / 1000).toInt()),
+                )
+            }
             return
         }
         timer?.cancel()
@@ -280,6 +330,10 @@ class GuidedWorkoutViewModel(
                 if (!state.running || state.done) return@launch
                 if (state.remaining > 1) {
                     _state.update { it.copy(remaining = it.remaining - 1) }
+                    // "3, 2, 1" into the end of a timed step long enough to
+                    // need warning -- the phone is across the room.
+                    val left = _state.value.remaining
+                    if (left in 1..3 && (state.step?.seconds ?: 0) >= COUNTDOWN_MIN_STEP_S) sessionCues?.speak("$left")
                 } else {
                     advance()
                     return@launch
@@ -360,10 +414,9 @@ class GuidedWorkoutViewModel(
         }
     }
 
-    /** Said out loud, because the phone is in a pocket. Silent if the step runner. */
+    /** Said out loud, because the phone is in a pocket or across the room. */
     private fun announce(step: GuidedStep) {
-        if (!_state.value.isRecorded) return
-        RunRecorder.cues?.announceStep(spokenStep(step))
+        cues?.announceStep(spokenStep(step))
     }
 
     // ── Finishing ────────────────────────────────────────────────────────────
@@ -526,11 +579,16 @@ class GuidedWorkoutViewModel(
 
     override fun onCleared() {
         timer?.cancel()
+        sessionCues?.release()
+        sessionCues = null
         super.onCleared()
     }
 
     private companion object {
         const val TAG = "TracksGuided"
+
+        /** A timed step this long or longer gets a spoken 3-2-1 before it ends. */
+        const val COUNTDOWN_MIN_STEP_S = 10
 
         const val UPLOAD_PENDING =
             "Saved to this phone and showing in your activities. " +
