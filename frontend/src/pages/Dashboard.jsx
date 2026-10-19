@@ -10,7 +10,7 @@
 // recap banner, the readiness card) and the pure date/format helpers live in
 // components/dashboard/ so this file stays focused on data orchestration.
 
-import { useEffect, useState, useMemo, useCallback, lazy, Suspense } from "react";
+import { useEffect, useRef, useState, useMemo, useCallback, lazy, Suspense } from "react";
 import { api } from "../api/client";
 import StatCard from "../components/StatCard";
 import CoachingCard from "../components/CoachingCard";
@@ -35,6 +35,9 @@ import RecapBanner from "../components/dashboard/RecapBanner";
 // every first visit — the login page included — downloaded the map before it
 // could draw anything. Now the map loads while the cards above it render.
 const ActivityHeatmap = lazy(() => import("../components/Charts/ActivityHeatmap"));
+/** A dashboard shown again refetches, but not more often than this. */
+const REFRESH_ON_FOCUS_MS = 60_000;
+
 export default function Dashboard() {
   const [period,    setPeriod]    = useState("monthly");
   const [me,        setMe]        = useState(null);
@@ -55,6 +58,7 @@ export default function Dashboard() {
   // closes so the banner disappears when everything's been reviewed.
   const [pendingRecaps,  setPendingRecaps]  = useState([]);
   const [recapOpen,      setRecapOpen]      = useState(false);
+  const [refreshTick,    setRefreshTick]    = useState(0);
 
   const imperial  = settings?.units === "imperial";
   const distUnit  = imperial ? "mi" : "km";
@@ -73,6 +77,29 @@ export default function Dashboard() {
     api.getUpcomingWorkouts(14).then(d => { if (!cancelled) setUpcomingWorkouts(d); }).catch(() => {});
     api.getPendingRecaps().then(d => { if (!cancelled) setPendingRecaps(d || []); }).catch(() => {});
     return () => { cancelled = true; };
+  }, []);
+
+  // Back to a tab left open: fitness, form and the plan move the moment an
+  // activity is imported (the server rebuilds both), and a dashboard that
+  // fetched them once at mount kept showing yesterday's until a reload.
+  // Refetched when the page is shown again, at most once a minute.
+  const lastRefresh = useRef(Date.now());
+  useEffect(() => {
+    function onVisible() {
+      if (document.visibilityState !== "visible") return;
+      if (Date.now() - lastRefresh.current < REFRESH_ON_FOCUS_MS) return;
+      lastRefresh.current = Date.now();
+      api.getTrainingLoad().then(setAllLoad).catch(() => {});
+      api.getCoachingToday().then(setCoaching).catch(() => {});
+      api.getUpcomingWorkouts(14).then(setUpcomingWorkouts).catch(() => {});
+      setRefreshTick(t => t + 1);
+    }
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
+    };
   }, []);
 
   // Refetch the pending list after the modal closes — it'll be empty once
@@ -96,7 +123,7 @@ export default function Dashboard() {
     const days = Math.min(PERIODS.find(p => p.value === period)?.days ?? 365, 365);
     api.getReadinessHistory(days).then(d => { if (!cancelled) setReadinessHistory(d); }).catch(() => {});
     return () => { cancelled = true; };
-  }, [period]);
+  }, [period, refreshTick]);
 
   // Weekly volume: refetch when period OR sport changes
   useEffect(() => {
@@ -106,7 +133,7 @@ export default function Dashboard() {
     if (selectedSport) params.sport = selectedSport;
     api.getWeeklyVolume(params).then(d => { if (!cancelled) setWeeklyVolume(d); }).catch(() => {});
     return () => { cancelled = true; };
-  }, [period, selectedSport]);
+  }, [period, selectedSport, refreshTick]);
 
   // Calendar: refetch when period OR selected sport changes
   useEffect(() => {

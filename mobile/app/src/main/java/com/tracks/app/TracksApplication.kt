@@ -228,7 +228,10 @@ class AppContainer(private val context: Context) {
             library,
             thresholds = { importThresholds() },
             isDeleted = { uid -> replica.row("activity", uid)?.isTombstone == true },
-            onActivity = { uid, startedAt, done -> matching.match(uid, startedAt, done) },
+            onActivity = { uid, startedAt, done ->
+                matching.match(uid, startedAt, done)
+                activityImported()
+            },
         )
         com.tracks.core.local.LocalFiles(blobs, library, importer)
     }
@@ -828,6 +831,23 @@ class AppContainer(private val context: Context) {
     }
 
     private var pendingRebuild: kotlinx.coroutines.Job? = null
+    private var pendingActivityRebuild: kotlinx.coroutines.Job? = null
+
+    /**
+     * A new activity: rebuild the active plan, as the server does after an
+     * import, so the next sessions answer the fitness and fatigue it moved.
+     * Before, the phone rebuilt only for goal and setting edits, and a ride
+     * synced from the watch left the plan as it was until something else
+     * changed. Debounced over a whole sync, like the server's ten seconds: a
+     * history download imports hundreds of activities and wants one rebuild.
+     */
+    fun activityImported() {
+        pendingActivityRebuild?.cancel()
+        pendingActivityRebuild = signalScope.launch {
+            kotlinx.coroutines.delay(ACTIVITY_REBUILD_DEBOUNCE_MS)
+            planInputsChanged()
+        }
+    }
 
     /**
      * A setting the plan is built from changed (PlanStaleness.PLAN_SETTINGS):
@@ -1142,6 +1162,7 @@ class AppContainer(private val context: Context) {
         private const val PUSH_EDITS_AFTER_MS = 5_000L
         const val SIGNAL_INTERVAL_MS = 1_500L
         const val PLAN_REBUILD_DEBOUNCE_MS = 1_500L
+        const val ACTIVITY_REBUILD_DEBOUNCE_MS = 10_000L
         const val KEY_ONBOARDED = "onboarding_complete"
         const val KEY_ONBOARD_STARTED = "onboarding_started"
         const val KEY_ONBOARD_STEP = "onboarding_step"

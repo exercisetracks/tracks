@@ -203,3 +203,16 @@ def test_a_rebuild_keeps_what_is_done_today_and_replaces_the_rest(client, db, re
     assert db.get(PlannedWorkout, open_id) is None
     today_rows = db.query(PlannedWorkout).filter_by(plan_id=plan.id, scheduled_date=date.today()).all()
     assert [r.id for r in today_rows if role(r.workout_type) == done_role] == [done_id]
+
+
+def test_an_imported_activity_rebuilds_the_plan_at_once(forced, monkeypatch):
+    """A new activity moves fitness and fatigue, so the plan answers it then.
+
+    The import used the lazy refresh, which skips a plan built in the last
+    six hours: a morning's rebuild meant an afternoon's ride changed nothing
+    until the evening.
+    """
+    from app.services import fit_import
+    monkeypatch.setattr("app.calculators.user_stats.recalculate_auto_values", lambda *_: None)
+    fit_import._do_plan_refresh(7)
+    assert forced == [7]

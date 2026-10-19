@@ -210,7 +210,11 @@ def _schedule_plan_refresh(user_id: int | None, material: UserKeyMaterial | None
 def _do_plan_refresh(user_id: int, material: UserKeyMaterial | None = None) -> None:
     with _refresh_lock:
         _refresh_timers.pop(user_id, None)
-    from app.api.training_plan import refresh_plans_for_user
+    # Forced: a new activity is exactly what a plan must answer at once --
+    # fitness and fatigue moved, so the next sessions should too. The lazy
+    # refresh's six-hour skip is for page loads, not for this; the ten-second
+    # debounce above already folds a whole sync into one rebuild.
+    from app.api.training_plan import refresh_plans_for_user_force as refresh_plans_for_user
     from app.calculators.user_stats import recalculate_auto_values
 
     # The auto thresholds first, from the history as it now stands. They were
