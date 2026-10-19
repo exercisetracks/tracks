@@ -83,3 +83,17 @@ def test_detail_basemap_replaces_the_planet_never_doubles_it(archives):
     assert [f["properties"]["src"] for f in covered["roads"]["features"]] == ["detail"]
     uncovered = mapbox_vector_tile.decode(gzip.decompress(merged_tiles.merged_tile(13, 21, 21)))
     assert [f["properties"]["src"] for f in uncovered["roads"]["features"]] == ["planet"]
+
+
+def test_a_polygon_clipped_along_the_tile_edge_still_encodes():
+    """A polygon that touches the cut box along an edge clips to a
+    GeometryCollection (area + stray line). The encoder refused those and the
+    whole merged tile failed with a 500; only the area must be kept."""
+    from shapely.geometry import GeometryCollection, LineString, Polygon
+
+    from app.services.merged_tiles import _same_kind
+
+    area = Polygon([(0, 0), (10, 0), (10, 10), (0, 10)])
+    mixed = GeometryCollection([area, LineString([(10, 10), (20, 10)])])
+    kept = _same_kind(mixed, area)
+    assert kept.geom_type == "Polygon" and kept.equals(area)

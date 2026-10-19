@@ -50,7 +50,9 @@ from pathlib import Path
 import mapbox_vector_tile
 from pmtiles.reader import MmapSource, Reader
 from shapely import affinity
-from shapely.geometry import box, shape
+from shapely.geometry import (
+    LineString, MultiLineString, MultiPoint, MultiPolygon, Point, Polygon, box, shape,
+)
 
 from app.config import settings
 
@@ -220,8 +222,8 @@ def _overzoom(tile: bytes, prefix: str, dz: int, cx: int, cy: int) -> bytes:
             g = affinity.affine_transform(g, [k, 0, 0, k, -cx * _EXTENT, -cy * _EXTENT])
             if not g.intersects(clip):
                 continue
-            g = g.intersection(clip) if g.geom_type != "Point" else g
-            if g.is_empty:
+            g = _same_kind(g.intersection(clip), g) if g.geom_type != "Point" else g
+            if g is None or g.is_empty:
                 continue
             out = {"geometry": g, "properties": f.get("properties", {})}
             if f.get("id") is not None:
@@ -234,6 +236,28 @@ def _overzoom(tile: bytes, prefix: str, dz: int, cx: int, cy: int) -> bytes:
     return mapbox_vector_tile.encode(
         layers, default_options={"extents": _EXTENT, "y_coord_down": True},
     )
+
+
+def _same_kind(clipped, original):
+    """[clipped] as the kind of geometry [original] was, or None.
+
+    Clipping a polygon along an edge it shares with the clip box gives back a
+    GeometryCollection of its area plus a stray line or point, which no MVT
+    can hold: the encoder raised, and the whole tile -- every layer of it --
+    failed with a 500. Only the parts of the original's dimension are kept.
+    """
+    if clipped.geom_type != "GeometryCollection":
+        return clipped
+    dim = 2 if "Polygon" in original.geom_type else 1 if "Line" in original.geom_type else 0
+    kinds = {2: (Polygon, MultiPolygon), 1: (LineString, MultiLineString), 0: (Point, MultiPoint)}[dim]
+    parts = []
+    for g in clipped.geoms:
+        if isinstance(g, kinds):
+            parts.extend(getattr(g, "geoms", [g]))
+    if not parts:
+        return None
+    multi = {2: MultiPolygon, 1: MultiLineString, 0: MultiPoint}[dim]
+    return parts[0] if len(parts) == 1 else multi(parts)
 
 
 def _part(name: str, prefix: str, lo: int, hi: int, z: int, x: int, y: int) -> bytes:
