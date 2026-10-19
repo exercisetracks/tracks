@@ -285,3 +285,63 @@ def to_step(c: StretchCandidate) -> dict:
         "garmin_category": c.garmin_category,
         "garmin_subtype": c.garmin_subtype,
     }
+
+
+# A stretch with no sides that works this many muscle groups at once is a
+# whole-body one (Downward Dog: hamstrings, calves, upper back, lats, glutes).
+WHOLE_BODY_MIN_MUSCLES = 3
+
+
+def _is_whole_body(step: dict) -> bool:
+    return (not step.get("each_side") and not step.get("side")
+            and len(step.get("muscles") or []) >= WHOLE_BODY_MIN_MUSCLES)
+
+
+def space_whole_body(steps: list[dict]) -> list[dict]:
+    """Never one whole-body stretch straight after another.
+
+    A two-set Downward Dog played as two holds back to back is the same pose
+    held twice with nothing between, which is not what a flow is. So a
+    whole-body stretch with several sets keeps one in its place and becomes a
+    bridge for the rest: placed between the left and right sides of the next
+    one-sided stretch -- Downward Dog, Runner's Lunge left, Downward Dog,
+    Runner's Lunge right, the classic transition -- or after the next stretch
+    when that one has no sides. A one-sided stretch split that way becomes two
+    steps with ``side`` set and ``each_side`` off, which every player and the
+    watch encoder already play as one hold each.
+
+    Then nothing whole-body may sit beside anything whole-body: a pair is
+    separated by moving the next other stretch between them, or, with none
+    left and the two the same stretch, the second is dropped.
+    """
+    out: list[dict] = []
+    bridges: list[dict] = []
+    for step in steps:
+        sets = int(step.get("sets") or 1)
+        if _is_whole_body(step) and sets > 1:
+            out.append(dict(step, sets=1))
+            bridges.extend(dict(step, sets=1) for _ in range(sets - 1))
+            continue
+        if bridges and step.get("each_side") and sets == 1:
+            out.append(dict(step, each_side=False, side="left"))
+            out.append(bridges.pop(0))
+            out.append(dict(step, each_side=False, side="right"))
+            continue
+        out.append(step)
+        if bridges and not _is_whole_body(step):
+            out.append(bridges.pop(0))
+    for b in bridges:
+        if out and not _is_whole_body(out[-1]):
+            out.append(b)
+
+    i = 1
+    while i < len(out):
+        if _is_whole_body(out[i]) and _is_whole_body(out[i - 1]):
+            j = next((k for k in range(i + 1, len(out)) if not _is_whole_body(out[k])), None)
+            if j is not None:
+                out.insert(i, out.pop(j))
+            elif out[i]["name"] == out[i - 1]["name"]:
+                out.pop(i)
+                continue
+        i += 1
+    return out

@@ -43,7 +43,7 @@ export default function MobilityCard({ workout, compact = false }) {
               <div className="shrink-0 text-right ml-3">
                 {s.duration_seconds && (
                   <p className="text-xs tabular-nums text-slate-500 dark:text-slate-400">
-                    {s.each_side ? `${s.duration_seconds}s / side` : `${s.duration_seconds}s`}
+                    {s.each_side ? `${s.duration_seconds}s / side` : s.side ? `${s.duration_seconds}s · ${s.side}` : `${s.duration_seconds}s`}
                     {s.sets > 1 ? ` × ${s.sets}` : ""}
                   </p>
                 )}

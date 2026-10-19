@@ -20,6 +20,7 @@ from app.calculators.flexibility import (
     select_stretch_flow,
     sport_target_muscles,
     strength_target_muscles,
+    space_whole_body,
     to_step,
 )
 from app.calculators.garmin_animations import (
@@ -99,7 +100,7 @@ def generate_post_activity_stretch_flow(
         order_by_position=True,
         closer_muscles=closer_muscles,
     )
-    steps = [to_step(c) for c in selected]
+    steps = space_whole_body([to_step(c) for c in selected])
     if return_meta:
         return {
             "steps": steps,

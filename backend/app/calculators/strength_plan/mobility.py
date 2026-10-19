@@ -21,6 +21,7 @@ from app.calculators.flexibility import (
     FULL_BODY_MOBILITY_MUSCLES,
     select_stretch_flow,
     sport_target_muscles,
+    space_whole_body,
     to_step,
 )
 from .flow_archetypes import select_flow_archetype
@@ -59,7 +60,7 @@ def _mobility_steps(
         order_by_position=True,
         closer_muscles=closer_muscles,
     )
-    return [to_step(c) for c in selected]
+    return space_whole_body([to_step(c) for c in selected])
 
 
 def _mobility_description(sport_family: str) -> str:

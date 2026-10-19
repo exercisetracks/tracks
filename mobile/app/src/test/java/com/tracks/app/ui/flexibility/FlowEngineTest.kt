@@ -89,4 +89,47 @@ class FlowEngineTest {
         assertEquals(1, later.index)
         assertEquals(30, later.remaining)
     }
+
+    /** The classic count into the end of a hold: "3, 2, 1", once each, before "rest". */
+    @Test
+    fun a_long_hold_counts_three_two_one_into_its_end() {
+        var step = FlowEngine.start(session(pigeonL, pigeonR), 0)
+        val said = mutableListOf<String>()
+        var t = 0L
+        while (t <= 31_000) {
+            step = FlowEngine.tick(step.session, t)
+            said += step.cues.map { FlowEngine.spoken(it) }
+            t += 250
+        }
+        assertEquals(listOf("3", "2", "1", "Rest. Next up, Pigeon, Right side."), said)
+    }
+
+    @Test
+    fun a_short_hold_is_not_counted_down() {
+        val quick = Hold(null, "Neck Roll", 8, 0)
+        var step = FlowEngine.start(session(quick, fold), 0)
+        val cues = mutableListOf<FlowEngine.Cue>()
+        for (t in 0L..7_000L step 250) { step = FlowEngine.tick(step.session, t); cues += step.cues }
+        assertTrue(cues.none { it is FlowEngine.Cue.Countdown })
+    }
+
+    @Test
+    fun the_flow_opens_by_naming_its_first_stretch() {
+        val first = FlowEngine.start(session(fold), 0).cues.single()
+        assertEquals("Starting flexibility flow. First up, Forward Fold. 20 seconds.", FlowEngine.spoken(first))
+    }
+
+    @Test
+    fun a_rest_before_the_next_set_says_which_set() {
+        val set1 = Hold(null, "Child's Pose", 30, 15, set = 1)
+        val set2 = Hold(null, "Child's Pose", 30, 15, set = 2)
+        val rest = FlowEngine.tick(FlowEngine.start(session(set1, set2), 0).session, 30_000).cues.single()
+        assertEquals("Rest. Set 2 of 2 next.", FlowEngine.spoken(rest))
+    }
+
+    @Test
+    fun the_end_thanks_the_person_by_name() {
+        assertEquals("Flexibility flow complete! Good work, Hawk.", FlowEngine.spoken(FlowEngine.Cue.Done, "Hawk", 0))
+    }
 }
+

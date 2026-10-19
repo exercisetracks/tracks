@@ -39,6 +39,10 @@ object FlowPlayback {
 
     internal var now: () -> Long = System::currentTimeMillis
 
+    /** The person's first name, for the closing line; set by whoever starts a flow. */
+    @Volatile
+    var athleteName: String? = null
+
     fun start(context: Context, session: FlowSession) {
         appContext = context.applicationContext
         if (cues == null) cues = RunCues(context.applicationContext)
@@ -75,9 +79,11 @@ object FlowPlayback {
         _state.value = step.session
         step.cues.forEach { cue ->
             // A buzz for every change of phase — the phone is on the mat, the
-            // speaker may be muted — and words for whoever can hear them.
-            cues?.nudge()
-            cues?.speak(FlowEngine.spoken(cue))
+            // speaker may be muted — and words for whoever can hear them. The
+            // count into a change is words only: three buzzes a second would
+            // be one long one.
+            if (cue !is FlowEngine.Cue.Countdown) cues?.nudge()
+            cues?.speak(FlowEngine.spoken(cue, athleteName, (now() / 1000).toInt()))
         }
         if (step.session.phase == HoldPhase.Done) ticker?.cancel()
     }

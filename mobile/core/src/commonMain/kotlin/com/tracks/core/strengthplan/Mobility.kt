@@ -31,7 +31,7 @@ object Mobility {
             orderByPosition = true,
             closerMuscles = archetype?.closerMuscles,
         )
-        return selected.map(Flexibility::toStep)
+        return Flexibility.spaceWholeBody(selected.map(Flexibility::toStep))
     }
 
     fun description(sportFamily: String): String {

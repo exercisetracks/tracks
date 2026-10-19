@@ -193,7 +193,12 @@ private fun expandStrength(step: WorkoutStep, into: MutableList<GuidedStep>) {
 private fun expandMobility(step: WorkoutStep, into: MutableList<GuidedStep>) {
     val name = step.name ?: "Stretch"
     val sets = (step.sets ?: 1).coerceIn(1, MAX_SETS)
-    val sides = if (step.eachSide) listOf("Left", "Right") else listOf(null)
+    val sides = when {
+        step.eachSide -> listOf("Left", "Right")
+        // One side alone, the other placed later around a bridging stretch.
+        step.side != null -> listOf(step.side!!.replaceFirstChar { c -> c.uppercase() })
+        else -> listOf(null)
+    }
     val hold = step.durationSeconds ?: DEFAULT_HOLD_SECONDS
 
     for (set in 1..sets) {

@@ -57,6 +57,8 @@ data class FlowSession(
     /** What was left of the phase when it was paused. */
     val pausedLeftMs: Long? = null,
     val startedAtMillis: Long = 0,
+    /** The last "3, 2, 1" number spoken in this hold; null until one is. */
+    val counted: Int? = null,
     val saving: Boolean = false,
     val saved: Boolean = false,
     val error: String? = null,
@@ -244,6 +246,9 @@ class FlexibilityViewModel(private val container: AppContainer) : ViewModel() {
         if (holds.isEmpty()) {
             _state.update { it.copy(error = "\"${flow.name}\" has no stretches in it.") }
             return
+        }
+        viewModelScope.launch {
+            FlowPlayback.athleteName = runCatching { container.sources.setting("name") }.getOrNull()
         }
         FlowPlayback.start(container.appContext, FlowSession(flow = flow, holds = holds))
     }

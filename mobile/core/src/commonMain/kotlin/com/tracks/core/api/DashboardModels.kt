@@ -281,6 +281,12 @@ data class WorkoutStep(
     @SerialName("duration_seconds") val durationSeconds: Int? = null,
     /** A one-sided stretch is two holds, not one held twice as long. */
     @SerialName("each_side") val eachSide: Boolean = false,
+    /**
+     * One side of a one-sided stretch on its own, "left" or "right": what the
+     * generator writes when a whole-body stretch is placed between the two
+     * sides (Flexibility.spaceWholeBody). Played as one hold, labelled.
+     */
+    val side: String? = null,
     val tempo: String? = null,
     /**
      * Garmin's own name for this movement, as a category slug and a number

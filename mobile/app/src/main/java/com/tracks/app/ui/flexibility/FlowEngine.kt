@@ -27,7 +27,17 @@ object FlowEngine {
     sealed interface Cue {
         /** A hold begins. [switchSides] when it is the other side of the one just done. */
         data class Hold(val hold: com.tracks.app.ui.flexibility.Hold, val switchSides: Boolean, val first: Boolean) : Cue
-        data class Rest(val seconds: Int, val next: com.tracks.app.ui.flexibility.Hold?) : Cue
+        /**
+         * A rest begins. [nextSetOf] is the set count when the next hold is the
+         * same stretch again (its next set), so the cue can say "set 2 of 3".
+         */
+        data class Rest(
+            val seconds: Int,
+            val next: com.tracks.app.ui.flexibility.Hold?,
+            val nextSetOf: Int? = null,
+        ) : Cue
+        /** "3", "2", "1" into the end of a hold. */
+        data class Countdown(val n: Int) : Cue
         data object Done : Cue
     }
 
@@ -54,7 +64,19 @@ object FlowEngine {
             s = step.session
             cues += step.cues
         }
-        return Step(s.withRemaining(now), cues)
+        s = s.withRemaining(now)
+        // "3, 2, 1" into the end of a hold long enough to need warning, the
+        // classic count before "rest" or "switch sides". The smallest number
+        // reached, once: a late tick does not count the whole way down.
+        val hold = s.hold
+        if (s.running && s.phase == HoldPhase.Holding && hold != null && hold.seconds >= COUNTDOWN_MIN_HOLD_S) {
+            val n = s.remaining
+            if (n in 1..3 && (s.counted == null || s.counted!! > n)) {
+                cues += Cue.Countdown(n)
+                s = s.copy(counted = n)
+            }
+        }
+        return Step(s, cues)
     }
 
     fun pause(s: FlowSession, now: Long): FlowSession {
@@ -117,20 +139,41 @@ object FlowEngine {
         return Step(next, listOf(Cue.Hold(h, switchSides = false, first = false)))
     }
 
-    /** What to say for [cue] — short, because it is heard mid-stretch. */
-    fun spoken(cue: Cue): String = when (cue) {
+    /**
+     * What to say for [cue] — short, because it is heard mid-stretch. The
+     * shape is the classic one: a count into the end of a hold, then what
+     * happens now and what is next.
+     *
+     * - first hold: "Starting flexibility flow. First up, Downward Dog. 30 seconds."
+     * - after a hold, with a rest: "Rest. Next up, Runner's Lunge, left side."
+     * - the same stretch's next set: "Rest. Set 2 of 3 next."
+     * - the other side, straight on: "Switch sides. Right side, 30 seconds."
+     * - the end: "Flow complete! Great job, Hawk." ([name], [pick] vary it)
+     */
+    fun spoken(cue: Cue, name: String? = null, pick: Int = 0): String = when (cue) {
         is Cue.Hold -> buildString {
-            if (cue.switchSides) {
-                append("Switch sides. ")
-                append("${cue.hold.side} side, ${cue.hold.seconds} seconds.")
-            } else {
-                append(cue.hold.name)
-                cue.hold.side?.let { append(", $it side") }
-                append(". ${cue.hold.seconds} seconds.")
+            when {
+                cue.first -> {
+                    append("Starting flexibility flow. First up, ${cue.hold.name}")
+                    cue.hold.side?.let { append(", $it side") }
+                    append(". ${cue.hold.seconds} seconds.")
+                }
+                cue.switchSides -> append("Switch sides. ${cue.hold.side} side, ${cue.hold.seconds} seconds.")
+                else -> {
+                    append(cue.hold.name)
+                    cue.hold.side?.let { append(", $it side") }
+                    cue.hold.set?.let { append(", set $it") }
+                    append(". ${cue.hold.seconds} seconds.")
+                }
             }
         }
-        is Cue.Rest -> cue.next?.let { "Rest. Next, ${it.name}${it.side?.let { s -> ", $s side" } ?: ""}." } ?: "Rest."
-        Cue.Done -> "Flow complete. Nice work."
+        is Cue.Rest -> when {
+            cue.next == null -> "Rest."
+            cue.nextSetOf != null && cue.next.set != null -> "Rest. Set ${cue.next.set} of ${cue.nextSetOf} next."
+            else -> "Rest. Next up, ${cue.next.name}${cue.next.side?.let { s -> ", $s side" } ?: ""}."
+        }
+        is Cue.Countdown -> "${cue.n}"
+        Cue.Done -> com.tracks.app.run.SpokenCues.finish(com.tracks.app.run.SpokenCues.sport("flexibility"), name, pick)
     }
 
     // ── Transitions ─────────────────────────────────────────────────────────
@@ -141,9 +184,15 @@ object FlowEngine {
         // No rest after the last hold, and none when none is set: straight on,
         // rather than a zero-second screen nobody can read.
         if (rest <= 0 || isLast) return nextHold(s, at)
+        val next = s.next
+        val current = s.hold
+        // The same stretch again (on the same side) is its next set.
+        val setOf = if (next?.set != null && current != null && next.name == current.name) {
+            s.holds.count { it.name == next.name && it.side == next.side }
+        } else null
         return Step(
-            s.copy(phase = HoldPhase.Resting, phaseEndsAt = at + rest * 1000L),
-            listOf(Cue.Rest(rest, s.next)),
+            s.copy(phase = HoldPhase.Resting, phaseEndsAt = at + rest * 1000L, counted = null),
+            listOf(Cue.Rest(rest, next, setOf)),
         )
     }
 
@@ -157,7 +206,7 @@ object FlowEngine {
         val h = s.holds[next]
         val switch = h.name == prev.name && h.side != null && prev.side != null && h.side != prev.side
         return Step(
-            s.copy(index = next, phase = HoldPhase.Holding, phaseEndsAt = at + h.seconds * 1000L),
+            s.copy(index = next, phase = HoldPhase.Holding, phaseEndsAt = at + h.seconds * 1000L, counted = null),
             listOf(Cue.Hold(h, switchSides = switch, first = false)),
         )
     }
@@ -172,4 +221,7 @@ object FlowEngine {
     }
 
     private const val RESTART_WINDOW_MS = 3_000L
+
+    /** A hold this long or longer gets a spoken 3-2-1 before it ends. */
+    const val COUNTDOWN_MIN_HOLD_S = 10
 }

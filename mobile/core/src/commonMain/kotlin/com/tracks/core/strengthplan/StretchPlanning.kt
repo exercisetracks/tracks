@@ -166,6 +166,6 @@ object StretchPlanning {
             orderByPosition = true,
             closerMuscles = archetype?.closerMuscles,
         )
-        return Flow(selected.map(Flexibility::toStep), archetype?.name, archetype?.tagline)
+        return Flow(Flexibility.spaceWholeBody(selected.map(Flexibility::toStep)), archetype?.name, archetype?.tagline)
     }
 }

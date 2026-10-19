@@ -183,6 +183,61 @@ object Flexibility {
         return if (closer != null) body + closer else body
     }
 
+    /** `WHOLE_BODY_MIN_MUSCLES`: see [spaceWholeBody]. */
+    const val WHOLE_BODY_MIN_MUSCLES = 3
+
+    private fun isWholeBody(step: Map<String, Any?>): Boolean =
+        step["each_side"] != true && step["side"] == null &&
+            ((step["muscles"] as? List<*>)?.size ?: 0) >= WHOLE_BODY_MIN_MUSCLES
+
+    private fun setsOf(step: Map<String, Any?>): Long = (step["sets"] as? Number)?.toLong()?.takeIf { it != 0L } ?: 1L
+
+    /**
+     * `space_whole_body`: never one whole-body stretch straight after another.
+     * A multi-set whole-body stretch keeps one set in place and bridges the
+     * rest -- between the sides of the next one-sided stretch (Downward Dog,
+     * lunge left, Downward Dog, lunge right), or after the next stretch. The
+     * Python explains it in full; the two are held together by fixtures.
+     */
+    fun spaceWholeBody(steps: List<MutableMap<String, Any?>>): MutableList<MutableMap<String, Any?>> {
+        val out = mutableListOf<MutableMap<String, Any?>>()
+        val bridges = ArrayDeque<MutableMap<String, Any?>>()
+        fun copy(step: Map<String, Any?>, vararg changes: Pair<String, Any?>) =
+            LinkedHashMap(step).apply { for ((k, v) in changes) put(k, v) }
+        for (step in steps) {
+            val sets = setsOf(step)
+            if (isWholeBody(step) && sets > 1) {
+                out += copy(step, "sets" to 1L)
+                repeat((sets - 1).toInt()) { bridges.addLast(copy(step, "sets" to 1L)) }
+                continue
+            }
+            if (bridges.isNotEmpty() && step["each_side"] == true && sets == 1L) {
+                out += copy(step, "each_side" to false, "side" to "left")
+                out += bridges.removeFirst()
+                out += copy(step, "each_side" to false, "side" to "right")
+                continue
+            }
+            out += step
+            if (bridges.isNotEmpty() && !isWholeBody(step)) out += bridges.removeFirst()
+        }
+        for (b in bridges) if (out.isNotEmpty() && !isWholeBody(out.last())) out += b
+
+        var i = 1
+        while (i < out.size) {
+            if (isWholeBody(out[i]) && isWholeBody(out[i - 1])) {
+                val j = (i + 1 until out.size).firstOrNull { !isWholeBody(out[it]) }
+                if (j != null) {
+                    out.add(i, out.removeAt(j))
+                } else if (out[i]["name"] == out[i - 1]["name"]) {
+                    out.removeAt(i)
+                    continue
+                }
+            }
+            i++
+        }
+        return out
+    }
+
     /** A selected stretch as a planned-workout `mobility_exercise` step. */
     fun toStep(c: StretchCandidate): MutableMap<String, Any?> = linkedMapOf(
         "type" to "mobility_exercise",
