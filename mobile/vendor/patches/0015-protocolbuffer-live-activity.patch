@@ -1,0 +1,28 @@
+diff --git a/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/ProtocolBufferHandler.java b/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/ProtocolBufferHandler.java
+index 502cb0d..7d4fa48 100644
+--- a/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/ProtocolBufferHandler.java
++++ b/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/ProtocolBufferHandler.java
+@@ -423,12 +423,23 @@ public class ProtocolBufferHandler implements MessageHandler {
+         if (deviceStatusService.hasActivityStatusResponse()) {
+             final GdiDeviceStatus.DeviceStatusService.ActivityStatusResponse activityStatusResponse = deviceStatusService.getActivityStatusResponse();
+             LOG.info("Received activity status: {}", activityStatusResponse.getStatus());
++            // PATCHED FOR TRACKS (vendor/patches/0015-protocolbuffer-live-activity.patch):
++            // a sync has to know the watch is recording before it reads the
++            // watch's refusals as a fault.
++            deviceSupport.onActivityStatus(activityStatusResponse.getStatus().getNumber());
+             return;
+         }
+         LOG.warn("Unknown DeviceStatusService response: {}", deviceStatusService);
+     }
+ 
+     private GdiSmartProto.Smart processProtobufCoreRequest(GdiCore.CoreService coreService) {
++        // PATCHED FOR TRACKS (0015): the watch's position about once a second
++        // while it records (measured against Garmin Explore). Upstream has no
++        // branch for it and logged it as an unknown request.
++        if (coreService.hasLocationUpdatedNotification()) {
++            deviceSupport.onLivePositions(coreService.getLocationUpdatedNotification().getLocationDataList());
++            return null;
++        }
+         if (coreService.hasSyncResponse()) {
+             final GdiCore.CoreService.SyncResponse syncResponse = coreService.getSyncResponse();
+             LOG.info("Received sync status: {}", syncResponse.getStatus());

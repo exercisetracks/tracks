@@ -173,6 +173,11 @@ class WatchManager(
      */
     suspend fun pullAll(): List<PulledFile> = integration.pullAll().also { reblockWifiUploadsIfSeen() }
 
+    /** Ask the watch whether it is recording; the answer lands in LiveActivity. */
+    fun requestActivityStatus() {
+        (integration as? GarminIntegration)?.requestActivityStatus()
+    }
+
     /** Files the watch refused to send during the last [pullAll]; 0 off a Garmin. */
     fun takeRefusedDownloads(): Int = (integration as? GarminIntegration)?.takeRefusedDownloads() ?: 0
 

@@ -33,6 +33,7 @@
     <string name="watch_sync_failed">Sync failed — will try again later</string>
     <string name="watch_sync_already_running">Already syncing</string>
     <string name="watch_sync_not_paired">No watch paired</string>
+    <string name="watch_sync_recording">Synced what the watch could send while it records. The rest follows once the activity is saved.</string>
     <string name="watch_sync_nothing_new">Nothing new from the watch</string>
     <string name="watch_attention_channel_name">Watch needs attention</string>
     <string name="watch_attention_channel_description">When the watch needs something done before it can sync, like a restart</string>

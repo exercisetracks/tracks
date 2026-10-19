@@ -616,6 +616,15 @@ fun MapScreen(
                     drawRoute(loaded, tools.route)
                 }
 
+                // What the watch is recording now, drawn as it arrives -- the
+                // track so far and where the watch is (phone only; see
+                // LiveActivity).
+                val live by com.tracks.device.garmin.live.LiveActivity.track.collectAsStateWithLifecycle()
+                LaunchedEffect(style, live) {
+                    val loaded = style ?: return@LaunchedEffect
+                    drawLiveTrack(loaded, live)
+                }
+
                 LaunchedEffect(style, tools.profileCursor) {
                     val loaded = style ?: return@LaunchedEffect
                     drawProfileCursor(loaded, tools.profileCursor)
@@ -1214,6 +1223,71 @@ internal fun drawRoute(style: Style, route: RouteDraft) {
                     PropertyFactory.circleColor("#ffffff"),
                     PropertyFactory.circleStrokeWidth(2.5f),
                     PropertyFactory.circleStrokeColor("#2563eb"),
+                ),
+            )
+        }
+}
+
+private const val LIVE_TRACK_SOURCE = "tracks_live_track"
+private const val LIVE_TRACK_LINE = "tracks_live_track_line"
+private const val LIVE_TRACK_CASING = "tracks_live_track_casing"
+private const val LIVE_POSITION_SOURCE = "tracks_live_position"
+private const val LIVE_POSITION_LAYER = "tracks_live_position_dot"
+
+/**
+ * The watch's activity in progress, as Garmin Explore shows it: the line so
+ * far and a dot where the watch is. Empty (not removed) when nothing is
+ * recording, so the layers stay in their place in the stack.
+ *
+ * Above the saved library and below the route editor's own layers, which are
+ * added later: a live position is the most current thing on the map, but a
+ * route being drawn still has to be legible over it.
+ */
+internal fun drawLiveTrack(style: Style, live: com.tracks.device.garmin.live.LiveActivity.Track) {
+    if (!style.isFullyLoaded) return
+    val shown = live.live
+    val line = if (shown && live.points.size >= 2) {
+        FeatureCollection.fromFeature(
+            Feature.fromGeometry(
+                LineString.fromLngLats(live.points.map { Point.fromLngLat(it.lng, it.lat) }),
+            ),
+        )
+    } else {
+        FeatureCollection.fromFeatures(emptyList())
+    }
+    val dot = live.position?.takeIf { shown }?.let {
+        FeatureCollection.fromFeature(Feature.fromGeometry(Point.fromLngLat(it.lng, it.lat)))
+    } ?: FeatureCollection.fromFeatures(emptyList())
+
+    (style.getSource(LIVE_TRACK_SOURCE) as? GeoJsonSource)?.setGeoJson(line)
+        ?: run {
+            style.addSource(GeoJsonSource(LIVE_TRACK_SOURCE, line))
+            style.addLayer(
+                LineLayer(LIVE_TRACK_CASING, LIVE_TRACK_SOURCE).withProperties(
+                    PropertyFactory.lineColor("#ffffff"),
+                    PropertyFactory.lineWidth(7f),
+                    PropertyFactory.lineCap(Property.LINE_CAP_ROUND),
+                    PropertyFactory.lineJoin(Property.LINE_JOIN_ROUND),
+                ),
+            )
+            style.addLayer(
+                LineLayer(LIVE_TRACK_LINE, LIVE_TRACK_SOURCE).withProperties(
+                    PropertyFactory.lineColor("#e11d48"),
+                    PropertyFactory.lineWidth(4f),
+                    PropertyFactory.lineCap(Property.LINE_CAP_ROUND),
+                    PropertyFactory.lineJoin(Property.LINE_JOIN_ROUND),
+                ),
+            )
+        }
+    (style.getSource(LIVE_POSITION_SOURCE) as? GeoJsonSource)?.setGeoJson(dot)
+        ?: run {
+            style.addSource(GeoJsonSource(LIVE_POSITION_SOURCE, dot))
+            style.addLayer(
+                CircleLayer(LIVE_POSITION_LAYER, LIVE_POSITION_SOURCE).withProperties(
+                    PropertyFactory.circleRadius(7f),
+                    PropertyFactory.circleColor("#e11d48"),
+                    PropertyFactory.circleStrokeWidth(3f),
+                    PropertyFactory.circleStrokeColor("#ffffff"),
                 ),
             )
         }

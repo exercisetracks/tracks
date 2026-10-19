@@ -704,3 +704,15 @@ counts refused downloads; when a pull refuses everything it listed,
 `WatchSyncRunner.pullReport` fails the PULL step, the sync screen says to
 restart the watch, and a notification says so for background syncs. The
 notification goes away on the next sync that gets files.
+
+**A likely phone-side cause (2026-10-18, a hypothesis, not yet confirmed).**
+Until then, a download the phone gave up on (watchdog silence, a bad opening
+reply) never closed its file-transfer channel, and the watch has six. On a
+link held up for days, abandoned transfers could use up every one of them;
+the watch would then refuse further requests, and only a new connection
+(which sends close-all) or a watch restart would free them. That matches both
+cures seen: restarting the watch, and force-stopping the app. Channels are now
+closed when a transfer is abandoned. Before Tracks says "restart the watch",
+the runner rebuilds the link and tries once more, and phone-side failures are
+counted separately from refusals. If the state comes back, the sync log
+(Settings > Watch > Share sync log) records each attempt.

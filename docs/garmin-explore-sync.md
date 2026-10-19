@@ -460,6 +460,26 @@ shows the track so far.
 
 ---
 
+### What Tracks does with it
+
+Since 2026-10-18 (not yet verified on the watch):
+
+- The once-a-second reports reach `GarminSupport.onLivePositions` (vendor
+  patch 0015) and the in-progress line's points part, read in every session,
+  reaches `ExploreSession.Host.onActiveTrack`. Both feed
+  `com.tracks.device.garmin.live.LiveActivity`, which the phone's map draws as
+  a line and a position dot. Nothing goes to the server.
+- Explore asked nothing of the watch to start the reports: in capture c the
+  only location exchange beforehand was the watch's own
+  `LocationUpdatedSetEnabledRequest {enabled, SIGNIFICANT_LOCATION}`, and the
+  reports began unprompted when recording started. The proto's `sint32`
+  fields are zigzag, which is why the raw varint above reads as twice the
+  semicircle value.
+- Each sync first asks the device-status service for the activity status
+  (OFF/STOPPED/PAUSED/ON). While it is PAUSED or ON, refusals are not
+  reported as a fault, and the runner asks again every two minutes and syncs
+  as soon as the activity is saved.
+
 ## Failure: `SYNC_FINISHED_FAILED`
 
 `sync_finished_notification {1: 2}` means the session failed and **the watch's

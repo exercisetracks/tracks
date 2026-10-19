@@ -16,6 +16,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import com.tracks.device.garmin.live.LiveActivity
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -183,28 +187,42 @@ class WatchSyncRunner(private val container: AppContainer) {
 
         // ── pull ── needs the link
         _progress.value = Progress("Reading the watch")
-        var refused = 0
-        val pulled = try {
-            container.watch.pullAll().also {
-                refused = container.watch.takeRefusedDownloads()
-                phases += pullReport(it.size, refused)
-                Log.i(TAG, "pulled ${it.size} file(s): ${it.groupingBy { f -> f.kind }.eachCount()}" +
-                    if (refused > 0) "; the watch refused $refused" else "")
-                WatchSyncNotifications.watchRefusing(container.appContext, if (it.isEmpty()) refused else 0)
-            }
-        } catch (e: CancellationException) {
-            // Never swallowed. The service being destroyed mid-sync must stop the
-            // run, not fall through and start pushing files to the watch on a
-            // coroutine the system has already given up on.
-            throw e
-        } catch (e: Exception) {
-            // Not fatal to the run. The push below may still be worth doing, and
-            // a watch that dropped mid-pull has usually left its files in place
-            // for the next attempt.
-            Log.w(TAG, "pull failed", e)
-            phases += PhaseReport(Phase.PULL, FAILED, e.message)
-            emptyList()
+        var attempt = pullOnce()
+        // A failed pull, or one the watch refused outright, gets one more try
+        // on a link built from nothing. That is what force-stopping the app
+        // did, and it was the only thing that worked: state left on a
+        // connection that stays up for days (a stuck BLE write, transfer
+        // channels never released) fails every sync over it, and only a new
+        // connection clears it. Not while the watch records -- its refusals
+        // then are the recording's, and a reconnect would not change them.
+        if (attempt.needsFreshLink && !LiveActivity.recording) {
+            Log.w(TAG, "pull ${attempt.report}; rebuilding the link and trying once more")
+            SyncTrace.note(container.appContext, "pull ${attempt.report}; rebuilding the link")
+            _progress.value = Progress("Reconnecting to the watch")
+            runCatching {
+                container.watch.disconnect()
+                container.watch.connect()
+            }.onFailure { if (it is CancellationException) throw it; Log.w(TAG, "reconnect failed", it) }
+            _progress.value = Progress("Reading the watch")
+            attempt = pullOnce()
         }
+        val recording = LiveActivity.recording
+        val refused = attempt.refused
+        val pulled = attempt.files
+        phases += attempt.report.let { report ->
+            // During a recording a refusal or a failure is expected, not a
+            // fault: the watch will not hand over what it is still writing.
+            // Said so plainly, and the rest follows once it is saved.
+            if (recording && report.status == FAILED) {
+                PhaseReport(Phase.PULL, SKIPPED, "the watch is recording; ${pulled.size} file(s) now, the rest once it is saved")
+            } else {
+                report
+            }
+        }
+        WatchSyncNotifications.watchRefusing(
+            container.appContext, if (pulled.isEmpty() && !recording) refused else 0,
+        )
+        if (recording) syncAfterRecording()
 
         // ── import ── needs nothing at all
         var imported = 0
@@ -286,8 +304,58 @@ class WatchSyncRunner(private val container: AppContainer) {
         return Outcome(
             pushed = pushed, pulled = pulled, imported = imported, health = health,
             notRegistered = notRegistered, uploadResult = uploadResult, phases = phases,
-            refusedByWatch = if (pulled.isEmpty()) refused else 0,
-        )
+            refusedByWatch = if (pulled.isEmpty() && !recording) refused else 0,
+            recordingOnWatch = recording,
+        ).also { SyncTrace.record(container.appContext, it) }
+    }
+
+    /** One pull, with what the watch refused and how it ended. */
+    private class PullAttempt(val files: List<PulledFile>, val refused: Int, val report: PhaseReport) {
+        val needsFreshLink: Boolean get() = report.status == FAILED
+    }
+
+    private suspend fun pullOnce(): PullAttempt = try {
+        val files = container.watch.pullAll()
+        val refused = container.watch.takeRefusedDownloads()
+        Log.i(TAG, "pulled ${files.size} file(s): ${files.groupingBy { f -> f.kind }.eachCount()}" +
+            if (refused > 0) "; the watch refused $refused" else "")
+        PullAttempt(files, refused, pullReport(files.size, refused))
+    } catch (e: CancellationException) {
+        // Never swallowed. The service being destroyed mid-sync must stop the
+        // run, not fall through and start pushing files to the watch on a
+        // coroutine the system has already given up on.
+        throw e
+    } catch (e: Exception) {
+        // Not fatal to the run. The push below may still be worth doing, and
+        // a watch that dropped mid-pull has usually left its files in place
+        // for the next attempt.
+        Log.w(TAG, "pull failed", e)
+        PullAttempt(emptyList(), 0, PhaseReport(Phase.PULL, FAILED, e.message))
+    }
+
+    private var afterRecording: Job? = null
+
+    /**
+     * Sync again once the watch has saved what it is recording.
+     *
+     * The activity being recorded is the one file a sync during it cannot
+     * have, and it is the one the person most wants. Rather than leave it
+     * for the next hourly run, ask the watch every couple of minutes whether
+     * it is still recording, and sync as soon as it says it is not.
+     */
+    private fun syncAfterRecording() {
+        if (afterRecording?.isActive == true) return
+        afterRecording = detached.launch {
+            while (true) {
+                delay(AFTER_RECORDING_POLL_MS)
+                runCatching { container.watch.requestActivityStatus() }
+                // The answer arrives on the BLE thread; give it a moment.
+                delay(5_000)
+                if (!LiveActivity.recording) break
+            }
+            Log.i(TAG, "the watch has finished recording; syncing what it saved")
+            runOnce()
+        }
     }
 
     data class Outcome(
@@ -310,6 +378,8 @@ class WatchSyncRunner(private val container: AppContainer) {
          * every one — the state only a restart of the watch clears. 0 otherwise.
          */
         val refusedByWatch: Int = 0,
+        /** The watch was recording an activity during this sync; nothing about it is a fault. */
+        val recordingOnWatch: Boolean = false,
     ) {
         /** True when nothing outright failed — skipped phases are not failures. */
         val clean: Boolean get() = phases.none { it.status == FAILED }
@@ -338,6 +408,9 @@ class WatchSyncRunner(private val container: AppContainer) {
 
     internal companion object {
         const val TAG = "TracksWatchSync"
+
+        /** How often [syncAfterRecording] asks whether the recording has ended. */
+        const val AFTER_RECORDING_POLL_MS = 2 * 60 * 1000L
 
         /**
          * The PULL step, given what came off and what the watch refused.

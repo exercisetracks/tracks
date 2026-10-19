@@ -15,7 +15,7 @@ import kotlin.test.assertTrue
  */
 class ExploreSessionTest {
 
-    private val now = 1791843474L
+    private var now = 1791843474L
 
     private inner class FakeHost : ExploreSession.Host {
         var state: String? = null
@@ -29,6 +29,8 @@ class ExploreSessionTest {
         override fun wanted() = wanted
         override fun onReport(report: ReconcileReport) { reports += report }
         override fun nowSeconds() = now
+        val activeTracks = mutableListOf<List<ActivePoint>>()
+        override fun onActiveTrack(points: List<ActivePoint>) { activeTracks += points }
     }
 
     private val course = DesiredCourse(
@@ -581,5 +583,54 @@ class ExploreSessionTest {
         second.handle(msg(1) { varint(1, 2) })
         assertEquals(a, second.ask(4).message(2)!!.message(1)!!.bytes(1)!!.hex())
         assertEquals(a, WatchLibrary.restore(WatchLibrary().also { it.collection = a }.serialise()).collection)
+    }
+
+    /**
+     * A session the watch abandoned without its finish must not hold every
+     * later sync hostage. Before, only the finish message closed a session, so
+     * after a dropped link each request just queued as a follow-up and courses
+     * stopped moving until the app was force-stopped.
+     */
+    @Test
+    fun `a session the watch went silent in is replaced by a fresh one`() {
+        val host = FakeHost()
+        val s = ExploreSession(host)
+        s.requestSync()
+        assertEquals(1, host.sent.size, "the first request starts a session")
+        s.requestSync()
+        assertEquals(1, host.sent.size, "a second, while it is live, waits its turn")
+        now += ExploreSession.STALE_SESSION_SECONDS + 1
+        s.requestSync()
+        assertEquals(2, host.sent.size, "once the session has gone silent, a new one starts")
+    }
+
+    /**
+     * The watch's in-progress line is the track so far, and Explore draws its
+     * live map from it. Tracks used to read it and throw it away; now the
+     * points reach the map. Positions come packed, as the watch writes them.
+     */
+    @Test
+    fun `the in-progress line's points reach the host`() {
+        val host = FakeHost()
+        val s = ExploreSession(host)
+        val uuid = "0123456789abcdef".toByteArray()
+        s.handle(msg(1) { varint(1, 2) })
+        // active_line_digest_write: the in-progress line's uuid.
+        s.handle(msg(32) { message(1) { message(1) { bytes(3, uuid) } } })
+        val packed = java.io.ByteArrayOutputStream().apply {
+            for ((lat, lng) in listOf(46.5 to 7.25, 46.501 to 7.251)) {
+                val pos = ExploreSession.position(lat, lng)
+                for (i in 0 until 8) write(((pos ushr (8 * i)) and 0xff).toInt())
+            }
+        }.toByteArray()
+        // line_data_ready: the points part (field 8), complete in one page.
+        s.handle(msg(ExploreSession.F_LINE_DATA_READY) {
+            varint(1, 0)
+            message(2) { bytes(1, uuid); varint(2, 3); message(8) { bytes(2, packed); varint(9, 0) } }
+        })
+        val track = host.activeTracks.single()
+        assertEquals(2, track.size)
+        assertEquals(46.5, track[0].lat, 1e-6)
+        assertEquals(7.251, track[1].lng, 1e-6)
     }
 }

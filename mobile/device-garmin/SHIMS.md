@@ -206,6 +206,24 @@ if one stops applying, rather than silently shipping an unpatched refresh.
     the code only when present. Verified by `FitDefinitionStatusMessageTest`,
     not yet on a watch.
 
+14. **`BtLEQueue`** — a client action's result is waited for with a 30 s
+    deadline (upstream has one only for server actions), and its expiry, or
+    the dispatch thread dying, drops the connection. Upstream waits forever:
+    one write whose GATT callback never comes blocks the device's only
+    dispatch thread, every later write queues behind it, and the link still
+    looks connected. That was one of the ways a sync failed and kept failing
+    until the app was force-stopped (2026-10-18). On a refresh, drop it if
+    upstream bounds the wait.
+
+15. **`ProtocolBufferHandler`** — two messages upstream only logs are
+    handed to `GarminSupport`: the device-status service's activity status
+    reply (`onActivityStatus`), so a sync knows the watch is recording, and
+    the core service's `LocationUpdatedNotification` (`onLivePositions`), the
+    watch's once-a-second position while it records, which upstream logged
+    as an unknown request. Both feed `com.tracks.device.garmin.live.LiveActivity`;
+    see docs/garmin-explore-sync.md, "The live activity". Not yet verified on
+    a watch.
+
 Patches 7–12 record edits that were made in place between August and
 September 2026 and found on 2026-09-30; until then a refresh would have
 reverted every one of them silently.

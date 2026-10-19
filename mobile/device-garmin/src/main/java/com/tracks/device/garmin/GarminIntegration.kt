@@ -785,16 +785,44 @@ class GarminIntegration(private val context: Context) : DeviceIntegration {
         syncSignal = signal
         try {
             support.fetchRecordedData()
-            withTimeout(SYNC_TIMEOUT_MS) { signal.await() }
+            withTimeout(SYNC_TIMEOUT_MS) { awaitWhileWatchIsActive(support, signal) }
         } finally {
             // Identity-checked for the reason given in [connectLocked]: a
             // disconnect that lands mid-run replaces nothing, but a *second*
             // run starting after one was abandoned must not have its signal
             // cleared by the first one unwinding.
             if (syncSignal === signal) syncSignal = null
+            // A run that did not finish leaves its queue, its in-flight slot
+            // and possibly a transfer channel behind on this connection, and
+            // the next sync tripped over all three. Cleared here rather than
+            // left for the next run to discover.
+            if (!signal.isCompleted) support.abandonLeftoverRun()
         }
         sweepOrphanedFiles(support)
         return synchronized(pulledThisRun) { pulledThisRun.toList() }
+    }
+
+    /**
+     * Wait for the run to finish, but only while the watch is still talking.
+     *
+     * [SYNC_TIMEOUT_MS] has to allow a week of activities over a slow link, so
+     * on its own it let a run that had silently stopped hold the runner's lock
+     * -- and every later sync, which reported "already running" -- for 45
+     * minutes. Silence is the real signal: a live run exchanges something
+     * every few seconds, and GarminSupport's own watchdogs answer each known
+     * stall within a minute, so [PULL_SILENCE_MS] of nothing means a stall
+     * none of them anticipated.
+     */
+    private suspend fun awaitWhileWatchIsActive(support: GarminSupport, signal: CompletableDeferred<Unit>) {
+        val startedAt = android.os.SystemClock.elapsedRealtime()
+        while (true) {
+            if (withTimeoutOrNull(PULL_SILENCE_CHECK_MS) { signal.await() } != null) return
+            val now = android.os.SystemClock.elapsedRealtime()
+            val quietFor = now - maxOf(startedAt, support.lastWatchActivityAt())
+            if (quietFor > PULL_SILENCE_MS) {
+                throw IllegalStateException("the watch went silent for ${quietFor / 1000}s mid-sync")
+            }
+        }
     }
 
     /**
@@ -956,6 +984,11 @@ class GarminIntegration(private val context: Context) : DeviceIntegration {
      */
     @Volatile
     private var forceLegacyPush = false
+
+    /** See GarminSupport.requestActivityStatus; a no-op with no link. */
+    fun requestActivityStatus() {
+        support?.requestActivityStatus()
+    }
 
     /** Downloads the watch refused during the last pull; see GarminSupport.takeRefusedDownloads. */
     fun takeRefusedDownloads(): Int = support?.takeRefusedDownloads() ?: 0
@@ -1370,6 +1403,10 @@ class GarminIntegration(private val context: Context) : DeviceIntegration {
          * a foreground service open forever, not to express an expectation.
          */
         const val SYNC_TIMEOUT_MS = 45 * 60 * 1000L
+
+        /** See [awaitWhileWatchIsActive]: longer than any of GarminSupport's own watchdogs. */
+        const val PULL_SILENCE_MS = 3 * 60 * 1000L
+        private const val PULL_SILENCE_CHECK_MS = 10 * 1000L
 
         const val PUSH_TIMEOUT_MS = 5 * 60 * 1000L
         // Legacy-upload watchdog: fail after this much silence, not this much

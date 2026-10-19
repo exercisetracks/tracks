@@ -260,7 +260,33 @@ private fun WatchSection(
         SectionDivider()
         SubHeading("Phone feeds")
         FeedRows(feeds)
+        SectionDivider()
+        SyncTraceRow()
     }
+}
+
+/**
+ * Share the watch-sync trace ([com.tracks.app.device.SyncTrace]) as text, for
+ * a sync that keeps failing. Plain text through the share sheet, so the person
+ * sees exactly what leaves the phone and chooses where.
+ */
+@Composable
+private fun SyncTraceRow() {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    Text(
+        "If syncing keeps failing, this shares a log of recent syncs: what each step did, no data.",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    NeutralButton("Share sync log", onClick = {
+        val file = com.tracks.app.device.SyncTrace.file(context)
+        val text = if (file.exists()) file.readText() else "No syncs recorded yet."
+        val send = android.content.Intent(android.content.Intent.ACTION_SEND)
+            .setType("text/plain")
+            .putExtra(android.content.Intent.EXTRA_SUBJECT, "Tracks watch sync log")
+            .putExtra(android.content.Intent.EXTRA_TEXT, text)
+        context.startActivity(android.content.Intent.createChooser(send, "Share sync log"))
+    })
 }
 
 /**

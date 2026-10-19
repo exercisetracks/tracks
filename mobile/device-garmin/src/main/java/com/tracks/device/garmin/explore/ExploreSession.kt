@@ -37,6 +37,13 @@ class ExploreSession(private val host: Host) {
         fun wanted(): Pair<List<DesiredCourse>, List<DesiredWaypoint>>?
         fun onReport(report: ReconcileReport)
         fun nowSeconds(): Long = System.currentTimeMillis() / 1000L
+
+        /**
+         * The in-progress activity's track so far, as (lat, lng) in degrees
+         * with elevation where given, read in full this session. Explore
+         * draws its live track from exactly this.
+         */
+        fun onActiveTrack(points: List<ActivePoint>) {}
     }
 
     /**
@@ -62,6 +69,8 @@ class ExploreSession(private val host: Host) {
 
     // Session state; none of it outlives a session.
     private var open = false
+    /** When the watch last said anything in the open session; see [requestSync]. */
+    private var heardAt = 0L
     private var full = false
     private var followUp = false
     private var announcedFrom = -1
@@ -77,6 +86,10 @@ class ExploreSession(private val host: Host) {
     private var placesListed = false
     private val listedLines = mutableSetOf<String>()
     private var linesListed = false
+
+    /** The in-progress line this session, and its points read so far, by index. */
+    private var activeUuid: ByteArray? = null
+    private val activePoints = sortedMapOf<Int, ActivePoint>()
 
     /** Lines the watch offered, still to read, and the one being read. */
     private val toRead = ArrayDeque<Pair<ByteArray, List<Int>>>()
@@ -110,6 +123,16 @@ class ExploreSession(private val host: Host) {
      * interleave their replies.
      */
     fun requestSync() = locked {
+        if (open && host.nowSeconds() - heardAt > STALE_SESSION_SECONDS) {
+            // The watch went quiet mid-session and never sent its finish --
+            // the link dropped, or it simply stopped answering. Only that
+            // message closes a session, so without this every later request
+            // queued as a follow-up behind one that would never end, and
+            // courses stopped syncing until the app was force-stopped.
+            host.log("the open session has been silent for ${host.nowSeconds() - heardAt}s; starting a new one")
+            open = false
+            followUp = false
+        }
         if (open) followUp = true else host.send(startLocked())
     }
 
@@ -125,6 +148,7 @@ class ExploreSession(private val host: Host) {
         // and a deleted item still served live there is put straight back.
         full = true
         open = true
+        heardAt = host.nowSeconds()
         resetSession()
         host.log("requesting a ${if (full) "FULL" else "INCREMENTAL"} sync")
         return ProtoWriter().message(F_START_REQUEST) {
@@ -140,6 +164,7 @@ class ExploreSession(private val host: Host) {
 
     /** One Explore message in; the reply, or null when none is owed. */
     fun handle(message: ByteArray): ByteArray? = locked {
+        heardAt = host.nowSeconds()
         try {
             dispatch(ProtoReader(message))
         } catch (e: Exception) {
@@ -286,11 +311,55 @@ class ExploreSession(private val host: Host) {
     private fun activeLine(body: ProtoReader): ByteArray {
         val uuid = body.message(1)?.messages(1)?.firstNotNullOfOrNull { it.bytes(3) }
         toRead.clear()
+        activeUuid = uuid
+        activePoints.clear()
         if (uuid != null) toRead += uuid to ACTIVE_PARTS
         return reply(F_ACTIVE_LINE_DIGEST_WRITE + 1) {
             varint(1, 0)
             nextLine()?.let { message(2, it) }
         }
+    }
+
+    /**
+     * One page of the in-progress line's points. Positions arrive packed (the
+     * watch's way) or one tag per value (Explore's); both are read. Field 9
+     * is the index of the page's first point, so a page read twice lands on
+     * the same entries.
+     */
+    private fun keepActivePoints(points: ProtoReader) {
+        val first = points.varint(9).toInt()
+        val positions = fixed64s(points, 2)
+        val elevations = fixed32s(points, 3)
+        for ((i, pos) in positions.withIndex()) {
+            val lat = (pos and 0xffffffffL).toInt() * (180.0 / 2147483648.0)
+            val lng = (pos ushr 32).toInt() * (180.0 / 2147483648.0)
+            val elevation = elevations.getOrNull(i)?.let { java.lang.Float.intBitsToFloat(it.toInt()).toDouble() }
+            activePoints[first + i] = ActivePoint(lat, lng, elevation)
+        }
+    }
+
+    private fun fixed64s(r: ProtoReader, number: Int): List<Long> = r.fields.filter { it.number == number }.flatMap { f ->
+        val packed = f.bytes
+        when {
+            packed != null -> (0 until packed.size / 8).map { k -> le(packed, k * 8, 8) }
+            f.varint != null -> listOf(f.varint)
+            else -> emptyList()
+        }
+    }
+
+    private fun fixed32s(r: ProtoReader, number: Int): List<Long> = r.fields.filter { it.number == number }.flatMap { f ->
+        val packed = f.bytes
+        when {
+            packed != null -> (0 until packed.size / 4).map { k -> le(packed, k * 4, 4) }
+            f.varint != null -> listOf(f.varint)
+            else -> emptyList()
+        }
+    }
+
+    private fun le(b: ByteArray, at: Int, n: Int): Long {
+        var v = 0L
+        for (k in 0 until n) v = v or ((b[at + k].toLong() and 0xff) shl (8 * k))
+        return v
     }
 
     /** The first request for the next line to read, or null when none is left. */
@@ -317,6 +386,13 @@ class ExploreSession(private val host: Host) {
     private fun lineData(body: ProtoReader): ByteArray {
         val uuid = reading
         val part = body.message(2)?.let { line -> PART_FIELDS.entries.firstOrNull { line.has(it.value) }?.key }
+        val active = activeUuid
+        if (uuid != null && active != null && uuid.contentEquals(active) && part == 2) {
+            body.message(2)?.message(PART_FIELDS.getValue(2))?.let { keepActivePoints(it) }
+            if (body.varint(1) != READ_MORE.toLong() && activePoints.isNotEmpty()) {
+                host.onActiveTrack(activePoints.values.toList())
+            }
+        }
         val next: ProtoWriter? = when {
             uuid == null -> null
             body.varint(1) == READ_MORE.toLong() && part != null -> lineOp(uuid, part, body.varint(3).toInt())
@@ -707,6 +783,8 @@ class ExploreSession(private val host: Host) {
     private fun wanted() = wantedNow ?: host.wanted().also { wantedNow = it }
 
     private fun resetSession() {
+        activeUuid = null
+        activePoints.clear()
         announcedFrom = -1
         announcedTo = -1
         deletedOnWatch.clear()
@@ -746,6 +824,13 @@ class ExploreSession(private val host: Host) {
     }
 
     companion object {
+        /**
+         * A session the watch has said nothing in for this long is over. A real
+         * one exchanges a message every few hundred milliseconds; two minutes
+         * of silence is a dropped link, not a slow watch.
+         */
+        const val STALE_SESSION_SECONDS = 120L
+
         // Explore sync message fields, from the captures.
         const val F_START_REQUEST = 1
         const val F_START_RESPONSE = 2
@@ -804,6 +889,9 @@ class ExploreSession(private val host: Host) {
         }
     }
 }
+
+/** A point of the watch's in-progress track, in degrees; elevation in metres where given. */
+data class ActivePoint(val lat: Double, val lng: Double, val elevation: Double?)
 
 /** Where the session asks the app what it wants, and tells it what the watch confirmed. */
 object ExploreBridge {

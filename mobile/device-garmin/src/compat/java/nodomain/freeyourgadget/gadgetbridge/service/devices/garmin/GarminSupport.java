@@ -51,7 +51,9 @@ import nodomain.freeyourgadget.gadgetbridge.impl.GBDevice;
 import nodomain.freeyourgadget.gadgetbridge.model.CallSpec;
 import nodomain.freeyourgadget.gadgetbridge.model.CannedMessagesSpec;
 import nodomain.freeyourgadget.gadgetbridge.model.NotificationSpec;
+import nodomain.freeyourgadget.gadgetbridge.proto.garmin.GdiCore;
 import nodomain.freeyourgadget.gadgetbridge.proto.garmin.GdiDeviceStatus;
+import com.tracks.device.garmin.live.LiveActivity;
 import nodomain.freeyourgadget.gadgetbridge.proto.garmin.GdiFileSyncService;
 import com.google.protobuf.ByteString;
 import nodomain.freeyourgadget.gadgetbridge.proto.garmin.GdiInstalledAppsService;
@@ -183,6 +185,16 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
             });
     private ScheduledFuture<?> downloadWatchdog;
     private volatile long lastDownloadActivityAt;
+    private volatile long lastWatchMessageAt;
+
+    /**
+     * When the watch last did anything this side can see: a GFDI message, or
+     * a fragment of a file arriving on the second channel. What the caller's
+     * inactivity bound is measured against (GarminIntegration.pullAll).
+     */
+    public long lastWatchActivityAt() {
+        return Math.max(lastWatchMessageAt, lastDownloadActivityAt);
+    }
 
     /**
      * Long on purpose. Firing early abandons a file that was on its way; firing
@@ -275,6 +287,27 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
 
     /** Output paths already taken this run. See {@link #queueForThisRun}. */
     private final Set<String> queuedThisRun = new HashSet<>();
+
+    /**
+     * The opening directory request was given up on (newer protocol only).
+     *
+     * <p>{@link FileTransferHandler} marks the directory as downloading when it
+     * is requested, and only the directory's arrival clears that mark. When
+     * the watchdog gives up and asks for the protobuf listing instead, the mark
+     * stays, and {@link #processDownloadQueueLocked} reads it as a listing
+     * still coming: the run could never end, the sync waited out its whole
+     * timeout holding the runner's lock, and every sync after it on the same
+     * connection reported "already running" until the app was force-stopped.
+     * The handler is vendored and exposes no way to clear the mark, so this
+     * says it is stale instead.
+     */
+    private volatile boolean directoryAbandoned;
+
+    /**
+     * The newer protocol's transfer in flight, so giving up on it can also
+     * release its channel. See {@link V2Download#abandon}.
+     */
+    private V2Download activeV2Download;
 
     /**
      * Whether a sync run is outstanding. Distinct from {@link #busyFetching},
@@ -512,6 +545,7 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
                 typeNamesByCode.clear();
             }
             watchdogExecutor.shutdownNow();
+            LiveActivity.INSTANCE.onDisconnected();
             super.dispose();
         }
     }
@@ -543,6 +577,7 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
         if (message == null) {
             return;
         }
+        lastWatchMessageAt = SystemClock.elapsedRealtime();
 
         final GFDIMessage parsed = GFDIMessage.parseIncoming(message);
         if (parsed == null) {
@@ -654,7 +689,7 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
         final boolean transferring = syncRequested
                 || awaitingFileList
                 || currentlyDownloading != null
-                || fileTransferHandler.isDownloading()
+                || directoryInFlight()
                 || fileTransferHandler.isUploading();
         if (transferring == fastConnection) {
             return;
@@ -838,7 +873,11 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
             final FileDownloadedDeviceEvent event = (FileDownloadedDeviceEvent) deviceEvent;
             if (!event.success) {
                 LOG.warn("Download failed for {}", event.directoryEntry);
-                refusedDownloads.incrementAndGet();
+                if (failingOnPhoneSide) {
+                    phoneSideDownloadFailures.incrementAndGet();
+                } else {
+                    refusedDownloads.incrementAndGet();
+                }
                 return;
             }
             // Deliberately *not* archived on the watch here, which is where
@@ -1026,9 +1065,14 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
             finishFileSync();
             return;
         }
+        abandonLeftoverRun();
+        // Asked first and answered long before the run ends: the runner reads
+        // it to tell a watch that is recording from one in trouble.
+        requestActivityStatus();
         syncRequested = true;
         awaitingDirectory = true;
         fileListRequestedThisRun = false;
+        directoryAbandoned = false;
         sendOutgoingMessage("fetch recorded data", fileTransferHandler.initiateDownload());
         directoryWatchdog = schedule(this::onDirectoryWatchdogFired, DIRECTORY_TIMEOUT_MS);
         updateConnectionPriority();
@@ -1049,6 +1093,7 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
         }
         awaitingDirectory = false;
         if (newSyncProtocol()) {
+            directoryAbandoned = true;
             LOG.warn("No directory after {}s; asking for the file list directly", DIRECTORY_TIMEOUT_MS / 1000);
             android.util.Log.w("TracksFileSync", "watch did not answer the directory request; listing directly");
             requestFileListOnce();
@@ -1180,7 +1225,7 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
         // isDownloading() is the guard that makes this safe to check eagerly:
         // the directory listing is itself a download, so it stays true from the
         // moment the listing is requested until the entries have been queued.
-        if (syncRequested && !fileTransferHandler.isDownloading()) {
+        if (syncRequested && !directoryInFlight()) {
             syncRequested = false;
             busyFetching = false;
             cancelDownloadWatchdog();
@@ -2348,101 +2393,160 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
         LOG.debug("Starting V2 transfer of {}/{} on handle {}",
                 syncFile.getId().getId1(), syncFile.getId().getId2(), fileHandle);
 
-        ((CommunicatorV2) comm).startTransfer(new CommunicatorV2.ServiceCallback() {
-            private final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-            private boolean started;
+        final V2Download transfer = new V2Download(fileHandle, syncFile);
+        synchronized (downloadLock) {
+            activeV2Download = transfer;
+        }
+        ((CommunicatorV2) comm).startTransfer(transfer);
+    }
 
-            /**
-             * Set once this transfer has given a verdict, so it cannot give a
-             * second one.
-             *
-             * <p>The channel stays open after a bad frame and keeps delivering,
-             * and {@code onClose} still arrives afterwards. Without this, one
-             * malformed transfer calls {@link #failCurrentDownload} repeatedly —
-             * and every call after the first abandons whichever *other* file the
-             * queue has moved on to. One bad file would take several good ones
-             * with it.
-             */
-            private boolean finished;
+    /**
+     * One file arriving over the newer protocol's second channel.
+     *
+     * <p>Named rather than anonymous so the queue can reach it after giving up:
+     * {@link #abandon} both silences it and closes its channel. Without that,
+     * a transfer the phone abandoned (watchdog, bad opening) kept its slot on
+     * the watch -- there are six, and nothing else freed them on a connection
+     * that stays up for days -- and its late {@code onClose} could still
+     * announce itself and release whichever file the queue had moved on to.
+     * Once all six were gone, every request failed straight away, which is
+     * how one stalled transfer became a sync that failed until force-stop.
+     */
+    private final class V2Download implements CommunicatorV2.ServiceCallback {
+        private final int fileHandle;
+        private final GdiFileSyncService.File syncFile;
+        private final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        private boolean started;
+        private CommunicatorV2.ServiceWriter writer;
 
-            @Override
-            public void onConnect(final CommunicatorV2.ServiceWriter writer) {
-                // Six bytes, of which only the handle is ours to fill in. The
-                // shape is upstream's, established by observation of Garmin's
-                // own app; the surrounding zeros have no known meaning and
-                // guessing at them is how this stops working.
-                final ByteBuffer request = ByteBuffer.allocate(6).order(ByteOrder.LITTLE_ENDIAN);
-                request.put((byte) 0x00);
-                request.put((byte) 0x00);
-                request.putShort((short) fileHandle);
-                request.put((byte) 0x00);
-                request.put((byte) 0x00);
-                writer.write("request file " + fileHandle, request.array());
-            }
+        /**
+         * Set once this transfer has given a verdict, so it cannot give a
+         * second one.
+         *
+         * <p>The channel stays open after a bad frame and keeps delivering,
+         * and {@code onClose} still arrives afterwards. Without this, one
+         * malformed transfer calls {@link #failCurrentDownload} repeatedly —
+         * and every call after the first abandons whichever *other* file the
+         * queue has moved on to. One bad file would take several good ones
+         * with it.
+         */
+        private boolean finished;
 
-            @Override
-            public void onMessage(final byte[] value) {
+        @Override
+        public void onConnect(final CommunicatorV2.ServiceWriter writer) {
+            synchronized (downloadLock) {
                 if (finished) {
+                    // Given up on before the watch opened the channel: close it
+                    // straight away rather than start a transfer nobody wants.
+                    writer.closeWhenDrained();
                     return;
                 }
-                if (!started) {
-                    // The watch acknowledges with three zero bytes before any
-                    // file content. Anything else means it is not going to send
-                    // the file, and buffering it would produce a plausible
-                    // looking file full of protocol noise.
-                    if (!ArrayUtils.equals(new byte[]{0, 0, 0}, value, 0)) {
-                        LOG.error("V2 transfer for handle {} opened with {} instead of an ack",
-                                fileHandle, GB.hexdump(value));
-                        finished = true;
-                        failCurrentDownload();
-                        return;
-                    }
-                    started = true;
-                    return;
-                }
-                buffer.write(value, 0, value.length);
-                onFileDownloadProgress(buffer.size());
+                this.writer = writer;
             }
+            // Six bytes, of which only the handle is ours to fill in. The
+            // shape is upstream's, established by observation of Garmin's
+            // own app; the surrounding zeros have no known meaning and
+            // guessing at them is how this stops working.
+            final ByteBuffer request = ByteBuffer.allocate(6).order(ByteOrder.LITTLE_ENDIAN);
+            request.put((byte) 0x00);
+            request.put((byte) 0x00);
+            request.putShort((short) fileHandle);
+            request.put((byte) 0x00);
+            request.put((byte) 0x00);
+            writer.write("request file " + fileHandle, request.array());
+        }
 
-            @Override
-            public void onClose() {
+        @Override
+        public void onMessage(final byte[] value) {
+            if (finished) {
+                return;
+            }
+            if (!started) {
+                // The watch acknowledges with three zero bytes before any
+                // file content. Anything else means it is not going to send
+                // the file, and buffering it would produce a plausible
+                // looking file full of protocol noise.
+                if (!ArrayUtils.equals(new byte[]{0, 0, 0}, value, 0)) {
+                    LOG.error("V2 transfer for handle {} opened with {} instead of an ack",
+                            fileHandle, GB.hexdump(value));
+                    finished = true;
+                    // Ours to close: the watch has opened a channel and will
+                    // not send on it.
+                    failCurrentDownload();
+                    return;
+                }
+                started = true;
+                return;
+            }
+            buffer.write(value, 0, value.length);
+            onFileDownloadProgress(buffer.size());
+        }
+
+        @Override
+        public void onClose() {
+            synchronized (downloadLock) {
+                // The watch has closed the channel itself; nothing to release.
+                writer = null;
                 if (finished) {
                     return;
                 }
                 finished = true;
-                if (buffer.size() == 0) {
-                    LOG.warn("V2 transfer for handle {} closed with nothing in the buffer", fileHandle);
-                    failCurrentDownload();
-                    return;
+                if (activeV2Download == this) {
+                    activeV2Download = null;
                 }
-
-                final byte[] inflated = CompressionUtils.INSTANCE.inflate(buffer.toByteArray());
-                if (inflated == null || inflated.length == 0) {
-                    LOG.error("Could not inflate {} bytes for handle {}", buffer.size(), fileHandle);
-                    failCurrentDownload();
-                    return;
-                }
-                LOG.debug("Inflated {} bytes to {}", buffer.size(), inflated.length);
-
-                final File written;
-                try {
-                    written = writeSyncFile(syncFile, inflated);
-                } catch (final IOException e) {
-                    LOG.error("Could not save the V2 file for handle " + fileHandle, e);
-                    failCurrentDownload();
-                    return;
-                }
-
-                final SyncFileDownloadedDeviceEvent event = new SyncFileDownloadedDeviceEvent();
-                event.syncFile = syncFile;
-                event.localPath = written.getAbsolutePath();
-                rememberIfActivity(syncFile);
-                // Goes through the normal event path, which is what releases
-                // currentlyDownloading and hands the file to Tracks.
-                evaluateGBDeviceEvent(event);
-                processDownloadQueue();
             }
-        });
+            if (buffer.size() == 0) {
+                LOG.warn("V2 transfer for handle {} closed with nothing in the buffer", fileHandle);
+                failCurrentDownload();
+                return;
+            }
+
+            final byte[] inflated = CompressionUtils.INSTANCE.inflate(buffer.toByteArray());
+            if (inflated == null || inflated.length == 0) {
+                LOG.error("Could not inflate {} bytes for handle {}", buffer.size(), fileHandle);
+                failCurrentDownload();
+                return;
+            }
+            LOG.debug("Inflated {} bytes to {}", buffer.size(), inflated.length);
+
+            final File written;
+            try {
+                written = writeSyncFile(syncFile, inflated);
+            } catch (final IOException e) {
+                LOG.error("Could not save the V2 file for handle " + fileHandle, e);
+                failCurrentDownload();
+                return;
+            }
+
+            final SyncFileDownloadedDeviceEvent event = new SyncFileDownloadedDeviceEvent();
+            event.syncFile = syncFile;
+            event.localPath = written.getAbsolutePath();
+            rememberIfActivity(syncFile);
+            // Goes through the normal event path, which is what releases
+            // currentlyDownloading and hands the file to Tracks.
+            evaluateGBDeviceEvent(event);
+            processDownloadQueue();
+        }
+
+        V2Download(final int fileHandle, final GdiFileSyncService.File syncFile) {
+            this.fileHandle = fileHandle;
+            this.syncFile = syncFile;
+        }
+
+        /** Stop listening and release the channel. Idempotent; called under {@link #downloadLock}. */
+        void abandon() {
+            finished = true;
+            final CommunicatorV2.ServiceWriter open = writer;
+            writer = null;
+            if (open != null) {
+                LOG.warn("Closing the transfer channel of abandoned handle {}", fileHandle);
+                try {
+                    open.closeWhenDrained();
+                } catch (final Exception e) {
+                    LOG.warn("Could not close the channel of handle " + fileHandle, e);
+                }
+            }
+        }
     }
 
     /**
@@ -2484,11 +2588,80 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
      */
     private void failCurrentDownload() {
         synchronized (downloadLock) {
+            final V2Download transfer = activeV2Download;
+            activeV2Download = null;
+            if (transfer != null) {
+                transfer.abandon();
+            }
             final FileDownloadedDeviceEvent event = new FileDownloadedDeviceEvent();
             event.success = false;
-            evaluateGBDeviceEvent(event);
+            // Every caller is the phone giving up -- silence, no free channel, a
+            // bad opening, a payload that would not inflate or save -- never the
+            // watch saying no. Counting these as refusals is what had Tracks
+            // tell people to restart a watch that was fine.
+            failingOnPhoneSide = true;
+            try {
+                evaluateGBDeviceEvent(event);
+            } finally {
+                failingOnPhoneSide = false;
+            }
             processDownloadQueueLocked();
         }
+    }
+
+    private boolean failingOnPhoneSide;
+
+    /**
+     * Whether the opening directory request is genuinely still on its way.
+     * See {@link #directoryAbandoned}.
+     */
+    private boolean directoryInFlight() {
+        return fileTransferHandler.isDownloading() && !directoryAbandoned;
+    }
+
+    /**
+     * Clear what a run that never finished left behind, before starting another.
+     *
+     * <p>The runner holds one sync at a time, so arriving here with a run
+     * still marked outstanding means the last one was given up on above us --
+     * its timeout fired, or it was cancelled. Its state survives on this
+     * connection otherwise: files it had queued are refused as "offered twice
+     * in one run", its in-flight slot blocks the queue, and its transfer
+     * channel stays registered on the watch. Those are what made a failed sync
+     * keep failing until a force-stop rebuilt the connection.
+     */
+    public void abandonLeftoverRun() {
+        final boolean leftover;
+        synchronized (downloadLock) {
+            leftover = syncRequested || busyFetching || awaitingFileList
+                    || currentlyDownloading != null || !filesToDownload.isEmpty();
+            if (!leftover) {
+                queuedThisRun.clear();
+                return;
+            }
+            LOG.warn("Starting a sync over the remains of an unfinished one; clearing them");
+            cancelDownloadWatchdog();
+            cancelFileListWatchdog();
+            final ScheduledFuture<?> watchdog = directoryWatchdog;
+            if (watchdog != null) {
+                watchdog.cancel(false);
+                directoryWatchdog = null;
+            }
+            final V2Download transfer = activeV2Download;
+            activeV2Download = null;
+            if (transfer != null) {
+                transfer.abandon();
+            }
+            currentlyDownloading = null;
+            busyFetching = false;
+            syncRequested = false;
+            awaitingDirectory = false;
+            awaitingFileList = false;
+            directoryAbandoned = fileTransferHandler.isDownloading();
+            filesToDownload.clear();
+            queuedThisRun.clear();
+        }
+        updateConnectionPriority();
     }
 
     /**
@@ -2626,6 +2799,17 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
 
     public int takeRefusedDownloads() {
         return refusedDownloads.getAndSet(0);
+    }
+
+    /**
+     * Downloads the phone gave up on itself, kept apart from
+     * {@link #refusedDownloads} so they cannot read as a watch in a bad state.
+     */
+    private final java.util.concurrent.atomic.AtomicInteger phoneSideDownloadFailures =
+            new java.util.concurrent.atomic.AtomicInteger();
+
+    public int takePhoneSideDownloadFailures() {
+        return phoneSideDownloadFailures.getAndSet(0);
     }
 
     /** See {@link #takeActivitiesSyncedElsewhere}. */
@@ -2862,6 +3046,47 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
         // requestSync rather than sending blind: a session already open gets a
         // follow-up instead of a second session interleaved with it.
         exploreSession().requestSync();
+    }
+
+    /** Ask whether an activity is recording; answered in {@link #onActivityStatus}. */
+    public void requestActivityStatus() {
+        sendProtobufRequest("activity status", GdiSmartProto.Smart.newBuilder()
+                .setDeviceStatusService(GdiDeviceStatus.DeviceStatusService.newBuilder()
+                        .setActivityStatusRequest(
+                                GdiDeviceStatus.DeviceStatusService.ActivityStatusRequest.newBuilder()))
+                .build());
+    }
+
+    /** The watch's answer: OFF 0, STOPPED 1, PAUSED 2, ON 3 (gdi_device_status.proto). */
+    public void onActivityStatus(final int status) {
+        final LiveActivity.Status mapped;
+        switch (status) {
+            case 0: mapped = LiveActivity.Status.OFF; break;
+            case 1: mapped = LiveActivity.Status.STOPPED; break;
+            case 2: mapped = LiveActivity.Status.PAUSED; break;
+            case 3: mapped = LiveActivity.Status.RECORDING; break;
+            default: mapped = LiveActivity.Status.UNKNOWN; break;
+        }
+        LOG.info("Watch activity status: {}", mapped);
+        LiveActivity.INSTANCE.onStatus(mapped);
+    }
+
+    /**
+     * Live positions from a recording watch. Semicircles in the proto's
+     * sint32 fields, the Garmin epoch for time. The proto marks altitude and
+     * the rest required, so a report without them would not have parsed.
+     */
+    public void onLivePositions(final List<GdiCore.CoreService.LocationData> reports) {
+        final List<LiveActivity.Point> points = new ArrayList<>(reports.size());
+        for (final GdiCore.CoreService.LocationData d : reports) {
+            if (!d.hasPosition()) continue;
+            points.add(new LiveActivity.Point(
+                    LiveActivity.INSTANCE.degrees(d.getPosition().getLat()),
+                    LiveActivity.INSTANCE.degrees(d.getPosition().getLon()),
+                    (double) d.getAltitude(),
+                    d.hasTimestamp() ? LiveActivity.INSTANCE.unixSeconds(d.getTimestamp() & 0xffffffffL) : null));
+        }
+        LiveActivity.INSTANCE.onPositions(points);
     }
 
     public void sendProtobufRequest(final String taskName, final GdiSmartProto.Smart payload) {

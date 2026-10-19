@@ -4,11 +4,13 @@ package nodomain.freeyourgadget.gadgetbridge.service.devices.garmin;
 
 import androidx.annotation.Nullable;
 
+import com.tracks.device.garmin.explore.ActivePoint;
 import com.tracks.device.garmin.explore.DesiredCourse;
 import com.tracks.device.garmin.explore.DesiredWaypoint;
 import com.tracks.device.garmin.explore.ExploreBridge;
 import com.tracks.device.garmin.explore.ExploreSession;
 import com.tracks.device.garmin.explore.ReconcileReport;
+import com.tracks.device.garmin.live.LiveActivity;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -81,6 +83,15 @@ public class ExploreSyncHandler {
             @Override
             public long nowSeconds() {
                 return System.currentTimeMillis() / 1000L;
+            }
+
+            @Override
+            public void onActiveTrack(final List<ActivePoint> points) {
+                final List<LiveActivity.Point> track = new java.util.ArrayList<>(points.size());
+                for (final ActivePoint p : points) {
+                    track.add(new LiveActivity.Point(p.getLat(), p.getLng(), p.getElevation(), null));
+                }
+                LiveActivity.INSTANCE.onTrackSoFar(track);
             }
         });
     }
