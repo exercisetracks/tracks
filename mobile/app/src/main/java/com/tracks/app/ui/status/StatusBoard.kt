@@ -73,6 +73,28 @@ class StatusBoard {
         }
     }
 
+    private val _seenUpTo = MutableStateFlow(0L)
+
+    /**
+     * The newest note the person has had a chance to read in the drawer's
+     * status area. A failure newer than this is "unseen", and is what puts the
+     * red dot on the menu button once the pill has gone.
+     */
+    val seenUpTo: StateFlow<Long> = _seenUpTo
+
+    /** The drawer was opened: everything in it now has been seen. */
+    fun markSeen() {
+        _seenUpTo.value = (_notes.value.maxOfOrNull { it.id } ?: 0L).coerceAtLeast(_seenUpTo.value)
+    }
+
+    /**
+     * What the pill has already popped up for, kept here rather than in the
+     * composable so a rotation does not pop the same news twice. Touched only
+     * from the UI thread.
+     */
+    internal var lastPoppedNote = 0L
+    internal val poppedJobs = mutableSetOf<StatusSource>()
+
     fun dismiss(id: Long) {
         _notes.update { notes -> notes.filterNot { it.id == id } }
     }

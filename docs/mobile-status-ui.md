@@ -3,11 +3,11 @@ SPDX-FileCopyrightText: 2026 Hawk Fugagli
 SPDX-License-Identifier: AGPL-3.0-or-later
 -->
 
-# Status on the phone: one pill
+# Status on the phone: one pill, then the drawer
 
 How the Android app tells someone what it is doing out of sight, and what came
-of it. The code is `ui/status/` (`StatusBoard`, `StatusHost`); this is the rules
-it follows, and the ones a new message has to follow.
+of it. The code is `ui/status/` (`StatusBoard`, `StatusHost`, `StatusDrawer`);
+this is the rules it follows, and the ones a new message has to follow.
 
 ## Why there is one
 
@@ -39,18 +39,41 @@ show three times at once: the gesture's spinner, the watch pill, and a
  ╰──────────────────────────────────╯
 ```
 
-Collapsed, it shows **one** thing, in this order:
+The pill is **news, not a dashboard**. It pops up when something new happens and
+then goes, whatever the news is:
 
-1. **The newest failure.** It stays until it is dismissed, or answered by a
-   later result from the same source.
-2. **A running job.** The ring fills with a percentage when the job knows how
-   far along it is, and spins when it does not.
-3. **The newest success**, for 3.5 s.
+| What happened | How long it pops up |
+|---|---|
+| A job starts (a source begins running) | 4 s |
+| A result | 4 s |
+| A failure | 8 s |
 
-Everything else running or unresolved is a "+N". Tapping the pill opens the card
-with all of it, and **Sync now** (the same sync as pull-to-sync).
+A job's progress ticks ("Downloading 3 of 40…") do not pop it again, and a
+source that has popped stays quiet until it stops and starts afresh. Collapsed,
+the pill shows the one thing it popped up for, live (a job keeps updating its
+ring), and "+N" for whatever else is running or unresolved. Tapping it opens the
+card with all of it and **Sync now**, which stays open until **Close**.
 
-With nothing to say, the pill is gone. There is no idle state.
+This replaced a pill that stayed for as long as a job ran or a failure was
+unresolved. Syncs and downloads run for many minutes, and the pill sat over
+every screen for all of them (changed 2026-10-18).
+
+## The drawer's status area
+
+Once the pill has gone, the news lives in the drawer, below Settings, under
+**Status**:
+
+- each running job, one per source, with its progress;
+- the last 5 results, newest first, each with when it happened ("4 min ago")
+  and a × to dismiss;
+- **Sync now**.
+
+A row is one line until tapped, then shows all of its words.
+
+The **menu button** says there is something in there: a ring around it while
+anything runs, and a red dot for a failure posted since the drawer was last
+opened. Opening the drawer counts as seeing it. The map's floating menu button
+does the same.
 
 | Glyph | Means | Colour |
 |---|---|---|
@@ -98,9 +121,9 @@ board. Never show a snackbar, toast, banner or pill of your own:
 - **A failure starts with "Could not"**, or names what went wrong ("…failed",
   "…refused"). `StatusBoard.isFailure` reads the words, so this is a rule, not
   a style.
-- **Lead with the fix.** The pill shows one line, so put what to do first:
-  "Restart your watch — it refused 12 file(s). Hold LIGHT…". The full text is
-  in the card.
+- **Lead with the fix.** The pill shows one line for a few seconds, so put
+  what to do first: "Restart your watch — it refused 12 file(s). Hold
+  LIGHT…". The full text is in the card and the drawer.
 - **Name the thing, not the mechanism**: "“Loop” is on the watch", not
   "Explore sync completed".
 - **Say "watch" or "server"** when the message is about one of them. The words
@@ -118,6 +141,7 @@ board. Never show a snackbar, toast, banner or pill of your own:
 
 - **Pull down to sync** works on every page but the map, whose drag pans. With
   a watch it syncs the watch, otherwise the server. Its spinner lets go as soon
-  as the pull is answered; the pill carries the sync from there.
+  as the pull is answered; the pill announces the sync and the drawer carries
+  it from there.
 - **The map hides the Android status bar.** A swipe from the top edge brings it
   back for a moment.

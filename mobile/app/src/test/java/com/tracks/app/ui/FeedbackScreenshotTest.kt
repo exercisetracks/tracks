@@ -57,6 +57,7 @@ class FeedbackScreenshotTest {
     @Composable
     private fun popup(p: SyncProgress) = Box(Modifier.fillMaxWidth().height(120.dp), contentAlignment = Alignment.TopCenter) {
         StatusHost(
+            board = com.tracks.app.ui.status.StatusBoard(),
             jobs = mapOf(
                 StatusSource.Server to StatusJob(syncLabel(p), p.fraction),
                 StatusSource.Watch to StatusJob("Reading the watch"),

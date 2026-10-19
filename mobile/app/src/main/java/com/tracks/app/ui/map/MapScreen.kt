@@ -782,9 +782,15 @@ fun MapScreen(
                 // the selection box reaches into that corner and a
                 // button over a draggable handle is a fight.
                 if (!choosingArea) {
+                    val board = toolsVm.container.status
+                    val runningJobs by board.jobs.collectAsStateWithLifecycle()
+                    val boardNotes by board.notes.collectAsStateWithLifecycle()
+                    val seen by board.seenUpTo.collectAsStateWithLifecycle()
                     MapDrawerButton(
                         onOpen = onOpenDrawer,
                         modifier = Modifier.align(Alignment.TopStart).reportBoundsTo(chrome),
+                        running = runningJobs.isNotEmpty(),
+                        alert = boardNotes.any { it.failed && it.id > seen },
                     )
                 }
             }

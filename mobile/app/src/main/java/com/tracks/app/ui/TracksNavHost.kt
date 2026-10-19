@@ -324,6 +324,16 @@ fun TracksNavHost(
         com.tracks.app.ui.body.LocalBodyGender provides
             if (bodyFemale) com.tracks.app.ui.body.BodyGender.Female else com.tracks.app.ui.body.BodyGender.Male,
     ) {
+    // Read once for the drawer, the menu button and the pill alike.
+    val jobs by status.jobs.collectAsStateWithLifecycle()
+    val notes by status.notes.collectAsStateWithLifecycle()
+    val seenUpTo by status.seenUpTo.collectAsStateWithLifecycle()
+    val unseenFailure = notes.any { it.failed && it.id > seenUpTo }
+    val syncNow: (() -> Unit)? = if (canSync) {
+        { scope.launch { if (hasDevice) vm.syncWatchFromGesture() else vm.syncServerFromGesture() } }
+    } else null
+    // Opening the drawer is reading the status area: the red dot goes.
+    LaunchedEffect(drawer.isOpen) { if (drawer.isOpen) status.markSeen() }
     androidx.compose.foundation.layout.Box {
     ModalNavigationDrawer(
         drawerState = drawer,
@@ -348,6 +358,14 @@ fun TracksNavHost(
                 onNavigate = { destination ->
                     scope.launch { drawer.close() }
                     navigateTo(destination)
+                },
+                status = {
+                    com.tracks.app.ui.status.StatusDrawerSection(
+                        jobs = jobs,
+                        notes = notes,
+                        onDismiss = status::dismiss,
+                        onSyncNow = syncNow?.let { sync -> { scope.launch { drawer.close() }; sync() } },
+                    )
                 },
             )
         },
@@ -379,7 +397,10 @@ fun TracksNavHost(
                                 onClick = { scope.launch { drawer.open() } },
                                 modifier = Modifier.tourAnchor("nav"),
                             ) {
-                                Icon(Icons.Filled.Menu, contentDescription = "Open navigation")
+                                com.tracks.app.ui.status.MenuIconWithStatus(
+                                    running = jobs.isNotEmpty(),
+                                    alert = unseenFailure,
+                                )
                             }
                         },
                         // A page's own controls go in the bar beside its name
@@ -672,17 +693,14 @@ fun TracksNavHost(
         // Every status in the app, in one pill at the top: at the bottom it
         // sat over the map's own controls and sheets. Just under the status
         // bar, small, and only while there is something to say.
-        val jobs by status.jobs.collectAsStateWithLifecycle()
-        val notes by status.notes.collectAsStateWithLifecycle()
         StatusHost(
+            board = status,
             jobs = jobs,
             notes = notes,
             onDismiss = status::dismiss,
             onExpirePosted = status::expirePosted,
             onHeight = { status.hostHeightPx = it },
-            onSyncNow = if (canSync) {
-                { scope.launch { if (hasDevice) vm.syncWatchFromGesture() else vm.syncServerFromGesture() } }
-            } else null,
+            onSyncNow = syncNow,
             modifier = Modifier
                 .align(androidx.compose.ui.Alignment.TopCenter)
                 .windowInsetsPadding(androidx.compose.foundation.layout.WindowInsets.statusBars),
@@ -718,6 +736,7 @@ private fun TracksDrawer(
     current: Destination?,
     hasDevice: Boolean,
     onNavigate: (Destination) -> Unit,
+    status: @Composable () -> Unit,
 ) {
     ModalDrawerSheet(
         drawerContainerColor = MaterialTheme.colorScheme.surface,
@@ -758,6 +777,13 @@ private fun TracksDrawer(
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
                 )
             }
+            // Below Settings: what the app is doing in the background, once
+            // the pill has said so and gone (see StatusHost).
+            HorizontalDivider(
+                Modifier.padding(vertical = 8.dp),
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+            )
+            status()
             Spacer(Modifier.height(24.dp))
         }
     }
@@ -772,7 +798,12 @@ private fun TracksDrawer(
  * furniture — which is what it is.
  */
 @Composable
-fun MapDrawerButton(onOpen: () -> Unit, modifier: Modifier = Modifier) {
+fun MapDrawerButton(
+    onOpen: () -> Unit,
+    modifier: Modifier = Modifier,
+    running: Boolean = false,
+    alert: Boolean = false,
+) {
     Surface(
         modifier.padding(12.dp),
         shape = androidx.compose.foundation.shape.RoundedCornerShape(Tokens.Radius.xl),
@@ -780,7 +811,7 @@ fun MapDrawerButton(onOpen: () -> Unit, modifier: Modifier = Modifier) {
         tonalElevation = 3.dp,
     ) {
         IconButton(onClick = onOpen) {
-            Icon(Icons.Filled.Menu, contentDescription = "Open navigation")
+            com.tracks.app.ui.status.MenuIconWithStatus(running = running, alert = alert)
         }
     }
 }

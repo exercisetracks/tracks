@@ -49,17 +49,22 @@ import kotlin.math.roundToInt
 
 /**
  * The app's one status pill, at the top of every screen. Everything from
- * [StatusBoard] is drawn here and nowhere else; see docs/mobile-status-ui.md.
+ * [StatusBoard] is drawn here and in the drawer's status area
+ * ([StatusDrawerSection]), and nowhere else; see docs/mobile-status-ui.md.
  *
- * Collapsed, it shows one thing, in this order:
- *  1. the newest failure, which stays until it is dismissed or answered;
- *  2. a running job, with a ring that fills or spins;
- *  3. the newest success, for [SUCCESS_MS], then the pill goes.
- * Anything else that is running or unresolved is a "+N" on the right. Tapping
- * opens the card listing all of it, with "Sync now" at the bottom.
+ * The pill is news, not a dashboard. It pops up for a few seconds when there
+ * is something new -- a job starting, a result, a failure -- and then gets out
+ * of the way; [POP_MS] for news, [FAILURE_POP_MS] for a failure. A sync that
+ * runs for many minutes used to keep the pill on screen the whole time, which
+ * is what this changes: the job carries on in the drawer, and the menu button
+ * carries a ring while anything runs and a red dot for a failure not yet seen
+ * there. Progress ticks of a running job do not pop it again.
+ *
+ * Tapping it opens the card listing everything, which stays open until closed.
  */
 @Composable
 fun StatusHost(
+    board: StatusBoard,
     jobs: Map<StatusSource, StatusJob>,
     notes: List<StatusNote>,
     onDismiss: (Long) -> Unit,
@@ -87,32 +92,54 @@ fun StatusHost(
             }
         }
     }
-    LaunchedEffect(jobs.keys) { ready = ready intersect jobs.keys }
+    LaunchedEffect(jobs.keys) {
+        ready = ready intersect jobs.keys
+        // A source that stopped may pop again the next time it starts.
+        board.poppedJobs.retainAll(jobs.keys)
+    }
     val shownJobs = jobs.filter { (source, job) -> source in ready || job.posted }
 
-    // Successes age out of the collapsed pill on a clock; failures do not.
-    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
-    val newestSuccess = notes.firstOrNull { !it.failed }
-    LaunchedEffect(newestSuccess?.id) {
-        now = System.currentTimeMillis()
-        if (newestSuccess != null) {
-            delay(SUCCESS_MS)
-            now = System.currentTimeMillis()
-        }
-    }
-    val failures = notes.filter { it.failed }
-    val freshSuccess = newestSuccess?.takeIf { now - it.at < SUCCESS_MS }
-    val running = shownJobs.entries.sortedBy { it.key.ordinal }
+    // What is popped up right now, and a counter so a newer pop is not cut
+    // short by an older one's timer.
+    var popped by remember { mutableStateOf<Pop?>(null) }
+    var popSeq by remember { mutableLongStateOf(0L) }
 
-    val headline: Line? = when {
-        failures.isNotEmpty() -> Line.Note(failures.first())
-        running.isNotEmpty() -> running.first().let { Line.Job(it.key, it.value) }
-        freshSuccess != null -> Line.Note(freshSuccess)
-        else -> null
+    val newest = notes.firstOrNull()
+    LaunchedEffect(newest?.id) {
+        val note = newest ?: return@LaunchedEffect
+        if (note.id <= board.lastPoppedNote) return@LaunchedEffect
+        board.lastPoppedNote = note.id
+        val mine = ++popSeq
+        popped = Pop.Note(note.id)
+        delay(popDurationMs(note))
+        if (popSeq == mine) popped = null
     }
-    val others = (failures.size - 1).coerceAtLeast(0) +
-        (running.size - if (headline is Line.Job) 1 else 0)
-    if (headline == null && failures.isEmpty()) expanded = false
+    val newJob = shownJobs.keys.sortedBy { it.ordinal }.firstOrNull { it !in board.poppedJobs }
+    LaunchedEffect(newJob) {
+        val source = newJob ?: return@LaunchedEffect
+        board.poppedJobs += source
+        // A job starting is routine; a failure on screen is not, and is not
+        // cut short for it. The job is in the "+N" and the drawer.
+        val showing = popped
+        if (showing is Pop.Note && notes.firstOrNull { it.id == showing.id }?.failed == true) return@LaunchedEffect
+        val mine = ++popSeq
+        popped = Pop.Job(source)
+        delay(POP_MS)
+        if (popSeq == mine) popped = null
+    }
+
+    val failures = notes.filter { it.failed }
+    val running = shownJobs.entries.sortedBy { it.key.ordinal }
+    // A popped job shows its live progress; a popped note its words. Either
+    // gone in the meantime (dismissed, finished) ends the pop.
+    val headline: Line? = when (val p = popped) {
+        is Pop.Note -> notes.firstOrNull { it.id == p.id }?.let { Line.Note(it) }
+        is Pop.Job -> shownJobs[p.source]?.let { Line.Job(p.source, it) }
+        null -> null
+    }
+    val others = failures.count { (headline as? Line.Note)?.note?.id != it.id } +
+        running.count { (headline as? Line.Job)?.source != it.key }
+    if (headline == null && notes.isEmpty() && running.isEmpty()) expanded = false
 
     Column(modifier.onSizeChanged { onHeight(it.height) }.widthIn(max = 420.dp).padding(horizontal = Tokens.Space.s4), horizontalAlignment = Alignment.CenterHorizontally) {
         AnimatedVisibility(
@@ -170,13 +197,22 @@ fun StatusHost(
     }
 }
 
-private sealed interface Line {
+/** What the pill has popped up for: a note by id, or a source's job. */
+private sealed interface Pop {
+    data class Note(val id: Long) : Pop
+    data class Job(val source: StatusSource) : Pop
+}
+
+/** How long a note stays popped up: a failure longer, so it can be read. */
+internal fun popDurationMs(note: StatusNote): Long = if (note.failed) FAILURE_POP_MS else POP_MS
+
+internal sealed interface Line {
     data class Job(val source: StatusSource, val job: StatusJob) : Line
     data class Note(val note: StatusNote) : Line
 }
 
 @Composable
-private fun CardRow(line: Line, onClose: (() -> Unit)?) {
+internal fun CardRow(line: Line, onClose: (() -> Unit)?) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Tokens.Space.s3),
@@ -199,7 +235,7 @@ private fun CardRow(line: Line, onClose: (() -> Unit)?) {
 
 /** The glyph and words for one line; the same in the pill and the card. */
 @Composable
-private fun androidx.compose.foundation.layout.RowScope.LineContent(line: Line, compact: Boolean) {
+internal fun androidx.compose.foundation.layout.RowScope.LineContent(line: Line, compact: Boolean) {
     val accent = MaterialTheme.colorScheme.primary
     val error = MaterialTheme.colorScheme.error
     when (line) {
@@ -250,5 +286,10 @@ private fun Label(source: String?, text: String, compact: Boolean, modifier: Mod
 }
 
 private const val SHOW_AFTER_MS = 700L
-internal const val SUCCESS_MS = 3_500L
+
+/** How long news pops up before it moves to the drawer. */
+internal const val POP_MS = 4_000L
+
+/** A failure stays a little longer: it usually asks something of the reader. */
+internal const val FAILURE_POP_MS = 8_000L
 private const val POSTED_CEILING_MS = 120_000L
