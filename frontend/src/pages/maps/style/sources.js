@@ -16,6 +16,9 @@ export const TILESET_NAMES = {
   // fills z8-12 in areas with no regional DEM downloaded (soft relief everywhere).
   dem_overview: "planet_dem_z7",
   contours: "master_contours",
+  // The web map's merged vector source (style mergeSources), one request per
+  // tile for every vector archive.
+  tiles: "merged",
 };
 
 const TILE_EXT = {
@@ -24,6 +27,7 @@ const TILE_EXT = {
   dem: ".webp",
   dem_overview: ".webp",
   contours: ".mvt",
+  tiles: ".mvt",
 };
 
 export function buildSourceUrl(key, version) {
@@ -48,7 +52,7 @@ const EMPTY_FC = { type: "FeatureCollection", features: [] };
  *
  * Either way the definitions live here rather than in two places that drift.
  */
-export function buildDemSources(version = "") {
+export function buildDemSources(version = "", overviewVersion = "") {
   return {
     // Regional relief: only exists where a region has been downloaded. minzoom 8
     // keeps MapLibre off the z0-7 levels this archive never carries.
@@ -67,7 +71,7 @@ export function buildDemSources(version = "") {
     // sharp regional shading sits on top wherever real z8-12 data exists.
     dem_overview: {
       type: "raster-dem",
-      tiles: [buildSourceUrl("dem_overview")],
+      tiles: [buildSourceUrl("dem_overview", overviewVersion)],
       tileSize: 512,
       minzoom: 0,
       maxzoom: 7,

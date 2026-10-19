@@ -61,13 +61,15 @@ export function useRegionDownload(map) {
   }, []);
 
   // Poll fast while something is in flight (download/merge/delete) so progress
-  // wheels appear and retire promptly; idle back to a lazy 30s.
+  // wheels appear and retire promptly; idle back to a lazy 5 minutes (a
+  // download started elsewhere shows within that, and the list is fetched again
+  // whenever the panel opens).
   const hasActive = regions.some((r) =>
     ["queued", "downloading", "downloading_dem", "merging", "trails", "contours", "combining", "cancelling", "deleting"].includes(r.status)
   );
   useEffect(() => {
     loadRegions();
-    const iv = setInterval(loadRegions, hasActive ? 4000 : 30000);
+    const iv = setInterval(loadRegions, hasActive ? 4000 : 300_000);
     return () => clearInterval(iv);
   }, [loadRegions, hasActive]);
 
@@ -123,7 +125,7 @@ export function useRegionDownload(map) {
     installedIdsRef.current = nowIds;
     if (removed) {
       try {
-        const src = map.getSource("basemap");
+        const src = map.getSource("basemap") || map.getSource("tiles");
         const tiles = src?.tiles || src?._options?.tiles;
         if (src?.setTiles && tiles) {
           const stamp = Date.now();
@@ -256,15 +258,21 @@ export function useRegionDownload(map) {
     }
 
     checkVersion();
-    // Poll every 10s so new tiles appear within ~15s of a merge completing,
-    // rather than waiting up to 30s.
-    versionPollRef.current = setInterval(checkVersion, 10_000);
+    // Every 10 s while an area is being built, so its tiles appear within
+    // about 15 s of the merge; otherwise every 5 minutes and when the tab comes
+    // back. A steady 10 s poll on an idle map was a request every 10 s for as
+    // long as the page stayed open, which counted against a reverse proxy's
+    // request limit as much as panning did.
+    versionPollRef.current = setInterval(checkVersion, hasActive ? 10_000 : 300_000);
+    const onVisible = () => { if (document.visibilityState === "visible") checkVersion(); };
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
       active = false;
       clearInterval(versionPollRef.current);
+      document.removeEventListener("visibilitychange", onVisible);
       map.off("load", onLoad);
     };
-  }, [map]);
+  }, [map, hasActive]);
 
   // --- 6. Bbox drawing: cleanup / rect rendering / draw interaction ------
   // Draw a rectangle by drag; corners are draggable handles for resizing. The

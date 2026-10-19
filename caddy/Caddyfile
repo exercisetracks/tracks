@@ -130,6 +130,14 @@
 	}
 	header @staticAssets Cache-Control "public, max-age=31536000, immutable"
 
+	# The web map's merged vector tile (backend app.services.merged_tiles):
+	# joined in the backend from the archives, and cached by the URL's version
+	# there, so it goes to the backend rather than go-pmtiles.
+	handle /api/tiles/merged/* {
+		uri replace /api/ /
+		reverse_proxy {$TRACKS_BACKEND:backend:8000}
+	}
+
 	handle /api/tiles/version {
 		uri replace /api/ /
 		reverse_proxy {$TRACKS_BACKEND:backend:8000}

@@ -213,3 +213,39 @@ describe('buildStyle', () => {
     expect(ids).toContain('contours_labels');
   });
 });
+
+// The web map draws every vector archive from one source, so a tile on screen
+// is one request rather than four (backend app.services.merged_tiles). A layer
+// left pointing at a source the merge removed would draw nothing, silently.
+describe('buildStyle merged (the web map)', () => {
+  it('reads every vector archive from one source', () => {
+    const style = buildStyle('', { merged: true });
+    for (const gone of ['basemap', 'overlay', 'routes_osm', 'contours']) {
+      expect(style.sources[gone]).toBeUndefined();
+    }
+    expect(style.sources.tiles.tiles[0]).toBe('/api/tiles/merged/{z}/{x}/{y}.mvt');
+    const ids = new Set(Object.keys(style.sources));
+    for (const layer of style.layers) {
+      if (layer.source) expect(ids.has(layer.source), layer.id).toBe(true);
+    }
+  });
+
+  it('names each archive layer with its archive prefix, as the backend does', () => {
+    const plain = buildStyle();
+    const merged = buildStyle('', { merged: true });
+    const byId = Object.fromEntries(merged.layers.map((l) => [l.id, l]));
+    const expectPrefix = { basemap: '', overlay: 'ov_', routes_osm: 'rt_', contours: 'ct_' };
+    let checked = 0;
+    for (const layer of plain.layers) {
+      if (!(layer.source in expectPrefix)) continue;
+      expect(byId[layer.id].source).toBe('tiles');
+      expect(byId[layer.id]['source-layer']).toBe(expectPrefix[layer.source] + layer['source-layer']);
+      checked++;
+    }
+    expect(checked).toBeGreaterThan(20);
+  });
+
+  it('keys route hover on the route section, as the routes source did', () => {
+    expect(buildStyle('', { merged: true }).sources.tiles.promoteId).toEqual({ rt_routes: 'feat_key' });
+  });
+});

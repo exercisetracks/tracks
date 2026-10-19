@@ -6,7 +6,9 @@ import { api } from "../../../api/client";
 // Owns the map-data "setup" status that feeds the single download/error toast.
 // Two independent sources are folded together here:
 //   • Global downloads (basemap overview + DEM) — polled from the backend every
-//     4s while the page is mounted. Fully self-contained (no map, own state).
+//     4s while one is running and once a minute otherwise (a steady 4 s poll on
+//     an idle map counted against a reverse proxy's request limit). Fully
+//     self-contained (no map, own state).
 //   • Region downloads/merges — passed in from useRegionDownload's `regions`
 //     list (this hook only buckets them; it does not own that data).
 // Returns the pre-bucketed arrays the toast renders plus `showToast`, so the
@@ -18,13 +20,16 @@ export function useDownloadStatus(regions) {
   useEffect(() => {
     let active = true;
     let timeout;
+    let downloads = [];
     async function poll() {
       if (!active) return;
       try {
         const data = await api.getGlobalDownloads();
-        if (active) setGlobalDownloads(data.downloads || []);
+        downloads = data.downloads || [];
+        if (active) setGlobalDownloads(downloads);
       } catch {}
-      if (active) timeout = setTimeout(poll, 4000);
+      const running = downloads.some((d) => d.status === "downloading");
+      if (active) timeout = setTimeout(poll, running ? 4000 : 60_000);
     }
     poll();
     return () => { active = false; clearTimeout(timeout); };

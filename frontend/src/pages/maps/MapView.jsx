@@ -12,7 +12,6 @@ import { useRegionDownload } from "./hooks/useRegionDownload";
 import { usePoiSearch } from "./hooks/usePoiSearch";
 import { usePoiFeatures } from "./hooks/usePoiFeatures";
 import { usePublicLandLabelRank } from "./hooks/usePublicLandLabelRank";
-import { useTilePrefetch } from "./hooks/useTilePrefetch";
 import { useGridOverlay } from "./hooks/useGridOverlay";
 import { use3D } from "./hooks/use3D";
 import { usePointInfo } from "./hooks/usePointInfo";
@@ -136,9 +135,6 @@ export default function MapView() {
   // Grid-ranks the public-land area names (grant-once, pan-stable) — the layer
   // starts filtered to nothing and this hook owns its filter.
   usePublicLandLabelRank(map, ready);
-  // Speculatively warms the HTTP cache for tiles just outside the viewport
-  // while the camera sits idle, so the next pan/zoom resolves from disk cache.
-  useTilePrefetch(map, ready);
   // 3D camera/terrain state, lifted here so the toolbar, the grid overlay, and the
   // layer panel all share one is3D truth (the grid is force-hidden in 3D).
   const { is3D, toggle: toggle3D, orbitTo } = use3D(map, ready);

@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Hawk Fugagli
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { useEffect, useRef } from "react";
+import { vectorRef } from "../style";
 import { cellKey } from "../utils/labelRank";
 
 // Deterministic thinning for the public-land area names (publiclands_labels).
@@ -49,8 +50,9 @@ export function usePublicLandLabelRank(map, ready) {
       const z = Math.max(MIN_Z, Math.min(MAX_Z, Math.floor(map.getZoom())));
       const taken = new Set();
       // Visible town names block their cells first.
-      for (const f of map.querySourceFeatures("basemap", {
-        sourceLayer: "places", filter: ["==", ["get", "kind"], "locality"],
+      const places = vectorRef(map, "basemap", "places");
+      for (const f of map.querySourceFeatures(places.source, {
+        sourceLayer: places.sourceLayer, filter: ["==", ["get", "kind"], "locality"],
       })) {
         if (f.geometry?.type !== "Point") continue;
         if ((f.properties?.min_zoom ?? 0) > z) continue;
@@ -63,8 +65,9 @@ export function usePublicLandLabelRank(map, ready) {
       // New candidates from the loaded tiles (dedupe tile-buffer copies by name).
       const seen = new Set();
       const cands = [];
-      for (const f of map.querySourceFeatures("overlay", {
-        sourceLayer: "landuse", filter: IS_CENTER_LABEL,
+      const landuse = vectorRef(map, "overlay", "landuse");
+      for (const f of map.querySourceFeatures(landuse.source, {
+        sourceLayer: landuse.sourceLayer, filter: IS_CENTER_LABEL,
       })) {
         const name = f.properties?.name ?? f.properties?.land_type;
         if (name == null || seen.has(name) || granted.has(name)) continue;
@@ -94,7 +97,7 @@ export function usePublicLandLabelRank(map, ready) {
       timerRef.current = setTimeout(recompute, 250);
     };
     const onSourceData = (e) => {
-      if ((e.sourceId === "overlay" || e.sourceId === "basemap") && e.isSourceLoaded) schedule();
+      if (["overlay", "basemap", "tiles"].includes(e.sourceId) && e.isSourceLoaded) schedule();
     };
     map.on("moveend", schedule);
     map.on("zoomend", schedule);

@@ -120,8 +120,8 @@ function withStablePlacement(layers) {
  *   with better information. A native client cannot patch its own style after
  *   load, so for the phone this is the only way relief arrives at all.
  */
-export function buildStyle(version = "", { includeDem = false } = {}) {
-  const sources = includeDem
+export function buildStyle(version = "", { includeDem = false, merged = false } = {}) {
+  const built = includeDem
     ? { ...buildSources(version), ...buildDemSources(version) }
     : buildSources(version);
   const layers = [
@@ -190,12 +190,66 @@ export function buildStyle(version = "", { includeDem = false } = {}) {
     // HUD over the map by useGridOverlay (Grid toggle), so it isn't listed here.
   ];
 
-  return {
+  const placed = withStablePlacement(withFadeIn(layers));
+  const style = {
     version: 8,
     glyphs: "/api/fonts/{fontstack}/{range}.pbf",
     sprite: "/api/sprite/usgs",
     transition: { duration: 300, delay: 0 },
-    sources,
-    layers: withStablePlacement(withFadeIn(layers)),
+    sources: built,
+    layers: placed,
   };
+  return merged ? mergeSources(style) : style;
+}
+
+/**
+ * The vector archives joined into one source, `tiles`, served one tile per
+ * z/x/y by the backend (app.services.merged_tiles). The web map only: four
+ * sources were four requests per tile on screen, and a reverse proxy with
+ * request limits banned the person panning. The phone keeps the separate
+ * sources, which its offline packs answer archive by archive.
+ *
+ * The backend renames every layer but the basemap's with its archive's prefix
+ * (two archives both have `water` and `landuse`), so each layer here moves to
+ * the merged source under the prefixed name. The basemap's z0-7 overview
+ * source reads the same URLs, which the browser has already cached.
+ */
+export const MERGED_SOURCE = "tiles";
+export const MERGED_PREFIX = { basemap: "", basemap_overview: "", overlay: "ov_", routes_osm: "rt_", contours: "ct_" };
+
+/**
+ * Where a source's layer lives on this map: under its own name, or inside the
+ * merged source with its archive's prefix. Hooks that query features or set
+ * feature-state call this rather than naming `overlay` or `routes_osm`, so they
+ * work on the web map (merged) and on any map built without merging.
+ */
+export function vectorRef(map, source, sourceLayer) {
+  if (map?.getSource?.(source) || !map?.getSource?.(MERGED_SOURCE)) return { source, sourceLayer };
+  return { source: MERGED_SOURCE, sourceLayer: (MERGED_PREFIX[source] ?? "") + sourceLayer };
+}
+
+export function mergeSources(style, version = "") {
+  const url = `/api/tiles/merged/{z}/{x}/{y}.mvt${version ? `?v=${version}` : ""}`;
+  const sources = { ...style.sources };
+  for (const id of ["basemap", "overlay", "routes_osm", "contours"]) delete sources[id];
+  sources[MERGED_SOURCE] = {
+    type: "vector",
+    tiles: [url],
+    minzoom: 0,
+    maxzoom: 15,
+    // A route's hover state is keyed on its feat_key, as on its own source.
+    promoteId: { rt_routes: "feat_key" },
+    attribution:
+      '<a href="https://protomaps.com">Protomaps</a> © <a href="https://openstreetmap.org">OpenStreetMap</a> contributors',
+  };
+  if (sources.basemap_overview) sources.basemap_overview = { ...sources.basemap_overview, tiles: [url] };
+  const layers = style.layers.map((layer) => {
+    if (!(layer.source in MERGED_PREFIX) || layer.source === "basemap_overview") return layer;
+    return {
+      ...layer,
+      source: MERGED_SOURCE,
+      "source-layer": MERGED_PREFIX[layer.source] + layer["source-layer"],
+    };
+  });
+  return { ...style, sources, layers };
 }

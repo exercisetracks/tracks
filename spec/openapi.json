@@ -14350,6 +14350,81 @@
         }
       }
     },
+    "/tiles/merged/{z}/{x}/{y}.mvt": {
+      "get": {
+        "tags": [
+          "tiles"
+        ],
+        "summary": "Merged Tile",
+        "description": "One tile with every vector archive's layers in it: the web map's single\nvector source (app.services.merged_tiles explains why). Versioned URLs are\nthe same bytes forever, so they are cached forever; an unversioned one is\nrevalidated.\n\nNo sign-in, like every other /api/tiles path (Caddy serves those straight\nfrom go-pmtiles): the archives are OpenStreetMap and public-domain data the\nmap shows anyone who can open the page. A tile not yet joined costs some\ntens of milliseconds of decoding, which is why joined tiles are cached and\nthe zoom is bounded (merged_tiles.MAX_ZOOM).",
+        "operationId": "merged_tile_tiles_merged__z___x___y__mvt_get",
+        "parameters": [
+          {
+            "name": "z",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Z"
+            }
+          },
+          {
+            "name": "x",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "X"
+            }
+          },
+          {
+            "name": "y",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Y"
+            }
+          },
+          {
+            "name": "v",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "V"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/tiles/version": {
       "get": {
         "tags": [

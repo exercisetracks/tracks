@@ -68,7 +68,9 @@ export function useMapInit(containerRef) {
 
     const instance = new maplibregl.Map({
       container: containerRef.current,
-      style: buildStyle(),
+      // One vector source for every archive (mergeSources): a tile on screen is
+      // one request, not four.
+      style: buildStyle("", { merged: true }),
       center: [-98.5, 39.8],
       zoom: 4,
       minZoom: 1,

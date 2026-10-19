@@ -71,6 +71,14 @@ export async function refreshTiles(map) {
         }
       }
 
+      // The z0-7 overview reads the merged tiles too (mergeSources); it follows
+      // their version so it is cached for good rather than revalidated.
+      const overview = map.getSource("basemap_overview");
+      const mergedUrl = buildSourceUrl("tiles", version.merged);
+      if (overview && map.getSource("tiles") && overview.tiles?.[0] !== mergedUrl) {
+        try { overview.setTiles([mergedUrl]); } catch {}
+      }
+
       // DEM source is omitted from the initial style to avoid 404 spam when
       // master_dem.pmtiles hasn't been downloaded yet. Add it (and the hillshade
       // layer) the first time the version endpoint reports a non-zero DEM mtime.
@@ -92,7 +100,7 @@ export function ensureDemSource(map, version) {
   const demMtime = version["master_dem"];
   if (!demMtime) return; // file doesn't exist yet
 
-  const demSources = buildDemSources(demMtime);
+  const demSources = buildDemSources(demMtime, version["planet_dem_z7"]);
 
   if (!map.getSource("dem")) {
     const url = buildSourceUrl("dem", demMtime);

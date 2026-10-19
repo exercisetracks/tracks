@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Hawk Fugagli
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { useEffect } from "react";
+import { vectorRef } from "../style";
 
 // Hover feedback for long trails: as the cursor moves over a route line, the
 // whole section under it lights up and the cursor becomes a pointer — signalling
@@ -16,12 +17,12 @@ import { useEffect } from "react";
 // The invisible wide line (osm_trails_route_hit) is the hover target — a ~20px
 // corridor, far easier to land on than the 2-3px painted route line.
 const HIT_LAYERS = ["osm_trails_route_hit"];
-const SRC = { source: "routes_osm", sourceLayer: "routes" };
 
 export function useRouteHover(map, ready) {
   useEffect(() => {
     if (!ready || !map) return;
 
+    const SRC = vectorRef(map, "routes_osm", "routes");
     let hovered = null;   // feat_key currently lit
 
     const clear = () => {
