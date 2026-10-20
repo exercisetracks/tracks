@@ -137,6 +137,18 @@ under it is `choice`; a setting that applies at once is `Switch`, one that is
 submitted with a form is `Checkbox`. `src/test/StyleKit.test.js` fails when a
 copy of a kit piece reappears.
 
+**Watch sync has one route per kind of content.** The phone runs one
+Garmin stack: Gadgetbridge's transport, Garmin's two file protocols (legacy
+and FileSyncService, both from Gadgetbridge), and Tracks' own code from
+captures (Explore sync, the encoders, every routing decision).
+[docs/watch-sync.md](docs/watch-sync.md) has the table of what goes where
+and how a fallback is chosen. Read it before adding a sync path, and update it
+in the same change. Route by what the watch's handshake declares, never by
+`is GarminIntegration`. Pass the route with the call, never as a mode flag.
+When a new route supersedes an old one, delete the old one or make it a
+fallback with a detectable trigger. When the phone and watch disagree about a
+session, rebuild the link rather than resetting state in place.
+
 **The phone reports background work in one pill.** Sync, watch, download and
 backup progress, and every result, go through `StatusBoard` and are drawn by
 `StatusHost`. There are no snackbars, toasts or per-feature pills.
@@ -165,6 +177,10 @@ records; check `git status` before staging broadly.
 Some of this system was reverse-engineered against hardware, and the notes are
 worth more than the code they explain:
 
+- [docs/watch-sync.md](docs/watch-sync.md) — the map of the phone's watch
+  sync: which content takes which protocol, which code owns it, what is
+  vendored and what is Tracks' own, and what has been verified on a watch.
+  Start here before touching `mobile/device-garmin/` or `WatchManager`.
 - [docs/garmin-ble-protocol.md](docs/garmin-ble-protocol.md) — how the watch
   link actually behaves, measured against a fenix 6X Pro rather than inferred
   from Gadgetbridge. Where the two disagree, that file is what the hardware

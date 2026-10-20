@@ -85,7 +85,6 @@ import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.messages.SetF
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.messages.SupportedFileTypesMessage;
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.messages.SystemEventMessage;
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.messages.status.NotificationSubscriptionStatusMessage;
-import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.messages.status.SetFileFlagsStatusMessage;
 import nodomain.freeyourgadget.gadgetbridge.util.ArrayUtils;
 import nodomain.freeyourgadget.gadgetbridge.util.CompressionUtils;
 import nodomain.freeyourgadget.gadgetbridge.util.GB;
@@ -365,16 +364,7 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
         protocolBufferHandler.setContext(gbDevice, btAdapter, context);
     }
 
-    public ProtocolBufferHandler getProtocolBufferHandler() {
-        return protocolBufferHandler;
-    }
-
     // ── What Tracks subscribes to ────────────────────────────────────────────
-
-    /** Notified as bytes arrive, so Tracks can show real progress rather than a spinner. */
-    public interface DownloadProgressListener {
-        void onProgress(int percent);
-    }
 
     /**
      * Told when a sync run begins and ends.
@@ -412,13 +402,9 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
         void onMusicRefreshWanted();
     }
 
-    private volatile DownloadProgressListener progressListener;
     private volatile SyncListener syncListener;
     private volatile MusicRefreshListener musicRefreshListener;
 
-    public void setDownloadProgressListener(final DownloadProgressListener listener) {
-        this.progressListener = listener;
-    }
 
     public void setSyncListener(final SyncListener listener) {
         this.syncListener = listener;
@@ -557,14 +543,6 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
             LiveActivity.INSTANCE.onDisconnected();
             super.dispose();
         }
-    }
-
-    public void setCommunicator(final ICommunicator communicator) {
-        this.communicator = communicator;
-    }
-
-    public ICommunicator getCommunicator() {
-        return communicator;
     }
 
     // ── Message dispatch ─────────────────────────────────────────────────────
@@ -1811,10 +1789,6 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
         return Collections.unmodifiableList(supportedFileTypes);
     }
 
-    public Set<GarminCapability> getWatchCapabilities() {
-        return Collections.unmodifiableSet(watchCapabilities);
-    }
-
     // ── Phone feeds: notifications, music, weather ───────────────────────────
 
     public void sendNotification(final NotificationSpec spec) {
@@ -1899,11 +1873,6 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
         return (frame[6] & 0xFF) | ((frame[7] & 0xFF) << 8);
     }
 
-    /** Whether the watch has asked for notifications. See the subscription event. */
-    public boolean isSubscribedToNotifications() {
-        return notificationsSubscribed;
-    }
-
     public void sendCallState(final CallSpec callSpec) {
         sendOutgoingMessage("call state", notificationsHandler.onSetCallState(callSpec));
     }
@@ -1981,17 +1950,12 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
      * <p>Bytes, not a percentage: neither protocol tells us the total up front
      * in a form this method sees, and both call it with a running count.
      *
-     * <p>Upstream drives a notification here. Tracks forwards it so the caller
-     * can decide — a foreground-service notification during an active transfer
-     * is required by Android anyway, but a background sync should stay silent.
+     * <p>Upstream drives a notification here. Tracks only uses it as proof the
+     * transfer is alive; the sync's progress pill counts files, not bytes.
      */
     public void onFileDownloadProgress(final int progress) {
         // Also what keeps the watchdog off a transfer that is simply large.
         lastDownloadActivityAt = SystemClock.elapsedRealtime();
-        final DownloadProgressListener listener = progressListener;
-        if (listener != null) {
-            listener.onProgress(progress);
-        }
     }
 
     public void addFileToDownloadList(final FileTransferHandler.DirectoryEntry directoryEntry) {
@@ -2204,10 +2168,6 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
         processDownloadQueue();
     }
 
-    public Queue<FileToDownload> getFilesToDownload() {
-        return filesToDownload;
-    }
-
     @Override
     public GarminPrefs getDevicePrefs() {
         return new GarminPrefs(
@@ -2256,9 +2216,12 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
      *   <li><b>The watch has already failed to answer.</b> Sticky, so a watch
      *       whose firmware does not know the protocol pays the timeout once
      *       rather than at the start of every sync.
-     *   <li><b>Somebody said so.</b> An explicit preference wins over the
+     *   <li><b>Somebody said so.</b> An explicit preference
+     *       ({@link #PREF_NEW_SYNC_PROTOCOL}, per device) wins over the
      *       automatic decision in both directions, including re-enabling a
-     *       watch that was demoted.
+     *       watch that was demoted. Nothing in the app sets it; it is a
+     *       debugging lever, set by hand on a watch that answers the newer
+     *       protocol badly rather than not at all.
      * </ol>
      *
      * <p>Defaulting on is the deliberate part. The older path works on this
@@ -2998,10 +2961,6 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
                 .build());
     }
 
-    public void onAppInfoReq() {
-        LOG.debug("Watch asked for app info");
-    }
-
     public void onAppListReceived(
             final List<GdiInstalledAppsService.InstalledAppsService.InstalledApp> apps) {
         LOG.debug("Watch reported {} installed app(s)", apps == null ? 0 : apps.size());
@@ -3034,25 +2993,16 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
         messageHandlers.remove(registered);
     }
 
-    protected void registerHandler(final MessageHandler handler) {
-        if (handler != null && !messageHandlers.contains(handler)) {
-            messageHandlers.add(handler);
-        }
-    }
-
-    public List<MessageHandler> getMessageHandlers() {
-        return Collections.unmodifiableList(messageHandlers);
-    }
-
     // ── Outgoing plumbing ────────────────────────────────────────────────────
 
     /**
-     * Send a protobuf request wrapped in a GFDI envelope.
-     *
-     * <p>Garmin runs several services (file sync, app config, device settings)
-     * over protobuf carried inside GFDI rather than as native GFDI messages.
-     * The vendored handlers build the payload; this puts it on the wire.
+     * Tracks' Explore session for this watch: what the watch holds, and the
+     * courses being put on or taken off it. See ExploreSession.
      */
+    public com.tracks.device.garmin.explore.ExploreSession exploreSession() {
+        return protocolBufferHandler.getExploreSyncHandler().getSession();
+    }
+
     /**
      * Open an Explore sync as soon as the watch is ready.
      *
@@ -3066,18 +3016,22 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
      * everything else this connection does, and a watch that will not open one
      * should not cost the user their file sync.
      */
-    /**
-     * Tracks' Explore session for this watch: what the watch holds, and the
-     * courses being put on or taken off it. See ExploreSession.
-     */
-    public com.tracks.device.garmin.explore.ExploreSession exploreSession() {
-        return protocolBufferHandler.getExploreSyncHandler().getSession();
-    }
-
     private void startExploreSync() {
+        // Only where the handshake offers it: a Garmin without Explore sync
+        // takes courses and places as FIT files instead (see
+        // GarminIntegration.speaksExploreSync), and asks it nothing here.
+        if (!speaksExploreSync()) {
+            LOG.info("The watch does not declare Explore sync; courses and places go as files");
+            return;
+        }
         // requestSync rather than sending blind: a session already open gets a
         // follow-up instead of a second session interleaved with it.
         exploreSession().requestSync();
+    }
+
+    /** Whether the watch's handshake declared Explore sync (courses and saved places by collection). */
+    public boolean speaksExploreSync() {
+        return watchCapabilities.contains(GarminCapability.EXPLORE_SYNC);
     }
 
     /**
@@ -3141,6 +3095,13 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
         LiveActivity.INSTANCE.onPositions(points);
     }
 
+    /**
+     * Send a protobuf request wrapped in a GFDI envelope.
+     *
+     * <p>Garmin runs several services (file sync, app config, device settings)
+     * over protobuf carried inside GFDI rather than as native GFDI messages.
+     * The vendored handlers build the payload; this puts it on the wire.
+     */
     public void sendProtobufRequest(final String taskName, final GdiSmartProto.Smart payload) {
         sendOutgoingMessage(taskName, protocolBufferHandler.prepareProtobufRequest(payload));
     }

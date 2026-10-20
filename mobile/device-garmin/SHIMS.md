@@ -271,14 +271,19 @@ that during the first run: eleven of them live in `values.xml` as
 
 ## Tracks' side: `com.tracks.device.garmin`
 
-Four files, and the split between them is the point.
+Which content travels over which protocol, and why, is in
+[docs/watch-sync.md](../../docs/watch-sync.md). The files:
 
 | File | Job |
 |---|---|
-| `GarminIntegration` | Implements `DeviceIntegration`. The only class that sees both worlds. |
-| `GarminWeatherEncoder` | Tracks' `WeatherReport` → FIT local messages. |
-| `GarminNotifications` | Tracks' `DeviceNotification` → `NotificationSpec`. |
-| `GarminFileTypes` | Which Garmin file type a server-supplied file is. |
+| `GarminIntegration` | Implements `DeviceIntegration`. The only class that sees both worlds; owns the link's lifetime and the push routes. |
+| `explore/` | Explore sync (courses and saved places), written from captures with no Gadgetbridge code. |
+| `CourseFitEncoder`, `LocationsFitEncoder` | Courses and places as FIT files: the fallback for a watch without Explore sync, and reading what the watch holds. |
+| `GarminFileTypes` | Which Garmin file type a pushed file is. |
+| `GarminWeatherEncoder`, `GarminNotifications` | Tracks' weather and notifications in the watch's shapes. |
+| `WatchAppConfig`, `WatchHttpProxy` | The Tracks Music app's pairing answer and its one allowed proxy target. |
+| `GarminSyncFileId` | A file-sync file's identity, round-tripped through `PulledFile`. |
+| `live/` | Live heart rate and the recording watch's live track. |
 
 **The pull contract changed shape.** `DeviceIntegration` originally had
 `listFiles()` and `pullFile()`, which is how a filesystem behaves and is not how
@@ -339,16 +344,11 @@ never arrives and never retries.
 
 ## What is next
 
-1. **Validate against real hardware.** The transport is written; none of it has
-   met this watch. This is the step that actually decides whether any of it is
-   right.
-2. **Background sync.** Today it is a button. Doing it while the phone is in a
-   pocket needs WorkManager plus a `connectedDevice` foreground service, because
-   Android will not let a long BLE transfer run otherwise.
-3. **AGPS.** Ephemeris arrives over the HTTP path Tracks refuses to proxy.
-   Serving *only* a server-supplied file from local storage would close the gap
-   without reopening a proxy to Garmin. `capabilities.assistedGps` says `false`
-   until then.
+**AGPS.** Ephemeris arrives over the HTTP path Tracks refuses to proxy.
+Serving *only* a server-supplied file from local storage would close the gap
+without reopening a proxy to Garmin. `capabilities.assistedGps` says `false`
+until then. (Hardware validation and background sync, once listed here, are
+done: see docs/watch-sync.md for what is verified.)
 
 ## Regenerating the shim map
 

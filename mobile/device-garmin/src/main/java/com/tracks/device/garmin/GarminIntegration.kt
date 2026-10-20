@@ -23,7 +23,6 @@ import com.tracks.device.PulledFileKind
 import com.tracks.device.WeatherReport
 import java.io.File
 import java.util.regex.Pattern
-import kotlin.coroutines.resume
 import nodomain.freeyourgadget.gadgetbridge.proto.garmin.GdiInstalledAppsService
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.TimeoutCancellationException
@@ -39,7 +38,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import android.os.SystemClock
-import nodomain.freeyourgadget.gadgetbridge.GBApplication
 import nodomain.freeyourgadget.gadgetbridge.deviceevents.GBDeviceEvent
 import nodomain.freeyourgadget.gadgetbridge.deviceevents.GBDeviceEventBatteryInfo
 import nodomain.freeyourgadget.gadgetbridge.deviceevents.GBDeviceEventFindPhone
@@ -50,15 +48,12 @@ import nodomain.freeyourgadget.gadgetbridge.deviceevents.GBDeviceEventNotificati
 import nodomain.freeyourgadget.gadgetbridge.deviceevents.GBDeviceEventVersionInfo
 import nodomain.freeyourgadget.gadgetbridge.impl.GBDevice
 import nodomain.freeyourgadget.gadgetbridge.service.AbstractDeviceSupport
-import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.FileTransferHandler
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.FileType
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.GarminSupport
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.deviceevents.FileDownloadedDeviceEvent
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.deviceevents.SyncFileDownloadedDeviceEvent
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.deviceevents.WeatherRequestDeviceEvent
-import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit.FitFile
 import nodomain.freeyourgadget.gadgetbridge.util.GB
-import nodomain.freeyourgadget.gadgetbridge.proto.garmin.GdiSmartProto
 
 /**
  * Tracks' side of the vendoring boundary.
@@ -258,64 +253,6 @@ class GarminIntegration(private val context: Context) : DeviceIntegration {
     }
 
     class PairingCancelledException : Exception("The user dismissed the pairing dialog")
-
-    /**
-     * Override which file-sync protocol to speak to a device.
-     *
-     * Garmin has two, and which one a watch can speak is a property of its
-     * firmware rather than something either side negotiates. The older one
-     * streams a directory listing and then the files, one at a time, each
-     * acknowledged; the newer one asks over protobuf and hands each file down a
-     * separate BLE channel, deflated. On the hardware measured here that is a
-     * ten-minute backlog against most of a day, so the newer protocol is the
-     * default and the device layer works out for itself when it cannot be used.
-     *
-     * Which means this is an override, not a switch: pass `null` — the default
-     * — to hand the decision back. It exists for the case the automatic
-     * decision cannot cover, a watch that answers the newer protocol badly
-     * rather than not at all, because that looks like success from here.
-     *
-     * Stored per device, because two watches on one phone can disagree.
-     * [reliableTransport] stays separate rather than implied: Gadgetbridge's
-     * experience is that the newer sync needs it for large files, but it also
-     * changes how the main protocol channel is opened — so on a watch that is
-     * otherwise working, being able to move one variable at a time is worth the
-     * extra argument.
-     *
-     * Not on [DeviceIntegration]: another vendor has no reason to have two
-     * protocols, let alone these two.
-     */
-    fun setSyncProtocol(
-        address: String,
-        newProtocol: Boolean? = null,
-        reliableTransport: Boolean? = newProtocol,
-    ) {
-        GBApplication.getDeviceSpecificSharedPrefs(address).edit().apply {
-            if (newProtocol == null) {
-                remove(GarminSupport.PREF_NEW_SYNC_PROTOCOL)
-            } else {
-                putBoolean(GarminSupport.PREF_NEW_SYNC_PROTOCOL, newProtocol)
-            }
-            if (reliableTransport == null) {
-                remove(GarminSupport.PREF_MLR)
-            } else {
-                putBoolean(GarminSupport.PREF_MLR, reliableTransport)
-            }
-        }.apply()
-
-        Log.i(
-            TAG,
-            "Sync protocol for $address: " + when (newProtocol) {
-                null -> "decided per connection"
-                true -> "forced to protobuf file sync"
-                false -> "forced to the directory listing"
-            } + when (reliableTransport) {
-                null -> ""
-                true -> ", service channels forced reliable"
-                false -> ", service channels forced unreliable"
-            },
-        )
-    }
 
     // ── Connection ───────────────────────────────────────────────────────────
 
@@ -1008,29 +945,32 @@ class GarminIntegration(private val context: Context) : DeviceIntegration {
         filename: String,
         bytes: ByteArray,
         lastInBatch: Boolean,
-    ) = pushLock.withLock { pushFileLocked(folder, filename, bytes, lastInBatch) }
+    ) = pushLock.withLock { pushFileLocked(folder, filename, bytes, lastInBatch, toInbox = false) }
 
     /**
-     * Send the next files the way a cable does, rather than the way Garmin
-     * Connect does.
+     * Send a file the way a cable does: legacy `CREATE_FILE`, into
+     * `GARMIN/NewFiles`, never over `FileSyncService`.
      *
      * The two BLE upload paths do not put a file in the same place.
      * `FileSyncService` hands the watch a typed object it files immediately: a
      * pushed workout turns up in `GARMIN/Workouts` under its own title, alone.
-     * The legacy `CREATE_FILE` path addresses a numeric type whose
-     * `InputToUnit` in `GarminDevice.xml` is `Garmin/NewFiles` -- the same inbox
-     * `garmin-sync` writes to over USB, and the one the watch's own importer
-     * scans as a batch.
+     * The legacy path addresses a numeric type whose `InputToUnit` in
+     * `GarminDevice.xml` is `Garmin/NewFiles` -- the same inbox `garmin-sync`
+     * writes to over USB, and the one the watch's own importer scans as a
+     * batch. A training calendar builds only from a schedule and its workouts
+     * delivered in the same batch, and the watch applies a settings file only
+     * from there. See docs/watch-sync.md.
      *
-     * That distinction is what makes a training calendar build: a schedule binds
-     * only to workouts delivered in the same batch, and over `FileSyncService`
-     * there is no batch to be in. See AGENTS.md.
-     *
-     * Set it around a bundle and clear it in a `finally` -- a leaked flag would
-     * quietly move every later push in the process onto the older protocol.
+     * A parameter of the call rather than a mode set around it: it used to be
+     * a process-wide flag each caller set and cleared in a `finally`, and a
+     * push from anywhere else in between went the forced way too.
      */
-    @Volatile
-    private var forceLegacyPush = false
+    suspend fun pushToInbox(
+        folder: String,
+        filename: String,
+        bytes: ByteArray,
+        lastInBatch: Boolean = true,
+    ) = pushLock.withLock { pushFileLocked(folder, filename, bytes, lastInBatch, toInbox = true) }
 
     /** See GarminSupport.setRealtimeHeartRate; a no-op with no link. */
     fun setLiveHeartRate(on: Boolean) {
@@ -1048,11 +988,6 @@ class GarminIntegration(private val context: Context) : DeviceIntegration {
     /** See GarminSupport.takeActivitiesSyncedElsewhere. */
     fun takeActivitiesSyncedElsewhere(): Int = support?.takeActivitiesSyncedElsewhere() ?: 0
 
-    fun setForceLegacyPush(wanted: Boolean) {
-        forceLegacyPush = wanted
-        Log.i(TAG, "pushes will use " + if (wanted) "the legacy NewFiles path" else "file-sync")
-    }
-
     /**
      * The body of [pushFile], with [pushLock] already held.
      *
@@ -1065,6 +1000,7 @@ class GarminIntegration(private val context: Context) : DeviceIntegration {
         filename: String,
         bytes: ByteArray,
         lastInBatch: Boolean,
+        toInbox: Boolean,
     ) {
         val support = requireConnected()
         val fileType = GarminFileTypes.resolve(folder, filename, bytes)
@@ -1089,7 +1025,7 @@ class GarminIntegration(private val context: Context) : DeviceIntegration {
         // "Send to device" claimed success for a course that was not there.
         val typeName = fileType.typeName
         if (GarminFileTypes.usesFileSync(fileType) &&
-            support.newSyncProtocol() && typeName != null && !forceLegacyPush
+            support.newSyncProtocol() && typeName != null && !toInbox
         ) {
             Log.i(TAG, "pushing $filename as $typeName over file-sync (${bytes.size} bytes)")
             val accepted = CompletableDeferred<Boolean>()
@@ -1187,12 +1123,19 @@ class GarminIntegration(private val context: Context) : DeviceIntegration {
         return true
     }
 
-    /** Courses and places not yet confirmed by the watch, as Tracks ids. */
     /** Where Tracks has put saved places on the watch, as [WatchLibrary.placeKey]s. */
     fun placesTracksSent(): Set<String> = support?.exploreSession()?.sentPlaces().orEmpty()
 
-    fun unconfirmedOnWatch(): Pair<Set<Int>, Set<Int>> =
-        support?.exploreSession()?.unconfirmed() ?: (emptySet<Int>() to emptySet())
+    /**
+     * Whether the connected watch takes courses and saved places as FIT files
+     * rather than over Explore sync: true only for a link whose handshake did
+     * not declare Explore sync. A fenix 6X Pro declares it (bit 69 of its
+     * CONFIGURATION, measured in the 2026-10-12 capture), so this is the
+     * fallback for older Garmins, not the usual route. False with no link, so
+     * a request while disconnected takes the Explore route and says so.
+     */
+    val takesCoursesAsFiles: Boolean
+        get() = support?.takeIf { it.isConnected }?.speaksExploreSync() == false
 
     /**
      * The connected watch's Garmin product number, null until its handshake has

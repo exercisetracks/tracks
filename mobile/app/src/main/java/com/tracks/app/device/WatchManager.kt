@@ -26,18 +26,14 @@ import com.tracks.device.PulledFile
 import com.tracks.device.PulledFileKind
 import com.tracks.core.api.CourseSummary
 import com.tracks.core.api.MarkItem
-import com.tracks.core.api.PushItem
 import com.tracks.core.api.Waypoint
 import com.tracks.app.TracksApplication
 import com.tracks.core.api.TracksClient
-import com.tracks.core.api.PlannedWorkout
-import com.tracks.core.sync.CoachingContext
 import com.tracks.core.sync.CoursePushJob
 import com.tracks.device.garmin.explore.DesiredCourse
 import com.tracks.device.garmin.explore.DesiredWaypoint
 import com.tracks.device.garmin.explore.ExploreBridge
 import com.tracks.device.garmin.explore.ReconcileReport
-import com.tracks.core.sync.SCHEDULE_DAYS_AHEAD
 import com.tracks.core.sync.WatchPushBundle
 import com.tracks.core.sync.WatchPushFile
 import com.tracks.core.sync.buildScheduleBundle
@@ -112,6 +108,21 @@ class WatchManager(
 
     private val sendLock = Mutex()
 
+    /**
+     * The Garmin integration, or null for another vendor: the one cast in
+     * this class. Garmin-only features (watch apps, Explore, settings files)
+     * read it; everything vendor-neutral goes through [integration].
+     */
+    private val garmin: GarminIntegration? = integration as? GarminIntegration
+
+    /**
+     * Courses and saved places go to this watch as FIT files: any watch that
+     * is not a Garmin, and a Garmin whose handshake did not declare Explore
+     * sync. Otherwise they go over Explore sync, which is the only way they
+     * can be taken off again. See docs/watch-sync.md.
+     */
+    private val mapItemsAsFiles: Boolean get() = garmin?.takesCoursesAsFiles ?: true
+
     private val _paired = MutableStateFlow(loadPairedDevice())
 
     /** The watch the user has associated, or null before they have paired one. */
@@ -175,16 +186,16 @@ class WatchManager(
 
     /** Stream the watch's heart rate into LiveHeartRate, or stop; a no-op with no link. */
     fun setLiveHeartRate(on: Boolean) {
-        (integration as? GarminIntegration)?.setLiveHeartRate(on)
+        garmin?.setLiveHeartRate(on)
     }
 
     /** Ask the watch whether it is recording; the answer lands in LiveActivity. */
     fun requestActivityStatus() {
-        (integration as? GarminIntegration)?.requestActivityStatus()
+        garmin?.requestActivityStatus()
     }
 
     /** Files the watch refused to send during the last [pullAll]; 0 off a Garmin. */
-    fun takeRefusedDownloads(): Int = (integration as? GarminIntegration)?.takeRefusedDownloads() ?: 0
+    fun takeRefusedDownloads(): Int = garmin?.takeRefusedDownloads() ?: 0
 
     /**
      * An activity arrived already flagged synced, recorded since the last check
@@ -193,7 +204,7 @@ class WatchManager(
      * to block it, block it again now, while the link is up.
      */
     private suspend fun reblockWifiUploadsIfSeen() {
-        val garmin = integration as? GarminIntegration ?: return
+        val garmin = garmin ?: return
         val seen = garmin.takeActivitiesSyncedElsewhere()
         if (seen == 0 || !WatchPrivacyPreference.blocksWifiUploads(context)) return
         Log.w(TAG, "$seen new activit(y/ies) arrived already uploaded elsewhere; switching Wi-Fi uploads off again")
@@ -212,7 +223,7 @@ class WatchManager(
      * Devices without the notion ignore it.
      */
     fun setPullSavedItems(wanted: Boolean) {
-        (integration as? com.tracks.device.garmin.GarminIntegration)?.setPullSavedItems(wanted)
+        garmin?.setPullSavedItems(wanted)
     }
 
     suspend fun confirmPulled(file: PulledFile) = integration.confirmPulled(file)
@@ -280,7 +291,7 @@ class WatchManager(
                 continue
             }
 
-            if (file.kind == PulledFileKind.PLACES && integration is GarminIntegration) {
+            if (file.kind == PulledFileKind.PLACES && garmin != null) {
                 // Read here, not handed to the server's ingest. The watch rewrites
                 // this file after every change to its places, Explore sync's own
                 // included, so it arrives on ordinary syncs; and the ingest makes
@@ -424,13 +435,14 @@ class WatchManager(
             Log.i(TAG, "no upload list (offline?); pushing what the phone can build", e)
             emptyList()
         }.filterNot { it.type == "workout" }
-            // Courses and places reach a Garmin over Explore sync only. The
-            // server lists them as files as well (GARMIN/Courses, Locations.fit)
-            // for USB and older watches, and pushed here they landed beside the
-            // Explore copies: every course and place on the watch twice
-            // ("test1 1"), the file copies in no collection, so nothing could
-            // ever take them off again (2026-10-13, after a factory reset).
-            .filterNot { integration is GarminIntegration && it.type in MAP_ITEM_TYPES }
+            // Courses and places are never pushed from the server's list. The
+            // server lists them as files (GARMIN/Courses, Locations.fit) for
+            // USB; the phone sends its own, by [pushMapItems]. Pushed here as
+            // well they landed beside the Explore copies: every course and
+            // place on the watch twice ("test1 1"), the file copies in no
+            // collection, so nothing could ever take them off again
+            // (2026-10-13, after a factory reset).
+            .filterNot { it.type in MAP_ITEM_TYPES }
 
         val delivered = mutableListOf<MarkItem>()
         var failed = 0
@@ -506,62 +518,7 @@ class WatchManager(
         )
     }
 
-    /**
-     * Send one thing the user just asked for, now, without waiting for a sync.
-     *
-     * The queue is still the mechanism — [wanted] picks out of the same
-     * `/device-sync/upload-list` a full sync would drain, and the same mark
-     * call records it — so this cannot deliver something the server does not
-     * already believe is owed. That is deliberate: a "send now" that built its
-     * own file would be a second encoder to keep in step with the first.
-     *
-     * [Outcome.Nothing] is a real answer rather than an error. Asking to send a
-     * track that is already on the watch is a reasonable thing to do and the
-     * honest reply is "it is already there", not a failure.
-     */
-    suspend fun pushNow(client: TracksClient, wanted: (PushItem) -> Boolean): Outcome {
-        val pending = try {
-            client.pushList(bluetooth = true).items.filter(wanted)
-                .filterNot { integration is GarminIntegration && it.type in MAP_ITEM_TYPES }
-        } catch (e: Exception) {
-            Log.w(TAG, "could not read the upload list", e)
-            return Outcome.Failed(e.message ?: "the server could not be reached")
-        }
-        if (pending.isEmpty()) return Outcome.Nothing
-
-        val delivered = mutableListOf<MarkItem>()
-        for (item in pending) {
-            val encoded = item.dataB64
-            if (encoded == null) {
-                Log.w(TAG, "server offered ${item.filename} with no bytes")
-                continue
-            }
-            try {
-                integration.pushFile(item.folder, item.filename, Base64.decode(encoded))
-                delivered += MarkItem(
-                    type = item.type, id = item.id,
-                    filename = item.filename, ids = item.ids,
-                )
-            } catch (e: Exception) {
-                Log.w(TAG, "could not push ${item.filename}", e)
-                return Outcome.Failed(e.message ?: "the watch refused the file")
-            }
-        }
-
-        if (delivered.isEmpty()) return Outcome.Nothing
-        // Marked only after every file landed, for the same reason the full
-        // sync does it: the server stops offering what it believes was
-        // delivered, so marking optimistically loses the file for good.
-        return try {
-            client.markUploaded(delivered)
-            Outcome.Sent(delivered.size)
-        } catch (e: Exception) {
-            Log.w(TAG, "pushed but could not record it", e)
-            Outcome.Failed("It reached the watch, but the server was not told")
-        }
-    }
-
-    /** What [pushNow] managed. */
+    /** What a push asked for by the person managed. */
     sealed interface Outcome {
         data class Sent(val files: Int) : Outcome
 
@@ -596,13 +553,13 @@ class WatchManager(
     suspend fun pushCourseNow(client: TracksClient, courseId: Int): Outcome {
         val courses = containerProvider().mapItems.courses()
         val course = courses.firstOrNull { it.id == courseId } ?: return Outcome.Nothing
-        if (integration is GarminIntegration) return syncLibraryNow()
+        if (!mapItemsAsFiles) return syncLibraryNow()
         return pushCourseJob(CoursePushJob(course.id, course.name, "TRK_${course.id}.fit"), courses)
     }
 
     /** Rebuild and push the saved-places file now, if the flagged set disagrees with what is believed on the watch. */
     suspend fun pushWaypointsNow(client: TracksClient): Outcome =
-        if (integration is GarminIntegration) syncLibraryNow()
+        if (!mapItemsAsFiles) syncLibraryNow()
         else pushWaypointPlan(waypointPushPlan(containerProvider().mapItems.waypoints()))
 
     /**
@@ -625,16 +582,11 @@ class WatchManager(
         val bytes = com.tracks.core.fit.SettingsFit.encode(
             wifiAutoUpload = false, nowMillis = System.currentTimeMillis(),
         ) ?: return Outcome.Nothing
-        val garmin = integration as? GarminIntegration
+        val garmin = garmin
             ?: return Outcome.Failed("Only Garmin watches upload on their own")
         return try {
             if (!connect()) return Outcome.Failed("No watch is paired")
-            garmin.setForceLegacyPush(true)
-            try {
-                integration.pushFile("GARMIN/NewFiles", WIFI_SETTINGS_FILENAME, bytes)
-            } finally {
-                garmin.setForceLegacyPush(false)
-            }
+            garmin.pushToInbox("GARMIN/NewFiles", WIFI_SETTINGS_FILENAME, bytes)
             Outcome.Sent(1)
         } catch (e: Exception) {
             Log.w(TAG, "watch refused the Wi-Fi settings", e)
@@ -651,7 +603,7 @@ class WatchManager(
      * over the same legacy path as [stopWifiUploads].
      */
     private suspend fun pushUserProfileIfDue() {
-        val garmin = integration as? GarminIntegration ?: return
+        val garmin = garmin ?: return
         val s = containerProvider().sources.settingValues()
         val weight = (s["weight_kg"] as? Number)?.toDouble()
         val height = (s["height_cm"] as? Number)?.toDouble()
@@ -669,12 +621,7 @@ class WatchManager(
         val bytes = com.tracks.core.fit.SettingsFit.encodeUserProfile(
             weight, height, sex, birthYear, nowMillis = now, currentYear = year,
         ) ?: run { Log.i(TAG, "user profile: weight, height, sex and birth year are all unset"); return }
-        garmin.setForceLegacyPush(true)
-        try {
-            integration.pushFile("GARMIN/NewFiles", PROFILE_SETTINGS_FILENAME, bytes)
-        } finally {
-            garmin.setForceLegacyPush(false)
-        }
+        garmin.pushToInbox("GARMIN/NewFiles", PROFILE_SETTINGS_FILENAME, bytes)
         prefs.edit().putString("sent_$serial", key).putLong("sent_at_$serial", now).apply()
         Log.i(TAG, "sent the user profile (weight, height, sex, age) to the watch")
     }
@@ -697,7 +644,7 @@ class WatchManager(
      * Vendor-specific: only Garmin has a Connect IQ file type to push into.
      */
     suspend fun installMusicApp(config: WatchAppConfig.Config): Outcome {
-        val garmin = integration as? GarminIntegration
+        val garmin = garmin
             ?: return Outcome.Failed("This watch does not take Connect IQ apps")
 
         // Connected first: the build is chosen by what the watch says it is,
@@ -742,7 +689,7 @@ class WatchManager(
      * music server, as of [revision] — see [GarminIntegration.setWatchAppConfig].
      */
     fun setMusicAppConfig(config: WatchAppConfig.Config?, revision: Long) {
-        (integration as? GarminIntegration)?.setWatchAppConfig(config, revision)
+        garmin?.setWatchAppConfig(config, revision)
     }
 
     /**
@@ -750,14 +697,12 @@ class WatchManager(
      * Empty when the watch is not a Garmin or is not connected.
      */
     suspend fun installedWatchApps(): List<GarminIntegration.InstalledApp> {
-        val garmin = integration as? GarminIntegration ?: return emptyList()
-        return garmin.listInstalledApps()
+        return garmin?.listInstalledApps() ?: emptyList()
     }
 
     /** Remove one app from the watch; true when the watch confirms the delete. */
     suspend fun removeWatchApp(app: GarminIntegration.InstalledApp): Boolean {
-        val garmin = integration as? GarminIntegration ?: return false
-        return garmin.deleteInstalledApp(app)
+        return garmin?.deleteInstalledApp(app) ?: false
     }
 
     /**
@@ -768,7 +713,7 @@ class WatchManager(
      * runs a session anyway.
      */
     suspend fun syncCoursesWithWatch(): Boolean {
-        val garmin = integration as? GarminIntegration ?: return false
+        val garmin = garmin ?: return false
         refreshWatchLibrary()
         return garmin.syncLibrary()
     }
@@ -784,7 +729,7 @@ class WatchManager(
      * fresh stamp, and the watch pulls it again.
      */
     fun syncLibrarySoon() {
-        if (integration !is GarminIntegration) return
+        if (garmin == null) return
         librarySyncJob?.cancel()
         librarySyncJob = scope.launch {
             kotlinx.coroutines.delay(LIBRARY_SYNC_DEBOUNCE_MS)
@@ -900,7 +845,7 @@ class WatchManager(
      * comes back through here.
      */
     private suspend fun retryExploreOnFreshLink(): Boolean {
-        if (exploreRetriedOnFreshLink || integration !is GarminIntegration) return false
+        if (exploreRetriedOnFreshLink || garmin == null) return false
         if (containerProvider().watchSync.isRunning) return false
         exploreRetriedOnFreshLink = true
         SyncTrace.note(containerProvider().appContext, "explore failed; rebuilding the link and trying once more")
@@ -918,8 +863,8 @@ class WatchManager(
     val courseChanges: Flow<ReconcileReport> = _courseChanges
 
     init {
-        if (integration is GarminIntegration) {
-            integration.linkNote = { SyncTrace.note(containerProvider().appContext, it) }
+        garmin?.let { garmin ->
+            garmin.linkNote = { SyncTrace.note(containerProvider().appContext, it) }
             ExploreBridge.library = object : ExploreBridge.Library {
                 override fun wanted() = wantedOnWatch
                 override fun log(message: String) {
@@ -951,7 +896,7 @@ class WatchManager(
      * plan would have noticed on its own.
      */
     suspend fun syncWaypointsAfterDelete(client: TracksClient): Outcome {
-        if (integration is GarminIntegration) return syncLibraryNow()
+        if (!mapItemsAsFiles) return syncLibraryNow()
         val desired = containerProvider().mapItems.waypoints().filter { it.loadToDevice }
         val plan = if (desired.isEmpty()) WaypointPushJob.Clear else WaypointPushJob.Rebuild(desired)
         return pushWaypointPlan(plan)
@@ -959,10 +904,10 @@ class WatchManager(
 
     /** Every course/waypoint push a full sync owes, folded into [pushFromServer]. */
     private suspend fun pushMapItems(client: TracksClient): MapPushCounts {
-        if (integration is GarminIntegration) {
-            // Courses and places go over Explore sync on a Garmin, not as files:
-            // a FIT course lands in nobody's collection and can never be taken
-            // off again. See docs/garmin-explore-sync.md.
+        if (!mapItemsAsFiles) {
+            // Over Explore sync where the watch speaks it, not as files: a FIT
+            // course lands in nobody's collection and can never be taken off
+            // again. See docs/garmin-explore-sync.md.
             syncLibraryNow()
             return MapPushCounts(0, 0)
         }
@@ -997,7 +942,7 @@ class WatchManager(
         val id = CourseFitEncoder.identify(bytes) ?: return false
         // A course Tracks delivered over Explore sync is written to a file by
         // the watch itself; its name is the one Tracks sent.
-        if (integration is GarminIntegration && id.name != null &&
+        if (garmin != null && id.name != null &&
             containerProvider().mapItems.courses().any { it.loadToDevice && it.name == id.name }
         ) return true
         if (id.manufacturer != 1 || id.product != 65534) return false
@@ -1189,114 +1134,103 @@ class WatchManager(
         // The whole bundle goes down the cable's route: schedule and every
         // workout it names into GARMIN/NewFiles, in one run, so the watch's own
         // importer sees them as one batch the way it does over USB. See
-        // GarminIntegration.setForceLegacyPush.
-        val garmin = integration as? com.tracks.device.garmin.GarminIntegration
-        garmin?.setForceLegacyPush(!SCHEDULE_OVER_FILE_SYNC)
+        // GarminIntegration.pushToInbox.
+        //
+        // FileSyncService does not build it, measured 2026-08-28: two syncs
+        // pushed all 21 files that way, ending the burst with the empty
+        // TransferCompleteResponse Garmin Connect sends (answered in 103 ms,
+        // so the terminator works), and Schedule.fit read back unchanged both
+        // times. Still open: a newer watch may not offer the legacy path at
+        // all, and whatever FileSyncService wants then is the missing piece.
+        suspend fun send(file: WatchPushFile, lastInBatch: Boolean) =
+            if (garmin != null) garmin.pushToInbox(file.folder, file.filename, file.bytes, lastInBatch)
+            else integration.pushFile(file.folder, file.filename, file.bytes, lastInBatch)
+        // Which workout ends the burst. -1 when there are none, in which
+        // case the schedule is the whole batch and closes it itself.
+        val lastIndex = bundle.workouts.size - 1
+
         try {
-            // Which workout ends the burst. -1 when there are none, in which
-            // case the schedule is the whole batch and closes it itself.
-            val lastIndex = bundle.workouts.size - 1
+            send(bundle.schedule, lastInBatch = lastIndex < 0)
+        } catch (e: Exception) {
+            Log.w(TAG, "could not push the training schedule", e)
+            return null
+        }
 
+        val delivered = mutableListOf<MarkItem>()
+        var pushed = 0
+        for ((index, workout) in bundle.workouts.withIndex()) {
             try {
-                integration.pushFile(
-                    bundle.schedule.folder, bundle.schedule.filename, bundle.schedule.bytes,
-                    lastInBatch = lastIndex < 0,
-                )
-            } catch (e: Exception) {
-                Log.w(TAG, "could not push the training schedule", e)
-                return null
-            }
-
-            val delivered = mutableListOf<MarkItem>()
-            var pushed = 0
-            for ((index, workout) in bundle.workouts.withIndex()) {
+                // Once more after a failure. Measured 2026-10-12: the watch
+                // left a workout's CREATE_FILE unanswered while it was busy
+                // with its own HTTP-proxy requests, the push stalled out
+                // after 60 s, and the calendar went up with that day empty.
+                // The same file went through on the sync before and after.
                 try {
-                    // Once more after a failure. Measured 2026-10-12: the watch
-                    // left a workout's CREATE_FILE unanswered while it was busy
-                    // with its own HTTP-proxy requests, the push stalled out
-                    // after 60 s, and the calendar went up with that day empty.
-                    // The same file went through on the sync before and after.
-                    try {
-                        integration.pushFile(
-                            workout.folder, workout.filename, workout.bytes,
-                            lastInBatch = index == lastIndex,
-                        )
-                    } catch (e: CancellationException) {
-                        throw e
-                    } catch (e: Exception) {
-                        Log.w(TAG, "${workout.filename} did not go through (${e.message}); trying once more")
-                        integration.pushFile(
-                            workout.folder, workout.filename, workout.bytes,
-                            lastInBatch = index == lastIndex,
-                        )
-                    }
-                    pushed++
-                    // Only what the server can actually record. A workout
-                    // written on this phone and not yet synced has no row to
-                    // mark, and its own create will carry it up shortly.
-                    workout.id?.let { id ->
-                        delivered += MarkItem(
-                            type = workout.type, id = id,
-                            filename = workout.filename, ids = workout.ids,
-                        )
-                    }
-                } catch (e: Exception) {
-                    // Keep going. A schedule missing one of its workouts is a
-                    // calendar with a hole in it; abandoning here would leave every
-                    // later day empty as well.
-                    Log.w(TAG, "could not push ${workout.filename} for the schedule", e)
-                }
-            }
-
-            if (delivered.isNotEmpty()) {
-                // Queued rather than sent, so a push made on a hillside is still
-                // recorded once there is a signal. The call is a blind append
-                // server-side, so replaying it late says the same thing.
-                // Recorded on the planned workout itself, locally, and synced
-                // like any other field — no server needed to know it is there.
-                try {
-                    val at = nowIso()
-                    for (item in delivered) {
-                        val id = item.id ?: continue
-                        containerProvider().sources.setValues(
-                            "planned_workout", id,
-                            mapOf("watch_filename" to item.filename, "watch_uploaded_at" to at, "watch_deleted_at" to null),
-                        )
-                    }
+                    send(workout, lastInBatch = index == lastIndex)
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
-                    Log.w(TAG, "pushed the schedule's workouts but could not record it", e)
+                    Log.w(TAG, "${workout.filename} did not go through (${e.message}); trying once more")
+                    send(workout, lastInBatch = index == lastIndex)
                 }
+                pushed++
+                // Only what the server can actually record. A workout
+                // written on this phone and not yet synced has no row to
+                // mark, and its own create will carry it up shortly.
+                workout.id?.let { id ->
+                    delivered += MarkItem(
+                        type = workout.type, id = id,
+                        filename = workout.filename, ids = workout.ids,
+                    )
+                }
+            } catch (e: Exception) {
+                // Keep going. A schedule missing one of its workouts is a
+                // calendar with a hole in it; abandoning here would leave every
+                // later day empty as well.
+                Log.w(TAG, "could not push ${workout.filename} for the schedule", e)
             }
-
-            Log.i(TAG, "pushed a training schedule covering ${bundle.count} workout(s), " +
-                "with $pushed of ${bundle.workouts.size} workout file(s)")
-            // Only once everything has been sent. A partial push -- a workout
-            // refused, or the link lost midway -- must be sent again, because a
-            // schedule naming a file that never arrived builds a calendar with a
-            // hole in it.
-            // Counted from what was pushed, not from what the server was told
-            // about: a workout the server has not seen yet is delivered to the
-            // watch just the same, and gating the digest on the report would
-            // mean re-pushing the whole calendar on every sync until it
-            // synced.
-            if (pushed == bundle.workouts.size) {
-                prefs().edit().putString(KEY_SCHEDULE_DIGEST, digest).apply()
-            } else {
-                Log.w(TAG, "not recording the calendar as delivered: " +
-                    "$pushed of ${bundle.workouts.size} workout(s) landed")
-            }
-            return bundle.count
-        } finally {
-            // In a `finally` because the flag is process-wide, not
-            // run-scoped. Any throw between here and the end -- a
-            // malformed payload, or the coroutine being cancelled when
-            // WatchSyncService is destroyed mid-push -- would otherwise
-            // leave it stuck true and silently move every later push in
-            // this process onto the legacy path.
-            garmin?.setForceLegacyPush(false)
         }
+
+        if (delivered.isNotEmpty()) {
+            // Queued rather than sent, so a push made on a hillside is still
+            // recorded once there is a signal. The call is a blind append
+            // server-side, so replaying it late says the same thing.
+            // Recorded on the planned workout itself, locally, and synced
+            // like any other field — no server needed to know it is there.
+            try {
+                val at = nowIso()
+                for (item in delivered) {
+                    val id = item.id ?: continue
+                    containerProvider().sources.setValues(
+                        "planned_workout", id,
+                        mapOf("watch_filename" to item.filename, "watch_uploaded_at" to at, "watch_deleted_at" to null),
+                    )
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.w(TAG, "pushed the schedule's workouts but could not record it", e)
+            }
+        }
+
+        Log.i(TAG, "pushed a training schedule covering ${bundle.count} workout(s), " +
+            "with $pushed of ${bundle.workouts.size} workout file(s)")
+        // Only once everything has been sent. A partial push -- a workout
+        // refused, or the link lost midway -- must be sent again, because a
+        // schedule naming a file that never arrived builds a calendar with a
+        // hole in it.
+        // Counted from what was pushed, not from what the server was told
+        // about: a workout the server has not seen yet is delivered to the
+        // watch just the same, and gating the digest on the report would
+        // mean re-pushing the whole calendar on every sync until it
+        // synced.
+        if (pushed == bundle.workouts.size) {
+            prefs().edit().putString(KEY_SCHEDULE_DIGEST, digest).apply()
+        } else {
+            Log.w(TAG, "not recording the calendar as delivered: " +
+                "$pushed of ${bundle.workouts.size} workout(s) landed")
+        }
+        return bundle.count
     }
 
     /**
@@ -1638,29 +1572,8 @@ class WatchManager(
         private const val PROFILE_RESEND_MS = 7L * 24 * 3600 * 1000
         private const val MUSIC_APP_FILENAME = "TracksMusic.prg"
 
-        /**
-         * Which transport carries the training-calendar bundle.
-         *
-         * True sends it over FileSyncService, ending the burst with the empty
-         * TransferCompleteResponse Garmin Connect sends (see
-         * FileSyncServiceHandler.handleTransferComplete). False forces the whole
-         * bundle down the legacy CREATE_FILE path into GARMIN/NewFiles, which is
-         * measured to build the calendar.
-         *
-         * **False, and measured.** Tested 2026-08-28 with the burst terminator in
-         * place: two syncs, both pushing all 21 files over FileSyncService, and
-         * the watch's Schedule.fit read back unchanged both times. The terminator itself works (the
-         * watch answers 20 {1:1} in 103 ms instead of timing out after 30 s), so
-         * the session close was not what the calendar was missing.
-         *
-         * Left as a named constant because the question is not closed: newer
-         * watches may not offer the legacy CREATE_FILE path at all, and whatever
-         * FileSyncService still wants is the thing that would let this be true.
-         */
         /** How long after the last edit to a course or place the watch is synced. */
         private const val LIBRARY_SYNC_DEBOUNCE_MS = 4_000L
-
-        private const val SCHEDULE_OVER_FILE_SYNC = false
 
         /** Fingerprint of the calendar the watch last accepted in full. */
         private const val KEY_SCHEDULE_DIGEST = "schedule_digest"
