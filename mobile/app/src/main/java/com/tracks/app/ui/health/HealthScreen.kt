@@ -200,6 +200,19 @@ fun HealthScreen(vm: HealthViewModel, modifier: Modifier = Modifier) {
                             unit = "%",
                             scale = MetricScale.Bands(SPO2_ZONES),
                             info = Explain.Spo2,
+                            chart = {
+                                IntradayHistoryPanel(
+                                    days = state.spo2Readings,
+                                    averages = state.series { it.spo2 },
+                                    windowStart = state.range.startDate(),
+                                    zones = SPO2_ZONES,
+                                    lo = SPO2_ZONES.first().min,
+                                    hi = SPO2_ZONES.last().max,
+                                    noun = "blood oxygen",
+                                    emptyText = "No blood-oxygen readings in this window. The watch takes a few a night while worn.",
+                                )
+                            },
+                            scaleUnderChart = true,
                         ),
                         HealthMetric(
                             label = "Respiration",

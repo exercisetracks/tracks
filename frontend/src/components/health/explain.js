@@ -39,7 +39,7 @@ export const EXPLAIN = {
     "The variation between consecutive heartbeats, in milliseconds, measured overnight. Higher generally means better recovered.",
     "Absolute values vary hugely between people — yours is only comparable with your own, which is why the dial compares you to your own range for the window. A multi-day decline is the useful signal; one low night usually is not."),
   spo2: info("Blood oxygen",
-    "The percentage of oxygen your blood is carrying, measured at the wrist. Typically 95–100% at sea level.",
+    "The percentage of oxygen your blood is carrying, measured at the wrist. The dial shows the latest reading, as the watch does; the chart has every reading it took. Typically 95–100% at sea level.",
     "Wrist readings are noisy and drop with a cold sensor or a loose strap. It is most interesting at altitude, where a falling overnight average tracks how acclimatised you are."),
   respiration: info("Respiration",
     "Breaths per minute, averaged across the day. Adults at rest are typically 12–20.",

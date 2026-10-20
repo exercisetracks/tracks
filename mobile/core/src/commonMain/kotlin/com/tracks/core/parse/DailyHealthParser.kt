@@ -93,6 +93,7 @@ internal object DailyHealthParser {
         val stressAt = HashMap<Long, Long>()
         /** Minute of local day -> heart rate, as `hr_at`. */
         val hrAt = HashMap<Long, Long>()
+        val spo2At = HashMap<Long, Long>()
         /** Minute of local day -> [moderate, vigorous] intensity minutes, as `intensity_at`. */
         val intensityAt = HashMap<Long, LongArray>()
         /** The day's ascent so far, mm (field 35), as `ascent_mm`. */
@@ -212,7 +213,13 @@ internal object DailyHealthParser {
                     val day = dayAt(frame.get("timestamp"))
                     val reading = frame.get("reading_spo2")
                     if (day != null && reading != null) {
-                        Py.floatOrNull(reading)?.let { v -> if (v in 50.0..100.0) day.spo2.add(v) }
+                        Py.floatOrNull(reading)?.let { v ->
+                            if (v in 50.0..100.0) {
+                                day.spo2.add(v)
+                                // Keeps its clock; see the Python for why.
+                                minuteOfDay(frame.get("timestamp"), offset)?.let { m -> day.spo2At[m] = PyMath.roundToLong(v) }
+                            }
+                        }
                     }
                 }
 
@@ -260,7 +267,10 @@ internal object DailyHealthParser {
         }
         rollUpRestingCalories(restingRate, elapsed)?.let { metrics["resting_calories"] = it }
 
-        if (day.spo2.isNotEmpty() && "spo2" !in metrics) {
+        // The latest reading, not the day's average (see the Python).
+        if (day.spo2At.isNotEmpty()) {
+            metrics["spo2"] = day.spo2At.getValue(day.spo2At.keys.max()).toDouble()
+        } else if (day.spo2.isNotEmpty() && "spo2" !in metrics) {
             metrics["spo2"] = PyMath.round(PyMath.sum(day.spo2) / day.spo2.size, 1)
         }
         day.ascentMm?.let { metrics["floors_climbed"] = it / FLOOR_MM }
@@ -270,6 +280,7 @@ internal object DailyHealthParser {
             "metrics" to metrics,
             "stress_series" to day.stressAt.keys.sorted().map { listOf(it, day.stressAt.getValue(it)) },
             "hr_series" to day.hrAt.keys.sorted().map { listOf(it, day.hrAt.getValue(it)) },
+            "spo2_series" to day.spo2At.keys.sorted().map { listOf(it, day.spo2At.getValue(it)) },
             "moderate_series" to day.intensityAt.keys.sorted().mapNotNull { m ->
                 day.intensityAt.getValue(m)[0].takeIf { it != 0L }?.let { listOf(m, it) }
             },

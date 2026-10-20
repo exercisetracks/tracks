@@ -313,6 +313,9 @@ class LocalMetrics(private val library: LocalLibrary, private val sources: Local
     /** `/health/heart-rate`: each day's all-day heart rate, in the stress curve's shape. */
     suspend fun heartRate(after: String?): List<StressDay> = series("hr_series", after)
 
+    /** `/health/spo2`: every blood-oxygen reading, in the stress curve's shape. */
+    suspend fun spo2(after: String?): List<StressDay> = series("spo2_series", after)
+
     /** `/metrics/stress`: the curve behind each day's average, for days that have one. */
     suspend fun stress(after: String?): List<StressDay> = series("stress_series", after)
 

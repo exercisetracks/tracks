@@ -139,9 +139,10 @@ export function sleepMetric(days, start) {
  * the intraday curve (empty on windows too long to draw one); `food` the meal
  * log, which is what the Eaten dial counts — see food.js.
  */
-export function healthGroups({ days, imperial, start, stress, heartRate = [], food = [], goals = DEFAULT_GOALS }) {
+export function healthGroups({ days, imperial, start, stress, heartRate = [], spo2 = [], food = [], goals = DEFAULT_GOALS }) {
   const stressAverages = series(days, d => d.avg_stress_level);
   const hrAverages = series(days, d => d.avg_hr);
+  const spo2Daily = series(days, d => d.spo2);
 
   const activity = {
     title: "Activity",
@@ -231,9 +232,16 @@ export function healthGroups({ days, imperial, start, stress, heartRate = [], fo
       },
       {
         key: "spo2", label: "SpO₂", longLabel: "Blood oxygen", unit: "%",
-        trend: series(days, d => d.spo2),
+        trend: spo2Daily,
         scale: { kind: "bands", zones: SPO2_ZONES },
         info: EXPLAIN.spo2,
+        chart: () => (
+          <IntradayHistory days={spo2} averages={spo2Daily} start={start}
+            zones={SPO2_ZONES} lo={80} hi={100} ticks={[80, 85, 90, 95, 100]} id="spo2" unit="%"
+            empty="No blood-oxygen readings in this window. The watch takes a few a night while worn."
+            label="Blood oxygen history chart" />
+        ),
+        scaleUnderChart: true,
       },
       {
         key: "respiration", label: "Respiration", unit: "br/min",

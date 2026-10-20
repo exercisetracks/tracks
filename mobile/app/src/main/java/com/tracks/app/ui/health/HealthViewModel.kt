@@ -210,6 +210,8 @@ data class HealthUiState(
     val stress: List<StressDay> = emptyList(),
     /** All-day heart rate, per day, on the same windows as [stress]. */
     val heartRate: List<StressDay> = emptyList(),
+    /** Every blood-oxygen reading, per day, on the same windows. */
+    val spo2Readings: List<StressDay> = emptyList(),
     val injuries: List<Injury> = emptyList(),
     val medications: List<Medication> = emptyList(),
     val medicationLog: List<MedicationLog> = emptyList(),
@@ -518,8 +520,9 @@ class HealthViewModel(private val container: AppContainer) : ViewModel() {
     private fun loadStress() {
         val range = _state.value.range
         if (!range.intraday) {
-            if (_state.value.stress.isNotEmpty() || _state.value.heartRate.isNotEmpty()) {
-                _state.update { it.copy(stress = emptyList(), heartRate = emptyList()) }
+            if (_state.value.stress.isNotEmpty() || _state.value.heartRate.isNotEmpty() ||
+                _state.value.spo2Readings.isNotEmpty()) {
+                _state.update { it.copy(stress = emptyList(), heartRate = emptyList(), spo2Readings = emptyList()) }
             }
             return
         }
@@ -534,6 +537,13 @@ class HealthViewModel(private val container: AppContainer) : ViewModel() {
             if (_state.value.range == range) {
                 val cutoff = range.afterDate()
                 _state.update { it.copy(heartRate = if (cutoff == null) hr else hr.filter { d -> d.date >= cutoff }) }
+            }
+            val ox = withContext(Dispatchers.Default) {
+                runCatching { container.metrics.spo2(range.afterDate()) }.getOrDefault(emptyList())
+            }
+            if (_state.value.range == range) {
+                val cutoff = range.afterDate()
+                _state.update { it.copy(spo2Readings = if (cutoff == null) ox else ox.filter { d -> d.date >= cutoff }) }
             }
         }
     }

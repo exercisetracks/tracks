@@ -401,6 +401,9 @@ def _write_one_day(db, parsed: dict, device_id: int | None, user_id: int) -> Non
     stress_series = parsed.get("stress_series") or []
     # All-day heart rate, merged by the clock exactly as stress is.
     hr_series = parsed.get("hr_series") or []
+    # Blood-oxygen readings, merged by the clock too; the day's `spo2` is the
+    # latest of them (see ``_set_latest_spo2``).
+    spo2_series = parsed.get("spo2_series") or []
     # Intensity minutes, per minute, merged the same way; the day's totals
     # are summed from the merged series, never added file to file.
     intensity = {k: parsed.get(k) or [] for k in ("moderate_series", "vigorous_series")}
@@ -441,6 +444,10 @@ def _write_one_day(db, parsed: dict, device_id: int | None, user_id: int) -> Non
         if hr_series:
             extra["hr_series"] = _merge_stress_series(extra.get("hr_series"), hr_series)
             changed = True
+        if spo2_series:
+            extra["spo2_series"] = _merge_stress_series(extra.get("spo2_series"), spo2_series)
+            _set_latest_spo2(existing, extra)
+            changed = True
         for key, series in intensity.items():
             if series:
                 extra[key] = _merge_stress_series(extra.get(key), series)
@@ -456,6 +463,8 @@ def _write_one_day(db, parsed: dict, device_id: int | None, user_id: int) -> Non
             extra["stress_series"] = stress_series
         if hr_series:
             extra["hr_series"] = hr_series
+        if spo2_series:
+            extra["spo2_series"] = spo2_series
         for key, series in intensity.items():
             if series:
                 extra[key] = series
@@ -463,7 +472,17 @@ def _write_one_day(db, parsed: dict, device_id: int | None, user_id: int) -> Non
             date=metric_date, user_id=user_id, device_id=device_id, extra=extra, **metrics,
         )
         _set_intensity_totals(row, extra)
+        _set_latest_spo2(row, extra)
         db.add(row)
+
+
+def _set_latest_spo2(row, extra: dict) -> None:
+    """The day's `spo2`: the last reading of its merged series, as the watch's
+    glance shows. Taken from the series, never first-wins, because a later file
+    can carry a later reading than the one the row was created with."""
+    series = extra.get("spo2_series")
+    if series:
+        row.spo2 = float(series[-1][1])
 
 
 def _set_intensity_totals(row, extra: dict) -> None:

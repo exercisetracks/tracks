@@ -110,6 +110,21 @@ class LocalImporterTest {
         assertEquals("u2", lib.uidOf(b))
     }
 
+    /** The dial shows the latest blood-oxygen reading, as the watch does, not the day's first or average. */
+    @Test
+    fun the_days_spo2_is_the_latest_reading_of_the_merged_series() {
+        fun series(vararg p: Pair<Int, Int>) = JsonArray(p.map { JsonArray(listOf(JsonPrimitive(it.first), JsonPrimitive(it.second))) })
+        val (m1, x1) = LocalImporter.mergeDay(
+            null, null, mapOf("spo2" to JsonPrimitive(93.0)), JsonArray(emptyList()), JsonArray(emptyList()),
+            spo2 = series(60 to 91, 1000 to 95),
+        )
+        assertEquals(95.0, m1["spo2"]!!.jsonPrimitive.doubleOrNull)
+        val (m2, _) = LocalImporter.mergeDay(
+            m1, x1, emptyMap(), JsonArray(emptyList()), JsonArray(emptyList()), spo2 = series(60 to 90),
+        )
+        assertEquals(95.0, m2["spo2"]!!.jsonPrimitive.doubleOrNull, "an older file does not pull the day back")
+    }
+
     @Test
     fun a_day_keeps_the_first_reading_except_where_the_server_takes_max_min_or_latest() {
         val first = JsonObject(mapOf(

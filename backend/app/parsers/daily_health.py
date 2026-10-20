@@ -415,6 +415,12 @@ class DailyHealthParser(BaseParser):
                             v = float(reading)
                             if 50 <= v <= 100:
                                 day["spo2"].append(v)
+                                # Keeps its clock: the dial shows the latest
+                                # reading, as the watch's glance does, and the
+                                # chart draws every one (see ``_finish_day``).
+                                minute = _minute_of_day(get(frame, "timestamp"), offset)
+                                if minute is not None:
+                                    day["spo2_at"][minute] = int(round(v))
                         except (TypeError, ValueError):
                             pass
 
@@ -600,6 +606,8 @@ def _new_day() -> dict:
         "stress_at": {},
         # Minute of local day -> heart rate, by the same rule.
         "hr_at": {},
+        # Minute of local day -> SpO2, merged by the clock like stress.
+        "spo2_at": {},
         # Minute of local day -> [moderate, vigorous] minutes.
         "intensity_at": {},
         "ascent_mm": None,
@@ -639,7 +647,14 @@ def _finish_day(date, day: dict, resting_rate: int | None,
     if resting is not None:
         metrics["resting_calories"] = resting
 
-    if day["spo2"] and "spo2" not in metrics:
+    # The latest reading, not the day's average: the watch's glance shows the
+    # most recent spot reading, and the average -- dragged down by the lower
+    # readings of a night's sleep -- ran a couple of points under it. It beats
+    # ``avg_spo2`` from the monitoring header for the same reason. The average
+    # is the fallback for a file that carries no per-reading records.
+    if day["spo2_at"]:
+        metrics["spo2"] = float(day["spo2_at"][max(day["spo2_at"])])
+    elif day["spo2"] and "spo2" not in metrics:
         metrics["spo2"] = round(sum(day["spo2"]) / len(day["spo2"]), 1)
     if day["ascent_mm"] is not None:
         metrics["floors_climbed"] = day["ascent_mm"] // FLOOR_MM
@@ -652,6 +667,7 @@ def _finish_day(date, day: dict, resting_rate: int | None,
         "metrics": metrics,
         "stress_series": [[m, v] for m, v in sorted(day["stress_at"].items())],
         "hr_series": [[m, v] for m, v in sorted(day["hr_at"].items())],
+        "spo2_series": [[m, v] for m, v in sorted(day["spo2_at"].items())],
         # Two series rather than one of pairs, so each merges by the clock
         # exactly as stress does (fit_import._merge_stress_series).
         "moderate_series": [[m, v[0]] for m, v in sorted(day["intensity_at"].items()) if v[0]],

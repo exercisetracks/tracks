@@ -321,3 +321,17 @@ def health_summary(
     """
     since = user_today(db, user.id) - timedelta(days=days - 1)
     return Response(summary_json(db, user.id, since), media_type="application/json")
+
+
+@router.get("/spo2", response_model=list[StressDayOut])
+def spo2_detail(
+    after: date | None = None,
+    before: date | None = None,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_auth),
+):
+    """Every blood-oxygen reading the watch took, for each day in the window
+    that has any (a handful a night). Off the daily metric, and capped, for
+    the reasons [stress_detail] gives; the points are `[minute of local day, %]`.
+    """
+    return _series_days(db, user, after, before, "spo2_series")

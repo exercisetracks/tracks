@@ -223,7 +223,8 @@ object Explain {
     val Spo2 = MetricInfo(
         "Blood oxygen",
         "The percentage of oxygen your blood is carrying, measured at the " +
-            "wrist. Typically 95–100% at sea level.",
+            "wrist. The dial shows the latest reading, as the watch does; the chart has " +
+            "every reading it took. Typically 95–100% at sea level.",
         "Wrist readings are noisy and drop with a cold sensor or a loose strap. " +
             "It is most interesting at altitude, where a falling overnight " +
             "average tracks how acclimatised you are.",

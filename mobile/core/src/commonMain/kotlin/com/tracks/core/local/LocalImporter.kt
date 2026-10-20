@@ -263,6 +263,7 @@ class LocalImporter(
                 val stages = LocalJson.of(day["stages"] ?: emptyList<Any>()) as JsonArray
                 val stress = LocalJson.of(day["stress_series"] ?: emptyList<Any>()) as JsonArray
                 val hr = LocalJson.of(day["hr_series"] ?: emptyList<Any>()) as JsonArray
+                val spo2 = LocalJson.of(day["spo2_series"] ?: emptyList<Any>()) as JsonArray
                 val intensity = INTENSITY_SERIES.associateWith { key ->
                     LocalJson.of(day[key] ?: emptyList<Any>()) as JsonArray
                 }
@@ -270,7 +271,7 @@ class LocalImporter(
                 val merged = mergeDay(
                     current?.let { TracksJson.parseToJsonElement(it.metrics).jsonObject },
                     current?.let { TracksJson.parseToJsonElement(it.extra).jsonObject },
-                    incoming, stages, stress, hr, intensity,
+                    incoming, stages, stress, hr, intensity, spo2,
                 )
                 library.q.upsertDay(date, merged.first.toString(), merged.second.toString())
             }
@@ -325,6 +326,7 @@ class LocalImporter(
             stress: JsonArray,
             hr: JsonArray = JsonArray(emptyList()),
             intensity: Map<String, JsonArray> = emptyMap(),
+            spo2: JsonArray = JsonArray(emptyList()),
         ): Pair<JsonObject, JsonObject> {
             val m = LinkedHashMap(metrics ?: JsonObject(emptyMap()))
             // The sleep totals follow the timeline that wins (see the server's
@@ -354,6 +356,13 @@ class LocalImporter(
             // All-day heart rate, merged by the minute the same way.
             if (hr.isNotEmpty()) {
                 x["hr_series"] = mergeStress(x["hr_series"] as? JsonArray, hr)
+            }
+            // Blood oxygen by the minute, and the day's figure is the latest
+            // reading of the merged series, not first-wins (`_set_latest_spo2`).
+            if (spo2.isNotEmpty()) {
+                val merged = mergeStress(x["spo2_series"] as? JsonArray, spo2)
+                x["spo2_series"] = merged
+                (merged.last() as JsonArray)[1].jsonPrimitive.longOrNull?.let { m["spo2"] = JsonPrimitive(it.toDouble()) }
             }
             // Intensity minutes by the minute too, and the day's totals from
             // the merged series: overlapping files never count a minute twice.

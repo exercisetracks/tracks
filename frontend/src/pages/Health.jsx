@@ -77,6 +77,7 @@ export default function Health() {
   const [settings,  setSettings]  = useState(null);
   const [stress,    setStress]    = useState([]);
   const [heartRate, setHeartRate] = useState([]);
+  const [spo2, setSpo2] = useState([]);
   const [rangeKey,  setRangeKey]  = useState("30d");
   const [logOpen,   setLogOpen]   = useState(false);
   const [meals,     setMeals]     = useState([]);
@@ -136,7 +137,7 @@ export default function Health() {
   // smear at the right edge pretending to be a year of data. The guard drops
   // an answer for a window the user has already left.
   useEffect(() => {
-    if (range.days == null || range.days > INTRADAY_MAX_DAYS) { setStress([]); setHeartRate([]); return undefined; }
+    if (range.days == null || range.days > INTRADAY_MAX_DAYS) { setStress([]); setHeartRate([]); setSpo2([]); return undefined; }
     let live = true;
     api.getStressDetail({ after: start })
       .then(days => { if (live) setStress(days ?? []); })
@@ -144,6 +145,9 @@ export default function Health() {
     api.getHeartRateDetail({ after: start })
       .then(days => { if (live) setHeartRate(days ?? []); })
       .catch(() => { if (live) setHeartRate([]); });
+    api.getSpo2Detail({ after: start })
+      .then(days => { if (live) setSpo2(days ?? []); })
+      .catch(() => { if (live) setSpo2([]); });
     return () => { live = false; };
   }, [range.days, start]);
 
@@ -158,8 +162,8 @@ export default function Health() {
     [metrics, settings],
   );
   const groups = useMemo(
-    () => healthGroups({ days, imperial, start, stress, heartRate, food, goals }),
-    [days, imperial, start, stress, heartRate, food, goals],
+    () => healthGroups({ days, imperial, start, stress, heartRate, spo2, food, goals }),
+    [days, imperial, start, stress, heartRate, spo2, food, goals],
   );
   const nights = useMemo(() => sleepNights(days), [days]);
   // The watch's half of the page only exists with readings one left behind —
