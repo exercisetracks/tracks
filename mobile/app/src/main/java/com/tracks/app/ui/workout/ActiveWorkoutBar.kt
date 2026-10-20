@@ -47,11 +47,11 @@ import com.tracks.core.format.distance
  * where you started it. With a run still recording and the phone in a hand
  * that is also holding a water bottle, it should be one tap from anywhere.
  *
- * Shown on every page but the map, which has no chrome by design (see
- * [com.tracks.app.ui.TracksNavHost]); the run's notification is the way back
- * from there. Says what state the session is in, because "paused" is the
- * thing most worth noticing when you have wandered off: a paused run left in a
- * pocket is the one that gets forgotten.
+ * Shown on every page, the map included although it has no other chrome
+ * (see [com.tracks.app.ui.TracksNavHost]): the map is where a run recorded on
+ * the phone goes mid-activity. Says what state the session is in, because
+ * "paused" is the thing most worth noticing when you have wandered off: a
+ * paused run left in a pocket is the one that gets forgotten.
  */
 @Composable
 fun ActiveWorkoutBar(session: ActiveWorkout.Session, state: GuidedUiState, onOpen: () -> Unit, modifier: Modifier = Modifier) {

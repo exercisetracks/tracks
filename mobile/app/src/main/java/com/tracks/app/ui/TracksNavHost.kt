@@ -435,21 +435,24 @@ fun TracksNavHost(
                     )
                 }
                 // The way back to a workout in progress, under the page's bar
-                // on every page but the map (no chrome there — its own button
-                // and the run's notification stand in) and the workout itself.
+                // on every page but the workout itself. The map too, though it
+                // has no other chrome: it is where someone recording on the
+                // phone goes mid-activity, and the way back from it was the
+                // run's notification, behind a pull-down.
                 val session = activeWorkout
                 val onWorkout = route == "workout/{workoutId}" &&
                     backStack?.arguments?.getInt("workoutId") == session?.workoutId
-                if (session != null && here != Destination.Map && !onWorkout) {
+                if (session != null && !onWorkout) {
                     val guided by guidedViewModel(session.workoutId, session.key).state.collectAsStateWithLifecycle()
                     ActiveWorkoutBar(
                         session = session,
                         state = guided,
                         onOpen = { navController.navigate("workout/${session.workoutId}") { launchSingleTop = true } },
                         // A detail page brings its own bar and the shell
-                        // draws none, so here this is the topmost thing and
-                        // has to keep clear of the status bar itself.
-                        modifier = if (here == null) {
+                        // draws none, and the map has none, so there this is
+                        // the topmost thing and has to keep clear of the
+                        // status bar itself (none while the map hides it).
+                        modifier = if (here == null || here == Destination.Map) {
                             Modifier.windowInsetsPadding(WindowInsets.statusBars)
                         } else {
                             Modifier

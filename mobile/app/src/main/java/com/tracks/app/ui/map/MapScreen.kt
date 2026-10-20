@@ -698,6 +698,20 @@ fun MapScreen(
                     drawLiveTrack(loaded, live, liveInk)
                 }
 
+                // And what the phone is recording itself, redrawn on each fix
+                // it keeps (fixCount) -- fixes arrive on the main thread, as
+                // this runs, so the list is read whole between two of them.
+                val phoneRun by com.tracks.app.run.RunRecorder.state.collectAsStateWithLifecycle()
+                LaunchedEffect(style, phoneRun.fixCount, phoneRun.phase, liveInk) {
+                    val loaded = style ?: return@LaunchedEffect
+                    val points = if (phoneRun.phase == com.tracks.app.run.RunPhase.Idle) {
+                        emptyList()
+                    } else {
+                        com.tracks.app.run.RunRecorder.fixes.map { Point.fromLngLat(it.lng, it.lat) }
+                    }
+                    drawPhoneTrack(loaded, points, liveInk)
+                }
+
                 LaunchedEffect(style, tools.profileCursor) {
                     val loaded = style ?: return@LaunchedEffect
                     drawProfileCursor(loaded, tools.profileCursor)
@@ -1308,6 +1322,9 @@ internal fun drawRoute(style: Style, route: RouteDraft) {
 private const val LIVE_TRACK_SOURCE = "tracks_live_track"
 private const val LIVE_TRACK_LINE = "tracks_live_track_line"
 private const val LIVE_TRACK_CASING = "tracks_live_track_casing"
+private const val PHONE_TRACK_SOURCE = "tracks_phone_track"
+private const val PHONE_TRACK_LINE = "tracks_phone_track_line"
+private const val PHONE_TRACK_CASING = "tracks_phone_track_casing"
 
 /**
  * The watch's activity in progress, as Garmin Explore shows it: the line so
@@ -1324,22 +1341,43 @@ private const val LIVE_TRACK_CASING = "tracks_live_track_casing"
  * route being drawn still has to be legible over it.
  */
 internal fun drawLiveTrack(style: Style, live: com.tracks.device.garmin.live.LiveActivity.Track, ink: Int) {
+    val points = if (live.live) live.points.map { Point.fromLngLat(it.lng, it.lat) } else emptyList()
+    drawRecordingLine(style, LIVE_TRACK_SOURCE, LIVE_TRACK_CASING, LIVE_TRACK_LINE, points, ink)
+}
+
+/**
+ * The activity the phone itself is recording (RunRecorder), as the watch's is
+ * drawn above: the track so far, in the accent, from the first fix until the
+ * finished activity is saved or discarded. Where the phone is now is the
+ * location dot, which already is the phone's own fix.
+ *
+ * A pause leaves no gap: the recorder drops fixes while paused, so the line
+ * runs straight from where the pause began to where it ended, as the
+ * recorded activity's own track will.
+ */
+internal fun drawPhoneTrack(style: Style, points: List<Point>, ink: Int) =
+    drawRecordingLine(style, PHONE_TRACK_SOURCE, PHONE_TRACK_CASING, PHONE_TRACK_LINE, points, ink)
+
+/** One recording's line: a white casing under the accent, made once and refilled. */
+private fun drawRecordingLine(
+    style: Style,
+    sourceId: String,
+    casingId: String,
+    lineId: String,
+    points: List<Point>,
+    ink: Int,
+) {
     if (!style.isFullyLoaded) return
-    val shown = live.live
-    val line = if (shown && live.points.size >= 2) {
-        FeatureCollection.fromFeature(
-            Feature.fromGeometry(
-                LineString.fromLngLats(live.points.map { Point.fromLngLat(it.lng, it.lat) }),
-            ),
-        )
+    val line = if (points.size >= 2) {
+        FeatureCollection.fromFeature(Feature.fromGeometry(LineString.fromLngLats(points)))
     } else {
         FeatureCollection.fromFeatures(emptyList())
     }
-    (style.getSource(LIVE_TRACK_SOURCE) as? GeoJsonSource)?.setGeoJson(line)
+    (style.getSource(sourceId) as? GeoJsonSource)?.setGeoJson(line)
         ?: run {
-            style.addSource(GeoJsonSource(LIVE_TRACK_SOURCE, line))
+            style.addSource(GeoJsonSource(sourceId, line))
             style.addLayer(
-                LineLayer(LIVE_TRACK_CASING, LIVE_TRACK_SOURCE).withProperties(
+                LineLayer(casingId, sourceId).withProperties(
                     PropertyFactory.lineColor("#ffffff"),
                     PropertyFactory.lineWidth(7f),
                     PropertyFactory.lineCap(Property.LINE_CAP_ROUND),
@@ -1347,14 +1385,14 @@ internal fun drawLiveTrack(style: Style, live: com.tracks.device.garmin.live.Liv
                 ),
             )
             style.addLayer(
-                LineLayer(LIVE_TRACK_LINE, LIVE_TRACK_SOURCE).withProperties(
+                LineLayer(lineId, sourceId).withProperties(
                     PropertyFactory.lineWidth(4f),
                     PropertyFactory.lineCap(Property.LINE_CAP_ROUND),
                     PropertyFactory.lineJoin(Property.LINE_JOIN_ROUND),
                 ),
             )
         }
-    style.getLayer(LIVE_TRACK_LINE)?.setProperties(PropertyFactory.lineColor(String.format("#%06X", ink)))
+    style.getLayer(lineId)?.setProperties(PropertyFactory.lineColor(String.format("#%06X", ink)))
 }
 
 /** What an empty GeoJSON source is fed, since null is not a document. */
