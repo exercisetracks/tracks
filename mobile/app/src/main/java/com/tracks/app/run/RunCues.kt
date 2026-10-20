@@ -86,14 +86,28 @@ class RunCues(context: Context) {
         say(text)
     }
 
+    /** Cuts in over whatever was still being said: a pause is news now. */
     fun announcePause() {
+        interrupt()
         buzz(SHORT_MS)
         say("Paused.")
     }
 
     fun announceResume() {
+        interrupt()
         buzz(SHORT_MS)
         say("Resumed.")
+    }
+
+    /**
+     * Stop talking and drop everything queued. For a skip: spamming Skip
+     * used to read out every step passed over, one after another, long after
+     * the screen had moved on. The caller then says only what the step it
+     * landed on needs.
+     */
+    fun interrupt() {
+        synchronized(pending) { pending.clear() }
+        runCatching { tts?.stop() }
     }
 
     /** [text] is the split's line, from [SpokenCues.split]. */

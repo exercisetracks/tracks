@@ -180,6 +180,10 @@ private fun expandStrength(step: WorkoutStep, into: MutableList<GuidedStep>) {
             }.ifBlank { null },
             note = step.note,
             cues = step.cues,
+            // Under the name, as a stretch's is: what the lift is and how to
+            // do it, which a name like "Renegade Row" does not say.
+            howTo = step.instructions?.takeIf { it.isNotBlank() }
+                ?: com.tracks.core.strengthplan.PlanLibrary.exerciseInstructions[name],
             position = "Set $set of $sets",
             kind = if (step.phase == "warmup") StepKind.Warmup else StepKind.Work,
             exercise = StrengthTarget(name, step.reps, step.weightKg),

@@ -105,7 +105,7 @@ class GuidedPlanTest {
     fun `a strength exercise becomes one step per set carrying what to log`() {
         val plan = workout(
             WorkoutStep(
-                type = "strength_exercise", name = "Back Squat", sets = 3, reps = 5,
+                type = "strength_exercise", name = "Barbell Back Squat", sets = 3, reps = 5,
                 weightKg = 100.0, targetRpe = 8.0, restSeconds = 120,
                 cues = listOf("Brace before you descend"), phase = "main",
             ),
@@ -116,7 +116,7 @@ class GuidedPlanTest {
 
         assertEquals("three sets and the two rests between them", 5, steps.size)
         val set = steps.first()
-        assertEquals("Back Squat", set.title)
+        assertEquals("Barbell Back Squat", set.title)
         assertEquals("Set 1 of 3", set.position)
         // No countdown on a working set: a set ends when the bar is racked.
         assertNull(set.seconds)
@@ -126,9 +126,11 @@ class GuidedPlanTest {
         // The prescription travels with the step, which is what lets a finished
         // session be logged with real numbers rather than a note.
         assertNotNull(set.exercise)
-        assertEquals("Back Squat", set.exercise!!.name)
+        assertEquals("Barbell Back Squat", set.exercise!!.name)
         assertEquals(5, set.exercise!!.reps)
         assertEquals(100.0, set.exercise!!.weightKg!!, 0.0)
+        // How to do it, from the library, under the name as a stretch's is.
+        assertTrue(set.howTo.orEmpty().isNotBlank())
     }
 
     @Test

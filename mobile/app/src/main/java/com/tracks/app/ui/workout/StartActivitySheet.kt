@@ -159,12 +159,19 @@ fun StartActivitySheet(
                     }
                     if (target == "time") {
                         Text("${targetMin.toInt()} min", style = MaterialTheme.typography.titleMedium)
-                        Slider(targetMin, { targetMin = (it / 5).toInt() * 5f }, valueRange = 5f..300f)
+                        Slider(
+                            targetMin, { targetMin = (it / 5).toInt() * 5f }, valueRange = 5f..300f,
+                            colors = sliderColors(durationColor((targetMin - 5f) / 295f)),
+                        )
                     }
                 }
                 StartKind.Group.Built -> {
                     Text("Length: ${minutes.toInt()} min", style = MaterialTheme.typography.labelLarge)
-                    Slider(minutes, { minutes = ((it / 5).toInt() * 5).coerceIn(5, 90).toFloat() }, valueRange = 5f..90f, steps = 16)
+                    Slider(
+                        minutes, { minutes = ((it / 5).toInt() * 5).coerceIn(5, 90).toFloat() },
+                        valueRange = 5f..90f, steps = 16,
+                        colors = sliderColors(durationColor((minutes - 5f) / 85f)),
+                    )
                     val words = if (k == StartKind.Flexibility) FLEX_WORDS else STRENGTH_WORDS
                     val levels = QuickSession.Intensity.entries
                     Text("Intensity: ${words[intensity.ordinal]}", style = MaterialTheme.typography.labelLarge)
@@ -175,6 +182,7 @@ fun StartActivitySheet(
                         onValueChange = { intensity = levels[it.toInt().coerceIn(0, levels.lastIndex)] },
                         valueRange = 0f..levels.lastIndex.toFloat(),
                         steps = levels.size - 2,
+                        colors = sliderColors(INTENSITY_COLORS[intensity.ordinal]),
                     )
                     NeutralButton(
                         if (picking) "Hide muscles" else if (emphasis.isEmpty()) "Focus on muscles?" else "Focus on muscles (${emphasis.size})",
@@ -246,3 +254,31 @@ private fun KindPill(text: String, selected: Boolean, onClick: () -> Unit) {
         Text(text, Modifier.padding(horizontal = 16.dp, vertical = 9.dp), style = MaterialTheme.typography.labelLarge)
     }
 }
+
+/**
+ * Intensity runs green to red, as a heat scale does everywhere: easy is cool,
+ * hard is hot. One colour per level, thumb and filled track alike.
+ */
+private val INTENSITY_COLORS = listOf(
+    androidx.compose.ui.graphics.Color(0xFF22C55E),
+    androidx.compose.ui.graphics.Color(0xFF84CC16),
+    androidx.compose.ui.graphics.Color(0xFFEAB308),
+    androidx.compose.ui.graphics.Color(0xFFF97316),
+    androidx.compose.ui.graphics.Color(0xFFEF4444),
+)
+
+/** Length deepens from light to deep blue: more of the same, not hotter. */
+private fun durationColor(fraction: Float) = androidx.compose.ui.graphics.lerp(
+    androidx.compose.ui.graphics.Color(0xFF7DD3FC),
+    androidx.compose.ui.graphics.Color(0xFF1D4ED8),
+    fraction.coerceIn(0f, 1f),
+)
+
+@Composable
+private fun sliderColors(color: androidx.compose.ui.graphics.Color) = androidx.compose.material3.SliderDefaults.colors(
+    thumbColor = color,
+    activeTrackColor = color,
+    activeTickColor = color.copy(alpha = 0.5f),
+    inactiveTrackColor = color.copy(alpha = 0.22f),
+    inactiveTickColor = color.copy(alpha = 0.6f),
+)

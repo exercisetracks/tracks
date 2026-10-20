@@ -54,11 +54,14 @@ object FlowPlayback {
     fun togglePause() {
         val s = _state.value ?: return
         _state.value = if (s.running) FlowEngine.pause(s, now()) else FlowEngine.resume(s, now())
+        if (s.running) cues?.announcePause() else cues?.announceResume()
         if (_state.value?.running == true) runTicker()
     }
 
-    fun skip() = _state.value?.let { apply(FlowEngine.skip(it, now())) }
-    fun back() = _state.value?.let { apply(FlowEngine.back(it, now())); runTicker() }
+    // Whatever was still being said about the stretch being left is cut off,
+    // so a run of skips says only the one landed on.
+    fun skip() = _state.value?.let { cues?.interrupt(); apply(FlowEngine.skip(it, now())) }
+    fun back() = _state.value?.let { cues?.interrupt(); apply(FlowEngine.back(it, now())); runTicker() }
     fun extend(seconds: Int) = _state.value?.let { _state.value = FlowEngine.extend(it, seconds, now()) }
 
     /** The screen's own edits to the session — saving, saved, an error. */

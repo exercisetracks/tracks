@@ -37,6 +37,17 @@ object PlanLibrary {
         }
     }
 
+    /**
+     * How to do each lift, by name — for the guided screen, which shows it
+     * under the exercise as it does a stretch's. Apart from [exercises] so
+     * that map stays the server's cache, field for field.
+     */
+    val exerciseInstructions: Map<String, String> by lazy {
+        rows(EXERCISE_LIBRARY_JSON).mapNotNull { r ->
+            (r["instructions"] as String?)?.takeIf { it.isNotBlank() }?.let { (r["name"] as String) to it }
+        }.toMap()
+    }
+
     val stretches: List<StretchRow> by lazy { rows(STRETCH_LIBRARY_JSON).map(::stretchRow) }
 
     @Suppress("UNCHECKED_CAST")

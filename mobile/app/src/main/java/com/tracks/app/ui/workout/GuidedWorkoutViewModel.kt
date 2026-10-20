@@ -322,6 +322,11 @@ class GuidedWorkoutViewModel(
     fun togglePause() {
         val running = _state.value.running
         _state.update { it.copy(running = !running) }
+        // A recording's service says this itself (RunService); a step session
+        // has only its own voice.
+        if (!_state.value.isRecorded) {
+            if (running) sessionCues?.announcePause() else sessionCues?.announceResume()
+        }
         if (running) timer?.cancel() else if (!_state.value.isRecorded) tick()
         if (!running && !_state.value.isRecorded) runClock()
     }
@@ -341,8 +346,15 @@ class GuidedWorkoutViewModel(
         }
     }
 
-    /** Skip whatever is on screen — a step you cannot do, or a rest cut short. */
-    fun skip() = advance()
+    /**
+     * Skip whatever is on screen — a step you cannot do, or a rest cut short.
+     * What was still being said about it stops, so a run of skips speaks only
+     * the step it lands on.
+     */
+    fun skip() {
+        cues?.interrupt()
+        advance()
+    }
 
     fun back() {
         val index = _state.value.index
@@ -352,6 +364,8 @@ class GuidedWorkoutViewModel(
             it.copy(index = index - 1, remaining = it.steps[index - 1].seconds ?: 0, done = false)
         }
         markStepStart()
+        cues?.interrupt()
+        _state.value.step?.let(::announce)
         if (_state.value.running && !_state.value.isRecorded) tick()
     }
 
