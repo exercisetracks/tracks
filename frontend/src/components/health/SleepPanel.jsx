@@ -88,7 +88,7 @@ function NoNight({ date }) {
     : new Date(`${date}T12:00:00`).toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
   return (
     <div>
-      <div className="text-sm font-medium">{label}</div>
+      <div className="text-sm font-medium text-slate-900 dark:text-white">{label}</div>
       <div className="text-2xl text-slate-400 dark:text-slate-500 mt-1">No data</div>
       <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">No sleep has been synced for this night yet.</p>
     </div>
@@ -131,6 +131,13 @@ function SleepClockChart({ nights, start, selected, onSelect }) {
   // A day wide, minus a gap, and never more — sized from the slot, never from
   // the number of nights, or uneven readings draw overlapping blobs.
   const barW = Math.max(2, Math.min(24, (plotW / slots) * 0.8));
+  // On a year or lifetime window the bars are a pixel or two wide, and a
+  // 1.5px score line would cover the hypnogram it sits over. Never wider
+  // than three quarters of a bar, but never thinner than 1px. Past a quarter
+  // of a bar the line also fades, down to 60% transparent at three quarters,
+  // so the bars underneath stay readable where the line crowds them.
+  const scoreStroke = Math.max(1, Math.min(1.5, barW * 0.75));
+  const scoreOpacity = 1 - 0.6 * Math.min(1, Math.max(0, (scoreStroke / barW - 0.25) / 0.5));
   const xOf = offset => GUTTER + ((offset + 0.5) / slots) * plotW;
   const y = hours => PLOT_H * ((hours - scale.min) / (scale.max - scale.min));
   // The score rides over the nights on its own 0–100: full height is 100. It
@@ -219,9 +226,8 @@ function SleepClockChart({ nights, start, selected, onSelect }) {
             <g key={`s-${p.night.date}`} pointerEvents="none">
               {next && next.offset === p.offset + 1 && (
                 <line x1={x} y1={ys} x2={xOf(next.offset)} y2={scoreY(next.night.score)}
-                  stroke={SCORE_COLOR} strokeWidth={1.5} strokeLinecap="round" />
+                  stroke={SCORE_COLOR} strokeWidth={scoreStroke} strokeOpacity={scoreOpacity} strokeLinecap="round" />
               )}
-              <circle cx={x} cy={ys} r={2.5} fill={SCORE_COLOR} />
             </g>
           );
         })}

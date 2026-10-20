@@ -270,7 +270,7 @@ export function SleepTrendChart({ hours, score, start }) {
             connectNulls={false} dot={loneDot("hours", SLEEP_COLOR, rows)}
             activeDot={{ r: 4 }} isAnimationActive={false} />
           <Line yAxisId="s" type="linear" dataKey="score" stroke={SCORE_COLOR} strokeWidth={2}
-            connectNulls={false} dot={loneDot("score", SCORE_COLOR, rows)}
+            connectNulls={false} dot={false}
             activeDot={{ r: 4 }} isAnimationActive={false} />
         </ComposedChart>
       </ResponsiveContainer>

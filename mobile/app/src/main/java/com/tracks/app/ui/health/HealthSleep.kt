@@ -363,6 +363,13 @@ private fun SleepHistoryChart(
             fun y(hours: Double) = plotHeight * (1f - scale.fraction(-hours))
             // Inset so the first and last bars sit fully inside the plot.
             fun x(fraction: Float) = gutter + dayAxis.centre(fraction, plotWidth, barWidth)
+            // On a year or lifetime window the bars are a pixel or two wide,
+            // and a 1.5dp score line would cover the hypnogram under it.
+            // Never wider than three quarters of a bar, never under 1px. Past
+            // a quarter of a bar the line also fades, down to 60% transparent
+            // at three quarters, so the bars under it stay readable.
+            val scoreStroke = (barWidth * 0.75f).coerceAtMost(1.5.dp.toPx()).coerceAtLeast(1f)
+            val scoreAlpha = 1f - 0.6f * ((scoreStroke / barWidth - 0.25f) / 0.5f).coerceIn(0f, 1f)
 
             // Average bedtime and average waking, behind the nights. A
             // reference rather than a reading, and the thing a run of bars is
@@ -470,16 +477,13 @@ private fun SleepHistoryChart(
                     java.time.temporal.ChronoUnit.DAYS.between(spot.day, next.day) == 1L
                 ) {
                     drawLine(
-                        color = SCORE_LINE,
+                        color = SCORE_LINE.copy(alpha = scoreAlpha),
                         start = here,
                         end = Offset(x(next.fraction), scoreY(next.night.score, plotHeight)),
-                        strokeWidth = 1.5.dp.toPx(),
+                        strokeWidth = scoreStroke,
                         cap = StrokeCap.Round,
                     )
                 }
-                // A dot on every scored night, so a night with no neighbour is
-                // still on the chart rather than an invisible endpoint.
-                drawCircle(color = SCORE_LINE, radius = 2.dp.toPx(), center = here)
             }
 
             drawDateAxis(
