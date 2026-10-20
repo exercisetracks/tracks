@@ -20,6 +20,8 @@ import com.tracks.device.CompanionPairing
 import com.tracks.device.ConnectionState
 import com.tracks.device.DeviceIntegration
 import com.tracks.device.MusicCommand
+import com.tracks.device.MusicState
+import com.tracks.device.MusicTrack
 import com.tracks.device.DeviceNotification
 import com.tracks.device.PairedDevice
 import com.tracks.device.PulledFile
@@ -102,6 +104,7 @@ class WatchManager(
     private val musicApps = WatchAppBundle { context.assets.open(it) }
     private var musicSubscription: MusicMonitor.Subscription? = null
     private var stopObservingReplies: (() -> Unit)? = null
+    private var stopWatchingCalls: (() -> Unit)? = null
 
     /** The long-lived collectors started by [attachFeeds], cancelled on detach. */
     private val feedJobs = mutableListOf<Job>()
@@ -1314,6 +1317,8 @@ class WatchManager(
         }
         TracksNotificationListener.sink = sink
         TracksNotificationListener.drain(sink)
+        // Calls ring from telephony, ahead of the phone app's notification.
+        stopWatchingCalls = com.tracks.app.feeds.IncomingCalls.watch(context)
 
         // The other direction: the user clearing, replying to, or pressing a
         // button on a notification from the wrist. Done on the phone by the
@@ -1372,7 +1377,8 @@ class WatchManager(
             integration.findPhone.collect { request -> finder.handle(request) }
         }
 
-        musicSubscription = music.observe { pushMusic() }
+        lastMusic = null
+        musicSubscription = music.observe { pushMusic(onlyIfChanged = true) }
         pushMusic()
     }
 
@@ -1389,6 +1395,8 @@ class WatchManager(
         TracksNotificationListener.sink = null
         stopObservingReplies?.invoke()
         stopObservingReplies = null
+        stopWatchingCalls?.invoke()
+        stopWatchingCalls = null
         WeatherReceiver.listener = null
         musicSubscription?.cancel()
         musicSubscription = null
@@ -1490,8 +1498,27 @@ class WatchManager(
     private var cachedForecast: WeatherReport? = null
     private var cachedForecastAt = 0L
 
-    private fun pushMusic() {
-        send("send music") { integration.sendMusic(music.currentTrack(), music.currentState()) }
+    /** What the watch was last sent for music; see [pushMusic]. */
+    private var lastMusic: Pair<MusicTrack?, MusicState?>? = null
+
+    /**
+     * Tell the watch what is playing.
+     *
+     * [onlyIfChanged] for the media session's own callbacks, which fire for
+     * changes the watch never shows. Players with "Bluetooth lyrics" rewrite
+     * their metadata on every lyric line, for a car stereo to show it as the
+     * title, and each rewrite used to send the watch three identical
+     * messages. They share the one queue to the watch with notifications and
+     * calls, which waited behind them. The watch asking, and the volume it
+     * just moved, always get an answer.
+     */
+    private fun pushMusic(onlyIfChanged: Boolean = false) {
+        send("send music") {
+            val now = music.currentTrack() to music.currentState()
+            if (onlyIfChanged && now == lastMusic) return@send
+            lastMusic = now
+            integration.sendMusic(now.first, now.second)
+        }
     }
 
     /**

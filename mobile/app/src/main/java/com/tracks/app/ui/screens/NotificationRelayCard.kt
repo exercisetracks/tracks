@@ -88,16 +88,15 @@ fun NotificationRelayCard(modifier: Modifier = Modifier) {
     var picking by remember { mutableStateOf(false) }
     var replies by remember { mutableStateOf(NotificationRelayPreferences.quickReplies(context)) }
     var editingReplies by remember { mutableStateOf(false) }
-    // Texting callers needs SEND_SMS, asked for only here, when wanted. The
-    // switch shows the permission itself: Android owns it, and turning it off
-    // is done in the app's system settings.
-    var canText by remember {
-        mutableStateOf(context.checkSelfPermission(android.Manifest.permission.SEND_SMS) ==
-            android.content.pm.PackageManager.PERMISSION_GRANTED)
-    }
-    val askToText = androidx.activity.compose.rememberLauncherForActivityResult(
-        androidx.activity.result.contract.ActivityResultContracts.RequestPermission(),
-    ) { granted -> canText = granted }
+    // The call permissions, asked for only here, when wanted, and all at once
+    // (IncomingCalls.PERMISSIONS). The switch shows the permissions themselves:
+    // Android owns them, and turning them off is done in the app's system
+    // settings. Calls still ring without them, later and without the caller's
+    // name, from the phone app's notification.
+    var callsOn by remember { mutableStateOf(com.tracks.app.feeds.IncomingCalls.allGranted(context)) }
+    val askForCalls = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions(),
+    ) { callsOn = com.tracks.app.feeds.IncomingCalls.allGranted(context) }
 
     Column(modifier) {
         SettingsCard("Notifications on the watch") {
@@ -133,6 +132,7 @@ fun NotificationRelayCard(modifier: Modifier = Modifier) {
 
             // Calls ring on the watch with answer, decline and a reply; the
             // reply declines and texts the caller one of the quick replies.
+            // A partial grant reads as off, so the switch asks again for the rest.
             Row(
                 Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -140,20 +140,20 @@ fun NotificationRelayCard(modifier: Modifier = Modifier) {
             ) {
                 Column(Modifier.weight(1f)) {
                     Text(
-                        "Text callers your reply",
+                        "Calls on the watch",
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurface,
                     )
                     Text(
-                        "Calls ring on the watch. Replying from it declines the call and texts the caller.",
+                        "Ring the watch as the phone rings, with the caller's name. Replying from it declines the call and texts the caller.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
                 TracksSwitch(
-                    checked = canText,
+                    checked = callsOn,
                     onCheckedChange = { on ->
-                        if (on) askToText.launch(android.Manifest.permission.SEND_SMS)
+                        if (on) askForCalls.launch(com.tracks.app.feeds.IncomingCalls.PERMISSIONS)
                         else context.startActivity(
                             android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
                                 .setData(android.net.Uri.fromParts("package", context.packageName, null))

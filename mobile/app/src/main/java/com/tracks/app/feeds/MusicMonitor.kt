@@ -61,7 +61,7 @@ class MusicMonitor(private val context: Context) {
     fun currentTrack(): MusicTrack? {
         val metadata = activeController()?.metadata ?: return null
         return MusicTrack(
-            title = metadata.getString(MediaMetadata.METADATA_KEY_TITLE),
+            title = titleOf(metadata),
             artist = metadata.getString(MediaMetadata.METADATA_KEY_ARTIST),
             album = metadata.getString(MediaMetadata.METADATA_KEY_ALBUM),
         )
@@ -204,7 +204,21 @@ class MusicMonitor(private val context: Context) {
         fun cancel()
     }
 
-    private companion object {
-        const val TAG = "TracksMusic"
+    companion object {
+        private const val TAG = "TracksMusic"
+
+        /**
+         * The song's title, read the way the phone's own media controls read
+         * it: the display title first, the title only when there is none.
+         *
+         * Not the other way round, because of "Bluetooth lyrics" — a setting
+         * in many players that writes the current lyric line into the title,
+         * for car stereos that show nothing else, while the display title
+         * keeps the song's name. Reading the title put the lyrics on the
+         * watch, a line at a time, under a phone showing the right name.
+         */
+        fun titleOf(metadata: MediaMetadata): String? =
+            metadata.getString(MediaMetadata.METADATA_KEY_DISPLAY_TITLE)?.takeIf { it.isNotBlank() }
+                ?: metadata.getString(MediaMetadata.METADATA_KEY_TITLE)
     }
 }

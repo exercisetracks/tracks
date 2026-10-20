@@ -1320,7 +1320,19 @@ class GarminIntegration(private val context: Context) : DeviceIntegration {
                 number = notification.phoneNumber
                 sourceAppId = notification.packageName
             }
-            ringing = RingingCall(notification.id, call)
+            // The same call again, now with its name or number. The watch
+            // updates a call in place only under the same id, and the id is
+            // the number's hash: a number learnt after the first ring would
+            // otherwise leave the numberless ring behind it, still ringing.
+            val before = ringing
+            val next = RingingCall(notification.id, call)
+            if (before != null && before.watchId != next.watchId) {
+                support.sendCallState(CallSpec().apply {
+                    command = CallSpec.CALL_END
+                    number = before.spec.number
+                })
+            }
+            ringing = next
             support.sendCallState(call)
             return
         }
