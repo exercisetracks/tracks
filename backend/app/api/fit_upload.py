@@ -94,10 +94,14 @@ async def upload_fit_files(
     log.info("[UPLOAD] Completed - imported=%d, duplicates=%d, errors=%d",
               len(imported), len(duplicates), len(errors))
 
-    if not imported and errors:
+    # A 400 only when every file failed. A batch of duplicates and one broken
+    # file is a normal batch from a bulk import (a Garmin export holds both),
+    # and refusing it made the client count the duplicates as failures too.
+    if errors and not imported and not duplicates:
         raise HTTPException(
             status_code=400,
-            detail={"message": "No files imported", "errors": [e["error"] for e in errors]}
+            detail={"message": "No files imported", "errors": [e["error"] for e in errors],
+                    "failed": errors}
         )
 
     return {
@@ -106,6 +110,7 @@ async def upload_fit_files(
         "errors": len(errors),
         "total": len(files),
         "files": imported,
+        "failed": errors,
         "message": f"Imported {len(imported)} file(s).",
     }
 

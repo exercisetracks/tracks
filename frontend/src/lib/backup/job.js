@@ -147,7 +147,7 @@ export async function chooseBackupTarget(filename) {
 // ── Backing up ──────────────────────────────────────────────────────────────
 
 /** Every row the account has, newest copy of each, and the header of the first page. */
-async function pullAll() {
+export async function pullAll() {
   const rows = new Map();
   let since = 0;
   let first = null;

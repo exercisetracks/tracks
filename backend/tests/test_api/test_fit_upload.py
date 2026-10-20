@@ -103,3 +103,22 @@ class TestUpload:
         assert resp.json()["saved"] == 1
         db.expire_all()
         assert db.query(Import).filter_by(user_id=user.id, source="upload").first() is not None
+
+    def test_a_broken_file_among_duplicates_fails_alone(self, client, user):
+        """A bulk import sends batches mixing files already imported with the odd
+        one that will not parse. That batch used to be refused outright, and the
+        client counted every duplicate in it as a failure too."""
+        headers = _auth_headers(client)
+        with patch.object(fit_import, "_parse_bytes", return_value=_PARSED):
+            _upload(client, headers, filename="old.fit", content=b"already here")
+
+        with patch.object(fit_import, "_parse_bytes", side_effect=ValueError("truncated")):
+            resp = client.post("/fit/upload", headers=headers, files=[
+                ("files", ("old.fit", io.BytesIO(b"already here"), "application/octet-stream")),
+                ("files", ("broken.fit", io.BytesIO(b"not a fit file"), "application/octet-stream")),
+            ])
+
+        assert resp.status_code == 200
+        body = resp.json()
+        assert (body["saved"], body["skipped"], body["errors"]) == (0, 1, 1)
+        assert [f["filename"] for f in body["failed"]] == ["broken.fit"]

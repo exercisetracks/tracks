@@ -571,7 +571,8 @@ export default function WatchSyncModal({ open, autoDevice, onClose, onSynced, mo
             <p className="text-xs text-slate-400 dark:text-slate-500">
               USB works for MTP watches (Fenix, Epix, FR 9xx — set USB mode to
               MTP first). Watches that mount as a drive (e.g. Instinct 2) use
-              the folder option.
+              the folder option. To import a whole export or a folder of
+              files, use Settings → Activity &amp; health files.
               {hostProbing && " Still watching for a watch on the server, too."}
             </p>
           </div>

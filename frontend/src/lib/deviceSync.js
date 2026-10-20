@@ -210,6 +210,40 @@ export async function fetchPushPlan() {
 const BATCH_MAX_FILES = 25;
 const BATCH_MAX_BYTES = 32 * 1024 * 1024;
 
+/** The server will not take uploads from this session at all (signed out, or its key gone). */
+export class UploadRefused extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "UploadRefused";
+  }
+}
+
+/**
+ * POST one batch. A dropped connection or a 5xx is tried once more after a
+ * pause — a bulk import is a thousand batches, and one blip should not lose 25
+ * files. The server dedupes by content hash, so a retry of a batch that did
+ * land costs nothing but the transfer. A 401/403 throws UploadRefused: every
+ * later batch would fail the same way.
+ */
+async function postBatch(form) {
+  for (let attempt = 0; ; attempt++) {
+    let res;
+    try {
+      res = await fetch(`${BASE_URL}/fit/upload`, { method: "POST", headers: authHeaders(), body: form });
+    } catch (e) {
+      if (attempt === 0) { await new Promise((r) => setTimeout(r, 2000)); continue; }
+      throw e;
+    }
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) return data;
+    if (res.status === 401 || res.status === 403) {
+      throw new UploadRefused(typeof data.detail === "string" ? data.detail : "Signed out — sign in again and re-run the import");
+    }
+    if (res.status >= 500 && attempt === 0) { await new Promise((r) => setTimeout(r, 2000)); continue; }
+    throw Object.assign(new Error(data.detail?.message || data.detail || `Upload failed (${res.status})`), { failed: data.detail?.failed });
+  }
+}
+
 /**
  * Read each file from the device and upload to /fit/upload in batches.
  * onFile(file, phase, received, total) — phase: "reading" | "uploading" | "done" | "error"
@@ -257,22 +291,17 @@ export async function uploadFiles(files, { onFile = null, cancelToken = null } =
     if (batchFiles.length === 0) continue;
 
     try {
-      const res = await fetch(`${BASE_URL}/fit/upload`, {
-        method: "POST",
-        headers: authHeaders(),
-        body: form,
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw new Error(data.detail?.message || data.detail || `Upload failed (${res.status})`);
-      }
+      const data = await postBatch(form);
       totals.saved += data.saved || 0;
       totals.skipped += data.skipped || 0;
       totals.errors += data.errors || 0;
+      for (const e of data.failed || []) totals.failures.push({ name: e.filename, error: e.error });
       for (const f of batchFiles) onFile?.(f, "done", f.size || 0, f.size || 0);
     } catch (e) {
+      if (e instanceof UploadRefused) throw e;
+      const failed = e.failed?.length ? e.failed : [{ filename: `${batchFiles.length} file(s)`, error: e.message || String(e) }];
       totals.errors += batchFiles.length;
-      totals.failures.push({ name: `${batchFiles.length} file(s)`, error: e.message || String(e) });
+      for (const f of failed) totals.failures.push({ name: f.filename, error: f.error });
       for (const f of batchFiles) onFile?.(f, "error", 0, f.size || 0);
     }
   }
