@@ -53,6 +53,17 @@ const RANGES = [
  */
 const INTRADAY_MAX_DAYS = 31;
 
+/**
+ * What is fetched however short the window. The goals read the last four
+ * finished weeks whatever range is chosen, and the page decides whether a watch
+ * is in play from readings "anywhere in the history", so a window of seven days
+ * would hide the whole measured half of the page after a quiet week. Three
+ * months covers both; a watch silent for longer than that is only noticed once
+ * a longer range is picked.
+ */
+const BASE_DAYS = 90;
+const LIFETIME_DAYS = 36500;
+
 function windowStart(range) {
   if (range.days == null) return null;
   const d = todayDate();
@@ -82,29 +93,43 @@ export default function Health() {
   const range = RANGES.find(r => r.key === rangeKey) ?? RANGES[2];
   const start = windowStart(range);
 
-  // Full history — the window offers Lifetime, so fetch everything once and
-  // filter on the way out rather than refetching on every range change.
-  const fetchMetrics = useCallback(() => {
-    api.getHealthSummary(36500).then(setMetrics).catch(() => {});
+  // Only as much history as the window on screen needs, and more when a longer
+  // one is picked. Fetching everything up front made the page wait on years of
+  // readings to draw a month of them. A longer fetch is a superset, so going
+  // back to a shorter range reuses what is already here instead of asking again.
+  const need = range.days == null ? LIFETIME_DAYS : Math.max(range.days, BASE_DAYS);
+  const loaded = useRef(0);
+  const asked = useRef(0);
+
+  const fetchHistory = useCallback((daysBack) => {
+    const ticket = ++asked.current;
+    // A stale answer — for a window the user has already moved past — must not
+    // replace a newer one that happened to arrive first.
+    const current = fn => v => { if (ticket === asked.current) fn(v); };
+    api.getHealthSummary(daysBack)
+      .then(current(rows => { loaded.current = daysBack; setMetrics(rows); }))
+      .catch(() => {});
+    // Saved meals, and every food entry — the Eaten dial counts them, so they
+    // cover the same span as the metrics.
+    api.getMeals().then(setMeals).catch(() => {});
+    api.getMealLog(daysBack).then(current(setFood)).catch(() => {});
   }, []);
 
-  // Saved meals, and every food entry — the Eaten dial counts them, so they
-  // are fetched over the same full history as the metrics.
-  const fetchFood = useCallback(() => {
-    api.getMeals().then(setMeals).catch(() => {});
-    api.getMealLog(36500).then(setFood).catch(() => {});
-  }, []);
+  // After a write: ask again for what is on screen.
+  const refresh = useCallback(() => fetchHistory(Math.max(loaded.current, need)), [fetchHistory, need]);
 
   const fetchInjuries = useCallback(() => {
     api.getInjuries().then(setInjuries).catch(() => {});
   }, []);
 
   useEffect(() => {
-    fetchMetrics();
-    fetchFood();
     fetchInjuries();
     api.getSettings().then(setSettings).catch(() => {});
-  }, [fetchMetrics, fetchFood, fetchInjuries]);
+  }, [fetchInjuries]);
+
+  useEffect(() => {
+    if (need > loaded.current) fetchHistory(need);
+  }, [need, fetchHistory]);
 
   // The stress curve, on windows short enough to draw one. A longer window
   // clears it: a month of readings drawn across a year of axis would be a
@@ -307,7 +332,7 @@ export default function Health() {
           meals={meals}
           log={food}
           imperial={imperial}
-          onChanged={() => { fetchMetrics(); fetchFood(); }}
+          onChanged={refresh}
           onClose={() => setLogOpen(false)}
         />
       )}

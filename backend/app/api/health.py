@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 from datetime import date, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
 
 from app.auth import require_auth
@@ -18,6 +18,7 @@ from app.schemas.health import (
 )
 from app.schemas.metrics import DailyMetricOut
 from app.services.crypto_context import require_crypto_session
+from app.services.health_summary import summary_json
 
 router = APIRouter(prefix="/health", tags=["health"])
 
@@ -312,12 +313,11 @@ def health_summary(
     days: int = 30,
     db: Session = Depends(get_db), user: User = Depends(require_auth),
 ):
-    """Recent daily metrics for the health page overview."""
-    # user injected via Depends
+    """Recent daily metrics for the health page overview.
+
+    Served from a cache and without the per-minute series — see
+    app.services.health_summary. The body is already serialised JSON, so
+    FastAPI's response_model is documentation here, not a second pass.
+    """
     since = user_today(db, user.id) - timedelta(days=days - 1)
-    return (
-        db.query(DailyMetric)
-        .filter(DailyMetric.user_id == user.id, DailyMetric.date >= since)
-        .order_by(DailyMetric.date)
-        .all()
-    )
+    return Response(summary_json(db, user.id, since), media_type="application/json")
