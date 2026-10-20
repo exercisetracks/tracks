@@ -5633,7 +5633,7 @@
           "health"
         ],
         "summary": "Health Summary",
-        "description": "Recent daily metrics for the health page overview.",
+        "description": "Recent daily metrics for the health page overview.\n\nServed from a cache and without the per-minute series — see\napp.services.health_summary. The body is already serialised JSON, so\nFastAPI's response_model is documentation here, not a second pass.",
         "operationId": "health_summary_health_summary_get",
         "security": [
           {
@@ -5663,6 +5663,83 @@
                     "$ref": "#/components/schemas/DailyMetricOut"
                   },
                   "title": "Response Health Summary Health Summary Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health/spo2": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Spo2 Detail",
+        "description": "Every blood-oxygen reading the watch took, for each day in the window\nthat has any (a handful a night). Off the daily metric, and capped, for\nthe reasons [stress_detail] gives; the points are `[minute of local day, %]`.",
+        "operationId": "spo2_detail_health_spo2_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "after",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "After"
+            }
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Before"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StressDayOut"
+                  },
+                  "title": "Response Spo2 Detail Health Spo2 Get"
                 }
               }
             }
@@ -14241,6 +14318,26 @@
         }
       }
     },
+    "/sprite/version": {
+      "get": {
+        "tags": [
+          "sprite"
+        ],
+        "summary": "Get Sprite Version",
+        "description": "The USGS sheet's current version, for the `v` query of its URLs.\n\nNull while the sheet is still being built; the client then fetches it\nunversioned, which revalidates.",
+        "operationId": "get_sprite_version_sprite_version_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
     "/sprite/{name}.{ext}": {
       "get": {
         "tags": [
@@ -14265,6 +14362,22 @@
             "schema": {
               "type": "string",
               "title": "Ext"
+            }
+          },
+          {
+            "name": "v",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "V"
             }
           }
         ],

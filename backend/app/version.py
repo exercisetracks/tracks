@@ -25,7 +25,7 @@ Bump `MIN_CLIENT_API_VERSION` only when you remove something old clients
 depend on — that's a deliberate act of dropping support, not a side effect.
 """
 
-SERVER_VERSION = "1.8.2"
+SERVER_VERSION = "1.8.3"
 
 # 2: /sync/push + /sync/pull replace /sync/delta and the old offline write
 # paths outright (docs/offline-first.md: no backwards compatibility), so a
@@ -40,5 +40,8 @@ SERVER_VERSION = "1.8.2"
 # Nor for 1.7.0's map packs (/maps/packs/*) and the queued region status:
 # additive too. A 1.7.0 phone against an older server finds no manifest and
 # saves no packs; nothing else changes.
+#
+# Nor for 1.8.3's /sprite/version: only the web map asks for it, and the web
+# map is served by the server it asks.
 API_VERSION = 2
 MIN_CLIENT_API_VERSION = 2
