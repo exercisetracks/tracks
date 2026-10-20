@@ -1551,11 +1551,23 @@ class WatchManager(
             .apply()
     }
 
-    fun forgetPairedDevice() {
+    /**
+     * Unpair: drop the link, the companion association and everything this
+     * phone remembers about the watch, so the next pairing starts clean.
+     *
+     * The calendar digest and FIT timestamps go with the rest of [prefs] on
+     * purpose: kept, they would tell the next watch it already holds a
+     * calendar it has never seen. The Bluetooth bond stays (see
+     * [CompanionPairing.forget]); the watch itself keeps everything on it.
+     */
+    suspend fun forgetPairedDevice() {
+        val device = _paired.value
         // The link service first: it would otherwise keep trying to reconnect
         // to a watch the user has just told us to forget, and its own stop
         // condition (nothing paired) is only noticed on its next attempt.
         WatchLinkService.stop(context)
+        disconnect()
+        device?.let { CompanionPairing(context).forget(it.address) }
         prefs().edit().clear().apply()
         _paired.value = null
     }

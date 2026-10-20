@@ -122,7 +122,11 @@ fun TracksNavHost(
     val state by vm.state.collectAsStateWithLifecycle()
     // Read here rather than inside Settings so the same answer can shape
     // anything else that is watch-only later, from one place.
-    val hasDevice by container.hasDevice.collectAsStateWithLifecycle()
+    val ownsDevice by container.hasDevice.collectAsStateWithLifecycle()
+    // A paired watch is a watch, whatever the switch last said: Settings
+    // hides the switch while one is paired, so it must not be able to hide
+    // the watch's own controls with no way back.
+    val hasDevice = ownsDevice || state.watch.pairedName != null
     val themeMode by container.themeMode.collectAsStateWithLifecycle()
     val syncProgress by container.syncProgress.collectAsStateWithLifecycle()
     val watchProgress by container.watchSync.progress.collectAsStateWithLifecycle()
@@ -669,6 +673,7 @@ fun TracksNavHost(
                     onSync = vm::sync,
                     onWatchPair = onPair,
                     onWatchSync = onSync,
+                    onWatchForget = vm::forgetWatch,
                     hasDevice = hasDevice,
                     onHasDeviceChange = container::setHasDevice,
                     onLogout = vm::logout,

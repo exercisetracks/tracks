@@ -106,6 +106,34 @@ class CompanionPairing(private val context: Context) {
             manager.associations.map { it.uppercase() }
         }
 
+    /**
+     * Drop Tracks' association with this device, so the OS stops waking the
+     * app for it and it no longer counts as Tracks' watch.
+     *
+     * The Bluetooth bond is left alone: Android offers apps no public way to
+     * remove one (only the system's Bluetooth settings can), and the bond is
+     * shared with anything else that talks to the watch. Best effort, like
+     * [associated]: a failure here leaves an association behind, which the
+     * next pairing simply reuses.
+     */
+    @Suppress("DEPRECATION")
+    fun forget(address: String) {
+        val manager = manager ?: return
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                manager.myAssociations
+                    .filter { it.deviceMacAddress?.toString().equals(address, ignoreCase = true) }
+                    .forEach { manager.disassociate(it.id) }
+            } else {
+                manager.associations
+                    .filter { it.equals(address, ignoreCase = true) }
+                    .forEach { manager.disassociate(it) }
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not remove the companion association", e)
+        }
+    }
+
     @SuppressLint("MissingPermission")
     private fun remoteName(address: String): String? = try {
         // Falls back to the address so a bonded-but-unnamed watch is still

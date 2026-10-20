@@ -272,7 +272,17 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
      */
     fun pairWatch(picker: CompanionPairing.DevicePicker) = run("Pairing") {
         val device = container.watch.pair(picker)
+        // A paired watch answers "do you have one" (Settings hides that
+        // switch while one is paired).
+        container.setHasDevice(true)
         _state.update { current -> current.copy(message = "Paired with ${device.name}.") }
+    }
+
+    /** Unpair the watch from this phone; see [com.tracks.app.device.WatchManager.forgetPairedDevice]. */
+    fun forgetWatch() = run("Unpairing") {
+        val name = state.value.watch.pairedName
+        container.watch.forgetPairedDevice()
+        _state.update { current -> current.copy(message = "Unpaired ${name ?: "the watch"}.") }
     }
 
     /**

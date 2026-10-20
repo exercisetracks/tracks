@@ -102,6 +102,8 @@ fun SettingsScreen(
     onSync: () -> Unit,
     onWatchPair: () -> Unit,
     onWatchSync: () -> Unit,
+    /** Unpair the watch from this phone — see [WatchSection]. */
+    onWatchForget: () -> Unit,
     /** Whether the user owns a watch at all — see [WatchSection]. */
     hasDevice: Boolean,
     onHasDeviceChange: (Boolean) -> Unit,
@@ -172,6 +174,7 @@ fun SettingsScreen(
             onHasDeviceChange = onHasDeviceChange,
             onPair = onWatchPair,
             onSync = onWatchSync,
+            onForget = onWatchForget,
         )
         }
         // Its own card under the watch: which notifications reach the wrist
@@ -236,12 +239,15 @@ fun SettingsScreen(
  * own one. Absent rather than greyed out: a disabled control is a promise
  * that something could be turned on, and there is nothing to turn on here.
  *
- * Nothing is deleted by turning it off. A watch that was paired stays paired,
- * and turning it back on brings every control back in the state it was left in;
- * this hides UI, it does not unpair anything.
+ * Nothing is deleted by turning it off: it hides UI, it does not unpair
+ * anything, and turning it back on brings every control back in the state it
+ * was left in.
+ *
+ * With a watch paired the question is answered, so the switch is not shown;
+ * Unpair takes its place, and the switch comes back once nothing is paired.
  */
 @Composable
-private fun WatchSection(
+internal fun WatchSection(
     state: UiState,
     profile: ProfileState,
     onSet: SetField,
@@ -250,14 +256,18 @@ private fun WatchSection(
     onHasDeviceChange: (Boolean) -> Unit,
     onPair: () -> Unit,
     onSync: () -> Unit,
+    onForget: () -> Unit,
 ) {
+    val paired = state.watch.pairedName != null
     SettingsCard(
         "Watch",
         MetricInfo("Watch", "Syncs about hourly while in range — no signal needed."),
     ) {
-        ToggleRow("I have a Garmin watch", null, hasDevice, onHasDeviceChange)
-        if (!hasDevice) return@SettingsCard
-        SectionDivider()
+        if (!paired) {
+            ToggleRow("I have a Garmin watch", null, hasDevice, onHasDeviceChange)
+            if (!hasDevice) return@SettingsCard
+            SectionDivider()
+        }
         WatchStatus(watch = state.watch, busy = state.busy, onPair = onPair, onSync = onSync)
         if (profile.loaded) {
             SectionDivider()
@@ -272,6 +282,37 @@ private fun WatchSection(
         FeedRows(feeds)
         SectionDivider()
         SyncTraceRow()
+        if (paired) {
+            SectionDivider()
+            UnpairRow(name = state.watch.pairedName.orEmpty(), busy = state.busy, onForget = onForget)
+        }
+    }
+}
+
+/**
+ * Unpair the watch from this phone, after a confirmation: it stops syncing
+ * and needs pairing again to come back, which is worth one tap more.
+ */
+@Composable
+private fun UnpairRow(name: String, busy: Boolean, onForget: () -> Unit) {
+    var confirming by remember { mutableStateOf(false) }
+    DangerButton("Unpair watch", onClick = { confirming = true }, enabled = !busy)
+    if (confirming) {
+        AlertDialog(
+            onDismissRequest = { confirming = false },
+            title = { Text("Unpair $name?") },
+            text = {
+                Text(
+                    "This phone stops syncing with it until you pair again. Nothing on the watch " +
+                        "or in Tracks is deleted. To remove the Bluetooth pairing too, forget the " +
+                        "watch in Android's Bluetooth settings.",
+                )
+            },
+            confirmButton = {
+                DangerButton("Unpair", onClick = { confirming = false; onForget() })
+            },
+            dismissButton = { NeutralButton("Cancel", onClick = { confirming = false }) },
+        )
     }
 }
 
