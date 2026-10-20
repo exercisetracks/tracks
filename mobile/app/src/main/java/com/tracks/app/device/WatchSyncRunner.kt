@@ -70,6 +70,9 @@ class WatchSyncRunner(private val container: AppContainer) {
 
     private val mutex = Mutex()
 
+    /** Whether a sync holds the watch right now. */
+    val isRunning: Boolean get() = mutex.isLocked
+
     /** Where a running watch sync is, for the progress pill; null when none is. */
     data class Progress(val label: String, val fraction: Float? = null)
 

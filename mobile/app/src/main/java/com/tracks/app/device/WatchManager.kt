@@ -838,6 +838,7 @@ class WatchManager(
         val items = containerProvider().mapItems
         val at = nowIso()
         if (!report.failed) {
+            exploreRetriedOnFreshLink = false
             val courses = items.courses().associateBy { it.id }
             for (id in report.coursesOn) {
                 val c = courses[id] ?: continue
@@ -868,6 +869,7 @@ class WatchManager(
             }
         } else {
             Log.w(TAG, "the watch could not finish syncing courses and places")
+            if (retryExploreOnFreshLink()) return
         }
         // Reported here rather than by the map, so it is heard off the map
         // too; and answered by the next session that works, even one with
@@ -879,6 +881,37 @@ class WatchManager(
         _courseChanges.tryEmit(report)
     }
 
+    /** Set by [retryExploreOnFreshLink]; cleared by the next session that finishes OK. */
+    @Volatile
+    private var exploreRetriedOnFreshLink = false
+
+    /**
+     * The first failed Explore session in a row is retried on a link built
+     * from nothing, before anyone is told; true when that retry is under way.
+     *
+     * Force-stopping the app was the one thing that cured a run of failures,
+     * and all it did was build a new connection: state left on a link held up
+     * for days (see GarminSupport's DEVICE_INFORMATION check) failed every
+     * session over it. Once per run of failures, so a watch whose own state is
+     * the trouble (docs/garmin-explore-sync.md, "Failure") costs one
+     * reconnect and then gets its message. Not while a sync runs: tearing the
+     * link down under it would fail the sync to fix the session. The new
+     * connection's handshake starts a session of its own, and its report
+     * comes back through here.
+     */
+    private suspend fun retryExploreOnFreshLink(): Boolean {
+        if (exploreRetriedOnFreshLink || integration !is GarminIntegration) return false
+        if (containerProvider().watchSync.isRunning) return false
+        exploreRetriedOnFreshLink = true
+        SyncTrace.note(containerProvider().appContext, "explore failed; rebuilding the link and trying once more")
+        refreshWatchLibrary()
+        return runCatching {
+            disconnect()
+            connect()
+        }.onFailure { Log.w(TAG, "could not rebuild the link after a failed Explore session", it) }
+            .isSuccess
+    }
+
     private val _courseChanges = kotlinx.coroutines.flow.MutableSharedFlow<ReconcileReport>(extraBufferCapacity = 4)
 
     /** What the watch just confirmed; the map library reloads and says so. */
@@ -886,6 +919,7 @@ class WatchManager(
 
     init {
         if (integration is GarminIntegration) {
+            integration.linkNote = { SyncTrace.note(containerProvider().appContext, it) }
             ExploreBridge.library = object : ExploreBridge.Library {
                 override fun wanted() = wantedOnWatch
                 override fun log(message: String) {

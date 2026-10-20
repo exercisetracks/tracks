@@ -418,6 +418,10 @@ class GarminIntegration(private val context: Context) : DeviceIntegration {
             override fun onSyncFinished() {
                 syncSignal?.complete(Unit)
             }
+
+            override fun onSessionRestarted() {
+                onWatchSessionRestarted(support)
+            }
         })
         support.setMusicRefreshListener(GarminSupport.MusicRefreshListener {
             _musicRequests.tryEmit(Unit)
@@ -523,10 +527,53 @@ class GarminIntegration(private val context: Context) : DeviceIntegration {
         readySignal?.completeExceptionally(DisconnectedException())
         syncSignal?.completeExceptionally(DisconnectedException())
         uploadSignal?.complete(false)
+        // A reading from a link that is gone is a guess, and a confident one:
+        // it is what made a stale link look healthy. The next connection's
+        // handshake asks for a fresh one.
+        _battery.value = null
         _connection.value = ConnectionState.Disconnected
     }
 
     class DisconnectedException : Exception("The watch disconnected")
+
+    /**
+     * Where this layer's account of a link it gave up on goes, besides logcat:
+     * the app's watch-sync trace, which outlives the moment.
+     */
+    @Volatile var linkNote: ((String) -> Unit)? = null
+
+    /** When [onWatchSessionRestarted] last dropped a link; see there. */
+    @Volatile private var lastSessionRestartDrop = 0L
+
+    /**
+     * The watch started a new GFDI session on a link that stayed up; see
+     * GarminSupport's DEVICE_INFORMATION check. Dropped rather than repaired in
+     * place: the old session's state is spread across the support object and
+     * every handler under it, and a connection built from nothing is the cure
+     * already proven by force-stopping the app.
+     *
+     * At most once per [SESSION_RESTART_DROP_MS]. A watch that restarted its
+     * session on every connection would otherwise hold the radio in a
+     * reconnect loop; then the link is kept, and a failing sync still
+     * rebuilds it on its own.
+     */
+    private fun onWatchSessionRestarted(support: GarminSupport) {
+        val now = SystemClock.elapsedRealtime()
+        if (lastSessionRestartDrop != 0L && now - lastSessionRestartDrop < SESSION_RESTART_DROP_MS) {
+            Log.w(TAG, "the watch restarted its session again within ${SESSION_RESTART_DROP_MS / 60000} min; keeping the link")
+            linkNote?.invoke("watch restarted its session again; link kept")
+            return
+        }
+        lastSessionRestartDrop = now
+        Log.w(TAG, "the watch restarted its session on a live link; rebuilding the link")
+        linkNote?.invoke("watch restarted its session on a live link; rebuilding the link")
+        lifecycle.launch {
+            connectLock.withLock {
+                // Only the link that reported it; a newer one is already clean.
+                if (this@GarminIntegration.support === support) disconnectLocked()
+            }
+        }
+    }
 
     private fun fail(device: PairedDevice, reason: String) {
         Log.w(TAG, "$reason (${device.name})")
@@ -1132,7 +1179,10 @@ class GarminIntegration(private val context: Context) : DeviceIntegration {
      * connected; the next connection runs one anyway.
      */
     fun syncLibrary(): Boolean {
-        val support = support ?: return false
+        // Connected, not merely present: a support object mid-handshake or
+        // mid-teardown takes the request, and BtLEQueue parks it until a
+        // connection that may never come.
+        val support = support?.takeIf { it.isConnected } ?: return false
         support.exploreSession().requestSync()
         return true
     }
@@ -1401,6 +1451,9 @@ class GarminIntegration(private val context: Context) : DeviceIntegration {
         )
 
         const val CONNECT_TIMEOUT_MS = 90_000L
+
+        /** See [onWatchSessionRestarted]. */
+        const val SESSION_RESTART_DROP_MS = 5 * 60 * 1000L
 
         /**
          * A week of unsynced activities on a slow BLE link genuinely takes

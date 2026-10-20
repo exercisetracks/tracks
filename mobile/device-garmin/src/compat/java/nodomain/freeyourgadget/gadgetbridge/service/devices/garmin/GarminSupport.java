@@ -389,6 +389,14 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
 
         /** Every queued file has been pulled (or skipped). */
         void onSyncFinished();
+
+        /**
+         * The watch began a new GFDI session on this link, so everything the
+         * last one set up on its side is gone. See the DEVICE_INFORMATION
+         * check in {@link #onMessage}.
+         */
+        default void onSessionRestarted() {
+        }
     }
 
     /**
@@ -606,6 +614,29 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
         if (parsed instanceof DeviceInformationMessage) {
             productNumber = productNumberOf(message);
             LOG.info("Watch is Garmin product {}", productNumber);
+            // DEVICE_INFORMATION opens a GFDI session and is never sent inside
+            // one. Arriving on a link that is already initialised, it means the
+            // watch closed its GFDI channel and CommunicatorV2 re-registered it
+            // in place, with no reconnect. The watch then starts over, and
+            // everything this connection set up on its side is gone: the
+            // battery subscription, sync-ready, the open Explore session.
+            // Nothing here repeated any of it, because completeInitialization
+            // ignores a second capabilities message. The phone still said
+            // Connected; the watch's battery stopped updating; and every Explore
+            // session failed until the app was force-stopped, which was the one
+            // thing that built a connection from nothing. So the link is dropped
+            // instead, and the link supervisor builds a new one.
+            if (getDevice() != null && getDevice().isInitialized()) {
+                LOG.warn("The watch started a new GFDI session on a live link; dropping the link to start clean");
+                final SyncListener listener = syncListener;
+                if (listener != null) {
+                    try {
+                        listener.onSessionRestarted();
+                    } catch (final Exception e) {
+                        LOG.error("Sync listener failed on session restart", e);
+                    }
+                }
+            }
         }
 
         // The watch asking what music commands the phone supports is the only

@@ -716,3 +716,39 @@ closed when a transfer is abandoned. Before Tracks says "restart the watch",
 the runner rebuilds the link and tries once more, and phone-side failures are
 counted separately from refusals. If the state comes back, the sync log
 (Settings > Watch > Share sync log) records each attempt.
+
+## A session restarted under a live link (2026-10-20)
+
+**Symptom (1.8.0):** now and then, "couldn't finish syncing courses and
+places", with the phone showing a battery level the watch no longer had.
+Force-stopping the app cured both every time.
+
+**Mechanism, from the code; not yet caught in a trace.** The battery level
+comes from a subscription the phone asks for once per GFDI session
+(`enableBatteryLevelUpdate`). A frozen level means the watch has stopped
+treating the phone's session as subscribed. There is one path where that
+happens and the phone notices nothing. The watch closes its GFDI channel
+(`CLOSE_HANDLE_RESP` for GFDI), and `CommunicatorV2` re-registers it in place,
+with no reconnect. The watch then runs its handshake again
+(DEVICE_INFORMATION, CONFIGURATION), and `completeInitialization` ignored the
+second CONFIGURATION ("Already initialised"). So the new session never got the
+battery subscription, sync-ready, time or file types, and the phone's Explore
+session state belonged to a session the watch had dropped. The link still
+reported Connected, so nothing rebuilt it until the process was killed.
+
+**What Tracks does now:**
+- A DEVICE_INFORMATION on an initialised link counts as a restarted session.
+  `GarminIntegration` drops the link, and `WatchLink` builds a new one. This
+  happens at most once every five minutes, so a watch that always restarts
+  cannot cause a reconnect loop.
+- The first failed Explore session in a row rebuilds the link once and lets
+  the new connection's own session retry. The person is told only if that
+  session fails too. This also keeps link failures from counting towards
+  `RETIRE_AFTER_FAILURES`, which replaces the collection.
+- The battery level is cleared when the link goes down, so a stale value is
+  no longer shown as current.
+
+**To confirm it:** the sync trace (Settings > Watch > Share sync log) shows
+`watch restarted its session on a live link` when the first case fires, and
+`explore failed; rebuilding the link` for the second. If failures keep coming
+with neither line in the trace, the cause is somewhere else.
