@@ -36,7 +36,7 @@ import DatePicker from "../components/ui/DatePicker";
 import ActivityRow from "../components/activities/ActivityRow";
 
 // Number of activities per page.
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 100;
 
 // ============================================================
 // MAIN ACTIVITIES COMPONENT
