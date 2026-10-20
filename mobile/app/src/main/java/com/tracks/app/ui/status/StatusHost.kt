@@ -3,6 +3,22 @@
 package com.tracks.app.ui.status
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.VectorConverter
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.composed
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntOffset
+import kotlinx.coroutines.launch
+import kotlin.math.abs
+import kotlin.math.min
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -103,16 +119,29 @@ fun StatusHost(
     // short by an older one's timer.
     var popped by remember { mutableStateOf<Pop?>(null) }
     var popSeq by remember { mutableLongStateOf(0L) }
+    var popMs by remember { mutableLongStateOf(POP_MS) }
+
+    // The one timer for every pop. It used to live inside the effects that
+    // start a pop, and a job's effect is keyed on "the job not yet popped" --
+    // which becomes null the moment it pops, cancelling its own delay, so a
+    // job's pill never went away until the job ended.
+    LaunchedEffect(popSeq) {
+        if (popSeq == 0L) return@LaunchedEffect
+        delay(popMs)
+        popped = null
+    }
+    // A swipe sends it away for good: the news is already marked as popped on
+    // the board, so nothing brings it back. It stays in the drawer.
+    val sendAway: () -> Unit = { popped = null; expanded = false; popSeq++ }
 
     val newest = notes.firstOrNull()
     LaunchedEffect(newest?.id) {
         val note = newest ?: return@LaunchedEffect
         if (note.id <= board.lastPoppedNote) return@LaunchedEffect
         board.lastPoppedNote = note.id
-        val mine = ++popSeq
+        popMs = popDurationMs(note)
+        popSeq++
         popped = Pop.Note(note.id)
-        delay(popDurationMs(note))
-        if (popSeq == mine) popped = null
     }
     val newJob = shownJobs.keys.sortedBy { it.ordinal }.firstOrNull { it !in board.poppedJobs }
     LaunchedEffect(newJob) {
@@ -122,10 +151,9 @@ fun StatusHost(
         // cut short for it. The job is in the "+N" and the drawer.
         val showing = popped
         if (showing is Pop.Note && notes.firstOrNull { it.id == showing.id }?.failed == true) return@LaunchedEffect
-        val mine = ++popSeq
+        popMs = POP_MS
+        popSeq++
         popped = Pop.Job(source)
-        delay(POP_MS)
-        if (popSeq == mine) popped = null
     }
 
     val failures = notes.filter { it.failed }
@@ -153,7 +181,7 @@ fun StatusHost(
                 tonalElevation = 3.dp,
                 shadowElevation = 6.dp,
                 contentColor = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(top = Tokens.Space.s2).animateContentSize(),
+                modifier = Modifier.padding(top = Tokens.Space.s2).swipeAway(sendAway).animateContentSize(),
             ) {
                 if (!expanded) {
                     val line = headline ?: return@Surface
@@ -175,7 +203,9 @@ fun StatusHost(
                         }
                     }
                 } else {
-                    Column(Modifier.fillMaxWidth().padding(vertical = Tokens.Space.s2)) {
+                    // Sized to its words, not stretched: it stays a floating card
+                    // like the pill it grew from, not a banner across the screen.
+                    Column(Modifier.width(IntrinsicSize.Max).widthIn(min = 240.dp).padding(vertical = Tokens.Space.s2)) {
                         running.forEach { (source, job) -> CardRow(Line.Job(source, job), onClose = null) }
                         notes.forEach { note -> CardRow(Line.Note(note), onClose = { onDismiss(note.id) }) }
                         Row(
@@ -195,6 +225,35 @@ fun StatusHost(
             }
         }
     }
+}
+
+/**
+ * Drag the pill sideways or up to send it away; a short drag springs back.
+ * Taps still reach the pill's own click.
+ */
+private fun Modifier.swipeAway(onAway: () -> Unit): Modifier = composed {
+    val offset = remember { Animatable(Offset.Zero, Offset.VectorConverter) }
+    val scope = rememberCoroutineScope()
+    val threshold = with(LocalDensity.current) { 72.dp.toPx() }
+    this
+        .offset { IntOffset(offset.value.x.roundToInt(), offset.value.y.roundToInt()) }
+        .graphicsLayer { alpha = 1f - (offset.value.getDistance() / (threshold * 3)).coerceIn(0f, 0.7f) }
+        .pointerInput(Unit) {
+            detectDragGestures(
+                onDragEnd = {
+                    val o = offset.value
+                    if (abs(o.x) > threshold || -o.y > threshold) {
+                        onAway()
+                        scope.launch { offset.snapTo(Offset.Zero) }
+                    } else scope.launch { offset.animateTo(Offset.Zero) }
+                },
+                onDragCancel = { scope.launch { offset.animateTo(Offset.Zero) } },
+            ) { change, drag ->
+                change.consume()
+                // Down is not a way out; it only follows a little.
+                scope.launch { offset.snapTo(Offset(offset.value.x + drag.x, min(offset.value.y + drag.y, 0f))) }
+            }
+        }
 }
 
 /** What the pill has popped up for: a note by id, or a source's job. */

@@ -53,6 +53,10 @@ source that has popped stays quiet until it stops and starts afresh. Collapsed,
 the pill shows the one thing it popped up for, live (a job keeps updating its
 ring), and "+N" for whatever else is running or unresolved. Tapping it opens the
 card with all of it and **Sync now**, which stays open until **Close**.
+The card is sized to its words and floats like the pill; it is not a banner
+across the screen. Drag the pill or the card sideways or up to send it away:
+it stays gone (the news is already marked as popped, so nothing re-pops it)
+and remains in the drawer.
 
 This replaced a pill that stayed for as long as a job ran or a failure was
 unresolved. Syncs and downloads run for many minutes, and the pill sat over
