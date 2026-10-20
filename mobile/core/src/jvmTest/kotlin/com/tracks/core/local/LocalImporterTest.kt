@@ -155,7 +155,7 @@ class LocalImporterTest {
         val lib = library()
         val importer = LocalImporter(lib)
         for (f in listOf("monitoring.fit", "sleep.fit", "hrv.fit")) importer.import(f, bytes(f))
-        assert(lib.days().isNotEmpty()) { "health samples produced no days" }
+        assert(lib.dayMetrics().isNotEmpty()) { "health samples produced no days" }
     }
 
     /**

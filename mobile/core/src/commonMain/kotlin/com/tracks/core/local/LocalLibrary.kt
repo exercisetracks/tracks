@@ -423,13 +423,37 @@ class LocalLibrary(
 
     // ── Days ────────────────────────────────────────────────────────────────
 
-    /** Every day's merged metrics plus `extra` (sleep stages, stress series). */
-    fun days(): List<LocalDay> = q.selectDays().executeAsList().map {
-        LocalDay(
-            it.date,
-            TracksJson.parseToJsonElement(it.metrics).jsonObject,
-            TracksJson.parseToJsonElement(it.extra).jsonObject,
-        )
+    /**
+     * Every day's merged metrics, newest first, without `extra`.
+     *
+     * `extra` is each day's intraday series — heart rate, stress, sleep
+     * stages — tens of kilobytes a day once parsed. Every day's, all at once,
+     * is what ran the phone out of memory on launch after years of history
+     * were imported: readiness only wanted these numbers.
+     */
+    fun dayMetrics(): List<Pair<String, JsonObject>> = q.selectDayMetrics().executeAsList().map {
+        it.date to TracksJson.parseToJsonElement(it.metrics).jsonObject
+    }
+
+    /**
+     * Each day from [since] on (every day when null), oldest first, with
+     * `extra` — read [DAY_PAGE] days at a time, so only one page's series are
+     * ever parsed at once. [action] should keep what it needs, not the day.
+     */
+    fun forEachDay(since: String?, action: (LocalDay) -> Unit) {
+        var cursor = ""
+        while (true) {
+            val page = q.selectDaysPage(since ?: "", cursor, DAY_PAGE).executeAsList()
+            for (it in page) {
+                action(LocalDay(
+                    it.date,
+                    TracksJson.parseToJsonElement(it.metrics).jsonObject,
+                    TracksJson.parseToJsonElement(it.extra).jsonObject,
+                ))
+            }
+            if (page.size < DAY_PAGE) return
+            cursor = page.last().date
+        }
     }
 
     fun day(date: String): LocalDay? = q.selectDay(date).executeAsOneOrNull()?.let {
@@ -467,3 +491,6 @@ data class LocalDay(val date: String, val metrics: JsonObject, val extra: JsonOb
  * resolution is millions of vertices for a card; 300 keeps a run's shape.
  */
 private const val HEAT_TRACK_POINTS = 300
+
+/** Days per read in [LocalLibrary.forEachDay]: a month or two of series at a time. */
+private const val DAY_PAGE = 60L

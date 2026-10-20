@@ -270,25 +270,33 @@ class LocalMetrics(private val library: LocalLibrary, private val sources: Local
      */
     suspend fun dailyMetrics(after: String?): List<DailyMetricFull> = cpu {
         val entries = sources.replica.rows("daily_entry").associateBy { it.str("date") }
-        val days = library.days().associateBy { it.date }
-        val dates = (days.keys + entries.keys.filterNotNull()).filter { after == null || it >= after }.sorted()
-        return@cpu dates.map { date ->
-            val base = days[date]
-            val fields = LinkedHashMap<String, JsonElement>()
-            base?.metrics?.let { fields.putAll(it) }
-            entries[date]?.fields?.forEach { (k, v) -> if (k != "date") fields[k] = v }
-            fields["date"] = JsonPrimitive(date)
-            val stages = base?.extra?.get("sleep_stages") as? JsonArray
+        // Each day's own fields, worked out as it is read: the day's series
+        // are parsed a page at a time and dropped (LocalLibrary.forEachDay).
+        val measured = HashMap<String, Map<String, JsonElement>>()
+        library.forEachDay(after) { day ->
+            val fields = LinkedHashMap<String, JsonElement>(day.metrics)
+            val stages = day.extra["sleep_stages"] as? JsonArray
             (stages?.firstOrNull() as? JsonObject)?.get("start")?.let { fields["sleep_start"] = it }
             (stages?.lastOrNull() as? JsonObject)?.get("end")?.let { fields["sleep_end"] = it }
             // As the server's model derives them from the same series.
-            val hr = (base?.extra?.get("hr_series") as? JsonArray).orEmpty()
+            val hr = (day.extra["hr_series"] as? JsonArray).orEmpty()
                 .mapNotNull { ((it as? JsonArray)?.getOrNull(1) as? JsonPrimitive)?.content?.toDoubleOrNull()?.toInt() }
             if (hr.isNotEmpty()) {
                 fields["avg_hr"] = JsonPrimitive(PyMath.round(hr.sum().toDouble() / hr.size, 1))
                 fields["min_hr"] = JsonPrimitive(hr.min())
                 fields["max_hr"] = JsonPrimitive(hr.max())
             }
+            measured[day.date] = fields
+        }
+        val dates = (measured.keys + entries.keys.filterNotNull()).filter { after == null || it >= after }.sorted()
+        return@cpu dates.map { date ->
+            val fields = LinkedHashMap<String, JsonElement>()
+            measured[date]?.let { fields.putAll(it) }
+            // Hand-entered values over the measured ones, but not over the
+            // series-derived fields, which the measured map already holds.
+            entries[date]?.fields?.forEach { (k, v) -> if (k != "date") fields[k] = v }
+            fields["date"] = JsonPrimitive(date)
+            measured[date]?.let { m -> listOf("sleep_start", "sleep_end", "avg_hr", "min_hr", "max_hr").forEach { k -> m[k]?.let { fields[k] = it } } }
             TracksJson.decodeFromJsonElement(DailyMetricFull.serializer(), JsonObject(fields.mapValues { LocalJson.integral(it.value) }))
         }
     }
@@ -309,23 +317,22 @@ class LocalMetrics(private val library: LocalLibrary, private val sources: Local
     suspend fun stress(after: String?): List<StressDay> = series("stress_series", after)
 
     private suspend fun series(key: String, after: String?): List<StressDay> = cpu {
-        library.days()
-        .filter { after == null || it.date >= after }
-        .sortedBy { it.date }
-        .mapNotNull { d ->
-            val points = d.extra[key] as? JsonArray ?: return@mapNotNull null
-            if (points.isEmpty()) return@mapNotNull null
-            TracksJson.decodeFromJsonElement(
+        val out = ArrayList<StressDay>()
+        library.forEachDay(after) { d ->
+            val points = d.extra[key] as? JsonArray ?: return@forEachDay
+            if (points.isEmpty()) return@forEachDay
+            out += TracksJson.decodeFromJsonElement(
                 StressDay.serializer(),
                 JsonObject(mapOf("date" to JsonPrimitive(d.date), "points" to points)),
             )
         }
+        out
     }
 
     /** The health readings readiness reads, from every day this phone has. */
-    fun dayMetrics(): List<DayMetric> = library.days().mapNotNull { d ->
-        val date = civil(d.date) ?: return@mapNotNull null
-        fun num(k: String) = (d.metrics[k] as? JsonPrimitive)?.doubleOrNull
+    fun dayMetrics(): List<DayMetric> = library.dayMetrics().mapNotNull { (day, metrics) ->
+        val date = civil(day) ?: return@mapNotNull null
+        fun num(k: String) = (metrics[k] as? JsonPrimitive)?.doubleOrNull
         DayMetric(date, hrv = num("hrv"), restingHr = num("resting_hr"), sleepHours = num("sleep_hours"), sleepScore = num("sleep_score"))
     }
 

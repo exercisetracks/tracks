@@ -217,5 +217,14 @@ SELECT * FROM local_day WHERE date = ?;
 selectDays:
 SELECT * FROM local_day ORDER BY date DESC;
 
+-- The daily numbers alone. `extra` holds each day's intraday series, tens of
+-- kilobytes a day: years of it parsed at once does not fit in an app's heap.
+selectDayMetrics:
+SELECT date, metrics FROM local_day ORDER BY date DESC;
+
+-- Days from :since on, a page at a time after :cursor, oldest first.
+selectDaysPage:
+SELECT * FROM local_day WHERE date >= :since AND date > :cursor ORDER BY date ASC LIMIT :pageSize;
+
 deleteAllDays:
 DELETE FROM local_day;
