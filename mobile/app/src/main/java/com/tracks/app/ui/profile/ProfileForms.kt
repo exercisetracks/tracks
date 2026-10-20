@@ -218,6 +218,23 @@ fun ZonesForm(state: ProfileState, set: SetField) {
     }
 }
 
+/**
+ * The Health page's goals: daily steps, weekly intensity minutes, daily
+ * floors. Auto follows your own last four weeks inside a sensible band
+ * (com.tracks.core.metrics.HealthGoals); Manual is a number you pick.
+ */
+@Composable
+fun GoalsForm(state: ProfileState, set: SetField) {
+    Column(verticalArrangement = Arrangement.spacedBy(Tokens.Space.s4)) {
+        ZoneSetting(state, set, "step_goal", "Steps", "a day",
+            "Auto: your usual day plus a little, between 5,000 and 12,000.")
+        ZoneSetting(state, set, "intensity_goal", "Intensity minutes", "a week",
+            "Auto: at least the WHO's 150 a week, rising with what you do, up to 300.")
+        ZoneSetting(state, set, "floors_goal", "Floors climbed", "a day",
+            "Auto: your usual day plus a little, between 5 and 20.")
+    }
+}
+
 @Composable
 private fun ZoneSetting(
     state: ProfileState, set: SetField,

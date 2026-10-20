@@ -35,6 +35,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import com.tracks.core.metrics.HealthGoals
 import java.time.LocalDate
 import com.tracks.core.api.MedicationSchedule
 import com.tracks.core.api.MedicationScheduleIn
@@ -214,6 +215,8 @@ data class HealthUiState(
     val medicationLog: List<MedicationLog> = emptyList(),
     val meals: List<Meal> = emptyList(),
     val mealLog: List<MealLog> = emptyList(),
+    /** What the step, intensity and floor dials fill toward (HealthGoals). */
+    val goals: HealthGoals.Goals = HealthGoals.DEFAULT,
     val error: String? = null,
 ) {
     /**
@@ -273,16 +276,22 @@ data class HealthUiState(
      */
     val weeklyIntensity: Trend
         get() {
-            val perDay = days.mapNotNull { d ->
-                val mod = d.intensityModerateMin
-                val vig = d.intensityVigorousMin
-                if (mod == null && vig == null) null else LocalDate.parse(d.date) to ((mod ?: 0) + 2 * (vig ?: 0)).toDouble()
-            }.toMap()
+            // Every calendar day from the first with any record on, a day
+            // without intensity counting as zero: a quiet day is 0 minutes,
+            // and leaving it out drew a gap (or a bridge) where the week's
+            // total actually fell.
+            val perDay = days.associate { d ->
+                LocalDate.parse(d.date) to ((d.intensityModerateMin ?: 0) + 2 * (d.intensityVigorousMin ?: 0)).toDouble()
+            }
             val dates = ArrayList<String>()
             val values = ArrayList<Double>()
-            for (day in perDay.keys.sorted()) {
+            val first = perDay.keys.minOrNull()
+            val last = perDay.keys.maxOrNull()
+            var day = first
+            while (day != null && last != null && day <= last) {
                 dates += day.toString()
-                values += (0L..6L).sumOf { perDay[day.minusDays(it)] ?: 0.0 }
+                values += (0L..6L).sumOf { perDay[day!!.minusDays(it)] ?: 0.0 }
+                day = day.plusDays(1)
             }
             return Trend(dates, values)
         }
@@ -464,8 +473,30 @@ class HealthViewModel(private val container: AppContainer) : ViewModel() {
                 runCatching { container.metrics.dailyMetrics(after = null) }.getOrDefault(emptyList())
             }
             applyMetrics(days = days, stillLoading = false)
+            loadGoals(days)
             loadStress()
         }
+    }
+
+    /**
+     * The goals, from every day on the phone rather than the window on
+     * screen: Auto looks at the last four finished weeks whatever range is
+     * chosen, so switching to 7 days does not move the goal.
+     */
+    private suspend fun loadGoals(all: List<DailyMetricFull>) {
+        val settings = runCatching { container.sources.settingValues() }.getOrDefault(emptyMap())
+        val today = LocalDate.now()
+        val from = today.minusDays(HealthGoals.WINDOW_DAYS.toLong()).toString()
+        val recent = all.filter { it.date >= from && it.date < today.toString() }.map {
+            HealthGoals.Day(
+                steps = it.steps,
+                intensityMin = if (it.intensityModerateMin == null && it.intensityVigorousMin == null) null
+                else (it.intensityModerateMin ?: 0) + 2 * (it.intensityVigorousMin ?: 0),
+                floors = it.floorsClimbed,
+            )
+        }
+        val goals = HealthGoals.resolve(HealthGoals.auto(recent), settings)
+        _state.update { it.copy(goals = goals) }
     }
 
     /**

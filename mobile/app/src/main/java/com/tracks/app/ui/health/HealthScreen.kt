@@ -101,7 +101,7 @@ fun HealthScreen(vm: HealthViewModel, modifier: Modifier = Modifier) {
                             label = "Steps",
                             trend = state.series { it.steps?.toDouble() },
                             unit = "",
-                            scale = MetricScale.Goal(STEP_GOAL, STEP_COLOR),
+                            scale = MetricScale.Goal(state.goals.steps.toDouble(), STEP_COLOR),
                             info = Explain.Steps,
                         ),
                         caloriesMetric(state),
@@ -150,7 +150,7 @@ fun HealthScreen(vm: HealthViewModel, modifier: Modifier = Modifier) {
                             longLabel = "Intensity minutes",
                             trend = state.weeklyIntensity,
                             unit = "min/wk",
-                            scale = MetricScale.Goal(INTENSITY_GOAL, INTENSITY_COLOR),
+                            scale = MetricScale.Goal(state.goals.intensityWeekly.toDouble(), INTENSITY_COLOR),
                             info = Explain.IntensityMinutes,
                         ),
                         HealthMetric(
@@ -158,7 +158,7 @@ fun HealthScreen(vm: HealthViewModel, modifier: Modifier = Modifier) {
                             longLabel = "Floors climbed",
                             trend = state.series { it.floorsClimbed?.toDouble() },
                             unit = "",
-                            scale = MetricScale.Goal(FLOORS_GOAL, FLOORS_COLOR),
+                            scale = MetricScale.Goal(state.goals.floors.toDouble(), FLOORS_COLOR),
                             info = Explain.Floors,
                         ),
                     ),
@@ -402,8 +402,9 @@ private fun rememberLiveHeartRate(): LiveHr {
 private data class LiveHr(val bpm: Int?, val recent: List<com.tracks.device.garmin.live.LiveHeartRate.Reading>)
 
 /**
- * Heart rate: live on the dial while the watch streams it, today's average
- * otherwise; behind it, the whole day minute by minute from the watch's own
+ * Heart rate: live on the dial while the watch streams it, and "--" when it
+ * does not (off the wrist, out of range) — the day's average there read as
+ * the heart rate now; behind it, the whole day minute by minute from the watch's own
  * monitoring files, with this page's live minutes laid over today.
  */
 @Composable
@@ -417,6 +418,7 @@ private fun heartRateMetric(state: HealthUiState, live: LiveHr): HealthMetric {
         scale = MetricScale.Bands(HEART_RATE_ZONES),
         info = Explain.HeartRate,
         live = live.bpm?.toDouble(),
+        liveOnly = true,
         chart = {
             IntradayHistoryPanel(
                 days = days,

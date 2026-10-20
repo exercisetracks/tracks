@@ -9,9 +9,10 @@ import {
   ACTIVE_CALORIE_GOAL, ACTIVE_COLOR, BODY_BATTERY_ZONES, CALORIE_COLOR, FRESH_DAYS, SLEEP_FRESH_DAYS,
   HRV_COLOR, HYDRATION_COLOR, HYDRATION_GOAL_ML, RESPIRATION_ZONES, RESTING_COLOR,
   RESTING_HR_ZONES, SLEEP_COLOR, SLEEP_GOAL_HOURS, SLEEP_ZONES, SPO2_ZONES, STEP_COLOR,
-  STEP_GOAL, STRESS_ZONES, HEART_RATE_ZONES, WEIGHT_COLOR, activityZones, currentOf, isFresh, series,
-  INTENSITY_GOAL, INTENSITY_COLOR, FLOORS_GOAL, FLOORS_COLOR, weeklyIntensity,
+  STRESS_ZONES, HEART_RATE_ZONES, WEIGHT_COLOR, activityZones, currentOf, isFresh, series,
+  INTENSITY_COLOR, FLOORS_COLOR, weeklyIntensity,
 } from "./scales";
+import { DEFAULT_GOALS } from "./goals";
 import { SLEEP_COLORS } from "./constants";
 import { EXPLAIN } from "./explain";
 import { SleepTrendChart } from "./HistoryCharts";
@@ -138,7 +139,7 @@ export function sleepMetric(days, start) {
  * the intraday curve (empty on windows too long to draw one); `food` the meal
  * log, which is what the Eaten dial counts — see food.js.
  */
-export function healthGroups({ days, imperial, start, stress, heartRate = [], food = [] }) {
+export function healthGroups({ days, imperial, start, stress, heartRate = [], food = [], goals = DEFAULT_GOALS }) {
   const stressAverages = series(days, d => d.avg_stress_level);
   const hrAverages = series(days, d => d.avg_hr);
 
@@ -150,7 +151,7 @@ export function healthGroups({ days, imperial, start, stress, heartRate = [], fo
       {
         key: "steps", label: "Steps", unit: "",
         trend: series(days, d => d.steps),
-        scale: { kind: "goal", target: STEP_GOAL, color: STEP_COLOR },
+        scale: { kind: "goal", target: goals.steps, color: STEP_COLOR },
         info: EXPLAIN.steps,
       },
       caloriesMetric(days),
@@ -181,13 +182,13 @@ export function healthGroups({ days, imperial, start, stress, heartRate = [], fo
       {
         key: "intensity", label: "Intensity", longLabel: "Intensity minutes", unit: "min/wk",
         trend: weeklyIntensity(days),
-        scale: { kind: "goal", target: INTENSITY_GOAL, color: INTENSITY_COLOR },
+        scale: { kind: "goal", target: goals.intensityWeekly, color: INTENSITY_COLOR },
         info: EXPLAIN.intensityMinutes,
       },
       {
         key: "floors", label: "Floors", longLabel: "Floors climbed", unit: "",
         trend: series(days, d => d.floors_climbed),
-        scale: { kind: "goal", target: FLOORS_GOAL, color: FLOORS_COLOR },
+        scale: { kind: "goal", target: goals.floors, color: FLOORS_COLOR },
         info: EXPLAIN.floors,
       },
     ],

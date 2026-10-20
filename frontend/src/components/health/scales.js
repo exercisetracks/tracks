@@ -299,22 +299,27 @@ export function isFresh(date, freshDays, today = localIso()) {
  * HealthUiState.weeklyIntensity). A rolling week because the goal is weekly.
  */
 export function weeklyIntensity(days) {
+  // Every calendar day from the first with any record on, a day without
+  // intensity counting as zero: a quiet day is 0 minutes, and leaving it out
+  // drew a gap where the week's total actually fell.
   const perDay = new Map();
   for (const d of days) {
-    if (d.intensity_moderate_min == null && d.intensity_vigorous_min == null) continue;
     perDay.set(d.date, (d.intensity_moderate_min ?? 0) + 2 * (d.intensity_vigorous_min ?? 0));
   }
-  const dates = [...perDay.keys()].sort();
+  const known = [...perDay.keys()].sort();
+  if (!known.length) return { dates: [], values: [] };
   // Calendar arithmetic on the date's own fields: these are days, not instants.
-  const daysBefore = (date, n) => {
+  const shift = (date, n) => {
     const [y, m, d] = date.split("-").map(Number);
-    const t = new Date(Date.UTC(y, m - 1, d - n));
+    const t = new Date(Date.UTC(y, m - 1, d + n));
     const pad = (v) => String(v).padStart(2, "0");
     return `${t.getUTCFullYear()}-${pad(t.getUTCMonth() + 1)}-${pad(t.getUTCDate())}`;
   };
+  const dates = [];
+  for (let date = known[0]; date <= known[known.length - 1]; date = shift(date, 1)) dates.push(date);
   const values = dates.map((date) => {
     let sum = 0;
-    for (let i = 0; i < 7; i++) sum += perDay.get(daysBefore(date, i)) ?? 0;
+    for (let i = 0; i < 7; i++) sum += perDay.get(shift(date, -i)) ?? 0;
     return sum;
   });
   return { dates, values };

@@ -18,6 +18,20 @@ class WeeklyIntensityTest {
                 DailyMetricFull("2026-03-09", intensityModerateMin = 5),
             ),
         )
-        assertEquals(listOf(30.0, 80.0, 55.0), state.weeklyIntensity.values)
+        assertEquals(listOf(30.0, 30.0, 30.0, 30.0, 80.0, 80.0, 80.0, 50.0, 55.0), state.weeklyIntensity.values)
+    }
+
+    /** The chart had gaps: a day with no intensity minutes is zero, not missing. */
+    @Test
+    fun `a quiet day is a zero, not a gap`() {
+        val state = HealthUiState(
+            days = listOf(
+                DailyMetricFull("2026-03-01", intensityModerateMin = 70),
+                DailyMetricFull("2026-03-08"),
+                DailyMetricFull("2026-03-09"),
+            ),
+        )
+        assertEquals(9, state.weeklyIntensity.dates.size)
+        assertEquals(listOf(0.0, 0.0), state.weeklyIntensity.values.takeLast(2))
     }
 }

@@ -123,7 +123,9 @@ entities:
              activity_frequency, experience_suggestion_dismissed, tour_seen, tour_enabled,
              weather_enabled, weather_location, map_enabled, wildfire_enabled,
              agps_enabled, agps_source, agps_custom_url, agps_max_age_hours,
-             setup_complete, start_activity_button]
+             setup_complete, start_activity_button,
+             step_goal_mode, step_goal_manual, intensity_goal_mode, intensity_goal_manual,
+             floors_goal_mode, floors_goal_manual]
     # weather_location is one map, {lat, lon, at}, rather than three fields:
     # merged field by field, two phones moving at once could otherwise leave
     # one phone's latitude beside the other's longitude — a place neither was.

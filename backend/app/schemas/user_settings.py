@@ -88,6 +88,13 @@ class UserSettingsOut(BaseModel):
     setup_complete: bool = False
     # See the model: null is automatic.
     start_activity_button: bool | None = None
+    # Health goals; see the model. A null mode is Auto.
+    step_goal_mode: str | None = None
+    step_goal_manual: int | None = None
+    intensity_goal_mode: str | None = None
+    intensity_goal_manual: int | None = None
+    floors_goal_mode: str | None = None
+    floors_goal_manual: int | None = None
 
     # In-app guided tutorial state. tour_seen maps {tourId: true} for tours the
     # user has finished/dismissed; tour_enabled is the master "show tips" switch.
@@ -209,6 +216,12 @@ class UserSettingsUpdate(BaseModel):
     experience_suggestion_dismissed: bool | None = None
     setup_complete: bool | None = None
     start_activity_button: bool | None = None
+    step_goal_mode: Literal["auto", "manual"] | None = None
+    step_goal_manual: int | None = Field(None, ge=500, le=100_000)
+    intensity_goal_mode: Literal["auto", "manual"] | None = None
+    intensity_goal_manual: int | None = Field(None, ge=10, le=2000)
+    floors_goal_mode: Literal["auto", "manual"] | None = None
+    floors_goal_manual: int | None = Field(None, ge=1, le=500)
     tour_seen: dict | None = None
     tour_enabled: bool | None = None
     weather_enabled: bool | None = None

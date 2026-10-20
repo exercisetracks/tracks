@@ -8,6 +8,7 @@ import com.tracks.app.AppContainer
 import com.tracks.app.ui.theme.Accent
 import com.tracks.app.ui.theme.ThemeMode
 import com.tracks.core.plan.PlanStaleness
+import com.tracks.core.metrics.HealthGoals
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -31,15 +32,40 @@ class ProfileViewModel(private val container: AppContainer) : ViewModel() {
     fun reload() = viewModelScope.launch {
         val values = runCatching { container.sources.settingValues() }.getOrDefault(emptyMap())
         _state.value = ProfileState(values, loaded = true)
+        launch { loadGoals() }
         // After the form is up, not before: this reads every activity, and
         // the values only fill in the "Auto · …" line under each threshold.
         val auto = runCatching { container.sources.autoThresholds() }.getOrNull() ?: return@launch
         _state.value = _state.value.copy(
-            auto = listOfNotNull(
+            auto = _state.value.auto + listOfNotNull(
                 auto.maxHr?.let { "max_hr" to it },
                 auto.thresholdHr?.let { "threshold_hr" to it },
                 auto.ftp?.let { "ftp" to it },
             ).toMap(),
+        )
+    }
+
+    /** What Auto makes of the Health goals, for the line under each one. */
+    private suspend fun loadGoals() {
+        val days = runCatching { container.metrics.dailyMetrics(after = null) }.getOrNull() ?: return
+        val today = java.time.LocalDate.now()
+        val from = today.minusDays(HealthGoals.WINDOW_DAYS.toLong()).toString()
+        val auto = HealthGoals.auto(
+            days.filter { it.date >= from && it.date < today.toString() }.map {
+                HealthGoals.Day(
+                    steps = it.steps,
+                    intensityMin = if (it.intensityModerateMin == null && it.intensityVigorousMin == null) null
+                    else (it.intensityModerateMin ?: 0) + 2 * (it.intensityVigorousMin ?: 0),
+                    floors = it.floorsClimbed,
+                )
+            },
+        )
+        _state.value = _state.value.copy(
+            auto = _state.value.auto + mapOf(
+                "step_goal" to auto.steps.toDouble(),
+                "intensity_goal" to auto.intensityWeekly.toDouble(),
+                "floors_goal" to auto.floors.toDouble(),
+            ),
         )
     }
 

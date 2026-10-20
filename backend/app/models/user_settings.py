@@ -118,6 +118,16 @@ class UserSettings(Base, Synced):
     # on a phone with no watch, hidden on one with a watch (which records its
     # own). True or false is the person's own choice, the same on every phone.
     start_activity_button = Column(Boolean, nullable=True)
+    # The Health page's goals. Mode null or "auto" follows the person's own
+    # last four weeks inside a band, worked out where the dials are drawn
+    # (phone core HealthGoals.kt, web components/health/goals.js); "manual"
+    # uses the number beside it.
+    step_goal_mode        = Column(String, nullable=True)
+    step_goal_manual      = Column(Integer, nullable=True)
+    intensity_goal_mode   = Column(String, nullable=True)
+    intensity_goal_manual = Column(Integer, nullable=True)
+    floors_goal_mode      = Column(String, nullable=True)
+    floors_goal_manual    = Column(Integer, nullable=True)
 
     # In-app guided tutorial (the per-page "tips" tour). tour_seen is an object
     # map of {tourId: true} for tours the user has finished or dismissed, so each

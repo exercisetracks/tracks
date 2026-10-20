@@ -34,4 +34,15 @@ class LiveHeartRateMinutesTest {
         val days = listOf(StressDay("2026-01-01", listOf(listOf(1, 60))))
         assertEquals(days, withLiveMinutes(days, emptyList(), nowElapsed = 0L))
     }
+
+    /** Off the wrist the watch streams zeros: the dial must go to "--", not show 0 bpm. */
+    @Test
+    fun a_zero_from_the_stream_ends_the_live_reading() {
+        LiveHeartRate.now = { 5_000L }
+        LiveHeartRate.onReading(72)
+        assertEquals(72, LiveHeartRate.current()?.bpm)
+        LiveHeartRate.onReading(0)
+        assertEquals(null, LiveHeartRate.current())
+        LiveHeartRate.clear()
+    }
 }

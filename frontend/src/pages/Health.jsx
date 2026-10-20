@@ -28,7 +28,8 @@ import InjuryActivitiesDrawer from "../components/health/InjuryActivitiesDrawer"
 import BarPills from "../components/ui/BarPills";
 import PageHeader from "../components/ui/PageHeader";
 import { PlusIcon } from "../components/ui/Button";
-import { todayDate } from "../lib/today";
+import { todayDate, todayIso } from "../lib/today";
+import { autoGoals, goalWindow, resolveGoals } from "../components/health/goals";
 
 /**
  * How far back every chart on the page looks. One window for the whole page,
@@ -125,9 +126,15 @@ export default function Health() {
     () => (start ? metrics.filter(m => m.date >= start) : metrics),
     [metrics, start],
   );
+  // From every day, not the window: Auto reads the last four finished weeks
+  // whatever range is on screen.
+  const goals = useMemo(
+    () => resolveGoals(autoGoals(goalWindow(metrics, todayIso())), settings),
+    [metrics, settings],
+  );
   const groups = useMemo(
-    () => healthGroups({ days, imperial, start, stress, heartRate, food }),
-    [days, imperial, start, stress, heartRate, food],
+    () => healthGroups({ days, imperial, start, stress, heartRate, food, goals }),
+    [days, imperial, start, stress, heartRate, food, goals],
   );
   const nights = useMemo(() => sleepNights(days), [days]);
   // The watch's half of the page only exists with readings one left behind —

@@ -1103,6 +1103,9 @@ val VO2MAX_ZONES = listOf(
  * app, and the figure in the middle is the real number regardless: the shape's
  * job past two laps is only to say "well over", which a full outer ring says.
  */
+/** The lap ring's colour on every dial: one meaning, "past the goal". */
+internal val LAP_COLOR = Color(0xFFEAB308)
+
 internal fun overflowOf(value: Double?, min: Double, max: Double): Double? {
     val span = max - min
     if (value == null || span <= 0.0) return null
@@ -1295,19 +1298,19 @@ fun RadialGauge(
                     )
                 }
 
-                // The second lap, outside the first. No track behind it: an
-                // empty outer ring drawn on every dial would be a permanent
-                // promise of a level nobody has reached.
+                // The second lap, outside the first, in gold rather than the
+                // bands again: drawn in the scale's own colours it read as more
+                // of the same dial, when what it says is "past the goal". No
+                // track behind it: an empty outer ring drawn on every dial
+                // would be a permanent promise of a level nobody has reached.
                 if (overflowTo != null) {
                     val (lapTopLeft, lapSize) = ring(1, lapStroke.width)
-                    zones.forEach { band ->
-                        val start = degreeFor(band.min) + GAUGE_GAP
-                        val end = (degreeFor(band.max) - GAUGE_GAP).coerceAtMost(overflowTo)
-                        if (end <= start) return@forEach
+                    val start = GAUGE_START + GAUGE_GAP
+                    if (overflowTo > start) {
                         drawArc(
-                            color = band.color,
+                            color = LAP_COLOR,
                             startAngle = start,
-                            sweepAngle = end - start,
+                            sweepAngle = overflowTo - start,
                             useCenter = false,
                             topLeft = lapTopLeft,
                             size = lapSize,

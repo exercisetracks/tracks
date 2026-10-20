@@ -31,9 +31,19 @@ object LiveHeartRate {
 
     /** How long a live reading stays "now" with nothing newer. */
     const val STALE_MS = 15_000L
+    private val VALID = 25..240
     private const val KEEP_MS = 10 * 60 * 1000L
 
+    /**
+     * A reading from the stream. Off the wrist the watch keeps streaming, but
+     * zeros (and on some firmware 255): those are "no reading", and they end
+     * the current one at once rather than showing a heart rate of 0.
+     */
     fun onReading(bpm: Int) = synchronized(this) {
+        if (bpm !in VALID) {
+            _reading.value = null
+            return@synchronized
+        }
         val r = Reading(bpm, now())
         _reading.value = r
         _recent.value = (_recent.value + r).filter { r.at - it.at <= KEEP_MS }

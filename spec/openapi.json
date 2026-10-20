@@ -22700,6 +22700,72 @@
             ],
             "title": "Start Activity Button"
           },
+          "step_goal_mode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Step Goal Mode"
+          },
+          "step_goal_manual": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Step Goal Manual"
+          },
+          "intensity_goal_mode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Intensity Goal Mode"
+          },
+          "intensity_goal_manual": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Intensity Goal Manual"
+          },
+          "floors_goal_mode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Floors Goal Mode"
+          },
+          "floors_goal_manual": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Floors Goal Manual"
+          },
           "tour_seen": {
             "additionalProperties": true,
             "type": "object",
@@ -23244,6 +23310,90 @@
               }
             ],
             "title": "Start Activity Button"
+          },
+          "step_goal_mode": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "auto",
+                  "manual"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Step Goal Mode"
+          },
+          "step_goal_manual": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100000.0,
+                "minimum": 500.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Step Goal Manual"
+          },
+          "intensity_goal_mode": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "auto",
+                  "manual"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Intensity Goal Mode"
+          },
+          "intensity_goal_manual": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 2000.0,
+                "minimum": 10.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Intensity Goal Manual"
+          },
+          "floors_goal_mode": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "auto",
+                  "manual"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Floors Goal Mode"
+          },
+          "floors_goal_manual": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 500.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Floors Goal Manual"
           },
           "tour_seen": {
             "anyOf": [

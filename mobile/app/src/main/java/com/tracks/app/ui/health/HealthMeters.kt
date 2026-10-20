@@ -207,6 +207,12 @@ data class HealthMetric(
      * there is none, and the dial falls back to the trend.
      */
     val live: Double? = null,
+    /**
+     * The dial shows [live] or nothing — "--" until the watch streams a
+     * reading, rather than a day's average that reads as the heart rate now.
+     * The history sheet still opens on the trend.
+     */
+    val liveOnly: Boolean = false,
     /** See MetricHistorySheet's `scaleUnderChart`. */
     val scaleUnderChart: Boolean = false,
 )
@@ -335,7 +341,7 @@ private fun MeterTile(
     // all — see [HealthMetric.freshDays]. Everything below follows from it:
     // a null blanks the figure, drops the verdict word, and leaves the arc
     // showing its scale and nothing filled.
-    val latest = metric.live ?: metric.trend.current(metric.freshDays)
+    val latest = if (metric.liveOnly) metric.live else metric.live ?: metric.trend.current(metric.freshDays)
     val verdict = metric.verdict?.let { zoneFor(latest, it) }
     Column(modifier) {
         RadialGauge(
@@ -517,14 +523,8 @@ fun activityZones(base: Double): List<GaugeZone> = listOf(
     GaugeZone("Goal met", base + ACTIVE_CALORIE_GOAL, base + ACTIVE_CALORIE_GOAL * 3, GREEN),
 )
 
-/** Everyday defaults, and the only invented numbers here. */
-const val STEP_GOAL = 10_000.0
-
-/** The WHO's weekly minimum of moderate activity, vigorous minutes counting double. */
-const val INTENSITY_GOAL = 150.0
-
-/** Garmin's default daily floors goal. */
-const val FLOORS_GOAL = 10.0
+// Step, intensity and floor goals are the account's, or Auto: see
+// com.tracks.core.metrics.HealthGoals and HealthUiState.goals.
 
 /**
  * Eight hours, and the same eight everywhere.

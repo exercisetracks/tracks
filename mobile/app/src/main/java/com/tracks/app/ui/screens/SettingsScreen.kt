@@ -141,6 +141,7 @@ fun SettingsScreen(
                 }
             }
             SettingsCard("Heart rate & power") { ZonesForm(profile, onSet) }
+            SettingsCard("Health goals") { com.tracks.app.ui.profile.GoalsForm(profile, onSet) }
             SettingsCard("Training") {
                 // How often you train is not here: it is asked once in
                 // onboarding, as on the web, and history replaces it.

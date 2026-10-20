@@ -26,6 +26,7 @@ const ARC_SPAN  = 270;               // total sweep, leaving a 90° gap at botto
 const GAP       = 2;                 // pixels between arc segments
 const LAP_STROKE = 0.45;             // the lap ring, as a fraction of the main stroke
 const LAP_GAP   = 2;
+const LAP_COLOR = "#eab308";        // the same gold on every dial, as on the phone
 
 // Resolve which classification band a value falls into (shared with the widgets
 // for their history tooltips/legends). Returns a neutral swatch when null.
@@ -135,16 +136,14 @@ export default function RadialGauge({
         );
       })}
 
-      {/* The second lap, outside the first. No track: an empty outer ring on
-          every dial would be a permanent promise of a level nobody reached. */}
-      {overEnd != null && segments.map(({ z, start, end }) => {
-        const segEnd = Math.min(end, overEnd);
-        if (segEnd <= start) return null;
-        return (
-          <path key={`lap-${z.label}`} d={arcD(start, segEnd, lapR)} fill="none"
-            stroke={z.color} strokeWidth={lapWidth} strokeLinecap="butt" />
-        );
-      })}
+      {/* The second lap, outside the first, in gold: in the bands' own
+          colours it read as more of the same dial, when it says "past the
+          goal". No track: an empty outer ring on every dial would be a
+          permanent promise of a level nobody reached. */}
+      {overEnd != null && overEnd > START_DEG && (
+        <path d={arcD(START_DEG, overEnd, lapR)} fill="none"
+          stroke={LAP_COLOR} strokeWidth={lapWidth} strokeLinecap="butt" />
+      )}
 
       {/* Indicator dot, on whichever ring the value is actually on */}
       {ix != null && (
