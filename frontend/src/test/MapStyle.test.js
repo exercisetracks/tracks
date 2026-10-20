@@ -348,4 +348,15 @@ describe("features fade in and labels share space", () => {
       expect(layers[i].layout["text-allow-overlap"]).not.toBe(true);
     }
   });
+
+  // Three taps in one park printed "Drinking Water" three deep: water and
+  // trailhead icons still always show, but their names now collide.
+  it("always draws water and trailhead icons but culls their stacked names", () => {
+    for (const id of ["poi_water_icons", "poi_trailhead_icons"]) {
+      const layer = layers.find((l) => l.id === id);
+      expect(layer.metadata?.["tracks:collide"]).toBe(true);
+      expect(layer.layout["icon-allow-overlap"]).toBe(true);
+      expect(layer.layout["text-allow-overlap"]).not.toBe(true);
+    }
+  });
 });

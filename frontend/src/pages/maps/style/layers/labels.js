@@ -464,6 +464,7 @@ export function buildLabels() {
       source: "pois",
       "source-layer": "pois",
       type: "symbol",
+      metadata: { "tracks:collide": true },
       minzoom: 10,
       filter: ["in", ["get", "kind"], ["literal", ["spring", "well", "drinking_water"]]],
       layout: {
@@ -494,8 +495,8 @@ export function buildLabels() {
     },
     // ── Trailheads ────────────────────────────────────────────────────────────
     // The single most important navigation POI for a hiker — give it the same
-    // always-on-top, overlap-allowed treatment as water sources so trailheads
-    // are never dropped to icon collision in dense areas.
+    // treatment as water sources: the icon is never dropped to collision in
+    // dense areas, while its name gives way rather than stacking.
     {
       id: "labels_parks",
       source: "basemap",
@@ -531,6 +532,8 @@ export function buildLabels() {
       source: "pois",
       "source-layer": "pois",
       type: "symbol",
+      // Icons always, names collision-placed: as poi_water_icons, above.
+      metadata: { "tracks:collide": true },
       minzoom: 10,
       filter: ["==", ["get", "kind"], "trailhead"],
       layout: {
