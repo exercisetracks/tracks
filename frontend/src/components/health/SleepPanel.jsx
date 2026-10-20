@@ -38,7 +38,7 @@ import useWidth from "./useWidth";
 import { SLEEP_COLORS } from "./constants";
 import { SCORE_COLOR, localIso } from "./scales";
 import { clockLabel, clockScale, hoursMinutes, laneOf, nightClock } from "./sleepClock";
-import { dayMs } from "./HistoryCharts";
+import { dayMs, YEAR_LABEL_DAYS } from "./HistoryCharts";
 import { EXPLAIN } from "./explain";
 import { InfoButton, InfoPanel } from "./ui";
 
@@ -134,10 +134,10 @@ function SleepClockChart({ nights, start, selected, onSelect }) {
   // On a year or lifetime window the bars are a pixel or two wide, and a
   // 1.5px score line would cover the hypnogram it sits over. Never wider
   // than three quarters of a bar, but never thinner than 1px. Past a quarter
-  // of a bar the line also fades, down to 60% transparent at three quarters,
+  // of a bar the line also fades, down to 70% transparent at three quarters,
   // so the bars underneath stay readable where the line crowds them.
   const scoreStroke = Math.max(1, Math.min(1.5, barW * 0.75));
-  const scoreOpacity = 1 - 0.6 * Math.min(1, Math.max(0, (scoreStroke / barW - 0.25) / 0.5));
+  const scoreOpacity = 1 - 0.7 * Math.min(1, Math.max(0, (scoreStroke / barW - 0.25) / 0.5));
   const xOf = offset => GUTTER + ((offset + 0.5) / slots) * plotW;
   const y = hours => PLOT_H * ((hours - scale.min) / (scale.max - scale.min));
   // The score rides over the nights on its own 0–100: full height is 100. It
@@ -281,7 +281,8 @@ function DateAxis({ from, slots, plotW }) {
   const [y, m, d] = from.split("-").map(Number);
   return Array.from({ length: count }, (_, i) => {
     const day = Math.round((i / (count - 1)) * (slots - 1));
-    const text = new Date(y, m - 1, d + day).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    const text = new Date(y, m - 1, d + day).toLocaleDateString(undefined,
+      slots > YEAR_LABEL_DAYS ? { month: "short", day: "numeric", year: "numeric" } : { month: "short", day: "numeric" });
     const anchor = i === 0 ? "start" : i === count - 1 ? "end" : "middle";
     const x = i === 0 ? GUTTER : i === count - 1 ? GUTTER + plotW : GUTTER + ((day + 0.5) / slots) * plotW;
     return <text key={i} x={x} y={PLOT_H + 14} textAnchor={anchor} fontSize={10} fill="#94a3b8">{text}</text>;

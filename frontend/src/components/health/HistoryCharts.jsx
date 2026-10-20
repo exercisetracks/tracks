@@ -83,7 +83,15 @@ function dateTicks(rows, count = 5) {
   });
 }
 
-const fmtTick = ms => new Date(ms).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+/** Past about half a year the day and month alone no longer say which year. */
+export const YEAR_LABEL_DAYS = 180;
+
+/** The axis label formatter for a chart over `rows`: the year joins it on a long window. */
+const tickFormatter = rows => {
+  const long = rows.length > 1 && (rows[rows.length - 1].dateMs - rows[0].dateMs) / DAY_MS > YEAR_LABEL_DAYS;
+  return ms => new Date(ms).toLocaleDateString(undefined,
+    long ? { month: "short", day: "numeric", year: "numeric" } : { month: "short", day: "numeric" });
+};
 const fmtLong = ms => new Date(ms).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" });
 
 const AXIS = { fontSize: 10, fill: "#94a3b8" };
@@ -206,7 +214,7 @@ export function MetricHistoryChart({ trend, start, color, zones, unit, decimals,
         {dayMarks(rows)}
         <XAxis dataKey="dateMs" type="number" scale="time"
           domain={[rows[0].dateMs, rows[rows.length - 1].dateMs]}
-          ticks={dateTicks(rows)} tickFormatter={fmtTick}
+          ticks={dateTicks(rows)} tickFormatter={tickFormatter(rows)}
           tick={AXIS} axisLine={false} tickLine={false} />
         <YAxis
           // Counted things start at zero: 9,000 steps against 10,000 is not
@@ -256,7 +264,7 @@ export function SleepTrendChart({ hours, score, start }) {
           {dayMarks(rows, "h")}
           <XAxis dataKey="dateMs" type="number" scale="time"
             domain={[rows[0].dateMs, rows[rows.length - 1].dateMs]}
-            ticks={dateTicks(rows)} tickFormatter={fmtTick}
+            ticks={dateTicks(rows)} tickFormatter={tickFormatter(rows)}
             tick={AXIS} axisLine={false} tickLine={false} />
           <YAxis yAxisId="h" domain={[0, Math.ceil(peak)]} allowDecimals={false}
             tick={{ ...AXIS, fill: SLEEP_COLOR }} axisLine={false} tickLine={false} width={34}

@@ -366,10 +366,10 @@ private fun SleepHistoryChart(
             // On a year or lifetime window the bars are a pixel or two wide,
             // and a 1.5dp score line would cover the hypnogram under it.
             // Never wider than three quarters of a bar, never under 1px. Past
-            // a quarter of a bar the line also fades, down to 60% transparent
+            // a quarter of a bar the line also fades, down to 70% transparent
             // at three quarters, so the bars under it stay readable.
             val scoreStroke = (barWidth * 0.75f).coerceAtMost(1.5.dp.toPx()).coerceAtLeast(1f)
-            val scoreAlpha = 1f - 0.6f * ((scoreStroke / barWidth - 0.25f) / 0.5f).coerceIn(0f, 1f)
+            val scoreAlpha = 1f - 0.7f * ((scoreStroke / barWidth - 0.25f) / 0.5f).coerceIn(0f, 1f)
 
             // Average bedtime and average waking, behind the nights. A
             // reference rather than a reading, and the thing a run of bars is

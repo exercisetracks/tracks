@@ -295,7 +295,9 @@ internal fun androidx.compose.ui.graphics.drawscope.DrawScope.drawDateAxis(
 ) {
     if (plotWidth <= 0f) return
     val labelStyle = style.copy(color = color)
-    fun text(fraction: Float) = axis.dateAt(fraction).format(DATE_AXIS_FORMAT)
+    // Past about half a year the day and month alone no longer say which year.
+    val format = if (axis.days > YEAR_LABEL_DAYS) DATE_AXIS_FORMAT_WITH_YEAR else DATE_AXIS_FORMAT
+    fun text(fraction: Float) = axis.dateAt(fraction).format(format)
 
     // Measured on real labels rather than assumed: "3 Sep" and "23 Aug" are
     // different widths, and the widest of the two ends is the binding one.
@@ -323,6 +325,11 @@ internal fun androidx.compose.ui.graphics.drawscope.DrawScope.drawDateAxis(
 
 private val DATE_AXIS_FORMAT: java.time.format.DateTimeFormatter =
     java.time.format.DateTimeFormatter.ofPattern("d MMM")
+
+private val DATE_AXIS_FORMAT_WITH_YEAR: java.time.format.DateTimeFormatter =
+    java.time.format.DateTimeFormatter.ofPattern("d MMM yyyy")
+
+private const val YEAR_LABEL_DAYS = 180
 
 /** A label and a gap of its own width again, so neighbours never touch. */
 private const val LABEL_BREATHING_ROOM = 2.0f
