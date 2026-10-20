@@ -4,7 +4,7 @@
 
 go-pmtiles serve does not set Cache-Control headers. This middleware
 injects appropriate caching headers for response types from the Python
-backend (fonts, sprites).
+backend (fonts). Sprites set their own: see app.routes.sprite.
 """
 
 from fastapi import Request
@@ -17,8 +17,6 @@ class CacheControlMiddleware(BaseHTTPMiddleware):
 
         path = request.url.path
         if path.startswith("/fonts/"):
-            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
-        elif path.startswith("/sprite/"):
             response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
         elif path.startswith("/maps/poi/features"):
             # Map-icon POIs for a bbox+zoom. The exact same URL recurs constantly

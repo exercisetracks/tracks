@@ -32,7 +32,8 @@ from app.services.sprite_builder.atlas import (
     _load_base_icons, _pack, _render_glyph, _render_pattern,
 )
 from app.services.sprite_builder.builder import (
-    _build_ratio, _is_current, build_sprite, build_sprite_async,
+    SHEET_FILES, _build_ratio, _is_current, build_sprite, build_sprite_async,
+    sprite_version,
 )
 from app.services.sprite_builder.palette import (
     BASE_SPRITE, BROWN, BUILD_VERSION, CLEAR, GREEN, ICON_PX, INK, PAD,
@@ -66,7 +67,7 @@ __all__ = [
     # registries
     "SYMBOLS", "PATTERNS",
     # public entry points
-    "build_sprite", "build_sprite_async",
+    "build_sprite", "build_sprite_async", "sprite_version",
     # point / line symbols
     "sym_aerodrome", "sym_alpine_hut", "sym_bar", "sym_benchmark",
     "sym_boat_ramp", "sym_cafe", "sym_campground", "sym_cave", "sym_cemetery",
