@@ -42,6 +42,13 @@ object LiveActivity {
         /** Whether there is a live track worth drawing. */
         val live: Boolean get() = points.isNotEmpty() && status != Status.OFF && status != Status.STOPPED
         val position: Point? get() = points.lastOrNull()
+
+        /**
+         * Where the watch is, for the map's location dot: the last position
+         * while the activity is live and something arrived within [STALE_MS]
+         * of [now], else null and the dot goes back to the phone's own fix.
+         */
+        fun fix(now: Long): Point? = position?.takeIf { live && now - updatedAt <= STALE_MS }
     }
 
     private val _track = MutableStateFlow(Track())

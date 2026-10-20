@@ -231,6 +231,13 @@ if one stops applying, rather than silently shipping an unpatched refresh.
     HR dial. The stream is switched on only while that page is open, and
     nothing is stored. Not yet verified on a watch.
 
+17. **`gdi_core.proto`** — `LocationData`'s fields are optional rather than
+    required. A recording watch's own reports carry only position, altitude,
+    timestamp and type (2026-10-12 capture), so with the rest required every
+    one failed to parse and patch 15 never saw a single report: the phone's
+    live track moved only when an Explore sync read the line so far.
+    Upstream's builders still set every field, so nothing it sends changes.
+
 Patches 7–12 record edits that were made in place between August and
 September 2026 and found on 2026-09-30; until then a refresh would have
 reverted every one of them silently.

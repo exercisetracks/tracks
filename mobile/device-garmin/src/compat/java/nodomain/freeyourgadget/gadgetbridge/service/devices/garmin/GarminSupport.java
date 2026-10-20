@@ -3079,20 +3079,33 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
 
     /**
      * Live positions from a recording watch. Semicircles in the proto's
-     * sint32 fields, the Garmin epoch for time. The proto marks altitude and
-     * the rest required, so a report without them would not have parsed.
+     * sint32 fields, the Garmin epoch for time.
+     *
+     * The watch sends only position, altitude, timestamp and type, so every
+     * field is optional (patch 0017) and read only when present. Until it has
+     * a fix it still reports, once a second, with both coordinates at
+     * 0x7FFFFFFF -- Garmin's "invalid" -- which would otherwise be a point at
+     * 180 degrees north drawn into the track.
      */
     public void onLivePositions(final List<GdiCore.CoreService.LocationData> reports) {
+        LiveActivity.INSTANCE.onPositions(livePoints(reports));
+    }
+
+    /** The reports as track points, those with no fix left out. Pure, for tests. */
+    static List<LiveActivity.Point> livePoints(final List<GdiCore.CoreService.LocationData> reports) {
         final List<LiveActivity.Point> points = new ArrayList<>(reports.size());
         for (final GdiCore.CoreService.LocationData d : reports) {
-            if (!d.hasPosition()) continue;
+            if (!d.hasPosition() || !d.getPosition().hasLat() || !d.getPosition().hasLon()) continue;
+            final int lat = d.getPosition().getLat();
+            final int lon = d.getPosition().getLon();
+            if (lat == Integer.MAX_VALUE || lon == Integer.MAX_VALUE) continue;
             points.add(new LiveActivity.Point(
-                    LiveActivity.INSTANCE.degrees(d.getPosition().getLat()),
-                    LiveActivity.INSTANCE.degrees(d.getPosition().getLon()),
-                    (double) d.getAltitude(),
+                    LiveActivity.INSTANCE.degrees(lat),
+                    LiveActivity.INSTANCE.degrees(lon),
+                    d.hasAltitude() ? (double) d.getAltitude() : null,
                     d.hasTimestamp() ? LiveActivity.INSTANCE.unixSeconds(d.getTimestamp() & 0xffffffffL) : null));
         }
-        LiveActivity.INSTANCE.onPositions(points);
+        return points;
     }
 
     /**

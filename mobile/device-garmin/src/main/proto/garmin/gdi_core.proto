@@ -93,15 +93,21 @@ message CoreService {
         repeated LocationData location_data = 1;
     }
 
+    // PATCHED FOR TRACKS (vendor/patches/0017-proto-live-position-optional.patch):
+    // optional, not required. A recording watch's own reports carry only
+    // position, altitude, timestamp and type (captured against Garmin
+    // Explore, 2026-10-12); with the rest required, every one failed to parse
+    // and was dropped whole, and the live track only moved when an Explore
+    // sync read the line so far.
     message LocationData {
-        required LatLon position=1;
-        required float altitude=2;
-        required uint32 timestamp=3;
-        required float h_accuracy=4;
-        required float v_accuracy=5;
-        required DataType position_type=6;
-        required float bearing=9;
-        required float speed=10;
+        optional LatLon position=1;
+        optional float altitude=2;
+        optional uint32 timestamp=3;
+        optional float h_accuracy=4;
+        optional float v_accuracy=5;
+        optional DataType position_type=6;
+        optional float bearing=9;
+        optional float speed=10;
     }
 
     message LatLon {

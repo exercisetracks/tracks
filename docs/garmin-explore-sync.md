@@ -447,11 +447,16 @@ With "sync current activity" on, the watch sends **`core_service` (Smart field
 13) message 7** about once a second while recording:
 
 ```
-{ 1: { 1: { 1: lat_u32, 2: lon_u32 }   # lat ≈ value × 180 / 2^32 (degrees); lon's sign encoding not yet confirmed
+{ 1: { 1: { 1: lat, 2: lon }         # sint32 semicircles, zigzag: west and south are negative
        2: f32 altitude_m
        3: garmin_timestamp              # seconds since 1989-12-31
-       6: 2 } }
+       6: 2 } }                         # REALTIME_TRACKING
 ```
+
+Nothing else: no accuracy, bearing or speed, which Gadgetbridge's proto
+declared `required`. Until the watch has a fix, it still reports once a
+second, with both coordinates at `0x7FFFFFFF` (10 of the 33 reports in
+capture c).
 
 Separately, each Explore session opens with
 **active_line_digest_write_request (32)** describing the in-progress line
@@ -462,13 +467,20 @@ shows the track so far.
 
 ### What Tracks does with it
 
-Since 2026-10-18 (not yet verified on the watch):
+Since 2026-10-18, and since 2026-10-20 with the reports actually parsed (not
+yet verified on the watch):
 
 - The once-a-second reports reach `GarminSupport.onLivePositions` (vendor
   patch 0015) and the in-progress line's points part, read in every session,
   reaches `ExploreSession.Host.onActiveTrack`. Both feed
   `com.tracks.device.garmin.live.LiveActivity`, which the phone's map draws as
-  a line and a position dot. Nothing goes to the server.
+  a line, and the location dot moves to the watch's position (with a
+  Bluetooth rune) while it is live. Nothing goes to the server.
+- Until 2026-10-20 no report ever arrived: `LocationData`'s missing fields
+  were `required`, so each report failed to parse and was dropped whole, and
+  the line moved only when an Explore sync read the line so far, about every
+  twenty minutes. Patch 0017 makes them optional, and reports with no fix
+  (`0x7FFFFFFF`) are skipped.
 - Explore asked nothing of the watch to start the reports: in capture c the
   only location exchange beforehand was the watch's own
   `LocationUpdatedSetEnabledRequest {enabled, SIGNIFICANT_LOCATION}`, and the
@@ -535,7 +547,6 @@ So the next attempt does not repeat these:
 - Whether a phone may declare more than one collection, and what "default"
   changes beyond where new items go.
 - How the watch reports a waypoint deleted on the watch.
-- Longitude encoding in the `core_service` live position.
 - What `5: 115` is (constant in every read; likely a format or schema version).
 
 ---

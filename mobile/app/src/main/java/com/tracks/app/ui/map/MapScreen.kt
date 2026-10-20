@@ -361,6 +361,23 @@ fun MapScreen(
                     MyLocation.apply(context, ready, loaded, follow)
                 }
 
+                // While the watch records, the dot is where the watch is, on
+                // every report. Re-checked once the reports could have gone
+                // stale, since a watch that stops sending sends nothing to
+                // recompose on, and the dot has to go back to the phone.
+                val watchTrack by com.tracks.device.garmin.live.LiveActivity.track.collectAsStateWithLifecycle()
+                LaunchedEffect(map, watchTrack) {
+                    val ready = map ?: return@LaunchedEffect
+                    val clock = com.tracks.device.garmin.live.LiveActivity.now
+                    val fix = watchTrack.fix(clock())
+                    MyLocation.showWatch(context, ready, fix)
+                    if (fix != null) {
+                        val age = clock() - watchTrack.updatedAt
+                        kotlinx.coroutines.delay(com.tracks.device.garmin.live.LiveActivity.STALE_MS - age + 500)
+                        MyLocation.showWatch(context, ready, watchTrack.fix(clock()))
+                    }
+                }
+
                 // Taps mean different things per tool, and are ignored entirely
                 // while the download box is up — a tap there is aimed at the
                 // box, not the map under it.
@@ -675,9 +692,10 @@ fun MapScreen(
                 // track so far and where the watch is (phone only; see
                 // LiveActivity).
                 val live by com.tracks.device.garmin.live.LiveActivity.track.collectAsStateWithLifecycle()
-                LaunchedEffect(style, live) {
+                val liveInk = MaterialTheme.colorScheme.primary.toArgb() and 0xFFFFFF
+                LaunchedEffect(style, live, liveInk) {
                     val loaded = style ?: return@LaunchedEffect
-                    drawLiveTrack(loaded, live)
+                    drawLiveTrack(loaded, live, liveInk)
                 }
 
                 LaunchedEffect(style, tools.profileCursor) {
@@ -1290,19 +1308,22 @@ internal fun drawRoute(style: Style, route: RouteDraft) {
 private const val LIVE_TRACK_SOURCE = "tracks_live_track"
 private const val LIVE_TRACK_LINE = "tracks_live_track_line"
 private const val LIVE_TRACK_CASING = "tracks_live_track_casing"
-private const val LIVE_POSITION_SOURCE = "tracks_live_position"
-private const val LIVE_POSITION_LAYER = "tracks_live_position_dot"
 
 /**
  * The watch's activity in progress, as Garmin Explore shows it: the line so
- * far and a dot where the watch is. Empty (not removed) when nothing is
- * recording, so the layers stay in their place in the stack.
+ * far. Empty (not removed) when nothing is recording, so the layers stay in
+ * their place in the stack. Where the watch is now is the location dot
+ * itself (MyLocation.showWatch), not a second dot here.
+ *
+ * In the theme's accent ([ink], RGB), like the activity lines: the track is
+ * yours, and chrome-coloured. Set on every draw, not only when the layer is
+ * made, so changing the accent recolours a track already on the map.
  *
  * Above the saved library and below the route editor's own layers, which are
  * added later: a live position is the most current thing on the map, but a
  * route being drawn still has to be legible over it.
  */
-internal fun drawLiveTrack(style: Style, live: com.tracks.device.garmin.live.LiveActivity.Track) {
+internal fun drawLiveTrack(style: Style, live: com.tracks.device.garmin.live.LiveActivity.Track, ink: Int) {
     if (!style.isFullyLoaded) return
     val shown = live.live
     val line = if (shown && live.points.size >= 2) {
@@ -1314,10 +1335,6 @@ internal fun drawLiveTrack(style: Style, live: com.tracks.device.garmin.live.Liv
     } else {
         FeatureCollection.fromFeatures(emptyList())
     }
-    val dot = live.position?.takeIf { shown }?.let {
-        FeatureCollection.fromFeature(Feature.fromGeometry(Point.fromLngLat(it.lng, it.lat)))
-    } ?: FeatureCollection.fromFeatures(emptyList())
-
     (style.getSource(LIVE_TRACK_SOURCE) as? GeoJsonSource)?.setGeoJson(line)
         ?: run {
             style.addSource(GeoJsonSource(LIVE_TRACK_SOURCE, line))
@@ -1331,25 +1348,13 @@ internal fun drawLiveTrack(style: Style, live: com.tracks.device.garmin.live.Liv
             )
             style.addLayer(
                 LineLayer(LIVE_TRACK_LINE, LIVE_TRACK_SOURCE).withProperties(
-                    PropertyFactory.lineColor("#e11d48"),
                     PropertyFactory.lineWidth(4f),
                     PropertyFactory.lineCap(Property.LINE_CAP_ROUND),
                     PropertyFactory.lineJoin(Property.LINE_JOIN_ROUND),
                 ),
             )
         }
-    (style.getSource(LIVE_POSITION_SOURCE) as? GeoJsonSource)?.setGeoJson(dot)
-        ?: run {
-            style.addSource(GeoJsonSource(LIVE_POSITION_SOURCE, dot))
-            style.addLayer(
-                CircleLayer(LIVE_POSITION_LAYER, LIVE_POSITION_SOURCE).withProperties(
-                    PropertyFactory.circleRadius(7f),
-                    PropertyFactory.circleColor("#e11d48"),
-                    PropertyFactory.circleStrokeWidth(3f),
-                    PropertyFactory.circleStrokeColor("#ffffff"),
-                ),
-            )
-        }
+    style.getLayer(LIVE_TRACK_LINE)?.setProperties(PropertyFactory.lineColor(String.format("#%06X", ink)))
 }
 
 /** What an empty GeoJSON source is fed, since null is not a document. */

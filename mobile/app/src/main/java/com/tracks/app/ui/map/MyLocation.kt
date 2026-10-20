@@ -6,12 +6,17 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
+import android.location.Location
 import android.util.Log
 import androidx.core.content.ContextCompat
+import com.tracks.app.R
+import com.tracks.device.garmin.live.LiveActivity
 import org.maplibre.android.camera.CameraUpdateFactory
 import org.maplibre.android.geometry.LatLng
+import org.maplibre.android.location.LocationComponent
 import org.maplibre.android.location.LocationComponentActivationOptions
 import org.maplibre.android.location.LocationComponentOptions
+import org.maplibre.android.location.engine.LocationEngine
 import org.maplibre.android.location.engine.LocationEngineRequest
 import org.maplibre.android.location.modes.CameraMode
 import org.maplibre.android.location.modes.RenderMode
@@ -129,6 +134,12 @@ enum class FollowMode {
  * The component must be re-activated on every style load. A style is a whole
  * new set of sources and layers, and the dot lives in those — so a region
  * download, which changes the served style, would silently take the dot with it.
+ *
+ * While the watch is recording, the dot is the watch's position instead
+ * ([showWatch]), drawn with a Bluetooth rune so it is clear where it came
+ * from. Only the position changes hands: the heading arrow and the
+ * heading-up camera still read the phone's compass, which is what the person
+ * holding the map is turning.
  */
 object MyLocation {
 
@@ -168,6 +179,18 @@ object MyLocation {
      */
     private var requestedFor: FollowMode? = null
 
+    /** Whether the component was activated with the phone's own location engine. */
+    private var activatedWithEngine = false
+
+    /** The watch's position while it is live ([showWatch]), else null. */
+    private var watch: LiveActivity.Point? = null
+
+    /** Whether the component is currently drawing [watch] rather than the phone's fix. */
+    private var showingWatch = false
+
+    /** The phone's engine, set aside while the watch is the source. */
+    private var phoneEngine: LocationEngine? = null
+
     fun permitted(context: Context): Boolean =
         ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) ==
             PackageManager.PERMISSION_GRANTED ||
@@ -184,39 +207,44 @@ object MyLocation {
      *
      * Safe to call repeatedly and safe to call without permission — it does
      * nothing rather than throwing, so callers do not have to guard every site.
+     * Without permission the dot is drawn only while the watch supplies it.
      */
     @SuppressLint("MissingPermission")
     fun apply(context: Context, map: MapLibreMap, style: Style, mode: FollowMode) {
-        if (!permitted(context)) return
         if (!style.isFullyLoaded) return
+        val phone = permitted(context)
 
         runCatching {
             val component = map.locationComponent
+            if (!phone && watch == null) {
+                if (component.isLocationComponentActivated) component.isLocationComponentEnabled = false
+                return
+            }
             // Re-activated when the *style* changes, not only when the
             // component has never been set up. The dot, its accuracy ring and
             // its heading arrow are layers inside the style, so a document
             // swap — which a region download causes — takes them with it, and
             // `isLocationComponentActivated` stays true over the top of a map
             // that is no longer showing anything.
-            if (!component.isLocationComponentActivated || activatedFor !== style) {
+            // And when permission arrives after a watch-only activation, so
+            // the phone's engine is there once the watch stops supplying fixes.
+            if (!component.isLocationComponentActivated || activatedFor !== style ||
+                activatedWithEngine != phone
+            ) {
                 component.activateLocationComponent(
                     LocationComponentActivationOptions.builder(context, style)
-                        .locationComponentOptions(
-                            LocationComponentOptions.builder(context)
-                                // Fade the dot out when the map is zoomed far
-                                // out: a 10 m accuracy ring at continental zoom
-                                // is a dot over an entire state, which is worse
-                                // than showing nothing.
-                                .enableStaleState(true)
-                                .build()
-                        )
-                        .useDefaultLocationEngine(true)
+                        .locationComponentOptions(dotOptions(context, fromWatch = false))
+                        .useDefaultLocationEngine(phone)
                         .locationEngineRequest(mode.locationRequest)
                         .build()
                 )
                 // A fresh component is running whatever was just handed to it,
-                // whatever the old one had been asking for.
+                // whatever the old one had been asking for -- the phone's
+                // engine and the phone's dot, so the watch is put back below.
                 requestedFor = mode
+                activatedWithEngine = phone
+                showingWatch = false
+                phoneEngine = null
             }
             activatedFor = style
             component.isLocationComponentEnabled = true
@@ -230,6 +258,8 @@ object MyLocation {
                 component.locationEngineRequest = mode.locationRequest
                 requestedFor = mode
             }
+
+            syncSource(context, component)
 
             // Move to the dot ourselves when following starts.
             //
@@ -250,4 +280,74 @@ object MyLocation {
             }
         }.onFailure { Log.w(TAG, "could not enable the location dot", it) }
     }
+
+    /**
+     * Draw the watch's position as the dot, or hand the dot back to the phone
+     * with null. Called on every report, about once a second while the watch
+     * records, so it touches only the dot's source and look -- never the
+     * camera mode, whose setter cancels whatever the map is animating.
+     */
+    fun showWatch(context: Context, map: MapLibreMap, position: LiveActivity.Point?) {
+        watch = position
+        runCatching {
+            val component = map.locationComponent
+            // Not up yet, or a style is loading: [apply] picks [watch] up.
+            if (!component.isLocationComponentActivated) return
+            syncSource(context, component)
+            if (position == null && !permitted(context)) component.isLocationComponentEnabled = false
+        }.onFailure { Log.w(TAG, "could not move the location dot to the watch", it) }
+    }
+
+    /**
+     * Point the component at [watch] or at the phone, whichever is current.
+     *
+     * The phone's engine is detached rather than left running alongside: its
+     * fixes would land between the watch's and the dot would jump between two
+     * receivers a few metres apart. Forced updates are MapLibre's way in for a
+     * position from elsewhere, and the component animates between them as it
+     * does between its own.
+     */
+    @SuppressLint("MissingPermission")
+    private fun syncSource(context: Context, component: LocationComponent) {
+        val at = watch
+        if (at != null) {
+            if (!showingWatch) {
+                phoneEngine = component.locationEngine
+                component.locationEngine = null
+                component.applyStyle(dotOptions(context, fromWatch = true))
+                showingWatch = true
+            }
+            component.isLocationComponentEnabled = true
+            component.forceLocationUpdate(
+                Location("watch").apply {
+                    latitude = at.lat
+                    longitude = at.lng
+                    at.altitude?.let { altitude = it }
+                    time = at.epochSeconds?.times(1000) ?: System.currentTimeMillis()
+                }
+            )
+        } else if (showingWatch) {
+            component.applyStyle(dotOptions(context, fromWatch = false))
+            component.locationEngine = phoneEngine
+            phoneEngine = null
+            showingWatch = false
+        }
+    }
+
+    private fun dotOptions(context: Context, fromWatch: Boolean): LocationComponentOptions =
+        LocationComponentOptions.builder(context)
+            // Fade the dot out when the map is zoomed far out: a 10 m accuracy
+            // ring at continental zoom is a dot over an entire state, which is
+            // worse than showing nothing.
+            .enableStaleState(true)
+            .apply {
+                if (fromWatch) {
+                    // Grey after MapLibre's stale timeout with no report: the
+                    // watch has lost its fix or the link, and the dot is
+                    // where it was, not where it is.
+                    foregroundDrawable(R.drawable.watch_location_dot)
+                    foregroundDrawableStale(R.drawable.watch_location_dot_stale)
+                }
+            }
+            .build()
 }

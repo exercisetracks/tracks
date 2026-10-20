@@ -57,6 +57,17 @@ class LiveActivityTest {
     }
 
     @Test
+    fun `the location dot takes the watch's position only while it is fresh`() {
+        LiveActivity.onPositions(listOf(p(46.0, 10), p(46.1, 11)))
+        val track = LiveActivity.track.value
+        assertEquals(46.1, track.fix(1_000L)?.lat)
+        assertEquals(46.1, track.fix(1_000L + LiveActivity.STALE_MS)?.lat)
+        assertEquals(null, track.fix(1_001L + LiveActivity.STALE_MS), "a quiet watch hands the dot back to the phone")
+        LiveActivity.onStatus(Status.STOPPED)
+        assertEquals(null, LiveActivity.track.value.fix(1_000L), "a saved activity is not where the watch is now")
+    }
+
+    @Test
     fun `semicircles and the Garmin epoch convert`() {
         assertEquals(90.0, LiveActivity.degrees(1 shl 30), 1e-9)
         assertEquals(631_065_600L, LiveActivity.unixSeconds(0))
