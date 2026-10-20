@@ -29,7 +29,7 @@
 import { useMemo } from "react";
 import useWidth from "./useWidth";
 import { STRESS_ZONES, localIso } from "./scales";
-import { dayMs } from "./HistoryCharts";
+import { dayMs, YEAR_LABEL_DAYS } from "./HistoryCharts";
 
 const PLOT_H = 200;
 const AXIS_H = 20;
@@ -237,7 +237,8 @@ function dateLabels(from, span, plotW) {
   return Array.from({ length: count }, (_, i) => {
     const f = i / (count - 1);
     const day = Math.min(span - 1, Math.round(f * (span - 1)));
-    const text = new Date(y, m - 1, d + day).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    const text = new Date(y, m - 1, d + day).toLocaleDateString(undefined,
+      span > YEAR_LABEL_DAYS ? { month: "short", day: "numeric", year: "numeric" } : { month: "short", day: "numeric" });
     // Centred on the middle of the day it names.
     const x = GUTTER + ((day + 0.5) / span) * plotW;
     return { x: i === 0 ? GUTTER : i === count - 1 ? GUTTER + plotW : x, text, anchor: i === 0 ? "start" : i === count - 1 ? "end" : "middle" };
