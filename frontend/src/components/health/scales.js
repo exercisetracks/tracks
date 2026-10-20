@@ -41,6 +41,8 @@ export const WEIGHT_COLOR    = BLUE;
 export const HYDRATION_COLOR = SKY;
 export const CALORIE_COLOR   = ORANGE;
 export const STEP_COLOR      = GREEN;
+export const INTENSITY_COLOR = "#f97316";
+export const FLOORS_COLOR    = "#0ea5e9";
 export const ACTIVE_COLOR    = ORANGE;
 // Distinct from the active half and from the empty track, so the two halves of
 // the day's burn read as two colours rather than one and a gap.
@@ -126,6 +128,10 @@ export const SLEEP_ZONES = [
 // Everyday defaults, and the only invented numbers here.
 
 export const STEP_GOAL           = 10_000;
+/** The WHO's weekly minimum of moderate activity; vigorous minutes count double. */
+export const INTENSITY_GOAL      = 150;
+/** Garmin's default daily floors goal. */
+export const FLOORS_GOAL         = 10;
 /** The sleep dial's arc runs to it and the history draws its goal line at it. */
 export const SLEEP_GOAL_HOURS    = 8;
 export const ACTIVE_CALORIE_GOAL = 500;
@@ -287,6 +293,33 @@ export function isFresh(date, freshDays, today = localIso()) {
  * `select` maps a daily row to a number or null; nulls are skipped, so a day
  * without a reading is absent rather than zero.
  */
+/**
+ * Intensity minutes over the seven days ending each day: moderate plus twice
+ * vigorous, as the watch and the WHO's 150-a-week count them (the phone's
+ * HealthUiState.weeklyIntensity). A rolling week because the goal is weekly.
+ */
+export function weeklyIntensity(days) {
+  const perDay = new Map();
+  for (const d of days) {
+    if (d.intensity_moderate_min == null && d.intensity_vigorous_min == null) continue;
+    perDay.set(d.date, (d.intensity_moderate_min ?? 0) + 2 * (d.intensity_vigorous_min ?? 0));
+  }
+  const dates = [...perDay.keys()].sort();
+  // Calendar arithmetic on the date's own fields: these are days, not instants.
+  const daysBefore = (date, n) => {
+    const [y, m, d] = date.split("-").map(Number);
+    const t = new Date(Date.UTC(y, m - 1, d - n));
+    const pad = (v) => String(v).padStart(2, "0");
+    return `${t.getUTCFullYear()}-${pad(t.getUTCMonth() + 1)}-${pad(t.getUTCDate())}`;
+  };
+  const values = dates.map((date) => {
+    let sum = 0;
+    for (let i = 0; i < 7; i++) sum += perDay.get(daysBefore(date, i)) ?? 0;
+    return sum;
+  });
+  return { dates, values };
+}
+
 export function series(days, select) {
   const dates = [];
   const values = [];

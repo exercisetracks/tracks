@@ -210,5 +210,24 @@ class LocalImporterTest {
         assertEquals(JsonNull, lib.summaryJson(uid)!!["workout_feel"])
         assertEquals(0, LocalImporter(lib).backfillSummaries { null })
     }
-}
 
+    /** Overlapping monitoring files: a minute read twice is one minute; floors widen. */
+    @Test
+    fun overlapping_files_count_an_intensity_minute_once() {
+        fun series(vararg p: Pair<Long, Long>) = kotlinx.serialization.json.JsonArray(
+            p.map { (m, v) -> kotlinx.serialization.json.JsonArray(listOf(kotlinx.serialization.json.JsonPrimitive(m), kotlinx.serialization.json.JsonPrimitive(v))) },
+        )
+        val none = kotlinx.serialization.json.JsonArray(emptyList())
+        val (m1, x1) = LocalImporter.mergeDay(
+            null, null, mapOf("floors_climbed" to kotlinx.serialization.json.JsonPrimitive(4)), none, none, none,
+            mapOf("moderate_series" to series(600L to 1L, 601L to 1L), "vigorous_series" to series(602L to 2L)),
+        )
+        val (m2, _) = LocalImporter.mergeDay(
+            m1, x1, mapOf("floors_climbed" to kotlinx.serialization.json.JsonPrimitive(9)), none, none, none,
+            mapOf("moderate_series" to series(601L to 1L, 603L to 5L), "vigorous_series" to series(602L to 2L)),
+        )
+        assertEquals("7", m2["intensity_moderate_min"].toString())
+        assertEquals("2", m2["intensity_vigorous_min"].toString())
+        assertEquals("9", m2["floors_climbed"].toString())
+    }
+}

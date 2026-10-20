@@ -52,6 +52,12 @@ class DailyMetric(Base, Synced):
     body_battery_last    = Column(Integer, nullable=True)
     body_battery_charged = Column(Integer, nullable=True)
     body_battery_drained = Column(Integer, nullable=True)
+    # Intensity minutes (the watch's moderate / vigorous minutes) and floors
+    # climbed, per day. The minutes are summed from per-minute series kept in
+    # `extra`, so overlapping monitoring files cannot count a minute twice.
+    intensity_moderate_min = Column(Integer, nullable=True)
+    intensity_vigorous_min = Column(Integer, nullable=True)
+    floors_climbed = Column(Integer, nullable=True)
     # Manually-entered body / nutrition metrics
     weight_kg            = Column(Float, nullable=True)
     hydration_ml         = Column(Integer, nullable=True)

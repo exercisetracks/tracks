@@ -318,6 +318,31 @@ class DailyHealthParser(BaseParser):
                     # draws it. 0 is the watch's "not measured" (off the
                     # wrist); anything outside a human range is a sensor
                     # glitch rather than a reading.
+                    # Intensity minutes: the minutes of this record that were
+                    # moderate or vigorous, per record rather than a running
+                    # count, so they are added up -- by minute of day, because
+                    # the files describing a day overlap and the same record
+                    # read twice is one minute, not two.
+                    if minute is not None:
+                        for field, slot in (("moderate_activity_minutes", 0), ("vigorous_activity_minutes", 1)):
+                            v = get(frame, field)
+                            if v:
+                                try:
+                                    day["intensity_at"].setdefault(minute, [0, 0])[slot] = int(v)
+                                except (TypeError, ValueError):
+                                    pass
+                    # Floors climbed today, from field 35: unnamed in the FIT
+                    # profile, the day's ascent so far in millimetres, reset at
+                    # local midnight (36 beside it is the descent; 37 and 38
+                    # are running totals of the moderate and vigorous minutes
+                    # above -- they matched those sums exactly, which is how
+                    # they were told apart). A floor is Garmin's 3.048 m.
+                    ascent_mm = get_by_iter(frame, "unknown_35")
+                    if ascent_mm is not None:
+                        try:
+                            day["ascent_mm"] = max(day["ascent_mm"] or 0, int(ascent_mm))
+                        except (TypeError, ValueError):
+                            pass
                     bpm = get(frame, "heart_rate")
                     if bpm is not None and minute is not None:
                         try:
@@ -557,6 +582,9 @@ def _resolve_timestamp(ts16, last):
 
 
 # A heart rate a person can have. Outside it is a sensor's noise.
+#: One floor, as Garmin counts them: ten feet of ascent.
+FLOOR_MM = 3048
+
 _HR_MIN = 25
 _HR_MAX = 240
 
@@ -572,6 +600,9 @@ def _new_day() -> dict:
         "stress_at": {},
         # Minute of local day -> heart rate, by the same rule.
         "hr_at": {},
+        # Minute of local day -> [moderate, vigorous] minutes.
+        "intensity_at": {},
+        "ascent_mm": None,
         "steps": {}, "calories": {},
         "elapsed": None, "last_at": None,
     }
@@ -610,6 +641,8 @@ def _finish_day(date, day: dict, resting_rate: int | None,
 
     if day["spo2"] and "spo2" not in metrics:
         metrics["spo2"] = round(sum(day["spo2"]) / len(day["spo2"]), 1)
+    if day["ascent_mm"] is not None:
+        metrics["floors_climbed"] = day["ascent_mm"] // FLOOR_MM
 
     # Outside ``metrics``, which is an allow-list of *columns*. This is a
     # variable-length series and goes in ``extra`` alongside the sleep
@@ -619,4 +652,8 @@ def _finish_day(date, day: dict, resting_rate: int | None,
         "metrics": metrics,
         "stress_series": [[m, v] for m, v in sorted(day["stress_at"].items())],
         "hr_series": [[m, v] for m, v in sorted(day["hr_at"].items())],
+        # Two series rather than one of pairs, so each merges by the clock
+        # exactly as stress does (fit_import._merge_stress_series).
+        "moderate_series": [[m, v[0]] for m, v in sorted(day["intensity_at"].items()) if v[0]],
+        "vigorous_series": [[m, v[1]] for m, v in sorted(day["intensity_at"].items()) if v[1]],
     }

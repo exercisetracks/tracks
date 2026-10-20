@@ -16683,6 +16683,39 @@
             ],
             "title": "Body Battery Charged"
           },
+          "intensity_moderate_min": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Intensity Moderate Min"
+          },
+          "intensity_vigorous_min": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Intensity Vigorous Min"
+          },
+          "floors_climbed": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Floors Climbed"
+          },
           "body_battery_drained": {
             "anyOf": [
               {

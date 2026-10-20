@@ -275,6 +275,21 @@ object Explain {
         "Worth watching on rest days: a 20,000-step rest day is not a rest day.",
     )
 
+    val IntensityMinutes = MetricInfo(
+        "Intensity minutes",
+        "Minutes of moderate or vigorous activity over the last seven days, as the " +
+            "watch counts them. A vigorous minute counts twice. The WHO recommends at " +
+            "least 150 a week (or 75 vigorous) for adult health.",
+        "Ten minutes or more at a time is what the watch counts; a brisk walk to the shop is moderate, " +
+            "a run is usually vigorous.",
+    )
+
+    val Floors = MetricInfo(
+        "Floors climbed",
+        "Floors climbed today, from the watch's barometer: one for every 3 m (10 ft) of ascent.",
+        "Hills count as well as stairs. Ten a day is the watch's default goal.",
+    )
+
     val CaloriesBurned = MetricInfo(
         "Calories burned",
         "Everything the day has cost so far: the resting burn your body spends " +

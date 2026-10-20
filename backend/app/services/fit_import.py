@@ -298,6 +298,7 @@ _DAILY_METRIC_FIELDS = {
     "avg_stress_level", "avg_respiration_rate",
     "body_battery_high", "body_battery_low", "body_battery_last",
     "body_battery_charged", "body_battery_drained",
+    "floors_climbed",
 }
 
 # Fields where a later file for the same day should widen the answer rather than
@@ -306,7 +307,7 @@ _DAILY_METRIC_FIELDS = {
 # under first-wins, a morning sync would pin the day's Body Battery high at
 # whatever it happened to be at breakfast.
 _DAILY_METRIC_MAX = {"body_battery_high", "body_battery_charged", "body_battery_drained", "steps",
-                     "active_calories", "resting_calories"}
+                     "active_calories", "resting_calories", "floors_climbed"}
 _DAILY_METRIC_MIN = {"body_battery_low"}
 # ...and where the newest reading is simply the right one.
 #
@@ -400,6 +401,9 @@ def _write_one_day(db, parsed: dict, device_id: int | None, user_id: int) -> Non
     stress_series = parsed.get("stress_series") or []
     # All-day heart rate, merged by the clock exactly as stress is.
     hr_series = parsed.get("hr_series") or []
+    # Intensity minutes, per minute, merged the same way; the day's totals
+    # are summed from the merged series, never added file to file.
+    intensity = {k: parsed.get(k) or [] for k in ("moderate_series", "vigorous_series")}
 
     existing = db.query(DailyMetric).filter_by(date=metric_date, user_id=user_id).first()
     if existing:
@@ -437,8 +441,13 @@ def _write_one_day(db, parsed: dict, device_id: int | None, user_id: int) -> Non
         if hr_series:
             extra["hr_series"] = _merge_stress_series(extra.get("hr_series"), hr_series)
             changed = True
+        for key, series in intensity.items():
+            if series:
+                extra[key] = _merge_stress_series(extra.get(key), series)
+                changed = True
         if changed:
             existing.extra = extra
+            _set_intensity_totals(existing, extra)
     else:
         extra = {}
         if stages:
@@ -447,9 +456,25 @@ def _write_one_day(db, parsed: dict, device_id: int | None, user_id: int) -> Non
             extra["stress_series"] = stress_series
         if hr_series:
             extra["hr_series"] = hr_series
-        db.add(DailyMetric(
+        for key, series in intensity.items():
+            if series:
+                extra[key] = series
+        row = DailyMetric(
             date=metric_date, user_id=user_id, device_id=device_id, extra=extra, **metrics,
-        ))
+        )
+        _set_intensity_totals(row, extra)
+        db.add(row)
+
+
+def _set_intensity_totals(row, extra: dict) -> None:
+    """The day's moderate and vigorous minutes, from its merged per-minute series."""
+    for key, column in (("moderate_series", "intensity_moderate_min"),
+                        ("vigorous_series", "intensity_vigorous_min")):
+        series = extra.get(key)
+        if series:
+            total = sum(int(p[1]) for p in series)
+            if getattr(row, column) != total:
+                setattr(row, column, total)
 
 
 # Which session fields an activity's import has read: 1 is workout_feel and
@@ -470,6 +495,9 @@ def _record_import(db, activity_id: int | None, user_id: int, content_hash: str,
     if activity_id is not None:
         # Parsed by this build, so every summary field it knows is in.
         extra["summary_fields"] = SUMMARY_FIELDS_VERSION
+    else:
+        # Likewise every daily-health field: nothing for that backfill to redo.
+        extra["daily_fields"] = DAILY_FIELDS_VERSION
     db.add(Import(
         activity_id=activity_id,
         user_id=user_id,
@@ -858,6 +886,62 @@ def backfill_activity_summaries_for_user(user_id: int, material: UserKeyMaterial
             log.info("Backfilled activity summaries for user %s: %d files read, %d filled, %d failed",
                      user_id, read, filled, failed)
         return {"files": read, "filled": filled, "failed": failed}
+    finally:
+        db.close()
+
+
+#: Which daily-health fields a health file's import has read: 1 is intensity
+#: minutes and floors (2026-10-19). Bump it when the daily parser learns more.
+DAILY_FIELDS_VERSION = 1
+
+
+def backfill_daily_health_for_user(user_id: int, material: UserKeyMaterial,
+                                   sid: str | None = None) -> dict:
+    """Re-read retained health files for what an older parser walked past --
+    today intensity minutes and floors -- once each.
+
+    Same shape and the same reasons as backfill_activity_summaries_for_user:
+    at login, where the key exists; marked on the Import row
+    (``daily_fields``) so a second run reads nothing. Each file goes back
+    through _write_daily_metrics, whose merges make a re-read safe: counters
+    keep their highest value and the per-minute series merge by the clock,
+    so nothing is counted twice and nothing already stored is lost.
+    """
+    db = SessionLocal()
+    try:
+        marked = func.coalesce(Import.extra["daily_fields"].as_integer(), 0)
+        todo = (
+            db.query(Import)
+            .filter(Import.user_id == user_id, Import.activity_id.is_(None),
+                    marked < DAILY_FIELDS_VERSION)
+            .order_by(Import.id)
+            .all()
+        )
+        read = written = failed = 0
+        for imp in todo:
+            try:
+                raw = retained_plaintext(db, user_id, imp.source_id, material)
+                if raw is not None:
+                    read += 1
+                    parsed = _parse_bytes(raw, (imp.extra or {}).get("filename") or "unknown.fit")
+                    if parsed and parsed.get("type") == "daily":
+                        with sync_store.derived(db):
+                            device_id = get_or_create_device(db, parsed["device"], user_id)
+                            _write_daily_metrics(db, parsed, device_id, user_id)
+                        written += 1
+                imp.extra = {**(imp.extra or {}), "daily_fields": DAILY_FIELDS_VERSION}
+                db.commit()
+            except Exception:
+                db.rollback()
+                log.exception("Daily health backfill failed for import %s", imp.id)
+                failed += 1
+            finally:
+                if sid is not None:
+                    crypto_context.renew_session_key(sid)
+        if todo:
+            log.info("Backfilled daily health for user %s: %d files read, %d days files, %d failed",
+                     user_id, read, written, failed)
+        return {"files": read, "written": written, "failed": failed}
     finally:
         db.close()
 

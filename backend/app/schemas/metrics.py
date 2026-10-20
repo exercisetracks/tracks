@@ -70,6 +70,9 @@ class DailyMetricOut(BaseModel):
     body_battery_low: int | None = None
     body_battery_last: int | None = None
     body_battery_charged: int | None = None
+    intensity_moderate_min: int | None = None
+    intensity_vigorous_min: int | None = None
+    floors_climbed: int | None = None
     body_battery_drained: int | None = None
     weight_kg: float | None = None
     hydration_ml: int | None = None

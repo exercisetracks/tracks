@@ -265,6 +265,16 @@ class AppContainer(private val context: Context) {
                     }
                     .onFailure { android.util.Log.w("TracksImport", "sleep redraw failed", it) }
             }
+            // Once per install: intensity minutes and floors from health
+            // files read before the parser knew them (LocalImporter.redrawDaily).
+            if (!prefs.getBoolean(DAILY_INTENSITY, false)) {
+                runCatching { files.redrawDaily() }
+                    .onSuccess {
+                        android.util.Log.i("TracksImport", "re-read $it health file(s) for intensity and floors")
+                        prefs.edit().putBoolean(DAILY_INTENSITY, true).apply()
+                    }
+                    .onFailure { android.util.Log.w("TracksImport", "daily re-read failed", it) }
+            }
             // Same once-per-launch, no-op-when-current shape: see repairUtcDayMatches.
             runCatching {
                 matching.repairUtcDayMatches(
@@ -1189,3 +1199,6 @@ data class OnboardingProgress(
 
 /** Migration flag for [AppContainer.backfillActivitySummaries]'s one-time sleep redraw. */
 private const val SLEEP_STAGE_ENDS = "sleep_stage_ends_v1"
+
+/** Migration flag for the one-time daily re-read (intensity minutes, floors). */
+private const val DAILY_INTENSITY = "daily_intensity_floors_v1"

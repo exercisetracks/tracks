@@ -55,3 +55,6 @@ def backfill_activity_summaries(user_id: int, sid: str) -> None:
         )
         return
     fit_import.backfill_activity_summaries_for_user(user_id, material, sid=sid)
+    # And the daily health fields a newer parser reads (intensity minutes,
+    # floors), from the same sealed files at the same moment.
+    fit_import.backfill_daily_health_for_user(user_id, material, sid=sid)

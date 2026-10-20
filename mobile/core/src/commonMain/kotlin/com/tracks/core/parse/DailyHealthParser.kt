@@ -93,6 +93,10 @@ internal object DailyHealthParser {
         val stressAt = HashMap<Long, Long>()
         /** Minute of local day -> heart rate, as `hr_at`. */
         val hrAt = HashMap<Long, Long>()
+        /** Minute of local day -> [moderate, vigorous] intensity minutes, as `intensity_at`. */
+        val intensityAt = HashMap<Long, LongArray>()
+        /** The day's ascent so far, mm (field 35), as `ascent_mm`. */
+        var ascentMm: Long? = null
         val steps = LinkedHashMap<String, Long>()
         val calories = LinkedHashMap<String, Long>()
         var elapsed: Long? = null
@@ -165,6 +169,15 @@ internal object DailyHealthParser {
                     }
                     val minute = minuteOfDay(whenValue, offset)
                     minute?.let { m -> day.elapsed = maxOf(day.elapsed ?: 0L, m) }
+                    // Intensity minutes by minute of day, and the day's ascent
+                    // for its floors -- see the Python for the fields.
+                    if (minute != null) {
+                        listOf("moderate_activity_minutes" to 0, "vigorous_activity_minutes" to 1).forEach { (field, slot) ->
+                            val v = Py.intOrNull(frame.get(field))
+                            if (v != null && v != 0L) day.intensityAt.getOrPut(minute) { LongArray(2) }[slot] = v
+                        }
+                    }
+                    Py.intOrNull(frame.getByIter("unknown_35"))?.let { mm -> day.ascentMm = maxOf(day.ascentMm ?: 0L, mm) }
                     // All-day heart rate; see the Python for the range.
                     val bpm = Py.intOrNull(frame.get("heart_rate"))
                     if (bpm != null && minute != null && bpm in HR_MIN..HR_MAX) day.hrAt[minute] = bpm
@@ -250,12 +263,19 @@ internal object DailyHealthParser {
         if (day.spo2.isNotEmpty() && "spo2" !in metrics) {
             metrics["spo2"] = PyMath.round(PyMath.sum(day.spo2) / day.spo2.size, 1)
         }
+        day.ascentMm?.let { metrics["floors_climbed"] = it / FLOOR_MM }
 
         return linkedMapOf(
             "date" to date,
             "metrics" to metrics,
             "stress_series" to day.stressAt.keys.sorted().map { listOf(it, day.stressAt.getValue(it)) },
             "hr_series" to day.hrAt.keys.sorted().map { listOf(it, day.hrAt.getValue(it)) },
+            "moderate_series" to day.intensityAt.keys.sorted().mapNotNull { m ->
+                day.intensityAt.getValue(m)[0].takeIf { it != 0L }?.let { listOf(m, it) }
+            },
+            "vigorous_series" to day.intensityAt.keys.sorted().mapNotNull { m ->
+                day.intensityAt.getValue(m)[1].takeIf { it != 0L }?.let { listOf(m, it) }
+            },
         )
     }
 
@@ -302,6 +322,8 @@ internal object DailyHealthParser {
         return CivilDate.fromEpochDay((seconds + offset).floorDiv(SECONDS_PER_DAY))
     }
 
+    /** One floor, as Garmin counts them: ten feet of ascent. */
+    private const val FLOOR_MM = 3048L
     private const val HR_MIN = 25L
     private const val HR_MAX = 240L
 

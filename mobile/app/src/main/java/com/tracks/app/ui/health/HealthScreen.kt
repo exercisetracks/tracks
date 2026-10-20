@@ -123,6 +123,44 @@ fun HealthScreen(vm: HealthViewModel, modifier: Modifier = Modifier) {
                                 state.latestOf { it.bodyBatteryDrained?.toDouble() }?.let { "Drained" to it },
                             ),
                         ),
+                        HealthMetric(
+                            label = "Stress",
+                            trend = state.series { it.avgStressLevel },
+                            unit = "",
+                            scale = MetricScale.Bands(STRESS_ZONES),
+                            info = Explain.Stress,
+                            // Every reading the watch took, not one dot per day. A
+                            // day's average is a single number for something that
+                            // moves all day, and two very different days average to
+                            // the same figure — see [StressHistoryPanel], which also
+                            // explains why the long windows go back to the averages.
+                            chart = {
+                                StressHistoryPanel(
+                                    days = state.stress,
+                                    averages = state.series { it.avgStressLevel },
+                                    windowStart = state.range.startDate(),
+                                )
+                            },
+                            // Drawn in the same bands, so the shared strip is
+                            // its legend.
+                            scaleUnderChart = true,
+                        ),
+                        HealthMetric(
+                            label = "Intensity",
+                            longLabel = "Intensity minutes",
+                            trend = state.weeklyIntensity,
+                            unit = "min/wk",
+                            scale = MetricScale.Goal(INTENSITY_GOAL, INTENSITY_COLOR),
+                            info = Explain.IntensityMinutes,
+                        ),
+                        HealthMetric(
+                            label = "Floors",
+                            longLabel = "Floors climbed",
+                            trend = state.series { it.floorsClimbed?.toDouble() },
+                            unit = "",
+                            scale = MetricScale.Goal(FLOORS_GOAL, FLOORS_COLOR),
+                            info = Explain.Floors,
+                        ),
                     ),
                     missingHint = "These come from the watch's daily monitoring files, " +
                         "which sync separately from activities.",
@@ -169,28 +207,6 @@ fun HealthScreen(vm: HealthViewModel, modifier: Modifier = Modifier) {
                             unit = "br/min",
                             scale = MetricScale.Bands(RESPIRATION_ZONES),
                             info = Explain.Respiration,
-                        ),
-                        HealthMetric(
-                            label = "Stress",
-                            trend = state.series { it.avgStressLevel },
-                            unit = "",
-                            scale = MetricScale.Bands(STRESS_ZONES),
-                            info = Explain.Stress,
-                            // Every reading the watch took, not one dot per day. A
-                            // day's average is a single number for something that
-                            // moves all day, and two very different days average to
-                            // the same figure — see [StressHistoryPanel], which also
-                            // explains why the long windows go back to the averages.
-                            chart = {
-                                StressHistoryPanel(
-                                    days = state.stress,
-                                    averages = state.series { it.avgStressLevel },
-                                    windowStart = state.range.startDate(),
-                                )
-                            },
-                            // Drawn in the same bands, so the shared strip is
-                            // its legend.
-                            scaleUnderChart = true,
                         ),
                     ),
                     missingHint = "Worn overnight, the watch records these while you sleep.",

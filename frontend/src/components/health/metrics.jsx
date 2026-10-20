@@ -10,6 +10,7 @@ import {
   HRV_COLOR, HYDRATION_COLOR, HYDRATION_GOAL_ML, RESPIRATION_ZONES, RESTING_COLOR,
   RESTING_HR_ZONES, SLEEP_COLOR, SLEEP_GOAL_HOURS, SLEEP_ZONES, SPO2_ZONES, STEP_COLOR,
   STEP_GOAL, STRESS_ZONES, HEART_RATE_ZONES, WEIGHT_COLOR, activityZones, currentOf, isFresh, series,
+  INTENSITY_GOAL, INTENSITY_COLOR, FLOORS_GOAL, FLOORS_COLOR, weeklyIntensity,
 } from "./scales";
 import { SLEEP_COLORS } from "./constants";
 import { EXPLAIN } from "./explain";
@@ -23,7 +24,8 @@ const KG_TO_LB = 2.20462;
 export function hasMeasurements(d) {
   return d.resting_hr != null || d.hrv != null || d.sleep_hours != null || d.steps != null ||
     d.active_calories != null || d.avg_stress_level != null || d.avg_respiration_rate != null ||
-    d.spo2 != null || d.body_battery_last != null;
+    d.spo2 != null || d.body_battery_last != null || d.floors_climbed != null ||
+    d.intensity_moderate_min != null;
 }
 
 /** The newest non-null value of a field anywhere in the window. */
@@ -167,6 +169,27 @@ export function healthGroups({ days, imperial, start, stress, heartRate = [], fo
           ["Drained", latestOf(days, "body_battery_drained")],
         ].filter(([, v]) => v != null),
       },
+      {
+        key: "stress", label: "Stress", unit: "",
+        trend: stressAverages,
+        scale: { kind: "bands", zones: STRESS_ZONES },
+        info: EXPLAIN.stress,
+        chart: () => <StressHistory days={stress} averages={stressAverages} start={start} />,
+        // Drawn in the same bands, so the shared strip is its legend.
+        scaleUnderChart: true,
+      },
+      {
+        key: "intensity", label: "Intensity", longLabel: "Intensity minutes", unit: "min/wk",
+        trend: weeklyIntensity(days),
+        scale: { kind: "goal", target: INTENSITY_GOAL, color: INTENSITY_COLOR },
+        info: EXPLAIN.intensityMinutes,
+      },
+      {
+        key: "floors", label: "Floors", longLabel: "Floors climbed", unit: "",
+        trend: series(days, d => d.floors_climbed),
+        scale: { kind: "goal", target: FLOORS_GOAL, color: FLOORS_COLOR },
+        info: EXPLAIN.floors,
+      },
     ],
   };
 
@@ -216,15 +239,6 @@ export function healthGroups({ days, imperial, start, stress, heartRate = [], fo
         trend: series(days, d => d.avg_respiration_rate),
         scale: { kind: "bands", zones: RESPIRATION_ZONES },
         info: EXPLAIN.respiration,
-      },
-      {
-        key: "stress", label: "Stress", unit: "",
-        trend: stressAverages,
-        scale: { kind: "bands", zones: STRESS_ZONES },
-        info: EXPLAIN.stress,
-        chart: () => <StressHistory days={stress} averages={stressAverages} start={start} />,
-        // Drawn in the same bands, so the shared strip is its legend.
-        scaleUnderChart: true,
       },
     ],
   };

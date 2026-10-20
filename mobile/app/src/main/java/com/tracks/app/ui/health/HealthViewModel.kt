@@ -265,6 +265,28 @@ data class HealthUiState(
         return Trend(dates, values)
     }
 
+    /**
+     * Intensity minutes over the seven days ending each day: moderate plus
+     * twice vigorous, as the watch and the WHO's 150-a-week count them. A
+     * rolling week rather than the day's figure because the goal is weekly,
+     * and a day's minutes alone say nothing against it.
+     */
+    val weeklyIntensity: Trend
+        get() {
+            val perDay = days.mapNotNull { d ->
+                val mod = d.intensityModerateMin
+                val vig = d.intensityVigorousMin
+                if (mod == null && vig == null) null else LocalDate.parse(d.date) to ((mod ?: 0) + 2 * (vig ?: 0)).toDouble()
+            }.toMap()
+            val dates = ArrayList<String>()
+            val values = ArrayList<Double>()
+            for (day in perDay.keys.sorted()) {
+                dates += day.toString()
+                values += (0L..6L).sumOf { perDay[day.minusDays(it)] ?: 0.0 }
+            }
+            return Trend(dates, values)
+        }
+
     val today: String get() = LocalDate.now().toString()
 
     /** Injuries still open, worst first — what the section leads with. */

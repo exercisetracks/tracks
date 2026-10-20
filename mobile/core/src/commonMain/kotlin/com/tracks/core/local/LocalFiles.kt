@@ -64,6 +64,9 @@ class LocalFiles(
     /** See [LocalImporter.redrawSleep]: every stored file, once. */
     suspend fun redrawSleep(): Int = importer.redrawSleep(raw.list()) { raw.get(it) }
 
+    /** See [LocalImporter.redrawDaily]. */
+    suspend fun redrawDaily(): Int = importer.redrawDaily(raw.list()) { raw.get(it) }
+
     /**
      * Import anything stored but never imported — a process killed between
      * the two steps, or derived tables dropped by a schema change (which

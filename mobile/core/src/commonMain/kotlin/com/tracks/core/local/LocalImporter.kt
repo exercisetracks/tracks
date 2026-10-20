@@ -134,6 +134,26 @@ class LocalImporter(
      * wrong shape. Here each sleep file replaces its night's timeline and its
      * sleep fields outright. Returns how many nights were redrawn.
      */
+    /**
+     * Every stored health file read again through [importDaily], for the
+     * fields an older parser walked past (intensity minutes and floors,
+     * 2026-10-19) -- the server's `backfill_daily_health_for_user`. Safe to
+     * repeat: counters keep their highest value and the per-minute series
+     * merge by the clock, so nothing is counted twice.
+     */
+    suspend fun redrawDaily(shas: List<String>, file: suspend (sha256: String) -> ByteArray?): Int {
+        var read = 0
+        for (sha in shas) {
+            val bytes = file(sha) ?: continue
+            if (FitParsing.select(bytes) != FitParsing.Kind.Daily) continue
+            @Suppress("UNCHECKED_CAST")
+            val parsed = runCatching { FitParsing.parse(FitParsing.Kind.Daily, bytes) as Map<String, Any?> }.getOrNull() ?: continue
+            importDaily(sha, parsed)
+            read++
+        }
+        return read
+    }
+
     suspend fun redrawSleep(shas: List<String>, file: suspend (sha256: String) -> ByteArray?): Int {
         var redrawn = 0
         for (sha in shas) {
@@ -243,11 +263,14 @@ class LocalImporter(
                 val stages = LocalJson.of(day["stages"] ?: emptyList<Any>()) as JsonArray
                 val stress = LocalJson.of(day["stress_series"] ?: emptyList<Any>()) as JsonArray
                 val hr = LocalJson.of(day["hr_series"] ?: emptyList<Any>()) as JsonArray
+                val intensity = INTENSITY_SERIES.associateWith { key ->
+                    LocalJson.of(day[key] ?: emptyList<Any>()) as JsonArray
+                }
                 val current = library.q.selectDay(date).executeAsOneOrNull()
                 val merged = mergeDay(
                     current?.let { TracksJson.parseToJsonElement(it.metrics).jsonObject },
                     current?.let { TracksJson.parseToJsonElement(it.extra).jsonObject },
-                    incoming, stages, stress, hr,
+                    incoming, stages, stress, hr, intensity,
                 )
                 library.q.upsertDay(date, merged.first.toString(), merged.second.toString())
             }
@@ -272,10 +295,18 @@ class LocalImporter(
             "avg_stress_level", "avg_respiration_rate",
             "body_battery_high", "body_battery_low", "body_battery_last",
             "body_battery_charged", "body_battery_drained",
+            "floors_climbed",
         )
         private val MAX = setOf(
             "body_battery_high", "body_battery_charged", "body_battery_drained", "steps",
-            "active_calories", "resting_calories",
+            "active_calories", "resting_calories", "floors_climbed",
+        )
+
+        /** Intensity minutes per minute of day, and the day totals summed from them (`_set_intensity_totals`). */
+        val INTENSITY_SERIES = listOf("moderate_series", "vigorous_series")
+        private val INTENSITY_TOTAL = mapOf(
+            "moderate_series" to "intensity_moderate_min",
+            "vigorous_series" to "intensity_vigorous_min",
         )
         private val MIN = setOf("body_battery_low")
         private val LATEST = setOf("body_battery_last", "resting_hr")
@@ -293,6 +324,7 @@ class LocalImporter(
             stages: JsonArray,
             stress: JsonArray,
             hr: JsonArray = JsonArray(emptyList()),
+            intensity: Map<String, JsonArray> = emptyMap(),
         ): Pair<JsonObject, JsonObject> {
             val m = LinkedHashMap(metrics ?: JsonObject(emptyMap()))
             // The sleep totals follow the timeline that wins (see the server's
@@ -322,6 +354,16 @@ class LocalImporter(
             // All-day heart rate, merged by the minute the same way.
             if (hr.isNotEmpty()) {
                 x["hr_series"] = mergeStress(x["hr_series"] as? JsonArray, hr)
+            }
+            // Intensity minutes by the minute too, and the day's totals from
+            // the merged series: overlapping files never count a minute twice.
+            for ((key, series) in intensity) {
+                if (series.isEmpty()) continue
+                val merged = mergeStress(x[key] as? JsonArray, series)
+                x[key] = merged
+                m[INTENSITY_TOTAL.getValue(key)] = JsonPrimitive(
+                    merged.sumOf { (it as JsonArray)[1].jsonPrimitive.longOrNull ?: 0L },
+                )
             }
             return JsonObject(m) to JsonObject(x)
         }

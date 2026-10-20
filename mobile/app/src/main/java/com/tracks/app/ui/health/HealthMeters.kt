@@ -520,6 +520,12 @@ fun activityZones(base: Double): List<GaugeZone> = listOf(
 /** Everyday defaults, and the only invented numbers here. */
 const val STEP_GOAL = 10_000.0
 
+/** The WHO's weekly minimum of moderate activity, vigorous minutes counting double. */
+const val INTENSITY_GOAL = 150.0
+
+/** Garmin's default daily floors goal. */
+const val FLOORS_GOAL = 10.0
+
 /**
  * Eight hours, and the same eight everywhere.
  *
@@ -537,6 +543,8 @@ internal val WEIGHT_COLOR = BLUE
 internal val HYDRATION_COLOR = SKY
 internal val CALORIE_COLOR = ORANGE
 internal val STEP_COLOR = GREEN
+internal val INTENSITY_COLOR = Color(0xFFF97316)
+internal val FLOORS_COLOR = Color(0xFF0EA5E9)
 internal val ACTIVE_COLOR = ORANGE
 /** Distinct from the active half and from the empty track, so the two
  *  halves of the day's burn read as two colours rather than one and a gap. */

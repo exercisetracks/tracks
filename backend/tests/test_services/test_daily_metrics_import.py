@@ -44,6 +44,9 @@ _NOT_FROM_A_DEVICE = {
     "extra",                                             # free-form side-channel
     "weight_kg", "hydration_ml", "calories_in",          # entered by the user
     "uid", "clock", "server_seq", "pending_refs",        # sync bookkeeping
+    # Summed from the merged per-minute series in `extra`, not taken from a
+    # file's metrics: see fit_import._set_intensity_totals.
+    "intensity_moderate_min", "intensity_vigorous_min",
 }
 
 
@@ -683,3 +686,29 @@ class TestVo2MaxIsAVo2Max:
         assert ActivityParser._plausible_vo2max(12341, 1.0) is None
         assert ActivityParser._plausible_vo2max(0, 10.0) is None
         assert ActivityParser._plausible_vo2max(None, 10.0) is None
+
+
+class TestIntensityMinutesAndFloors:
+    """The watch's moderate/vigorous minutes are per record, and the files
+    describing a day overlap, so they are summed by minute of day; floors are
+    a running count, so a later file widens them."""
+
+    def _day(self, db, files):
+        from app.services.fit_import import _write_one_day
+        for parsed in files:
+            _write_one_day(db, parsed, None, self.uid)
+            db.flush()
+        return db.query(DailyMetric).filter_by(user_id=self.uid).one()
+
+    def test_overlapping_files_count_a_minute_once(self, db, user):
+        self.uid = user.id
+        day = date.today() - timedelta(days=1)
+        first = {"date": day, "metrics": {"floors_climbed": 4},
+                 "moderate_series": [[600, 1], [601, 1]], "vigorous_series": [[602, 2]]}
+        # The next sync re-reads 601-602 and adds 603.
+        second = {"date": day, "metrics": {"floors_climbed": 9},
+                  "moderate_series": [[601, 1], [603, 5]], "vigorous_series": [[602, 2]]}
+        row = self._day(db, [first, second])
+        assert row.intensity_moderate_min == 7
+        assert row.intensity_vigorous_min == 2
+        assert row.floors_climbed == 9
