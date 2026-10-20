@@ -277,7 +277,7 @@ object Explain {
 
     val IntensityMinutes = MetricInfo(
         "Intensity minutes",
-        "Minutes of moderate or vigorous activity over the last seven days, as the " +
+        "Minutes of moderate or vigorous activity so far this week (Monday to Sunday), as the " +
             "watch counts them. A vigorous minute counts twice. The WHO recommends at " +
             "least 150 a week (or 75 vigorous) for adult health.",
         "Ten minutes or more at a time is what the watch counts; a brisk walk to the shop is moderate, " +

@@ -8,9 +8,9 @@ import org.junit.Test
 
 class WeeklyIntensityTest {
 
-    /** The goal is weekly: the dial reads the seven days ending each day, vigorous counting twice (as the web). */
+    /** The goal is weekly: the dial reads the calendar week so far (Monday first), vigorous counting twice (as the web). */
     @Test
-    fun `intensity is a rolling week with vigorous minutes doubled`() {
+    fun `intensity is the week to date, restarting Monday, with vigorous minutes doubled`() {
         val state = HealthUiState(
             days = listOf(
                 DailyMetricFull("2026-03-01", intensityModerateMin = 30, intensityVigorousMin = 0),
@@ -18,7 +18,7 @@ class WeeklyIntensityTest {
                 DailyMetricFull("2026-03-09", intensityModerateMin = 5),
             ),
         )
-        assertEquals(listOf(30.0, 30.0, 30.0, 30.0, 80.0, 80.0, 80.0, 50.0, 55.0), state.weeklyIntensity.values)
+        assertEquals(listOf(30.0, 0.0, 0.0, 0.0, 50.0, 50.0, 50.0, 50.0, 5.0), state.weeklyIntensity.values)
     }
 
     /** The chart had gaps: a day with no intensity minutes is zero, not missing. */

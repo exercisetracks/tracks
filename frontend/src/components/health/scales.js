@@ -294,9 +294,10 @@ export function isFresh(date, freshDays, today = localIso()) {
  * without a reading is absent rather than zero.
  */
 /**
- * Intensity minutes over the seven days ending each day: moderate plus twice
- * vigorous, as the watch and the WHO's 150-a-week count them (the phone's
- * HealthUiState.weeklyIntensity). A rolling week because the goal is weekly.
+ * Intensity minutes so far in each day's calendar week (Monday first): moderate
+ * plus twice vigorous, as the watch and the WHO's 150-a-week count them (the
+ * phone's HealthUiState.weeklyIntensity). Tied to the week rather than rolling
+ * seven days because the goal is weekly, so the dial starts again each Monday.
  */
 export function weeklyIntensity(days) {
   // Every calendar day from the first with any record on, a day without
@@ -319,7 +320,10 @@ export function weeklyIntensity(days) {
   for (let date = known[0]; date <= known[known.length - 1]; date = shift(date, 1)) dates.push(date);
   const values = dates.map((date) => {
     let sum = 0;
-    for (let i = 0; i < 7; i++) sum += perDay.get(shift(date, -i)) ?? 0;
+    // getUTCDay: Sunday 0 … Saturday 6, so Monday is 0 days back.
+    const [y, m, d] = date.split("-").map(Number);
+    const sinceMonday = (new Date(Date.UTC(y, m - 1, d)).getUTCDay() + 6) % 7;
+    for (let i = 0; i <= sinceMonday; i++) sum += perDay.get(shift(date, -i)) ?? 0;
     return sum;
   });
   return { dates, values };

@@ -269,10 +269,11 @@ data class HealthUiState(
     }
 
     /**
-     * Intensity minutes over the seven days ending each day: moderate plus
-     * twice vigorous, as the watch and the WHO's 150-a-week count them. A
-     * rolling week rather than the day's figure because the goal is weekly,
-     * and a day's minutes alone say nothing against it.
+     * Intensity minutes so far in each day's calendar week (Monday first):
+     * moderate plus twice vigorous, as the watch and the WHO's 150-a-week
+     * count them. The week to date rather than the day's figure because the
+     * goal is weekly, and a day's minutes alone say nothing against it; the
+     * total starts again each Monday.
      */
     val weeklyIntensity: Trend
         get() {
@@ -290,7 +291,7 @@ data class HealthUiState(
             var day = first
             while (day != null && last != null && day <= last) {
                 dates += day.toString()
-                values += (0L..6L).sumOf { perDay[day!!.minusDays(it)] ?: 0.0 }
+                values += (0L..day!!.dayOfWeek.ordinal.toLong()).sumOf { perDay[day!!.minusDays(it)] ?: 0.0 }
                 day = day.plusDays(1)
             }
             return Trend(dates, values)

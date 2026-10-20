@@ -1,14 +1,14 @@
 
 describe("intensity minutes and floors", () => {
-  // The goal is weekly, so the dial reads a rolling week, vigorous counting double.
-  it("sums the seven days ending each day, vigorous twice", async () => {
+  // The goal is weekly, so the dial reads the calendar week (Monday first), vigorous counting double.
+  it("sums the week so far, restarting each Monday, vigorous twice", async () => {
     const { weeklyIntensity } = await import("../components/health/scales");
     const days = [
       { date: "2026-03-01", intensity_moderate_min: 30, intensity_vigorous_min: 0 },
       { date: "2026-03-05", intensity_moderate_min: 10, intensity_vigorous_min: 20 },
       { date: "2026-03-09", intensity_moderate_min: 5, intensity_vigorous_min: null },
     ];
-    expect(weeklyIntensity(days).values).toEqual([30, 30, 30, 30, 80, 80, 80, 50, 55]);
+    expect(weeklyIntensity(days).values).toEqual([30, 0, 0, 0, 50, 50, 50, 50, 5]);
   });
 
   // The chart had gaps: a day with no intensity minutes is zero, not missing.
