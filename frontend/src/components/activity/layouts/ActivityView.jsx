@@ -45,6 +45,7 @@ import MindBodyLayout from "./MindBodyLayout";
 import FallbackLayout from "./FallbackLayout";
 import MergedTripLayout from "./MergedTripLayout";
 import { HowItFelt } from "../cards/HowItFelt";
+import { ActivityNotes } from "../cards/ActivityNotes";
 import ConfirmDialog from "../../ConfirmDialog";
 import Checkbox from "../../ui/Checkbox";
 
@@ -115,11 +116,13 @@ export function ActivityView() {
 
   const sharedProps = { activity, track, laps, sets, climbs, golfHoles, imperial, sportType };
 
+  // Notes sit with Delete in the corner, as the phone puts its note and pencil
+  // in the app bar: things said *about* the activity, apart from its numbers.
   const deleteButton = (
     <button
       onClick={() => setShowDelete(true)}
       data-tour="activity-delete"
-      className="btn btn-danger btn-sm absolute top-4 right-4 z-10"
+      className="btn btn-danger btn-sm"
     >
       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -159,7 +162,10 @@ export function ActivityView() {
         />
       )}
       <div className="relative pr-3.5">
-        {deleteButton}
+        <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
+          <ActivityNotes activity={activity} />
+          {deleteButton}
+        </div>
         <UserMaxHRContext.Provider value={settings?.max_hr ?? null}>{layout}</UserMaxHRContext.Provider>
         {/* Here rather than per layout: the watch asks after any sport. */}
         {!activity.is_merged && <HowItFelt activity={activity} />}

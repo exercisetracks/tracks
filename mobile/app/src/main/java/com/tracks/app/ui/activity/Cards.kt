@@ -47,6 +47,11 @@ data class Stat(val value: String, val label: String)
  * under a finger. Three stopped fitting every phone once values like
  * "42.7 km/h" arrived; the figures shrink to fit ([StatValue]) and below
  * [TWO_UP_BELOW] there are two to a row, as on the health page.
+ *
+ * Each figure and its label are centred in their column, as the web's stat
+ * pills are. Left-aligned, figures of different widths left a ragged right
+ * edge down every column, and a short one ("154") sat visibly off the middle
+ * of the space it owned.
  */
 @Composable
 fun StatGrid(stats: List<Stat>, modifier: Modifier = Modifier) {
@@ -63,7 +68,7 @@ fun StatGrid(stats: List<Stat>, modifier: Modifier = Modifier) {
                 stats.chunked(columns).forEach { row ->
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         row.forEach { stat ->
-                            StatValue(stat.value, stat.label, Modifier.weight(1f))
+                            StatValue(stat.value, stat.label, Modifier.weight(1f), centered = true)
                         }
                         // Pad the last row so two stats do not stretch to fill it.
                         repeat(columns - row.size) { Column(Modifier.weight(1f)) {} }

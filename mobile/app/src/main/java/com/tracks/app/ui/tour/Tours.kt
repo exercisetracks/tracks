@@ -278,9 +278,9 @@ object Tours {
                 anchor = "activity-body",
             ),
             TourStep(
-                "Rename, re-sport, hide",
-                "Tap the name or the pencil to rename the activity, add notes, correct its sport, " +
-                    "hide it from your stats, or delete it.",
+                "Rename, notes, hide",
+                "Tap the name to rename the activity where it stands. The pencil opens its notes, " +
+                    "whose first words then sit beside it, and is where to hide it from your stats or delete it.",
                 anchor = "activity-edit",
             ),
         ),

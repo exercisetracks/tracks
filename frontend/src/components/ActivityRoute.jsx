@@ -201,7 +201,11 @@ const ActivityRoute = forwardRef(function ActivityRoute(
   }, [ready, track]);
 
   return (
-    <div style={{ height }} className="relative rounded-xl overflow-hidden bg-slate-900">
+    // `isolate`: the controls and legend need z-[1000] to sit over MapLibre's
+    // canvas, and without a stacking context of their own that number is
+    // compared page-wide — the legend drew over every dialog (z-50) opened
+    // on the activity, the notes one included.
+    <div style={{ height }} className="relative isolate rounded-xl overflow-hidden bg-slate-900">
       <MapLibreMap
         theme={isDark ? "dark" : "light"}
         onReady={handleReady}

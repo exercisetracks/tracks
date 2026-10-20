@@ -14,6 +14,7 @@ import com.tracks.core.api.Lap
 import com.tracks.core.api.StrengthSet
 import com.tracks.core.api.TrackPoint
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,15 +27,23 @@ data class DetailUiState(
     val data: ActivityDetailData? = null,
     val error: String? = null,
     /**
-     * The map style for the route, or null when there is not one to hand.
+     * The map styles for the route, one per theme, or null when there is not
+     * one to hand.
      *
-     * Read from the on-disk cache rather than fetched: the detail screen must
-     * open instantly and offline, and a 200 KB style download per activity
-     * would make it do neither. Null simply means the Map tab has not been
-     * opened yet on this install, and the route falls back to the
+     * The plain backdrop the web draws its activity maps over
+     * (`/maps/backdrop.json`), not the Map tab's planning style: that one has
+     * no dark palette, and a white map in the middle of a dark detail screen
+     * was what the desktop had already stopped doing. The screen picks the
+     * one matching the app's theme.
+     *
+     * Read from the on-disk cache before anything is fetched: the detail
+     * screen must open instantly and offline, and a style download per
+     * activity would make it do neither. Null for both means no style has
+     * ever been seen on this install, and the route falls back to the
      * projection-only drawing.
      */
-    val mapStyleJson: String? = null,
+    val backdropLight: String? = null,
+    val backdropDark: String? = null,
 )
 
 /**
@@ -76,29 +85,43 @@ class ActivityDetailViewModel(
 
     private fun loadMapStyle() {
         viewModelScope.launch {
-            val cached = withContext(Dispatchers.IO) { container.mapStyleCache().read() }
+            fun read(cache: com.tracks.app.MapStyleCache) = runCatching { cache.read() }.getOrNull()
+            val (cachedLight, cachedDark, cachedPlanning) = withContext(Dispatchers.IO) {
+                Triple(
+                    read(container.backdropStyleCache(false)),
+                    read(container.backdropStyleCache(true)),
+                    read(container.mapStyleCache()),
+                )
+            }
             // Shown immediately when there is one, so the route draws on a
             // basemap without waiting for the network — the whole point of
-            // caching it.
-            if (cached != null) _state.update { it.copy(mapStyleJson = cached) }
+            // caching it. The planning style stands in for a palette not yet
+            // cached: light in a dark screen, but a map.
+            publish(cachedLight ?: cachedPlanning, cachedDark ?: cachedPlanning)
 
             // Then refreshed anyway, rather than returning here. The style is
             // not a constant: the server narrows each source's zoom range to
             // the tile archives that exist (`services/tile_coverage.py`), so
-            // downloading a region changes it — and so did fixing it. A cache
-            // that is only ever written when empty pins a phone to whatever
-            // style it happened to see first, which is exactly how a device
-            // ended up still requesting z13-15 basemap tiles that 404 and
-            // drawing a blank map, long after the server had stopped
-            // promising them.
+            // downloading a region changes it. A cache that is only ever
+            // written when empty pins a phone to whatever style it happened to
+            // see first, which is exactly how a device ended up requesting
+            // z13-15 basemap tiles that 404 and drawing a blank map.
             //
             // Best-effort: failing costs the refresh, not the cached copy.
-            runCatching { container.client().mapStyleJson() }
-                .onSuccess { fresh ->
-                    if (fresh == cached) return@onSuccess
-                    withContext(Dispatchers.IO) { container.mapStyleCache().write(fresh) }
-                    _state.update { it.copy(mapStyleJson = fresh) }
-                }
+            // The same caches the dashboard's heatmap writes, so either screen
+            // warms the other.
+            suspend fun fetch(dark: Boolean): String? =
+                runCatching { container.client().backdropStyleJson(dark) }.getOrNull()
+                    ?.also { fresh -> withContext(Dispatchers.IO) { container.backdropStyleCache(dark).write(fresh) } }
+            val light = async { fetch(dark = false) }
+            val dark = async { fetch(dark = true) }
+            publish(light.await(), dark.await())
+        }
+    }
+
+    private fun publish(light: String?, dark: String?) {
+        _state.update {
+            it.copy(backdropLight = light ?: it.backdropLight, backdropDark = dark ?: it.backdropDark)
         }
     }
 
@@ -125,7 +148,7 @@ class ActivityDetailViewModel(
      */
     fun rename(name: String) {
         val trimmed = name.trim()
-        if (trimmed.isBlank()) return
+        if (trimmed.isBlank() || trimmed == _state.value.data?.detail?.name) return
         viewModelScope.launch {
             // A source edit on a derived row (spec/sync.yaml, `activity`):
             // the measurements are the file's, the name is the person's.
@@ -137,28 +160,25 @@ class ActivityDetailViewModel(
     }
 
     /**
-     * Save what the edit sheet says: name, notes and the sport correction.
+     * Save the activity's notes.
      *
-     * Each is a field of the activity's synced row, so only the fields that
-     * actually changed are written — writing an unchanged name would stamp it
-     * and let this phone's copy beat a rename made elsewhere since.
+     * A field of the activity's synced row (spec/sync.yaml, `activity`), so
+     * the web reads the same note and an edit there comes back here. Written
+     * only when it changed — writing an unchanged note would stamp it and let
+     * this phone's copy beat an edit made on the desktop since.
+     *
+     * Blank is "no note", stored as null, so clearing the field removes the
+     * snippet from the bar rather than leaving an empty one.
      */
-    fun save(name: String, notes: String, choice: SportChoice?) {
+    fun saveNotes(notes: String) {
         val current = _state.value.data?.detail ?: return
-        val trimmedName = name.trim()
-        val trimmedNotes = notes.trim().ifBlank { null }
-        val values = buildMap<String, Any?> {
-            if (trimmedName.isNotBlank() && trimmedName != current.name) put("name", trimmedName)
-            if (trimmedNotes != current.notes?.trim()?.ifBlank { null }) put("notes", trimmedNotes)
-            if (choice != null && (choice.sport != current.sport || choice.subSport != current.subSport)) {
-                put("sport", choice.sport)
-                put("sub_sport", choice.subSport)
-            }
-        }
-        if (values.isEmpty()) return
+        val trimmed = notes.trim().ifBlank { null }
+        if (trimmed == current.notes?.trim()?.ifBlank { null }) return
         viewModelScope.launch {
-            container.sources.editActivity(activityId, values)
-            load()
+            container.sources.editActivity(activityId, mapOf("notes" to trimmed))
+            _state.update { state ->
+                state.copy(data = state.data?.let { it.copy(detail = it.detail.copy(notes = trimmed)) })
+            }
         }
     }
 

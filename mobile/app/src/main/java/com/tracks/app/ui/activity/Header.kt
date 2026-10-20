@@ -76,14 +76,6 @@ fun ActivityHeaderCard(data: ActivityDetailData, modifier: Modifier = Modifier) 
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-
-        detail.notes?.takeIf { it.isNotBlank() }?.let { notes ->
-            Text(
-                notes,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-        }
     }
 }
 
