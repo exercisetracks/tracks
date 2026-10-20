@@ -14,7 +14,7 @@
 // The same images go to the list rows and the symbol picker as data URLs, so
 // a place in the library looks exactly like the mark it makes on the map.
 
-const SPRITE = "/api/sprite/usgs@2x";
+import { spriteFile, spriteVersion } from "./sprite";
 
 /** As tall as the pin's head, so a symbol and a pin read as the same weight of mark. CSS px. */
 const ICON_PX = 22;
@@ -33,13 +33,14 @@ export function loadAtlas() {
   if (!atlasPromise) {
     atlasPromise = (async () => {
       try {
+        const version = await spriteVersion();
         const [index, image] = await Promise.all([
-          fetch(`${SPRITE}.json`).then((r) => (r.ok ? r.json() : null)),
+          fetch(spriteFile(version, "@2x", "json")).then((r) => (r.ok ? r.json() : null)),
           new Promise((resolve, reject) => {
             const img = new Image();
             img.onload = () => resolve(img);
             img.onerror = reject;
-            img.src = `${SPRITE}.png`;
+            img.src = spriteFile(version, "@2x", "png");
           }),
         ]);
         return index ? { index, image } : null;

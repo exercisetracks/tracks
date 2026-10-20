@@ -144,6 +144,13 @@ fun IntradayHistoryPanel(
     noun: String,
     emptyText: String,
     modifier: Modifier = Modifier,
+    /**
+     * For sparse readings (blood oxygen is a handful a night): a plain line
+     * through the readings, joined across gaps of up to this many days and
+     * broken beyond, with a dot only at each line's ends rather than one per
+     * reading. Null is the dense curve, broken at every empty column.
+     */
+    joinWithinDays: Float? = null,
 ) {
     val axisColor = MaterialTheme.colorScheme.onSurfaceVariant
     val gridColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)
@@ -328,9 +335,26 @@ fun IntradayHistoryPanel(
             var runEnd = 0f
             var runLastY = 0f
             var runLength = 0
+            var runStartY = 0f
+            val joined = joinWithinDays != null
+            val dotRadius = (LINE_WIDTH * 1.5f).toPx()
 
             fun flush() {
-                if (runLength > 1) {
+                if (joined) {
+                    if (runLength > 1) {
+                        drawPath(
+                            path = run,
+                            brush = lineBrush,
+                            style = Stroke(
+                                width = LINE_WIDTH.toPx(),
+                                cap = StrokeCap.Round,
+                                join = StrokeJoin.Round,
+                            ),
+                        )
+                        drawCircle(brush = lineBrush, radius = dotRadius, center = Offset(runStart, runStartY))
+                    }
+                    if (runLength > 0) drawCircle(brush = lineBrush, radius = dotRadius, center = Offset(runEnd, runLastY))
+                } else if (runLength > 1) {
                     val area = Path().apply {
                         addPath(run)
                         lineTo(runEnd, plotHeight)
@@ -358,16 +382,21 @@ fun IntradayHistoryPanel(
                 runLength = 0
             }
 
+            val maxGapColumns = joinWithinDays?.let { it / dayAxis.days * columns }
+            var lastFilled = -1
             for (column in 0 until columns) {
                 if (count[column] == 0) {
-                    flush()
+                    if (maxGapColumns == null) flush()
                     continue
                 }
+                if (maxGapColumns != null && runLength > 0 && column - lastFilled > maxGapColumns) flush()
+                lastFilled = column
                 val px = columnX(column)
                 val py = y(total[column] / count[column])
                 if (runLength == 0) {
                     run.moveTo(px, py)
                     runStart = px
+                    runStartY = py
                 } else {
                     run.lineTo(px, py)
                 }

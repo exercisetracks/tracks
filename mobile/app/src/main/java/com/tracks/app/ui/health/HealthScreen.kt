@@ -210,6 +210,7 @@ fun HealthScreen(vm: HealthViewModel, modifier: Modifier = Modifier) {
                                     hi = SPO2_ZONES.last().max,
                                     noun = "blood oxygen",
                                     emptyText = "No blood-oxygen readings in this window. The watch takes a few a night while worn.",
+                                    joinWithinDays = 2f,
                                 )
                             },
                             scaleUnderChart = true,

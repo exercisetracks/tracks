@@ -278,6 +278,24 @@ describe('the style the browser loads', () => {
     expect(style.sprite).toBe('https://maps.example.org/api/sprite/usgs');
     expect(() => new URL(style.sprite)).not.toThrow();
   });
+
+  // A manifest and image cached apart, from different builds, drew every icon
+  // one slot over: a park with the public-works symbol, a peak with the park's.
+  it('names its sprite by the sheet\'s version, where MapLibre keeps it', async () => {
+    const { webStyle } = await import('../pages/maps/hooks/useMapInit');
+    const style = webStyle('https://maps.example.org', 'abc123');
+    expect(style.sprite).toBe('https://maps.example.org/api/sprite/usgs?v=abc123');
+    // MapLibre inserts the ratio and extension into the path, before the query.
+    const u = new URL(style.sprite);
+    u.pathname += '@2x.png';
+    expect(u.href).toBe('https://maps.example.org/api/sprite/usgs@2x.png?v=abc123');
+  });
+
+  it('reads the legend and saved-place symbols from the same versioned sheet', async () => {
+    const { spriteFile } = await import('../pages/maps/utils/sprite');
+    expect(spriteFile('abc123', '@2x', 'json')).toBe('/api/sprite/usgs@2x.json?v=abc123');
+    expect(spriteFile(null, '', 'png')).toBe('/api/sprite/usgs.png');
+  });
 });
 
 // A city park used to read only as a place with no roads.

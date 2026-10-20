@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { useState, useEffect, useMemo } from "react";
 import { COLORS } from "../style/palette";
+import { spriteFile, spriteVersion } from "../utils/sprite";
 
 // USGS-quad legend. A floating button toggles a scrollable panel that mirrors
 // the official 7.5' topographic symbol sheet, scoped to what this map renders.
@@ -11,21 +12,19 @@ import { COLORS } from "../style/palette";
 // icons on the map. Line/boundary/contour conventions are drawn as inline SVG
 // from the shared palette so they stay in sync with the style.
 
-const SPRITE_URL = "/api/sprite/usgs";
-
 // ── sprite → data URL helpers ───────────────────────────────────────────────
-function loadSprite() {
+async function loadSprite() {
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  const hi = dpr > 1;
-  const base = `${SPRITE_URL}${hi ? "@2x" : ""}`;
+  const ratio = dpr > 1 ? "@2x" : "";
+  const version = await spriteVersion();
   return Promise.all([
-    fetch(`${base}.json`).then((r) => r.json()),
+    fetch(spriteFile(version, ratio, "json")).then((r) => r.json()),
     new Promise((resolve, reject) => {
       const img = new Image();
       img.crossOrigin = "anonymous";
       img.onload = () => resolve(img);
       img.onerror = reject;
-      img.src = `${base}.png`;
+      img.src = spriteFile(version, ratio, "png");
     }),
   ]).then(([manifest, sheet]) => ({ manifest, sheet, dpr }));
 }

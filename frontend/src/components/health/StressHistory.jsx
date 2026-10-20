@@ -88,6 +88,28 @@ export function stressSamples({ days, averages, start }) {
   return { intraday, samples, span, from };
 }
 
+/**
+ * The readings themselves as runs, a new run starting wherever two neighbours
+ * are more than `maxGapDays` apart. Points sit at fractional column positions,
+ * which is what `xOf` and the hover lookup take.
+ */
+export function joinedRuns(samples, span, columns, maxGapDays) {
+  const maxGap = maxGapDays / span;
+  const runs = [];
+  let run = [];
+  let last = null;
+  for (const s of samples) {
+    if (last != null && s.x - last > maxGap && run.length) {
+      runs.push(run);
+      run = [];
+    }
+    run.push({ c: s.x * columns - 0.5, level: s.level });
+    last = s.x;
+  }
+  if (run.length) runs.push(run);
+  return runs;
+}
+
 /** Averaged columns, and the runs of consecutive non-empty ones. */
 export function stressRuns(samples, columns) {
   const total = new Float64Array(columns);
@@ -124,8 +146,14 @@ export default function StressHistory({ days, averages, start }) {
  * by reading on short windows and as daily averages on long ones, in its own
  * fixed scale (`lo`..`hi`), the bands drawn into it. Everything said about
  * stress above applies.
+ *
+ * `joinDays` is for sparse readings (blood oxygen is a handful a night): the
+ * chart becomes a plain line through the readings themselves, joined across any
+ * gap up to that many days and broken beyond it, with a dot only at each line's
+ * ends -- a dot per reading would be a scatter, and the averaged columns would
+ * leave most of the line unjoined.
  */
-export function IntradayHistory({ days, averages, start, zones, lo, hi, ticks, id, empty, label, unit }) {
+export function IntradayHistory({ days, averages, start, zones, lo, hi, ticks, id, empty, label, unit, joinDays }) {
   const [ref, width] = useWidth(640);
   // The column under the pointer, if any. Hover answers "what was it then?",
   // which the bands only answer in general; every other history chart has it.
@@ -147,7 +175,9 @@ export function IntradayHistory({ days, averages, start, zones, lo, hi, ticks, i
 
   const plotW = Math.max(1, width - GUTTER);
   const columns = Math.max(1, Math.min(MAX_COLUMNS, Math.floor(plotW / COLUMN_PX)));
-  const runs = stressRuns(samples, columns);
+  const runs = joinDays != null
+    ? joinedRuns(samples, span, columns, joinDays)
+    : stressRuns(samples, columns);
   const average = samples.reduce((s, p) => s + p.level, 0) / samples.length;
 
   // Fixed 0–100, never fitted to the window: the bands mean fixed numbers, and
@@ -219,7 +249,20 @@ export function IntradayHistory({ days, averages, start, zones, lo, hi, ticks, i
             strokeOpacity={span > 14 ? 0.2 : 0.3} />
         ))}
 
-        {runs.map((run, i) => run.length > 1 ? (
+        {joinDays != null && runs.map((run, i) => (
+          <g key={i}>
+            {run.length > 1 && (
+              <path d={runPath(run)} fill="none" stroke={`url(#${id}-line)`} strokeWidth={2}
+                strokeLinejoin="round" strokeLinecap="round" />
+            )}
+            {[run[0], run[run.length - 1]].map((p, k) => (
+              (k === 0 || run.length > 1) && (
+                <circle key={k} cx={xOf(p.c)} cy={y(p.level)} r={3} fill={`url(#${id}-line)`} />
+              )
+            ))}
+          </g>
+        ))}
+        {joinDays == null && runs.map((run, i) => run.length > 1 ? (
           <g key={i}>
             <path
               d={`${runPath(run)}L${xOf(run[run.length - 1].c).toFixed(1)},${PLOT_H}L${xOf(run[0].c).toFixed(1)},${PLOT_H}Z`}

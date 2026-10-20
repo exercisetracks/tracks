@@ -30,3 +30,14 @@ describe("intensity minutes and floors", () => {
     expect(vitals.metrics).toHaveLength(6);
   });
 });
+
+describe("joined readings (blood oxygen)", () => {
+  // Readings are a handful a night: the line runs through them, and only a
+  // gap of more than two days breaks it.
+  it("breaks the line only across a gap of more than two days", async () => {
+    const { joinedRuns } = await import("../components/health/StressHistory");
+    const at = (day) => ({ x: day / 10, level: 95 });
+    const runs = joinedRuns([at(0), at(1.5), at(3.5), at(6.1)], 10, 100, 2);
+    expect(runs.map((r) => r.length)).toEqual([3, 1]);
+  });
+});

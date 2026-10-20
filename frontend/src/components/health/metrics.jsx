@@ -237,7 +237,7 @@ export function healthGroups({ days, imperial, start, stress, heartRate = [], sp
         info: EXPLAIN.spo2,
         chart: () => (
           <IntradayHistory days={spo2} averages={spo2Daily} start={start}
-            zones={SPO2_ZONES} lo={80} hi={100} ticks={[80, 85, 90, 95, 100]} id="spo2" unit="%"
+            zones={SPO2_ZONES} lo={80} hi={100} ticks={[80, 85, 90, 95, 100]} id="spo2" unit="%" joinDays={2}
             empty="No blood-oxygen readings in this window. The watch takes a few a night while worn."
             label="Blood oxygen history chart" />
         ),
