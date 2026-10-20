@@ -241,10 +241,62 @@ object Flexibility {
     }
 
     /** A selected stretch as a planned-workout `mobility_exercise` step. */
+    // ── Hold times ──────────────────────────────────────────────────────────
+    // A port of flexibility.py's hold_seconds, where the evidence behind each
+    // number is written down: kept identical by the plan-injection fixtures.
+
+    private val SMALL = setOf("neck", "forearms", "hands", "feet")
+    private val BIG_LOWER = setOf(
+        "hamstrings", "hip_flexors", "hip_adductors", "glutes", "hip_external_rotators", "quads", "groin", "calves",
+    )
+    private val RESTORATIVE = listOf(
+        "corpse", "savasana", "legs up the wall", "supported", "child's pose",
+        "knees to chest", "thunderbolt", "hero pose", "bound angle", "butterfly",
+    )
+    private val EFFORTFUL = listOf(
+        "chair", "plank", "four-limbed", "warrior iii", "warrior three", "locust", "bow pose",
+        "dolphin", "half moon", "standing split", "bird dog", "boat", "eagle", "half chair",
+        "upward facing dog", "up dog",
+    )
+    private val CENTERING = listOf("mountain pose", "arms up", "prayer mudra", "throat lock", "all fours")
+    private val INVERSION = listOf("shoulder stand", "plow")
+    private val FLOOR = setOf("seated", "supine", "prone", "kneeling")
+    private val FLOOR_NAMES = listOf(
+        "pigeon", "seated", "lying", "supine", "fold", "forward bend", "straddle",
+        "head to knee", "split", "cradle", "figure-four", "90/90", "frog", "couch", "garland",
+    )
+
+    /** Seconds per side (per set) to hold [c] at the moderate level. */
+    fun holdSeconds(c: StretchCandidate): Int {
+        if (c.isCustom && c.durationPerSideSec != 0) return c.durationPerSideSec
+        val name = c.name.lowercase()
+        val muscles = c.primaryMuscles.toSet()
+        val pattern = c.movementPattern
+        val library = c.durationPerSideSec
+        if ("corpse" in name || "savasana" in name) return 180
+        val small = muscles.isNotEmpty() && SMALL.containsAll(muscles - "calves") && muscles.any { it in SMALL }
+        if (pattern == "myofascial_release") return if (small && "feet" !in muscles) 60 else 90
+        if ("breath" in name) return 120
+        if (RESTORATIVE.any { it in name }) {
+            return if (library >= 90 || "child" in name || "legs up" in name || "supported" in name) 120 else 90
+        }
+        if (pattern == "dynamic_stretch") return if (library >= 90) maxOf(45, library) else 45
+        if (pattern == "balance_pose" || EFFORTFUL.any { it in name }) return 30
+        if (CENTERING.any { it in name }) return 30
+        if (INVERSION.any { it in name }) return 45
+        if (pattern == "pnf_stretch") return 60
+        if (small) return if (pattern == "static_stretch") 40 else 45
+        if ("warrior" in name) return 45
+        val upright = name.startsWith("standing") || "dog" in name
+        val onFloor = !upright && (c.position in FLOOR || FLOOR_NAMES.any { it in name })
+        if (muscles.any { it in BIG_LOWER }) return if (onFloor) 90 else 60
+        return if (onFloor) 60 else 45
+    }
+
     fun toStep(c: StretchCandidate): MutableMap<String, Any?> = linkedMapOf(
         "type" to "mobility_exercise",
         "name" to c.name,
-        "duration_seconds" to (if (c.durationPerSideSec != 0) c.durationPerSideSec else 60).toLong(),
+        "duration_seconds" to holdSeconds(c).toLong(),
         "sets" to (if (c.sets != 0) c.sets else 1).toLong(),
         "each_side" to c.eachSide,
         "description" to c.description,

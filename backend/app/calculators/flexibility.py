@@ -271,12 +271,92 @@ def order_flow_by_position(
     return body + ([closer] if closer else [])
 
 
+# ── Hold times ───────────────────────────────────────────────────────────────
+#
+# How long each stretch is held at the moderate level, from what kind of
+# stretch it is. The library's own times were never tuned (nearly every yoga
+# pose said 60 s), so every stretch played the same length. The evidence:
+#
+# - Static stretching: ROM gains grow with time under stretch, with ~60 s per
+#   muscle per session the dose behind most of the benefit (Behm et al. 2016,
+#   Appl Physiol Nutr Metab; ACSM: 30-60 s for older adults). Large, stiff
+#   lower-body muscles (hamstrings, hip flexors, adductors, glutes) need the
+#   longer end; passive floor positions can be held longer than standing ones,
+#   since nothing else has to work.
+# - Small structures (neck, wrists, feet) respond to short holds and dislike
+#   long ones: 30-40 s.
+# - Poses that are mostly strength or balance (chair, planks, warrior III,
+#   locust) are limited by fatigue, not tissue: 30 s.
+# - Dynamic stretches and flows are repetitions, not holds: 45 s of them.
+# - Restorative poses (child's pose, legs up the wall, savasana) are held for
+#   minutes in restorative and yin practice; 2 min here, savasana 3.
+# - Myofascial release: 60-120 s per area (Cheatham et al. 2015).
+#
+# The intensity levels scale these (QuickSession on the phone), so "moderate"
+# averages about 60 s across a flow. Ported to the phone in Flexibility.kt
+# (holdSeconds); the plan-injection fixtures keep the two identical.
+
+_SMALL = {"neck", "forearms", "hands", "feet"}
+_BIG_LOWER = {"hamstrings", "hip_flexors", "hip_adductors", "glutes", "hip_external_rotators",
+              "quads", "groin", "calves"}
+_RESTORATIVE = ("corpse", "savasana", "legs up the wall", "supported", "child's pose",
+                "knees to chest", "thunderbolt", "hero pose", "bound angle", "butterfly")
+_EFFORTFUL = ("chair", "plank", "four-limbed", "warrior iii", "warrior three", "locust", "bow pose",
+              "dolphin", "half moon", "standing split", "bird dog", "boat", "eagle", "half chair",
+              "upward facing dog", "up dog")
+_CENTERING = ("mountain pose", "arms up", "prayer mudra", "throat lock", "all fours")
+_INVERSION = ("shoulder stand", "plow")
+_FLOOR = {"seated", "supine", "prone", "kneeling"}
+_FLOOR_NAMES = ("pigeon", "seated", "lying", "supine", "fold", "forward bend", "straddle",
+                "head to knee", "split", "cradle", "figure-four", "90/90", "frog", "couch", "garland")
+
+
+def hold_seconds(c: StretchCandidate) -> int:
+    """Seconds per side (per set) to hold [c] at the moderate level."""
+    if c.is_custom and c.duration_per_side_sec:
+        return c.duration_per_side_sec        # the person's own stretch, their own time
+    name = c.name.lower()
+    muscles = set(c.primary_muscles)
+    pattern = c.movement_pattern
+    if "corpse" in name or "savasana" in name:
+        return 180
+    small = bool(muscles) and muscles - {"calves"} <= _SMALL and bool(muscles & _SMALL)
+    if pattern == "myofascial_release":
+        return 60 if small and "feet" not in muscles else 90
+    if "breath" in name:
+        return 120
+    if any(k in name for k in _RESTORATIVE):
+        return 120 if (c.duration_per_side_sec or 0) >= 90 or "child" in name or "legs up" in name \
+            or "supported" in name else 90
+    if pattern == "dynamic_stretch":
+        # A flow of several poses (a sun salutation) keeps its longer round.
+        return max(45, c.duration_per_side_sec) if (c.duration_per_side_sec or 0) >= 90 else 45
+    if pattern == "balance_pose" or any(k in name for k in _EFFORTFUL):
+        return 30
+    if any(k in name for k in _CENTERING):
+        return 30
+    if any(k in name for k in _INVERSION):
+        return 45
+    if pattern == "pnf_stretch":
+        return 60                              # contract-relax rounds, not one long hold
+    if small:
+        return 40 if pattern == "static_stretch" else 45
+    if "warrior" in name:
+        return 45                              # the front thigh tires before anything lengthens
+    # Standing and down-dog shapes hold the body up: never the long floor hold.
+    upright = name.startswith("standing") or "dog" in name
+    on_floor = not upright and (c.position in _FLOOR or any(k in name for k in _FLOOR_NAMES))
+    if muscles & _BIG_LOWER:
+        return 90 if on_floor else 60
+    return 60 if on_floor else 45
+
+
 def to_step(c: StretchCandidate) -> dict:
     """Convert a selected stretch into a PlannedWorkout `mobility_exercise` step."""
     return {
         "type": "mobility_exercise",
         "name": c.name,
-        "duration_seconds": c.duration_per_side_sec or 60,
+        "duration_seconds": hold_seconds(c),
         "sets": c.sets or 1,
         "each_side": c.each_side or False,
         "description": c.description or "",

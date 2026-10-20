@@ -72,5 +72,22 @@ class QuickSessionTest {
         val onTarget = steps.count { s -> (s["muscles"] as List<*>).any { it in legs } }
         assertTrue(onTarget >= steps.size * 0.75, "most stretches work the flow's own muscles: $onTarget of ${steps.size}")
     }
-}
 
+    /**
+     * Every stretch used to play the same length. Now each is held for what
+     * it is (a pigeon outlasts a chair pose), the moderate level averages
+     * about a minute, and the levels scale those holds rather than replace them.
+     */
+    @Test
+    fun holds_differ_by_stretch_and_moderate_averages_about_a_minute() {
+        val holds = stretches.map(Flexibility::holdSeconds)
+        assertTrue(holds.average() in 55.0..65.0, "moderate average ${holds.average()}")
+        val pigeon = stretches.first { it.name == "Pigeon Pose" }
+        val chair = stretches.first { it.name == "Chair Pose" }
+        assertTrue(Flexibility.holdSeconds(pigeon) > Flexibility.holdSeconds(chair))
+        val steps = QuickSession.flexibility(stretches, 30, Intensity.Medium, emptyList(), "seed")
+        assertTrue(steps.map { it["duration_seconds"] }.distinct().size > 2, "holds: ${steps.map { it["duration_seconds"] }}")
+        assertEquals(15, QuickSession.scaledHold(20, 0.6))
+        assertEquals(115, QuickSession.scaledHold(90, 1.25))
+    }
+}

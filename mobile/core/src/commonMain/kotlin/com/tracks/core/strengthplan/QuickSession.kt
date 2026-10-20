@@ -3,6 +3,7 @@
 package com.tracks.core.strengthplan
 
 import com.tracks.core.parse.PyRandom
+import kotlin.math.roundToInt
 
 /**
  * A strength or flexibility session built on the spot, from a length, an
@@ -42,10 +43,19 @@ object QuickSession {
     /** Between holds: getting out of one stretch and into the next (the runner's transition). */
     const val TRANSITION_S = 10
 
-    /** Hold, seconds, and sets, by intensity: gentle, moderate, deep. */
-    private val HOLD_S = mapOf(
-        Intensity.VeryLow to 20, Intensity.Low to 30, Intensity.Medium to 45, Intensity.High to 60, Intensity.VeryHigh to 90,
+    /**
+     * How much longer than its moderate hold ([Flexibility.holdSeconds]) each
+     * stretch is held, by intensity. A scale rather than one hold for all, so
+     * a pigeon still outlasts a chair pose at every level; moderate averages
+     * about a minute across the library.
+     */
+    private val HOLD_SCALE = mapOf(
+        Intensity.VeryLow to 0.6, Intensity.Low to 0.8, Intensity.Medium to 1.0, Intensity.High to 1.25, Intensity.VeryHigh to 1.5,
     )
+
+    /** A stretch's hold at [scale]: whole five seconds, never under 15. */
+    internal fun scaledHold(base: Int, scale: Double): Int =
+        maxOf(MIN_HOLD_S, minOf(MAX_HOLD_S, (base * scale / 5).roundToInt() * 5))
     private val STRETCH_SETS = mapOf(
         Intensity.VeryLow to 1, Intensity.Low to 1, Intensity.Medium to 1, Intensity.High to 2, Intensity.VeryHigh to 1,
     )
@@ -107,7 +117,7 @@ object QuickSession {
         /** The muscles to balance across; full body unless a session already chose them. */
         base: List<String> = Flexibility.FULL_BODY_MOBILITY_MUSCLES,
     ): List<MutableMap<String, Any?>> {
-        var hold = HOLD_S.getValue(intensity)
+        var scale = HOLD_SCALE.getValue(intensity)
         var sets = STRETCH_SETS.getValue(intensity)
         val goal = minutes * 60
         fun build(count: Int): List<MutableMap<String, Any?>> {
@@ -118,12 +128,12 @@ object QuickSession {
                 seed = seed, equipmentFree = equipmentFree, minCount = 1, orderByPosition = true,
             )
             val steps = picked.map(Flexibility::toStep).onEach {
-                it["duration_seconds"] = hold.toLong()
+                it["duration_seconds"] = scaledHold((it["duration_seconds"] as Number).toInt(), scale).toLong()
                 it["sets"] = sets.toLong()
             }
             return Flexibility.spaceWholeBody(steps)
         }
-        var count = (goal / ((hold * 1.5 + TRANSITION_S) * sets)).toInt().coerceIn(MIN_ITEMS, MAX_ITEMS)
+        var count = (goal / ((AVERAGE_HOLD_S * scale * 1.5 + TRANSITION_S) * sets)).toInt().coerceIn(MIN_ITEMS, MAX_ITEMS)
         var steps = build(count)
         // Nudged until it fits: a flow's length depends on which stretches are
         // one-sided, which the first guess cannot know.
@@ -150,11 +160,21 @@ object QuickSession {
             total = flexibilitySeconds(steps)
         }
         if (total < goal * 0.9) {
-            hold = minOf(MAX_HOLD_S, (hold * goal / total.toDouble()).toInt() / 5 * 5)
+            scale = minOf(MAX_SCALE, scale * goal / total.toDouble())
             steps = build(count)
         }
         // A whole extra set can overshoot: trim stretches back to the length.
         while (flexibilitySeconds(steps) > goal * 1.1 && count > MIN_ITEMS) steps = build(--count)
+        // Whole stretches are a coarse step at the deep levels — a one-sided
+        // stretch held three times is minutes on its own — so the last
+        // adjustment is to the holds, a little either way. Transitions do not
+        // scale, so it takes a round or two to settle.
+        repeat(3) {
+            val now = flexibilitySeconds(steps)
+            if (now >= goal * 0.9 && now <= goal * 1.1) return steps
+            scale = (scale * goal / now).coerceIn(MIN_SCALE, MAX_SCALE)
+            steps = build(count)
+        }
         return steps
     }
 
@@ -213,6 +233,14 @@ object QuickSession {
 
     private const val MIN_ITEMS = 3
     private const val MAX_STRETCH_SETS = 3
-    private const val MAX_HOLD_S = 90
+    /** Savasana at the deepest level is 4.5 minutes; nothing else comes near. */
+    private const val MAX_HOLD_S = 300
+    private const val MIN_HOLD_S = 15
+    /** The library's moderate holds average about this (see [Flexibility.holdSeconds]). */
+    private const val AVERAGE_HOLD_S = 60
+    /** How far a long gentle flow may stretch its holds to fill the time. */
+    private const val MAX_SCALE = 2.0
+    /** And how far a flow may shorten them, so a quick deep flow still has its stretches. */
+    private const val MIN_SCALE = 0.5
     private const val MAX_ITEMS = 30
 }
