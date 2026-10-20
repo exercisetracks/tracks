@@ -1,17 +1,11 @@
 // SPDX-FileCopyrightText: 2026 Hawk Fugagli
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { useState, useEffect, useCallback, useRef } from "react";
+import { PITCH_3D, PITCH_THRESHOLD, MAX_PITCH } from "../../../components/map/tilt";
 
-// Pitch (camera tilt) applied when toggling 3D on via the pip.
-const PITCH_3D = 55;
-// Above this pitch the map counts as "3D" — lights the control and turns on the
-// terrain mesh. Small enough that a deliberate drag-tilt registers, large enough
-// that incidental wobble at pitch 0 doesn't.
-const PITCH_THRESHOLD = 5;
-// Hard cap on tilt: a draw distance. Past 60° the view reaches toward the
-// horizon, where the terrain tile fan explodes — 75° was usable plugged in and
-// barely movable on battery. The phone caps at the same (MapScreen MAX_PITCH).
-export const MAX_PITCH = 60;
+// The tilt constants are shared with the heatmap's MapToolbar (components/map/
+// tilt.js); MAX_PITCH is re-exported for useMapInit's maxPitch.
+export { MAX_PITCH };
 
 // Level of detail toward the horizon (MapLibre setSourceTileLodParams). Tiles
 // far from the camera are drawn from lower zooms the way a game swaps in

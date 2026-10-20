@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../../api/client";
 import { useMapInit } from "./hooks/useMapInit";
-import { useWheelZoom } from "./hooks/useWheelZoom";
+import { useWheelZoom } from "../../components/map/useWheelZoom";
 import { useMapSettings } from "./hooks/useMapSettings";
 import { useDownloadStatus } from "./hooks/useDownloadStatus";
 import { useLayerToggles } from "./hooks/useLayerToggles";
@@ -35,7 +35,7 @@ import ItemEditor from "./components/ItemEditor";
 import ItemDetail from "./components/ItemDetail";
 import ActivityDetailPanel from "./components/ActivityDetailPanel";
 import MergePanel from "./components/MergePanel";
-import MapToolbar from "./components/MapToolbar";
+import MapToolbar from "../../components/map/MapToolbar";
 import ProgressRing from "./components/ProgressRing";
 import MapLegend from "./components/MapLegend";
 

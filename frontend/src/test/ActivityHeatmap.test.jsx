@@ -4,6 +4,7 @@
 // sport pie — instead of carrying its own. These pin that it asks for what the
 // page chose, that it no longer offers controls that could disagree with it,
 // and that the camera re-frames when the filter moves but not when the mode does.
+// It also navigates with the map page's toolbar rather than gestures alone.
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 
@@ -11,8 +12,10 @@ const api = vi.hoisted(() => ({ getHeatmap: vi.fn(), getSports: vi.fn() }));
 vi.mock("../api/client", () => ({ api }));
 vi.mock("../context/ThemeContext", () => ({ useTheme: () => ({ colorScheme: "light" }) }));
 
-// A stand-in map that records every fit, ready as soon as it mounts.
+// A stand-in map that records every fit and camera move, ready as soon as it
+// mounts.
 const fits = vi.hoisted(() => []);
+const eases = vi.hoisted(() => []);
 vi.mock("../components/map/MapLibreMap", async () => {
   const { useEffect } = await import("react");
   return {
@@ -22,6 +25,13 @@ vi.mock("../components/map/MapLibreMap", async () => {
           getLayer: () => null,
           addLayer: () => {},
           fitBounds: (b) => fits.push(b),
+          easeTo: (o) => eases.push(o),
+          on: () => {},
+          off: () => {},
+          getBearing: () => 0,
+          getPitch: () => 0,
+          getZoom: () => 2,
+          getContainer: () => document.createElement("div"),
         });
       }, []);
       return null;
@@ -41,6 +51,7 @@ const TRACK = [[45.0, 7.0], [45.1, 7.1]];
 
 beforeEach(() => {
   fits.length = 0;
+  eases.length = 0;
   api.getHeatmap.mockReset().mockResolvedValue([TRACK]);
   api.getSports.mockReset().mockResolvedValue(["running"]);
   window.matchMedia = () => ({ matches: false });
@@ -91,5 +102,14 @@ describe("the dashboard heatmap", () => {
     render(<ActivityHeatmap after="2026-09-30" />);
     await screen.findByText(/no gps data/i);
     expect(fits).toHaveLength(0);
+  });
+
+  it("tilts into 3D from the map page's toolbar", async () => {
+    // Reaching 3D by touchpad gesture alone was too finicky to use; the
+    // toolbar's pip is the dependable way in, as it is on the map page.
+    render(<ActivityHeatmap after="2026-09-07" />);
+    fireEvent.click(await screen.findByTitle("Tilt to 3D view"));
+    expect(eases).toContainEqual(expect.objectContaining({ pitch: 55 }));
+    expect(screen.getByTitle("Zoom in")).toBeTruthy();
   });
 });

@@ -30,7 +30,8 @@ export default function MapLibreMap({
   // Attribution stays bottom-right on purpose — the legends already clear it by
   // sitting at bottom-12, and ActivityRoute's legend is itself bottom-LEFT, so
   // moving attribution there would just trade one overlap for another.
-  // Both overridable for callers whose chrome lives elsewhere.
+  // Both overridable for callers whose chrome lives elsewhere; a null
+  // navPosition leaves the buttons out for a caller with its own (MapToolbar).
   navPosition = "top-left",
   attributionPosition = "bottom-right",
 }) {
@@ -66,7 +67,7 @@ export default function MapLibreMap({
     });
     mapRef.current = map;
     themeRef.current = theme;
-    if (interactive) {
+    if (interactive && navPosition) {
       map.addControl(new maplibregl.NavigationControl({ showCompass: false }), navPosition);
     }
     map.addControl(new maplibregl.AttributionControl({ compact: true }), attributionPosition);

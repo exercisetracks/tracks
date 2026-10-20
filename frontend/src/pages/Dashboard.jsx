@@ -311,7 +311,7 @@ export default function Dashboard() {
       {/* Geographic heatmap */}
       <Section title="Training Locations" dataTour="dashboard-locations">
         <div className="card p-0 overflow-hidden">
-          <Suspense fallback={<div style={{ height: 420 }} />}>
+          <Suspense fallback={<div style={{ height: 650 }} />}>
             <ActivityHeatmap sport={selectedSport} after={afterDateFor(period)} />
           </Suspense>
         </div>

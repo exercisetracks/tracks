@@ -12,10 +12,17 @@
 // around it; now the only control it owns is the colouring mode. The camera
 // re-frames whenever the filter changes, so the opening view is always the
 // activities in the window rather than wherever the last filter left it.
+//
+// Navigation is the map page's MapToolbar: tilting into 3D by touchpad
+// gesture alone was too finicky to use, and two maps that move differently
+// is one more thing to learn.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "../../api/client";
 import { useTheme } from "../../context/ThemeContext";
 import MapLibreMap from "../map/MapLibreMap";
+import MapToolbar, { GLASS } from "../map/MapToolbar";
+import { useFlatTilt } from "../map/tilt";
+import { useWheelZoom } from "../map/useWheelZoom";
 import { HeatmapGlowLayer, buildHeatmapVerts, glowStyleForMode, legendStops } from "../map/HeatmapGlowLayer";
 
 const MODES = [
@@ -36,9 +43,10 @@ function Legend({ mode, theme }) {
   const stops  = legendStops(mode, theme);
 
   return (
-    // bottom-12: clear of the map credits' "i" button in the corner below.
-    <div className="absolute bottom-12 right-2 z-[1000] pointer-events-none" style={{ minWidth: 130 }}>
-      <div className="bg-slate-900/80 backdrop-blur rounded-lg px-2.5 py-1.5 text-xs text-white">
+    // Bottom-left, as the toolbar holds bottom-right; bottom-12 clears the map
+    // credits' "i" button in the corner below.
+    <div className="absolute bottom-12 left-2 z-[1000] pointer-events-none" style={{ minWidth: 130 }}>
+      <div className={`${GLASS} rounded-lg px-2.5 py-1.5 text-xs text-slate-600 dark:text-slate-300`}>
         <div className="h-2 rounded-full mb-1" style={{ background: `linear-gradient(to right, ${stops.join(", ")})` }} />
         <div className="flex justify-between gap-3">{labels.map(l => <span key={l}>{l}</span>)}</div>
       </div>
@@ -53,30 +61,27 @@ function Controls({ mode, onModeChange }) {
 
   return (
     <div className="absolute top-3 right-3 z-[1000]" style={{ maxWidth: 220 }}>
-      <div className="bg-slate-900/85 backdrop-blur rounded-xl shadow-lg text-white text-xs overflow-hidden">
+      <div className={`${GLASS} rounded-xl text-xs overflow-hidden`}>
         <button
           onClick={() => setOpen(o => !o)}
-          className="w-full flex items-center justify-between px-2.5 py-1.5 font-semibold tracking-wide text-slate-200 hover:bg-slate-700/60 transition-colors"
+          className="w-full flex items-center justify-between px-2.5 py-1.5 font-semibold tracking-wide text-slate-700 dark:text-slate-200 hover:bg-slate-500/10 transition-colors"
         >
           <span>Heatmap</span>
-          <span className="text-slate-400">{open ? "▲" : "▼"}</span>
+          <span className="text-slate-400 dark:text-slate-500">{open ? "▲" : "▼"}</span>
         </button>
 
         {open && (
           <div className="px-2.5 pb-2.5 space-y-3">
             {/* Viz mode */}
             <div>
-              <p className="text-slate-400 mb-1 uppercase tracking-wider" style={{ fontSize: 10 }}>Mode</p>
+              <p className="text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wider" style={{ fontSize: 10 }}>Mode</p>
               <div className="flex flex-wrap gap-1">
                 {MODES.map(m => (
                   <button
                     key={m.value}
                     onClick={() => onModeChange(m.value)}
-                    className={`px-1.5 py-0.5 rounded-full border transition-colors ${
-                      mode === m.value
-                        ? "bg-orange-500 border-orange-500 text-white"
-                        : "border-slate-600 text-slate-300 hover:border-slate-400"
-                    }`}
+                    aria-pressed={mode === m.value}
+                    className="chip chip-sm"
                   >
                     {m.label}
                   </button>
@@ -96,6 +101,9 @@ function Controls({ mode, onModeChange }) {
 function HeatmapMap({ tracks, mode, fitTracks, fitKey, theme }) {
   const mapRef    = useRef(null);
   const glowRef   = useRef(null);
+  // The map as state as well as a ref: the toolbar and the camera hooks need a
+  // render once it exists.
+  const [map, setMap] = useState(null);
   const vertsRef  = useRef({ verts: null, count: 0 });
   const lastFit   = useRef(-1);
   const [ready, setReady] = useState(false);
@@ -107,6 +115,7 @@ function HeatmapMap({ tracks, mode, fitTracks, fitKey, theme }) {
   // drops custom layers, so we rebuild and re-upload the current geometry.
   const handleReady = useCallback((map) => {
     mapRef.current = map;
+    setMap(map);
     // Idempotent: onReady can fire again (StrictMode, theme/style swap, which
     // drops custom layers). Only add the layer if it isn't already present.
     let layer = glowRef.current;
@@ -150,12 +159,29 @@ function HeatmapMap({ tracks, mode, fitTracks, fitKey, theme }) {
     }
   }, [ready, fitKey, fitTracks]);
 
-  return <MapLibreMap theme={theme} onReady={handleReady} initialZoom={2} className="absolute inset-0" />;
+  useWheelZoom(map);
+  const { is3D, toggle: toggle3D, orbitTo } = useFlatTilt(map);
+
+  return (
+    <>
+      {/* navPosition null: the toolbar has zoom. The credits go bottom-left,
+          under the legend, out of the toolbar's corner. */}
+      <MapLibreMap
+        theme={theme}
+        onReady={handleReady}
+        initialZoom={2}
+        className="absolute inset-0"
+        navPosition={null}
+        attributionPosition="bottom-left"
+      />
+      <MapToolbar map={map} mapReady={ready} is3D={is3D} onToggle3D={toggle3D} orbitTo={orbitTo} />
+    </>
+  );
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function ActivityHeatmap({ height = 420, sport = "", after = null }) {
+export default function ActivityHeatmap({ height = 650, sport = "", after = null }) {
   const { colorScheme } = useTheme();
   const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
   const isDark = colorScheme === "dark" || (colorScheme === "system" && systemDark);
@@ -257,15 +283,15 @@ export default function ActivityHeatmap({ height = 420, sport = "", after = null
 
       {/* Loading overlay */}
       {loading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-slate-900/50 z-[999] rounded-xl">
-          <span className="text-sm text-slate-300 animate-pulse">Loading…</span>
+        <div className="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-slate-900/50 z-[999] rounded-xl">
+          <span className="text-sm text-slate-600 dark:text-slate-300 animate-pulse">Loading…</span>
         </div>
       )}
 
       {/* Empty-data message */}
       {!loading && !displayTracks.length && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[998]">
-          <span className="text-sm text-slate-400 bg-slate-900/70 px-2.5 py-1 rounded-full">
+          <span className={`${GLASS} text-sm text-slate-500 dark:text-slate-400 px-2.5 py-1 rounded-full`}>
             No GPS data for this filter
           </span>
         </div>

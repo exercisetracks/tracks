@@ -13,13 +13,17 @@ import { useState, useEffect, useRef, useCallback, memo } from "react";
 //
 // One drag gizmo now covers rotate + tilt (the old separate tilt slider is
 // gone), and the 3D toggle lives as the pip — four controls folded into one.
+//
+// Shared by the map page (with use3D's terrain) and the dashboard heatmap (with
+// tilt.js's flat tilt), so both maps navigate the same way.
 // ===========================================================================
 
 // Drag sensitivity: degrees of camera change per pixel dragged on the compass.
 const DEG_PER_PX_BEARING = 0.7;
 const DEG_PER_PX_PITCH = 0.6;
 
-const GLASS =
+// Exported so the panels floating beside it on a map match it.
+export const GLASS =
   "bg-white/85 dark:bg-slate-800/85 backdrop-blur-md border border-slate-200/80 " +
   "dark:border-slate-700/80 shadow-lg shadow-slate-900/10";
 
