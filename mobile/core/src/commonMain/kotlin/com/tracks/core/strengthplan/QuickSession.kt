@@ -35,6 +35,21 @@ object QuickSession {
         val primaryMuscles: List<String>,
         val isCompound: Boolean = true,
         val difficulty: Int = 1,
+        val pattern: String = "push",
+        val equipment: List<String> = listOf("bodyweight"),
+    )
+
+    /**
+     * Who is lifting, for the weights: the library (equipment, for
+     * supersets), their per-lift records, and body weight and sex for a first
+     * guess at a lift never logged. Empty, every weight is a fixed default.
+     */
+    data class Lifter(
+        val library: Map<String, Map<String, Any?>> = emptyMap(),
+        val records: Map<String, Map<String, Any?>> = emptyMap(),
+        val bodyWeightKg: Double? = null,
+        val sex: String? = null,
+        val units: String = "metric",
     )
 
     /** Two in every five picks go to the chosen muscles. */
@@ -60,15 +75,34 @@ object QuickSession {
         Intensity.VeryLow to 1, Intensity.Low to 1, Intensity.Medium to 1, Intensity.High to 2, Intensity.VeryHigh to 1,
     )
 
-    /** Sets, reps, rest (s) and target RPE, by intensity: light, moderate, hard. */
-    private data class Dose(val sets: Int, val reps: Int, val restS: Int, val rpe: Double)
+    /**
+     * Sets, reps for a compound and a single-joint lift, the %1RM each rep
+     * count is done at, and the effort, by intensity. Moderate is eight and
+     * twelve: a compound lift is heavier per rep, a single-joint one wants
+     * more of them for the same work. The rest comes from the movement
+     * ([Periodization.restSeconds]), one to three minutes.
+     */
+    private data class Dose(val sets: Int, val reps: Int, val isolationReps: Int, val rpe: Double)
     private val DOSE = mapOf(
-        Intensity.VeryLow to Dose(2, 15, 45, 5.0),
-        Intensity.Low to Dose(2, 12, 60, 6.0),
-        Intensity.Medium to Dose(3, 10, 90, 7.0),
-        Intensity.High to Dose(4, 6, 120, 8.0),
-        Intensity.VeryHigh to Dose(5, 4, 150, 9.0),
+        Intensity.VeryLow to Dose(2, 15, 15, 5.0),
+        Intensity.Low to Dose(2, 12, 15, 6.0),
+        Intensity.Medium to Dose(3, 8, 12, 7.0),
+        Intensity.High to Dose(4, 6, 10, 8.0),
+        Intensity.VeryHigh to Dose(5, 4, 8, 9.0),
     )
+
+    /** The usual %1RM for a set of [reps] taken near, not to, failure. */
+    private fun pctFor(reps: Int): Double = when {
+        reps <= 4 -> 0.87
+        reps <= 6 -> 0.80
+        reps <= 8 -> 0.72
+        reps <= 10 -> 0.70
+        reps <= 12 -> 0.65
+        else -> 0.60
+    }
+
+    /** Rest is per movement now; this is its rough average, for sizing a session. */
+    private const val AVERAGE_REST_S = 100
 
     /** About how long one working set takes, and setting up for an exercise. */
     private const val SET_WORK_S = 45
@@ -194,9 +228,10 @@ object QuickSession {
         emphasis: List<String>,
         seed: String,
         base: List<String> = STRENGTH_MUSCLES,
+        lifter: Lifter = Lifter(),
     ): List<MutableMap<String, Any?>> {
         val dose = DOSE.getValue(intensity)
-        val perExercise = dose.sets * SET_WORK_S + (dose.sets - 1) * dose.restS + EXERCISE_SETUP_S
+        val perExercise = dose.sets * SET_WORK_S + (dose.sets - 1) * AVERAGE_REST_S + EXERCISE_SETUP_S
         val count = (minutes * 60 / perExercise).coerceIn(2, MAX_ITEMS)
         val byMuscle = HashMap<String, MutableList<QuickExercise>>()
         for (x in exercises) for (m in x.primaryMuscles) byMuscle.getOrPut(m) { ArrayList() } += x
@@ -218,17 +253,33 @@ object QuickSession {
             PyRandom("$seed-$muscle-${out.size}").shuffle(top)
             val pick = top.first()
             seen += pick.name
-            out += linkedMapOf(
+            val reps = if (pick.isCompound) dose.reps else dose.isolationReps
+            val pct = pctFor(reps)
+            val (weight, estimated) = Loads.prescribedWeight(
+                lifter.records[pick.name], pick.pattern, pick.isCompound, pick.equipment, pct,
+                1.0, 1.0, lifter.bodyWeightKg, lifter.sex, lifter.units,
+            )
+            out += linkedMapOf<String, Any?>(
                 "type" to "strength_exercise",
                 "name" to pick.name,
                 "sets" to dose.sets.toLong(),
-                "reps" to dose.reps.toLong(),
-                "rest_seconds" to dose.restS.toLong(),
+                "reps" to reps.toLong(),
+                "weight_kg" to weight,
+                // The light end keeps sessions short, as the plan's supplementary tiers do.
+                "rest_seconds" to Periodization.restSeconds(
+                    pick.pattern, if (intensity <= Intensity.Low) 2 else 3, pick.isCompound, reps.toLong(),
+                ),
                 "target_rpe" to dose.rpe,
                 "muscles" to pick.primaryMuscles,
-            )
+                "primary_muscles" to pick.primaryMuscles,
+                "movement_pattern" to pick.pattern,
+            ).also { if (estimated && weight > 0) it["weight_estimated"] = true }
         }
-        return out
+        // Supersets where the kit allows, as the plan does (Supersets).
+        val library = lifter.library.ifEmpty {
+            exercises.associate { it.name to mapOf<String, Any?>("equipment" to it.equipment) }
+        }
+        return Supersets.group(out, library)
     }
 
     private const val MIN_ITEMS = 3

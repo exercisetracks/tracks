@@ -409,9 +409,19 @@ class LocalPlanning(
                 primaryMuscles = (ex["primary_muscles"] as? List<String>).orEmpty(),
                 isCompound = ex["is_compound"] != false,
                 difficulty = (ex["difficulty"] as? Number)?.toInt() ?: 1,
+                pattern = ex["movement_pattern"] as? String ?: "push",
+                equipment = needs,
             )
         }
-        return com.tracks.core.strengthplan.QuickSession.strength(exercises, minutes, intensity, emphasis, seed, base)
+        // The same weights the plan would give: records first, else a guess off body weight.
+        val lifter = com.tracks.core.strengthplan.QuickSession.Lifter(
+            library = PlanLibrary.exercises,
+            records = recordsOf(LocalTraining(sources).standings()),
+            bodyWeightKg = sources.setting("weight_kg")?.toDoubleOrNull(),
+            sex = sources.setting("sex"),
+            units = sources.setting("units") ?: "metric",
+        )
+        return com.tracks.core.strengthplan.QuickSession.strength(exercises, minutes, intensity, emphasis, seed, base, lifter)
     }
 
     /**
@@ -483,13 +493,7 @@ class LocalPlanning(
             )
         }
         val standings = LocalTraining(sources).standings()
-        val records = standings.associate {
-            it.exerciseName to linkedMapOf<String, Any?>(
-                "estimated_1rm_kg" to it.estimated1rmKg, "last_weight_kg" to it.lastWeightKg,
-                "last_reps" to it.lastReps?.toLong(), "last_session_volume_kg" to it.lastSessionVolumeKg,
-                "sessions_completed" to it.sessionsCompleted.toLong(), "progression_stage" to it.progressionStage,
-            )
-        }
+        val records = recordsOf(standings)
         val injuries = sources.replica.rows("injury").filter { r ->
             val end = r.str("end_date")?.let(::civilOrNull)
             end == null || end >= today
@@ -546,6 +550,17 @@ class LocalPlanning(
             anchorDate = planStart(goal, today),
             customs = customs,
             recentlyUsed = recentlyUsed,
+            bodyWeightKg = sources.setting("weight_kg")?.toDoubleOrNull(),
+            sex = sources.setting("sex"),
+        )
+    }
+
+    /** Each lift's standing as the generators read it (`strength_records`). */
+    private fun recordsOf(standings: List<com.tracks.core.api.StrengthProgress>) = standings.associate {
+        it.exerciseName to linkedMapOf<String, Any?>(
+            "estimated_1rm_kg" to it.estimated1rmKg, "last_weight_kg" to it.lastWeightKg,
+            "last_reps" to it.lastReps?.toLong(), "last_session_volume_kg" to it.lastSessionVolumeKg,
+            "sessions_completed" to it.sessionsCompleted.toLong(), "progression_stage" to it.progressionStage,
         )
     }
 

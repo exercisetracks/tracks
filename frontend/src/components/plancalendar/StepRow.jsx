@@ -8,6 +8,17 @@
 import { PACE_LABELS } from "./constants";
 import { fmtWeight } from "../../lib/weight";
 
+/**
+ * Effort on a 10-point scale, in words: "Effort 7/10 · 3 reps in the tank".
+ * RPE was never explained anywhere, and the number alone means nothing to
+ * someone who has not met it. Reps in reserve = 10 − RPE (Zourdos 2016).
+ */
+export function effortText(rpe) {
+  const r = Math.round(Number(rpe));
+  const left = Math.max(0, 10 - r);
+  return `Effort ${r}/10 · ${left === 0 ? "to failure" : `${left} rep${left === 1 ? "" : "s"} in the tank`}`;
+}
+
 export default function StepRow({ step, imperial = false }) {
   const t = step.type;
   if (t === "walk") {
@@ -67,12 +78,14 @@ export default function StepRow({ step, imperial = false }) {
     );
   }
   if (t === "strength_exercise") {
-    const { name, sets, reps, weight_kg, target_rpe, primary_muscles, cues, tempo, superset_group } = step;
+    const { name, sets, reps, weight_kg, target_rpe, primary_muscles, cues, tempo, group } = step;
     const weightLabel = fmtWeight(weight_kg, imperial);
     const muscles = (primary_muscles || []).slice(0, 2).map(m => m.replace(/_/g, " ")).join(", ");
     const cue = (cues || [])[0];
     // Superset badge: A/B/C… so paired accessories read as one giant set.
-    const supBadge = superset_group != null ? String.fromCharCode(65 + superset_group) : null;
+    // A superset's members share a group ("superset-1", "superset-2"…): A, B…
+    const supNum = group?.kind === "superset" ? parseInt(String(group.uid).split("-").pop(), 10) : NaN;
+    const supBadge = Number.isFinite(supNum) ? String.fromCharCode(64 + supNum) : null;
     return (
       <div className="flex items-start gap-3 py-1.5">
         <div className="w-2 h-2 rounded-full bg-violet-400 dark:bg-violet-500 mt-1.5 shrink-0" />
@@ -89,11 +102,23 @@ export default function StepRow({ step, imperial = false }) {
             <span className="text-xs text-slate-500 dark:text-slate-400 tabular-nums">{sets}×{reps}</span>
             <span className="text-xs text-slate-400 dark:text-slate-500 tabular-nums">{weightLabel}</span>
             {tempo && <span className="text-xs text-slate-400 dark:text-slate-500">tempo {tempo}</span>}
-            {target_rpe && <span className="text-xs text-slate-400 dark:text-slate-500">Perceived Exertion {target_rpe}</span>}
+            {step.weight_estimated && weight_kg > 0 && <span className="text-xs text-slate-400 dark:text-slate-500">starting guess</span>}
+            {/* A weight says how hard; without one, effort in words rather than "RPE 7". */}
+            {target_rpe && !(weight_kg > 0) && <span className="text-xs text-slate-400 dark:text-slate-500">{effortText(target_rpe)}</span>}
             {muscles && <span className="text-xs text-slate-400 dark:text-slate-500">{muscles}</span>}
           </div>
           {cue && <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 italic">{cue}</p>}
         </div>
+      </div>
+    );
+  }
+  if (t === "rest") {
+    const sec = step.duration_seconds ?? 0;
+    return (
+      <div className="flex items-start gap-3 py-1 pl-5">
+        <span className="text-xs text-slate-400 dark:text-slate-500 tabular-nums">
+          Rest {Math.floor(sec / 60)}:{String(sec % 60).padStart(2, "0")}
+        </span>
       </div>
     );
   }

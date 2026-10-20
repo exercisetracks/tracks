@@ -54,11 +54,66 @@ class QuickSessionTest {
             QuickSession.QuickExercise(name, (ex["primary_muscles"] as List<String>))
         }
         val hard = QuickSession.strength(exercises, 45, Intensity.High, listOf("chest"), "seed")
+            .filter { it["type"] == "strength_exercise" }
         assertTrue(hard.size >= 3)
         assertTrue(hard.all { it["sets"] == 4L && it["reps"] == 6L })
         assertEquals(hard.size, hard.map { it["name"] }.toSet().size, "no lift twice")
         val light = QuickSession.strength(exercises, 45, Intensity.Low, emptyList(), "seed")
+            .filter { it["type"] == "strength_exercise" }
         assertTrue(light.size > hard.size, "lighter sets, more exercises in the same time")
+    }
+
+    private fun libraryExercises() = PlanLibrary.exercises.map { (name, ex) ->
+        @Suppress("UNCHECKED_CAST")
+        QuickSession.QuickExercise(
+            name, ex["primary_muscles"] as List<String>, isCompound = ex["is_compound"] != false,
+            pattern = ex["movement_pattern"] as String? ?: "push",
+            equipment = (ex["equipment"] as List<String>).ifEmpty { listOf("bodyweight") },
+        )
+    }
+
+    /**
+     * Ten reps for everything was the old moderate. Now eight for a compound
+     * lift and twelve for a single-joint one, each with a weight to use (a
+     * guess off body weight the first time) and rest by the movement.
+     */
+    @Test
+    fun a_moderate_session_is_eight_and_twelve_with_weights_and_varied_rest() {
+        val lifter = QuickSession.Lifter(library = PlanLibrary.exercises, bodyWeightKg = 80.0, sex = "male")
+        val lifts = QuickSession.strength(libraryExercises(), 60, Intensity.Medium, emptyList(), "seed", lifter = lifter)
+            .filter { it["type"] == "strength_exercise" }
+        val compound = PlanLibrary.exercises.filterValues { it["is_compound"] != false }.keys
+        lifts.forEach { assertEquals(if (it["name"] in compound) 8L else 12L, it["reps"], "${it["name"]}") }
+        assertTrue(lifts.any { (it["weight_kg"] as Double) > 0 && it["weight_estimated"] == true }, "weights: $lifts")
+        val rests = lifts.map { (it["rest_seconds"] as Long) }
+        assertTrue(rests.all { it in 60L..180L } && rests.distinct().size > 1, "rests $rests")
+    }
+
+    /**
+     * The soul-crushing version: every set of one lift before the next. Lifts
+     * that share kit (or need none) and no muscle now go in turn, a rest after
+     * each; two machines never pair, so nobody crosses the gym mid-round.
+     */
+    @Test
+    fun compatible_lifts_become_supersets_and_two_machines_never_pair() {
+        val library = PlanLibrary.exercises
+        val steps = QuickSession.strength(libraryExercises(), 60, Intensity.Medium, emptyList(), "seed",
+            lifter = QuickSession.Lifter(library = library))
+        val groups = steps.filter { it["group"] != null }.groupBy { (it["group"] as Map<*, *>)["uid"] }
+        assertTrue(groups.isNotEmpty(), "no supersets in $steps")
+        for ((_, members) in groups) {
+            val lifts = members.filter { it["type"] == "strength_exercise" }
+            assertTrue(lifts.size in 2..3)
+            assertEquals(lifts.size - 1, members.count { it["type"] == "rest" }, "a rest between each")
+            @Suppress("UNCHECKED_CAST")
+            val stations = lifts.count { l ->
+                val kit = (library.getValue(l["name"] as String)["equipment"] as List<String>).toSet() - "bodyweight"
+                kit.isNotEmpty() && kit.none { it in setOf("dumbbell", "barbell", "kettlebell", "band") }
+            }
+            assertTrue(stations <= 1, "two stations in one superset: $lifts")
+            val muscles = lifts.flatMap { it["primary_muscles"] as List<*> }
+            assertEquals(muscles.size, muscles.toSet().size, "a muscle twice in one superset")
+        }
     }
 
     /**

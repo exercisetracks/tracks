@@ -230,4 +230,55 @@ class GuidedPlanTest {
         ))
         assertEquals(listOf(false, true, false), steps.map { it.countsDistance })
     }
+
+    /**
+     * Every squat set before the first dip was the soul-crushing version. A
+     * superset plays a set of each in turn, the rest between them as written
+     * and the group's rest after each round.
+     */
+    @Test
+    fun `a superset plays a set of each lift in turn`() {
+        val g = com.tracks.core.api.StepGroup(uid = "superset-1", kind = "superset", rounds = 2, restSeconds = 90)
+        val plan = workout(
+            WorkoutStep(type = "strength_exercise", name = "Goblet Squat", sets = 2, reps = 8, group = g),
+            WorkoutStep(type = "rest", durationSeconds = 120, group = g),
+            WorkoutStep(type = "strength_exercise", name = "Dip", sets = 2, reps = 12, group = g),
+            sport = "strength_training",
+        )
+        val steps = guidedSteps(plan)
+        assertEquals(
+            listOf("Goblet Squat", "Recovery", "Dip", "Recovery", "Goblet Squat", "Recovery", "Dip"),
+            steps.map { it.title },
+        )
+        assertEquals(listOf(120, 90, 120), steps.filter { it.kind == StepKind.Rest }.map { it.seconds })
+    }
+
+    /** RPE was never explained: a bodyweight set says how hard in words, a weighted one shows its weight. */
+    @Test
+    fun `effort is spelled out and a guessed weight says so`() {
+        assertEquals("effort 8/10, 2 reps in the tank", effortText(8.0))
+        val plan = workout(
+            WorkoutStep(type = "strength_exercise", name = "Push-Up", sets = 1, reps = 12, weightKg = 0.0, targetRpe = 7.0),
+            WorkoutStep(type = "strength_exercise", name = "Barbell Back Squat", sets = 1, reps = 8, weightKg = 40.0,
+                weightEstimated = true, targetRpe = 7.0),
+            sport = "strength_training",
+        )
+        val (push, squat) = guidedSteps(plan)
+        assertTrue(push.detail!!.contains("3 reps in the tank"))
+        assertTrue(squat.detail!!.contains("starting guess") && !squat.detail!!.contains("effort"))
+    }
+
+    /** Whoever put 30 kg on the bar for set one has it there for set two. */
+    @Test
+    fun `a logged weight carries to the next sets of the same lift`() {
+        val steps = guidedSteps(workout(
+            WorkoutStep(type = "strength_exercise", name = "Barbell Back Squat", sets = 3, reps = 8, weightKg = 40.0, restSeconds = 60),
+            sport = "strength_training",
+        ))
+        val state = GuidedUiState(steps = steps, logged = mapOf(0 to StrengthTarget("Barbell Back Squat", 7, 30.0)))
+        assertEquals(30.0, state.setAt(2)!!.weightKg!!, 0.0)
+        assertEquals(8, state.setAt(2)!!.reps)
+        assertEquals(7, state.setAt(0)!!.reps)
+    }
 }
+

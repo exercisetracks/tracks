@@ -198,7 +198,8 @@ private fun FlowDone(session: FlowSession, controls: FlowControls, modifier: Mod
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Text("How did it feel?", style = MaterialTheme.typography.labelLarge)
+            Text("How hard was it?", style = MaterialTheme.typography.labelLarge)
+            Text("1 is barely any effort, 10 is everything you had.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(Tokens.Space.s1_5)) {
                 (1..10).forEach { v ->
                     FilterChip(selected = rpe == v, onClick = { rpe = if (rpe == v) null else v }, label = { Text("$v") })

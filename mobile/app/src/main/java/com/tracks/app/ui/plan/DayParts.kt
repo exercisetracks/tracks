@@ -334,7 +334,12 @@ internal fun stepDetail(
             // for a non-null rather than for a positive number.
             step.weightKg?.let { part(weight(it, imperial)) }
             step.tempo?.takeIf { it.isNotBlank() }?.let { part("tempo $it") }
-            step.targetRpe?.takeIf { it > 0 }?.let { part("RPE ${trimZero(it)}") }
+            // A weight says how hard; without one, effort in words — "RPE 7" was never explained.
+            if ((step.weightKg ?: 0.0) <= 0.0) {
+                step.targetRpe?.takeIf { it > 0 }?.let { part(com.tracks.app.ui.workout.effortText(it)) }
+            } else if (step.weightEstimated) {
+                part("starting guess")
+            }
             step.restSeconds?.takeIf { it > 0 }?.let { part("${it}s rest") }
         }
 

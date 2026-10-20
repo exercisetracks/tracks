@@ -276,6 +276,8 @@ data class WorkoutStep(
     val name: String? = null,
     val sets: Int? = null,
     @SerialName("weight_kg") val weightKg: Double? = null,
+    /** [weightKg] is a first guess off body weight: the lift was never logged. */
+    @SerialName("weight_estimated") val weightEstimated: Boolean = false,
     @SerialName("target_rpe") val targetRpe: Double? = null,
     @SerialName("rest_seconds") val restSeconds: Int? = null,
     @SerialName("duration_seconds") val durationSeconds: Int? = null,

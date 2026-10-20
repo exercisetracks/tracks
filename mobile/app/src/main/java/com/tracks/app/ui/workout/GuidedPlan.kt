@@ -99,7 +99,10 @@ data class GuidedStep(
  */
 fun guidedSteps(workout: PlannedWorkout): List<GuidedStep> {
     val steps = buildList {
-        workout.steps.forEach { step -> expand(step, this) }
+        for ((group, members) in com.tracks.core.fit.WorkoutBlocks.runs(workout.steps)) {
+            if (group != null && members.any { it.type == "strength_exercise" }) expandGroup(group, members, this)
+            else members.forEach { step -> expand(step, this) }
+        }
     }
     if (steps.isNotEmpty()) return steps
 
@@ -127,6 +130,7 @@ fun guidedSteps(workout: PlannedWorkout): List<GuidedStep> {
 private fun expand(step: WorkoutStep, into: MutableList<GuidedStep>) {
     when (step.type) {
         "strength_exercise" -> expandStrength(step, into)
+        "rest" -> step.durationSeconds?.takeIf { it > 0 }?.let { into += recovery(it) }
         "mobility_exercise" -> expandMobility(step, into)
         "interval_set" -> expandRepeats(step, into, label = "Interval")
         "effort_set" -> expandRepeats(step, into, label = "Effort")
@@ -156,39 +160,89 @@ private fun expand(step: WorkoutStep, into: MutableList<GuidedStep>) {
  * in their head — and it starts itself, as the strength runner's does.
  */
 private fun expandStrength(step: WorkoutStep, into: MutableList<GuidedStep>) {
-    val name = step.name ?: "Exercise"
     val sets = (step.sets ?: 1).coerceIn(1, MAX_SETS)
     val rest = step.restSeconds ?: 0
 
     for (set in 1..sets) {
-        into += GuidedStep(
-            title = name,
-            detail = buildString {
-                step.reps?.let { append("$it reps") }
-                step.weightKg?.takeIf { it > 0 }?.let {
-                    if (isNotEmpty()) append(" · ")
-                    append("${it.roundToInt()} kg")
-                }
+        into += strengthSet(step, "Set $set of $sets")
+        if (rest > 0 && set < sets) into += recovery(rest)
+    }
+}
+
+/**
+ * A superset (or circuit): a set of each member in turn, the rest steps
+ * between them as written, and the group's rest after each round — "squat,
+ * rest, dip, rest, row, rest" rather than every squat set first. The
+ * members' own set counts do not apply: rounds are the sets, as on the watch
+ * (WorkoutFit).
+ */
+private fun expandGroup(group: com.tracks.core.api.StepGroup, members: List<WorkoutStep>, into: MutableList<GuidedStep>) {
+    val rounds = group.rounds.coerceIn(1, MAX_SETS)
+    val word = if (group.kind == "superset") "Superset" else "Round"
+    for (round in 1..rounds) {
+        members.forEach { m ->
+            when (m.type) {
+                "strength_exercise" -> into += strengthSet(m, "$word · round $round of $rounds")
+                "rest" -> m.durationSeconds?.takeIf { it > 0 }?.let { into += recovery(it) }
+            }
+        }
+        if (group.restSeconds > 0 && round < rounds) into += recovery(group.restSeconds)
+    }
+}
+
+/** One working set of [step], [position] saying where it sits. */
+private fun strengthSet(step: WorkoutStep, position: String): GuidedStep {
+    val name = step.name ?: "Exercise"
+    return GuidedStep(
+        title = name,
+        detail = buildString {
+            step.reps?.let { append("$it reps") }
+            val weight = step.weightKg?.takeIf { it > 0 }
+            if (weight != null) {
+                if (isNotEmpty()) append(" · ")
+                append(weightText(weight))
+                if (step.weightEstimated) append(" (starting guess)")
+            } else {
+                // No weight to go by: how hard, in words. "RPE 8" was never
+                // explained anywhere.
                 step.targetRpe?.let {
                     if (isNotEmpty()) append(" · ")
-                    append("RPE ${it.roundToInt()}")
+                    append(effortText(it))
                 }
-                step.tempo?.let {
-                    if (isNotEmpty()) append(" · ")
-                    append("tempo $it")
-                }
-            }.ifBlank { null },
-            note = step.note,
-            cues = step.cues,
-            // Under the name, as a stretch's is: what the lift is and how to
-            // do it, which a name like "Renegade Row" does not say.
-            howTo = step.instructions?.takeIf { it.isNotBlank() }
-                ?: com.tracks.core.strengthplan.PlanLibrary.exerciseInstructions[name],
-            position = "Set $set of $sets",
-            kind = if (step.phase == "warmup") StepKind.Warmup else StepKind.Work,
-            exercise = StrengthTarget(name, step.reps, step.weightKg),
-        )
-        if (rest > 0 && set < sets) into += recovery(rest)
+            }
+            step.tempo?.let {
+                if (isNotEmpty()) append(" · ")
+                append("tempo $it")
+            }
+        }.ifBlank { null },
+        note = step.note,
+        cues = step.cues,
+        // Under the name, as a stretch's is: what the lift is and how to
+        // do it, which a name like "Renegade Row" does not say.
+        howTo = step.instructions?.takeIf { it.isNotBlank() }
+            ?: com.tracks.core.strengthplan.PlanLibrary.exerciseInstructions[name],
+        position = position,
+        kind = if (step.phase == "warmup") StepKind.Warmup else StepKind.Work,
+        exercise = StrengthTarget(name, step.reps, step.weightKg),
+    )
+}
+
+/** A load in the account's units, as the plates are labelled: whole pounds or kilos to the half. */
+fun weightText(kg: Double, imperial: Boolean = com.tracks.core.format.Units.imperial): String =
+    if (imperial) "${(kg * 2.20462).roundToInt()} lb"
+    else if (kg % 1.0 == 0.0) "${kg.roundToInt()} kg" else "${"%.1f".format(kg)} kg"
+
+/**
+ * Effort on a ten-point scale in words: "effort 8/10, 2 reps in the tank".
+ * Reps in reserve = 10 − RPE (Zourdos et al. 2016).
+ */
+fun effortText(rpe: Double): String {
+    val r = rpe.roundToInt().coerceIn(1, 10)
+    val left = 10 - r
+    return "effort $r/10, " + when (left) {
+        0 -> "to failure"
+        1 -> "1 rep in the tank"
+        else -> "$left reps in the tank"
     }
 }
 

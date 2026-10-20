@@ -168,3 +168,50 @@ def conservative_starting_weight(
         "carry":    10.0,
     }
     return defaults.get(movement_pattern, 10.0)
+
+
+# A novice's one-rep max, as a multiple of body weight, by pattern: the
+# "beginner" line of the published strength standards (Kilgore & Rippetoe's
+# tables, and the population data behind strengthlevel.com and
+# symmetricstrength.com), rounded down. Women's ratios are lower for the upper
+# body than the lower (Miller et al. 1993: ~52% vs ~66% of men's absolute
+# strength), hence two factors.
+_NOVICE_1RM_BW = {
+    "squat":     0.75,
+    "hinge":     1.0,
+    "push":      0.6,
+    "pull":      0.55,
+    "carry":     0.5,
+    "rotation":  0.15,
+    "isolation": 0.2,
+}
+_FEMALE_LOWER = 0.75
+_FEMALE_UPPER = 0.6
+# One dumbbell or kettlebell, of a two-handed barbell lift's load.
+_PER_HAND = 0.4
+# A starting guess errs light: the first session's logged sets set the real
+# 1RM, and one too heavy is the session someone does not come back for.
+_GUESS_MARGIN = 0.85
+
+
+def starting_weight(movement_pattern: str, is_compound: bool, equipment: list | None,
+                    pct_1rm: float, body_weight_kg: float | None, sex: str | None) -> float:
+    """
+    A first working weight for a lift never logged: the novice 1RM for this
+    body weight, at the session's %1RM, a little light. Without a body weight
+    the old fixed defaults ([conservative_starting_weight]) stand.
+    """
+    if is_bodyweight_only(equipment) or movement_pattern in ("isometric", "plyometric"):
+        return 0.0
+    if not body_weight_kg or body_weight_kg <= 0:
+        return conservative_starting_weight(movement_pattern, is_compound, equipment)
+    ratio = _NOVICE_1RM_BW.get(movement_pattern, 0.3)
+    if not is_compound and movement_pattern != "isolation":
+        ratio = min(ratio, _NOVICE_1RM_BW["isolation"])
+    if sex == "female":
+        ratio *= _FEMALE_LOWER if movement_pattern in ("squat", "hinge") else _FEMALE_UPPER
+    eq = set(equipment or [])
+    if ("dumbbell" in eq or "kettlebell" in eq) and "barbell" not in eq and "machine" not in eq:
+        ratio *= _PER_HAND
+    return body_weight_kg * ratio * pct_1rm * _GUESS_MARGIN
+

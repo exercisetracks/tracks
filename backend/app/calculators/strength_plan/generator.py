@@ -34,10 +34,13 @@ from .leveling import (
     experience_stage_floor,
     starting_weight_factor,
 )
-from .loads import conservative_starting_weight, round_weight_for_equipment, training_weight
+from .loads import round_weight_for_equipment, starting_weight, training_weight
+from .supersets import group_supersets
 from .mobility import _mobility_description, _mobility_steps
 from .periodization import (
     _periodization_prescription,
+    REST_MAX_S,
+    REST_MIN_S,
     _rest_seconds,
     _session_duration_minutes,
     _TIER_SETS,
@@ -63,6 +66,8 @@ def generate_strength_workouts(
     stretch_candidates: list | None = None,
     experience: str | None = None,
     anchor_date: date | None = None,
+    body_weight_kg: float | None = None,
+    sex: str | None = None,
 ) -> list[dict]:
     """
     Generate strength PlannedWorkout dicts to be inserted alongside the
@@ -250,11 +255,6 @@ def generate_strength_workouts(
             # Rotates per block so a split cycles its applicable archetypes block
             # to block. None → fall back to the default (no-archetype) behaviour.
             archetype = select_archetype(split_key, sport_family, tier, stage, block_num)
-            superset_of = {}
-            if archetype:
-                for gi, pair in enumerate(archetype.supersets):
-                    for slot_key in pair:
-                        superset_of[slot_key] = gi
 
             # ── Exercise selection ────────────────────────────────────────────
             max_ex = 3 if tier <= 2 else (4 if tier == 3 else 5)
@@ -292,7 +292,7 @@ def generate_strength_workouts(
             for slot_key, ex_name in slot_picks:
                 ex = library.get(ex_name, {})
                 pattern = ex.get("movement_pattern", "push")
-                rest_s  = _rest_seconds(pattern, tier)
+                compound = bool(ex.get("is_compound", True))
                 scheme  = archetype.schemes.get(slot_key) if archetype else None
 
                 # Use per-exercise progression stage for accurate prescription
@@ -316,6 +316,16 @@ def generate_strength_workouts(
                 rpe_target = presc["rpe_target"]
                 pct_1rm    = presc["pct_1rm"]
                 tempo      = None
+                # The hypertrophy day's ten reps: eight for a compound lift,
+                # twelve for a single-joint one, which is lighter per rep and
+                # wants more of them for the same stimulus (Schoenfeld 2017,
+                # 6-12+ reps all build muscle when taken near failure). Twelve
+                # is about 65% of 1RM, not the 70% eight are.
+                if reps == 10:
+                    reps = 8 if compound else 12
+                    if not compound:
+                        pct_1rm = min(pct_1rm, 0.65)
+                rest_s = _rest_seconds(pattern, tier, compound, reps)
 
                 # Archetype scheme override for this slot (e.g. a 5×5 main hinge,
                 # a prescribed tempo/rest). Only the keys present are overridden;
@@ -327,6 +337,7 @@ def generate_strength_workouts(
                     pct_1rm    = scheme.get("pct_1rm", pct_1rm)
                     rest_s     = scheme.get("rest_seconds", rest_s)
                     tempo      = scheme.get("tempo")
+                rest_s = max(REST_MIN_S, min(REST_MAX_S, rest_s))
 
                 # Deload: cut volume and ease intensity so the week absorbs the
                 # prior block's fatigue (Zourdos 2019, Schoenfeld 2019). Applied
@@ -352,10 +363,12 @@ def generate_strength_workouts(
                         strength_rec["last_weight_kg"] * inj_modifier, pct_1rm
                     )
                 else:
-                    weight = conservative_starting_weight(
-                        pattern, ex.get("is_compound", True), ex_equip
+                    weight = starting_weight(
+                        pattern, compound, ex_equip, pct_1rm, body_weight_kg, sex,
                     )
                     weight *= inj_modifier * exp_weight_factor
+                estimated = not (strength_rec and (strength_rec.get("estimated_1rm_kg")
+                                                   or strength_rec.get("last_weight_kg")))
 
                 # Round to realistic gym weights based on the exercise's equipment type
                 if weight > 0:
@@ -378,9 +391,20 @@ def generate_strength_workouts(
                 }
                 if tempo:
                     step["tempo"] = tempo
-                if slot_key in superset_of:
-                    step["superset_group"] = superset_of[slot_key]
+                # Never lifted: the weight is a guess from body weight, and the
+                # screen says so (the first logged sets replace it).
+                if estimated and weight > 0:
+                    step["weight_estimated"] = True
                 steps.append(step)
+
+            # Supersets, the blueprint's pairs first (see supersets.py).
+            slot_index = {slot_key: i for i, (slot_key, _n) in enumerate(slot_picks)}
+            preferred_pairs = [
+                (slot_index[pair[0]], slot_index[pair[1]])
+                for pair in (archetype.supersets if archetype else [])
+                if len(pair) >= 2 and pair[0] in slot_index and pair[1] in slot_index
+            ]
+            steps = group_supersets(steps, library, preferred_pairs)
 
             # Plyometric finisher on leg-focused days for running/MTB — power
             # transfers to gait/pedal stroke — and alpine skiing, where the

@@ -440,11 +440,11 @@ def generator_cases():
         dict(name="alpine_skiing_plyo_finisher", sport="alpine_skiing", today=mon,
              goal=dict(strength_tier=3, strength_days_per_week=None, event_date=mon + timedelta(days=42)),
              existing=[], equipment=["barbell", "dumbbell", "bodyweight"], injuries="none", sessions=30,
-             units="metric", experience="regular", anchor=None),
+             units="metric", experience="regular", anchor=None, body_weight=80.0, sex="male"),
         dict(name="nordic_skiing_supplementary", sport="nordic_skiing", today=sun,
              goal=dict(strength_tier=2, strength_days_per_week=None, event_date=sun + timedelta(days=30)),
              existing=[], equipment=["dumbbell", "bodyweight"], injuries="none", sessions=5,
-             units="imperial", experience=None, anchor=None),
+             units="imperial", experience=None, anchor=None, body_weight=62.0, sex="female"),
         dict(name="nothing_is_safe", sport="running", today=wed,
              goal=dict(strength_tier=3, strength_days_per_week=None, event_date=wed + timedelta(days=10)),
              existing=[], equipment=["sled"], injuries="none", sessions=0, units="metric", experience=None,
@@ -464,6 +464,7 @@ def generator_cases():
             session_max_minutes=c.get("max_minutes"), regen_salt=c.get("salt", ""),
             confirmed_no_exercises=c.get("confirmed_no"), stretch_candidates=stretches,
             experience=c["experience"], anchor_date=c["anchor"],
+            body_weight_kg=c.get("body_weight"), sex=c.get("sex"),
         )
         out.append({
             "name": c["name"], "sport": c["sport"], "today": c["today"].isoformat(),
@@ -474,6 +475,7 @@ def generator_cases():
             "preferred": sorted(c.get("preferred") or []), "excluded": sorted(c.get("excluded") or []),
             "confirmed_no": sorted(c.get("confirmed_no") or []), "max_minutes": c.get("max_minutes"),
             "salt": c.get("salt", ""), "no_stretches": bool(c.get("no_stretches")),
+            "body_weight": c.get("body_weight"), "sex": c.get("sex"),
             "expect": _plain(result),
         })
     return {"records": records, "cases": out}

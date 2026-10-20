@@ -55,6 +55,12 @@ data class GuidedUiState(
     val begun: Boolean = false,
     /** Walked past the last step. */
     val done: Boolean = false,
+    /**
+     * What was actually lifted, by step index, where the person changed it
+     * from the plan: the weight on the bar, the reps they got. Logged sets
+     * are what moves the next session's weights (the 1RM estimate).
+     */
+    val logged: Map<Int, StrengthTarget> = emptyMap(),
     val saving: Boolean = false,
     val saved: Boolean = false,
     /** Saved into the outbox rather than sent — worth saying, so nobody re-does it. */
@@ -346,6 +352,14 @@ class GuidedWorkoutViewModel(
         }
     }
 
+    /** The person's own numbers for the set at [index], replacing the plan's. */
+    fun logSet(index: Int, weightKg: Double?, reps: Int?) {
+        _state.update { st ->
+            val set = st.setAt(index) ?: return@update st
+            st.copy(logged = st.logged + (index to set.copy(weightKg = weightKg, reps = reps)))
+        }
+    }
+
     /**
      * Skip whatever is on screen — a step you cannot do, or a rest cut short.
      * What was still being said about it stops, so a run of skips speaks only
@@ -547,17 +561,15 @@ class GuidedWorkoutViewModel(
      *
      * Walked past, not prescribed: someone who stops after two of four sets has
      * done two, and telling the server otherwise would move next week's
-     * prescription on a session that did not happen. The prescribed weight and
-     * reps are used for the sets that *were* done, because this runner has no
-     * field to correct them in — the strength screen's own runner does, and is
-     * still the place to log a session that went differently.
+     * prescription on a session that did not happen. Each set carries what
+     * was logged for it on the screen (setAt), the plan's numbers otherwise.
      */
     private fun completedExercises(): List<LoggedExercise> {
         val state = _state.value
         // Everything before the cursor, plus the step on screen once the runner
         // has been walked off the end of the list.
-        val reached = if (state.done) state.steps else state.steps.take(state.index)
-        return reached.mapNotNull { it.exercise }
+        val reached = if (state.done) state.steps.size else state.index
+        return (0 until reached).mapNotNull { state.setAt(it) }
             .groupBy { it.name }
             .map { (name, targets) ->
                 LoggedExercise(
@@ -694,3 +706,18 @@ class GuidedWorkoutViewModel(
                 "It will upload to your server on the next sync."
     }
 }
+
+/**
+ * The set at [index] as it stands: what was logged for it, else the plan's —
+ * carrying the weight of the last set of the same lift that was logged, since
+ * whoever put 30 kg on the bar for set one has it there for set two.
+ */
+fun GuidedUiState.setAt(index: Int): StrengthTarget? {
+    val planned = steps.getOrNull(index)?.exercise ?: return null
+    logged[index]?.let { return it }
+    val earlier = (index - 1 downTo 0).firstNotNullOfOrNull { i ->
+        logged[i]?.takeIf { it.name == planned.name }
+    }
+    return if (earlier != null) planned.copy(weightKg = earlier.weightKg) else planned
+}
+

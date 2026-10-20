@@ -54,13 +54,22 @@ internal object Periodization {
         "squat" to 180L, "hinge" to 180L, "push" to 120L, "pull" to 120L, "plyometric" to 90L,
         "rotation" to 90L, "isometric" to 60L, "isolation" to 60L, "carry" to 120L,
     )
-    private val REST_SUPP = mapOf(
-        "squat" to 90L, "hinge" to 90L, "push" to 75L, "pull" to 75L, "plyometric" to 60L,
-        "rotation" to 60L, "isometric" to 45L, "isolation" to 45L, "carry" to 75L,
-    )
+    const val REST_MIN_S = 60L
+    const val REST_MAX_S = 180L
 
-    fun restSeconds(pattern: Any?, tier: Int): Long =
-        if (tier <= 2) REST_SUPP[pattern as? String] ?: 75L else REST[pattern as? String] ?: 120L
+    /**
+     * One to three minutes, by how hard the movement is — periodization.py's
+     * `_rest_seconds`, where the evidence is.
+     */
+    fun restSeconds(pattern: Any?, tier: Int, isCompound: Boolean = true, reps: Long? = null): Long {
+        var rest = REST[pattern as? String] ?: 120L
+        if (!isCompound && pattern in setOf("squat", "hinge", "push", "pull")) rest = minOf(rest, 90L)
+        if (reps != null) {
+            if (reps <= 5 && isCompound) rest += 30 else if (reps >= 12) rest -= 30
+        }
+        if (tier <= 2) rest -= 30
+        return rest.coerceIn(REST_MIN_S, REST_MAX_S)
+    }
 
     private val DURATION_CAPS = mapOf(5 to 75L, 4 to 60L, 3 to 50L, 2 to 20L, 1 to 15L)
 

@@ -79,6 +79,8 @@ object StrengthPlan {
         stretchCandidates: List<StretchCandidate>? = null,
         experience: String? = null,
         anchorDate: CivilDate? = null,
+        bodyWeightKg: Double? = null,
+        sex: String? = null,
     ): List<MutableMap<String, Any?>> {
         val tier = goal.strengthTier
         // A race already run is no race — see generator.py. Otherwise every day
@@ -167,8 +169,6 @@ object StrengthPlan {
                 splitIdx++
 
                 val archetype = Archetypes.select(splitKey, sportFamily, tier, stage, blockNum)
-                val supersetOf = HashMap<String, Long>()
-                archetype?.supersets?.forEachIndexed { gi, pair -> for (slot in pair) supersetOf[slot] = gi.toLong() }
 
                 val slotPicks = Exercises.select(
                     sportFamily = sportFamily, tier = tier, splitType = splitKey, equipment = equipment,
@@ -188,7 +188,7 @@ object StrengthPlan {
                 for ((slotKey, exName) in slotPicks) {
                     val ex = library[exName].orEmpty()
                     val pattern = ex.get("movement_pattern", "push")
-                    var restS: Any = Periodization.restSeconds(pattern, tier)
+                    val compound = Py.truthy(ex.get("is_compound", true))
                     val scheme = if (archetype != null && slotKey != null) archetype.schemes[slotKey] else null
 
                     val rec = strengthRecords[exName]
@@ -202,6 +202,12 @@ object StrengthPlan {
                     var rpeTarget: Any = pRpe
                     var pct1rm: Any = pPct
                     var tempo: Any? = null
+                    // Ten reps: eight compound, twelve single-joint — see generator.py.
+                    if (num(reps) == 10.0) {
+                        reps = if (compound) 8L else 12L
+                        if (!compound) pct1rm = pyMin(pct1rm, 0.65)
+                    }
+                    var restS: Any = Periodization.restSeconds(pattern, tier, compound, (reps as Number).toLong())
                     if (truthy(scheme)) {
                         setsCount = scheme!!.get("sets", setsCount)!!
                         reps = scheme.get("reps", reps)!!
@@ -210,6 +216,7 @@ object StrengthPlan {
                         restS = scheme.get("rest_seconds", restS)!!
                         tempo = scheme["tempo"]
                     }
+                    restS = num(restS).toLong().coerceIn(Periodization.REST_MIN_S, Periodization.REST_MAX_S)
                     if (isDeload) {
                         setsCount = pyMax(1L, pyFloorDiv(setsCount, 2))
                         pct1rm = PyMath.round(num(pct1rm) * 0.85, 3)
@@ -220,16 +227,10 @@ object StrengthPlan {
                     val injModifier = Injuries.loadModifier(ex, injuries)
                     @Suppress("UNCHECKED_CAST")
                     val exEquip = ex.get("equipment", listOf("bodyweight")) as List<String?>?
-                    var weight: Double = when {
-                        rec != null && truthy(rec) && truthy(rec["estimated_1rm_kg"]) -> {
-                            val w = Loads.trainingWeight(num(rec["estimated_1rm_kg"]) * injModifier, num(pct1rm))
-                            if (w < 0.1) 0.0 else w
-                        }
-                        rec != null && truthy(rec) && truthy(rec["last_weight_kg"]) ->
-                            Loads.trainingWeight(num(rec["last_weight_kg"]) * injModifier, num(pct1rm))
-                        else -> Loads.conservativeStartingWeight(pattern, exEquip) * (injModifier * expWeightFactor)
-                    }
-                    if (weight > 0) weight = Loads.roundWeightForEquipment(weight, exEquip?.filterNotNull(), units)
+                    val (weight, estimated) = Loads.prescribedWeight(
+                        rec?.takeIf { truthy(it) }, pattern, compound, exEquip, num(pct1rm),
+                        injModifier, expWeightFactor, bodyWeightKg, sex, units,
+                    )
 
                     @Suppress("UNCHECKED_CAST")
                     val cues = ((ex["cues"] as List<Any?>?)?.takeIf { it.isNotEmpty() } ?: emptyList()).take(3)
@@ -249,9 +250,17 @@ object StrengthPlan {
                         "phase" to "main",
                     )
                     if (truthy(tempo)) step["tempo"] = tempo
-                    if (slotKey != null && slotKey in supersetOf) step["superset_group"] = supersetOf[slotKey]
+                    if (estimated && weight > 0) step["weight_estimated"] = true
                     steps += step
                 }
+                val slotIndex = HashMap<String?, Int>()
+                slotPicks.forEachIndexed { i, (slot, _) -> slotIndex[slot] = i }
+                val preferredPairs = archetype?.supersets.orEmpty()
+                    .filter { it.size >= 2 && it[0] in slotIndex && it[1] in slotIndex }
+                    .map { slotIndex.getValue(it[0]) to slotIndex.getValue(it[1]) }
+                val grouped = Supersets.group(steps, library, preferredPairs)
+                steps.clear()
+                steps += grouped
 
                 if ((sportFamily == "running" || sportFamily == "mountain_biking" || sportFamily == "alpine_skiing") &&
                     splitKey in Slots.LEG_SPLITS && !isDeload

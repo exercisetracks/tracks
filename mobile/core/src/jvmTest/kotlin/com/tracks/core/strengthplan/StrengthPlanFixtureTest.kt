@@ -243,6 +243,8 @@ class StrengthPlanFixtureTest {
                 stretchCandidates = if (v["no_stretches"] as Boolean) null else stretches,
                 experience = v["experience"] as String?,
                 anchorDate = date(v["anchor"]),
+                bodyWeightKg = (v["body_weight"] as Number?)?.toDouble(),
+                sex = v["sex"] as String?,
             )
             val want = v["expect"] as List<*>
             val have = plain(got) as List<*>

@@ -75,4 +75,52 @@ internal object Loads {
             else -> 10.0
         }
     }
+
+    // loads.py's starting_weight, where the strength standards behind these are.
+    private val NOVICE_1RM_BW = mapOf(
+        "squat" to 0.75, "hinge" to 1.0, "push" to 0.6, "pull" to 0.55,
+        "carry" to 0.5, "rotation" to 0.15, "isolation" to 0.2,
+    )
+    private const val FEMALE_LOWER = 0.75
+    private const val FEMALE_UPPER = 0.6
+    private const val PER_HAND = 0.4
+    private const val GUESS_MARGIN = 0.85
+
+    /** A first working weight for a lift never logged, from body weight; the fixed defaults without one. */
+    fun startingWeight(
+        movementPattern: Any?, isCompound: Boolean, equipment: List<String?>?,
+        pct1rm: Double, bodyWeightKg: Double?, sex: String?,
+    ): Double {
+        if (isBodyweightOnly(equipment) || movementPattern == "isometric" || movementPattern == "plyometric") return 0.0
+        if (bodyWeightKg == null || bodyWeightKg <= 0) return conservativeStartingWeight(movementPattern, equipment)
+        var ratio = NOVICE_1RM_BW[movementPattern as? String] ?: 0.3
+        if (!isCompound && movementPattern != "isolation") ratio = minOf(ratio, NOVICE_1RM_BW.getValue("isolation"))
+        if (sex == "female") ratio *= if (movementPattern == "squat" || movementPattern == "hinge") FEMALE_LOWER else FEMALE_UPPER
+        val eq = equipment.orEmpty().toSet()
+        if (("dumbbell" in eq || "kettlebell" in eq) && "barbell" !in eq && "machine" !in eq) ratio *= PER_HAND
+        return bodyWeightKg * ratio * pct1rm * GUESS_MARGIN
+    }
+
+    /**
+     * The working weight for one lift: from its estimated 1RM, else its last
+     * weight, else a starting guess off body weight — and whether it is that
+     * guess. One function for the plan ([StrengthPlan]) and for sessions built
+     * on the spot ([QuickSession]), as generator.py does it inline.
+     */
+    fun prescribedWeight(
+        record: Map<String, Any?>?, pattern: Any?, isCompound: Boolean, equipment: List<String?>?,
+        pct1rm: Double, injuryModifier: Double, experienceFactor: Double,
+        bodyWeightKg: Double?, sex: String?, units: String,
+    ): Pair<Double, Boolean> {
+        val e1rm = (record?.get("estimated_1rm_kg") as? Number)?.toDouble()?.takeIf { it != 0.0 }
+        val last = (record?.get("last_weight_kg") as? Number)?.toDouble()?.takeIf { it != 0.0 }
+        var weight = when {
+            e1rm != null -> trainingWeight(e1rm * injuryModifier, pct1rm).let { if (it < 0.1) 0.0 else it }
+            last != null -> trainingWeight(last * injuryModifier, pct1rm)
+            else -> startingWeight(pattern, isCompound, equipment, pct1rm, bodyWeightKg, sex) * (injuryModifier * experienceFactor)
+        }
+        if (weight > 0) weight = roundWeightForEquipment(weight, equipment?.filterNotNull(), units)
+        return weight to (e1rm == null && last == null)
+    }
 }
+

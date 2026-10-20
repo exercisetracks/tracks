@@ -37,6 +37,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.background
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -167,6 +169,23 @@ private fun StepPane(state: GuidedUiState, vm: GuidedWorkoutViewModel, onQuit: (
                 )
             }
             StepGauges(state)
+
+            // The weight and reps of this set, or of the one just finished
+            // while resting — the watch asks the same after every set.
+            val logIndex = when {
+                step.exercise != null -> state.index
+                step.kind == StepKind.Rest && state.steps.getOrNull(state.index - 1)?.exercise != null -> state.index - 1
+                else -> null
+            }
+            logIndex?.let { i ->
+                state.setAt(i)?.let { set ->
+                    SetLog(
+                        label = if (i == state.index) "This set" else "Last set",
+                        set = set,
+                        onChange = { w, r -> vm.logSet(i, w, r) },
+                    )
+                }
+            }
 
             if (step.seconds == null && state.begun) {
                 // A set has no clock — see [expandStrength]. Saying so beats an
@@ -318,7 +337,7 @@ private fun FinishPane(state: GuidedUiState, vm: GuidedWorkoutViewModel) {
             color = MaterialTheme.colorScheme.onSurface,
         )
         Text(
-            "How hard was it?",
+            "How hard was it? 1 is barely any effort, 10 is everything you had.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -418,3 +437,58 @@ internal fun countdown(seconds: Int): String {
         "$minutes:${rest.toString().padStart(2, '0')}"
     }
 }
+
+/**
+ * The weight on the bar and the reps done, each with a minus and a plus:
+ * prefilled with the plan's, changed in a tap or two between sets. A weight
+ * step is the smallest the gym usually has — 5 lb, or 2.5 kg.
+ */
+@Composable
+private fun SetLog(label: String, set: StrengthTarget, onChange: (Double?, Int?) -> Unit) {
+    val imperial = com.tracks.core.format.Units.imperial
+    val stepKg = if (imperial) 5 / 2.20462 else 2.5
+    val weight = set.weightKg ?: 0.0
+    val reps = set.reps ?: 0
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Stepper(
+                text = if (weight > 0) weightText(weight) else "Bodyweight",
+                onMinus = { onChange((weight - stepKg).coerceAtLeast(0.0).let { if (it < 0.5) 0.0 else it }, set.reps) },
+                onPlus = { onChange(weight + stepKg, set.reps) },
+                modifier = Modifier.weight(1.2f),
+            )
+            Stepper(
+                text = "$reps reps",
+                onMinus = { onChange(set.weightKg, (reps - 1).coerceAtLeast(0)) },
+                onPlus = { onChange(set.weightKg, reps + 1) },
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+@Composable
+private fun Stepper(text: String, onMinus: () -> Unit, onPlus: () -> Unit, modifier: Modifier = Modifier) {
+    Row(
+        modifier
+            .clip(RoundedCornerShape(Tokens.Radius.full))
+            .background(MaterialTheme.colorScheme.surfaceVariant),
+        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+    ) {
+        IconButton(onClick = onMinus) {
+            Text("−", style = MaterialTheme.typography.titleLarge)
+        }
+        Text(
+            text,
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.weight(1f),
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            maxLines = 1,
+        )
+        IconButton(onClick = onPlus) {
+            Text("+", style = MaterialTheme.typography.titleLarge)
+        }
+    }
+}
+

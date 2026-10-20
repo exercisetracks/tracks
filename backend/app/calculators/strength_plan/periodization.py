@@ -118,24 +118,30 @@ _REST_BY_PATTERN: dict[str, int] = {
     "carry":      120,
 }
 
-# Supplementary (tier 1-2) rest — shorter to keep sessions compact (≤25 min)
-_REST_BY_PATTERN_SUPP: dict[str, int] = {
-    "squat":      90,
-    "hinge":      90,
-    "push":       75,
-    "pull":       75,
-    "plyometric": 60,
-    "rotation":   60,
-    "isometric":  45,
-    "isolation":  45,
-    "carry":      75,
-}
+# Rest between sets runs one to three minutes, by how hard the movement is
+# on the whole body: a heavy squat or hinge needs the full three to repeat its
+# performance, a curl or a plank one (de Salles et al. 2009, Sports Med:
+# 3-5 min for heavy multi-joint strength work, 1-2 min for single-joint and
+# lighter loads). The pattern sets the base; very heavy sets (5 reps or fewer)
+# of a compound lift get more, light high-rep sets (12+) less, a single-joint
+# version of a pattern is capped at 90 s, and supplementary tiers take 30 s
+# off to keep their sessions short — never below a minute.
+REST_MIN_S = 60
+REST_MAX_S = 180
 
 
-def _rest_seconds(pattern: str, tier: int) -> int:
+def _rest_seconds(pattern: str, tier: int, is_compound: bool = True, reps: int | None = None) -> int:
+    rest = _REST_BY_PATTERN.get(pattern, 120)
+    if not is_compound and pattern in ("squat", "hinge", "push", "pull"):
+        rest = min(rest, 90)
+    if reps is not None:
+        if reps <= 5 and is_compound:
+            rest += 30
+        elif reps >= 12:
+            rest -= 30
     if tier <= 2:
-        return _REST_BY_PATTERN_SUPP.get(pattern, 75)
-    return _REST_BY_PATTERN.get(pattern, 120)
+        rest -= 30
+    return max(REST_MIN_S, min(REST_MAX_S, rest))
 
 
 def _session_duration_minutes(exercises: list[str], library: dict,

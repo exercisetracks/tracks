@@ -28,6 +28,9 @@ data class StrengthInputs(
     val anchorDate: CivilDate? = null,
     val customs: List<PlanAssembly.CustomWorkout> = emptyList(),
     val recentlyUsed: Set<Any> = emptySet(),
+    /** For a first weight on a lift never logged (Loads.startingWeight). */
+    val bodyWeightKg: Double? = null,
+    val sex: String? = null,
 )
 
 /**
@@ -74,6 +77,8 @@ object PlanInjection {
                 stretchCandidates = stretchCandidates,
                 experience = strength.experience,
                 anchorDate = strength.anchorDate,
+                bodyWeightKg = strength.bodyWeightKg,
+                sex = strength.sex,
             )
             out = PlanAssembly.attachCustomWorkouts(out, generated, strength.customs, strength.recentlyUsed)
         }

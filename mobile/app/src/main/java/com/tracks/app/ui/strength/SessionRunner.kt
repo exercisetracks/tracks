@@ -537,6 +537,8 @@ private fun RpeRow(rpe: Int?, onRpe: (Int?) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(Tokens.Space.s1_5)) {
         Text("SESSION EFFORT", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.primary)
+        Text("How hard was it? 1 is barely any effort, 10 is everything you had.", style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant)
         Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(Tokens.Space.s1_5)) {
             (1..10).forEach { value ->
                 FilterChip(selected = rpe == value, onClick = { onRpe(if (rpe == value) null else value) }, label = { Text("$value") })

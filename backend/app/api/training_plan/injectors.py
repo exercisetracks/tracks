@@ -309,6 +309,9 @@ def _inject_strength_workouts(
         # `created_at` is when this server first saw the row, so a goal made on
         # a phone put its strength blocks in different weeks here and there.
         anchor_date=_goal_anchor(goal),
+        # A lift never logged starts from a guess off body weight (loads.starting_weight).
+        body_weight_kg=us.weight_kg if us else None,
+        sex=us.sex if us else None,
     )
 
     # ── Inject user's custom workouts into the plan ──────────────────────
