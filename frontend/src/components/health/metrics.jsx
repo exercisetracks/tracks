@@ -209,7 +209,7 @@ export function healthGroups({ days, imperial, start, stress, heartRate = [], fo
         info: EXPLAIN.heartRate,
         chart: () => (
           <IntradayHistory days={heartRate} averages={hrAverages} start={start}
-            zones={HEART_RATE_ZONES} lo={30} hi={210} ticks={[30, 60, 100, 140, 170, 210]} id="hr"
+            zones={HEART_RATE_ZONES} lo={30} hi={210} ticks={[30, 60, 100, 140, 170, 210]} id="hr" unit="bpm"
             empty="No heart rate in this window. The watch records it all day while worn."
             label="Heart rate history chart" />
         ),

@@ -26,7 +26,7 @@
 // readings happened to be drawn last. The line breaks wherever a column has no
 // readings: a line drawn across a charging day would say the watch was worn.
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import useWidth from "./useWidth";
 import { STRESS_ZONES, localIso } from "./scales";
 import { dayMs, YEAR_LABEL_DAYS } from "./HistoryCharts";
@@ -125,8 +125,11 @@ export default function StressHistory({ days, averages, start }) {
  * fixed scale (`lo`..`hi`), the bands drawn into it. Everything said about
  * stress above applies.
  */
-export function IntradayHistory({ days, averages, start, zones, lo, hi, ticks, id, empty, label }) {
+export function IntradayHistory({ days, averages, start, zones, lo, hi, ticks, id, empty, label, unit }) {
   const [ref, width] = useWidth(640);
+  // The column under the pointer, if any. Hover answers "what was it then?",
+  // which the bands only answer in general; every other history chart has it.
+  const [hover, setHover] = useState(null);
   const { intraday, samples, span, from } = useMemo(
     () => stressSamples({ days, averages, start }),
     [days, averages, start],
@@ -166,8 +169,28 @@ export function IntradayHistory({ days, averages, start, zones, lo, hi, ticks, i
   const marks = span <= 31 ? Array.from({ length: span - 1 }, (_, i) => GUTTER + ((i + 1) / span) * plotW) : [];
   const labels = dateLabels(from, span, plotW);
 
+  // The nearest column that has a reading: a pointer over a charging day
+  // should still say something rather than nothing.
+  const filled = runs.flat();
+  const nearest = px => {
+    const c = ((px - GUTTER) / plotW) * columns - 0.5;
+    let best = null;
+    for (const col of filled) if (best == null || Math.abs(col.c - c) < Math.abs(best.c - c)) best = col;
+    return best;
+  };
+  const onMove = e => {
+    const px = e.clientX - e.currentTarget.getBoundingClientRect().left;
+    setHover(px >= GUTTER && px <= width ? nearest(px) : null);
+  };
+  const hovered = hover && filled.find(col => col.c === hover.c);
+  // The band the reading falls in: the highest one it has reached.
+  const hoverZone = hovered
+    ? [...zones].sort((p, q) => q.min - p.min).find(z => hovered.level >= z.min)
+    : null;
+
   return (
     <div ref={ref} className="space-y-2">
+      <div className="relative" onMouseMove={onMove} onMouseLeave={() => setHover(null)}>
       <svg width={width} height={TOP + PLOT_H + AXIS_H} role="img" aria-label={label}>
         <g transform={`translate(0 ${TOP})`}>
         <defs>
@@ -216,8 +239,35 @@ export function IntradayHistory({ days, averages, start, zones, lo, hi, ticks, i
         {labels.map(l => (
           <text key={l.x} x={l.x} y={PLOT_H + 14} textAnchor={l.anchor} fontSize={10} fill="#94a3b8">{l.text}</text>
         ))}
+
+        {hovered && (
+          <g pointerEvents="none">
+            <line x1={xOf(hovered.c)} x2={xOf(hovered.c)} y1={0} y2={PLOT_H} stroke="#94a3b8" strokeOpacity={0.7} />
+            <circle cx={xOf(hovered.c)} cy={y(hovered.level)} r={4}
+              fill={hoverZone?.color ?? "#94a3b8"} stroke="white" strokeWidth={1.5} />
+          </g>
+        )}
         </g>
       </svg>
+      {hovered && (
+        <div className="absolute pointer-events-none z-10 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 shadow-lg text-xs"
+          style={{
+            top: 0,
+            // Flips to the left of the line past the middle, so it never runs off the chart.
+            ...(xOf(hovered.c) > width / 2
+              ? { right: width - xOf(hovered.c) + 12 }
+              : { left: xOf(hovered.c) + 12 }),
+          }}>
+          <p className="font-semibold text-slate-700 dark:text-slate-200 mb-0.5">
+            {hoverStamp(from, span, hovered.c / columns + 0.5 / columns, intraday)}
+          </p>
+          <p style={{ color: hoverZone?.color }}>
+            <strong>{Math.round(hovered.level)}</strong>{unit && ` ${unit}`}
+            {hoverZone && <span className="opacity-70"> — {hoverZone.label}</span>}
+          </p>
+        </div>
+      )}
+      </div>
 
       <p className="text-center text-[11px] text-slate-500 dark:text-slate-400">
         {/* Said out loud: a spike is twenty minutes in one, a whole day in the other. */}
@@ -227,6 +277,20 @@ export function IntradayHistory({ days, averages, start, zones, lo, hi, ticks, i
           legend every other history ends in. */}
     </div>
   );
+}
+
+/** The moment a position along the window names: day and time, or just the day for an average. */
+function hoverStamp(from, span, fraction, intraday) {
+  const [y, m, d] = from.split("-").map(Number);
+  const at = Math.min(span * fraction, span - 1e-9);
+  const day = Math.floor(at);
+  const date = new Date(y, m - 1, d + day).toLocaleDateString(undefined,
+    { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+  if (!intraday) return date;
+  const minutes = Math.floor((at - day) * 1440);
+  const time = new Date(2000, 0, 1, Math.floor(minutes / 60), minutes % 60)
+    .toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  return `${date} · ${time}`;
 }
 
 /** Up to five dates under the plot, the ends aligned inwards so they stay inside it. */
