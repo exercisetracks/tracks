@@ -33,6 +33,7 @@ public class DownloadRequestMessage extends GFDIMessage {
         writer.writeByte(this.requestType.ordinal());
         writer.writeShort(this.crcSeed);
         writer.writeInt(this.dataSize);
+        writer.writeByte(0); // flags?
 
         return true;
     }

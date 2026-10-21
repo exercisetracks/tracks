@@ -500,6 +500,7 @@ public class BleNamesResolver {
         mServices.put("0000185d-0000-1000-8000-00805f9b34fb", "Cookware");
         mServices.put("0000185e-0000-1000-8000-00805f9b34fb", "Voice Assistant");
         mServices.put("0000185f-0000-1000-8000-00805f9b34fb", "Generic Voice Assistant");
+        mServices.put("00001860-0000-1000-8000-00805f9b34fb", "Tire Pressure Monitoring System");
 
         // source: https://bitbucket.org/bluetooth-SIG/public/src/main/assigned_numbers/uuids/service_class.yaml
         mServices.put("00001000-0000-1000-8000-00805f9b34fb", "ServiceDiscoveryServerServiceClassID");
@@ -607,6 +608,7 @@ public class BleNamesResolver {
         mServices.put("6e40fff0-b5a3-f393-e0a9-e50e24dcca9e", "(Propr: NUS - Nordic UART Service)");
         mServices.put("de5bf728-d711-4e47-af26-65e3012a5dc7", "(Propr: Yawell Serial)");
         mServices.put("0000ae00-0000-1000-8000-00805f9b34fb", "(Propr: Sinilink-APP)");
+        mServices.put("0000ff10-0000-1000-8000-00805f9b34fb", "(Propr: 8BitDo)");
         mServices.put("65970000-4bda-4c1e-af4b-551c4cf74769", "(Propr: Victron)");
 
         // source https://bitbucket.org/bluetooth-SIG/public/src/main/assigned_numbers/uuids/characteristic_uuids.yaml
@@ -1113,7 +1115,14 @@ public class BleNamesResolver {
         mCharacteristics.put("00002c37-0000-1000-8000-00805f9b34fb", "Voice Assistant Supported Languages");
         mCharacteristics.put("00002c38-0000-1000-8000-00805f9b34fb", "Voice Assistant Supported Features");
         mCharacteristics.put("00002c39-0000-1000-8000-00805f9b34fb", "HID SCI Mode");
-        mCharacteristics.put("00002c3A-0000-1000-8000-00805f9b34fb", "HID SCI Information");
+        mCharacteristics.put("00002c3a-0000-1000-8000-00805f9b34fb", "HID SCI Information");
+        mCharacteristics.put("00002c3b-0000-1000-8000-00805f9b34fb", "Tire Pressure");
+        mCharacteristics.put("00002c3c-0000-1000-8000-00805f9b34fb", "Tire Temperature");
+        mCharacteristics.put("00002c3d-0000-1000-8000-00805f9b34fb", "Tire Acceleration");
+        mCharacteristics.put("00002c3e-0000-1000-8000-00805f9b34fb", "TPMS Properties");
+        mCharacteristics.put("00002c3f-0000-1000-8000-00805f9b34fb", "TPMS Duty Cycle");
+        mCharacteristics.put("00002c40-0000-1000-8000-00805f9b34fb", "TPMS Position");
+        mCharacteristics.put("00002c41-0000-1000-8000-00805f9b34fb", "TPMS Signing Key");
 
         mCharacteristics.put("14702856-620a-3973-7c78-9cfff0876abd", "(Propr: HPLUS Control)");
         mCharacteristics.put("14702853-620a-3973-7c78-9cfff0876abd", "(Propr: HPLUS Measurements)");
@@ -1206,6 +1215,7 @@ public class BleNamesResolver {
         mCharacteristics.put("de5bf72a-d711-4e47-af26-65e3012a5dc7", "(Propr: Yawell Write)");
         mCharacteristics.put("0000ae04-0000-1000-8000-00805f9b34fb", "(Propr: Sinilink-APP RX)");
         mCharacteristics.put("0000ae10-0000-1000-8000-00805f9b34fb", "(Propr: Sinilink-APP TX)");
+        mCharacteristics.put("0000ff13-0000-1000-8000-00805f9b34fb", "(Propr: 8BitDo Controller)");
         mCharacteristics.put("6597ffff-4bda-4c1e-af4b-551c4cf74769", "(Propr: Victron Keep-alive)");
         mCharacteristics.put("6597eeff-4bda-4c1e-af4b-551c4cf74769", "(Propr: Victron Consumed Ah)");
         mCharacteristics.put("6597ed8e-4bda-4c1e-af4b-551c4cf74769", "(Propr: Victron Power)");

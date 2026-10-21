@@ -9,15 +9,15 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
-import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit.fieldDefinitions.FieldDefinitionWeatherReport
-import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit.messages.FitWeather
+import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit.enums.WeatherReport as FitWeatherReport
+import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit.messages.FitWeatherConditions
 
 /**
  * The encoder is worth testing precisely because its two hardest properties are
- * invisible: temperatures leave in Kelvin even though the wire carries Celsius,
- * and several fields are deliberately null so the record *definition* still
- * carries them. Both are silent when wrong — a watch face reading 273 degrees
- * too cold, or a watch quietly rejecting a record.
+ * invisible: temperatures are Celsius on the wire, which a broadcast's Kelvin
+ * has to be turned back into, and several fields are deliberately null so the
+ * record *definition* still carries them. Both are silent when wrong — a
+ * watch face 273 degrees off, or a watch quietly rejecting a record.
  */
 class GarminWeatherEncoderTest {
 
@@ -41,40 +41,41 @@ class GarminWeatherEncoderTest {
     )
 
     @Test
-    fun `temperatures are encoded as kelvin`() {
+    fun `temperatures go to the wire in celsius`() {
         val messages = GarminWeatherEncoder.encode(report(currentC = 12))
         val current = messages.recordDataList
-            .filterIsInstance<FitWeather>()
-            .first { it.weatherReport == FieldDefinitionWeatherReport.Type.current }
+            .filterIsInstance<FitWeatherConditions>()
+            .first { it.weatherReport == FitWeatherReport.current }
 
-        // 12 C is 285 K. The field definition subtracts 273 on the way to the
-        // wire, so anything that looks like Celsius here is a 273-degree bug.
-        assertEquals(285, current.temperature)
-        assertEquals(280, current.lowTemperature)
-        assertEquals(291, current.highTemperature)
+        // Celsius as it is (the field is signed 8-bit Celsius since
+        // Gadgetbridge 0.94); a Kelvin value here is a 273-degree bug.
+        assertEquals(12, current.temperature)
+        assertEquals(7, current.lowTemperature)
+        assertEquals(18, current.highTemperature)
     }
 
     @Test
     fun `a forecast survives the broadcast round trip unchanged`() {
         // What the wire actually does: a broadcast arrives in Kelvin, is parsed
-        // to Celsius, and goes back out to the watch in Kelvin. Anything that
-        // breaks that symmetry shifts every temperature by 273.
+        // to Celsius, and goes to the watch as Kelvin minus 273, the same
+        // integer conversion Gadgetbridge makes (its #4313). Anything that
+        // breaks that shifts every temperature by 273.
         val kelvin = 285
         val parsed = WeatherBroadcast.kelvinToCelsius(kelvin)
         val encoded = GarminWeatherEncoder.encode(report(currentC = parsed))
             .recordDataList
-            .filterIsInstance<FitWeather>()
-            .first { it.weatherReport == FieldDefinitionWeatherReport.Type.current }
+            .filterIsInstance<FitWeatherConditions>()
+            .first { it.weatherReport == FitWeatherReport.current }
 
-        assertEquals(kelvin, encoded.temperature)
+        assertEquals(kelvin - 273, encoded.temperature)
     }
 
     @Test
     fun `current conditions carry the definition fields the broadcast cannot fill`() {
         val messages = GarminWeatherEncoder.encode(report())
         val current = messages.recordDataList
-            .filterIsInstance<FitWeather>()
-            .first { it.weatherReport == FieldDefinitionWeatherReport.Type.current }
+            .filterIsInstance<FitWeatherConditions>()
+            .first { it.weatherReport == FitWeatherReport.current }
 
         // Present in the definition, empty in the data. getFieldByNumber
         // returning null is the correct outcome; the point is that encoding
@@ -92,8 +93,8 @@ class GarminWeatherEncoderTest {
         val messages = GarminWeatherEncoder.encode(report(forecasts = week))
 
         val daily = messages.recordDataList
-            .filterIsInstance<FitWeather>()
-            .filter { it.weatherReport == FieldDefinitionWeatherReport.Type.daily_forecast }
+            .filterIsInstance<FitWeatherConditions>()
+            .filter { it.weatherReport == FitWeatherReport.daily_forecast }
 
         // Today plus four. A watch shows five days; sending seven wastes radio
         // time on records it will discard.
@@ -103,10 +104,10 @@ class GarminWeatherEncoderTest {
     @Test
     fun `an empty forecast still produces today`() {
         val messages = GarminWeatherEncoder.encode(report(forecasts = emptyList()))
-        val types = messages.recordDataList.filterIsInstance<FitWeather>().map { it.weatherReport }
+        val types = messages.recordDataList.filterIsInstance<FitWeatherConditions>().map { it.weatherReport }
 
-        assertTrue(FieldDefinitionWeatherReport.Type.current in types)
-        assertTrue(FieldDefinitionWeatherReport.Type.daily_forecast in types)
+        assertTrue(FitWeatherReport.current in types)
+        assertTrue(FitWeatherReport.daily_forecast in types)
         assertNotNull(messages.definitions.firstOrNull())
     }
 

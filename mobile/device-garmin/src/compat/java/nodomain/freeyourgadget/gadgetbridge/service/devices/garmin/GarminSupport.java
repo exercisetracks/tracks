@@ -58,8 +58,9 @@ import com.tracks.device.garmin.live.LiveHeartRate;
 import nodomain.freeyourgadget.gadgetbridge.proto.garmin.GdiFileSyncService;
 import com.google.protobuf.ByteString;
 import nodomain.freeyourgadget.gadgetbridge.proto.garmin.GdiInstalledAppsService;
-import nodomain.freeyourgadget.gadgetbridge.proto.garmin.GdiSettingsService;
-import nodomain.freeyourgadget.gadgetbridge.proto.garmin.GdiSmartProto;
+import nodomain.freeyourgadget.gadgetbridge.proto.garmin.GdiSettingsService.InitRequest;
+import nodomain.freeyourgadget.gadgetbridge.proto.garmin.GdiSettingsService.SettingsService;
+import nodomain.freeyourgadget.gadgetbridge.proto.garmin.GdiSmartProto.Smart;
 import nodomain.freeyourgadget.gadgetbridge.service.btle.AbstractBTLESingleDeviceSupport;
 import nodomain.freeyourgadget.gadgetbridge.service.btle.TransactionBuilder;
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.communicator.ICommunicator;
@@ -130,6 +131,8 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
      * iterating this list at the time.
      */
     private final List<MessageHandler> messageHandlers = new CopyOnWriteArrayList<>();
+    /** What the watch said it takes per message (MaxPacketSizeDeviceEvent); upstream's default until then. */
+    private int maxPacketSize = 400;
 
     private final List<FileType> supportedFileTypes = new ArrayList<>();
 
@@ -379,6 +382,15 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
 
         /** Every queued file has been pulled (or skipped). */
         void onSyncFinished();
+
+        /**
+         * Someone pressed sync on the watch itself (file sync's
+         * start_sync_notification, handled from Gadgetbridge 0.94). Tracks
+         * runs its ordinary sync for it (WatchManager), rather than
+         * Gadgetbridge's fetch, which would pull outside the sync runner.
+         */
+        default void onWatchRequestedSync() {
+        }
 
         /**
          * The watch began a new GFDI session on this link, so everything the
@@ -839,7 +851,8 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
         }
 
         if (deviceEvent instanceof MaxPacketSizeDeviceEvent) {
-            fileTransferHandler.setMaxPacketSize(((MaxPacketSizeDeviceEvent) deviceEvent).getMaxPacketSize());
+            maxPacketSize = ((MaxPacketSizeDeviceEvent) deviceEvent).getMaxPacketSize();
+            fileTransferHandler.setMaxPacketSize(maxPacketSize);
             return;
         }
 
@@ -871,7 +884,7 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
             // The watch is about to stream FIT records and has just told us
             // their shape. The handler unregisters itself once the stream ends.
             messageHandlers.add(new FitLocalMessageHandler(
-                    this, ((IncomingFitDefinitionDeviceEvent) deviceEvent).getRecordDefinitions()));
+                    this, ((IncomingFitDefinitionDeviceEvent) deviceEvent).getRecordDefinitions(), maxPacketSize));
             return;
         }
 
@@ -997,6 +1010,10 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
         }
         watchReadySignalled = true;
         bondIfUnbonded();
+        subscribeLivePositions();
+        // Whether it is recording now, for the banner and the map, rather
+        // than at the first sync: a phone that connects mid-run says so at once.
+        requestActivityStatus();
         startExploreSync();
         final SyncListener listener = syncListener;
         if (listener != null) {
@@ -1026,7 +1043,7 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
     }
 
     private void enableBatteryLevelUpdate() {
-        sendProtobufRequest("enable battery updates", GdiSmartProto.Smart.newBuilder()
+        sendProtobufRequest("enable battery updates", Smart.newBuilder()
                 .setDeviceStatusService(
                         GdiDeviceStatus.DeviceStatusService.newBuilder()
                                 .setRemoteDeviceBatteryStatusRequest(
@@ -1044,11 +1061,11 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
         final String language = Locale.getDefault().getLanguage();
         final String country = Locale.getDefault().getCountry();
         final String localeString = language + "_" + country.toUpperCase(Locale.ROOT);
-        sendProtobufRequest("init realtime settings", GdiSmartProto.Smart.newBuilder()
+        sendProtobufRequest("init realtime settings", Smart.newBuilder()
                 .setSettingsService(
-                        GdiSettingsService.SettingsService.newBuilder()
+                        SettingsService.newBuilder()
                                 .setInitRequest(
-                                        GdiSettingsService.InitRequest.newBuilder()
+                                        InitRequest.newBuilder()
                                                 .setLanguage(localeString.length() == 5 ? localeString : "en_US")
                                                 .setRegion("us")))
                 .build());
@@ -1120,7 +1137,7 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
         fileListRequestedThisRun = true;
         awaitingFileList = true;
         armFileListWatchdog();
-        sendProtobufRequest("request file list", GdiSmartProto.Smart.newBuilder()
+        sendProtobufRequest("request file list", Smart.newBuilder()
                 .setFileSyncService(
                         protocolBufferHandler.getFileSyncServiceHandler().requestFileList())
                 .build());
@@ -1207,7 +1224,7 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
                     continue;
                 }
                 armDownloadWatchdog("file " + label);
-                sendProtobufRequest("request file", GdiSmartProto.Smart.newBuilder()
+                sendProtobufRequest("request file", Smart.newBuilder()
                         .setFileSyncService(
                                 protocolBufferHandler.getFileSyncServiceHandler().requestFile(syncFile))
                         .build());
@@ -1568,7 +1585,7 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
             return;
         }
 
-        sendProtobufRequest(taskName, GdiSmartProto.Smart.newBuilder()
+        sendProtobufRequest(taskName, Smart.newBuilder()
                 .setFileSyncService(protocolBufferHandler.getFileSyncServiceHandler()
                         .uploadRequest(typeName, contents.length, transferHandle -> {
                             if (transferHandle < 0) {
@@ -1841,8 +1858,8 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
         edit.apply();
 
         final CannedMessagesSpec spec = new CannedMessagesSpec();
-        spec.type = CannedMessagesSpec.TYPE_NEWSMS;
-        spec.cannedMessages = java.util.Arrays.copyOf(replies, Math.min(replies.length, MAX_QUICK_REPLIES));
+        spec.setType(CannedMessagesSpec.TYPE_NEWSMS);
+        spec.setCannedMessages(java.util.Arrays.copyOf(replies, Math.min(replies.length, MAX_QUICK_REPLIES)));
         sendOutgoingMessage("quick replies", protocolBufferHandler.setCannedMessages(spec));
     }
 
@@ -1905,7 +1922,7 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
             }
         }
 
-        final FitLocalMessageHandler handler = new FitLocalMessageHandler(this, weatherMessages);
+        final FitLocalMessageHandler handler = new FitLocalMessageHandler(this, weatherMessages, maxPacketSize);
         messageHandlers.add(handler);
         sendOutgoingMessage("send weather", handler.init());
     }
@@ -2044,7 +2061,8 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
      *
      * <p>The watch names a type once and then omits it. In a listing of 357
      * files, the first {@code SPORTS} entry carries {@code type.name = "SPORTS"}
-     * alongside {@code type.code}, and every {@code SPORTS} entry after it
+     * alongside {@code type.name_id} (field 3; Gadgetbridge called it
+     * {@code code} until 0.94), and every {@code SPORTS} entry after it
      * carries the code alone — the name is stated once and referred to by number
      * thereafter. Measured on a fenix 6X: 39 of the first 43 files pulled had no
      * type name, and landed in a directory called UNKNOWN.
@@ -2065,10 +2083,10 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
      * own doc comment.
      */
     private GdiFileSyncService.File nameType(final GdiFileSyncService.File file) {
-        if (!file.hasType() || !file.getType().hasCode()) {
+        if (!file.hasType() || !file.getType().hasNameId()) {
             return file;
         }
-        final int code = file.getType().getCode();
+        final int code = file.getType().getNameId();
         if (file.getType().hasName() && !file.getType().getName().isEmpty()) {
             final String name = file.getType().getName();
             if (!name.equals(typeNamesByCode.put(code, name))) {
@@ -2109,12 +2127,12 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
     public String resolveTypeName(final GdiFileSyncService.FileType type) {
         if (type.hasName() && !type.getName().isEmpty()) {
             final String name = type.getName();
-            if (type.hasCode() && !name.equals(typeNamesByCode.put(type.getCode(), name))) {
-                persistTypeName(type.getCode(), name);
+            if (type.hasNameId() && !name.equals(typeNamesByCode.put(type.getNameId(), name))) {
+                persistTypeName(type.getNameId(), name);
             }
             return name;
         }
-        return type.hasCode() ? typeNamesByCode.get(type.getCode()) : null;
+        return type.hasNameId() ? typeNamesByCode.get(type.getNameId()) : null;
     }
 
     /**
@@ -2698,7 +2716,7 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
             return;
         }
         sendProtobufRequest("mark file as synced",
-                GdiSmartProto.Smart.newBuilder().setFileSyncService(command).build());
+                Smart.newBuilder().setFileSyncService(command).build());
     }
 
     /** Stable identity for a newer-protocol file, independent of the local filename. */
@@ -2941,7 +2959,7 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
      * delete.
      */
     public void requestInstalledApps(final GdiInstalledAppsService.InstalledAppsService.AppType type) {
-        sendProtobufRequest("list installed apps", GdiSmartProto.Smart.newBuilder()
+        sendProtobufRequest("list installed apps", Smart.newBuilder()
                 .setInstalledAppsService(GdiInstalledAppsService.InstalledAppsService.newBuilder()
                         .setGetInstalledAppsRequest(
                                 GdiInstalledAppsService.InstalledAppsService.GetInstalledAppsRequest.newBuilder()
@@ -2952,7 +2970,7 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
     /** Delete one installed app, named by the id and type the watch reported. */
     public void deleteInstalledApp(final byte[] storeAppId,
                                    final GdiInstalledAppsService.InstalledAppsService.AppType type) {
-        sendProtobufRequest("delete app", GdiSmartProto.Smart.newBuilder()
+        sendProtobufRequest("delete app", Smart.newBuilder()
                 .setInstalledAppsService(GdiInstalledAppsService.InstalledAppsService.newBuilder()
                         .setDeleteAppRequest(
                                 GdiInstalledAppsService.InstalledAppsService.DeleteAppRequest.newBuilder()
@@ -3054,9 +3072,93 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
         LiveHeartRate.INSTANCE.onReading(bpm);
     }
 
+    /**
+     * Ask the watch for its position once a second while it records, as
+     * Garmin Explore does on every connection (capture c, 90.1 s and 90.5 s,
+     * docs/garmin-explore-sync.md "The live activity"): a request with
+     * nothing enabled, then one for REALTIME_TRACKING with Explore's own
+     * values. The watch answers OK and from then on sends
+     * {@code LocationUpdatedNotification}s -- only to a client that asked:
+     * capture c's 33 reports all went to Explore, none to Connect on the same
+     * watch. Without this the phone's live track moved only when an Explore
+     * sync read the line so far.
+     */
+    private void subscribeLivePositions() {
+        for (final Smart request : liveTrackingRequests()) {
+            sendProtobufRequest("live position subscription", request);
+        }
+    }
+
+    /** The two requests of {@link #subscribeLivePositions}, as sent. Pure, for tests. */
+    static List<Smart> liveTrackingRequests() {
+        final Smart off = Smart.newBuilder()
+                .setCoreService(GdiCore.CoreService.newBuilder()
+                        .setLocationUpdatedSetEnabledRequest(
+                                GdiCore.CoreService.LocationUpdatedSetEnabledRequest.newBuilder()
+                                        .setEnabled(false)))
+                .build();
+        final Smart on = Smart.newBuilder()
+                .setCoreService(GdiCore.CoreService.newBuilder()
+                        .setLocationUpdatedSetEnabledRequest(
+                                GdiCore.CoreService.LocationUpdatedSetEnabledRequest.newBuilder()
+                                        .setEnabled(true)
+                                        .addRequests(GdiCore.CoreService.Request.newBuilder()
+                                                .setRequested(GdiCore.CoreService.DataType.REALTIME_TRACKING)
+                                                // Explore's values; what they bound is not known.
+                                                // Reports came once a second regardless.
+                                                .setMinUpdateThreshold(5)
+                                                .setDistanceThreshold(1.0f))))
+                .build();
+        return java.util.Arrays.asList(off, on);
+    }
+
+    /** The watch asked for a sync from its own menu; see {@link SyncListener#onWatchRequestedSync}. */
+    public void onWatchRequestedSync() {
+        LOG.info("The watch asked for a sync");
+        final SyncListener listener = syncListener;
+        if (listener != null) {
+            try {
+                listener.onWatchRequestedSync();
+            } catch (final Exception e) {
+                LOG.error("Sync listener failed on a watch-requested sync", e);
+            }
+        }
+    }
+
+    /**
+     * The watch's directory listed no FIT files at all. Upstream (0.95) takes
+     * that as a device whose files only come over classic Bluetooth (RFCOMM),
+     * such as an Edge 520 Plus, and switches to it. Tracks has no RFCOMM
+     * transport, so this is said and nothing else changes.
+     */
+    public void onDirectoryWithoutFitFiles() {
+        LOG.info("The watch's directory lists no FIT files; RFCOMM transfer is not supported here");
+    }
+
+    /**
+     * Bring the watch's hydration widget up to date: a push notification
+     * addressed to the widget, carrying {@code payload} (see
+     * com.tracks.device.garmin.WatchHydration#updatePayload). Its id is the
+     * time and a random suffix, the shape Connect uses; the watch acknowledges
+     * it by id.
+     */
+    public void pushHydration(final String payload) {
+        final String id = String.format(Locale.ROOT, "%d-%08x",
+                System.currentTimeMillis(), new java.util.Random().nextInt());
+        sendProtobufRequest("hydration update", Smart.newBuilder()
+                .setPushNotificationService(
+                        nodomain.freeyourgadget.gadgetbridge.proto.garmin.GdiSmartProto.PushNotificationService.newBuilder()
+                                .setPushNotification(
+                                        nodomain.freeyourgadget.gadgetbridge.proto.garmin.GdiSmartProto.PushNotificationService.PushNotification.newBuilder()
+                                                .setId(id)
+                                                .setAppId(com.tracks.device.garmin.WatchHydration.APP_ID)
+                                                .setPayload(payload)))
+                .build());
+    }
+
     /** Ask whether an activity is recording; answered in {@link #onActivityStatus}. */
     public void requestActivityStatus() {
-        sendProtobufRequest("activity status", GdiSmartProto.Smart.newBuilder()
+        sendProtobufRequest("activity status", Smart.newBuilder()
                 .setDeviceStatusService(GdiDeviceStatus.DeviceStatusService.newBuilder()
                         .setActivityStatusRequest(
                                 GdiDeviceStatus.DeviceStatusService.ActivityStatusRequest.newBuilder()))
@@ -3115,7 +3217,7 @@ public class GarminSupport extends AbstractBTLESingleDeviceSupport implements IC
      * over protobuf carried inside GFDI rather than as native GFDI messages.
      * The vendored handlers build the payload; this puts it on the wire.
      */
-    public void sendProtobufRequest(final String taskName, final GdiSmartProto.Smart payload) {
+    public void sendProtobufRequest(final String taskName, final Smart payload) {
         sendOutgoingMessage(taskName, protocolBufferHandler.prepareProtobufRequest(payload));
     }
 

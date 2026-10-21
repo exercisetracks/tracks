@@ -79,11 +79,17 @@ object LiveActivity {
         )
     }
 
-    /** The watch's once-a-second reports. Appended in time order; repeats are dropped. */
+    /**
+     * The watch's once-a-second reports. Appended in time order; repeats are
+     * dropped. Reports after a stop are a new recording, the stop having been
+     * heard (onStatus) and the start not: the watch says nothing when one
+     * begins, it just starts reporting.
+     */
     fun onPositions(points: List<Point>) = synchronized(this) {
         if (points.isEmpty()) return
         val prev = _track.value
-        val merged = ArrayList(prev.points)
+        val fresh = prev.status == Status.OFF || prev.status == Status.STOPPED
+        val merged = if (fresh) ArrayList() else ArrayList(prev.points)
         for (p in points) {
             val last = merged.lastOrNull()
             if (last != null && last.lat == p.lat && last.lng == p.lng) continue

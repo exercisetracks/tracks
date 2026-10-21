@@ -86,6 +86,13 @@ interface DeviceIntegration {
     val findPhone: Flow<FindPhone>
 
     /**
+     * Someone pressed sync on the device itself and wants it to happen now,
+     * rather than at the phone's next scheduled run. Device-to-phone like
+     * [findPhone]. Empty for a device that cannot ask.
+     */
+    val syncRequests: Flow<Unit> get() = kotlinx.coroutines.flow.emptyFlow()
+
+    /**
      * The user acting on a relayed notification from the device — clearing it,
      * replying, or pressing one of its buttons. Empty when
      * [DeviceCapabilities.notificationActions] is false.

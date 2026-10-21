@@ -52,6 +52,10 @@ public class FileTransferDataMessage extends GFDIMessage {
 
     @Override
     protected boolean generateOutgoing() {
+        if (!sendOutgoing) {
+            // incoming chunks can exceed the response buffer, and are never sent back
+            return false;
+        }
         final MessageWriter writer = new MessageWriter(response);
         writer.writeShort(0); // packet size will be filled below
         writer.writeShort(garminMessage.getId());
@@ -59,7 +63,7 @@ public class FileTransferDataMessage extends GFDIMessage {
         writer.writeShort(crc);
         writer.writeInt(dataOffset);
         writer.writeBytes(message);
-        return sendOutgoing;
+        return true;
     }
 
 }

@@ -1,0 +1,16 @@
+diff --git a/mobile/device-garmin/src/main/proto/garmin/gdi_core.proto b/mobile/device-garmin/src/main/proto/garmin/gdi_core.proto
+index 2098651..ebbffa1 100644
+--- a/mobile/device-garmin/src/main/proto/garmin/gdi_core.proto
++++ b/mobile/device-garmin/src/main/proto/garmin/gdi_core.proto
+@@ -68,6 +68,11 @@ message CoreService {
+         repeated Request requests = 2;
+     }
+ 
++    // PATCHED FOR TRACKS (vendor/patches/0018-proto-location-request-threshold.patch):
++    // min_update_threshold is a varint, not a float. Garmin Explore subscribes
++    // to the watch's live position with {REALTIME_TRACKING, 5, 1.0f} and the
++    // 5 goes on the wire as a varint (capture c, 2026-10-12); upstream
++    // Gadgetbridge made the same change after 0.93.0.
+     message Request {
+         optional DataType requested = 1;
+         optional uint32 min_update_threshold = 2;

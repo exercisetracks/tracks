@@ -232,6 +232,17 @@ class LocalSources(
         createFields(entity, values.mapValues { LocalJson.of(it.value) }, keyValues)
     }
 
+    /**
+     * A number from the row of [entity] whose [keyField] is [key] — a day's
+     * `hydration_ml`, say — or null when there is no such row or field. For
+     * `:app`, as [createValues] is.
+     */
+    suspend fun numberOf(entity: String, keyField: String, key: String, field: String): Double? = io {
+        replica.rows(entity).firstOrNull { it.str(keyField) == key }
+            ?.fields?.get(field)
+            ?.let { (it as? kotlinx.serialization.json.JsonPrimitive)?.content?.toDoubleOrNull() }
+    }
+
     /** Set fields of one row from plain values. */
     suspend fun setValues(entity: String, id: Int, values: Map<String, Any?>) = io {
         editFields(entity, id, values.mapValues { LocalJson.of(it.value) })

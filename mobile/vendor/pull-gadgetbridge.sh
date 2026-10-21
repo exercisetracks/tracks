@@ -84,7 +84,10 @@ for path in "${includes[@]}"; do
     cp -r "$SRC_JAVA/$path" "$PKG_ROOT/$(dirname "$path")/"
 done
 
-SRC_PROTO="$SRC/app/src/main/proto"
+# Under app/ until 0.93; from 0.94 in their own module (check-vendored.py
+# makes the same choice).
+SRC_PROTO="$SRC/GBProtobufGenerator/src/main/proto"
+[[ -d "$SRC_PROTO" ]] || SRC_PROTO="$SRC/app/src/main/proto"
 for path in "${proto_includes[@]}"; do
     if [[ ! -e "$SRC_PROTO/$path" ]]; then
         echo "error: manifest lists proto '$path', which upstream no longer has." >&2

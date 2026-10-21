@@ -12,15 +12,15 @@ public class FilterMessage extends GFDIMessage {
         final MessageWriter writer = new MessageWriter(response);
         writer.writeShort(0); // packet size will be filled below
         writer.writeShort(this.garminMessage.getId());
-        writer.writeByte(FilterType.UNK_3.ordinal());
+        writer.writeByte(FilterType.ONLY_NEW_3.ordinal());
 
         return true;
     }
 
     public enum FilterType {
-        NO_0,
+        ALL_FILES_0,
         UNK_1,
         UNK_2,
-        UNK_3
+        ONLY_NEW_3
     }
 }

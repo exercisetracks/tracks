@@ -44,14 +44,27 @@ PROTO = REPO / "mobile/device-garmin/src/main/proto"
 LOCK = HERE / "gadgetbridge.lock"
 
 
-def vendored_files() -> list[tuple[Path, str]]:
+def proto_root(upstream: Path | None) -> str:
+    """Where a checkout keeps its .proto files.
+
+    Under app/ until 0.93; from 0.94 in their own module, GBProtobufGenerator,
+    so the release a checkout is at decides.
+    """
+    moved = "GBProtobufGenerator/src/main/proto"
+    if upstream is not None and (upstream / moved).is_dir():
+        return moved
+    return "app/src/main/proto"
+
+
+def vendored_files(upstream: Path | None = None) -> list[tuple[Path, str]]:
     """(path in this repo, path in the Gadgetbridge checkout) for every vendored file."""
     out = []
     for p in sorted((JAVA / "nodomain").rglob("*")):
         if p.suffix in (".java", ".kt"):
             out.append((p, "app/src/main/java/" + str(p.relative_to(JAVA))))
+    protos = proto_root(upstream)
     for p in sorted(PROTO.rglob("*.proto")):
-        out.append((p, "app/src/main/proto/" + str(p.relative_to(PROTO))))
+        out.append((p, protos + "/" + str(p.relative_to(PROTO))))
     return out
 
 
@@ -89,7 +102,7 @@ def main() -> int:
         return 2
     upstream = Path(args[0])
 
-    files = vendored_files()
+    files = vendored_files(upstream)
     with tempfile.TemporaryDirectory() as tmp:
         scratch = Path(tmp)
         missing = []

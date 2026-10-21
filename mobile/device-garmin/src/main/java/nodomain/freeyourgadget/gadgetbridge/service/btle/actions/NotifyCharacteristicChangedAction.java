@@ -84,6 +84,6 @@ public class NotifyCharacteristicChangedAction extends BtLEServerAction {
     @Override
     public String toString() {
         String uuid = characteristic == null ? "(null)" : characteristic.getUuid().toString();
-        return super.toString() + " " + uuid + " - " + GB.hexdump(value);
+        return super.toString() + " " + uuid + " >@ " + GB.hexdump(value);
     }
 }

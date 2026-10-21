@@ -11,9 +11,9 @@ message NotificationsService {
 
 message PictureRequest {
   optional uint32 notification_id = 1;
-  optional uint32 unk2 = 2; // 0
+  optional uint32 index = 2; // 0
   optional PictureParameters parameters = 3;
-  // unk4 "\001"
+  repeated PictureType picture_type = 4;
 }
 
 message PictureParameters {
@@ -24,14 +24,19 @@ message PictureParameters {
 }
 
 message PictureResponse {
-  optional uint32 unk1 = 1; // 1
+  optional uint32 status = 1; // 1: OK
   optional uint32 notification_id = 2;
-  optional uint32 unk3 = 3; // 0
-  optional uint32 unk4 = 4; // 1
+  optional uint32 index = 3; // 0
+  optional PictureType picture_type = 4;
   optional DataTransferItem dataTransferItem = 5;
 }
 
 message DataTransferItem {
   optional uint32 id = 1;
   optional uint32 size = 2;
+}
+
+enum PictureType {
+  PNG = 0;
+  JPEG = 1;
 }

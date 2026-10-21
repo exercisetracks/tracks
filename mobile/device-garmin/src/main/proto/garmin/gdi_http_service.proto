@@ -39,6 +39,7 @@ message HttpService {
   optional WebResponse webResponse = 2;
   optional RawRequest rawRequest = 5;
   optional RawResponse rawResponse = 6;
+  optional ShowURLNotification showURLNotification = 11;
 
   message WebRequest {
     required string url = 1;
@@ -61,12 +62,23 @@ message HttpService {
     optional ResponseType responseType = 6;
   }
 
+  message MultiPartForm {
+    optional string name = 1;
+    optional string filename = 2;
+    optional string content_type = 3;
+    optional DataTransferItem xferData = 5;
+  }
+
   message RawRequest {
     required string url = 1;
     optional Method method = 3;
+    optional string body = 4;
     repeated Header header = 5;
     optional bool useDataXfer = 6;
     optional bytes rawBody = 7;
+    repeated MultiPartForm multiPartForms = 8;
+    optional uint32 conenctionTimeout = 9;
+    optional uint32 readTimeout = 10;
   }
 
   message RawResponse {
@@ -85,5 +97,11 @@ message HttpService {
   message Header {
     required string key = 1;
     required string value = 2;
+  }
+
+  message ShowURLNotification {
+    required string url = 1;
+    optional bytes parameters = 2;
+    optional string app = 3;
   }
 }

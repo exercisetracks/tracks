@@ -3,14 +3,15 @@ package nodomain.freeyourgadget.gadgetbridge.util;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
-import java.text.SimpleDateFormat;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.Locale;
 
 public class GBToStringBuilder extends ToStringBuilder {
     public static final GBToStringStyle STYLE = new GBToStringStyle();
 
-    private static final SimpleDateFormat SDF = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.ROOT);
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS", Locale.ROOT);
 
     public GBToStringBuilder(final Object object) {
         super(object, STYLE);
@@ -40,7 +41,8 @@ public class GBToStringBuilder extends ToStringBuilder {
             // omit nulls
             if (value != null) {
                 if (value instanceof Date) {
-                    super.append(buffer, fieldName, SDF.format(value), fullDetail);
+                    final String formatted = DATE_FORMATTER.format(((Date) value).toInstant().atZone(ZoneId.systemDefault()));
+                    super.append(buffer, fieldName, formatted, fullDetail);
                 } else {
                     super.append(buffer, fieldName, value, fullDetail);
                 }

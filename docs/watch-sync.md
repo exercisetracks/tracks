@@ -63,7 +63,7 @@ handshake picks it, never which class happens to be in use.
 | Courses and saved places | Explore sync | FIT files over legacy (`CourseFitEncoder`, `LocationsFitEncoder`), if the handshake does not declare `EXPLORE_SYNC` | `ExploreSession`; fallback in `WatchManager.pushMapItems` | Explore on fenix 6X (which declares it, bit 69). The file fallback has **not** been run on an older watch. |
 | Courses/places listed by the server | never pushed from the list: the phone builds its own (avoids duplicates) | none | `pushFromServer` filter | fenix 6X |
 | Notifications, calls, weather, music, find-phone | GFDI messages (Gadgetbridge handlers) | none | `GarminSupport`, `GarminIntegration` | fenix 6X |
-| Live heart rate, activity status, live track | Realtime service, protobuf | none | patches 0015, 0016, 0017 | not yet on a watch |
+| Live heart rate, activity status, live track | Realtime service, protobuf; the live track by subscription (`subscribeLivePositions`) | none | patches 0015–0018 | not yet on a watch |
 
 Every path needs a reason in its own comment, and every fallback needs a
 trigger the phone can detect. A path that is "probably needed by some watch" is

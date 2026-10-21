@@ -8,6 +8,8 @@ import kotlin.math.roundToLong
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.FileType
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit.FitFile
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit.RecordData
+import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit.enums.Event
+import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit.enums.EventType
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit.enums.GarminSport
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit.messages.FitCourse
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit.messages.FitEvent
@@ -127,10 +129,10 @@ object CourseFitEncoder {
             .setMessageIndex(0)
             .setTimestamp(times.last())
             .setStartTime(times.first())
-            .setStartLat(first[1])
-            .setStartLong(first[0])
-            .setEndLat(last[1])
-            .setEndLong(last[0])
+            .setStartPositionLat(first[1])
+            .setStartPositionLong(first[0])
+            .setEndPositionLat(last[1])
+            .setEndPositionLong(last[0])
             .setTotalElapsedTime((times.last() - times.first()).toDouble())
             .setTotalTimerTime((times.last() - times.first()).toDouble())
             .setTotalDistance(totalDistance)
@@ -156,8 +158,8 @@ object CourseFitEncoder {
         points.indices.forEach { i ->
             records += AbstractFitRecord.Builder()
                 .setTimestamp(times[i])
-                .setLatitude(points[i][1])
-                .setLongitude(points[i][0])
+                .setPositionLat(points[i][1])
+                .setPositionLong(points[i][0])
                 .setDistance(cumulative[i])
                 .build(5)
         }
@@ -205,12 +207,12 @@ object CourseFitEncoder {
         return hypot(dx, dy)
     }
 
-    // Raw FIT `event`/`event_type` enum values, not modelled as Kotlin enums —
-    // this build's profile leaves both fields as plain ENUM base types with no
-    // dedicated field-definition class (see the profile's `EVENT` message).
-    // Copied from GpxRouteFileConverter's own use of the same two constants,
-    // itself Gadgetbridge's working, hardware-proven course encoder.
-    private const val EVENT_TIMER = 0
-    private const val EVENT_TYPE_START = 0
-    private const val EVENT_TYPE_STOP_ALL = 9
+    // The FIT `event`/`event_type` values GpxRouteFileConverter uses, itself
+    // Gadgetbridge's working, hardware-proven course encoder: timer, start
+    // (0, 0) and timer, stop-disable-all (0, 9). Enums since Gadgetbridge
+    // 0.94's profile; the 9 is STOP_DISABLE_ALL, not STOP_ALL (4), which is
+    // what the golden course files carry.
+    private val EVENT_TIMER = Event.TIMER
+    private val EVENT_TYPE_START = EventType.START
+    private val EVENT_TYPE_STOP_ALL = EventType.STOP_DISABLE_ALL
 }

@@ -161,6 +161,10 @@ class GarminIntegration(private val context: Context) : DeviceIntegration {
      * current forecast is the right behaviour, not answering twice.
      */
     private val _weatherRequests = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+
+    /** One pending at most: a second press while one waits asks for the same sync. */
+    private val _syncRequests = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    override val syncRequests: Flow<Unit> = _syncRequests.asSharedFlow()
     override val weatherRequests: Flow<Unit> = _weatherRequests.asSharedFlow()
 
     private val pairing = CompanionPairing(context)
@@ -358,6 +362,10 @@ class GarminIntegration(private val context: Context) : DeviceIntegration {
 
             override fun onSessionRestarted() {
                 onWatchSessionRestarted(support)
+            }
+
+            override fun onWatchRequestedSync() {
+                _syncRequests.tryEmit(Unit)
             }
         })
         support.setMusicRefreshListener(GarminSupport.MusicRefreshListener {
@@ -975,6 +983,21 @@ class GarminIntegration(private val context: Context) : DeviceIntegration {
     /** See GarminSupport.setRealtimeHeartRate; a no-op with no link. */
     fun setLiveHeartRate(on: Boolean) {
         support?.setRealtimeHeartRate(on)
+    }
+
+    /**
+     * Send the hydration widget today's total and goal, if this watch has
+     * shown it syncs one (WatchHydration.Store.watchUsesIt); a no-op with no
+     * link. Off the caller's thread: the payload reads the phone's database.
+     */
+    fun pushHydration() {
+        val linked = support ?: return
+        val store = WatchHydration.store ?: return
+        if (!store.watchUsesIt) return
+        Thread({
+            runCatching { WatchHydration.updatePayload()?.let(linked::pushHydration) }
+                .onFailure { Log.w(TAG, "hydration update not sent", it) }
+        }, "watch-hydration-push").start()
     }
 
     /** See GarminSupport.requestActivityStatus; a no-op with no link. */

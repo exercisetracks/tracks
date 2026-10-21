@@ -182,7 +182,8 @@ public class Prefs {
         return getList(key, defaultValue, ",");
     }
 
-    @Deprecated  // use getLocalTime
+    /// @deprecated use {@link #getLocalTime(String, String)}
+    @Deprecated
     public Date getTimePreference(final String key, final String defaultValue) {
         final String time = getString(key, defaultValue);
 

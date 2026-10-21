@@ -5,6 +5,7 @@ package nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.http;
 import com.google.protobuf.ByteString;
 import com.tracks.device.garmin.WatchAppConfig;
 import com.tracks.device.garmin.WatchHttpProxy;
+import com.tracks.device.garmin.WatchHydration;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -18,24 +19,27 @@ import java.util.List;
 import java.util.Map;
 
 import nodomain.freeyourgadget.gadgetbridge.proto.garmin.GdiHttpService;
-import nodomain.freeyourgadget.gadgetbridge.proto.garmin.GdiSmartProto;
+import nodomain.freeyourgadget.gadgetbridge.proto.garmin.GdiSmartProto.Smart;
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.GarminSupport;
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.deviceevents.ProtobufResponseEvent;
 
 /**
- * Garmin's on-watch HTTP proxy. Answers two kinds of request and refuses the rest.
+ * Garmin's on-watch HTTP proxy. Answers three kinds of request and refuses the rest.
  *
  * <p>The watch asks the phone to fetch URLs on its behalf: weather tiles, map
  * data, Connect API calls. Honouring all of that would make Tracks an open
  * proxy for whatever the watch names, reaching Garmin's servers from the user's
  * phone — for a self-hosted app whose entire premise is that the user's data
  * stays on their own server, that is the wrong default. So the rule is an
- * allow-list, and it has exactly two entries:
+ * allow-list, and it has exactly three entries:
  *
  * <ol>
  *   <li><b>{@code https://tracks.invalid/ciq/config}</b> — the Tracks music app
  *   on the watch asking who it belongs to. Answered from memory, see
  *   {@link WatchAppConfig}. No socket is opened; the host cannot resolve.</li>
+ *   <li><b>The hydration widget's Connect calls</b> — answered on the phone
+ *   from Tracks' own daily water, never sent to Garmin; see
+ *   {@link WatchHydration}.</li>
  *   <li><b>The user's own music server</b> — the one the config names. The
  *   music app lists playlists through this when the watch is not on Wi-Fi.
  *   Same scheme, host and port as the configured server, nothing looser, and
@@ -68,6 +72,14 @@ public class HttpHandler {
 
     private final GarminSupport deviceSupport;
 
+    /** One at a time, in order: two drinks logged back to back must add up, not race. */
+    private static final java.util.concurrent.ExecutorService hydrationExecutor =
+            java.util.concurrent.Executors.newSingleThreadExecutor(runnable -> {
+                final Thread thread = new Thread(runnable, "watch-hydration");
+                thread.setDaemon(true);
+                return thread;
+            });
+
     public HttpHandler(final GarminSupport deviceSupport) {
         this.deviceSupport = deviceSupport;
     }
@@ -99,6 +111,34 @@ public class HttpHandler {
             return reply(request, configResponse());
         }
 
+        if (WatchHydration.INSTANCE.handles(url)) {
+            // Off the BLE thread: answering reads, and for a logged drink
+            // writes, the phone's database. The reply follows as an event,
+            // as a proxied one does.
+            hydrationExecutor.execute(() -> {
+                String json = null;
+                try {
+                    json = WatchHydration.INSTANCE.answer(request.getMethod(), url, request.getBody());
+                } catch (final Exception e) {
+                    LOG.warn("Could not answer the watch's hydration request {} {}", request.getMethod(), request.getPath(), e);
+                }
+                final GdiHttpService.HttpService reply;
+                if (json == null) {
+                    reply = errorReply(request);
+                } else {
+                    final GarminHttpResponse response = new GarminHttpResponse();
+                    response.setStatus(HTTP_OK);
+                    response.getHeaders().put("content-type", "application/json");
+                    response.setBody(json.getBytes(StandardCharsets.UTF_8));
+                    reply = reply(request, response);
+                }
+                deviceSupport.evaluateGBDeviceEvent(new ProtobufResponseEvent(
+                        Smart.newBuilder().setHttpService(reply).build(),
+                        request.getMessageRequestId()));
+            });
+            return null;
+        }
+
         if (WatchAppConfig.INSTANCE.isProxyable(url)) {
             LOG.debug("Proxying {} {} for the watch", request.getMethod(), url);
             WatchHttpProxy.INSTANCE.fetch(
@@ -112,7 +152,7 @@ public class HttpHandler {
                                 ? errorReply(request)
                                 : reply(request, fromProxy(result));
                         deviceSupport.evaluateGBDeviceEvent(new ProtobufResponseEvent(
-                                GdiSmartProto.Smart.newBuilder().setHttpService(reply).build(),
+                                Smart.newBuilder().setHttpService(reply).build(),
                                 request.getMessageRequestId()));
                         return kotlin.Unit.INSTANCE;
                     });

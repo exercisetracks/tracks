@@ -8,7 +8,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.FileType
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit.FitFile
-import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit.fieldDefinitions.FieldDefinitionLocationSymbol.LocationSymbol
+import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit.enums.LocationSymbol
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit.messages.FitFileId
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit.messages.FitLocation
 

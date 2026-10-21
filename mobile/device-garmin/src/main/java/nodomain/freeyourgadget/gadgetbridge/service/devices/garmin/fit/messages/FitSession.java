@@ -40,20 +40,20 @@ public class FitSession extends AbstractFitSession {
 
         final ActivityPoint startActivityPoint = new ActivityPoint();
         startActivityPoint.setTime(new Date(getComputedTimestamp() * 1000L));
-        if (getStartLatitude() != null && getStartLongitude() != null) {
+        if (getStartPositionLat() != null && getStartPositionLong() != null) {
             startActivityPoint.setLocation(new GPSCoordinate(
-                    getStartLongitude(),
-                    getStartLatitude(),
+                    getStartPositionLong(),
+                    getStartPositionLat(),
                     GPSCoordinate.UNKNOWN_ALTITUDE
             ));
             activityPoints.add(startActivityPoint);
         }
         final ActivityPoint endActivityPoint = new ActivityPoint();
         endActivityPoint.setTime(new Date(getComputedTimestamp() * 1000L));
-        if (getEndLatitude() != null && getEndLongitude() != null) {
+        if (getEndPositionLat() != null && getEndPositionLong() != null) {
             endActivityPoint.setLocation(new GPSCoordinate(
-                    getEndLongitude(),
-                    getEndLatitude(),
+                    getEndPositionLong(),
+                    getEndPositionLat(),
                     GPSCoordinate.UNKNOWN_ALTITUDE
             ));
             activityPoints.add(endActivityPoint);

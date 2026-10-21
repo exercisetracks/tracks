@@ -198,7 +198,7 @@ public abstract class AbstractBTLESingleDeviceSupport extends AbstractBTLEDevice
         if (!isInitialized()) {
             logger.debug("Initializing device for {}", taskName);
             // first, add a transaction that performs device initialization
-            TransactionBuilder builder = createTransactionBuilder("Initialize device");
+            TransactionBuilder builder = createTransactionBuilder("performInitialized");
             builder.add(new CheckInitializedAction(gbDevice));
             initializeDevice(builder);
             builder.queue();
@@ -339,7 +339,7 @@ public abstract class AbstractBTLESingleDeviceSupport extends AbstractBTLEDevice
      */
     public void logMessageContent(byte[] value) {
         if (value != null) {
-            logger.info("RECEIVED DATA WITH LENGTH: {}: {}", value.length, GB.hexdump(value));
+            logger.debug("RECEIVED DATA WITH LENGTH: {}: {}", value.length, GB.lazyHexdump(value));
         } else {
             logger.warn("RECEIVED DATA: (null)");
         }
@@ -361,13 +361,21 @@ public abstract class AbstractBTLESingleDeviceSupport extends AbstractBTLEDevice
             logger.warn("Services discovered, but device state is already " + getDevice().getState() + " for device: " + getDevice() + ", so ignoring");
             return;
         }
-        TransactionBuilder builder = createTransactionBuilder("Initializing device");
+        TransactionBuilder builder = createTransactionBuilder("initializeDevice");
 
+        initializeDevice(builder);
+
+        // The BLE Intent API subscriptions run AFTER the device-specific init.
+        // A failed GATT action aborts the remaining transaction (see
+        // BtLEQueue.checkWaitingCharacteristic), and the device support sets
+        // State.INITIALIZED inside initializeDevice(); with the API
+        // subscriptions first, one failed CCCD write left the device stuck in
+        // INITIALIZING forever ("connecting" in the UI while the watch shows
+        // the link as up). In this order a failed subscription costs only that
+        // characteristic's notifications, never the whole connection.
         if(bleApi != null) {
             bleApi.initializeDevice(builder);
         }
-
-        initializeDevice(builder);
 
         if (getDevice().getDeviceCoordinator().supportsConnectionPriority()) {
             final boolean lowPower = getDevicePrefs().getConnectionPriorityLowPower();
@@ -511,7 +519,7 @@ public abstract class AbstractBTLESingleDeviceSupport extends AbstractBTLEDevice
     }
 
     @Override
-    int getMTU(int deviceIdx) {
+    public int getMTU(int deviceIdx) {
         if(deviceIdx != 0){
             throw new IllegalArgumentException("deviceIdx is " + deviceIdx);
         }

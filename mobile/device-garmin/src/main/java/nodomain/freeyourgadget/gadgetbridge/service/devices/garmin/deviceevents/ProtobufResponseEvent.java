@@ -6,13 +6,13 @@ import androidx.annotation.NonNull;
 
 import nodomain.freeyourgadget.gadgetbridge.deviceevents.GBDeviceEvent;
 import nodomain.freeyourgadget.gadgetbridge.impl.GBDevice;
-import nodomain.freeyourgadget.gadgetbridge.proto.garmin.GdiSmartProto;
+import nodomain.freeyourgadget.gadgetbridge.proto.garmin.GdiSmartProto.Smart;
 
 public class ProtobufResponseEvent extends GBDeviceEvent {
-    public GdiSmartProto.Smart payload;
+    public Smart payload;
     public int messageId;
 
-    public ProtobufResponseEvent(final GdiSmartProto.Smart payload, final int messageId) {
+    public ProtobufResponseEvent(final Smart payload, final int messageId) {
         this.payload = payload;
         this.messageId = messageId;
     }

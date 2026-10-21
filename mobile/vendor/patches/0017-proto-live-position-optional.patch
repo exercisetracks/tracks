@@ -1,8 +1,8 @@
 diff --git a/mobile/device-garmin/src/main/proto/garmin/gdi_core.proto b/mobile/device-garmin/src/main/proto/garmin/gdi_core.proto
-index 1deac9f..618eb7f 100644
+index f27b430..2098651 100644
 --- a/mobile/device-garmin/src/main/proto/garmin/gdi_core.proto
 +++ b/mobile/device-garmin/src/main/proto/garmin/gdi_core.proto
-@@ -93,15 +93,21 @@ message CoreService {
+@@ -101,6 +101,12 @@ message CoreService {
          repeated LocationData location_data = 1;
      }
  
@@ -13,22 +13,5 @@ index 1deac9f..618eb7f 100644
 +    // and was dropped whole, and the live track only moved when an Explore
 +    // sync read the line so far.
      message LocationData {
--        required LatLon position=1;
--        required float altitude=2;
--        required uint32 timestamp=3;
--        required float h_accuracy=4;
--        required float v_accuracy=5;
--        required DataType position_type=6;
--        required float bearing=9;
--        required float speed=10;
-+        optional LatLon position=1;
-+        optional float altitude=2;
-+        optional uint32 timestamp=3;
-+        optional float h_accuracy=4;
-+        optional float v_accuracy=5;
-+        optional DataType position_type=6;
-+        optional float bearing=9;
-+        optional float speed=10;
-     }
- 
-     message LatLon {
+         optional LatLon position=1;
+         optional float altitude=2;

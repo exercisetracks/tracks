@@ -8,9 +8,10 @@ import com.tracks.device.feeds.WeatherBroadcast
 import java.time.Instant
 import java.time.ZoneId
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit.FitLocalMessageBuilder
-import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit.fieldDefinitions.FieldDefinitionWeatherCondition
-import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit.fieldDefinitions.FieldDefinitionWeatherReport
-import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit.messages.FitWeather
+import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit.fieldDefinitions.FieldDefinitionWeatherStatus
+import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit.enums.WeatherReport as FitWeatherReport
+import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit.messages.AbstractFitWeatherConditions
+import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit.messages.FitWeatherConditions
 
 /**
  * Turns a [WeatherReport] into the FIT records a Garmin watch expects.
@@ -24,11 +25,13 @@ import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit.messages.
  *
  * ## The two things that are easy to get wrong
  *
- * **Temperatures go in as Kelvin.** That looks wrong, because the FIT profile
- * declares `weather_conditions.temperature` as signed Celsius — but
- * `FieldDefinitionTemperature` carries a `-273` offset that it applies on
- * encode, so a builder is fed Kelvin and the wire carries Celsius. Passing
- * Celsius here would put the watch 273 degrees below freezing.
+ * **Temperatures go in as Celsius**, and the wire carries Celsius: the FIT
+ * profile declares `weather_conditions.temperature` as signed 8-bit Celsius.
+ * Until Gadgetbridge 0.94 the field definition took Kelvin and subtracted 273
+ * on encode, so this encoder fed it Kelvin; since 0.94 the builder takes
+ * Celsius as it is, and Kelvin here would be 273 degrees too warm, or out of
+ * range and dropped. The bytes on the wire are what they were, except at
+ * exactly 0 C: the Kelvin helper treated 0 as "no reading", and sent that.
  *
  * **Null is not the same as absent.** Setting a field to null still adds it to
  * the record *definition* while leaving the value empty. Some watches will not
@@ -64,15 +67,15 @@ object GarminWeatherEncoder {
 
         weather.forecasts.take(FORECAST_DAYS).forEachIndexed { index, forecast ->
             val at = weather.timestamp + (index + 1L) * SECONDS_PER_DAY
-            val builder = FitWeather.Builder()
-                .setWeatherReport(FieldDefinitionWeatherReport.Type.daily_forecast)
+            val builder = FitWeatherConditions.Builder()
+                .setWeatherReport(FitWeatherReport.daily_forecast)
                 // The day this describes, not the moment the forecast was
                 // fetched. Every daily record used to carry the *same*
                 // timestamp — today's — so the watch was handed five rows
                 // claiming to be about the same day and kept one.
                 .setTimestamp(at)
-                .setLowTemperature(celsiusToKelvin(forecast.minTempC))
-                .setHighTemperature(celsiusToKelvin(forecast.maxTempC))
+                .setLowTemperature(forecast.minTempC)
+                .setHighTemperature(forecast.maxTempC)
                 .setCondition(condition(forecast.conditionCode))
                 .setAirQuality(null)
             builder.setDayOfWeek(dayOfWeek(at))
@@ -94,11 +97,11 @@ object GarminWeatherEncoder {
         return messages
     }
 
-    private fun hourly(hour: HourlyForecast): FitWeather.Builder =
-        FitWeather.Builder()
-            .setWeatherReport(FieldDefinitionWeatherReport.Type.hourly_forecast)
+    private fun hourly(hour: HourlyForecast): AbstractFitWeatherConditions.Builder =
+        FitWeatherConditions.Builder()
+            .setWeatherReport(FitWeatherReport.hourly_forecast)
             .setTimestamp(hour.timestamp)
-            .setTemperature(celsiusToKelvin(hour.tempC))
+            .setTemperature(hour.tempC)
             .setCondition(condition(hour.conditionCode))
             .setPrecipitationProbability(hour.precipProbability)
             .setRelativeHumidity(hour.humidityPercent)
@@ -108,17 +111,17 @@ object GarminWeatherEncoder {
             .setDewPoint(null)
             .setAirQuality(null)
 
-    private fun current(weather: WeatherReport): FitWeather.Builder {
-        val builder = FitWeather.Builder()
-            .setWeatherReport(FieldDefinitionWeatherReport.Type.current)
+    private fun current(weather: WeatherReport): AbstractFitWeatherConditions.Builder {
+        val builder = FitWeatherConditions.Builder()
+            .setWeatherReport(FitWeatherReport.current)
             .setTimestamp(weather.timestamp)
             .setObservedAtTime(weather.timestamp)
-            .setTemperature(celsiusToKelvin(weather.currentTempC))
-            .setLowTemperature(celsiusToKelvin(weather.todayMinTempC))
-            .setHighTemperature(celsiusToKelvin(weather.todayMaxTempC))
+            .setTemperature(weather.currentTempC)
+            .setLowTemperature(weather.todayMinTempC)
+            .setHighTemperature(weather.todayMaxTempC)
             .setCondition(condition(weather.currentConditionCode))
             .setWindDirection(weather.windDirectionDegrees)
-            .setWindSpeed(weather.windSpeedKmh)
+            .setWindSpeed(weather.windSpeedKmh?.let(::millimetresPerSecond))
             .setRelativeHumidity(weather.humidityPercent)
             .setLocation(weather.location)
             // Explicitly null: the definition must carry these fields even
@@ -149,20 +152,28 @@ object GarminWeatherEncoder {
         return builder
     }
 
-    private fun today(weather: WeatherReport): FitWeather.Builder {
-        val builder = FitWeather.Builder()
-            .setWeatherReport(FieldDefinitionWeatherReport.Type.daily_forecast)
+    private fun today(weather: WeatherReport): AbstractFitWeatherConditions.Builder {
+        val builder = FitWeatherConditions.Builder()
+            .setWeatherReport(FitWeatherReport.daily_forecast)
             .setTimestamp(weather.timestamp)
-            .setLowTemperature(celsiusToKelvin(weather.todayMinTempC))
-            .setHighTemperature(celsiusToKelvin(weather.todayMaxTempC))
+            .setLowTemperature(weather.todayMinTempC)
+            .setHighTemperature(weather.todayMaxTempC)
             .setCondition(condition(weather.currentConditionCode))
             .setAirQuality(null)
         builder.setDayOfWeek(dayOfWeek(weather.timestamp))
         return builder
     }
 
+    /**
+     * The FIT field is millimetres per second since Gadgetbridge 0.94's
+     * profile; before it, the same bytes were km/h scaled by 298, about 7%
+     * high. Upstream's own conversion (FitWeatherConditions.weatherWindSpeed),
+     * which Kotlin cannot reach through the chained setters' return type.
+     */
+    private fun millimetresPerSecond(kmh: Float): Int = Math.round(kmh / 3.6f * 1000.0f)
+
     private fun condition(openWeatherCode: Int) =
-        FieldDefinitionWeatherCondition.openWeatherCodeToFitWeatherStatus(openWeatherCode)
+        FieldDefinitionWeatherStatus.openWeatherCodeToFitWeatherStatus(openWeatherCode)
 
     /**
      * The watch labels forecast days by name, so this has to be the *user's*
@@ -177,7 +188,6 @@ object GarminWeatherEncoder {
      * directions cannot drift apart — including the shared decision that zero
      * means "not supplied" and stays zero.
      */
-    private fun celsiusToKelvin(celsius: Int): Int = WeatherBroadcast.celsiusToKelvin(celsius)
 }
 
 /**

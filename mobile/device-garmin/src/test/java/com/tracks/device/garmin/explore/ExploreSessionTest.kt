@@ -633,4 +633,32 @@ class ExploreSessionTest {
         assertEquals(46.5, track[0].lat, 1e-6)
         assertEquals(7.251, track[1].lng, 1e-6)
     }
+
+    /**
+     * The watch writes a point every second from the start button, with or
+     * without a fix; the ones without are 0x7FFFFFFF in both halves (capture
+     * c's first page held nine of them). Read as positions, they put the
+     * line's start at 180 degrees north.
+     */
+    @Test
+    fun `points recorded before the watch had a fix are left out`() {
+        val host = FakeHost()
+        val s = ExploreSession(host)
+        val uuid = "0123456789abcdef".toByteArray()
+        s.handle(msg(1) { varint(1, 2) })
+        s.handle(msg(32) { message(1) { message(1) { bytes(3, uuid) } } })
+        val noFix = (0x7fffffffL shl 32) or 0x7fffffffL
+        val packed = java.io.ByteArrayOutputStream().apply {
+            for (pos in listOf(noFix, noFix, ExploreSession.position(46.5, 7.25))) {
+                for (i in 0 until 8) write(((pos ushr (8 * i)) and 0xff).toInt())
+            }
+        }.toByteArray()
+        s.handle(msg(ExploreSession.F_LINE_DATA_READY) {
+            varint(1, 0)
+            message(2) { bytes(1, uuid); varint(2, 3); message(8) { bytes(2, packed) } }
+        })
+        val track = host.activeTracks.single()
+        assertEquals(1, track.size)
+        assertEquals(46.5, track.single().lat, 1e-6)
+    }
 }

@@ -192,6 +192,11 @@ class WatchManager(
         garmin?.setLiveHeartRate(on)
     }
 
+    /** Send the watch's hydration widget today's water; see GarminIntegration.pushHydration. */
+    fun pushHydration() {
+        garmin?.pushHydration()
+    }
+
     /** Ask the watch whether it is recording; the answer lands in LiveActivity. */
     fun requestActivityStatus() {
         garmin?.requestActivityStatus()
@@ -1377,9 +1382,45 @@ class WatchManager(
             integration.findPhone.collect { request -> finder.handle(request) }
         }
 
+        // Sync pressed on the watch: the same run as the phone's own button,
+        // so it pushes the plan as well as pulling, and reports in the status
+        // pill like any other. One already running answers it on its own; the
+        // runner's lock turns a second into nothing.
+        feedJobs += scope.launch {
+            integration.syncRequests.collect {
+                Log.i(TAG, "the watch asked for a sync")
+                try {
+                    containerProvider().watchSync.runOnceDetached()
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Log.w(TAG, "watch-requested sync failed", e)
+                }
+            }
+        }
+
+        // While the watch records, ask how it is doing whenever its position
+        // reports go quiet. A pause, a stop and a save all end the reports
+        // without a word, and the recording banner and the dashboard's start
+        // button go by what it last said; this keeps that at most half a
+        // minute stale. Silent while reports flow, and while nothing records.
+        feedJobs += scope.launch {
+            val live = com.tracks.device.garmin.live.LiveActivity
+            while (true) {
+                kotlinx.coroutines.delay(RECORDING_CHECK_MS)
+                if (live.recording && live.now() - live.track.value.updatedAt > RECORDING_QUIET_MS) {
+                    requestActivityStatus()
+                }
+            }
+        }
+
         lastMusic = null
         musicSubscription = music.observe { pushMusic(onlyIfChanged = true) }
         pushMusic()
+
+        // The hydration widget shows the phone's total for today, not the one
+        // it had when the link last dropped.
+        pushHydration()
     }
 
     /**
@@ -1610,6 +1651,9 @@ class WatchManager(
         private const val PROFILE_PREFS = "tracks_watch_profile"
         private const val PROFILE_RESEND_MS = 7L * 24 * 3600 * 1000
         private const val MUSIC_APP_FILENAME = "TracksMusic.prg"
+        /** How often a recording watch's quiet is checked, and how long counts as quiet. */
+        private const val RECORDING_CHECK_MS = 20_000L
+        private const val RECORDING_QUIET_MS = 15_000L
 
         /** How long after the last edit to a course or place the watch is synced. */
         private const val LIBRARY_SYNC_DEBOUNCE_MS = 4_000L

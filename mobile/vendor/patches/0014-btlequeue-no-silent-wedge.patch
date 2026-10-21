@@ -1,10 +1,10 @@
 diff --git a/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/btle/BtLEQueue.java b/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/btle/BtLEQueue.java
-index f443274..fd3bad1 100644
+index f9cb1c4..afd5d6b 100644
 --- a/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/btle/BtLEQueue.java
 +++ b/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/btle/BtLEQueue.java
 @@ -71,6 +71,18 @@ public final class BtLEQueue implements Thread.UncaughtExceptionHandler {
+     private static final byte[] EMPTY = new byte[0];
      private static final AtomicLong QUEUE_COUNTER = new AtomicLong(0L);
-     private static final AtomicLong THREAD_COUNTER = new AtomicLong(0L);
      private static final long SERVER_ACTION_RESULT_TIMEOUT_SECONDS = 30L;
 +    // PATCHED FOR TRACKS (vendor/patches/0014-btlequeue-no-silent-wedge.patch)
 +    //
@@ -18,10 +18,10 @@ index f443274..fd3bad1 100644
 +    // expiry is treated the same way: as a dead connection, so the link
 +    // supervisor reconnects instead of the queue sitting wedged.
 +    private static final long CLIENT_ACTION_RESULT_TIMEOUT_SECONDS = 30L;
+     private final long mQueueIdx;
  
      private final Object mGattMonitor;
-     private final GBDevice mGbDevice;
-@@ -200,7 +212,11 @@ public final class BtLEQueue implements Thread.UncaughtExceptionHandler {
+@@ -205,7 +217,11 @@ public final class BtLEQueue implements Thread.UncaughtExceptionHandler {
                                  // check again, maybe due to some condition, action did not need to write, so we can't wait
                                  boolean waitForResult = action.expectsResult();
                                  if (waitForResult) {
@@ -34,8 +34,8 @@ index f443274..fd3bad1 100644
                                      mWaitForActionResultLatch = null;
                                      if (mAbortTransaction) {
                                          break;
-@@ -219,6 +235,15 @@ public final class BtLEQueue implements Thread.UncaughtExceptionHandler {
-                     LOG.error("Queue Dispatch Thread died", ex);
+@@ -224,6 +240,15 @@ public final class BtLEQueue implements Thread.UncaughtExceptionHandler {
+                     LOG.error("mDispatchThread: thread {} died", getThreadLabel(), ex);
                      crashed = true;
                      mConnectionLatch = null;
 +                    // PATCHED FOR TRACKS (0014): a dead dispatch thread with the

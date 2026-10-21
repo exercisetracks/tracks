@@ -19,11 +19,15 @@ public class CreateFileMessage extends GFDIMessage {
     }
 
     public CreateFileMessage(int fileSize, FileType.FILETYPE filetype) {
+        this(fileSize, filetype, true);
+    }
+
+    public CreateFileMessage(int fileSize, FileType.FILETYPE filetype, boolean sendOutgoing) {
         this.garminMessage = GarminMessage.CREATE_FILE;
         this.fileSize = fileSize;
         this.filetype = filetype;
         this.statusMessage = this.getStatusMessage();
-        this.generateOutgoing = true;
+        this.generateOutgoing = sendOutgoing;
     }
 
     public static CreateFileMessage parseIncoming(MessageReader reader, GarminMessage garminMessage) {
@@ -36,6 +40,8 @@ public class CreateFileMessage extends GFDIMessage {
         reader.readByte(); //unk
         final int subTypeMask = reader.readByte(); //???
         final int numberMask = reader.readShort(); //???
+        final String path = reader.readString2();
+        final long longFileId = reader.readLong();
 
         return new CreateFileMessage(garminMessage, fileSize, filetype);
     }
@@ -53,8 +59,8 @@ public class CreateFileMessage extends GFDIMessage {
         writer.writeByte(0); //reserved
         writer.writeByte(0); //subtypemask
         writer.writeShort(65535); //numbermask
-        writer.writeShort(0); ///???
-        writer.writeLong(random.nextLong());
+        writer.writeShort(0); // path length
+        writer.writeLong(random.nextLong()); // long fileId
 
         return generateOutgoing;
     }

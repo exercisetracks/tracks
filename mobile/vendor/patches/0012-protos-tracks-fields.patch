@@ -1,11 +1,12 @@
 diff --git a/mobile/device-garmin/src/main/proto/garmin/gdi_explore_sync.proto b/mobile/device-garmin/src/main/proto/garmin/gdi_explore_sync.proto
-index a0e1c6e..d0f2032 100644
+index 42a1976..2d557eb 100644
 --- a/mobile/device-garmin/src/main/proto/garmin/gdi_explore_sync.proto
 +++ b/mobile/device-garmin/src/main/proto/garmin/gdi_explore_sync.proto
-@@ -119,9 +119,19 @@ message StartSyncRequest {
+@@ -123,10 +123,19 @@ message StartSyncRequest {
    optional int32 protocol_version = 2;
    optional bytes app_uuid = 3;
    optional uint32 sync_capabilities = 4;
+-  repeated Message5 unk5 = 5;
 +  // Repeated, one per capability the client is actually exercising. Garmin
 +  // Explore sends 4 (TRACKING_EVENT), 8 (COURSES) and 2 (ACTIVE_LINES) and
 +  // sends no actual_capabilities at all; Tracks previously sent the bitmask in
@@ -20,9 +21,9 @@ index a0e1c6e..d0f2032 100644
 +}
 +
  message StartSyncResponse {
-   optional StartSyncStatus status = 1;
-   optional int32 supported_protocol_version = 3;
-@@ -152,17 +162,60 @@ message CollectionDigestWriteResponse {
+   message Message2 {
+     optional uint32 unk1 = 1;
+@@ -169,17 +178,60 @@ message CollectionDigestWriteResponse {
  }
  
  message CollectionDigestReadRequest {
@@ -83,7 +84,7 @@ index a0e1c6e..d0f2032 100644
  }
  
  message WaypointDigestWriteRequest {
-@@ -231,8 +284,13 @@ message LineDigestWriteResponse {
+@@ -248,8 +300,13 @@ message LineDigestWriteResponse {
  message LineDigestReadRequest {
  }
  
@@ -97,7 +98,7 @@ index a0e1c6e..d0f2032 100644
  }
  
  message Line {
-@@ -309,10 +367,22 @@ message LineDataReadyResponse {
+@@ -326,10 +383,22 @@ message LineDataReadyResponse {
    optional LineDataRequestOp next_data_request = 1;
  }
  
@@ -121,13 +122,15 @@ index a0e1c6e..d0f2032 100644
 +  optional uint32 has_lines = 5;
  }
 diff --git a/mobile/device-garmin/src/main/proto/garmin/gdi_file_sync_service.proto b/mobile/device-garmin/src/main/proto/garmin/gdi_file_sync_service.proto
-index 3110306..3ce0ca0 100644
+index 606fb5e..236d4da 100644
 --- a/mobile/device-garmin/src/main/proto/garmin/gdi_file_sync_service.proto
 +++ b/mobile/device-garmin/src/main/proto/garmin/gdi_file_sync_service.proto
-@@ -7,6 +7,17 @@ option java_package = "nodomain.freeyourgadget.gadgetbridge.proto.garmin";
+@@ -7,8 +7,22 @@ option java_package = "nodomain.freeyourgadget.gadgetbridge.proto.garmin";
  message FileSyncService {
    optional FileRequest file_request = 1;
    optional FileResponse file_response = 2;
+-  optional Message4 unk4 = 4;
+-  optional TransferStatusRequest transfer_status_request = 5;
 +  // Tracks-local, not upstream: captured from Garmin Connect pushing a training
 +  // calendar. This is how Garmin uploads — NOT the legacy GFDI CREATE_FILE /
 +  // UPLOAD_REQUEST / FILE_TRANSFER_DATA path. See AGENTS.md.
@@ -139,11 +142,24 @@ index 3110306..3ce0ca0 100644
 +  // which is why an upload the watch had accepted never went anywhere.
 +  optional TransferComplete transfer_complete = 5;
 +  optional TransferCompleteResponse transfer_complete_response = 21;
++  // Upstream (0.94+) calls 4 Message4, 5 TransferStatusRequest and 21
++  // TransferStatusResponse, and answers 5 with {1: 1}. They are the same wire
++  // messages as the captured ones above, and Connect answers with 34 (empty
++  // at the end of a burst), which is what made calendar pushes land; so these
++  // names and that answer stand. See FileSyncServiceHandler.handleTransferComplete.
+   optional Message7 unk7 = 7;
    optional FileListRequest file_list_request = 9;
    optional FileListResponse file_list_response = 10;
-   optional NewFileNotification new_file_notification = 12;
-@@ -33,6 +44,50 @@ message FileUpdateNotification {
-   optional FileId flags = 2;
+@@ -19,7 +33,6 @@ message FileSyncService {
+   optional FileUpdateNotification file_update_notification = 17;
+   optional Message19 unk19 = 19;
+   optional Notification20 notification20 = 20;
+-  optional TransferStatusResponse transfer_status_response = 21;
+   optional StartSyncNotification start_sync_notification = 22;
+   optional Message24 unk24 = 24;
+ 
+@@ -92,6 +105,50 @@ message FileUpdateNotification {
+   optional FileId flags_removed = 3;
  }
  
 +// Ask the watch to accept a new file. The watch answers UploadResponse with a
@@ -194,37 +210,34 @@ index 3110306..3ce0ca0 100644
    optional File file = 1;
    optional uint32 unk2 = 2; // 24
 diff --git a/mobile/device-garmin/src/main/proto/garmin/gdi_smart_proto.proto b/mobile/device-garmin/src/main/proto/garmin/gdi_smart_proto.proto
-index 4bfe21e..16496cd 100644
+index 5009544..79797c5 100644
 --- a/mobile/device-garmin/src/main/proto/garmin/gdi_smart_proto.proto
 +++ b/mobile/device-garmin/src/main/proto/garmin/gdi_smart_proto.proto
-@@ -36,4 +36,30 @@ message Smart {
-     optional SettingsService settings_service = 42;
-     optional FileSyncService file_sync_service = 43;
-     optional NotificationsService notifications_service = 49;
-+    // Tracks-local, undocumented here and upstream. Garmin Connect brackets a
-+    // training-calendar push with this service: field 3 {1:1} immediately before
-+    // the push begins, and an empty field 6 about half a second before the
-+    // schedule upload itself. Its meaning is unread; what is captured is that
-+    // Connect sends both and its calendar builds. See AGENTS.md.
-+    optional Service47 service_47 = 47;
-+}
-+
-+// Service 47. Named for its field number because nothing names it: it is absent
-+// from Gadgetbridge's protos and from every Garmin SDK we can see.
-+message Service47 {
-+    // Connect sends {1:0} twice early in a session and {1:1} immediately before
-+    // pushing a training calendar. The watch answers field 4 with a status.
-+    optional Service47SetFlag set_flag = 3;
-+    optional Service47SetFlagResponse set_flag_response = 4;
-+    // Sent with an empty payload, between the schedule's upload request and the
-+    // bytes. Zero-length on the wire, so it carries its meaning in being sent.
-+    optional bytes commit = 6;
-+}
-+
+@@ -55,6 +55,10 @@ message Smart {
+     optional Service56 service56 = 56;
+ }
+ 
 +message Service47SetFlag {
 +    optional uint32 enabled = 1;
 +}
 +
-+message Service47SetFlagResponse {
-+    optional uint32 status = 1;
+ message UUID {
+     required fixed64 upper = 1;
+     required fixed64 lower = 2;
+@@ -342,8 +346,16 @@ message Service47 {
+     message Message5 {
+     }
+     optional Message1 device_checks_for_software_update = 1;
++    // Tracks-local (captured from Garmin Connect pushing a training calendar):
++    // Connect sends set_flag {1:0} twice early in a session and {1:1}
++    // immediately before the push, and the watch answers with unk4 as a
++    // status. An empty commit goes about half a second before the schedule's
++    // upload itself; zero-length on the wire, so it means by being sent. Its
++    // meaning is unread; what is captured is that Connect's calendar builds.
++    optional Service47SetFlag set_flag = 3;
+     optional Message4 unk4 = 4;
+     optional Message5 unk5 = 5;
++    optional bytes commit = 6;
  }
+ 
+ message Service56 {

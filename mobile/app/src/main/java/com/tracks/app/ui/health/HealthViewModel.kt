@@ -787,6 +787,11 @@ class HealthViewModel(private val container: AppContainer) : ViewModel() {
                 "daily_entry", patch, DailyMetricPatch.serializer(),
                 keyValues = mapOf("date" to date), extra = mapOf("date" to date),
             )
+            // And the watch's hydration widget, if it has one, shows it.
+            if (patch.hydrationMl != null) {
+                container.watchHydration.loggedOnPhone()
+                container.watch.pushHydration()
+            }
             loadMetrics()
         }
     }

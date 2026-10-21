@@ -1,3 +1,19 @@
+/*  Copyright (C) 2024-2026 Daniele Gobbetti, José Rebelo, Thomas Kuehne
+
+    This file is part of Gadgetbridge.
+
+    Gadgetbridge is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published
+    by the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Gadgetbridge is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 package nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.communicator.v2;
 
 import static nodomain.freeyourgadget.gadgetbridge.service.btle.AbstractBTLEDeviceSupport.calcMaxWriteChunk;
@@ -56,6 +72,11 @@ public class CommunicatorV2 implements ICommunicator {
     // MLR support
     private final Map<Integer, MlrCommunicator> mlrCommunicators = new HashMap<>();
 
+    // Set while a CLOSE_ALL_REQ is outstanding, so individual CLOSE_HANDLE_RESP messages that
+    // arrive as part of that close-all do not also trigger their own service re-registration -
+    // CLOSE_ALL_RESP already re-registers GFDI unconditionally.
+    private boolean closingAll = false;
+
     public CommunicatorV2(final GarminSupport garminSupport) {
         this.mSupport = garminSupport;
     }
@@ -81,6 +102,7 @@ public class CommunicatorV2 implements ICommunicator {
 
                 builder.notify(characteristicReceive, true);
                 builder.write(characteristicSend, closeAllServices());
+                closingAll = true;
 
                 return true;
             }
@@ -321,10 +343,14 @@ public class CommunicatorV2 implements ICommunicator {
                         yield new RealtimeHeartRateCallback();
                     case REALTIME_STEPS:
                         yield new RealtimeStepsCallback();
+                    case REALTIME_FLOORS:
+                        yield new RealtimeFloorsCallback();
                     case REALTIME_ACCELEROMETER:
                         yield new RealtimeAccelerometerCallback();
                     case REALTIME_SPO2:
                         yield new RealtimeSpo2Callback();
+                    case REALTIME_BODY_BATTERY:
+                        yield new RealtimeBodyBatteryCallback();
                     case REALTIME_RESPIRATION:
                         yield new RealtimeRespirationCallback();
                     case REALTIME_HRV:
@@ -352,6 +378,11 @@ public class CommunicatorV2 implements ICommunicator {
 
                 if (reliable != 0) {
                     // MLR mode - create reliable communicator
+                    final MlrCommunicator oldMlrComm = mlrCommunicators.remove(handle);
+                    if (oldMlrComm != null) {
+                        LOG.warn("Replacing existing MLR communicator for handle {}", handle);
+                        oldMlrComm.close();
+                    }
                     final MlrCommunicator mlrComm = createMlrCommunicator(handle, serviceCallback);
                     mlrCommunicators.put(handle, mlrComm);
                     serviceCallback.onConnect(new MlrServiceWriter(mlrComm));
@@ -384,8 +415,10 @@ public class CommunicatorV2 implements ICommunicator {
                     handleByService.remove(service);
                     serviceCallbacks.remove(service);
 
-                    if (service == Service.GFDI) {
-                        // The watch closed the main GFDI channel, re-register it.
+                    if (service == Service.GFDI && !closingAll) {
+                        // The watch closed the main GFDI channel, re-register it, unless we're
+                        // waiting for a CLOSE_ALL_RESP, in which case we will re-register it once
+                        // we get it.
                         LOG.warn("GFDI handle was closed unexpectedly");
                         mSupport.createTransactionBuilder("open GFDI")
                                 .write(characteristicSend, registerService(Service.GFDI, mSupport.mlrEnabled()))
@@ -398,7 +431,8 @@ public class CommunicatorV2 implements ICommunicator {
                 break;
             }
             case CLOSE_ALL_RESP:
-                LOG.debug("Received close all handles response. Message: {}", message.array());
+                LOG.debug("Received close all handles response. Message: {}", GB.lazyHexdump(message.array()));
+                closingAll = false;
                 serviceByHandle.clear();
                 handleByService.clear();
                 for (ServiceCallback callback : serviceCallbacks.values()) {
@@ -684,6 +718,7 @@ public class CommunicatorV2 implements ICommunicator {
         REALTIME_HR(6),
         REALTIME_STEPS(7),
         REALTIME_CALORIES(8),
+        REALTIME_FLOORS(9),
         REALTIME_INTENSITY(10),
         REALTIME_HRV(12),
         REALTIME_STRESS(13),

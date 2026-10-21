@@ -27,12 +27,15 @@ message InstalledAppsService {
     optional uint64 fileSize = 7;
     optional uint32 nativeAppId = 8;
     optional bool favorite = 9;
+    optional string unk10 = 10;
   }
 
   optional GetInstalledAppsRequest getInstalledAppsRequest = 1;
   optional GetInstalledAppsResponse getInstalledAppsResponse = 2;
   optional DeleteAppRequest deleteAppRequest = 3;
   optional DeleteAppResponse deleteAppResponse = 4;
+  optional Message6 unk6 = 6;
+  optional Message12 unk12 = 12;
 
   message GetInstalledAppsRequest {
     required AppType appType = 1;
@@ -45,8 +48,9 @@ message InstalledAppsService {
   }
 
   message DeleteAppRequest {
-    required bytes storeAppId = 1;
+    required uint32 nativeAppId = 1;
     required AppType appType = 2;
+    optional bytes storeAppId = 3;
   }
 
   message DeleteAppResponse {
@@ -57,5 +61,12 @@ message InstalledAppsService {
     }
 
     required Status status = 1;
+  }
+
+  message Message6 {
+    optional uint32 unk1 = 1;
+  }
+
+  message Message12 {
   }
 }

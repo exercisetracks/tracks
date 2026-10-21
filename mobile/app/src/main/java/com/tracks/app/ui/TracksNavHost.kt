@@ -459,6 +459,24 @@ fun TracksNavHost(
                         },
                     )
                 }
+                // The same strip for an activity the watch is recording, which
+                // opens the map: the track so far is drawn there. Not on the
+                // map itself, where it would only open the page it is on.
+                val watchTrack by com.tracks.device.garmin.live.LiveActivity.track.collectAsStateWithLifecycle()
+                val watchRecording = watchTrack.status == com.tracks.device.garmin.live.LiveActivity.Status.RECORDING ||
+                    watchTrack.status == com.tracks.device.garmin.live.LiveActivity.Status.PAUSED
+                if (watchRecording && here != Destination.Map) {
+                    com.tracks.app.ui.workout.WatchRecordingBar(
+                        track = watchTrack,
+                        onOpen = { navigateTo(Destination.Map) },
+                        // Topmost on a detail page, as the workout strip is.
+                        modifier = if (here == null && session == null) {
+                            Modifier.windowInsetsPadding(WindowInsets.statusBars)
+                        } else {
+                            Modifier
+                        },
+                    )
+                }
                 }
             },
         ) { padding ->

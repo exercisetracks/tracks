@@ -185,6 +185,20 @@ public class GB {
         return sb.toString();
     }
 
+    /**
+     * A hexdump made only if the log line is written (Gadgetbridge 0.94): the
+     * vendored transport passes this to its debug logging, where turning
+     * every packet into hex up front would be wasted on a release build.
+     */
+    public static Object lazyHexdump(final byte[] buffer) {
+        return new Object() {
+            @Override
+            public String toString() {
+                return buffer == null ? "(null)" : hexdump(buffer);
+            }
+        };
+    }
+
     public static String hexdump(byte[] buffer) {
         return hexdump(buffer, 0, -1);
     }

@@ -1,4 +1,4 @@
-/*  Copyright (C) 2019-2026 Andreas Shimokawa, Daniel Dakhno
+/*  Copyright (C) 2019-2026 Andreas Shimokawa, Daniel Dakhno, Thomas Kuehne
 
     This file is part of Gadgetbridge.
 
@@ -22,17 +22,29 @@ import android.bluetooth.BluetoothGatt;
 import androidx.annotation.IntRange;
 import androidx.annotation.NonNull;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import nodomain.freeyourgadget.gadgetbridge.service.btle.AbstractBTLEDeviceSupport;
 import nodomain.freeyourgadget.gadgetbridge.service.btle.BtLEAction;
 import nodomain.freeyourgadget.gadgetbridge.service.btle.GattCallback;
 
 /// Calls {@link BluetoothGatt#requestMtu(int)}. Results are returned to
 /// {@link GattCallback#onMtuChanged(BluetoothGatt, int, int)}
 public class RequestMtuAction extends BtLEAction {
-    private final int mtu;
+    private static final Logger LOG = LoggerFactory.getLogger(RequestMtuAction.class);
 
-    public RequestMtuAction(@IntRange(from = 23L, to = 517L) final int mtu) {
+    private final int mtu;
+    private final AbstractBTLEDeviceSupport deviceSupport;
+    private final int deviceIdx;
+
+    public RequestMtuAction(@IntRange(from = 23L, to = 517L) final int mtu,
+                            @NonNull AbstractBTLEDeviceSupport deviceSupport,
+                            @IntRange(from = 23L) final int deviceIdx) {
         super(null);
         this.mtu = mtu;
+        this.deviceSupport = deviceSupport;
+        this.deviceIdx = deviceIdx;
     }
 
 
@@ -44,7 +56,23 @@ public class RequestMtuAction extends BtLEAction {
     @SuppressLint("MissingPermission")
     @Override
     public boolean run(@NonNull final BluetoothGatt gatt) {
-        return gatt.requestMtu(mtu);
+        int currentMtu = deviceSupport.getMTU(deviceIdx);
+
+        int request = mtu;
+
+        // see 3.4.2.1 Exchange MTU Request (Blueooth Core Specification v.5.0.0, vol 3, Part F)
+        // on error: re-request current MTU instead of aborting the whole Transaction
+
+        if (currentMtu >= mtu) {
+            request = currentMtu;
+            LOG.info("requested MTU {} >= effective MTU {}: re-requesting {}", mtu, currentMtu);
+        } else if (currentMtu > 23) {
+            request = currentMtu;
+            LOG.warn("MTU has already been negotiated to {}, not requesting MTU {} to avoid GATT_INVALID_PDU: re-requesting: {}",
+                    currentMtu, mtu, request);
+        }
+
+        return gatt.requestMtu(request);
     }
 
     @NonNull

@@ -5,7 +5,7 @@ package com.tracks.device.garmin
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.FileType
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit.FitFile
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit.RecordData
-import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit.fieldDefinitions.FieldDefinitionLocationSymbol.LocationSymbol
+import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit.enums.LocationSymbol
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit.messages.FitFileId
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit.messages.FitLocation
 
@@ -145,7 +145,7 @@ object LocationsFitEncoder {
         val end = minOf(headerSize + declared, data.size.toLong()).toInt()
         val defs = HashMap<Int, Triple<Int, List<Pair<Int, Int>>, Boolean>>()
         val out = mutableListOf<WaypointLocation>()
-        val symbols = LocationSymbol.values().associateBy { it.id }
+        val symbols = LocationSymbol.values().associateBy { it.num }
         val iconFor = HashMap<LocationSymbol, String>().apply { ICON_TO_SYMBOL.forEach { (icon, sym) -> putIfAbsent(sym, icon) } }
         var at = headerSize
         while (at < end) {

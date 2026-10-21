@@ -59,8 +59,21 @@ public class GarminByteBufferReader {
         return byteBuffer.getDouble();
     }
 
+    /// string length is encoded as a Byte
     public String readString() {
         final int size = readByte();
+        byte[] bytes = new byte[size];
+        byteBuffer.get(bytes);
+        return new String(bytes, StandardCharsets.UTF_8);
+    }
+
+    /// string length is encoded as a Short
+    public String readString2() {
+        final int size = readShort();
+        if(size < 1){
+            return "";
+        }
+
         byte[] bytes = new byte[size];
         byteBuffer.get(bytes);
         return new String(bytes, StandardCharsets.UTF_8);

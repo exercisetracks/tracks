@@ -6,6 +6,8 @@ import com.tracks.core.run.RunFix
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.FileType
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit.FitFile
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit.RecordData
+import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit.enums.Event
+import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit.enums.EventType
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit.messages.FitActivity
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit.messages.FitEvent
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit.messages.FitFileCreator
@@ -86,9 +88,9 @@ object RunFit {
     }
 
     /** `event_type`: 0 starts the timer, 4 stops everything. */
-    private const val EVENT_TIMER = 0
-    private const val EVENT_TYPE_START = 0
-    private const val EVENT_TYPE_STOP_ALL = 4
+    private val EVENT_TIMER = Event.TIMER
+    private val EVENT_TYPE_START = EventType.START
+    private val EVENT_TYPE_STOP_ALL = EventType.STOP_ALL
 
     /**
      * Local message numbers.
@@ -174,8 +176,8 @@ object RunFit {
             }
             records += AbstractFitRecord.Builder().apply {
                 setTimestamp(fix.timestampMs / 1000L)
-                setLatitude(fix.lat)
-                setLongitude(fix.lng)
+                setPositionLat(fix.lat)
+                setPositionLong(fix.lng)
                 setDistance(travelled)
                 fix.altitudeM?.let { setAltitude(it.toFloat()) }
                 fix.speedMps?.let { setSpeed(it.toFloat()) }
@@ -197,10 +199,10 @@ object RunFit {
             setStartTime(startSec)
             setSport(sport)
             setSubSport(subSport)
-            setStartLat(first.lat)
-            setStartLong(first.lng)
-            setEndLat(last.lat)
-            setEndLong(last.lng)
+            setStartPositionLat(first.lat)
+            setStartPositionLong(first.lng)
+            setEndPositionLat(last.lat)
+            setEndPositionLong(last.lng)
             setTotalDistance(distanceM)
             setTotalElapsedTime(elapsedMs / 1000.0)
             setTotalTimerTime(movingSec)
@@ -214,8 +216,8 @@ object RunFit {
             setStartTime(startSec)
             setSport(sport)
             setSubSport(subSport)
-            setStartLatitude(first.lat)
-            setStartLongitude(first.lng)
+            setStartPositionLat(first.lat)
+            setStartPositionLong(first.lng)
             setTotalDistance(distanceM)
             // The session's elapsed field is whole seconds; the lap's is not.
             setTotalElapsedTime(elapsedMs / 1000L)
@@ -228,11 +230,11 @@ object RunFit {
 
         records += FitActivity.Builder().apply {
             setTimestamp(endSec)
-            setTotalTimerTime(movingMs / 1000L)
+            setTotalTimerTime(movingMs / 1000.0)
             setNumSessions(1)
             setType(0)
-            setEvent(26)          // activity
-            setEventType(1)       // stop
+            setEvent(Event.ACTIVITY)
+            setEventType(EventType.STOP)
             setLocalTimestamp(endSec)
         }.build(LOCAL_ACTIVITY)
 
@@ -289,17 +291,17 @@ object RunFit {
         }.build(LOCAL_SESSION)
         records += FitActivity.Builder().apply {
             setTimestamp(endSec)
-            setTotalTimerTime(movingMs / 1000L)
+            setTotalTimerTime(movingMs / 1000.0)
             setNumSessions(1)
             setType(0)
-            setEvent(26)
-            setEventType(1)
+            setEvent(Event.ACTIVITY)
+            setEventType(EventType.STOP)
             setLocalTimestamp(endSec)
         }.build(LOCAL_ACTIVITY)
         return FitFile(records).outgoingMessage
     }
 
-    private fun timerEvent(timestampSec: Long, eventType: Int): FitEvent =
+    private fun timerEvent(timestampSec: Long, eventType: EventType): FitEvent =
         FitEvent.Builder().apply {
             setTimestamp(timestampSec)
             setEvent(EVENT_TIMER)

@@ -54,10 +54,10 @@ class CourseFitEncoderTest {
 
         val records = parsed.records.filterIsInstance<FitRecord>()
         assertEquals(square.size, records.size)
-        assertEquals(square.first()[1], records.first().latitude!!, 1e-4)
-        assertEquals(square.first()[0], records.first().longitude!!, 1e-4)
-        assertEquals(square.last()[1], records.last().latitude!!, 1e-4)
-        assertEquals(square.last()[0], records.last().longitude!!, 1e-4)
+        assertEquals(square.first()[1], records.first().positionLat!!, 1e-4)
+        assertEquals(square.first()[0], records.first().positionLong!!, 1e-4)
+        assertEquals(square.last()[1], records.last().positionLat!!, 1e-4)
+        assertEquals(square.last()[0], records.last().positionLong!!, 1e-4)
     }
 
     @Test

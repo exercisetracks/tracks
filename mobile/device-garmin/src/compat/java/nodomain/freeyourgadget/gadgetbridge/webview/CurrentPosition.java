@@ -25,6 +25,13 @@ public class CurrentPosition {
     public long getTimestamp() { return timestamp; }
 
     /**
+     * Whether this came from a location typed into settings rather than a fix
+     * (Gadgetbridge 0.94, which then refuses to pass a stale one to the
+     * watch). Never: this shim has no such setting, and no position at all.
+     */
+    public boolean isFromPreferences() { return false; }
+
+    /**
      * A zeroed location — never null, and never a real position.
      *
      * <p>This returned null until a real watch objected. The reasoning was that

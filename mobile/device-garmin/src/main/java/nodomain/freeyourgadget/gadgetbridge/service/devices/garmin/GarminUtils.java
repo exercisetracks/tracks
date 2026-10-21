@@ -45,7 +45,12 @@ public final class GarminUtils {
         // Type can be null when a FIT file's file_id.type field is missing
         // or unrecognised; fall back to a fixed placeholder so both the
         // directory and filename segments stay consistent.
-        final String typeName = type != null ? type.name() : "NULL";
+        return buildExportPath(type == null ? null : type.name(), date, suffix, extension);
+    }
+
+    public static String buildExportPath(@Nullable final String type, @Nullable final Date date,
+                                         final String suffix, final String extension) {
+        final String typeName = type != null ? type: "NULL";
         final StringBuilder sb = new StringBuilder();
         sb.append(typeName).append(File.separator);
         if (date != null) {

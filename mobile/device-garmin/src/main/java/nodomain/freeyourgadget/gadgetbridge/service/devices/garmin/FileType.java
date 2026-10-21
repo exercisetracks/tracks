@@ -1,3 +1,19 @@
+/*  Copyright (C) 2024-2026 Daniele Gobbetti, José Rebelo, Thomas Kuehne
+
+    This file is part of Gadgetbridge.
+
+    Gadgetbridge is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published
+    by the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Gadgetbridge is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 package nodomain.freeyourgadget.gadgetbridge.service.devices.garmin;
 
 import androidx.annotation.Nullable;
@@ -53,7 +69,7 @@ public class FileType {
         // virtual/undocumented
         DIRECTORY(0, 0), // root directory is hardcoded: fileIndex = 0x0000 / 0
         UNKNOWN_1_0(1, 0), // venu 3, fileIndex=4096
-        DEVICE_XML(8, 255), // hardcoded: fileIndex = 0xFFFD / 65533
+        DEVICE_XML(8, 255, false, "DEVICE_XML"), // hardcoded: fileIndex = 0xFFFD / 65533
 
         // fit files
         DEVICE_1(128, 1), // just "-"
@@ -162,20 +178,59 @@ public class FileType {
         UNKNOWN_255_022(255, 22), // HRM Pro Plus
         ERROR_SHUTDOWN_REPORTS(255, 245, true, "ErrorShutdownReports"),
         IQ_ERROR_REPORTS(255, 244, true, "IQErrorReports"),
-        GOLF_SCORECARD(255, 246, true, "GOLF_SCORECARD"), // Garmin vívoactive 5 - #4522
+        GOLF_SCORECARD(255, 246, true, "GOLF_SCORECARD"), // xml files, Garmin vívoactive 5 - #4522
         ULF_LOGS(255, 247, true, "ULFLogs"),
         KPI(255, 248, true, "KPI"), // Garmin Instinct Solar Tactical Edition - #5803
 
-        // unknown type and subtype
-        ACTIVITY_GCPD(Integer.MIN_VALUE, Integer.MIN_VALUE, true, "ACTIVITY_GCPD"),
-        BACKUP_PRIMARY(Integer.MIN_VALUE, Integer.MIN_VALUE, true, "BACKUP_PRIMARY"),
-        BACKUP_SUPPLEMENTARY(Integer.MIN_VALUE, Integer.MIN_VALUE, true, "BACKUP_SUPPLEMENTARY"),
-        BLE_LOGS(Integer.MIN_VALUE, Integer.MIN_VALUE, true, "BLELogs"),
-        FITNESS_HISTORY(Integer.MIN_VALUE, Integer.MIN_VALUE, true, "FitnessHistory"),
-        GPS_DATA(Integer.MIN_VALUE, Integer.MIN_VALUE, true, "GPSData"),
-        RAM_DUMP(Integer.MIN_VALUE, Integer.MIN_VALUE, true, "RAMDump"),
-        WELLNESS_TYPE_1(Integer.MIN_VALUE, Integer.MIN_VALUE, true, "WELLNESS_TYPE_1"),
-
+        // only seen in device.xml or V2 syncs, but not V1 syncs
+        ACTIVITY_GCPD("ACTIVITY_GCPD", true),
+        BACKUP_PRIMARY("BACKUP_PRIMARY", true), // zip files
+        BACKUP_SUPPLEMENTARY("BACKUP_SUPPLEMENTARY", true), // zip files
+        BaseMaps("BaseMaps"), // img files
+        BirdsEye("BirdsEye"), // jnx files
+        BLELogs("BLELogs", true),
+        CustomMaps("CustomMaps"), // kmz files
+        CustomPOI("CustomPOI"), // gpi files
+        EphemerisT1("EphemerisT1"),
+        Etyp("Etyp"), // sid files
+        ExpressRequest("ExpressRequest"),
+        FITBinary("FITBinary"),
+        FIT_TYPE_MET_ZONES("FIT_TYPE_MET_ZONES"),
+        FTLImageVersion("FTLImageVersion"),
+        FitnessHistory("FitnessHistory", true),
+        GPSData("GPSData", true), // gpx files
+        IQAppsConfiguration("IQAppsConfiguration"),
+        IQAppsMailboxFile("IQAppsMailboxFile"), // mbx files
+        IQAppsObjectStoreFile("IQAppsObjectStoreFile"), // str files
+        IQAppsSettingsFile("IQAppsSettingsFile"), // set files
+        IQAudioContentApps("IQAudioContentApps"), // prg files
+        IQDataFields("IQDataFields"), // prg files
+        IQStoreMessage("IQStoreMessage"), // stm files
+        IQWatchApps("IQWatchApps"), // prg files
+        IQWatchFaces("IQWatchFaces"), // prg files
+        IQWidgets("IQWidgets"), // prg files
+        LiveActivity("LiveActivity"), // JSON files
+        MEDIA_AUDIOBOOK("MEDIA_AUDIOBOOK"), // audio book upload: MP3, M4A, M4B, WAV, AAC, ADTS
+        MEDIA_PLAYLIST("MEDIA_PLAYLIST"), // music playlist upload: M3U, M3U8
+        MEDIA_PODCAST("MEDIA_PODCAST"), // podcast upload: MP3, M4A, M4B, WAV, AAC, ADTS
+        MEDIA_TRACK("MEDIA_TRACK"), // music upload: MP3, M4A, M4B, WAV, AAC, ADTS
+        MapRegionGrouping("MapRegionGrouping"),
+        NMaps("NMaps"), // img files
+        NamedTrails("NamedTrails"),
+        PROMPT_FILE("PROMPT_FILE"), // hvm files
+        PedestrianMaps("PedestrianMaps"), // img files
+        PreProgrammedDEMMaps("PreProgrammedDEMMaps"), // img files
+        PreProgrammedNamedMaps("PreProgrammedNamedMaps"), // img files
+        PreProgrammedRDA("PreProgrammedRDA"), // img files
+        RAMDump("RAMDump", true),
+        SupplementalMaps("SupplementalMaps"), // img files
+        TimeZoneMaps("TimeZoneMaps"),
+        TranslatedText("TranslatedText"),//  ln2, ln4, lng, or gtt files
+        UHCConfig("UHCConfig"), // txt files
+        ULFConfig("ULFConfig"), // jsn files
+        UnitSoftwareUpdate("UnitSoftwareUpdate"), // gcd files
+        WELLNESS_TYPE_1("WELLNESS_TYPE_1", true), // jet lag
+        WiFiConfiguration("WiFiConfiguration"),
         ;
 
         private final int type;
@@ -247,6 +302,14 @@ public class FileType {
             this(type, subtype, pull, type==128 ? "FIT_TYPE_" + subtype : null);
         }
 
+        FILETYPE( final String typeName) {
+            this(Integer.MIN_VALUE, Integer.MIN_VALUE, false, typeName);
+        }
+
+        FILETYPE( final String typeName, final boolean pull) {
+            this(Integer.MIN_VALUE, Integer.MIN_VALUE, pull, typeName);
+        }
+
         FILETYPE(final int type, final int subtype, boolean pull, final String typeName) {
             this.type = type;
             this.subtype = subtype;
@@ -265,12 +328,12 @@ public class FileType {
         }
 
         @Nullable
-        public static FILETYPE findByTypeName(String name) {
-            if(name == null || name.length() < 1){
+        public static FILETYPE findByTypeName(@Nullable String name) {
+            if (name == null || name.length() < 1) {
                 return null;
             }
-            for(FILETYPE type : values()){
-                if(type.typeName != null && name.contentEquals(type.typeName)){
+            for (FILETYPE type : values()) {
+                if (type.typeName != null && name.equalsIgnoreCase(type.typeName)) {
                     return type;
                 }
             }

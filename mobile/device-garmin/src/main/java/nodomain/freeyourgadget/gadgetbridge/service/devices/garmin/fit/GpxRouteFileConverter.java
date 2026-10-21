@@ -1,3 +1,19 @@
+/*  Copyright (C) 2024-2026 Daniele Gobbetti, José Rebelo, Thomas Kuehne, Sam Jeffery
+
+    This file is part of Gadgetbridge.
+
+    Gadgetbridge is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published
+    by the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Gadgetbridge is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 package nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit;
 
 import androidx.annotation.NonNull;
@@ -12,15 +28,21 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import nodomain.freeyourgadget.gadgetbridge.model.GPSCoordinate;
+import nodomain.freeyourgadget.gadgetbridge.model.NavigationInfoSpec;
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.FileType;
+import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit.enums.CoursePoint;
+import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit.enums.Event;
+import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit.enums.EventType;
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit.enums.GarminSport;
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit.messages.FitCourse;
+import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit.messages.FitCoursePoint;
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit.messages.FitEvent;
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit.messages.FitFileCreator;
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit.messages.FitFileId;
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit.messages.FitLap;
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit.messages.FitRecord;
 import nodomain.freeyourgadget.gadgetbridge.util.gpx.model.GpxFile;
+import nodomain.freeyourgadget.gadgetbridge.util.gpx.model.GpxNavigationPoint;
 import nodomain.freeyourgadget.gadgetbridge.util.gpx.model.GpxTrackPoint;
 
 public class GpxRouteFileConverter {
@@ -31,13 +53,19 @@ public class GpxRouteFileConverter {
     private final GpxFile gpxFile;
     private FitFile convertedFile;
     private final String name;
+    private boolean includeNavigation;
+    private boolean includeStraightNavigation;
 
     public GpxRouteFileConverter(@NonNull final GpxFile gpxFile,
                                  @NonNull final String trackName,
+                                 final boolean includeNavigation,
+                                 final boolean includeStraightNavigation,
                                  @Nullable final Date date) {
         this.timestamp = ((date == null) ? System.currentTimeMillis() : date.getTime()) / 1000L;
         this.gpxFile = gpxFile;
         this.name = trackName;
+        this.includeNavigation = includeNavigation;
+        this.includeStraightNavigation = includeStraightNavigation;
         try {
             this.convertedFile = convertGpxToRoute(gpxFile);
         } catch (final Exception e) {
@@ -96,8 +124,8 @@ public class GpxRouteFileConverter {
 
             final FitRecord.Builder recordBuilder = new FitRecord.Builder();
             recordBuilder.setTimestamp(runningTs);
-            recordBuilder.setLatitude(point.getLatitude());
-            recordBuilder.setLongitude(point.getLongitude());
+            recordBuilder.setPositionLat(point.getLatitude());
+            recordBuilder.setPositionLong(point.getLongitude());
             recordBuilder.setDistance(totalDistance);
 
             if(point.hasAltitude()){
@@ -123,6 +151,65 @@ public class GpxRouteFileConverter {
             gpxPointDataRecords.add(recordBuilder.build(0x05));
         }
 
+        final List<GpxNavigationPoint> gpxNavigationPointList = gpxFile.getTracks().get(0)
+                .getTrackSegments().stream()
+                .flatMap(segment -> segment.getNavigationPoints().stream())
+                .collect(Collectors.toList());
+
+        final List<RecordData> gpxCoursePointDataRecords = new ArrayList<>();
+
+        if (includeNavigation) {
+            int count = 0;
+            for (GpxNavigationPoint point :
+                    gpxNavigationPointList) {
+                LOG.debug("MAS: Adding navigation point: {}", point);
+                final FitCoursePoint.Builder coursePointBuilder = new FitCoursePoint.Builder();
+                coursePointBuilder.setTimestamp(point.getTime().getTime() / 1000L);
+                coursePointBuilder.setPositionLat(point.getLatitude());
+                coursePointBuilder.setPositionLong(point.getLongitude());
+                coursePointBuilder.setDistance(point.getDistanceFromStart());
+                coursePointBuilder.setType(switch (point.getNavigationInstruction()) {
+                    case NavigationInfoSpec.ACTION_CONTINUE -> CoursePoint.STRAIGHT;
+                    case NavigationInfoSpec.ACTION_TURN_LEFT -> CoursePoint.LEFT;
+                    case NavigationInfoSpec.ACTION_TURN_LEFT_SLIGHTLY -> CoursePoint.SLIGHT_LEFT;
+                    case NavigationInfoSpec.ACTION_TURN_LEFT_SHARPLY -> CoursePoint.SHARP_LEFT;
+                    case NavigationInfoSpec.ACTION_TURN_RIGHT -> CoursePoint.RIGHT;
+                    case NavigationInfoSpec.ACTION_TURN_RIGHT_SLIGHTLY -> CoursePoint.SLIGHT_RIGHT;
+                    case NavigationInfoSpec.ACTION_TURN_RIGHT_SHARPLY -> CoursePoint.SHARP_RIGHT;
+                    case NavigationInfoSpec.ACTION_KEEP_LEFT -> CoursePoint.LEFT_FORK;
+                    case NavigationInfoSpec.ACTION_KEEP_RIGHT -> CoursePoint.RIGHT_FORK;
+                    case NavigationInfoSpec.ACTION_UTURN_LEFT, NavigationInfoSpec.ACTION_UTURN_RIGHT -> CoursePoint.U_TURN;
+                    case NavigationInfoSpec.ACTION_OFFROUTE -> CoursePoint.GENERIC; // ?
+                    default -> CoursePoint.GENERIC;
+                });
+
+                if (point.getNavigationInstruction() == NavigationInfoSpec.ACTION_ROUNDABOUT_LEFT) {
+                    coursePointBuilder.setType(switch (point.getRoundaboutExitNumber()) {
+                        case 1 -> CoursePoint.LEFT;
+                        case 2 -> CoursePoint.STRAIGHT;
+                        default -> CoursePoint.RIGHT;
+                    });
+                } else if (point.getNavigationInstruction() == NavigationInfoSpec.ACTION_ROUNDABOUT_RIGHT) {
+                    coursePointBuilder.setType(switch (point.getRoundaboutExitNumber()) {
+                        case 1 -> CoursePoint.RIGHT;
+                        case 2 -> CoursePoint.STRAIGHT;
+                        default -> CoursePoint.LEFT;
+                    });
+                }
+
+                if (point.getExtraNavigationInstruction() != null) {
+                    coursePointBuilder.setName(point.getExtraNavigationInstruction());
+                }
+
+                coursePointBuilder.setMessageIndex(count);
+
+                if (point.getNavigationInstruction() != NavigationInfoSpec.ACTION_CONTINUE || includeStraightNavigation) {
+                    gpxCoursePointDataRecords.add(coursePointBuilder.build(0x06));
+                    count++;
+                }
+            }
+        }
+
         final FitLap.Builder lapRecordBuilder = getLapRecordData(gpxTrackPointList);
         lapRecordBuilder.setTotalDistance(totalDistance);
         lapRecordBuilder.setTotalAscent((int) Math.round(totalAscent));
@@ -136,18 +223,21 @@ public class GpxRouteFileConverter {
         courseFileDataRecords.add(getCourseRecordData());
         courseFileDataRecords.add(lapRecordBuilder.build(0x03));
 
-        courseFileDataRecords.add(getEventRecordData(timestamp, 0));
-        courseFileDataRecords.add(getEventRecordData(runningTs, 9));
+        courseFileDataRecords.add(getEventRecordData(timestamp, EventType.START));
 
         courseFileDataRecords.addAll(gpxPointDataRecords);
+
+        // Stop must be at the end, or some watches will freeze
+        courseFileDataRecords.add(getEventRecordData(runningTs, EventType.STOP_DISABLE_ALL));
+        courseFileDataRecords.addAll(gpxCoursePointDataRecords);
 
         return new FitFile(courseFileDataRecords);
     }
 
-    private FitEvent getEventRecordData(long timestamp, int eventType) {
+    private FitEvent getEventRecordData(long timestamp, EventType eventType) {
         final FitEvent.Builder eventBuilder = new FitEvent.Builder();
         eventBuilder.setTimestamp(timestamp);
-        eventBuilder.setEvent(0);
+        eventBuilder.setEvent(Event.TIMER);
         eventBuilder.setEventGroup(0);
         eventBuilder.setEventType(eventType);
         return eventBuilder.build(0x04);
@@ -158,10 +248,10 @@ public class GpxRouteFileConverter {
         final GPSCoordinate last = gpxTrackPointList.get(gpxTrackPointList.size() - 1);
 
         final FitLap.Builder lapBuilder = new FitLap.Builder();
-        lapBuilder.setStartLat(first.getLatitude());
-        lapBuilder.setStartLong(first.getLongitude());
-        lapBuilder.setEndLat(last.getLatitude());
-        lapBuilder.setEndLong(last.getLongitude());
+        lapBuilder.setStartPositionLat(first.getLatitude());
+        lapBuilder.setStartPositionLong(first.getLongitude());
+        lapBuilder.setEndPositionLat(last.getLatitude());
+        lapBuilder.setEndPositionLong(last.getLongitude());
         lapBuilder.setTimestamp(timestamp);
         lapBuilder.setMessageIndex(0);
         lapBuilder.setStartTime(timestamp);

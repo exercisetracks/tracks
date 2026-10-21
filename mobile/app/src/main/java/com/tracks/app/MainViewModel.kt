@@ -1197,19 +1197,33 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
     }
 
     private fun run(label: String, block: suspend () -> Unit) {
-        viewModelScope.launch { awaiting(label, block) }
+        viewModelScope.launch { report(label, block) }
     }
 
     /**
      * As [run], for a caller that has to know when it finished — a
      * pull-to-refresh drawing its own indicator, which would otherwise have to
      * guess how long to spin for.
+     *
+     * The work runs in the view model's scope and the caller only waits for
+     * it. The gesture's scope is the page's, and leaving the page mid-sync
+     * (opening the map from the recording banner, say) cancelled it: the sync
+     * carried on, detached, but the wait was reported as "Syncing watch
+     * failed: rememberCoroutineScope left the composition". Now leaving stops
+     * only the waiting, and the outcome is still reported when it comes.
      */
     private suspend fun awaiting(label: String, block: suspend () -> Unit) {
+        viewModelScope.launch { report(label, block) }.join()
+    }
+
+    private suspend fun report(label: String, block: suspend () -> Unit) {
         run {
             _state.update { current -> current.copy(busy = true, message = null) }
             try {
                 block()
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                // Not a failure: the view model is going, and its work with it.
+                throw e
             } catch (e: VaultLockedException) {
                 _state.update { current -> current.copy(
                     message = "Your data is locked. Sign in again to unlock it.",

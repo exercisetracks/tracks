@@ -36,7 +36,8 @@ internal object GarminNotifications {
         spec.sourceName = notification.appName
         spec.sourceAppId = notification.packageName
         spec.type = typeOf(notification.category)
-        spec.attachedActions = actionsOf(notification)
+        // Nullable elements since Gadgetbridge 0.94 made the spec Kotlin.
+        spec.attachedActions = ArrayList<NotificationSpec.Action?>(actionsOf(notification))
         return spec
     }
 
@@ -74,11 +75,11 @@ internal object GarminNotifications {
             }
         }
         out += NotificationSpec.Action().apply {
-            type = NotificationSpec.Action.TYPE_SYNTECTIC_DISMISS
+            type = NotificationSpec.Action.TYPE_SYNTHETIC_DISMISS
             title = "Clear"
         }
         out += NotificationSpec.Action().apply {
-            type = NotificationSpec.Action.TYPE_SYNTECTIC_MUTE
+            type = NotificationSpec.Action.TYPE_SYNTHETIC_MUTE
             title = "Mute app"
         }
         return out

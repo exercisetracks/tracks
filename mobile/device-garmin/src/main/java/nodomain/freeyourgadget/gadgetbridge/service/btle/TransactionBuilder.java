@@ -212,7 +212,7 @@ public class TransactionBuilder {
     /// {@link GattCallback#onMtuChanged(BluetoothGatt, int, int)}
     @NonNull
     public TransactionBuilder requestMtu(@IntRange(from = 23L, to = 517L) int mtu) {
-        RequestMtuAction action = new RequestMtuAction(mtu);
+        RequestMtuAction action = new RequestMtuAction(mtu, mDeviceSupport, mDeviceIdx);
         return add(action);
     }
 
@@ -278,12 +278,6 @@ public class TransactionBuilder {
     public TransactionBuilder sleep(@IntRange(from = 0L) int millis) {
         SleepAction action = new SleepAction(millis);
         return add(action);
-    }
-
-    /// @deprecated use {@link #sleep(int)} instead
-    @Deprecated
-    public TransactionBuilder wait(@IntRange(from = 0L) int millis) {
-        return sleep(millis);
     }
 
     /// Causes the {@link BtLEQueue} to execute the {@link Predicate} and expect no {@link GattCallback} result.

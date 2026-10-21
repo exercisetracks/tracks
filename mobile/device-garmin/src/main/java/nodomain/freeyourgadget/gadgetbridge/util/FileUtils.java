@@ -97,10 +97,10 @@ public class FileUtils {
      */
     public static void copyStreamToFile(InputStream inputStream, File destFile) throws IOException {
         try (FileOutputStream fout = new FileOutputStream(destFile)) {
-            byte[] buf = new byte[4096];
-            while (inputStream.available() > 0) {
-                int bytes = inputStream.read(buf);
-                fout.write(buf, 0, bytes);
+            final byte[] buf = new byte[4096];
+            int read;
+            while ((read = inputStream.read(buf)) > 0) {
+                fout.write(buf, 0, read);
             }
         }
     }
@@ -312,9 +312,9 @@ public class FileUtils {
      * @return the bytes read from the InputStream
      * @throws IOException when reading failed or when maxLen was exceeded
      */
-    public static byte[] readAll(InputStream in, long maxLen) throws IOException {
-        ByteArrayOutputStream out = new ByteArrayOutputStream(Math.max(8192, in.available()));
-        byte[] buf = new byte[8192];
+    public static byte[] readAll(final InputStream in, final long maxLen) throws IOException {
+        final ByteArrayOutputStream out = new ByteArrayOutputStream(Math.max(8192, (int) maxLen));
+        final byte[] buf = new byte[8192];
         int read;
         long totalRead = 0;
         while ((read = in.read(buf)) > 0) {
@@ -325,6 +325,10 @@ public class FileUtils {
             }
         }
         return out.toByteArray();
+    }
+
+    public static byte[] readAll(final InputStream in) throws IOException {
+        return readAll(in, 64 * 1024 * 1024);
     }
 
     public static byte[] readAll(final File inputFile) throws IOException {
@@ -366,6 +370,23 @@ public class FileUtils {
             }
         }
         return dir.delete();
+    }
+
+    @Nullable
+    public static byte[] getHeader(final File file, final int bytes) {
+        final byte[] header = new byte[bytes];
+
+        try (InputStream is = new FileInputStream(file)) {
+            if (is.read(header) != header.length) {
+                LOG.warn("Read unexpected number of header bytes");
+                return null;
+            }
+        } catch (final IOException e) {
+            LOG.error("Error while reading header bytes", e);
+            return null;
+        }
+
+        return header;
     }
 
     public static File createTempDir(String prefix) throws IOException {
@@ -502,6 +523,13 @@ public class FileUtils {
         }
         if (data.length > 13 && BLETypeConversions.toUint32(data, 8) == FitFile.Header.MAGIC) {
             return "fit";
+        }
+        if (ArrayUtils.equals(data, new byte[]{'{', '"'}, 0)) {
+            // plain JSON
+            return "json";
+        } else if (ArrayUtils.equals(data, new byte[]{(byte) 0xEF, (byte) 0xBB, (byte) 0xBF, '{', '"'}, 0)) {
+            // JSON with leading UTF-8 Byte Order Mark (BOM)
+            return "json";
         }
         return null;
     }

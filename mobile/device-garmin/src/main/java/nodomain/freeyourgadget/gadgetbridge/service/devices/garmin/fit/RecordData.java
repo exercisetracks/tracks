@@ -72,7 +72,7 @@ public class RecordData {
                 } else {
                     LOG.warn("Dev field '{}' (#{}) has no base type — no matching field_description was parsed before its first record; falling back to opaque bytes",
                             fieldDef.getName(), fieldDef.getFieldDefinitionNumber());
-                    devBaseType = BaseType.BASE_TYPE_BYTE;
+                    devBaseType = BaseType.BYTE;
                 }
                 FieldDefinition temp = new FieldDefinition(fieldDef.getFieldDefinitionNumber(), fieldDef.getSize(), devBaseType, fieldDef.getName());
                 fieldDataList.add(new FieldData(temp, totalSize));
@@ -119,6 +119,13 @@ public class RecordData {
     public void generateOutgoingDataPayload(MessageWriter writer) {
         writer.writeByte(recordHeader.generateOutgoingDataPayload());
         writer.writeBytes(valueHolder.array());
+    }
+
+    /**
+     * Size in bytes this record will take up once encoded, i.e. the record header byte plus its field values.
+     */
+    public int getEncodedSize() {
+        return 1 + valueHolder.capacity();
     }
 
     public void setFieldByNumber(int number, Object... value) {
@@ -242,10 +249,13 @@ public class RecordData {
             // some older Garmin devices encoded e.g.
             // [distance] and [enhanced_speed] as float instead of double
             // [cadence] as float instead of integer
-            if(clazz.equals(Double.class)){
+            if (clazz.equals(Double.class)) {
                 return clazz.cast(number.doubleValue());
             }
-            if(clazz.equals(Integer.class)){
+            if (clazz.equals(Float.class)) {
+                return clazz.cast(number.floatValue());
+            }
+            if (clazz.equals(Integer.class)) {
                 return clazz.cast(number.intValue());
             }
 

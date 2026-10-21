@@ -60,6 +60,6 @@ public class ServerResponseAction extends BtLEServerAction {
     @NonNull
     @Override
     public String toString() {
-        return super.toString() + " #" + requestId + " - " + GB.hexdump(getValue());
+        return super.toString() + " #" + requestId + " >@ " + GB.hexdump(getValue());
     }
 }

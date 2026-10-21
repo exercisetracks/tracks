@@ -8,6 +8,8 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.location.Location;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -46,12 +48,12 @@ import nodomain.freeyourgadget.gadgetbridge.proto.garmin.GdiFileSyncService;
 import nodomain.freeyourgadget.gadgetbridge.proto.garmin.GdiFindMyWatch;
 import nodomain.freeyourgadget.gadgetbridge.proto.garmin.GdiHttpService;
 import nodomain.freeyourgadget.gadgetbridge.proto.garmin.GdiNotificationsService;
-import nodomain.freeyourgadget.gadgetbridge.proto.garmin.GdiSettingsService;
 import nodomain.freeyourgadget.gadgetbridge.proto.garmin.GdiInstalledAppsService;
-import nodomain.freeyourgadget.gadgetbridge.proto.garmin.GdiSmartProto;
+import nodomain.freeyourgadget.gadgetbridge.proto.garmin.GdiSmartProto.Smart;
 import nodomain.freeyourgadget.gadgetbridge.proto.garmin.GdiSmsNotification;
 import nodomain.freeyourgadget.gadgetbridge.proto.garmin.GdiEcgService;
 import nodomain.freeyourgadget.gadgetbridge.proto.garmin.GdiExploreSyncService;
+import nodomain.freeyourgadget.gadgetbridge.proto.garmin.GdiSettingsService.SettingsService;
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.http.DataTransferHandler;
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.http.HttpHandler;
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.messages.GFDIMessage;
@@ -76,6 +78,7 @@ public class ProtocolBufferHandler implements MessageHandler {
     private final FileSyncServiceHandler fileSyncServiceHandler;
     private final EcgServiceHandler ecgServiceHandler;
     private final ExploreSyncHandler exploreSyncHandler;
+    private final PushNotificationHandler pushNotificationHandler;
 
     private final Map<GdiSmsNotification.SmsNotificationService.CannedListType, String[]> cannedListTypeMap = new HashMap<>();
 
@@ -87,6 +90,7 @@ public class ProtocolBufferHandler implements MessageHandler {
         fileSyncServiceHandler = new FileSyncServiceHandler(deviceSupport);
         ecgServiceHandler = new EcgServiceHandler(deviceSupport);
         exploreSyncHandler = new ExploreSyncHandler(deviceSupport);
+        pushNotificationHandler = new PushNotificationHandler(deviceSupport);
     }
 
     public void setContext(final GBDevice gbDevice, final BluetoothAdapter btAdapter, final Context context) {
@@ -116,9 +120,9 @@ public class ProtocolBufferHandler implements MessageHandler {
             LOG.info("Received protobuf message #{}, {}B: {}", message.getRequestId(), protobufFragment.totalLength, GB.hexdump(protobufFragment.fragmentBytes, 0, protobufFragment.totalLength));
             chunkedFragmentsMap.remove(message.getRequestId());
 
-            final GdiSmartProto.Smart smart;
+            final Smart smart;
             try {
-                smart = GdiSmartProto.Smart.parseFrom(protobufFragment.fragmentBytes);
+                smart = Smart.parseFrom(protobufFragment.fragmentBytes);
             } catch (InvalidProtocolBufferException e) {
                 LOG.error("Failed to parse protobuf message ({}): {}", e.getLocalizedMessage(), GB.hexdump(protobufFragment.fragmentBytes));
                 return null;
@@ -136,7 +140,7 @@ public class ProtocolBufferHandler implements MessageHandler {
             if (smart.hasHttpService()) {
                 final GdiHttpService.HttpService response = httpHandler.handle(smart.getHttpService(), message.getRequestId());
                 if (response != null) {
-                    return prepareProtobufResponse(GdiSmartProto.Smart.newBuilder().setHttpService(response).build(), message.getRequestId());
+                    return prepareProtobufResponse(Smart.newBuilder().setHttpService(response).build(), message.getRequestId());
                 }
                 processed = true;
                 // Response will be async
@@ -146,7 +150,7 @@ public class ProtocolBufferHandler implements MessageHandler {
                 if (response == null) {
                     return null;
                 }
-                return prepareProtobufResponse(GdiSmartProto.Smart.newBuilder().setDataTransferService(response).build(), message.getRequestId());
+                return prepareProtobufResponse(Smart.newBuilder().setDataTransferService(response).build(), message.getRequestId());
             }
             if (smart.hasDeviceStatusService()) {
                 processed = true;
@@ -173,9 +177,9 @@ public class ProtocolBufferHandler implements MessageHandler {
                                     .setOauthToken(UUID.randomUUID().toString())
                                     .setOauthSecret(RandomStringUtils.insecure().next(35, true, true))
                                     .build()
-                            ).setUnk2(0).build();
+                            ).setRegion(0).build();
 
-                    return prepareProtobufResponse(GdiSmartProto.Smart.newBuilder().setAuthenticationService(
+                    return prepareProtobufResponse(Smart.newBuilder().setAuthenticationService(
                             GdiAuthenticationService.AuthenticationService.newBuilder()
                                     .setOauthResponse(oauthResponse)
                     ).build(), message.getRequestId());
@@ -209,31 +213,22 @@ public class ProtocolBufferHandler implements MessageHandler {
                 }
             }
             if (smart.hasFileSyncService()) {
-                // Tracks: ask the support class rather than re-reading the
-                // preference. Which protocol a connection speaks is now decided
-                // once, per connection, from the watch's own capabilities — so
-                // a raw preference read here answers a different question and
-                // gets it wrong on every watch that never set one. See
-                // vendor/patches/0005-filesync-single-authority.patch.
                 if (deviceSupport.newSyncProtocol()) {
                     processed = true;
                     final GdiFileSyncService.FileSyncService response = fileSyncServiceHandler.handle(smart.getFileSyncService());
                     if (response != null) {
-                        return prepareProtobufResponse(GdiSmartProto.Smart.newBuilder().setFileSyncService(response).build(), message.getRequestId());
+                        return prepareProtobufResponse(Smart.newBuilder().setFileSyncService(response).build(), message.getRequestId());
                     }
                 } else {
                     LOG.warn("Ignoring file sync service - new sync protocol is disabled");
                 }
             }
             if (smart.hasEcgService()) {
-                // Tracks: same single authority as above. Upstream gates ECG on
-                // the file-sync preference because both arrived with the same
-                // firmware generation, and that reading is preserved here.
                 if (deviceSupport.newSyncProtocol()) {
                     processed = true;
                     final GdiEcgService.EcgService response = ecgServiceHandler.handle(smart.getEcgService());
                     if (response != null) {
-                        return prepareProtobufResponse(GdiSmartProto.Smart.newBuilder().setEcgService(response).build(), message.getRequestId());
+                        return prepareProtobufResponse(Smart.newBuilder().setEcgService(response).build(), message.getRequestId());
                     }
                 } else {
                     LOG.warn("Ignoring zip transfer service - new sync protocol is disabled");
@@ -242,12 +237,15 @@ public class ProtocolBufferHandler implements MessageHandler {
             if (smart.hasAppConfigService()) {
                 processed = appConfigHandler.process(smart.getAppConfigService());
             }
+            if (smart.hasPushNotificationService()) {
+                processed = pushNotificationHandler.handle(smart.getPushNotificationService());
+            }
             if (smart.hasExploreSyncService()) {
                 if (deviceSupport.getDevicePrefs().getBoolean("garmin_exploresync", false)) {
                     processed = true;
                     final GdiExploreSyncService.ExploreSyncService response = exploreSyncHandler.handle(smart.getExploreSyncService());
                     if (response != null) {
-                        return prepareProtobufResponse(GdiSmartProto.Smart.newBuilder().setExploreSyncService(response).build(), message.getRequestId());
+                        return prepareProtobufResponse(Smart.newBuilder().setExploreSyncService(response).build(), message.getRequestId());
                     }
                 } else {
                     LOG.warn("Ignoring explore sync service - explore sync is disabled");
@@ -284,7 +282,7 @@ public class ProtocolBufferHandler implements MessageHandler {
 
             if (chunkedFragmentsMap.containsKey(statusMessage.getRequestId())) {
                 final ProtobufFragment protobufFragment = chunkedFragmentsMap.get(statusMessage.getRequestId());
-                LOG.debug("Protobuf message #{} found in queue: {}", statusMessage.getRequestId(), GB.hexdump(protobufFragment.fragmentBytes));
+                LOG.debug("Protobuf message #{} found in queue: {}", statusMessage.getRequestId(), GB.lazyHexdump(protobufFragment.fragmentBytes));
 
                 if (protobufFragment.totalLength <= (statusMessage.getDataOffset() + maxChunkSize)) {
                     chunkedFragmentsMap.remove(statusMessage.getRequestId());
@@ -313,7 +311,7 @@ public class ProtocolBufferHandler implements MessageHandler {
         return chunkedFragmentsMap.get(message.getRequestId());
     }
 
-    private GdiSmartProto.Smart processProtobufCalendarRequest(GdiCalendarService.CalendarService calendarService) {
+    private Smart processProtobufCalendarRequest(GdiCalendarService.CalendarService calendarService) {
         if (calendarService.hasCalendarRequest()) {
             GdiCalendarService.CalendarService.CalendarServiceRequest calendarServiceRequest = calendarService.getCalendarRequest();
 
@@ -322,7 +320,7 @@ public class ProtocolBufferHandler implements MessageHandler {
 
             if (!syncEnabled) {
                 LOG.warn("Got calendar request, but calendar sync is disabled");
-                return GdiSmartProto.Smart.newBuilder().setCalendarService(
+                return Smart.newBuilder().setCalendarService(
                         GdiCalendarService.CalendarService.newBuilder().setCalendarResponse(
                                 GdiCalendarService.CalendarService.CalendarServiceResponse.newBuilder()
                                         .addAllCalendarEvent(Collections.emptyList())
@@ -393,7 +391,7 @@ public class ProtocolBufferHandler implements MessageHandler {
             }
 
             LOG.debug("CalendarService Sending {} events to watch", watchEvents.size());
-            return GdiSmartProto.Smart.newBuilder().setCalendarService(
+            return Smart.newBuilder().setCalendarService(
                     GdiCalendarService.CalendarService.newBuilder().setCalendarResponse(
                             GdiCalendarService.CalendarService.CalendarServiceResponse.newBuilder()
                                     .addAllCalendarEvent(watchEvents)
@@ -402,7 +400,7 @@ public class ProtocolBufferHandler implements MessageHandler {
             ).build();
         }
         LOG.warn("Unknown CalendarService request: {}", calendarService);
-        return GdiSmartProto.Smart.newBuilder().setCalendarService(
+        return Smart.newBuilder().setCalendarService(
                 GdiCalendarService.CalendarService.newBuilder().setCalendarResponse(
                         GdiCalendarService.CalendarService.CalendarServiceResponse.newBuilder()
                                 .setStatus(GdiCalendarService.CalendarService.CalendarServiceResponse.ResponseStatus.UNKNOWN_RESPONSE_STATUS)
@@ -432,7 +430,8 @@ public class ProtocolBufferHandler implements MessageHandler {
         LOG.warn("Unknown DeviceStatusService response: {}", deviceStatusService);
     }
 
-    private GdiSmartProto.Smart processProtobufCoreRequest(GdiCore.CoreService coreService) {
+    @Nullable
+    private Smart processProtobufCoreRequest(@NonNull GdiCore.CoreService coreService) {
         // PATCHED FOR TRACKS (0015): the watch's position about once a second
         // while it records (measured against Garmin Explore). Upstream has no
         // branch for it and logged it as an unknown request.
@@ -448,15 +447,20 @@ public class ProtocolBufferHandler implements MessageHandler {
 
         if (coreService.hasGetLocationRequest()) {
             LOG.info("Got location request");
-            final Location location = new CurrentPosition().getLastKnownLocation();
+            final CurrentPosition currentPosition = new CurrentPosition();
+            final Location location = currentPosition.getLastKnownLocation();
             final GdiCore.CoreService.GetLocationResponse.Builder response = GdiCore.CoreService.GetLocationResponse.newBuilder();
             if (location.getLatitude() == 0 && location.getLongitude() == 0) {
+                response.setStatus(GdiCore.CoreService.GetLocationResponse.Status.NO_VALID_LOCATION);
+            } else if (currentPosition.isFromPreferences() &&
+                    GBApplication.getPrefs().getBoolean("use_updated_location_if_available", false)) {
+                LOG.warn("No fresh location available, replying with NO_VALID_LOCATION");
                 response.setStatus(GdiCore.CoreService.GetLocationResponse.Status.NO_VALID_LOCATION);
             } else {
                 response.setStatus(GdiCore.CoreService.GetLocationResponse.Status.OK)
                         .setLocationData(GarminUtils.toLocationData(location, GdiCore.CoreService.DataType.GENERAL_LOCATION));
             }
-            return GdiSmartProto.Smart.newBuilder().setCoreService(
+            return Smart.newBuilder().setCoreService(
                     GdiCore.CoreService.newBuilder().setGetLocationResponse(response)).build();
         }
 
@@ -507,15 +511,24 @@ public class ProtocolBufferHandler implements MessageHandler {
                 }
             }
 
-            return GdiSmartProto.Smart.newBuilder().setCoreService(
+            return Smart.newBuilder().setCoreService(
                     GdiCore.CoreService.newBuilder().setLocationUpdatedSetEnabledResponse(response)).build();
+        }
+
+        if (coreService.hasConnectedNotification()) {
+            LOG.info("Got ConnectedNotification");
+            // ping-pong to notify the gadget that the connection is live and working
+            return Smart.newBuilder().setCoreService(
+                    GdiCore.CoreService.newBuilder().setConnectedNotification(
+                            GdiCore.CoreService.ConnectedNotification.newBuilder().build()
+                    )).build();
         }
 
         LOG.warn("Unknown CoreService request: {}", coreService);
         return null;
     }
 
-    private GdiSmartProto.Smart processProtobufNotificationsServiceMessage(final GdiNotificationsService.NotificationsService notificationsService) {
+    private Smart processProtobufNotificationsServiceMessage(final GdiNotificationsService.NotificationsService notificationsService) {
         if (notificationsService.hasPictureRequest()) {
             final GdiNotificationsService.PictureRequest pictureRequest = notificationsService.getPictureRequest();
             final int notificationId = pictureRequest.getNotificationId();
@@ -534,20 +547,23 @@ public class ProtocolBufferHandler implements MessageHandler {
 
             final int transferId = DataTransferHandler.registerData(imageBytes);
 
-            final GdiNotificationsService.PictureResponse response = GdiNotificationsService.PictureResponse.newBuilder()
-                    .setUnk1(1)
+            final GdiNotificationsService.PictureResponse.Builder response = GdiNotificationsService.PictureResponse.newBuilder()
+                    .setStatus(1)
                     .setNotificationId(notificationId)
-                    .setUnk3(0)
-                    .setUnk4(1)
+                    .setPictureType(GdiNotificationsService.PictureType.JPEG)
                     .setDataTransferItem(
                             GdiNotificationsService.DataTransferItem.newBuilder()
                                     .setId(transferId)
                                     .setSize(imageBytes.length)
                                     .build()
-                    )
-                    .build();
-            return GdiSmartProto.Smart.newBuilder().setNotificationsService(
-                    GdiNotificationsService.NotificationsService.newBuilder().setPictureResponse(response)
+                    );
+
+            if (pictureRequest.hasIndex()) {
+                response.setIndex(pictureRequest.getIndex());
+            }
+
+            return Smart.newBuilder().setNotificationsService(
+                    GdiNotificationsService.NotificationsService.newBuilder().setPictureResponse(response.build())
             ).build();
         }
 
@@ -555,7 +571,7 @@ public class ProtocolBufferHandler implements MessageHandler {
         return null;
     }
 
-    private GdiSmartProto.Smart processProtobufSmsNotificationMessage(GdiSmsNotification.SmsNotificationService smsNotificationService) {
+    private Smart processProtobufSmsNotificationMessage(GdiSmsNotification.SmsNotificationService smsNotificationService) {
         if (smsNotificationService.hasSmsCannedListRequest()) {
             LOG.debug("Got request for sms canned list");
 
@@ -583,7 +599,7 @@ public class ProtocolBufferHandler implements MessageHandler {
             if (!found)
                 builder.setStatus(GdiSmsNotification.SmsNotificationService.ResponseStatus.GENERIC_ERROR);
 
-            return GdiSmartProto.Smart.newBuilder().setSmsNotificationService(GdiSmsNotification.SmsNotificationService.newBuilder().setSmsCannedListResponse(builder)).build();
+            return Smart.newBuilder().setSmsNotificationService(GdiSmsNotification.SmsNotificationService.newBuilder().setSmsCannedListResponse(builder)).build();
         } else {
             LOG.warn("Protobuf smsNotificationService request not implemented: {}", smsNotificationService);
             return null;
@@ -624,7 +640,7 @@ public class ProtocolBufferHandler implements MessageHandler {
         LOG.warn("Unknown FindMyWatchService response: {}", findMyWatchService);
     }
 
-    private boolean processProtobufSettingsService(final GdiSettingsService.SettingsService settingsService) {
+    private boolean processProtobufSettingsService(final SettingsService settingsService) {
         boolean processed = false;
 
         if (settingsService.hasDefinitionResponse()) {
@@ -651,14 +667,14 @@ public class ProtocolBufferHandler implements MessageHandler {
         return processed;
     }
 
-    public ProtobufMessage prepareProtobufRequest(GdiSmartProto.Smart protobufPayload) {
+    public ProtobufMessage prepareProtobufRequest(Smart protobufPayload) {
         if (null == protobufPayload)
             return null;
         final int requestId = getNextProtobufRequestId();
         return prepareProtobufMessage(protobufPayload.toByteArray(), GFDIMessage.GarminMessage.PROTOBUF_REQUEST, requestId);
     }
 
-    public ProtobufMessage prepareProtobufResponse(GdiSmartProto.Smart protobufPayload, int requestId) {
+    public ProtobufMessage prepareProtobufResponse(Smart protobufPayload, int requestId) {
         if (null == protobufPayload)
             return null;
         return prepareProtobufMessage(protobufPayload.toByteArray(), GFDIMessage.GarminMessage.PROTOBUF_RESPONSE, requestId);
@@ -683,7 +699,7 @@ public class ProtocolBufferHandler implements MessageHandler {
 
     public ProtobufMessage setCannedMessages(CannedMessagesSpec cannedMessagesSpec) {
         final GdiSmsNotification.SmsNotificationService.CannedListType cannedListType;
-        switch (cannedMessagesSpec.type) {
+        switch (cannedMessagesSpec.getType()) {
             case CannedMessagesSpec.TYPE_REJECTEDCALLS:
                 cannedListType = GdiSmsNotification.SmsNotificationService.CannedListType.PHONE_CALL_RESPONSE;
                 break;
@@ -696,9 +712,9 @@ public class ProtocolBufferHandler implements MessageHandler {
                 return null;
         }
 
-        this.cannedListTypeMap.put(cannedListType, cannedMessagesSpec.cannedMessages);
+        this.cannedListTypeMap.put(cannedListType, cannedMessagesSpec.getCannedMessages());
 
-        GdiSmartProto.Smart smart = GdiSmartProto.Smart.newBuilder()
+        Smart smart = Smart.newBuilder()
                 .setSmsNotificationService(GdiSmsNotification.SmsNotificationService.newBuilder()
                         .setSmsCannedListChangedNotification(
                                 GdiSmsNotification.SmsNotificationService.SmsCannedListChangedNotification.newBuilder().addChangedType(cannedListType)
@@ -710,6 +726,10 @@ public class ProtocolBufferHandler implements MessageHandler {
 
     public FileSyncServiceHandler getFileSyncServiceHandler() {
         return fileSyncServiceHandler;
+    }
+
+    public PushNotificationHandler getPushNotificationHandler() {
+        return pushNotificationHandler;
     }
 
     public AppConfigHandler getAppConfigHandler() {

@@ -65,6 +65,9 @@ class TracksApplication : Application() {
         raiseMapTileConcurrency()
         container = AppContainer(this)
         container.watchPacksForConnectivity()
+        // The watch's hydration widget is answered from the day's water; see
+        // WatchHydrationStore.
+        com.tracks.device.garmin.WatchHydration.store = container.watchHydration
         // Read the screens' last figures now, so the first screen has them.
         container.snapshots
         // Enqueued unconditionally: the worker itself decides whether there is
@@ -888,6 +891,11 @@ class AppContainer(private val context: Context) {
      * why a second instance here would defeat the point of having one.
      */
     val watchSync: WatchSyncRunner by lazy { WatchSyncRunner(this) }
+
+    /** The day's water as the watch's hydration widget reads and logs it. */
+    val watchHydration: com.tracks.app.device.WatchHydrationStore by lazy {
+        com.tracks.app.device.WatchHydrationStore(this)
+    }
 
     /**
      * Syncs the watch on the first open each morning and shortly after the

@@ -1,9 +1,15 @@
 diff --git a/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/FileSyncServiceHandler.kt b/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/FileSyncServiceHandler.kt
-index 7b6134b..b255dcd 100644
+index 921e745..7588900 100644
 --- a/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/FileSyncServiceHandler.kt
 +++ b/mobile/device-garmin/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/garmin/FileSyncServiceHandler.kt
-@@ -4,17 +4,44 @@ import nodomain.freeyourgadget.gadgetbridge.proto.garmin.GdiFileSyncService
- import nodomain.freeyourgadget.gadgetbridge.proto.garmin.GdiSmartProto
+@@ -16,27 +16,51 @@
+     along with this program.  If not, see <https://www.gnu.org/licenses/>. */
+ package nodomain.freeyourgadget.gadgetbridge.service.devices.garmin
+ 
+-import nodomain.freeyourgadget.gadgetbridge.model.RecordedDataTypes
+ import nodomain.freeyourgadget.gadgetbridge.proto.garmin.GdiFileSyncService
+ import nodomain.freeyourgadget.gadgetbridge.proto.garmin.GdiSmartProto.Smart
+-import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.FileType.FILETYPE
  import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.deviceevents.FileDownloadedDeviceEvent
  import nodomain.freeyourgadget.gadgetbridge.util.protobuf.buildWith
 +import android.util.Log
@@ -42,42 +48,85 @@ index 7b6134b..b255dcd 100644
              fileSyncService.hasNewFileNotification() -> handleNewFileNotification(fileSyncService.newFileNotification)
              fileSyncService.hasFileListResponse() -> handleFileListResponse(fileSyncService.fileListResponse)
              fileSyncService.hasFileResponse() -> handleFileResponse(fileSyncService.fileResponse)
+             fileSyncService.hasFileModifiedFlags() -> handleFileModifiedFlags(fileSyncService.fileModifiedFlags)
+-            fileSyncService.hasTransferStatusRequest() -> handleTransferStatusRequest(fileSyncService.transferStatusRequest)
+             fileSyncService.hasFileUpdateNotification() -> handleFileUpdateNotification(fileSyncService.fileUpdateNotification)
+             fileSyncService.hasStartSyncNotification() -> handleStartSyncNotification(fileSyncService.startSyncNotification)
 +            fileSyncService.hasUploadResponse() -> handleUploadResponse(fileSyncService.uploadResponse)
 +            fileSyncService.hasTransferComplete() -> handleTransferComplete(fileSyncService.transferComplete)
              else -> {
                  LOG.warn("Unhandled file sync service: {}", fileSyncService)
                  return null
-@@ -25,17 +52,21 @@ class FileSyncServiceHandler(val deviceSupport: GarminSupport) {
+@@ -46,7 +70,9 @@ class FileSyncServiceHandler(val deviceSupport: GarminSupport) {
+ 
+     private fun handleStartSyncNotification(startSyncNotification: GdiFileSyncService.StartSyncNotification): GdiFileSyncService.FileSyncService? {
+         LOG.debug("Got start sync notification: {}", startSyncNotification)
+-        deviceSupport.onFetchRecordedData(RecordedDataTypes.TYPE_ALL)
++        // Tracks: not Gadgetbridge's fetch, which would start a pull outside
++        // the phone's sync runner; the support class hands it to Tracks.
++        deviceSupport.onWatchRequestedSync()
+         return null
+     }
+ 
+@@ -63,26 +89,26 @@ class FileSyncServiceHandler(val deviceSupport: GarminSupport) {
+         return null
+     }
+ 
+-    private fun handleTransferStatusRequest(transferStatusRequest: GdiFileSyncService.TransferStatusRequest): GdiFileSyncService.FileSyncService? {
+-        LOG.debug("Got transfer status request: {}", transferStatusRequest)
+-        val response = GdiFileSyncService.TransferStatusResponse.newBuilder().buildWith {
+-            unk1 = 1
+-        }
+-        return GdiFileSyncService.FileSyncService.newBuilder().buildWith {
+-            transferStatusResponse = response
+-        }
+-    }
+-
      private fun handleNewFileNotification(newFileNotification: GdiFileSyncService.NewFileNotification): GdiFileSyncService.FileSyncService? {
          LOG.debug("Got new file notification: {}", newFileNotification)
-         for(file in newFileNotification.fileList){
--            if (!file.hasType() || !file.type.hasName()) {
+-
+-        for (file in newFileNotification.fileList) {
+-            if (!file.hasType()) {
+-                LOG.warn("New file has no type: {}", file)
++        for(file in newFileNotification.fileList){
 +            // By code when the notice omits the name: see GarminSupport.resolveTypeName.
 +            val typeName = if (file.hasType()) deviceSupport.resolveTypeName(file.type) else null
 +            if (typeName == null) {
-                 LOG.warn("New file has no type name: {}", file)
-+                Log.i("TracksFileSync", "new-file notice with unknown type code ${file.type.code}")
-                 continue
-             }
-             val fetchUnknownFiles = deviceSupport.devicePrefs.fetchUnknownFiles
--            val typeName = file.type.name
-             val type = FileType.FILETYPE.findByTypeName(typeName)
--            if (type == null || !(type.pull || fetchUnknownFiles)) {
++                LOG.warn("New file has no type name: {}", file)
++                Log.i("TracksFileSync", "new-file notice with unknown type index ${file.type.nameId}")
++                continue
++            }
++            val fetchUnknownFiles = deviceSupport.devicePrefs.fetchUnknownFiles
++            val type = FileType.FILETYPE.findByTypeName(typeName)
 +            if (!FileType.FILETYPE.shouldPull(type) && !fetchUnknownFiles) {
-                 LOG.warn("Ignoring file type: {}", file)
++                LOG.warn("Ignoring file type: {}", file)
 +                Log.i("TracksFileSync", "new-file notice ignored: $typeName")
                  continue
              }
 +            Log.i("TracksFileSync", "new-file notice queued: $typeName")
  
-             deviceSupport.addFileToDownloadList(file)
+-            conditionallyDownload(file, null)
++            deviceSupport.addFileToDownloadList(file)
          }
-@@ -68,31 +99,51 @@ class FileSyncServiceHandler(val deviceSupport: GarminSupport) {
+         return null
+     }
+@@ -105,37 +131,59 @@ class FileSyncServiceHandler(val deviceSupport: GarminSupport) {
+ 
+     private fun handleFileListResponse(fileListResponse: GdiFileSyncService.FileListResponse): GdiFileSyncService.FileSyncService? {
+         LOG.debug(
+-            "Handling file list response with status={}, files={}, cursorId={}, nextPageId={}",
+-            if (fileListResponse.hasStatus()) fileListResponse.status else null,
++            "Handling file list response with {} files, cursorId={}, nextPageId={}",
+             fileListResponse.fileList.size,
+             if (fileListResponse.hasCursorId()) fileListResponse.cursorId else null,
+-            if (fileListResponse.hasNextPageId()) fileListResponse.nextPageId else null,
++            fileListResponse.nextPageId,
+         )
  
          val fetchUnknownFiles = deviceSupport.devicePrefs.fetchUnknownFiles
  
 -        // Only the first entry for a type seems to contain the type name, so keep track of them
--        val codeMap: MutableMap<Int?, String?> = HashMap()
+-        val nameMap: MutableMap<Int?, String?> = HashMap()
 +        // Only the first entry for a type ever carries its name — not the first
 +        // per page — so names come from GarminSupport's persisted map.
 +        // Tracks: a one-line tally per page, on logcat rather than slf4j (which
@@ -87,24 +136,30 @@ index 7b6134b..b255dcd 100644
 +        val queued = sortedMapOf<String, Int>()
 +        val ignored = sortedMapOf<String, Int>()
          for (file in fileListResponse.fileList) {
-             if (!file.hasType() || !file.type.hasCode()) {
-                 LOG.warn("Ignoring file with unknown type: {}", file)
+-            if (!file.hasType()) {
+-                LOG.warn("Ignoring listed file without type information: {}", file)
++            if (!file.hasType() || !file.type.hasNameId()) {
++                LOG.warn("Ignoring file with unknown type: {}", file)
 +                ignored.merge("code?", 1, Int::plus)
                  continue
              }
--            if (file.type.hasName()) {
--                codeMap.put(file.type.code, file.type.name)
--            }
--            val typeName = codeMap[file.type.code]
+-
+-            if (file.type.hasNameId() && file.type.hasName()) {
+-                nameMap.put(file.type.nameId, file.type.name)
 +            val typeName = deviceSupport.resolveTypeName(file.type)
-             if (typeName == null) {
-                 LOG.warn("No type name found for {}", file)
-+                ignored.merge("code ${file.type.code}", 1, Int::plus)
-                 continue
++            if (typeName == null) {
++                LOG.warn("No type name found for {}", file)
++                ignored.merge("index ${file.type.nameId}", 1, Int::plus)
++                continue
              }
  
-             val fileType = FileType.FILETYPE.findByTypeName(typeName)
--            if (fileType == null || !(fileType.pull || fetchUnknownFiles)) {
+-            var typeName = if (file.type.hasName()) {
+-                file.type.name
+-            } else if (file.type.hasNameId()) {
+-                nameMap[file.type.nameId]
+-            } else {
+-                null
++            val fileType = FileType.FILETYPE.findByTypeName(typeName)
 +            if (recovering) {
 +                if (fileType == FileType.FILETYPE.ACTIVITY && deviceSupport.wantsRecoveredActivity(file)) {
 +                    recovered++
@@ -113,14 +168,15 @@ index 7b6134b..b255dcd 100644
 +                continue
 +            }
 +            if (!FileType.FILETYPE.shouldPull(fileType) && !fetchUnknownFiles) {
-                 LOG.warn("Ignoring file type: {} {}", typeName, fileType)
++                LOG.warn("Ignoring file type: {} {}", typeName, fileType)
 +                ignored.merge(typeName, 1, Int::plus)
-                 continue
++                continue
              }
  
-             LOG.debug("Adding to download: {}/{} ({})", file.id.id1, file.id.id2, typeName)
+-            conditionallyDownload(file, typeName)
++            LOG.debug("Adding to download: {}/{} ({})", file.id.id1, file.id.id2, typeName)
 +            queued.merge(typeName, 1, Int::plus)
-             deviceSupport.addFileToDownloadList(file)
++            deviceSupport.addFileToDownloadList(file)
          }
 +        Log.i(
 +            "TracksFileSync",
@@ -131,7 +187,7 @@ index 7b6134b..b255dcd 100644
  
          // #5461 - some watches to not send the next page ID
          // however, from previous logs, it always seems to match the max seen across all sent items, so attempt
-@@ -104,12 +155,44 @@ class FileSyncServiceHandler(val deviceSupport: GarminSupport) {
+@@ -147,12 +195,44 @@ class FileSyncServiceHandler(val deviceSupport: GarminSupport) {
          // one page - otherwise anything past the first ~100 items (which can easily be all SPORTS
          // backlog) is never seen.
          cursorId = if (fileListResponse.hasCursorId()) fileListResponse.cursorId else null
@@ -149,7 +205,7 @@ index 7b6134b..b255dcd 100644
          if (cursorId != null) {
              deviceSupport.sendProtobufRequest(
                  "continue file list",
-                 GdiSmartProto.Smart.newBuilder().setFileSyncService(requestFileList()).build()
+                 Smart.newBuilder().setFileSyncService(requestFileList()).build()
              )
 +        } else if (recoverFrom != null) {
 +            recovering = true
@@ -160,7 +216,7 @@ index 7b6134b..b255dcd 100644
 +            recoveryStartPage = recoverFrom
 +            deviceSupport.sendProtobufRequest(
 +                "recovery file list",
-+                GdiSmartProto.Smart.newBuilder().setFileSyncService(requestFileList()).build()
++                Smart.newBuilder().setFileSyncService(requestFileList()).build()
 +            )
          } else {
 +            if (recovering) {
@@ -176,7 +232,7 @@ index 7b6134b..b255dcd 100644
              // Tracks: the listing is finished, and nothing else on the wire says
              // so. Upstream does not need to know, because it only ever ends a
              // sync run once a file has actually transferred; Tracks ends the run
-@@ -123,11 +206,190 @@ class FileSyncServiceHandler(val deviceSupport: GarminSupport) {
+@@ -166,11 +246,190 @@ class FileSyncServiceHandler(val deviceSupport: GarminSupport) {
          return null
      }
  
@@ -274,10 +330,10 @@ index 7b6134b..b255dcd 100644
 +                        .setId2(clientId)
 +                        .build()
 +                    type = GdiFileSyncService.FileType.newBuilder()
-+                        .setUnk1(0)
++                        .setCode(0)
 +                        .setName(typeName)
 +                        .build()
-+                    this.size = size
++                    this.size = size.toLong()
 +                }
 +                unk2 = ACK_CONSTANT
 +                unk3 = 0
@@ -364,10 +420,10 @@ index 7b6134b..b255dcd 100644
              // Exclusion flags? If we omit this, it sends back already synced files going back months.
 +            // Which is exactly what a recovery listing wants.
 +            if (recovering) return@apply
-             flags1 = GdiFileSyncService.FileId.newBuilder().setId1(FLAGS_SYNCED).setId2(FLAGS_SYNCED).build()
-             flags2 = GdiFileSyncService.FileId.newBuilder().setId1(FLAGS_SYNCED).setId2(FLAGS_SYNCED).build()
+             addFlags1(GdiFileSyncService.FileId.newBuilder().setId1(FLAGS_SYNCED).setId2(FLAGS_SYNCED).build())
+             addFlags2(GdiFileSyncService.FileId.newBuilder().setId1(FLAGS_SYNCED).setId2(FLAGS_SYNCED).build())
          }
-@@ -163,24 +425,28 @@ class FileSyncServiceHandler(val deviceSupport: GarminSupport) {
+@@ -206,24 +465,28 @@ class FileSyncServiceHandler(val deviceSupport: GarminSupport) {
      }
  
      fun markSynced(syncFile: GdiFileSyncService.File): GdiFileSyncService.FileSyncService? {
@@ -414,23 +470,84 @@ index 7b6134b..b255dcd 100644
          }
  
          return GdiFileSyncService.FileSyncService.newBuilder().buildWith {
-@@ -195,5 +461,20 @@ class FileSyncServiceHandler(val deviceSupport: GarminSupport) {
-         private val LOG = LoggerFactory.getLogger(FileSyncServiceHandler::class.java)
+@@ -234,67 +497,24 @@ class FileSyncServiceHandler(val deviceSupport: GarminSupport) {
+         }
+     }
  
-         private const val FLAGS_SYNCED = 42405L
-+
+-    private fun conditionallyDownload(file: GdiFileSyncService.File, rawTypeName: String?) {
+-        var computedName: String? = null;
+-        if (rawTypeName == null || rawTypeName.length < 1) {
+-            if (file.hasType() && file.type.hasName()) {
+-                computedName = file.type.name;
+-            } else if (file.hasType() && file.type.hasCode()) {
+-                if (file.type.code == 3) {
+-                    computedName = FILETYPE.DEVICE_XML.name
+-                } else {
+-                    // generate a name for fetchUnknownFiles
+-                    computedName = "TYPE_" + file.type.code;
+-                }
+-            } else {
+-                LOG.warn("Ignoring file with no type name: {}", file)
+-                return
+-            }
+-        } else {
+-            computedName = rawTypeName;
+-        }
+-
+-        val fileType = FileType.FILETYPE.findByTypeName(computedName)
+-        val typeName = if (fileType != null) {
+-            if (fileType.typeName != null) {
+-                fileType.typeName
+-            } else {
+-                fileType.name
+-            }
+-        } else {
+-            computedName
+-        }
++    companion object {
++        private val LOG = LoggerFactory.getLogger(FileSyncServiceHandler::class.java)
+ 
+-        if (!deviceSupport.devicePrefs.fetchUnknownFiles) {
+-            if (fileType == null || !fileType.pull) {
+-                LOG.warn("Ignoring file: {} {}", typeName, file)
+-                return
+-            }
+-        }
++        private const val FLAGS_SYNCED = 42405L
+ 
+-        // ensure the to-be-downloaded file has a good type.name
+-        // used by a later processing stage for non-FIT files
+-        val actualFile: GdiFileSyncService.File
+-        if (!file.hasType() || !file.type.hasName() || !typeName.contentEquals(file.type.name)) {
+-            val builder = file.toBuilder()
+-            builder.setType(GdiFileSyncService.FileType.newBuilder().setName(typeName).build())
+-            actualFile = builder.build();
+-        } else {
+-            actualFile = file
+-        }
 +        /**
 +         * The number Garmin Connect puts in UploadRequest.unk2 and in the answer
 +         * to every TransferComplete. Its meaning is unread; what is established
 +         * is that Connect always sends exactly this and the watch is content.
 +         */
 +        private const val ACK_CONSTANT = 34
-+
+ 
+-        LOG.debug(
+-            "Adding file to download: {}/{} ({})",
+-            actualFile.id.id1,
+-            actualFile.id.id2,
+-            actualFile.type.name
+-        )
+-        deviceSupport.addFileToDownloadList(actualFile)
+-    }
 +        /** id1 sentinel meaning "new file, watch assigns the id". */
 +        private const val NEW_FILE_ID = -1L // 0xFFFFFFFFFFFFFFFF
-+
+ 
+-    companion object {
+-        private val LOG = LoggerFactory.getLogger(FileSyncServiceHandler::class.java)
 +        private var lastClientFileId = System.currentTimeMillis() / 1000L
-+
+ 
+-        private const val FLAGS_SYNCED = 42405L
 +        @Synchronized
 +        private fun nextClientFileId(): Long = ++lastClientFileId
      }

@@ -2,6 +2,7 @@ package nodomain.freeyourgadget.gadgetbridge.model;
 
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Locale;
 
 public enum NotificationType {
     UNKNOWN,
@@ -70,7 +71,7 @@ public enum NotificationType {
      * may be used to bring backward compatibility.
      */
     public String getFixedValue() {
-        return name().toLowerCase();
+        return name().toLowerCase(Locale.ROOT);
     }
 
     public String getGenericType() {

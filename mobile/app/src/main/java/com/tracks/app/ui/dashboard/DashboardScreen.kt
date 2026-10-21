@@ -130,12 +130,25 @@ fun DashboardScreen(
         // At the very top: an activity not on any plan, started by hand. See
         // StartActivitySheet; the setting is under Settings > Training.
         if (showStart) {
+            // Greyed while the watch records one: two recordings of the same
+            // run, one from each device, would both land in the activity list.
+            val watchTrack by com.tracks.device.garmin.live.LiveActivity.track.collectAsStateWithLifecycle()
+            val watchRecording = watchTrack.status == com.tracks.device.garmin.live.LiveActivity.Status.RECORDING ||
+                watchTrack.status == com.tracks.device.garmin.live.LiveActivity.Status.PAUSED
             com.tracks.app.ui.components.PrimaryButton(
                 "Start activity",
                 onClick = { starting = true },
                 icon = androidx.compose.material.icons.Icons.Filled.PlayArrow,
+                enabled = !watchRecording,
                 modifier = Modifier.fillMaxWidth(),
             )
+            if (watchRecording) {
+                Text(
+                    "The watch is recording an activity.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
         state.error?.let { message ->
             Text(

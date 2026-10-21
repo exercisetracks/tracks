@@ -19,7 +19,7 @@ import java.util.List;
 
 import kotlin.Pair;
 import nodomain.freeyourgadget.gadgetbridge.proto.garmin.GdiExploreSyncService.ExploreSyncService;
-import nodomain.freeyourgadget.gadgetbridge.proto.garmin.GdiSmartProto;
+import nodomain.freeyourgadget.gadgetbridge.proto.garmin.GdiSmartProto.Smart;
 
 /**
  * The one seam between Gadgetbridge's protobuf plumbing and Tracks' own Explore
@@ -54,7 +54,7 @@ public class ExploreSyncHandler {
             @Override
             public void send(final byte[] message) {
                 try {
-                    deviceSupport.sendProtobufRequest("explore sync", GdiSmartProto.Smart.newBuilder()
+                    deviceSupport.sendProtobufRequest("explore sync", Smart.newBuilder()
                             .setExploreSyncService(ExploreSyncService.parseFrom(message))
                             .build());
                 } catch (final Exception e) {

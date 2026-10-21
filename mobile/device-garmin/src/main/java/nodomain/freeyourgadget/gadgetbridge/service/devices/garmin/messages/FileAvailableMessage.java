@@ -24,7 +24,6 @@ import java.util.Date;
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.FileTransferHandler;
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.FileType;
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.GarminTimeUtils;
-import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.messages.status.GFDIStatusMessage;
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.messages.status.GenericStatusMessage;
 
 public class FileAvailableMessage extends GFDIMessage {
@@ -53,18 +52,21 @@ public class FileAvailableMessage extends GFDIMessage {
         final Date fileDate = wireTimestamp == 0 ? null
                 : new Date(GarminTimeUtils.garminTimestampToJavaMillis(wireTimestamp));
         final FileTransferHandler.DirectoryEntry directoryEntry = new FileTransferHandler.DirectoryEntry(fileIndex, filetype, fileNumber, specificFlags, fileFlags, fileSize, fileDate);
-        LOG.info("Received not-yet supported FILE_AVAILABLE message for type {}/{}: {}", fileDataType, fileSubType, directoryEntry);
+        if (filetype == null) {
+            LOG.warn("Received FILE_AVAILABLE message of unknown type {}/{}: {}", fileDataType, fileSubType, directoryEntry);
+        } else {
+            LOG.info("Received FILE_AVAILABLE message for type {}/{}: {}", fileDataType, fileSubType, directoryEntry);
+        }
 
         return new FileAvailableMessage(originalGarminMessage, directoryEntry);
     }
 
     @Override
-    protected GFDIStatusMessage getStatusMessage() {
-        return new GenericStatusMessage(garminMessage, Status.UNSUPPORTED);
-    }
-
-    @Override
     protected boolean generateOutgoing() {
         return false;
+    }
+
+    public FileTransferHandler.DirectoryEntry getDirectoryEntry(){
+        return directoryEntry;
     }
 }

@@ -323,14 +323,20 @@ class ExploreSession(private val host: Host) {
     /**
      * One page of the in-progress line's points. Positions arrive packed (the
      * watch's way) or one tag per value (Explore's); both are read. Field 9
-     * is the index of the page's first point, so a page read twice lands on
-     * the same entries.
+     * is the index of the page's first point (absent, as protobuf's zero, on
+     * the first page), so a page read twice lands on the same entries.
+     *
+     * The line keeps a point for every second recorded, fix or not: one
+     * recorded before the watch had GPS is 0x7FFFFFFF in both halves (ten of
+     * the first page's ten in capture c). Kept, that is a point at 180 degrees
+     * north, the line runs off the top of the world, and the dot follows it.
      */
     private fun keepActivePoints(points: ProtoReader) {
         val first = points.varint(9).toInt()
         val positions = fixed64s(points, 2)
         val elevations = fixed32s(points, 3)
         for ((i, pos) in positions.withIndex()) {
+            if ((pos and 0xffffffffL).toInt() == Int.MAX_VALUE || (pos ushr 32).toInt() == Int.MAX_VALUE) continue
             val lat = (pos and 0xffffffffL).toInt() * (180.0 / 2147483648.0)
             val lng = (pos ushr 32).toInt() * (180.0 / 2147483648.0)
             val elevation = elevations.getOrNull(i)?.let { java.lang.Float.intBitsToFloat(it.toInt()).toDouble() }

@@ -1,7 +1,23 @@
+/*  Copyright (C) 2025-2026 José Rebelo, Thomas Kuehne
+
+    This file is part of Gadgetbridge.
+
+    Gadgetbridge is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published
+    by the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Gadgetbridge is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 package nodomain.freeyourgadget.gadgetbridge.service.devices.garmin
 
 import nodomain.freeyourgadget.gadgetbridge.proto.garmin.GdiFileSyncService
-import nodomain.freeyourgadget.gadgetbridge.proto.garmin.GdiSmartProto
+import nodomain.freeyourgadget.gadgetbridge.proto.garmin.GdiSmartProto.Smart
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.deviceevents.FileDownloadedDeviceEvent
 import nodomain.freeyourgadget.gadgetbridge.util.protobuf.buildWith
 import android.util.Log
@@ -40,6 +56,9 @@ class FileSyncServiceHandler(val deviceSupport: GarminSupport) {
             fileSyncService.hasNewFileNotification() -> handleNewFileNotification(fileSyncService.newFileNotification)
             fileSyncService.hasFileListResponse() -> handleFileListResponse(fileSyncService.fileListResponse)
             fileSyncService.hasFileResponse() -> handleFileResponse(fileSyncService.fileResponse)
+            fileSyncService.hasFileModifiedFlags() -> handleFileModifiedFlags(fileSyncService.fileModifiedFlags)
+            fileSyncService.hasFileUpdateNotification() -> handleFileUpdateNotification(fileSyncService.fileUpdateNotification)
+            fileSyncService.hasStartSyncNotification() -> handleStartSyncNotification(fileSyncService.startSyncNotification)
             fileSyncService.hasUploadResponse() -> handleUploadResponse(fileSyncService.uploadResponse)
             fileSyncService.hasTransferComplete() -> handleTransferComplete(fileSyncService.transferComplete)
             else -> {
@@ -49,6 +68,27 @@ class FileSyncServiceHandler(val deviceSupport: GarminSupport) {
         }
     }
 
+    private fun handleStartSyncNotification(startSyncNotification: GdiFileSyncService.StartSyncNotification): GdiFileSyncService.FileSyncService? {
+        LOG.debug("Got start sync notification: {}", startSyncNotification)
+        // Tracks: not Gadgetbridge's fetch, which would start a pull outside
+        // the phone's sync runner; the support class hands it to Tracks.
+        deviceSupport.onWatchRequestedSync()
+        return null
+    }
+
+
+    private fun handleFileUpdateNotification(fileUpdateNotification: GdiFileSyncService.FileUpdateNotification): GdiFileSyncService.FileSyncService? {
+        LOG.debug("Got file updated flags: {}", fileUpdateNotification)
+        // no action required
+        return null
+    }
+
+    private fun handleFileModifiedFlags(fileModifiedFlags: GdiFileSyncService.FileModifiedFlags): GdiFileSyncService.FileSyncService? {
+        LOG.debug("Got file modified flags: {}", fileModifiedFlags)
+        // no action required
+        return null
+    }
+
     private fun handleNewFileNotification(newFileNotification: GdiFileSyncService.NewFileNotification): GdiFileSyncService.FileSyncService? {
         LOG.debug("Got new file notification: {}", newFileNotification)
         for(file in newFileNotification.fileList){
@@ -56,7 +96,7 @@ class FileSyncServiceHandler(val deviceSupport: GarminSupport) {
             val typeName = if (file.hasType()) deviceSupport.resolveTypeName(file.type) else null
             if (typeName == null) {
                 LOG.warn("New file has no type name: {}", file)
-                Log.i("TracksFileSync", "new-file notice with unknown type code ${file.type.code}")
+                Log.i("TracksFileSync", "new-file notice with unknown type index ${file.type.nameId}")
                 continue
             }
             val fetchUnknownFiles = deviceSupport.devicePrefs.fetchUnknownFiles
@@ -108,7 +148,7 @@ class FileSyncServiceHandler(val deviceSupport: GarminSupport) {
         val queued = sortedMapOf<String, Int>()
         val ignored = sortedMapOf<String, Int>()
         for (file in fileListResponse.fileList) {
-            if (!file.hasType() || !file.type.hasCode()) {
+            if (!file.hasType() || !file.type.hasNameId()) {
                 LOG.warn("Ignoring file with unknown type: {}", file)
                 ignored.merge("code?", 1, Int::plus)
                 continue
@@ -116,7 +156,7 @@ class FileSyncServiceHandler(val deviceSupport: GarminSupport) {
             val typeName = deviceSupport.resolveTypeName(file.type)
             if (typeName == null) {
                 LOG.warn("No type name found for {}", file)
-                ignored.merge("code ${file.type.code}", 1, Int::plus)
+                ignored.merge("index ${file.type.nameId}", 1, Int::plus)
                 continue
             }
 
@@ -169,7 +209,7 @@ class FileSyncServiceHandler(val deviceSupport: GarminSupport) {
         if (cursorId != null) {
             deviceSupport.sendProtobufRequest(
                 "continue file list",
-                GdiSmartProto.Smart.newBuilder().setFileSyncService(requestFileList()).build()
+                Smart.newBuilder().setFileSyncService(requestFileList()).build()
             )
         } else if (recoverFrom != null) {
             recovering = true
@@ -180,7 +220,7 @@ class FileSyncServiceHandler(val deviceSupport: GarminSupport) {
             recoveryStartPage = recoverFrom
             deviceSupport.sendProtobufRequest(
                 "recovery file list",
-                GdiSmartProto.Smart.newBuilder().setFileSyncService(requestFileList()).build()
+                Smart.newBuilder().setFileSyncService(requestFileList()).build()
             )
         } else {
             if (recovering) {
@@ -300,10 +340,10 @@ class FileSyncServiceHandler(val deviceSupport: GarminSupport) {
                         .setId2(clientId)
                         .build()
                     type = GdiFileSyncService.FileType.newBuilder()
-                        .setUnk1(0)
+                        .setCode(0)
                         .setName(typeName)
                         .build()
-                    this.size = size
+                    this.size = size.toLong()
                 }
                 unk2 = ACK_CONSTANT
                 unk3 = 0
@@ -390,8 +430,8 @@ class FileSyncServiceHandler(val deviceSupport: GarminSupport) {
             // Exclusion flags? If we omit this, it sends back already synced files going back months.
             // Which is exactly what a recovery listing wants.
             if (recovering) return@apply
-            flags1 = GdiFileSyncService.FileId.newBuilder().setId1(FLAGS_SYNCED).setId2(FLAGS_SYNCED).build()
-            flags2 = GdiFileSyncService.FileId.newBuilder().setId1(FLAGS_SYNCED).setId2(FLAGS_SYNCED).build()
+            addFlags1(GdiFileSyncService.FileId.newBuilder().setId1(FLAGS_SYNCED).setId2(FLAGS_SYNCED).build())
+            addFlags2(GdiFileSyncService.FileId.newBuilder().setId1(FLAGS_SYNCED).setId2(FLAGS_SYNCED).build())
         }
 
         val currentcursorId = cursorId
@@ -452,7 +492,7 @@ class FileSyncServiceHandler(val deviceSupport: GarminSupport) {
         return GdiFileSyncService.FileSyncService.newBuilder().buildWith {
             fileSetFlags = GdiFileSyncService.FileSetFlags.newBuilder().buildWith {
                 file = syncFile.id
-                flags = GdiFileSyncService.FileId.newBuilder().setId1(FLAGS_SYNCED).setId2(FLAGS_SYNCED).build()
+                setFlags = GdiFileSyncService.FileId.newBuilder().setId1(FLAGS_SYNCED).setId2(FLAGS_SYNCED).build()
             }
         }
     }

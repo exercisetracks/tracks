@@ -41,6 +41,7 @@ message SmsNotificationService {
     enum CannedListType {
         PHONE_CALL_RESPONSE = 0;
         SMS_MESSAGE_RESPONSE = 1;
+        GROUP_TRACK_RESPONSE = 2;
     }
 
     enum ResponseStatus {

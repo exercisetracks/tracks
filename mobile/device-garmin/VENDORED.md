@@ -11,11 +11,11 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 | | |
 |---|---|
 | Upstream | https://codeberg.org/Freeyourgadget/Gadgetbridge |
-| Version | `0.93.0` |
-| Pulled | 2026-08-14 |
-| Java files | 223 |
+| Version | `0.95.1` |
+| Pulled | 2026-10-20 |
+| Java files | 218 |
 | Proto files | 17 |
-| Codegen files | 1 (in `:fit-codegen`) |
+| Codegen files | 2 (in `:fit-codegen`) |
 | Licence | AGPL-3.0-or-later (same as Tracks) |
 
 Everything under `src/main/java/nodomain/freeyourgadget/gadgetbridge/` is

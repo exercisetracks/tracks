@@ -29,6 +29,7 @@ application {
 
 dependencies {
     implementation(libs.json)
+    implementation(libs.gson)
 }
 
 // Where the generated sources land: a shared location under the root build

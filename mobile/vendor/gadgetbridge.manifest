@@ -140,6 +140,9 @@ include service/devices/garmin/deviceevents
 # and internet firewall, and nothing Tracks needs yet goes through it. Weather
 # reaches the watch over GFDI instead.
 #include service/devices/garmin/http
+# Its request/response and JSON types are Tracks' own now, beside the forked
+# HttpHandler in src/compat: the music-server proxy is built on them, and
+# upstream moved GarminJson to Gson after 0.93.0.
 
 # ── Support types the protocol code refers to ────────────────────────────────
 # Small, dependency-free value types. Vendored rather than reimplemented
@@ -173,9 +176,19 @@ include util/gpx/model
 # Notification, call, and canned-reply payloads. Pure value types with no
 # coupling — the vocabulary the GFDI notification layer speaks, so inventing
 # our own would mean translating at every call site.
-include model/NotificationSpec.java
-include model/CallSpec.java
-include model/CannedMessagesSpec.java
+include model/NotificationSpec.kt
+include model/CallSpec.kt
+include model/CannedMessagesSpec.kt
+# What the specs above implement since 0.94: transliteration and the RTL fix.
+# Their helpers (sanitizeText, RtlUtils, GBToStringBuilder) are shims in
+# src/compat -- upstream's pull in an emoji converter, app preferences and
+# commons-lang, for text a Garmin shows as it is.
+include model/DeviceTextAdaptable.kt
+# Named by vendored FIT code from 0.94: the OpenWeather-to-FIT condition map,
+# and GPX navigation instructions in the route converter.
+include model/weather/OwmCondition.kt
+include model/NavigationInfoSpec.kt
+include util/language/Transliterator.java
 
 # Two GDI protobuf sub-handlers that are genuinely self-contained. The others
 # (AppConfig, ExploreSync, Http, DataTransfer) reach into Gadgetbridge's UI,
@@ -224,3 +237,8 @@ include service/devices/garmin/EcgServiceHandler.kt
 #   entities/, database/
 #       greenDAO. Tracks stores activity data on the server and mirrors
 #       summaries in SQLDelight; a second ORM would be a second source of truth.
+
+# A workout-template encoder on upstream's own workout model (0.95), which
+# drags in its settings UI and resources. Tracks writes its own workout FIT
+# files (com.tracks.device.garmin) and calls none of it.
+exclude service/devices/garmin/fit/workouts

@@ -70,7 +70,7 @@ public class WriteAction extends BtLEAction {
     /// shared write implementation that can be used without a BtLEAction
     public static boolean writeCharacteristic(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, byte[] value) {
         if (LOG.isDebugEnabled()) {
-            LOG.debug("writing to characteristic: {} - {}", characteristic.getUuid(), GB.hexdump(value));
+            LOG.debug("writing to characteristic: {} >@ {}", characteristic.getUuid(), GB.hexdump(value));
         }
         return writeCharacteristicImp(gatt, characteristic, value, false);
     }
@@ -116,7 +116,7 @@ public class WriteAction extends BtLEAction {
     public String toString() {
         BluetoothGattCharacteristic characteristic = getCharacteristic();
         String uuid = characteristic == null ? "(null)" : characteristic.getUuid().toString();
-        return getCreationTime() + " " + getClass().getSimpleName() + " " + uuid + " - "
+        return getCreationTime() + " " + getClass().getSimpleName() + " " + uuid + " >@ "
                 + GB.hexdump(getValue());
     }
 }

@@ -118,7 +118,7 @@ public enum GarminCapability {
     UNK_87,
     UNK_88,
     UNK_89,
-    UNK_90,
+    NEO_SYNC,
     UNK_91,
     REALTIME_SETTINGS,
     UNK_93,

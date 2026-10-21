@@ -68,6 +68,16 @@ class LiveActivityTest {
     }
 
     @Test
+    fun `reports after a stop start a new track`() {
+        LiveActivity.onPositions(listOf(p(46.0, 10), p(46.1, 11)))
+        LiveActivity.onStatus(Status.STOPPED)
+        // Status was answered before the next run began; its first report:
+        LiveActivity.onPositions(listOf(p(47.0, 500)))
+        assertEquals(listOf(47.0), LiveActivity.track.value.points.map { it.lat })
+        assertTrue(LiveActivity.recording)
+    }
+
+    @Test
     fun `semicircles and the Garmin epoch convert`() {
         assertEquals(90.0, LiveActivity.degrees(1 shl 30), 1e-9)
         assertEquals(631_065_600L, LiveActivity.unixSeconds(0))

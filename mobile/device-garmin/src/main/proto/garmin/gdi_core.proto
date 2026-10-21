@@ -12,6 +12,13 @@ message CoreService {
     optional LocationUpdatedSetEnabledRequest location_updated_set_enabled_request = 5;
     optional LocationUpdatedSetEnabledResponse location_updated_set_enabled_response = 6;
     optional LocationUpdatedNotification location_updated_notification = 7;
+    optional Message9 unk9 = 9;
+    optional Message11 unk11 = 11;
+    optional ConnectedNotification connected_notification = 14;
+    optional Message18 unk18 = 18;
+
+    message ConnectedNotification {
+    }
 
     message SyncRequest {
     }
@@ -22,6 +29,7 @@ message CoreService {
         enum ResponseStatus {
             UNKNOWN_RESPONSE_STATUS = 0;
             OK = 1;
+            UNK2 = 2;
         }
     }
 
@@ -60,9 +68,14 @@ message CoreService {
         repeated Request requests = 2;
     }
 
+    // PATCHED FOR TRACKS (vendor/patches/0018-proto-location-request-threshold.patch):
+    // min_update_threshold is a varint, not a float. Garmin Explore subscribes
+    // to the watch's live position with {REALTIME_TRACKING, 5, 1.0f} and the
+    // 5 goes on the wire as a varint (capture c, 2026-10-12); upstream
+    // Gadgetbridge made the same change after 0.93.0.
     message Request {
         optional DataType requested = 1;
-        optional float min_update_threshold = 2;
+        optional uint32 min_update_threshold = 2;
         optional float distance_threshold = 3;
     }
 
@@ -115,4 +128,15 @@ message CoreService {
         required sint32 lon = 2;
     }
 
+    message Message9 {
+        optional uint32 unk2 = 2;
+    }
+
+    message Message11 {
+        optional uint32 unk1 = 1;
+    }
+
+    message Message18 {
+        optional uint64 unk1 = 1; // current time ?
+    }
 }

@@ -108,6 +108,10 @@ fun ActiveWorkoutBar(session: ActiveWorkout.Session, state: GuidedUiState, onOpe
 }
 
 /** Breathing while the session runs, still while it waits — readable from the corner of an eye. */
+/** The dot for a recording, breathing green or still amber when paused -- for [WatchRecordingBar]. */
+@Composable
+internal fun RecordingDot(paused: Boolean) = StatusDot(if (paused) AMBER else GREEN, pulsing = !paused)
+
 @Composable
 private fun StatusDot(color: Color, pulsing: Boolean) {
     val alpha = if (pulsing) {

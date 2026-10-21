@@ -123,6 +123,25 @@ public class GPSCoordinate implements Parcelable {
         return end.distanceTo(start);
     }
 
+    /** Mean Earth radius (m) for the haversine great-circle distance. */
+    private static final double EARTH_RADIUS_M = 6_371_000.0;
+
+    /**
+     * Great-circle distance in metres between two coordinates (pure-Java haversine). Unlike
+     * {@link #getDistance}, this does not delegate to {@code android.location.Location}, so it is
+     * available in plain-JVM unit tests and off the Android runtime (used by the FIT exporter and
+     * the workout GPS parser to derive a distance stream the wire format omits).
+     */
+    public static double distanceHaversine(final GPSCoordinate a, final GPSCoordinate b) {
+        final double lat1 = Math.toRadians(a.getLatitude());
+        final double lat2 = Math.toRadians(b.getLatitude());
+        final double dLat = lat2 - lat1;
+        final double dLon = Math.toRadians(b.getLongitude() - a.getLongitude());
+        final double h = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        return 2 * EARTH_RADIUS_M * Math.asin(Math.min(1.0, Math.sqrt(h)));
+    }
+
     public double getAltitudeDifference(GPSCoordinate source) {
         if (!hasAltitude())
             return 0;

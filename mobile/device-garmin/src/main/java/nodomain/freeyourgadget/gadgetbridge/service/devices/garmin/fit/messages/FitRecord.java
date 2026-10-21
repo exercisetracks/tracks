@@ -35,15 +35,15 @@ public class FitRecord extends AbstractFitRecord {
         builder.setDistance(getDistance());
         builder.setHdop(getGpsAccuracy());
         builder.setHeartRate(getHeartRate());
-        builder.setLatitude(getLatitude());
-        builder.setLongitude(getLongitude());
+        builder.setLatitude(getPositionLat());
+        builder.setLongitude(getPositionLong());
         builder.setN2Load(getN2Load());
         builder.setPower(getPower());
         builder.setStamina(getStamina());
         builder.setStepLength(getStepLength());
         builder.setTemperature(getTemperature());
 
-        builder.setVerticalOscillation(getOscillation());
+        builder.setVerticalOscillation(getVerticalOscillation());
         builder.setStanceTimePercent(getStanceTimePercent());
         builder.setStanceTime(getStanceTime());
         builder.setVerticalRatio(getVerticalRatio());

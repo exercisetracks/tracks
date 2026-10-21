@@ -9,8 +9,8 @@ message CalendarService {
   optional CalendarServiceResponse calendar_response = 2;
 
   message CalendarServiceRequest {
-    optional uint32 begin = 1;
-    optional uint32 end = 2;
+    optional uint64 begin = 1;
+    optional uint64 end = 2;
     optional bool include_organizer = 3 [default = false];
     optional bool include_title = 4 [default = true];
     optional bool include_location = 5 [default = true];
@@ -40,8 +40,8 @@ message CalendarService {
     optional string title = 2;
     optional string location = 3 [default = ""];
     optional string description = 4 [default = ""];
-    optional uint32 start_date = 5;
-    optional uint32 end_date = 6;
+    optional uint64 start_date = 5;
+    optional uint64 end_date = 6;
     optional bool all_day = 7;
     repeated uint32 reminder_time_in_secs = 8;
   }

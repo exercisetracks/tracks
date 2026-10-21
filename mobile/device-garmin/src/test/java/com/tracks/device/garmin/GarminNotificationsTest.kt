@@ -36,7 +36,7 @@ class GarminNotificationsTest {
 
         // The id is what a later dismissal addresses; losing it means a
         // notification the user cleared on the phone stays on the wrist.
-        assertEquals(42, spec.getId())
+        assertEquals(42, spec.id)
         assertEquals("Ada", spec.title)
         assertEquals("on my way", spec.body)
         assertEquals("Ada", spec.sender)
@@ -89,7 +89,7 @@ class GarminNotificationsTest {
         // downloads). Dropping them on a null would lose the dismissal too.
         val bare = notification().copy(title = null, body = null, sender = null)
         val spec = GarminNotifications.toSpec(bare)
-        assertEquals(42, spec.getId())
+        assertEquals(42, spec.id)
         assertEquals(null, spec.title)
     }
 
@@ -114,17 +114,17 @@ class GarminNotificationsTest {
         )
         assertEquals(
             listOf("Mark as read", "Reply", "Clear", "Mute app"),
-            spec.attachedActions.map { it.title },
+            spec.attachedActions!!.filterNotNull().map { it.title },
         )
-        assertEquals(NotificationSpec.Action.TYPE_WEARABLE_REPLY, spec.attachedActions[1].type)
-        assertEquals(NotificationSpec.Action.TYPE_SYNTECTIC_MUTE, spec.attachedActions.last().type)
+        assertEquals(NotificationSpec.Action.TYPE_WEARABLE_REPLY, spec.attachedActions!!.filterNotNull()[1].type)
+        assertEquals(NotificationSpec.Action.TYPE_SYNTHETIC_MUTE, spec.attachedActions!!.filterNotNull().last().type)
     }
 
     @Test
     fun `every notification can be cleared and muted even with no buttons of its own`() {
-        val types = GarminNotifications.toSpec(notification()).attachedActions.map { it.type }
+        val types = GarminNotifications.toSpec(notification()).attachedActions!!.filterNotNull().map { it.type }
         assertEquals(
-            listOf(NotificationSpec.Action.TYPE_SYNTECTIC_DISMISS, NotificationSpec.Action.TYPE_SYNTECTIC_MUTE),
+            listOf(NotificationSpec.Action.TYPE_SYNTHETIC_DISMISS, NotificationSpec.Action.TYPE_SYNTHETIC_MUTE),
             types,
         )
     }
@@ -134,7 +134,7 @@ class GarminNotificationsTest {
         val spec = GarminNotifications.toSpec(
             withActions(*Array(7) { NotificationAction("B$it", SIMPLE) }),
         )
-        assertEquals(listOf("B0", "B1", "B2", "B3", "B4"), spec.attachedActions.dropLast(2).map { it.title })
+        assertEquals(listOf("B0", "B1", "B2", "B3", "B4"), spec.attachedActions!!.filterNotNull().dropLast(2).map { it.title })
     }
 
     @Test
@@ -144,7 +144,7 @@ class GarminNotificationsTest {
         val spec = GarminNotifications.toSpec(
             withActions(NotificationAction("Reply", REPLY), NotificationAction("Reply all", REPLY)),
         )
-        assertEquals(1, spec.attachedActions.count { it.isReply })
+        assertEquals(1, spec.attachedActions!!.filterNotNull().count { it.isReply })
     }
 
     @Test

@@ -443,8 +443,21 @@ The phone answers each page with the next op.
 
 ## The live activity
 
-With "sync current activity" on, the watch sends **`core_service` (Smart field
-13) message 7** about once a second while recording:
+A client that has **subscribed** gets **`core_service` (Smart field 13)
+message 7** about once a second while the watch records. Explore subscribes
+on its own channel (handle 7) as it connects, with two `core_service`
+message 5 requests (capture c, 90.1 s and 90.5 s), each answered OK by a
+message 6:
+
+```
+{ 1: 0 }                                          # nothing enabled
+{ 1: 1, 2: { 1: 2, 2: 5, 3: f32 1.0 } }           # REALTIME_TRACKING; 5 is a varint
+```
+
+What the 5 and the 1.0 bound is not known: the reports came once a second.
+They go **only to the subscriber**: all 33 of capture c's went to handle 7,
+none to Connect's handle 2 on the same watch, although notifications such as
+`new_file_notification` went to both. The report itself:
 
 ```
 { 1: { 1: { 1: lat, 2: lon }         # sint32 semicircles, zigzag: west and south are negative
@@ -460,8 +473,15 @@ capture c).
 
 Separately, each Explore session opens with
 **active_line_digest_write_request (32)** describing the in-progress line
-(type 3). Explore asks for its parts, as for any line. That is how Explore
-shows the track so far.
+(type 3). Explore asks for its parts, as for any line, and the points part
+(2) arrives as `line_data_ready` pages of ten: field 8 carries the packed
+positions (lat in the low 32 bits, lng in the high), elevations, timestamps,
+and field 9 the index of the page's first point (absent on the first, as
+protobuf's zero). The line holds one point per second from the start button,
+**the no-fix ones included** as `0x7FFFFFFF`. Explore ran a session every
+one to two minutes in capture c, but none during its 32-second recording:
+the live line came from the reports, and the line read is what fills in
+what the phone missed.
 
 ---
 
@@ -481,12 +501,21 @@ yet verified on the watch):
   the line moved only when an Explore sync read the line so far, about every
   twenty minutes. Patch 0017 makes them optional, and reports with no fix
   (`0x7FFFFFFF`) are skipped.
-- Explore asked nothing of the watch to start the reports: in capture c the
-  only location exchange beforehand was the watch's own
-  `LocationUpdatedSetEnabledRequest {enabled, SIGNIFICANT_LOCATION}`, and the
-  reports began unprompted when recording started. The proto's `sint32`
-  fields are zigzag, which is why the raw varint above reads as twice the
+- Until 2026-10-21 Tracks never subscribed, so even with the reports
+  parsed none arrived. This note used to say Explore asked nothing of the
+  watch; that read only handle 2 and missed Explore's own channel.
+  `GarminSupport.subscribeLivePositions` now sends Explore's two requests
+  when the watch is ready (patch 0018 makes field 2 the varint it is), and
+  asks for the activity status at the same time. The proto's `sint32` fields
+  are zigzag, which is why the raw varint above reads as twice the
   semicircle value.
+- The in-progress line's no-fix points are skipped too
+  (`ExploreSession.keepActivePoints`); kept, they started the line at 180
+  degrees north.
+- While the watch is recording, the phone asks for the activity status
+  whenever the reports have been quiet for 15 s (`WatchManager`): a pause or
+  a stop ends them without a word, and the recording banner and the
+  dashboard's start button go by the answer.
 - Each sync first asks the device-status service for the activity status
   (OFF/STOPPED/PAUSED/ON). While it is PAUSED or ON, refusals are not
   reported as a fault, and the runner asks again every two minutes and syncs

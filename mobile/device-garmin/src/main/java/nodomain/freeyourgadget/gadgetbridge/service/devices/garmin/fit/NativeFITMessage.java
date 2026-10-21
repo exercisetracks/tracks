@@ -1,3 +1,20 @@
+/*  Copyright (C) 2024-2026 Daniele Gobbetti, José Rebelo, punchdeerflyscorpion, Thomas Kuehne, Gideon Zenz
+
+    This file is part of Gadgetbridge.
+
+    Gadgetbridge is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published
+    by the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Gadgetbridge is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>. */
+
 package nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit;
 
 import androidx.annotation.NonNull;
@@ -8,13 +25,12 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.event.Level;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit.baseTypes.BaseType;
+import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.fit.fieldDefinitions.FieldDefinitions;
 
 /**
  * @noinspection DuplicateStringLiteralInspection, WeakerAccess
@@ -176,12 +192,12 @@ public class NativeFITMessage {
         final int number;
         final BaseType baseType;
         final String name;
-        final FieldDefinitionFactory.FIELD type;
-        final int scale;
+        final FieldDefinitions type;
+        final double scale;
         final int offset;
         final int size;
 
-        FieldDefinitionPrimitive(int number, BaseType baseType, int size, String name, FieldDefinitionFactory.FIELD type, int scale, int offset) {
+        FieldDefinitionPrimitive(int number, BaseType baseType, int size, String name, FieldDefinitions type, double scale, int offset) {
             this.number = number;
             this.baseType = baseType;
             this.size = size;
@@ -191,23 +207,23 @@ public class NativeFITMessage {
             this.offset = offset;
         }
 
-        FieldDefinitionPrimitive(int number, BaseType baseType, String name, FieldDefinitionFactory.FIELD type, int scale, int offset) {
+        FieldDefinitionPrimitive(int number, BaseType baseType, String name, FieldDefinitions type, double scale, int offset) {
             this(number, baseType, baseType.getSize(), name, type, scale, offset);
         }
 
-        FieldDefinitionPrimitive(int number, BaseType baseType, String name, FieldDefinitionFactory.FIELD type) {
-            this(number, baseType, baseType.getSize(), name, type, 1, 0);
+        FieldDefinitionPrimitive(int number, BaseType baseType, String name, FieldDefinitions type) {
+            this(number, baseType, baseType.getSize(), name, type, 1.0, 0);
         }
 
         FieldDefinitionPrimitive(int number, BaseType baseType, String name) {
-            this(number, baseType, baseType.getSize(), name, null, 1, 0);
+            this(number, baseType, baseType.getSize(), name, null, 1.0, 0);
         }
 
         FieldDefinitionPrimitive(int number, BaseType baseType, int size, String name) {
-            this(number, baseType, size, name, null, 1, 0);
+            this(number, baseType, size, name, null, 1.0, 0);
         }
 
-        FieldDefinitionPrimitive(int number, BaseType baseType, String name, int scale, int offset) {
+        FieldDefinitionPrimitive(int number, BaseType baseType, String name, double scale, int offset) {
             this(number, baseType, baseType.getSize(), name, null, scale, offset);
         }
 
@@ -223,11 +239,11 @@ public class NativeFITMessage {
             return name;
         }
 
-        public FieldDefinitionFactory.FIELD getType() {
+        public FieldDefinitions getType() {
             return type;
         }
 
-        public int getScale() {
+        public double getScale() {
             return scale;
         }
 
@@ -253,7 +269,7 @@ public class NativeFITMessage {
             result = 31 * result + Objects.hashCode(baseType);
             result = 31 * result + Objects.hashCode(name);
             result = 31 * result + Objects.hashCode(type);
-            result = 31 * result + scale;
+            result = 31 * result + Double.hashCode(scale);
             result = 31 * result + offset;
             result = 31 * result + size;
             return result;

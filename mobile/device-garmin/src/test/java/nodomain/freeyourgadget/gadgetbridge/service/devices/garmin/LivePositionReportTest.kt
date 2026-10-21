@@ -9,7 +9,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import nodomain.freeyourgadget.gadgetbridge.proto.garmin.GdiSmartProto
+import nodomain.freeyourgadget.gadgetbridge.proto.garmin.GdiSmartProto.Smart
 
 /**
  * The once-a-second position a recording watch sends (core service, message 7),
@@ -48,7 +48,7 @@ class LivePositionReportTest {
     private fun semicircles(degrees: Double) = (degrees * 2147483648.0 / 180.0).toInt()
 
     private fun parse(bytes: ByteArray) =
-        GdiSmartProto.Smart.parseFrom(bytes).coreService.locationUpdatedNotification.locationDataList
+        Smart.parseFrom(bytes).coreService.locationUpdatedNotification.locationDataList
 
     @Test
     fun `a report with only what the watch sends parses`() {
@@ -79,5 +79,23 @@ class LivePositionReportTest {
         val p = GarminSupport.livePoints(parse(smart)).single()
         assertNull(p.altitude)
         assertNull(p.epochSeconds)
+    }
+
+    /**
+     * The watch sends these reports only to a client that subscribed, and
+     * Tracks never did: in capture c all 33 went to Garmin Explore, which had
+     * asked, and none to Connect on the same watch. Explore's two requests,
+     * byte for byte: nothing enabled, then REALTIME_TRACKING with 5 as a
+     * varint and 1.0 as a float.
+     */
+    @Test
+    fun `the subscription is Explore's, byte for byte`() {
+        val off = encode { s -> s.writeByteArray(13, encode { c -> c.writeByteArray(5, encode { it.writeBool(1, false) }) }) }
+        val request = encode { it.writeEnum(1, 2); it.writeUInt32(2, 5); it.writeFloat(3, 1.0f) }
+        val on = encode { s ->
+            s.writeByteArray(13, encode { c -> c.writeByteArray(5, encode { it.writeBool(1, true); it.writeByteArray(2, request) }) })
+        }
+        val sent = GarminSupport.liveTrackingRequests().map { it.toByteArray().toList() }
+        assertEquals(listOf(off.toList(), on.toList()), sent)
     }
 }
