@@ -95,6 +95,38 @@ class TestTrainingLoad:
             assert abs(p["tsb"] - (p["ctl"] - p["atl"])) < 0.15
 
 
+class TestHiddenActivities:
+    """The phone's dashboard leaves hidden activities out (LocalMetrics.rows);
+    the server's counted them, so the web and the phone showed different
+    totals and fitness for the same account."""
+
+    def test_a_hidden_activity_is_not_in_the_totals(self, client, user, db):
+        _make_activity(db, user, distance_meters=10000)
+        _make_activity(db, user, distance_meters=50000, hidden=True,
+                       started_at=datetime(2024, 6, 2, 8, 0, 0))
+        windowed = client.get("/metrics/summary", params={"after": "2024-01-01"}).json()
+        assert windowed["activity_count"] == 1
+        assert abs(windowed["total_distance_km"] - 10.0) < 0.01
+        # And the all-time slice, which is served from the dashboard cache.
+        assert client.get("/metrics/summary").json()["activity_count"] == 1
+
+    def test_a_hidden_activity_adds_no_load(self, client, user, db):
+        _make_activity(db, user, training_stress_score=80.0, hidden=True)
+        data = client.get("/metrics/training-load", params={"after": "2024-01-01"}).json()
+        assert all(p["tss"] == 0 for p in data)
+
+    def test_hiding_on_the_web_updates_the_cached_dashboard(self, client, user, db):
+        """The all-time slices are cached; a hide that did not invalidate them
+        would leave the activity counted until the next import."""
+        from tests.test_api.test_activities import _auth
+        headers, _material = _auth(client, db, user)
+        a = _make_activity(db, user)
+        _make_activity(db, user, started_at=datetime(2024, 6, 2, 8, 0, 0))
+        assert client.get("/metrics/summary", headers=headers).json()["activity_count"] == 2
+        client.patch(f"/activities/{a.id}", json={"hidden": True}, headers=headers)
+        assert client.get("/metrics/summary", headers=headers).json()["activity_count"] == 1
+
+
 class TestDailyMetrics:
     def test_empty_returns_empty(self, client, user):
         assert client.get("/metrics/daily").json() == []

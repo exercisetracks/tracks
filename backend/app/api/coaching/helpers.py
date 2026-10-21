@@ -83,7 +83,7 @@ def _build_tss_by_date(db: Session, user_id: int, us: UserSettings | None) -> di
     threshold_hr = _effective_threshold_hr(us)
     tz = us.timezone if us else None
     q = db.query(Activity).filter(Activity.started_at.isnot(None))
-    q = q.filter(Activity.device_id.in_(_claimed_device_ids(db, user_id)))
+    q = q.filter(Activity.device_id.in_(_claimed_device_ids(db, user_id)), Activity.hidden.is_(False))
     activities = q.order_by(Activity.started_at).all()
     discipline = active_mtb_discipline(db, user_id)
     calibration = load_calibration(activities, threshold_hr, discipline, tz)
@@ -104,7 +104,7 @@ def _fatigue_inputs(db: Session, user_id: int, us: UserSettings | None, today: d
     threshold_hr = _effective_threshold_hr(us)
     tz = us.timezone if us else None
     q = db.query(Activity).filter(Activity.started_at.isnot(None))
-    q = q.filter(Activity.device_id.in_(_claimed_device_ids(db, user_id)))
+    q = q.filter(Activity.device_id.in_(_claimed_device_ids(db, user_id)), Activity.hidden.is_(False))
     activities = q.order_by(Activity.started_at).all()
     discipline = active_mtb_discipline(db, user_id)
     calibration = load_calibration(activities, threshold_hr, discipline, tz)
@@ -129,7 +129,7 @@ def _sport_and_overall_ctl(db: Session, user_id: int, us: UserSettings | None, t
     threshold_hr = _effective_threshold_hr(us)
     tz = us.timezone if us else None
     q = db.query(Activity).filter(Activity.started_at.isnot(None))
-    q = q.filter(Activity.device_id.in_(_claimed_device_ids(db, user_id)))
+    q = q.filter(Activity.device_id.in_(_claimed_device_ids(db, user_id)), Activity.hidden.is_(False))
     activities = q.order_by(Activity.started_at).all()
     discipline = active_mtb_discipline(db, user_id)
     calibration = load_calibration(activities, threshold_hr, discipline, tz)
@@ -179,7 +179,7 @@ def _event_load(db: Session, user_id: int, today: date, counts) -> tuple[float, 
     discipline = active_mtb_discipline(db, user_id)
     since = today - timedelta(days=HISTORY_DAYS)
     q = db.query(Activity).filter(Activity.started_at.isnot(None))
-    q = q.filter(Activity.device_id.in_(_claimed_device_ids(db, user_id)))
+    q = q.filter(Activity.device_id.in_(_claimed_device_ids(db, user_id)), Activity.hidden.is_(False))
     activities = q.order_by(Activity.started_at).all()
     tz = us.timezone if us else None
     calibration = load_calibration(activities, threshold_hr, discipline, tz)
@@ -274,6 +274,7 @@ def _build_result(db: Session, user: User, us: UserSettings | None,
             Activity.started_at >= local_day_start(ninety_days_ago, tz),
             Activity.sport.isnot(None),
             Activity.device_id.in_(_claimed_device_ids(db, user.id)),
+            Activity.hidden.is_(False),
         )
         .order_by(Activity.started_at.desc())
         .all(),

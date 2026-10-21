@@ -585,13 +585,13 @@ private fun TrainingLocationsCard(
             // The modes and their legend float on the map's foot rather than
             // sitting under it: the page keeps the height, and the controls
             // sit on the thing they change. Pills, like the window's at the
-            // top: the same kind of choice, so the same piece.
+            // top: the same kind of choice, so the same piece. The pills sit
+            // bare on the map; only the legend keeps a plate, because its
+            // labels are plain text and vanish over busy tiles.
             Column(
                 Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(Tokens.Space.s3)
-                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.88f), RoundedCornerShape(Tokens.Radius.xl))
-                    .padding(horizontal = Tokens.Space.s3, vertical = Tokens.Space.s2),
+                    .padding(Tokens.Space.s3),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
@@ -644,7 +644,12 @@ private fun HeatmapLegend(mode: HeatmapMode) {
         HeatmapMode.HeartRate -> listOf("Low HR", "High HR") to SPEED_RAMP
         HeatmapMode.Pace -> listOf("Slow", "Fast") to SPEED_RAMP
     }
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    Column(
+        Modifier
+            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.88f), RoundedCornerShape(Tokens.Radius.lg))
+            .padding(horizontal = Tokens.Space.s3, vertical = Tokens.Space.s2),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
         Box(
             Modifier
                 .fillMaxWidth()

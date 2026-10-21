@@ -35,6 +35,19 @@ object WatchSyncNotifications {
      */
     const val LINK_ID = 1002
 
+    /**
+     * The link notification's own channel, at [IMPORTANCE_MIN].
+     *
+     * Android will not hold the watch link without a foreground service, and
+     * will not run one without a notification — but nothing obliges that
+     * notification to be seen. At MIN it has no status-bar icon and sits
+     * collapsed at the foot of the shade, and being a channel of its own lets
+     * the person turn it off in system settings without also losing sync
+     * progress. A new id rather than lowering [CHANNEL_ID]: Android ignores an
+     * importance change to a channel that already exists on the phone.
+     */
+    const val LINK_CHANNEL_ID = "watch_link"
+
     /** "Restart your watch" — see [watchRefusing]. */
     const val REFUSING_ID = 1003
 
@@ -60,6 +73,16 @@ object WatchSyncNotifications {
                 NotificationManager.IMPORTANCE_LOW,
             ).apply {
                 description = context.getString(R.string.watch_sync_channel_description)
+            }
+        )
+        manager.createNotificationChannel(
+            NotificationChannel(
+                LINK_CHANNEL_ID,
+                context.getString(R.string.watch_link_channel_name),
+                NotificationManager.IMPORTANCE_MIN,
+            ).apply {
+                description = context.getString(R.string.watch_link_channel_description)
+                setShowBadge(false)
             }
         )
     }
@@ -102,14 +125,16 @@ object WatchSyncNotifications {
             Intent(context, MainActivity::class.java),
             PendingIntent.FLAG_IMMUTABLE,
         )
-        return NotificationCompat.Builder(context, CHANNEL_ID)
+        return NotificationCompat.Builder(context, LINK_CHANNEL_ID)
             .setSmallIcon(android.R.drawable.stat_sys_data_bluetooth)
             .setContentTitle(context.getString(R.string.watch_link_title))
             .setContentText(text)
             .setContentIntent(openApp)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setSilent(true)
+            .setShowWhen(false)
+            .setPriority(NotificationCompat.PRIORITY_MIN)
             .build()
     }
 

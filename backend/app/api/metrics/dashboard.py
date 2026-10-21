@@ -124,7 +124,7 @@ def vo2max_history(
                  Activity.distance_meters, Activity.duration_seconds)
         # Runs too, for the pace-based estimate when no device reports one
         # (dashboard_stats.vo2max_history).
-        .filter(Activity.user_id == user.id,
+        .filter(Activity.user_id == user.id, Activity.hidden.is_(False),
                 or_(Activity.vo2max_estimate.isnot(None), Activity.sport.ilike("%run%")))
     )
     us = _get_user_settings(db, user.id)

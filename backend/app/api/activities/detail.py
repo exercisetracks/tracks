@@ -137,6 +137,9 @@ class ActivityUpdate(BaseModel):
     name: str | None = None
     notes: str | None = None
     sport: str | None = None
+    # The synced contract's `hidden` field (spec/sync.yaml, `activity`), so the
+    # web can hide an activity and show a hidden one again, as the phone can.
+    hidden: bool | None = None
 
 
 @router.patch("/{activity_id}", response_model=ActivityDetail)
@@ -157,6 +160,10 @@ def update_activity(
         activity.name = update.name
     if update.notes is not None:
         activity.notes = update.notes
+    if update.hidden is not None:
+        # Hidden activities leave the dashboard, load and heatmap.
+        caches_stale |= update.hidden != activity.hidden
+        activity.hidden = update.hidden
 
     if update.sport is not None:
         new_sport = update.sport.strip().lower()

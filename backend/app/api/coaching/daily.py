@@ -154,7 +154,8 @@ def weekly_plan(user: User = Depends(require_auth), db: Session = Depends(get_db
         .filter(Activity.user_id == user.id,
                 Activity.started_at >= local_day_start(ninety_days_ago, tz),
                 Activity.sport.isnot(None),
-                Activity.device_id.in_(_claimed_device_ids(db, user.id)))
+                Activity.device_id.in_(_claimed_device_ids(db, user.id)),
+                Activity.hidden.is_(False))
         .order_by(Activity.started_at.desc())
         .all(),
         tz,

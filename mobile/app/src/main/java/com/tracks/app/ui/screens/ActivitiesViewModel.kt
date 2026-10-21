@@ -73,6 +73,14 @@ data class ActivitiesUiState(
      * alike — which is the entire reason the taxonomy exists.
      */
     val types: Set<String> = emptySet(),
+    /**
+     * Show the hidden activities instead of the visible ones — the type
+     * filter's "Hidden" entry, and the one place they can be found again. The
+     * other filters still apply within them.
+     */
+    val showHidden: Boolean = false,
+    /** The hidden activities, read when [showHidden] is on. */
+    val hidden: List<ActivitySummary> = emptyList(),
     /** Track outlines by activity id. Absent means "no GPS" or "not fetched yet". */
     val shapes: Map<Int, TrackShape> = emptyMap(),
     val loadingShapes: Boolean = false,
@@ -166,6 +174,17 @@ class ActivitiesViewModel(private val container: AppContainer) : ViewModel() {
 
     fun clearTypes() = _state.update { it.copy(types = emptySet()) }
 
+    fun setShowHidden(show: Boolean) {
+        _state.update { it.copy(showHidden = show, selected = emptySet()) }
+        if (show) viewModelScope.launch { loadHidden() }
+    }
+
+    private suspend fun loadHidden() {
+        if (!_state.value.showHidden) return
+        val hidden = runCatching { container.sources.activities(hidden = true) }.getOrDefault(emptyList())
+        _state.update { it.copy(hidden = hidden) }
+    }
+
     fun toggleSelected(id: Int) = _state.update {
         it.copy(selected = if (id in it.selected) it.selected - id else it.selected + id)
     }
@@ -206,6 +225,8 @@ class ActivitiesViewModel(private val container: AppContainer) : ViewModel() {
     }
 
     private suspend fun loadShapes() {
+        // An activity hidden or shown again elsewhere moves between the lists.
+        loadHidden()
         _state.update { it.copy(trips = container.sources.trips()) }
         _state.update { it.copy(loadingShapes = true) }
         val cache = container.trackShapes

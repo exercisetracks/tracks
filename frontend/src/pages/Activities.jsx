@@ -37,6 +37,8 @@ import ActivityRow from "../components/activities/ActivityRow";
 
 // Number of activities per page.
 const PAGE_SIZE = 100;
+/** The sport dropdown's "Hidden" entry; not a sport, see setSportFilter. */
+const HIDDEN_OPTION = "__hidden__";
 
 // ============================================================
 // MAIN ACTIVITIES COMPONENT
@@ -66,6 +68,7 @@ export default function Activities() {
   // This makes the state shareable and bookmarkable
   // ============================================================
   const sport  = searchParams.get("sport")  || "";  // Filter by sport type
+  const hidden = searchParams.get("hidden") === "1";  // Only hidden activities
   const after  = searchParams.get("after")  || "";  // Date range start
   const before = searchParams.get("before") || "";  // Date range end
   const sort   = searchParams.get("sort")   || "date";  // Sort column
@@ -105,6 +108,19 @@ export default function Activities() {
       const next = new URLSearchParams(prev);
       if (value) next.set(key, value); else next.delete(key);
       next.delete("page");
+      return next;
+    });
+  }
+
+  /** The sport dropdown: a sport, or the hidden activities (one or the other). */
+  function setSportFilter(value) {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      next.delete("page");
+      next.delete("sport");
+      next.delete("hidden");
+      if (value === HIDDEN_OPTION) next.set("hidden", "1");
+      else if (value) next.set("sport", value);
       return next;
     });
   }
@@ -150,7 +166,7 @@ export default function Activities() {
     setSearchInput("");
     setSearchParams(prev => {
       const next = new URLSearchParams(prev);
-      ["q", "sport", "after", "before", "page"].forEach(k => next.delete(k));
+      ["q", "sport", "hidden", "after", "before", "page"].forEach(k => next.delete(k));
       return next;
     });
   }
@@ -183,6 +199,7 @@ export default function Activities() {
     const params = { page, page_size: PAGE_SIZE, sort, order };
     if (urlSearch) params.search = urlSearch;
     if (sport)  params.sport  = sport;
+    if (hidden) params.hidden = true;
     if (after)  params.after  = after;
     if (before) params.before = before;
     api.getActivities(params)
@@ -190,13 +207,13 @@ export default function Activities() {
       .catch(() => {})
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [page, urlSearch, sport, after, before, sort, order]);
+  }, [page, urlSearch, sport, hidden, after, before, sort, order]);
 
   // ============================================================
   // SECTION 5: DERIVED STATE
   // ============================================================
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const hasFilters = urlSearch || sport || after || before;
+  const hasFilters = urlSearch || sport || hidden || after || before;
 
   // ============================================================
   // SECTION 6: RENDER THE PAGE
@@ -225,13 +242,17 @@ export default function Activities() {
           onChange={e => setSearchInput(e.target.value)}
           className="field w-52"
         />
+        {/* Hidden sits in the sport filter, as on the phone: it is the one
+            place hidden activities can be found again. Its own URL param
+            rather than a sport value, so no sport name can collide with it. */}
         <select
-          value={sport}
-          onChange={e => setParam("sport", e.target.value)}
+          value={hidden ? HIDDEN_OPTION : sport}
+          onChange={e => setSportFilter(e.target.value)}
           className="field w-auto"
         >
           <option value="">All sports</option>
           {sports.map(s => <option key={s} value={s}>{s}</option>)}
+          <option value={HIDDEN_OPTION}>Hidden</option>
         </select>
         <DatePicker value={after} max={before || undefined} placeholder="From" onChange={v => setParam("after", v)} />
         <span className="text-slate-400 text-xs">–</span>

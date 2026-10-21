@@ -57,6 +57,7 @@ def list_activities(
     after: date | None = Query(None, description="Only activities on or after this date"),
     before: date | None = Query(None, description="Only activities on or before this date"),
     search: str | None = Query(None, description="Filter by activity name (case-insensitive)"),
+    hidden: bool = Query(False, description="List only hidden activities instead of the visible ones"),
     sort: str = Query("date", description="Sort column: date | duration | distance"),
     order: str = Query("desc", description="Sort direction: asc | desc"),
     page: int = Query(1, ge=1, description="Page number, starting at 1"),
@@ -72,6 +73,10 @@ def list_activities(
         and_(Activity.is_merged.is_(True), Activity.user_id == user.id),
     ))
 
+    # Hidden activities stay out of the list (the column's whole promise),
+    # and `hidden=true` lists only them — the one place they can be found
+    # again and shown, short of remembering a URL.
+    q = q.filter(Activity.hidden.is_(hidden))
     if sport:
         q = q.filter(Activity.sport == sport.strip().lower())
     if after:

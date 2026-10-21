@@ -122,8 +122,10 @@ fun ActivitiesScreen(
     modifier: Modifier = Modifier,
 ) {
     val local by vm.state.collectAsStateWithLifecycle()
+    // The hidden activities stand in for the list while that filter is on.
+    val source = if (local.showHidden) local.hidden else state.activities
 
-    if (state.activities.isEmpty()) {
+    if (state.activities.isEmpty() && !local.showHidden) {
         EmptyState(
             title = "Nothing cached yet",
             body = if (state.serverUrl.isBlank()) {
@@ -140,13 +142,13 @@ fun ActivitiesScreen(
     // the sort field and types only, so a search, a flipped direction or a
     // new window changed nothing until something else (leaving and coming
     // back) recomputed the list — which read as search not working at all.
-    val visible = remember(state.activities, local.sort, local.descending, local.types, local.query, local.window) {
-        vm.visible(state.activities, local)
+    val visible = remember(source, local.sort, local.descending, local.types, local.query, local.window) {
+        vm.visible(source, local)
     }
     // A new order or filter starts at its top: the first thing anyone wants
     // after "oldest first" is the oldest one.
     val listState = androidx.compose.foundation.lazy.rememberLazyListState()
-    LaunchedEffect(local.sort, local.descending, local.types, local.query, local.window) {
+    LaunchedEffect(local.sort, local.descending, local.types, local.query, local.window, local.showHidden) {
         listState.scrollToItem(0)
     }
 
@@ -154,13 +156,23 @@ fun ActivitiesScreen(
         // Only when something is hidden. A permanent "showing 128 of 128" is a
         // line of chrome that says nothing; a line that appears exactly when the
         // list is not the whole list is the answer to "where did the rest go".
-        if (local.types.isNotEmpty()) {
+        if (local.types.isNotEmpty() || local.showHidden) {
             FilterSummary(
                 shown = visible.size,
-                total = state.activities.size,
+                total = source.size,
                 types = local.types,
-                onClear = vm::clearTypes,
+                hidden = local.showHidden,
+                onClear = { vm.clearTypes(); vm.setShowHidden(false) },
             )
+        }
+
+        if (visible.isEmpty() && local.showHidden && local.types.isEmpty() && local.query.isBlank()) {
+            EmptyState(
+                title = "No hidden activities",
+                body = "Hide one from its page (the pencil) to keep its data out of the list and your stats.",
+                modifier = Modifier.fillMaxSize(),
+            )
+            return@Column
         }
 
         if (visible.isEmpty()) {
@@ -189,7 +201,7 @@ fun ActivitiesScreen(
             contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
             verticalArrangement = Arrangement.spacedBy(5.dp),
         ) {
-            if (local.trips.isNotEmpty() && local.selected.isEmpty()) {
+            if (local.trips.isNotEmpty() && local.selected.isEmpty() && !local.showHidden) {
                 items(local.trips, key = { "trip-${it.id}" }) { trip ->
                     TripRow(trip, onDelete = { vm.deleteTrip(trip.id) })
                 }
@@ -206,7 +218,9 @@ fun ActivitiesScreen(
                         if (local.selected.isNotEmpty()) vm.toggleSelected(activity.id)
                         else onActivityClick(activity.id)
                     },
-                    onLongClick = { vm.toggleSelected(activity.id) },
+                    // No trips from hidden activities: a trip counts only
+                    // visible members, so it would total nothing.
+                    onLongClick = { if (!local.showHidden) vm.toggleSelected(activity.id) },
                 )
                 }
             }
@@ -237,8 +251,10 @@ fun ActivityListActions(
     var filterOpen by remember { mutableStateOf(false) }
     var sortOpen by remember { mutableStateOf(false) }
     var searching by remember { mutableStateOf(false) }
-    val counts = remember(activities) { sportTypeCounts(activities) }
-    val filters = state.types.size + (if (state.window != ActivityWindow.All) 1 else 0)
+    val listed = if (state.showHidden) state.hidden else activities
+    val counts = remember(listed) { sportTypeCounts(listed) }
+    val filters = state.types.size + (if (state.window != ActivityWindow.All) 1 else 0) +
+        (if (state.showHidden) 1 else 0)
     val focus = remember { androidx.compose.ui.focus.FocusRequester() }
     val screen = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp.dp
 
@@ -316,7 +332,11 @@ fun ActivityListActions(
                 counts = counts,
                 selected = state.types,
                 onToggle = vm::toggleType,
-                onClear = { vm.clearTypes(); vm.setWindow(ActivityWindow.All); filterOpen = false },
+                showHidden = state.showHidden,
+                onShowHidden = vm::setShowHidden,
+                onClear = {
+                    vm.clearTypes(); vm.setWindow(ActivityWindow.All); vm.setShowHidden(false); filterOpen = false
+                },
                 onDismiss = { filterOpen = false },
             )
         }
@@ -332,6 +352,8 @@ private fun FilterMenu(
     counts: List<SportTypeCount>,
     selected: Set<String>,
     onToggle: (String) -> Unit,
+    showHidden: Boolean,
+    onShowHidden: (Boolean) -> Unit,
     onClear: () -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -345,6 +367,14 @@ private fun FilterMenu(
         }
         HorizontalDivider()
         TypeMenuItems(counts, selected, onToggle, onClear)
+        // Last, under a rule: not a type but which activities the types are
+        // picked from. The web puts it in its sport dropdown the same way.
+        HorizontalDivider()
+        DropdownMenuItem(
+            text = { Text("Hidden") },
+            onClick = { onShowHidden(!showHidden) },
+            leadingIcon = { Checkbox(checked = showHidden, onCheckedChange = null) },
+        )
     }
 }
 
@@ -400,6 +430,7 @@ private fun FilterSummary(
     shown: Int,
     total: Int,
     types: Set<String>,
+    hidden: Boolean,
     onClear: () -> Unit,
 ) {
     Row(
@@ -410,7 +441,10 @@ private fun FilterSummary(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Text(
-            "$shown of $total · ${types.sorted().joinToString(", ") { sportLabel(it) }}",
+            buildList {
+                if (hidden) add("Hidden")
+                addAll(types.sorted().map { sportLabel(it) })
+            }.joinToString(", ").let { "$shown of $total · $it" },
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,

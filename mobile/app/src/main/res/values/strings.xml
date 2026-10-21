@@ -25,7 +25,9 @@
     <string name="map_download_areas">%1$d areas</string>
 
     <!-- The persistent connection notification. See WatchLinkService. -->
-    <string name="watch_link_title">Watch connected</string>
+    <string name="watch_link_title">Watch link</string>
+    <string name="watch_link_channel_name">Watch connection</string>
+    <string name="watch_link_channel_description">Keeps your watch connected for notifications, music and weather. Silent; you can hide it here without affecting the link.</string>
     <string name="watch_link_connecting">Connecting…</string>
     <string name="watch_link_connected">%1$s · notifications and weather active</string>
     <string name="watch_link_waiting">Waiting for your watch…</string>

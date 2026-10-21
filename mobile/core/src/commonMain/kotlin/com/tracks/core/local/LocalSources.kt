@@ -114,13 +114,17 @@ class LocalSources(
      * the person said about each one laid over it — a rename, a sport
      * correction, a hide, a delete. The measurements are the file's; the name
      * is theirs.
+     *
+     * [hidden] true lists only the activities the person hid instead — the
+     * list's "Hidden" filter, the one place they can be found and shown again.
      */
-    suspend fun activities(): List<ActivitySummary> = io {
+    suspend fun activities(hidden: Boolean = false): List<ActivitySummary> = io {
         val said = replica.rows("activity", includeDeleted = true).associateBy { it.uid }
         val uids = library.uidsByAlias()
         return@io library.activities().mapNotNull { a ->
-            val edit = uids[a.id]?.let(said::get) ?: return@mapNotNull a
-            if (edit.isTombstone || (edit.fields["hidden"] as? JsonPrimitive)?.content == "true") return@mapNotNull null
+            val edit = uids[a.id]?.let(said::get) ?: return@mapNotNull a.takeIf { !hidden }
+            if (edit.isTombstone) return@mapNotNull null
+            if (isHidden(edit) != hidden) return@mapNotNull null
             a.copy(
                 name = if ("name" in edit.fields) edit.str("name") else a.name,
                 sport = edit.str("sport") ?: a.sport,
@@ -128,6 +132,8 @@ class LocalSources(
             )
         }
     }
+
+    private fun isHidden(edit: SyncedRow): Boolean = (edit.fields["hidden"] as? JsonPrimitive)?.content == "true"
 
     /** Rename, re-sport, note or hide one activity — a source edit on a derived row. */
     suspend fun editActivity(id: Int, values: Map<String, Any?>): Unit = io {

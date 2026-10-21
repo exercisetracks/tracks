@@ -43,5 +43,8 @@ SERVER_VERSION = "1.8.5"
 #
 # Nor for 1.8.3's /sprite/version: only the web map asks for it, and the web
 # map is served by the server it asks.
+#
+# Nor for the activity list's `hidden` filter and field: the phone lists from
+# its own replica, and the web is served by the server it asks.
 API_VERSION = 2
 MIN_CLIENT_API_VERSION = 2

@@ -162,7 +162,7 @@ def _build_and_store_dash_cache(db, user_id: int, us) -> None:
     filtered endpoints and replayed by the phone's port; this only selects rows.
     """
     q = db.query(Activity).filter(Activity.started_at.isnot(None))
-    q = q.filter(Activity.device_id.in_(_claimed_device_ids(db, user_id)))
+    q = q.filter(Activity.device_id.in_(_claimed_device_ids(db, user_id)), Activity.hidden.is_(False))
     rows = q.with_entities(
         Activity.started_at,
         Activity.sport,
@@ -182,7 +182,7 @@ def _build_and_store_dash_cache(db, user_id: int, us) -> None:
                  Activity.distance_meters, Activity.duration_seconds)
         # Runs too, for the pace-based estimate when no device reports one
         # (dashboard_stats.vo2max_history).
-        .filter(Activity.user_id == user_id,
+        .filter(Activity.user_id == user_id, Activity.hidden.is_(False),
                 or_(Activity.vo2max_estimate.isnot(None), Activity.sport.ilike("%run%")))
         .order_by(Activity.started_at)
         .all()

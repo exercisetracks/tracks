@@ -9,6 +9,9 @@ and the cache builder.
 
 Every query is scoped to the *requesting* user's claimed devices. This is
 mandatory for multi-user correctness: never fall back to "the first user".
+And every one leaves out the activities the user hid, as the phone's
+LocalMetrics does — hiding is how a bad recording is taken out of the stats
+without deleting it, so a stat that still counted it would undo the point.
 """
 
 from datetime import date, timedelta
@@ -62,7 +65,7 @@ def _effective_threshold_hr(us: UserSettings | None) -> float | None:
 def _activity_query(db: Session, user_id: int, us: UserSettings | None, after: date | None, before: date | None):
     """Base Activity query with date range and claimed-device filters applied."""
     q = _started_in(db.query(Activity).filter(Activity.started_at.isnot(None)), us, after, before)
-    q = q.filter(Activity.device_id.in_(_claimed_device_ids(db, user_id)))
+    q = q.filter(Activity.device_id.in_(_claimed_device_ids(db, user_id)), Activity.hidden.is_(False))
     return q
 
 
@@ -85,7 +88,7 @@ def _slim_activity_rows(db: Session, user_id: int, us, after: date | None = None
         .filter(Activity.started_at.isnot(None))
     )
     q = _started_in(q, us, after, before)
-    q = q.filter(Activity.device_id.in_(_claimed_device_ids(db, user_id)))
+    q = q.filter(Activity.device_id.in_(_claimed_device_ids(db, user_id)), Activity.hidden.is_(False))
     return q.order_by(Activity.started_at).all()
 
 

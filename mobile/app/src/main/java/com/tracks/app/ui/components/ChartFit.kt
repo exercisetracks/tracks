@@ -15,6 +15,7 @@ import com.patrykandpatrick.vico.core.cartesian.data.CartesianValueFormatter
 import com.patrykandpatrick.vico.core.common.data.ExtraStore
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 
 /**
  * Charts that fit the screen instead of scrolling off it.
@@ -104,10 +105,24 @@ val DateAxisFormatter = CartesianValueFormatter { context, value, _ ->
     val dates = context.model.extraStore.getOrNull(AxisDates).orEmpty()
     if (dates.isEmpty()) return@CartesianValueFormatter BLANK_LABEL
     val iso = dates[value.toInt().coerceIn(0, dates.lastIndex)]
-    runCatching { LocalDate.parse(iso).format(AXIS_DATE_FORMAT) }.getOrDefault(BLANK_LABEL)
+    val format = if (spansYears(dates)) AXIS_DATE_YEAR_FORMAT else AXIS_DATE_FORMAT
+    runCatching { LocalDate.parse(iso).format(format) }.getOrDefault(BLANK_LABEL)
 }
 
+/**
+ * Whether the series is long enough that "3 Mar" no longer says which March.
+ * Decided by span rather than by period, so a year-to-date window in autumn
+ * and a lifetime both get the year, and a month never does. Four labels of
+ * "3 Mar 2025" still fit one line of a phone-width chart (see [TARGET_LABELS]).
+ */
+private fun spansYears(dates: List<String>): Boolean = runCatching {
+    ChronoUnit.DAYS.between(LocalDate.parse(dates.first()), LocalDate.parse(dates.last())) > YEAR_LABEL_SPAN_DAYS
+}.getOrDefault(false)
+
+private const val YEAR_LABEL_SPAN_DAYS = 180
+
 private val AXIS_DATE_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM")
+private val AXIS_DATE_YEAR_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM yyyy")
 
 /**
  * A space, not `""` — see [AxisDates]. Reached only before any data exists, when

@@ -42,6 +42,9 @@ class LocalActivityDetail(private val library: LocalLibrary, private val sources
         val fields = LinkedHashMap<String, JsonElement>(summary)
         fields["id"] = JsonPrimitive(id)
         edit?.fields?.forEach { (k, v) -> if (k != "hidden") fields[k] = v }
+        // Normalised to a real boolean, whatever form the edit stored it in, so
+        // it cannot fail the decode; the screen offers "Show again" on it.
+        fields["hidden"] = JsonPrimitive((edit?.fields?.get("hidden") as? JsonPrimitive)?.content == "true")
         fields["lap_count"] = JsonPrimitive((detail["laps"] as? JsonArray)?.size ?: 0)
 
         val activity = decode(JsonObject(fields), ActivityDetail.serializer()) ?: return null

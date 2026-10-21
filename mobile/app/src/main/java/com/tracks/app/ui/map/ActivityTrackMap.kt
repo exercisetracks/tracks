@@ -33,6 +33,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalDensity
+import android.view.Gravity
 import com.tracks.core.api.TrackPoint
 import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.maps.MapLibreMap
@@ -103,6 +105,7 @@ fun ActivityTrackMap(
     val routeGeoJson = remember(track, mode, plainColor) { routeFeatures(track, mode, plainColor) }
 
     var loaded by remember { mutableStateOf<Pair<MapLibreMap, Style>?>(null) }
+    val density = LocalDensity.current.density
     // Framed once. A theme switch swaps the style and a pill swaps the
     // colours; neither should throw away where the user had zoomed to.
     var framed by remember { mutableStateOf(false) }
@@ -117,7 +120,18 @@ fun ActivityTrackMap(
             embedded = true,
             styleJson = styleJson,
             modifier = Modifier.fillMaxSize(),
-        ) { map, style -> loaded = map to style }
+        ) { map, style ->
+            // Credits in the bottom-right corner: MapLibre puts them bottom-
+            // left by default, which is where the colour legend sits. The
+            // info button takes the corner and the logo sits just inside it —
+            // MapLibre's own defaults do the same side by side, mirrored.
+            val px = { d: Int -> (d * density).toInt() }
+            map.uiSettings.attributionGravity = Gravity.BOTTOM or Gravity.END
+            map.uiSettings.setAttributionMargins(0, 0, px(4), px(4))
+            map.uiSettings.logoGravity = Gravity.BOTTOM or Gravity.END
+            map.uiSettings.setLogoMargins(0, 0, px(32), px(4))
+            loaded = map to style
+        }
 
         if (modes.isNotEmpty()) {
             RouteColourPills(
@@ -145,7 +159,7 @@ fun ActivityTrackMap(
 }
 
 /**
- * The pills, floating on the map's top edge like the web's control panel.
+ * The pills, floating straight on the map's top edge.
  * Wrapped rather than scrolled: six of them (a mountain-bike ride) do not fit
  * one line of a phone-width map, and a row that scrolls inside a map that pans
  * is two gestures fighting over one finger.
@@ -158,10 +172,10 @@ private fun RouteColourPills(
     onPick: (RouteColour) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // No panel behind them: the pills carry their own fill, and a plate under
+    // the whole row hid a strip of the map for nothing.
     FlowRow(
-        modifier
-            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.88f), RoundedCornerShape(Tokens.Radius.xl))
-            .padding(horizontal = 6.dp, vertical = 5.dp),
+        modifier,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {

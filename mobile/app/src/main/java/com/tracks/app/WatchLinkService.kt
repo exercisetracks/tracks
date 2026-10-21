@@ -40,8 +40,9 @@ import kotlinx.coroutines.launch
  * `connectedDevice` is the type built for this, and it is already declared for
  * [WatchSyncService].
  *
- * The cost is an ongoing notification the user cannot dismiss, which is a real
- * cost and the reason this is a **user-visible choice** rather than something
+ * The cost is an ongoing notification, posted silently on a channel of its
+ * own at minimum importance (see [WatchSyncNotifications.LINK_CHANNEL_ID]) —
+ * still a real cost and the reason this is a **user-visible choice** rather than something
  * the app switches on by itself. See [WatchLinkPreference].
  *
  * ## Why it is separate from WatchSyncService
@@ -64,6 +65,15 @@ class WatchLinkService : Service() {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var job: Job? = null
+
+    /**
+     * What the notification last said. Every start re-posts the notification
+     * — MainActivity starts this service each time the app comes forward — and
+     * re-posting a fixed "Connecting…" overwrote "Connected" with no state
+     * change to correct it: the connection flow only emits on change, so the
+     * shade said "Connecting…" for as long as the watch stayed connected.
+     */
+    private var notificationText: String? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -95,7 +105,7 @@ class WatchLinkService : Service() {
         ServiceCompat.startForeground(
             this,
             WatchSyncNotifications.LINK_ID,
-            WatchSyncNotifications.link(this, getString(R.string.watch_link_connecting)),
+            WatchSyncNotifications.link(this, notificationText ?: getString(R.string.watch_link_connecting)),
             ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE,
         )
 
@@ -152,6 +162,7 @@ class WatchLinkService : Service() {
             ConnectionState.Disconnected, is ConnectionState.Failed ->
                 getString(R.string.watch_link_waiting)
         }
+        notificationText = text
         val manager = getSystemService(android.app.NotificationManager::class.java) ?: return
         manager.notify(WatchSyncNotifications.LINK_ID, WatchSyncNotifications.link(this, text))
     }

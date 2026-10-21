@@ -10,6 +10,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -38,7 +39,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.tracks.app.ui.tour.TourAnchor
 import com.tracks.app.ui.tour.tourAnchor
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
@@ -96,15 +96,31 @@ fun ActivityDetailScreen(
                             onCancel = { renaming = false },
                         )
                     } else {
-                        Text(
-                            shown,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(Tokens.Radius.lg))
-                                .clickable(enabled = state.data != null) { renaming = true }
-                                .padding(horizontal = 6.dp, vertical = 2.dp),
-                        )
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            // The box takes the spare width, so the details
+                            // below sit at the end; the name inside it wraps
+                            // its text, so the tap highlight stays its size.
+                            Box(Modifier.weight(1f)) {
+                                Text(
+                                    shown,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(Tokens.Radius.lg))
+                                        .clickable(enabled = state.data != null) { renaming = true }
+                                        .padding(horizontal = 6.dp, vertical = 2.dp),
+                                )
+                            }
+                            // Sport and date, stacked at the title's end: the
+                            // title gives way (ellipsis) before they do, and
+                            // the note snippet keeps its own slot in actions.
+                            state.data?.let {
+                                ActivityTitleDetails(
+                                    it,
+                                    Modifier.padding(start = 6.dp).tourAnchor("activity-body"),
+                                )
+                            }
+                        }
                     }
                 },
                 navigationIcon = {
@@ -176,6 +192,7 @@ fun ActivityDetailScreen(
                 editingNotes = false
             },
             onHide = { editingNotes = false; vm.hide(onBack) },
+            onUnhide = { editingNotes = false; vm.unhide() },
             onDelete = { editingNotes = false; vm.delete(onBack) },
         )
     }
@@ -239,9 +256,9 @@ private fun DetailBody(data: ActivityDetailData, mapStyleJson: String?) {
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        // Before the map, because it says *which* activity this is: the app bar
-        // shows a name that for most imports is the watch's own "Hike".
-        TourAnchor("activity-body") { ActivityHeaderCard(data) }
+        // Which activity this is — sport and date — sits in the app bar now
+        // (ActivityTitleDetails); only the merged note is left up here.
+        MergedNote(data)
 
         // The map leads when there is one — it is the fastest way to recognise
         // which ride this was, ahead of any number on the screen.

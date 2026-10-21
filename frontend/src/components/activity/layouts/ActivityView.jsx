@@ -75,6 +75,21 @@ export function ActivityView() {
 
   const [showDelete, setShowDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showHide, setShowHide] = useState(false);
+  const [hiding, setHiding] = useState(false);
+
+  // Hidden is the synced `hidden` field, as on the phone: the activity keeps
+  // its data and leaves the list, and the list's "Hidden" filter is where it
+  // is found again. Back to the list either way — it has just moved.
+  const setHidden = useCallback(async (hidden) => {
+    setHiding(true);
+    try {
+      await api.patchActivity(id, { hidden });
+      navigate(hidden ? "/activities" : "/activities?hidden=1");
+    } catch {
+      setHiding(false);
+    }
+  }, [id, navigate]);
 
   const handleDelete = useCallback(async (allowReimport) => {
     setDeleting(true);
@@ -131,6 +146,18 @@ export function ActivityView() {
     </button>
   );
 
+  // Hiding asks first, as a delete does; showing again is the undo, so it
+  // does not.
+  const hideButton = activity.is_merged ? null : activity.hidden ? (
+    <button onClick={() => setHidden(false)} disabled={hiding} className="btn btn-neutral btn-sm">
+      Show again
+    </button>
+  ) : (
+    <button onClick={() => setShowHide(true)} className="btn btn-neutral btn-sm">
+      Hide
+    </button>
+  );
+
   let layout;
   if (activity.is_merged)                           layout = <MergedTripLayout activity={activity} imperial={imperial} />;
   else if (isGolf(activity))                        layout = <GolfLayout {...sharedProps} />;
@@ -161,9 +188,20 @@ export function ActivityView() {
           deleting={deleting}
         />
       )}
+      {showHide && (
+        <ConfirmDialog
+          title="Hide activity?"
+          message="It leaves the activity list and keeps its data. Pick “Hidden” in the list's sport filter to find it and show it again."
+          confirmLabel={hiding ? "Hiding…" : "Hide"}
+          busy={hiding}
+          onConfirm={() => setHidden(true)}
+          onCancel={() => setShowHide(false)}
+        />
+      )}
       <div className="relative pr-3.5">
         <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
           <ActivityNotes activity={activity} />
+          {hideButton}
           {deleteButton}
         </div>
         <UserMaxHRContext.Provider value={settings?.max_hr ?? null}>{layout}</UserMaxHRContext.Provider>

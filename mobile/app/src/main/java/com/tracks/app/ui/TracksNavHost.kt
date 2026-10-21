@@ -318,6 +318,12 @@ fun TracksNavHost(
             launchSingleTop = true
             restoreState = true
         }
+        // The drawer opens a page, not wherever that page was left. Restoring
+        // the saved stack also restored an activity opened earlier, so
+        // "Activities" landed on that activity rather than the list. Popping
+        // back to the page's own entry keeps the list's scroll position (it
+        // lives in that entry) and drops only the screens above it.
+        navController.popBackStack(destination.route, inclusive = false)
     }
 
     // Every watch-only control below reads this rather than a parameter —

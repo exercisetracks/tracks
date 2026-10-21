@@ -90,6 +90,25 @@ class TestListActivities:
         items = client.get("/activities/").json()["items"]
         assert items[0]["started_at"] > items[1]["started_at"]
 
+    def test_a_hidden_activity_leaves_the_list(self, client, user, db):
+        """The column says hidden activities stay out of lists; the server
+        listed them anyway, so hiding on the phone did nothing on the web."""
+        _make_activity(db, user, name="Shown")
+        _make_activity(db, user, name="Gone", hidden=True,
+                       started_at=datetime(2024, 6, 2, 8, 0, 0))
+        data = client.get("/activities/").json()
+        assert [a["name"] for a in data["items"]] == ["Shown"]
+        assert data["total"] == 1
+
+    def test_hidden_true_lists_only_the_hidden(self, client, user, db):
+        """The filter is the one way to find a hidden activity again."""
+        _make_activity(db, user, name="Shown")
+        _make_activity(db, user, name="Gone", hidden=True,
+                       started_at=datetime(2024, 6, 2, 8, 0, 0))
+        data = client.get("/activities/?hidden=true").json()
+        assert [a["name"] for a in data["items"]] == ["Gone"]
+        assert data["items"][0]["hidden"] is True
+
 
 class TestGetActivity:
     def test_get_existing(self, client, user, db):
@@ -114,6 +133,16 @@ class TestPatchActivity:
         data = resp.json()
         assert data["name"] == "Morning Run"
         assert data["notes"] == "Felt great"
+
+    def test_an_activity_can_be_hidden_and_shown_again(self, client, user, db):
+        """Hiding is the undoable alternative to a delete, so the web has to be
+        able to undo it."""
+        headers, _material = _auth(client, db, user)
+        a = _make_activity(db, user)
+        resp = client.patch(f"/activities/{a.id}", json={"hidden": True}, headers=headers)
+        assert resp.json()["hidden"] is True
+        resp = client.patch(f"/activities/{a.id}", json={"hidden": False}, headers=headers)
+        assert resp.json()["hidden"] is False
 
     def test_patch_missing_returns_404(self, client, user, db):
         headers, _material = _auth(client, db, user)

@@ -196,6 +196,16 @@ class ActivityDetailViewModel(
         }
     }
 
+    /** Undo [hide]: back in the list and the stats. Stays on the page, which now offers Hide. */
+    fun unhide() {
+        viewModelScope.launch {
+            container.sources.editActivity(activityId, mapOf("hidden" to false))
+            _state.update { state ->
+                state.copy(data = state.data?.let { it.copy(detail = it.detail.copy(hidden = false)) })
+            }
+        }
+    }
+
     /** Delete this activity for good. Its file is kept, but no copy of it ever brings the activity back. */
     fun delete(onDone: () -> Unit) {
         viewModelScope.launch {

@@ -33,6 +33,7 @@ class ActivitySummary(BaseModel):
     avg_speed: float | None = None
     device_id: int | None = None
     is_merged: bool = False   # a "merged trip" summary (excluded from all metrics)
+    hidden: bool = False      # hidden by the user; out of the list unless asked for
 
 
 class LapOut(BaseModel):

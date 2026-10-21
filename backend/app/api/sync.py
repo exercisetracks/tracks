@@ -56,7 +56,7 @@ def sync_push(
     if any(c.get("entity") in _LOAD_INPUTS for c in changes):
         invalidate_training_load_cache()
         invalidate_dashboard_cache()
-    # A phone's rename, re-sport or delete of an activity: the heatmap caches
+    # A phone's rename, re-sport, hide or delete of an activity: the heatmap caches
     # carry its sport and name. See activities/heatmap_cache.py.
     if any(c.get("entity") == "activity" for c in changes):
         invalidate_heatmap_cache(user.id)

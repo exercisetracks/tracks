@@ -270,14 +270,14 @@ def build_heatmap_bases(db, claimed_ids: list) -> dict[str, list]:
     acts = {
         a.id: (_utc_iso(a.started_at), (a.sport or "").strip().lower())
         for a in db.query(Activity.id, Activity.started_at, Activity.sport)
-        .filter(Activity.device_id.in_(claimed_ids))
+        .filter(Activity.device_id.in_(claimed_ids), Activity.hidden.is_(False))
     }
     q = (
         db.query(DataPoint.activity_id, DataPoint.lat, DataPoint.lng,
                  DataPoint.speed, DataPoint.heart_rate, DataPoint.altitude)
         .join(Activity, DataPoint.activity_id == Activity.id)
         .filter(DataPoint.lat.isnot(None), DataPoint.lng.isnot(None))
-        .filter(Activity.device_id.in_(claimed_ids))
+        .filter(Activity.device_id.in_(claimed_ids), Activity.hidden.is_(False))
         .order_by(DataPoint.activity_id, DataPoint.recorded_at)
         .yield_per(_STREAM_BATCH)
     )

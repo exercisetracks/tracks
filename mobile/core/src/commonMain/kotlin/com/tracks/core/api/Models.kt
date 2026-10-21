@@ -263,6 +263,8 @@ data class ActivityDetail(
     @SerialName("lap_count") val lapCount: Int? = null,
     @SerialName("device_id") val deviceId: Int? = null,
     @SerialName("is_merged") val isMerged: Boolean = false,
+    /** Hidden by the person: out of the list and the stats, data kept. */
+    val hidden: Boolean = false,
 )
 
 /** One lap. Golf fields are null for everything that is not golf. */

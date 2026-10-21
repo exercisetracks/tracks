@@ -53,10 +53,12 @@ fun ActivityNotesSheet(
     onDismiss: () -> Unit,
     onSave: (notes: String) -> Unit,
     onHide: () -> Unit,
+    onUnhide: () -> Unit,
     onDelete: () -> Unit,
 ) {
     var notes by remember { mutableStateOf(detail.notes.orEmpty()) }
     var confirmDelete by remember { mutableStateOf(false) }
+    var confirmHide by remember { mutableStateOf(false) }
     val focus = remember { FocusRequester() }
     // Straight to the keyboard: the pencil was pressed to write.
     LaunchedEffect(Unit) { focus.requestFocus() }
@@ -81,17 +83,31 @@ fun ActivityNotesSheet(
             )
             PrimaryButton("Save", onClick = { onSave(notes) }, modifier = Modifier.fillMaxWidth())
             ButtonRow {
-                TonalButton("Hide", onClick = onHide)
+                // Showing again is the undo, so only hiding asks first.
+                if (detail.hidden) TonalButton("Show again", onClick = onUnhide)
+                else TonalButton("Hide", onClick = { confirmHide = true })
                 DangerButton("Delete", onClick = { confirmDelete = true })
             }
             Text(
-                "Hidden activities leave the list, the dashboard and training load, and keep their data. " +
-                    "A delete is final on every device.",
+                "Hidden activities leave the list, the dashboard and training load, and keep their data; " +
+                    "\"Hidden\" in the list's filter shows them again. A delete is final on every device.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(bottom = 16.dp),
             )
         }
+    }
+
+    if (confirmHide) {
+        AlertDialog(
+            onDismissRequest = { confirmHide = false },
+            title = { Text("Hide this activity?") },
+            text = { Text("It leaves the list, the dashboard and training load on every device, and keeps its data. Pick \"Hidden\" in the list's filter to find it and show it again.") },
+            confirmButton = {
+                PrimaryButton("Hide", onClick = { confirmHide = false; onHide() })
+            },
+            dismissButton = { NeutralButton("Cancel", onClick = { confirmHide = false }) },
+        )
     }
 
     if (confirmDelete) {

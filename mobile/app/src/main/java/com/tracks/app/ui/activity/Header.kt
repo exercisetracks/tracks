@@ -2,25 +2,17 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 package com.tracks.app.ui.activity
 
-import com.tracks.app.ui.theme.Tokens
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import java.time.format.DateTimeFormatter
 
 /**
- * When this was, and what it was.
+ * When this was, and what it was — two short lines stacked beside the title.
  *
  * The detail screen used to answer neither. The app bar carries the activity's
  * name — which for most imports is the watch's own "Hike" or "MTB" — and every
@@ -28,55 +20,56 @@ import java.time.format.DateTimeFormatter
  * whether it was showing this morning's ride or one from March. On a list you
  * scroll by date that is the first thing you want confirmed after tapping.
  *
- * The sport label is here rather than in the app bar because it is a fact about
- * the activity, not a title: `sub_sport` is what separates a treadmill run from
- * a trail run and a snowboard day from a ski day, and the app bar has one line
- * for a name the user may have written themselves.
+ * In the app bar rather than above the map, where it cost a row of the page:
+ * two label-sized lines stack into the bar's height without growing it. The
+ * sport is plain tinted text rather than the chip it was, because a chip's
+ * padding is what would have pushed the bar taller. The weekday is dropped
+ * for the same space; the date and time are what identify the activity.
+ *
+ * The sport label is kept apart from the title because it is a fact about the
+ * activity, not a name: `sub_sport` is what separates a treadmill run from a
+ * trail run and a snowboard day from a ski day, and the title is one line for a
+ * name the user may have written themselves.
  */
 @Composable
-fun ActivityHeaderCard(data: ActivityDetailData, modifier: Modifier = Modifier) {
+fun ActivityTitleDetails(data: ActivityDetailData, modifier: Modifier = Modifier) {
     val detail = data.detail
     val label = remember(detail.sport, detail.subSport, data.sportType) {
         sportLabel(detail.sport, detail.subSport, data.sportType)
     }
     val started = remember(detail.startedAt) { startedAtLabel(detail.startedAt) }
 
-    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Surface(
-                shape = RoundedCornerShape(Tokens.Radius.md),
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
-            ) {
-                Text(
-                    label,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-            }
-            if (started != null) {
-                Text(
-                    started,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-
-        // Merged trips are stitched from several recordings, so their totals are
-        // sums rather than anything one device measured. Worth saying, because
-        // it explains a duration that no single file could account for.
-        if (detail.isMerged) {
+    Column(modifier, horizontalAlignment = Alignment.End) {
+        Text(
+            label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.primary,
+            maxLines = 1,
+        )
+        if (started != null) {
             Text(
-                "Merged from more than one recording",
-                style = MaterialTheme.typography.bodySmall,
+                started,
+                style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
             )
         }
     }
+}
+
+/**
+ * Merged trips are stitched from several recordings, so their totals are sums
+ * rather than anything one device measured. Worth saying, because it explains
+ * a duration that no single file could account for.
+ */
+@Composable
+fun MergedNote(data: ActivityDetailData) {
+    if (!data.detail.isMerged) return
+    Text(
+        "Merged from more than one recording",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
 }
 
 /**
@@ -92,7 +85,7 @@ private fun startedAtLabel(startedAt: String?): String? {
     return STARTED_FORMAT.format(local)
 }
 
-private val STARTED_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("EEE d MMM yyyy · HH:mm")
+private val STARTED_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM yyyy · HH:mm")
 
 /**
  * A name for the sport, refined by `sub_sport` where it changes the answer.
