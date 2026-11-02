@@ -446,7 +446,17 @@ private fun Detail(
             val preview = remember(c.strategy.path) {
                 c.strategy.path.map { (lat, lon) -> com.tracks.core.api.TrackPoint(lat = lat, lng = lon) }
             }
-            com.tracks.app.ui.map.ActivityTrackMap(track = preview, styleJson = mapStyleJson)
+            // The profile under it: the hills, and the target the plan sets on them.
+            var held by remember { mutableStateOf<Pair<Double, Double>?>(null) }
+            com.tracks.app.ui.map.ActivityTrackMap(track = preview, styleJson = mapStyleJson, marker = held)
+            val laps = c.prediction?.laps.orEmpty()
+            val sport = c.goal.eventSport ?: "running"
+            val metric = remember(sport, laps) { com.tracks.core.race.CourseProfile.metric(sport, laps) }
+            val profile = remember(c.strategy.path, c.strategy.elevations, laps, metric) {
+                if (sport == "swimming") null
+                else com.tracks.core.race.CourseProfile.points(c.strategy.path, c.strategy.elevations, laps, metric)
+            }
+            profile?.let { pts -> CourseProfileChart(pts, metric) { p -> held = p?.let { it.lat to it.lon } } }
             ButtonRow {
                 TonalButton("Replace course", onClick = { choosing = true })
                 DangerButton("Remove course", onClick = onRemoveCourse)

@@ -297,6 +297,30 @@ class TrainingScreenshotTest {
         )
     }
 
+    /** A 5 km course over one hill: the map, then the profile with its pace line. */
+    private val courseCard: RacePlanCard get() {
+        val n = 60
+        val path = (0..n).map { 46.0 to 7.0 + it * 0.0007 }
+        val elevations = (0..n).map { 400.0 + 60.0 * kotlin.math.sin(it * kotlin.math.PI / n) }
+        val segments = listOf(0.06, 0.04, 0.0, -0.04, -0.06).map {
+            com.tracks.core.race.Segment(distanceM = 1000.0, gradient = it, elevationGainM = maxOf(0.0, it * 1000))
+        }
+        val strategy = LocalRacePlans.Strategy(uid = "r1", hasCourse = true, segments = segments, path = path,
+            elevations = elevations)
+        val pred = LocalRacePlans.running(45.0, 5000.0, "flat", 0.0, imperial = false, maxHr = null, segments = segments)
+        return RacePlanCard(goal, strategy, 45.0, pred)
+    }
+
+    @Test
+    fun race_plan_course_light() = shoot("race_plan_course_light", ThemeMode.Light) {
+        RacePlansContent(RacePlansState(loading = false, cards = listOf(courseCard), openGoalId = 1), {}, { _, _, _ -> })
+    }
+
+    @Test
+    fun race_plan_course_dark() = shoot("race_plan_course_dark", ThemeMode.Dark) {
+        RacePlansContent(RacePlansState(loading = false, cards = listOf(courseCard), openGoalId = 1), {}, { _, _, _ -> })
+    }
+
     @Test
     fun training_fuel_practice_light() = shoot("training_fuel_practice_light", ThemeMode.Light) {
         val long = w(9, today.toString(), "long", "Long run", min = 100, done = true)

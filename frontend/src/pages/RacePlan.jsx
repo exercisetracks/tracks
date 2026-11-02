@@ -41,6 +41,7 @@ export default function RacePlan() {
   const [error,        setError]       = useState(null);
   const [gpxUploading, setGpxUploading]= useState(false);
   const [splitDraft,   setSplitDraft]  = useState(0);
+  const [profilePoint, setProfilePoint]= useState(null);
 
   const splitTimer = useRef(null);
 
@@ -337,10 +338,12 @@ export default function RacePlan() {
                 theme={isDark ? "dark" : "light"}
                 center={mapCenter}
                 zoom={mapZoom}
+                marker={profilePoint}
               />
             </div>
 
-            <ElevationChart coursePath={coursePath} isDark={isDark} imperial={imperial} />
+            <ElevationChart coursePath={coursePath} laps={displayLaps} sport={sport} imperial={imperial}
+              onHover={setProfilePoint} />
 
             {/* Pin controls — hidden when GPX is loaded (auto-set from course) */}
             {!hasCourse && (

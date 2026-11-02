@@ -39,6 +39,7 @@ import com.tracks.core.api.TrackPoint
 import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.maps.MapLibreMap
 import org.maplibre.android.maps.Style
+import org.maplibre.android.style.layers.CircleLayer
 import org.maplibre.android.style.layers.LineLayer
 import org.maplibre.android.style.layers.PropertyFactory
 import org.maplibre.android.style.expressions.Expression
@@ -76,6 +77,7 @@ fun ActivityTrackMap(
     track: List<TrackPoint>,
     styleJson: String?,
     modifier: Modifier = Modifier,
+    marker: Pair<Double, Double>? = null,
 ) {
     val positions = remember(track) {
         track.mapNotNull { p ->
@@ -155,6 +157,10 @@ fun ActivityTrackMap(
                 framed = true
             }
         }
+        LaunchedEffect(loaded, marker) {
+            val (_, style) = loaded ?: return@LaunchedEffect
+            drawMarker(style, marker)
+        }
     }
 }
 
@@ -208,6 +214,33 @@ private fun RouteColourLegend(mode: RouteColour, modifier: Modifier = Modifier) 
             }
         }
     }
+}
+
+private const val MARKER_SOURCE = "activity_track_marker"
+private const val MARKER_LAYER = "activity_track_marker_layer"
+
+/**
+ * A dot on the route at (lat, lon) — where a chart beside the map is being
+ * read (the race plan's course profile) — or none. Its own source and layer,
+ * above the route, so moving it never redraws the line.
+ */
+private fun drawMarker(style: Style, at: Pair<Double, Double>?) {
+    val features = FeatureCollection.fromFeatures(
+        listOfNotNull(at?.let { (lat, lon) -> Feature.fromGeometry(Point.fromLngLat(lon, lat)) }),
+    )
+    (style.getSource(MARKER_SOURCE) as? GeoJsonSource)?.let {
+        it.setGeoJson(features)
+        return
+    }
+    style.addSource(GeoJsonSource(MARKER_SOURCE, features))
+    style.addLayer(
+        CircleLayer(MARKER_LAYER, MARKER_SOURCE).withProperties(
+            PropertyFactory.circleRadius(6f),
+            PropertyFactory.circleColor("#FFFFFF"),
+            PropertyFactory.circleStrokeColor("#8B5CF6"),
+            PropertyFactory.circleStrokeWidth(3f),
+        ),
+    )
 }
 
 private const val TRACK_SOURCE = "activity_track_line"

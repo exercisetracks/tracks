@@ -1,7 +1,8 @@
 // SPDX-FileCopyrightText: 2026 Hawk Fugagli
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Self-hosted MapLibre race map for the Race Plan page. Draws the course as a
-// purple line and lets the user click to drop a weather-location pin. It is a
+// purple line and lets the user click to drop a weather-location pin; a
+// `marker` puts a dot on the course where the elevation plot is hovered. It is a
 // pure presentational component: it takes the course path, pin coordinates,
 // initial center/zoom and a theme via props, and reports pin clicks back through
 // `onPin`. It holds no page state of its own.
@@ -22,9 +23,10 @@ const PIN_SVG =
   '<path d="M13 0C5.8 0 0 5.8 0 13c0 9.2 13 23 13 23s13-13.8 13-23C26 5.8 20.2 0 13 0z" fill="#8b5cf6"/>' +
   '<circle cx="13" cy="13" r="5" fill="#fff"/></svg>';
 
-export default function RaceMap({ coursePath, pinLat, pinLon, onPin, disabled, theme, center, zoom }) {
+export default function RaceMap({ coursePath, pinLat, pinLon, onPin, disabled, theme, center, zoom, marker }) {
   const mapRef = useRef(null);
   const pinRef = useRef(null);
+  const markerRef = useRef(null);
   const [ready, setReady] = useState(false);
   const didFit = useRef(false);
   // Refs mirror the latest onPin/disabled so the once-bound click handler always
@@ -90,6 +92,19 @@ export default function RaceMap({ coursePath, pinLat, pinLon, onPin, disabled, t
       pinRef.current.setLngLat([pinLon, pinLat]);
     }
   }, [ready, pinLat, pinLon]);
+
+  // The spot the elevation plot is pointing at, [lat, lon] or null.
+  useEffect(() => {
+    if (!ready) return;
+    if (!marker) { markerRef.current?.remove(); markerRef.current = null; return; }
+    if (!markerRef.current) {
+      const el = document.createElement("div");
+      el.className = "w-3.5 h-3.5 rounded-full bg-white border-[3px] border-violet-500 shadow";
+      markerRef.current = new maplibregl.Marker({ element: el }).setLngLat([marker[1], marker[0]]).addTo(mapRef.current);
+    } else {
+      markerRef.current.setLngLat([marker[1], marker[0]]);
+    }
+  }, [ready, marker]);
 
   // fit to the course once it loads
   useEffect(() => {

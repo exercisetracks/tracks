@@ -49,6 +49,8 @@ class LocalRacePlans(private val sources: LocalSources) {
         val segments: List<Segment> = emptyList(),
         /** The loaded course's sampled path as (lat, lon), for its map preview; empty when none. */
         val path: List<Pair<Double, Double>> = emptyList(),
+        /** The elevation at each point of [path], null where the GPX had none: the course profile's hills. */
+        val elevations: List<Double?> = emptyList(),
         val useGpxDistance: Boolean = false,
         /** The user's fuelling overrides; null = the calculated default. */
         val fuelCarbs: Int? = null,
@@ -92,6 +94,14 @@ class LocalRacePlans(private val sources: LocalSources) {
                 val lon = (p.getOrNull(1) as? JsonPrimitive)?.doubleOrNull ?: return@mapNotNull null
                 lat to lon
             },
+            // Read point for point with [path] above, and skipping the same
+            // malformed points, so the two lists stay aligned.
+            elevations = (row.fields["course_path"] as? JsonArray).orEmpty().mapNotNull { e ->
+                val p = e as? JsonArray ?: return@mapNotNull null
+                if ((p.getOrNull(0) as? JsonPrimitive)?.doubleOrNull == null) return@mapNotNull null
+                if ((p.getOrNull(1) as? JsonPrimitive)?.doubleOrNull == null) return@mapNotNull null
+                listOf((p.getOrNull(2) as? JsonPrimitive)?.doubleOrNull)
+            }.map { it.first() },
             useGpxDistance = (row.fields["use_gpx_distance"] as? JsonPrimitive)?.booleanOrNull == true,
             fuelCarbs = row.int("fuel_carbs_per_hour"),
             fuelFluid = row.int("fuel_fluid_ml_per_hour"),
