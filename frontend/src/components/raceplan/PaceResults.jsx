@@ -4,14 +4,13 @@
 // the Race Plan page: a header row (predicted finish, FTP for cycling, and the
 // fastest/slowest colour legend), the lap PaceTable itself, and a methodology
 // footnote. Purely presentational and prop-driven — the caller supplies the
-// already-computed `laps` and `perLapDrinks` plus the plan/flags it needs.
+// already-computed `laps` plus the plan/flags it needs.
 
 import PaceTable from "./PaceTable";
 
 export default function PaceResults({
   plan,
   laps,
-  perLapDrinks,
   imperial,
   isCycling,
   hasCourse,
@@ -53,7 +52,6 @@ export default function PaceResults({
         maxHr={maxHr}
         sport={sport}
         ftp={plan?.ftp}
-        perLapDrinks={perLapDrinks}
       />
 
       {/* Methodology footnote — differs for cycling (physics/W) vs running (VDOT) */}

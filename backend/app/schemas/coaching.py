@@ -279,7 +279,8 @@ class RacePlanOut(BaseModel):
     triathlon_splits_m: dict | None = None      # {"swim_m", "bike_m", "run_m"}
     # MTB / road-cycling extras (None for other sports)
     target_hr_ceiling:   int  | None = None     # bpm cap during the race
-    fueling_plan:        dict | None = None     # {"carbs_g_per_h", "reminder_min", "notes", ...}
+    climb_target_w_per_kg: float | None = None  # hill climbs: the W/kg to aim for
+    climb_target_watts:  int  | None = None     # ... and the watts it means at the rider's weight
     fuel_carbs_per_hour:     int | None = None
     fuel_fluid_ml_per_hour:  int | None = None
     fuel_sodium_mg_per_hour: int | None = None

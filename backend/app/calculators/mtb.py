@@ -292,26 +292,6 @@ def mtb_hr_only_laps(
     return laps, total_acc
 
 
-def fueling_plan(predicted_seconds: float | None, discipline: str | None = None) -> dict:
-    """
-    Per-hour carbohydrate target (Jeukendrup 2014, eat-while-you-train review).
-    Reminder cadence scales with predicted duration so a 5-h XCM doesn't get
-    spammed every 15 min like a 90-min XCO.
-    """
-    hours = (predicted_seconds or 0) / 3600
-    if hours <= 1.0:
-        return {"carbs_g_per_h": 30, "reminder_min": 30,
-                "notes": "Short race — top up before the start; one mid-race feed is plenty."}
-    if hours <= 2.0:
-        return {"carbs_g_per_h": 60, "reminder_min": 25,
-                "notes": "Aim for 60 g/h from minute 30 — one gel / chew every ~20–25 min."}
-    if hours <= 4.0:
-        return {"carbs_g_per_h": 80, "reminder_min": 20,
-                "notes": "80 g/h mixed carbs (glucose + fructose 2:1). Practice this in training."}
-    return {"carbs_g_per_h": 90, "reminder_min": 20,
-            "notes": "Ultra fueling: 90 g/h, mixed sources, include some real food after hour 3."}
-
-
 def apply_mtb_tss_multiplier(
     sport: str | None,
     tss: float | None,

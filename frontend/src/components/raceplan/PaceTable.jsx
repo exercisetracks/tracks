@@ -2,15 +2,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Km/mile-by-km/mile target table for the Race Plan page. Renders pace targets
 // (running) or power + %FTP (cycling), plus optional grade / GAP, per-lap HR
-// ceiling, and weather-aware drink markers. Fully driven by props — used both by
+// ceiling. Drinks are the fuel plan's timeline (FuelSection). Fully driven by props — used both by
 // the main running/cycling view and per-leg inside the triathlon breakdown.
 
 import { fmtDist, gradientColor, fmtGradient } from "./format";
 
-export default function PaceTable({ laps, hasCourse, imperial, hrMode, maxHr, sport = "running", ftp, perLapDrinks = null }) {
+export default function PaceTable({ laps, hasCourse, imperial, hrMode, maxHr, sport = "running", ftp }) {
   if (!laps?.length) return null;
   const isCycling = sport === "cycling";
-  const hasDrinks = perLapDrinks?.some(d => d !== null) ?? false;
 
   // For cycling: rank by watts (higher = harder = "fastest"); for running: rank by pace
   const fastest = isCycling
@@ -43,11 +42,10 @@ export default function PaceTable({ laps, hasCourse, imperial, hrMode, maxHr, sp
             {hasCourse && <th className="pb-1.5 text-right">Grade</th>}
             {hasCourse && <th className="pb-1.5 text-right">{isCycling ? "Flat equiv." : "GAP"}</th>}
             {showHr    && <th className="pb-1.5 text-right">HR ceiling</th>}
-            {hasDrinks && <th className="pb-1.5 text-right">Drink</th>}
           </tr>
         </thead>
         <tbody>
-          {laps.map((lap, i) => (
+          {laps.map((lap) => (
             <tr key={lap.lap} className={`border-b border-slate-100 dark:border-slate-800 ${
               i % 2 === 0 ? "" : "bg-slate-50/50 dark:bg-slate-800/20"
             }`}>
@@ -105,13 +103,6 @@ export default function PaceTable({ laps, hasCourse, imperial, hrMode, maxHr, sp
               {showHr && (
                 <td className="py-1 text-right font-mono text-xs text-rose-600 dark:text-rose-400">
                   ≤ {lap.hr_ceiling ?? maxHr}
-                </td>
-              )}
-              {hasDrinks && (
-                <td className={`py-1 text-right font-mono text-xs font-semibold ${
-                  perLapDrinks[i] ? "text-amber-600 dark:text-amber-400" : "text-slate-300 dark:text-slate-600"
-                }`}>
-                  {perLapDrinks[i] ? `Sip ${perLapDrinks[i].sipMl} ml` : "—"}
                 </td>
               )}
             </tr>

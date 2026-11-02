@@ -329,7 +329,6 @@ def _do_generate_race_plan(goal_id: int, db: Session, user: User):
     elif family == "mountain_biking":
         from app.calculators.mtb import (
             race_hr_ceiling,
-            fueling_plan as mtb_fueling_plan,
             mtb_hr_only_laps as _mtb_hr_only_laps,
             mtb_grade_multiplier,
         )
@@ -404,9 +403,9 @@ def _do_generate_race_plan(goal_id: int, db: Session, user: User):
                 course_type     = rp.course_type,
             )
 
-        # Race-plan extras: HR ceiling field + fueling plan.
+        # The race's HR ceiling, shown in Pacing. Fuelling is the fuel plan's
+        # (calculators/fuel_plan.py), for every sport alike.
         rp.target_hr_ceiling = race_hr_ceiling(discipline, int(lthr) if lthr else None)
-        rp.fueling_plan      = mtb_fueling_plan(actual_sec, discipline)
 
     # ══════════════════════════════════════════════════════════════════════════
     # CYCLING
@@ -415,7 +414,6 @@ def _do_generate_race_plan(goal_id: int, db: Session, user: User):
         from app.calculators.road_cycling import (
             drafting_factor as cy_drafting_factor,
             race_hr_ceiling as cy_race_hr_ceiling,
-            fueling_plan as cy_fueling_plan,
             road_grade_multiplier,
             hill_climb_target_w_per_kg,
         )
@@ -483,16 +481,13 @@ def _do_generate_race_plan(goal_id: int, db: Session, user: User):
                 lap["hr_ceiling"] = hr_ceiling
 
         rp.target_hr_ceiling = hr_ceiling
-        rp.fueling_plan      = cy_fueling_plan(actual_sec, cycling_discipline)
-
-        # Hill climb: surface a target W/kg alongside watts. Stored inside the
-        # fueling_plan dict so we don't need a new column.
-        if cycling_discipline == "hill_climb" and rp.fueling_plan is not None:
-            target_w_kg = hill_climb_target_w_per_kg(actual_sec)
-            rp.fueling_plan = dict(rp.fueling_plan)   # detach from default literal
-            rp.fueling_plan["target_w_per_kg"] = target_w_kg
-            if us and us.weight_kg:
-                rp.fueling_plan["target_watts"] = int(round(target_w_kg * us.weight_kg))
+        # Hill climb: a W/kg to aim for, shown in Pacing beside the HR
+        # ceiling; the watts it means are worked out from the rider's weight
+        # when the plan is read (_race_plan_out), so a new weight needs no
+        # regeneration.
+        rp.climb_target_w_per_kg = (
+            hill_climb_target_w_per_kg(actual_sec) if cycling_discipline == "hill_climb" else None
+        )
 
     # ══════════════════════════════════════════════════════════════════════════
     # SWIMMING

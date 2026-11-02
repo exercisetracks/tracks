@@ -587,226 +587,66 @@
  "seconds": [
   {
    "seconds": null,
-   "road_fuel": {
-    "carbs_g_per_h": 30,
-    "reminder_min": 30,
-    "notes": "Short race — top up before the start; one mid-race feed is plenty."
-   },
-   "mtb_fuel": {
-    "carbs_g_per_h": 30,
-    "reminder_min": 30,
-    "notes": "Short race — top up before the start; one mid-race feed is plenty."
-   },
    "w_per_kg": 5.0
   },
   {
    "seconds": 0.0,
-   "road_fuel": {
-    "carbs_g_per_h": 30,
-    "reminder_min": 30,
-    "notes": "Short race — top up before the start; one mid-race feed is plenty."
-   },
-   "mtb_fuel": {
-    "carbs_g_per_h": 30,
-    "reminder_min": 30,
-    "notes": "Short race — top up before the start; one mid-race feed is plenty."
-   },
    "w_per_kg": 5.0
   },
   {
    "seconds": 59.0,
-   "road_fuel": {
-    "carbs_g_per_h": 30,
-    "reminder_min": 30,
-    "notes": "Short race — top up before the start; one mid-race feed is plenty."
-   },
-   "mtb_fuel": {
-    "carbs_g_per_h": 30,
-    "reminder_min": 30,
-    "notes": "Short race — top up before the start; one mid-race feed is plenty."
-   },
    "w_per_kg": 5.0
   },
   {
    "seconds": 180.0,
-   "road_fuel": {
-    "carbs_g_per_h": 30,
-    "reminder_min": 30,
-    "notes": "Short race — top up before the start; one mid-race feed is plenty."
-   },
-   "mtb_fuel": {
-    "carbs_g_per_h": 30,
-    "reminder_min": 30,
-    "notes": "Short race — top up before the start; one mid-race feed is plenty."
-   },
    "w_per_kg": 5.0
   },
   {
    "seconds": 181.0,
-   "road_fuel": {
-    "carbs_g_per_h": 30,
-    "reminder_min": 30,
-    "notes": "Short race — top up before the start; one mid-race feed is plenty."
-   },
-   "mtb_fuel": {
-    "carbs_g_per_h": 30,
-    "reminder_min": 30,
-    "notes": "Short race — top up before the start; one mid-race feed is plenty."
-   },
    "w_per_kg": 4.3
   },
   {
    "seconds": 300.0,
-   "road_fuel": {
-    "carbs_g_per_h": 30,
-    "reminder_min": 30,
-    "notes": "Short race — top up before the start; one mid-race feed is plenty."
-   },
-   "mtb_fuel": {
-    "carbs_g_per_h": 30,
-    "reminder_min": 30,
-    "notes": "Short race — top up before the start; one mid-race feed is plenty."
-   },
    "w_per_kg": 4.3
   },
   {
    "seconds": 720.0,
-   "road_fuel": {
-    "carbs_g_per_h": 30,
-    "reminder_min": 30,
-    "notes": "Short race — top up before the start; one mid-race feed is plenty."
-   },
-   "mtb_fuel": {
-    "carbs_g_per_h": 30,
-    "reminder_min": 30,
-    "notes": "Short race — top up before the start; one mid-race feed is plenty."
-   },
    "w_per_kg": 4.0
   },
   {
    "seconds": 1200.0,
-   "road_fuel": {
-    "carbs_g_per_h": 30,
-    "reminder_min": 30,
-    "notes": "Short race — top up before the start; one mid-race feed is plenty."
-   },
-   "mtb_fuel": {
-    "carbs_g_per_h": 30,
-    "reminder_min": 30,
-    "notes": "Short race — top up before the start; one mid-race feed is plenty."
-   },
    "w_per_kg": 3.7
   },
   {
    "seconds": 2400.0,
-   "road_fuel": {
-    "carbs_g_per_h": 30,
-    "reminder_min": 30,
-    "notes": "Short race — top up before the start; one mid-race feed is plenty."
-   },
-   "mtb_fuel": {
-    "carbs_g_per_h": 30,
-    "reminder_min": 30,
-    "notes": "Short race — top up before the start; one mid-race feed is plenty."
-   },
    "w_per_kg": 3.4
   },
   {
    "seconds": 3600.0,
-   "road_fuel": {
-    "carbs_g_per_h": 30,
-    "reminder_min": 30,
-    "notes": "Short race — top up before the start; one mid-race feed is plenty."
-   },
-   "mtb_fuel": {
-    "carbs_g_per_h": 30,
-    "reminder_min": 30,
-    "notes": "Short race — top up before the start; one mid-race feed is plenty."
-   },
    "w_per_kg": 3.1
   },
   {
    "seconds": 3601.0,
-   "road_fuel": {
-    "carbs_g_per_h": 60,
-    "reminder_min": 25,
-    "notes": "Aim for 60 g/h from minute 30 — one gel/chew every ~20–25 min."
-   },
-   "mtb_fuel": {
-    "carbs_g_per_h": 60,
-    "reminder_min": 25,
-    "notes": "Aim for 60 g/h from minute 30 — one gel / chew every ~20–25 min."
-   },
    "w_per_kg": 2.8
   },
   {
    "seconds": 7200.0,
-   "road_fuel": {
-    "carbs_g_per_h": 60,
-    "reminder_min": 25,
-    "notes": "Aim for 60 g/h from minute 30 — one gel/chew every ~20–25 min."
-   },
-   "mtb_fuel": {
-    "carbs_g_per_h": 60,
-    "reminder_min": 25,
-    "notes": "Aim for 60 g/h from minute 30 — one gel / chew every ~20–25 min."
-   },
    "w_per_kg": 2.8
   },
   {
    "seconds": 7201.0,
-   "road_fuel": {
-    "carbs_g_per_h": 80,
-    "reminder_min": 20,
-    "notes": "80 g/h mixed carbs (glucose + fructose 2:1). Practice in training."
-   },
-   "mtb_fuel": {
-    "carbs_g_per_h": 80,
-    "reminder_min": 20,
-    "notes": "80 g/h mixed carbs (glucose + fructose 2:1). Practice this in training."
-   },
    "w_per_kg": 2.5
   },
   {
    "seconds": 14400.0,
-   "road_fuel": {
-    "carbs_g_per_h": 80,
-    "reminder_min": 20,
-    "notes": "80 g/h mixed carbs (glucose + fructose 2:1). Practice in training."
-   },
-   "mtb_fuel": {
-    "carbs_g_per_h": 80,
-    "reminder_min": 20,
-    "notes": "80 g/h mixed carbs (glucose + fructose 2:1). Practice this in training."
-   },
    "w_per_kg": 2.5
   },
   {
    "seconds": 14401.0,
-   "road_fuel": {
-    "carbs_g_per_h": 90,
-    "reminder_min": 20,
-    "notes": "Ultra fueling: 90 g/h, mixed sources, include real food after hour 3."
-   },
-   "mtb_fuel": {
-    "carbs_g_per_h": 90,
-    "reminder_min": 20,
-    "notes": "Ultra fueling: 90 g/h, mixed sources, include some real food after hour 3."
-   },
    "w_per_kg": 2.2
   },
   {
    "seconds": 30000.0,
-   "road_fuel": {
-    "carbs_g_per_h": 90,
-    "reminder_min": 20,
-    "notes": "Ultra fueling: 90 g/h, mixed sources, include real food after hour 3."
-   },
-   "mtb_fuel": {
-    "carbs_g_per_h": 90,
-    "reminder_min": 20,
-    "notes": "Ultra fueling: 90 g/h, mixed sources, include some real food after hour 3."
-   },
    "w_per_kg": 2.2
   }
  ],

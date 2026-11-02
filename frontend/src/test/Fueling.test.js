@@ -20,10 +20,8 @@ import { existsSync, readFileSync } from "node:fs";
 
 import {
   computeFuelingParams,
-  computePerLapDrinks,
   computeSipMl,
   defaultCarbsPerHour,
-  getPerLapDrinks,
 } from "../utils/fuelingUtils";
 
 const FIXTURES = "/spec/fixtures/fueling.json";
@@ -65,28 +63,6 @@ describe.skipIf(!available)("shared golden corpus", () => {
       .filter((c) => c.got !== c.expected);
     expect(mismatches).toEqual([]);
   });
-
-  it("lands drinks on the same laps", () => {
-    const mismatches = data.per_lap_drinks_cases
-      .map((c) => ({
-        name: c.name,
-        expected: c.expected,
-        got: computePerLapDrinks(c.laps, c.sip_interval_min, c.first_sip_min, c.per_sip_ml),
-      }))
-      .filter((c) => JSON.stringify(c.got) !== JSON.stringify(c.expected));
-    expect(mismatches).toEqual([]);
-  });
-
-  it("produces the same end-to-end schedule", () => {
-    const mismatches = data.get_per_lap_drinks_cases
-      .map((c) => ({
-        name: c.name,
-        expected: c.expected,
-        got: getPerLapDrinks(c.laps, c.predicted_seconds, c.fueling_plan_carbs, c.weather),
-      }))
-      .filter((c) => JSON.stringify(c.got) !== JSON.stringify(c.expected));
-    expect(mismatches).toEqual([]);
-  });
 });
 
 describe("thresholds come from the spec, not from literals here", () => {
@@ -104,9 +80,4 @@ describe("thresholds come from the spec, not from literals here", () => {
     expect(computeFuelingParams(2, { temperature_c: 25, humidity_pct: 80 }).isHumid).toBe(true);
   });
 
-  it("returns no drinks without laps or a predicted duration", () => {
-    expect(getPerLapDrinks([], 1500, null, null)).toEqual([]);
-    expect(getPerLapDrinks([{ target_sec_per_km: 300, distance_m: 1000 }], null, null, null))
-      .toEqual([]);
-  });
 });

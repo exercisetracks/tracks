@@ -297,9 +297,12 @@ def _race_plan_out(rp: RacePlan, us: UserSettings | None = None,
         "swim_target_pace":  format_swim_pace(css, 1.0) if css and family in ("swimming", "triathlon") else None,
         "triathlon_legs":    rp.weather_snapshot.get("triathlon_legs") if rp.weather_snapshot else None,
         "triathlon_splits_m": rp.triathlon_splits_m,
-        # MTB-specific (None for other sports)
+        # Cycling and MTB (None for other sports): the race's HR ceiling, and
+        # a hill climb's W/kg with the watts it means at today's weight.
         "target_hr_ceiling": rp.target_hr_ceiling,
-        "fueling_plan":      rp.fueling_plan,
+        "climb_target_w_per_kg": rp.climb_target_w_per_kg,
+        "climb_target_watts": (int(round(rp.climb_target_w_per_kg * us.weight_kg))
+                               if rp.climb_target_w_per_kg and us and us.weight_kg else None),
         "fuel_carbs_per_hour":     rp.fuel_carbs_per_hour,
         "fuel_fluid_ml_per_hour":  rp.fuel_fluid_ml_per_hour,
         "fuel_sodium_mg_per_hour": rp.fuel_sodium_mg_per_hour,

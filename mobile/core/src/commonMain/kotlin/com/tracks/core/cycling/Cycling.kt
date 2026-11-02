@@ -33,9 +33,6 @@ data class GoalForDiscipline(
 
 internal fun normalizeSport(sport: String?): String = (sport ?: "").lowercase().replace(" ", "_")
 
-/** Carbohydrate guidance by predicted race duration (Jeukendrup 2014). */
-data class FuelingPlan(val carbsGPerH: Int, val reminderMin: Int, val notes: String)
-
 object RoadCycling {
     val SPORTS = setOf("cycling", "road_biking", "gravel_cycling", "virtual_cycling", "indoor_cycling", "e_biking")
     val INDOOR_SPORTS = setOf("indoor_cycling", "virtual_cycling")
@@ -75,15 +72,6 @@ object RoadCycling {
 
     fun raceHrCeiling(discipline: String?, lthr: Int?): Int? = hrCeiling(discipline, lthr, HR_CEILING_PCT, DEFAULT_DISCIPLINE)
 
-    fun fuelingPlan(predictedSeconds: Double?): FuelingPlan {
-        val hours = (predictedSeconds ?: 0.0) / 3600
-        return when {
-            hours <= 1.0 -> FuelingPlan(30, 30, "Short race — top up before the start; one mid-race feed is plenty.")
-            hours <= 2.0 -> FuelingPlan(60, 25, "Aim for 60 g/h from minute 30 — one gel/chew every ~20–25 min.")
-            hours <= 4.0 -> FuelingPlan(80, 20, "80 g/h mixed carbs (glucose + fructose 2:1). Practice in training.")
-            else -> FuelingPlan(90, 20, "Ultra fueling: 90 g/h, mixed sources, include real food after hour 3.")
-        }
-    }
 
     fun gradeMultiplier(grad: Double): Double {
         if (grad >= 0) {
@@ -268,15 +256,6 @@ object Mtb {
         return laps to totalAcc
     }
 
-    fun fuelingPlan(predictedSeconds: Double?): FuelingPlan {
-        val hours = (predictedSeconds ?: 0.0) / 3600
-        return when {
-            hours <= 1.0 -> FuelingPlan(30, 30, "Short race — top up before the start; one mid-race feed is plenty.")
-            hours <= 2.0 -> FuelingPlan(60, 25, "Aim for 60 g/h from minute 30 — one gel / chew every ~20–25 min.")
-            hours <= 4.0 -> FuelingPlan(80, 20, "80 g/h mixed carbs (glucose + fructose 2:1). Practice this in training.")
-            else -> FuelingPlan(90, 20, "Ultra fueling: 90 g/h, mixed sources, include some real food after hour 3.")
-        }
-    }
 }
 
 private fun hrCeiling(discipline: String?, lthr: Int?, pcts: Map<String, Double>, default: String): Int? {

@@ -28,10 +28,6 @@ class CyclingFixtureTest {
     private fun JsonElement?.dbl(): Double? = if (this == null || this is JsonNull) null else jsonPrimitive.doubleOrNull
     private fun JsonElement?.int(): Int? = if (this == null || this is JsonNull) null else jsonPrimitive.intOrNull
 
-    private fun fuel(o: JsonElement) = o.jsonObject.let {
-        FuelingPlan(it["carbs_g_per_h"].int()!!, it["reminder_min"].int()!!, it["notes"].str()!!)
-    }
-
     @Test
     fun sports_are_classified_as_the_server_classifies_them() {
         for (c in fx.cases("sports")) {
@@ -66,11 +62,9 @@ class CyclingFixtureTest {
     }
 
     @Test
-    fun duration_based_guidance_matches() {
+    fun the_climb_target_by_duration_matches() {
         for (c in fx.cases("seconds")) {
             val s = c["seconds"].dbl()
-            assertEquals(fuel(c["road_fuel"]!!), RoadCycling.fuelingPlan(s), "$s")
-            assertEquals(fuel(c["mtb_fuel"]!!), Mtb.fuelingPlan(s), "$s")
             assertEquals(c["w_per_kg"].dbl(), RoadCycling.hillClimbTargetWPerKg(s), "$s")
         }
     }

@@ -140,9 +140,11 @@ class RacePlan(Base, Synced):
 
     # MTB-specific (generalizable to other HR-ceiling sports later):
     #   target_hr_ceiling   bpm cap during the race (LTHR × discipline factor)
-    #   fueling_plan        {"carbs_g_per_h": int, "reminder_min": int, "notes": str}
+    #   climb_target_w_per_kg  hill climbs: the W/kg to aim for (road_cycling.hill_climb_target_w_per_kg)
+    # Fuelling is not here: it is the fuel plan's (calculators/fuel_plan.py),
+    # from the fuel_* fields below. An older per-sport carbs dict was dropped.
     target_hr_ceiling   = Column(Integer, nullable=True)
-    fueling_plan        = Column(PJson, nullable=True)
+    climb_target_w_per_kg = Column(Float, nullable=True)
 
     # Watch sync
     fit_b64          = Column(String, nullable=True)   # base64 FIT bytes for Garmin upload

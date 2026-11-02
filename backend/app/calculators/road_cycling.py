@@ -160,26 +160,6 @@ def race_hr_ceiling(discipline: str | None, lthr: int | None) -> int | None:
     return int(round(lthr * pct))
 
 
-# Carb fueling target g/h by duration (Jeukendrup 2014, Sports Med).
-def fueling_plan(predicted_seconds: float | None, discipline: str | None = None) -> dict:
-    """
-    Carbohydrate fueling guidance by predicted race duration.
-    Glucose:fructose 2:1 to clear the 60 g/h single-transporter limit.
-    """
-    hours = (predicted_seconds or 0) / 3600
-    if hours <= 1.0:
-        return {"carbs_g_per_h": 30, "reminder_min": 30,
-                "notes": "Short race — top up before the start; one mid-race feed is plenty."}
-    if hours <= 2.0:
-        return {"carbs_g_per_h": 60, "reminder_min": 25,
-                "notes": "Aim for 60 g/h from minute 30 — one gel/chew every ~20–25 min."}
-    if hours <= 4.0:
-        return {"carbs_g_per_h": 80, "reminder_min": 20,
-                "notes": "80 g/h mixed carbs (glucose + fructose 2:1). Practice in training."}
-    return {"carbs_g_per_h": 90, "reminder_min": 20,
-            "notes": "Ultra fueling: 90 g/h, mixed sources, include real food after hour 3."}
-
-
 # ── Grade adjustment (same multiplicative model as MTB but tuned for road) ──
 
 def road_grade_multiplier(grad: float) -> float:

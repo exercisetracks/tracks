@@ -26,12 +26,6 @@ data class FuelingBand(val concentrationPct: Int, val sipIntervalMin: Int, val s
 /** The subset of a weather snapshot the calculator reads. */
 data class WeatherSnapshot(val temperatureC: Double?, val humidityPct: Double?)
 
-/** One lap's fueling-relevant fields: pace target and distance. */
-data class FuelingLap(val targetSecPerKm: Double?, val distanceM: Double?)
-
-/** A single scheduled sip: how much, and how many minutes into the effort. */
-data class Drink(val sipMl: Int, val atMin: Int)
-
 /** Concentration/interval/salt band plus the two booleans the caller shows a
  * banner from — mirrors the JS return shape of `computeFuelingParams`. */
 data class FuelingParams(
@@ -106,61 +100,4 @@ fun computeSipMl(carbsPerHour: Double, concentration: Double, sipIntervalMin: In
     val volumePerHourMl = carbsPerHour / concentration
     val sipsPerHour = 60.0 / sipIntervalMin
     return (jsRound((volumePerHourMl / sipsPerHour) / 10.0) * 10).toInt()
-}
-
-/**
- * One scheduled drink (or null) per lap, walking cumulative elapsed time and
- * firing a sip every [sipIntervalMin] starting at [firstSipMin]. A lap
- * missing a pace target or distance (or with non-positive distance)
- * contributes zero elapsed time and gets no drink.
- */
-fun computePerLapDrinks(
-    laps: List<FuelingLap>,
-    sipIntervalMin: Int,
-    firstSipMin: Int,
-    perSipMl: Int,
-): List<Drink?> {
-    if (laps.isEmpty()) return emptyList()
-
-    val drinks = arrayOfNulls<Drink>(laps.size)
-    var cumulativeSec = 0.0
-    var nextSipSec = firstSipMin * 60.0
-
-    for (i in laps.indices) {
-        val lap = laps[i]
-        if (lap.targetSecPerKm == null || lap.distanceM == null || lap.distanceM <= 0) {
-            continue
-        }
-        val lapTime = (lap.distanceM / 1000.0) * lap.targetSecPerKm
-        val end = cumulativeSec + lapTime
-
-        while (nextSipSec <= end) {
-            drinks[i] = Drink(sipMl = perSipMl, atMin = jsRound(nextSipSec / 60.0).toInt())
-            nextSipSec += sipIntervalMin * 60.0
-        }
-
-        cumulativeSec += lapTime
-    }
-
-    return drinks.toList()
-}
-
-/**
- * End-to-end: derive carbs/hour (from the plan or [defaultCarbsPerHour]),
- * derive the heat band, derive the per-sip volume, and schedule drinks across
- * [laps]. Empty when there are no laps or no predicted duration.
- */
-fun getPerLapDrinks(
-    laps: List<FuelingLap>,
-    predictedSeconds: Double?,
-    fuelingPlanCarbs: Double?,
-    weather: WeatherSnapshot?,
-): List<Drink?> {
-    if (laps.isEmpty() || predictedSeconds == null || predictedSeconds == 0.0) return emptyList()
-
-    val durationHours = predictedSeconds / 3600.0
-    val carbsPerHour = fuelingPlanCarbs ?: defaultCarbsPerHour(durationHours).toDouble()
-    val params = computeFuelingParams(durationHours, weather)
-    val perSipMl = computeSipMl(carbsPerHour, params.concentration, params.sipIntervalMin)
-    return computePerLapDrinks(laps, params.sipIntervalMin, params.firstSipMin, perSipMl)
 }

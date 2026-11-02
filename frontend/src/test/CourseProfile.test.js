@@ -41,3 +41,14 @@ describe("the course profile", () => {
     expect(targetMetric("cycling", [{ distance_m: 1000, target_sec_per_km: 120 }])).toBe("pace");
   });
 });
+
+import { raceTargetsText } from "../components/raceplan/RaceTargets";
+
+describe("the race-wide targets line", () => {
+  it("keeps the HR ceiling and climb target the old strategy card showed", () => {
+    // The card went with the old fuelling model; these two must not.
+    expect(raceTargetsText({ target_hr_ceiling: 165, climb_target_w_per_kg: 3.7, climb_target_watts: 259 }))
+      .toBe("Average HR ≤ 165 bpm · Climb at 3.7 W/kg (≈ 259 W)");
+    expect(raceTargetsText({ target_hr_ceiling: null })).toBe("");
+  });
+});

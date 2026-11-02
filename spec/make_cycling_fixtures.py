@@ -143,8 +143,7 @@ def main() -> None:
                          "mtb_tss": mtb.mtb_tss_multiplier(d),
                          "hr": [{"lthr": l, "road": road_cycling.race_hr_ceiling(d, l),
                                  "mtb": mtb.race_hr_ceiling(d, l)} for l in LTHRS]} for d in DISCIPLINES],
-        "seconds": [{"seconds": s, "road_fuel": road_cycling.fueling_plan(s), "mtb_fuel": mtb.fueling_plan(s),
-                     "w_per_kg": road_cycling.hill_climb_target_w_per_kg(s)} for s in SECONDS],
+        "seconds": [{"seconds": s, "w_per_kg": road_cycling.hill_climb_target_w_per_kg(s)} for s in SECONDS],
         "grades": [{"grad": g, "road": road_cycling.road_grade_multiplier(g),
                     "mtb": mtb.mtb_grade_multiplier(g)} for g in GRADS],
         "indoor_tss": [{"sport": s, "tss": t, "expected": road_cycling.apply_indoor_tss_multiplier(s, t)}

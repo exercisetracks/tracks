@@ -11,7 +11,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { api } from "../api/client";
 import { useTheme } from "../context/ThemeContext";
-import { getPerLapDrinks } from "../utils/fuelingUtils";
 import { fmtDist, fmtDistShort, recomputeLaps } from "../components/raceplan/format";
 import { COURSE_OPTIONS_METRIC, COURSE_OPTIONS_IMPERIAL, HR_OPTIONS } from "../components/raceplan/constants";
 import { Section, RadioGroup, SyncStatus } from "../components/raceplan/ui";
@@ -21,10 +20,10 @@ import TriathlonSection from "../components/raceplan/TriathlonSection";
 import WeatherBar from "../components/raceplan/WeatherBar";
 import ElevationChart from "../components/raceplan/ElevationChart";
 import RaceMap from "../components/raceplan/RaceMap";
-import StrategyPanel from "../components/raceplan/StrategyPanel";
 import FuelSection from "../components/raceplan/FuelSection";
 import CourseMenu from "../components/raceplan/CourseMenu";
 import PaceResults from "../components/raceplan/PaceResults";
+import RaceTargets from "../components/raceplan/RaceTargets";
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 
@@ -137,26 +136,6 @@ export default function RacePlan() {
     [plan?.lap_paces, plan?.predicted_seconds, splitDraft, imperial]
   );
 
-  // Per-lap drink markers for the pace table (weather-aware sip schedule)
-  const perLapDrinks = useMemo(() => {
-    try {
-      return getPerLapDrinks(
-        displayLaps,
-        plan?.predicted_seconds,
-        plan?.fueling_plan?.carbs_g_per_h,
-        plan?.weather_snapshot,
-      );
-    } catch {
-      return [];
-    }
-  }, [
-      displayLaps,
-      plan?.predicted_seconds,
-      plan?.fueling_plan?.carbs_g_per_h,
-      plan?.weather_snapshot,
-    ],
-  );
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[40vh]">
@@ -240,6 +219,7 @@ export default function RacePlan() {
             imperial={imperial}
             isCycling={isCycling}
           />
+          <RaceTargets plan={plan} />
         </Section>
       )}
 
@@ -419,16 +399,6 @@ export default function RacePlan() {
             </Section>
           )}
 
-          {/* Race-day strategy panel: HR ceiling + fueling guidance (MTB + cycling) */}
-          {(plan.target_hr_ceiling || plan.fueling_plan) && (
-            <Section title="Race-day strategy">
-              <StrategyPanel
-                targetHrCeiling={plan.target_hr_ceiling}
-                fuelingPlan={plan.fueling_plan}
-              />
-            </Section>
-          )}
-
           {!isSwimming && plan.predicted_seconds > 0 && (
             <Section title="Fuelling">
               <FuelSection goalId={goalId} plan={plan} onPatch={patchPlan} />
@@ -476,7 +446,6 @@ export default function RacePlan() {
               <PaceResults
                 plan={plan}
                 laps={displayLaps}
-                perLapDrinks={perLapDrinks}
                 imperial={imperial}
                 isCycling={isCycling}
                 hasCourse={hasCourse}
