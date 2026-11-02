@@ -1201,6 +1201,13 @@ fun RadialGauge(
      * pins at the end of its scale.
      */
     needle: Boolean = false,
+    /**
+     * A tick across the arc at a value to reach, when the fill is something
+     * else — the race plan's fuel gauges fill to what the products deliver and
+     * tick the target, on a scale that runs to an elite's intake. The web's
+     * RadialGauge takes the same `target`.
+     */
+    target: Double? = null,
 ) {
     val scaleMin = zones.first().min
     val scaleMax = zones.last().max
@@ -1317,6 +1324,22 @@ fun RadialGauge(
                             style = lapStroke,
                         )
                     }
+                }
+
+                target?.let { t ->
+                    val r = (this.size.width - strokeStyle.width) / 2f - reserved
+                    val radians = Math.toRadians(degreeFor(t).toDouble())
+                    val cos = kotlin.math.cos(radians).toFloat()
+                    val sin = kotlin.math.sin(radians).toFloat()
+                    val half = strokeStyle.width / 2f + 2.dp.toPx()
+                    val c = Offset(this.size.width / 2f, this.size.height / 2f)
+                    drawLine(
+                        color = indicatorColor,
+                        start = c + Offset((r - half) * cos, (r - half) * sin),
+                        end = c + Offset((r + half) * cos, (r + half) * sin),
+                        strokeWidth = 2.dp.toPx(),
+                        cap = StrokeCap.Round,
+                    )
                 }
 
                 // A dot at the value, so the exact position is readable even

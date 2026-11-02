@@ -51,9 +51,6 @@ export default function ElevationChart({ coursePath, laps, sport, imperial = fal
   const series = metric && data.some((d) => d.target != null) ? SERIES[metric] : null;
 
   const rows = data.map((d) => ({ ...d, x: toDist(d.m), e: Math.round(eleOf(d.ele)) }));
-  const eles = rows.map((r) => r.e);
-  const lo = Math.min(...eles), hi = Math.max(...eles);
-  const pad = Math.max(5, (hi - lo) * 0.1);
 
   const tip = ({ active, payload }) => {
     const p = active && payload?.[0]?.payload;
@@ -92,7 +89,7 @@ export default function ElevationChart({ coursePath, laps, sport, imperial = fal
             <CartesianGrid {...CHART_GRID} />
             <XAxis dataKey="x" type="number" domain={["dataMin", "dataMax"]} tick={TICK} axisLine={false}
               tickLine={false} tickFormatter={(v) => `${Math.round(v)}`} unit={` ${distUnit}`} tickCount={6} />
-            <YAxis yAxisId="ele" domain={[Math.floor(lo - pad), Math.ceil(hi + pad)]} tick={TICK}
+            <YAxis yAxisId="ele" domain={["auto", "auto"]} tick={TICK}
               axisLine={false} tickLine={false} width={40} />
             {series && (
               <YAxis yAxisId="target" orientation="right" reversed={metric === "pace"} domain={["auto", "auto"]}

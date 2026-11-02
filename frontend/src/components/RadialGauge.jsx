@@ -58,6 +58,12 @@ export default function RadialGauge({
    */
   captionColor,
   lap = false,
+  /**
+   * A tick across the arc at a value to reach, when the fill is something
+   * else — the race plan's fuel gauges fill to what the products deliver and
+   * tick the target, on a scale that runs to an elite's intake.
+   */
+  target = null,
 }) {
   const lo = min ?? zones[0].min;
   const hi = max ?? zones[zones.length - 1].max;
@@ -144,6 +150,14 @@ export default function RadialGauge({
         <path d={arcD(START_DEG, overEnd, lapR)} fill="none"
           stroke={LAP_COLOR} strokeWidth={lapWidth} strokeLinecap="butt" />
       )}
+
+      {target != null && (() => {
+        const deg = valueToDeg(target);
+        const [x1, y1] = polar(deg, R - stroke / 2 - 2 * K);
+        const [x2, y2] = polar(deg, R + stroke / 2 + 2 * K);
+        return <line data-testid="gauge-target" x1={x1} y1={y1} x2={x2} y2={y2} strokeWidth={2 * K}
+          strokeLinecap="round" className="stroke-slate-800 dark:stroke-white" />;
+      })()}
 
       {/* Indicator dot, on whichever ring the value is actually on */}
       {ix != null && (

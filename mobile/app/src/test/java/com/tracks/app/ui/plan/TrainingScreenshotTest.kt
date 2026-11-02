@@ -251,20 +251,23 @@ class TrainingScreenshotTest {
         RacePlansContent(RacePlansState(loading = false, cards = listOf(card), openGoalId = 1, maxHr = 190), {}, { _, _, _ -> })
     }
 
-    /** A half marathon with two products picked: targets, timeline and the gut ramp. */
+    /** A half marathon with a gel, a big gel and the homemade mix: gauges, strip, recipe, gut ramp. */
     private val fuelledCard: RacePlanCard get() {
         val gel = com.tracks.core.fuel.FuelPlan.Product("g", "Gel", 25.0, 50)
         val big = com.tracks.core.fuel.FuelPlan.Product("b", "Big Gel", 40.0, 200, caffeineMg = 100)
         val pred = LocalRacePlans.running(45.0, 21097.5, "flat", 0.0, imperial = false, maxHr = 190)
-        val strategy = LocalRacePlans.Strategy(uid = "r1", fuelCarbs = 60, fuelProductUids = listOf("g", "b"))
+        val strategy = LocalRacePlans.Strategy(uid = "r1", fuelCarbs = 60,
+            fuelProductUids = listOf(com.tracks.core.fuel.FuelPlan.HOMEMADE_UID, "g", "b"))
         val minutes = pred.seconds / 60.0
         val tg = com.tracks.core.fuel.FuelPlan.targets(minutes, carbs = 60)
+        val mix = com.tracks.core.fuel.FuelPlan.homemadeServing(tg)
+        val timeline = com.tracks.core.fuel.FuelPlan.timeline(minutes, tg, listOf(gel, big),
+            pred.laps.map { com.tracks.core.fuel.FuelPlan.Lap(it.distanceM.toDouble(), it.targetSecPerKm) }, mix)
+        val drunk = timeline.items.filter { it.productUid == com.tracks.core.fuel.FuelPlan.HOMEMADE_UID }.sumOf { it.fluidMl }
         val fuel = LocalRacePlans.Fuel(
-            tg,
-            com.tracks.core.fuel.FuelPlan.timeline(minutes, tg, listOf(gel, big),
-                pred.laps.map { com.tracks.core.fuel.FuelPlan.Lap(it.distanceM.toDouble(), it.targetSecPerKm) }),
-            listOf(gel, big),
+            tg, timeline, listOf(gel, big),
             mapOf("w1" to 40, "w2" to 50, "w3" to 60),
+            com.tracks.core.fuel.FuelPlan.homemadeRecipe("basic", 750, mix, 60, drunk),
         )
         return RacePlanCard(goal, strategy, 45.0, pred, fuel)
     }

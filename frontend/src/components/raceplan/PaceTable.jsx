@@ -45,7 +45,7 @@ export default function PaceTable({ laps, hasCourse, imperial, hrMode, maxHr, sp
           </tr>
         </thead>
         <tbody>
-          {laps.map((lap) => (
+          {laps.map((lap, i) => (
             <tr key={lap.lap} className={`border-b border-slate-100 dark:border-slate-800 ${
               i % 2 === 0 ? "" : "bg-slate-50/50 dark:bg-slate-800/20"
             }`}>

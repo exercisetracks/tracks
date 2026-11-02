@@ -549,7 +549,7 @@ private fun Detail(
         }
         c.fuel?.let { f ->
             Section("Fuelling") {
-                FuelSection(c.strategy, f, onSet, onAddProduct, onToggleProduct)
+                FuelSection(c.strategy, f, onSet, onAddProduct, onToggleProduct, durationMin = p.seconds / 60.0)
             }
         }
     }

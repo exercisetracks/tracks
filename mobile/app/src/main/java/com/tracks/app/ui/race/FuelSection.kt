@@ -2,6 +2,17 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 package com.tracks.app.ui.race
 
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -50,15 +61,18 @@ import com.tracks.core.local.LocalRacePlans
 
 /**
  * Race fuelling on the phone, computed from synced rows
- * (LocalRacePlans.fuel) and identical to the web's.
+ * (LocalRacePlans.fuel) and identical to the web's (FuelSection.jsx).
  *
- * Laid out to be read at a glance on race morning: one summary line of the
- * targets in force, the products carried as chips, a time · distance · what
- * timeline, and one line of gut training. It had grown a paragraph of help
- * under every part; the numbers turned out to explain themselves once they were
- * in one place, so there is deliberately no helper text here. Editing the
- * targets lives behind the pencil because it is done once per race, not read
- * every time.
+ * Laid out to be read at a glance on race morning: four gauges (carbs,
+ * sodium, potassium, fluid per hour), the race's stops on a strip along its
+ * clock with the list folded under it, the products carried as chips — the
+ * built-in homemade mix first — and that mix's recipe when it is carried.
+ * A gauge's scale runs to an elite ultra athlete's hour, its fill is what the
+ * products deliver and its tick the target (docs/race-fuelling-research.md).
+ * It had grown a paragraph of help under every part; the numbers turned out
+ * to explain themselves once they were in one place, so there is deliberately
+ * no helper text here. Editing the targets lives behind the pencil because it
+ * is done once per race, not read every time.
  */
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -68,33 +82,45 @@ internal fun FuelSection(
     onSet: (String, Any?) -> Unit,
     onAddProduct: (LocalRacePlans.ProductDraft) -> Unit,
     onToggleProduct: (String) -> Unit,
+    /** The predicted race, in minutes: the strip's length. */
+    durationMin: Double = 0.0,
 ) {
     val t = f.targets
     var editing by remember { mutableStateOf(false) }
     var adding by remember { mutableStateOf(false) }
 
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Column(Modifier.weight(1f)) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+        FuelGauges(t, f.timeline.perHour, Modifier.weight(1f))
+        Column(horizontalAlignment = Alignment.End) {
+            IconButton(onClick = { editing = true }) {
+                Icon(Icons.Default.Edit, contentDescription = "Edit fuelling targets")
+            }
+            // The mix's sips set the stops when it is carried (FuelPlan.timeline).
             Text(
-                "${t.carbsGPerH} g carbs · ${t.fluidMlPerH} ml · ${t.sodiumMgPerH} mg Na / h",
-                style = MaterialTheme.typography.bodyLarge.copy(fontFeatureSettings = "tnum"),
-                fontWeight = FontWeight.Medium,
-            )
-            Text(
-                "every ${t.intervalMin} min",
-                style = MaterialTheme.typography.bodySmall,
+                "every ${f.homemade?.intervalMin ?: t.intervalMin} min",
+                style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        IconButton(onClick = { editing = true }) {
-            Icon(Icons.Default.Edit, contentDescription = "Edit fuelling targets")
-        }
     }
+
+    TimelineStrip(f.timeline.items, durationMin)
 
     FlowRow(
         horizontalArrangement = Arrangement.spacedBy(Tokens.Space.s1_5),
         verticalArrangement = Arrangement.spacedBy(Tokens.Space.s1_5),
     ) {
+        val mixOn = FuelPlan.HOMEMADE_UID in s.fuelProductUids
+        FilterChip(
+            selected = mixOn,
+            onClick = { onToggleProduct(FuelPlan.HOMEMADE_UID) },
+            label = { Text(FuelPlan.HOMEMADE_NAME) },
+            leadingIcon = if (mixOn) {
+                { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+            } else {
+                null
+            },
+        )
         f.products.forEach { p ->
             val uid = p.uid ?: return@forEach
             val carried = uid in s.fuelProductUids
@@ -115,11 +141,7 @@ internal fun FuelSection(
         )
     }
 
-    if (f.timeline.items.isNotEmpty()) {
-        Column {
-            f.timeline.items.forEach { TimelineRow(it) }
-        }
-    }
+    f.homemade?.let { MixCard(it, s, onSet) }
 
     if (f.gut.isNotEmpty()) {
         Text(
@@ -141,6 +163,156 @@ internal fun FuelSection(
     }
 }
 
+/** The gauges' colours, as on the web (FuelSection.jsx's GAUGES); each is named under its dial. */
+private val CARBS = Color(0xFFEDA100)
+private val SODIUM = Color(0xFF1BAF7A)
+private val POTASSIUM = Color(0xFFE87BA4)
+private val FLUID = Color(0xFF2A78D6)
+
+@Composable
+private fun FuelGauges(t: FuelPlan.Targets, got: FuelPlan.Amounts, modifier: Modifier = Modifier) {
+    val c = FuelPlan.CEILINGS
+    // Two by two on a phone: four dials across leave each too small to read.
+    EvenGrid(modifier, minColumns = 2, maxColumns = 4) {
+        Gauge("Carbs", "g", got.carbsG, t.carbsGPerH, c.carbsGPerH, CARBS)
+        Gauge("Sodium", "mg", got.sodiumMg, t.sodiumMgPerH, c.sodiumMgPerH, SODIUM)
+        Gauge("Potassium", "mg", got.potassiumMg, t.potassiumMgPerH, c.potassiumMgPerH, POTASSIUM)
+        Gauge("Fluid", "ml", got.fluidMl, t.fluidMlPerH, c.fluidMlPerH, FLUID)
+    }
+}
+
+@Composable
+private fun Gauge(label: String, unit: String, got: Int, target: Int, ceiling: Int, color: Color) {
+    com.tracks.app.ui.dashboard.RadialGauge(
+        value = got.toDouble(),
+        zones = listOf(com.tracks.app.ui.dashboard.GaugeZone(label, 0.0, ceiling.toDouble(), color)),
+        label = "$label / h",
+        unit = unit,
+        size = 96.dp,
+        caption = "target $target",
+        captionColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        target = target.toDouble(),
+    )
+}
+
+/**
+ * The stops along the race clock: a dot each, a sip of the homemade mix
+ * small and a product large. Tapping one names it; the full list is folded
+ * under the strip.
+ */
+@Composable
+private fun TimelineStrip(items: List<FuelPlan.Item>, durationMin: Double) {
+    if (items.isEmpty() || durationMin <= 0) return
+    var picked by remember(items) { mutableStateOf<FuelPlan.Item?>(null) }
+    var all by remember { mutableStateOf(false) }
+    val sip = MaterialTheme.colorScheme.primary
+    val line = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Box(
+            Modifier.fillMaxWidth().height(24.dp).pointerInput(items) {
+                detectTapGestures { o ->
+                    val m = o.x / size.width * durationMin
+                    picked = items.minBy { kotlin.math.abs(it.minute - m) }
+                }
+            },
+        ) {
+            Canvas(Modifier.fillMaxSize()) {
+                val y = size.height / 2
+                drawLine(line, Offset(0f, y), Offset(size.width, y), strokeWidth = 2.dp.toPx())
+                items.forEach { i ->
+                    val x = (i.minute / durationMin).toFloat().coerceIn(0f, 1f) * size.width
+                    val isSip = i.productUid == FuelPlan.HOMEMADE_UID
+                    val r = (if (isSip) 3.dp else 5.dp).toPx() * if (i == picked) 1.5f else 1f
+                    drawCircle(if (isSip) sip else CARBS, r, Offset(x, y))
+                }
+            }
+        }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            val small = MaterialTheme.typography.labelSmall.copy(fontFeatureSettings = "tnum")
+            Text("0:00", style = small, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                picked?.let { i ->
+                    listOfNotNull(clock(i.minute), i.distanceM?.let { distance(it.toDouble()) }, stopName(i))
+                        .joinToString(" · ")
+                } ?: "${items.size} stops",
+                style = small,
+            )
+            Text(clock(durationMin.toInt()), style = small, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Text(
+            if (all) "Hide stops" else "Show all stops (${items.size})",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.clickable { all = !all }.padding(vertical = 4.dp),
+        )
+        if (all) Column { items.forEach { TimelineRow(it) } }
+    }
+}
+
+/** What to take at a stop: the product (or plain grams), plus its fluid when it carries any. */
+internal fun stopName(i: FuelPlan.Item): String = buildString {
+    append(i.name ?: "${trim(i.carbsG)} g carbs")
+    if (i.fluidMl > 0) append(" + ${i.fluidMl} ml")
+}
+
+/** "45 g (3½ tbsp)", or "60 ml (¼ cup)" for a liquid — the web's amountLabel. */
+internal fun amountLabel(i: FuelPlan.Ingredient): String =
+    i.ml?.let { "${trim(it)} ml (${i.measure})" } ?: "${trim(i.grams ?: 0.0)} g (${i.measure})"
+
+private val PRESETS = listOf("basic" to "Basic", "high_carb" to "High-carb", "natural" to "Natural")
+
+/** The homemade mix's recipe: pick a recipe, size the bottle, read what goes in. */
+@Composable
+private fun MixCard(r: FuelPlan.Recipe, s: LocalRacePlans.Strategy, onSet: (String, Any?) -> Unit) {
+    Column(
+        Modifier.fillMaxWidth()
+            .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f), RoundedCornerShape(Tokens.Radius.xl))
+            .padding(Tokens.Space.s3),
+        verticalArrangement = Arrangement.spacedBy(Tokens.Space.s2),
+    ) {
+        Text(FuelPlan.HOMEMADE_NAME, style = MaterialTheme.typography.titleSmall)
+        Row(horizontalArrangement = Arrangement.spacedBy(Tokens.Space.s1_5)) {
+            PRESETS.forEach { (key, label) ->
+                FilterChip(selected = r.preset == key, onClick = { onSet("fuel_mix_preset", key) }, label = { Text(label) })
+            }
+        }
+        var bottle by remember(s.fuelMixBottleMl) { mutableStateOf(s.fuelMixBottleMl?.toString() ?: "") }
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Tokens.Space.s2)) {
+            OutlinedTextField(
+                value = bottle,
+                onValueChange = { v ->
+                    bottle = v.filter(Char::isDigit)
+                    onSet("fuel_mix_bottle_ml", bottle.toIntOrNull()?.takeIf { it >= 100 })
+                },
+                placeholder = { Text("${FuelPlan.DEFAULT_BOTTLE_ML}") },
+                suffix = { Text("ml") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.width(132.dp),
+            )
+            Text("per bottle · make ${r.bottles}", style = MaterialTheme.typography.bodyMedium)
+        }
+        Column {
+            r.ingredients.forEach { IngredientRow(it.name, amountLabel(it)) }
+            IngredientRow("Water", "to ${r.bottleMl} ml")
+        }
+        Text(
+            "${r.concentrationPct}% · sip ${r.sipMl} ml every ${r.intervalMin} min" +
+                if (r.preset == "natural") " · coconut water varies: check its label" else "",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun IngredientRow(name: String, amount: String) {
+    Row(Modifier.fillMaxWidth().padding(vertical = 3.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+        Text(name, style = MaterialTheme.typography.bodyMedium)
+        Text(amount, style = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum"))
+    }
+}
+
 /** One stop: when, where, and what to take. Fluid only when the product carries some. */
 @Composable
 private fun TimelineRow(i: FuelPlan.Item) {
@@ -154,10 +326,7 @@ private fun TimelineRow(i: FuelPlan.Item) {
             modifier = Modifier.width(76.dp),
         )
         Text(
-            buildString {
-                append(i.name ?: "${trim(i.carbsG)} g carbs")
-                if (i.fluidMl > 0) append(" + ${i.fluidMl} ml")
-            },
+            stopName(i),
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.weight(1f),
         )
