@@ -27,6 +27,13 @@ object FuelPlan {
     val SODIUM_MG_PER_HOUR = mapOf("normal" to 400, "hot" to 600, "very_hot" to 800)
     const val DEFAULT_INTERVAL_MIN = 20
 
+    /** Potassium follows the fluid drunk, at mid-range sweat potassium. See the Python. */
+    const val POTASSIUM_MG_PER_ML = 0.2
+
+    /** The fuel gauges' full scale, per hour: an elite ultra-endurance athlete's. Display only. */
+    data class Ceilings(val carbsGPerH: Int, val sodiumMgPerH: Int, val potassiumMgPerH: Int, val fluidMlPerH: Int)
+    val CEILINGS = Ceilings(carbsGPerH = 120, sodiumMgPerH = 1500, potassiumMgPerH = 375, fluidMlPerH = 1200)
+
     const val LONG_SESSION_MIN = 75
     const val GUT_START_G_PER_H = 40
     const val GUT_STEP_G_PER_H = 10
@@ -45,6 +52,8 @@ object FuelPlan {
         val customFluid: Boolean,
         val customSodium: Boolean,
         val customInterval: Boolean,
+        val potassiumMgPerH: Int = 0,
+        val customPotassium: Boolean = false,
     )
 
     data class Product(
@@ -54,6 +63,7 @@ object FuelPlan {
         val sodiumMg: Int = 0,
         val fluidMl: Int = 0,
         val caffeineMg: Int = 0,
+        val potassiumMg: Int = 0,
     )
 
     data class Lap(val distanceM: Double, val targetSecPerKm: Double)
@@ -67,9 +77,10 @@ object FuelPlan {
         val sodiumMg: Int,
         val fluidMl: Int,
         val caffeineMg: Int,
+        val potassiumMg: Int = 0,
     )
 
-    data class Amounts(val carbsG: Int, val sodiumMg: Int, val fluidMl: Int, val caffeineMg: Int)
+    data class Amounts(val carbsG: Int, val sodiumMg: Int, val fluidMl: Int, val caffeineMg: Int, val potassiumMg: Int = 0)
 
     data class Timeline(val items: List<Item>, val totals: Amounts, val perHour: Amounts)
 
@@ -113,12 +124,14 @@ object FuelPlan {
         fluid: Int? = null,
         sodium: Int? = null,
         interval: Int? = null,
+        potassium: Int? = null,
     ): Targets {
         val band = heatBand(temperatureC, humidityPct)
         check(band in BANDS)
+        val fluidMl = fluid ?: FLUID_ML_PER_HOUR.getValue(band)
         return Targets(
             carbsGPerH = carbs ?: defaultCarbsPerHour(durationMin / 60.0),
-            fluidMlPerH = fluid ?: FLUID_ML_PER_HOUR.getValue(band),
+            fluidMlPerH = fluidMl,
             sodiumMgPerH = sodium ?: SODIUM_MG_PER_HOUR.getValue(band),
             intervalMin = if (interval != null && interval != 0) interval else DEFAULT_INTERVAL_MIN,
             band = band,
@@ -126,6 +139,8 @@ object FuelPlan {
             customFluid = fluid != null,
             customSodium = sodium != null,
             customInterval = interval != null && interval != 0,
+            potassiumMgPerH = potassium ?: halfUp(fluidMl * POTASSIUM_MG_PER_ML),
+            customPotassium = potassium != null,
         )
     }
 
@@ -152,6 +167,7 @@ object FuelPlan {
         var taken = 0.0
         var carbs = 0.0
         var sodium = 0
+        var potassium = 0
         var fluid = 0
         var caffeine = 0
         var minute = interval
@@ -177,10 +193,11 @@ object FuelPlan {
                 val p = best!!
                 if (owed >= p.carbsG / 2.0) {
                     items += Item(minute, distanceAt(minute.toDouble(), laps), p.uid, p.name, p.carbsG,
-                        p.sodiumMg, p.fluidMl, p.caffeineMg)
+                        p.sodiumMg, p.fluidMl, p.caffeineMg, p.potassiumMg)
                     taken += p.carbsG
                     carbs += p.carbsG
                     sodium += p.sodiumMg
+                    potassium += p.potassiumMg
                     fluid += p.fluidMl
                     caffeine += p.caffeineMg
                 }
@@ -191,9 +208,9 @@ object FuelPlan {
         fun perHour(v: Double) = if (hours != 0.0) halfUp(v / hours) else 0
         return Timeline(
             items = items,
-            totals = Amounts(halfUp(carbs), sodium, fluid, caffeine),
+            totals = Amounts(halfUp(carbs), sodium, fluid, caffeine, potassium),
             perHour = Amounts(perHour(carbs), perHour(sodium.toDouble()), perHour(fluid.toDouble()),
-                perHour(caffeine.toDouble())),
+                perHour(caffeine.toDouble()), perHour(potassium.toDouble())),
         )
     }
 

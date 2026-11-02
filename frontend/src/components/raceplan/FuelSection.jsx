@@ -22,6 +22,7 @@ const TARGET_FIELDS = [
   ["fuel_carbs_per_hour", "Carbs", "g/h", "carbs_g_per_h"],
   ["fuel_fluid_ml_per_hour", "Fluid", "ml/h", "fluid_ml_per_h"],
   ["fuel_sodium_mg_per_hour", "Sodium", "mg/h", "sodium_mg_per_h"],
+  ["fuel_potassium_mg_per_hour", "Potassium", "mg/h", "potassium_mg_per_h"],
   ["fuel_interval_min", "Every", "min", "interval_min"],
 ];
 
@@ -79,7 +80,7 @@ function TargetsEditor({ plan, calculated, onPatch, onClose }) {
 }
 
 function ProductForm({ onAdd, onCancel }) {
-  const [draft, setDraft] = useState({ name: "", kind: "gel", carbs_g: 25, sodium_mg: 0, caffeine_mg: 0, fluid_ml: 0 });
+  const [draft, setDraft] = useState({ name: "", kind: "gel", carbs_g: 25, sodium_mg: 0, potassium_mg: 0, caffeine_mg: 0, fluid_ml: 0 });
   return (
     <div className={PANEL}>
       <h4 className="text-sm font-semibold text-slate-900 dark:text-white">New product</h4>
@@ -89,7 +90,7 @@ function ProductForm({ onAdd, onCancel }) {
         {KINDS.map((k) => <option key={k}>{k}</option>)}
       </select>
       <div className="grid grid-cols-2 gap-2">
-        {[["carbs_g", "Carbs (g)"], ["sodium_mg", "Sodium (mg)"], ["caffeine_mg", "Caffeine (mg)"], ["fluid_ml", "Fluid (ml)"]].map(([k, l]) => (
+        {[["carbs_g", "Carbs (g)"], ["sodium_mg", "Sodium (mg)"], ["potassium_mg", "Potassium (mg)"], ["caffeine_mg", "Caffeine (mg)"], ["fluid_ml", "Fluid (ml)"]].map(([k, l]) => (
           <label key={k} className="text-xs text-slate-500 dark:text-slate-400 flex flex-col gap-1">{l}
             <input className={INPUT} type="number" min="0" value={draft[k]}
               onChange={(e) => setDraft({ ...draft, [k]: Number(e.target.value) })} />

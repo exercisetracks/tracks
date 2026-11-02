@@ -34,6 +34,7 @@ class ProductIn(BaseModel):
     kind: str = "gel"
     carbs_g: float = 0
     sodium_mg: int = 0
+    potassium_mg: int = 0
     caffeine_mg: int = 0
     fluid_ml: int = 0
     serving: Optional[str] = None
@@ -132,13 +133,14 @@ def fuel_plan_for(db: Session, user_id: int, goal: TrainingGoal, rp: RacePlan | 
         carbs=rp.fuel_carbs_per_hour if rp else None,
         fluid=rp.fuel_fluid_ml_per_hour if rp else None,
         sodium=rp.fuel_sodium_mg_per_hour if rp else None,
+        potassium=rp.fuel_potassium_mg_per_hour if rp else None,
         interval=rp.fuel_interval_min if rp else None,
     )
     all_products = db.query(FuelProduct).filter_by(user_id=user_id).all()
     by_uid = {p.uid: p for p in all_products}
     chosen = [by_uid[u] for u in ((rp.fuel_product_uids if rp else None) or []) if u in by_uid]
     products = [{"uid": p.uid, "name": p.name, "carbs_g": float(p.carbs_g or 0),
-                 "sodium_mg": p.sodium_mg or 0, "fluid_ml": p.fluid_ml or 0,
+                 "sodium_mg": p.sodium_mg or 0, "potassium_mg": p.potassium_mg or 0, "fluid_ml": p.fluid_ml or 0,
                  "caffeine_mg": p.caffeine_mg or 0} for p in chosen]
     timeline = fp.timeline(duration_min, tg, products,
                            [{"distance_m": l["distance_m"], "target_sec_per_km": l["target_sec_per_km"]}
@@ -158,7 +160,7 @@ def fuel_plan_for(db: Session, user_id: int, goal: TrainingGoal, rp: RacePlan | 
                  "duration_min": l.duration_min}
                 for l in db.query(GutTrainingLog).filter_by(user_id=user_id).all()]
         gut = fp.gut_training(tg["carbs_g_per_h"], goal.event_date.isoformat(), workouts, logs)
-    return {"targets": tg, "timeline": timeline, "gut_training": gut,
+    return {"targets": tg, "timeline": timeline, "gut_training": gut, "ceilings": fp.CEILINGS,
             "product_uids": [p["uid"] for p in products]}
 
 

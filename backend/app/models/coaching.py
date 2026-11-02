@@ -157,6 +157,7 @@ class RacePlan(Base, Synced):
     fuel_carbs_per_hour     = Column(Integer, nullable=True)
     fuel_fluid_ml_per_hour  = Column(Integer, nullable=True)
     fuel_sodium_mg_per_hour = Column(Integer, nullable=True)
+    fuel_potassium_mg_per_hour = Column(Integer, nullable=True)
     fuel_interval_min       = Column(Integer, nullable=True)
     fuel_product_uids       = Column(PJson, nullable=True)
 

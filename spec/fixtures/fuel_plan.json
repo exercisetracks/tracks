@@ -9,12 +9,14 @@
     "carbs_g_per_h": 30,
     "fluid_ml_per_h": 500,
     "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 100,
     "interval_min": 20,
     "band": "normal",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -33,13 +35,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "normal",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 25,
+   "temperature_c": null,
+   "humidity_pct": null,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 30,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 25,
+   "temperature_c": null,
+   "humidity_pct": null,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 30,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -52,12 +102,14 @@
     "carbs_g_per_h": 30,
     "fluid_ml_per_h": 650,
     "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 130,
     "interval_min": 20,
     "band": "hot",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -76,13 +128,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "hot",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 25,
+   "temperature_c": null,
+   "humidity_pct": 80.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 30,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 25,
+   "temperature_c": null,
+   "humidity_pct": 80.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 30,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -95,12 +195,14 @@
     "carbs_g_per_h": 30,
     "fluid_ml_per_h": 500,
     "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 100,
     "interval_min": 20,
     "band": "normal",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -119,13 +221,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "normal",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 25,
+   "temperature_c": 18.0,
+   "humidity_pct": 40.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 30,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 25,
+   "temperature_c": 18.0,
+   "humidity_pct": 40.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 30,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -138,12 +288,14 @@
     "carbs_g_per_h": 30,
     "fluid_ml_per_h": 650,
     "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 130,
     "interval_min": 20,
     "band": "hot",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -162,13 +314,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "hot",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 25,
+   "temperature_c": 26.0,
+   "humidity_pct": 30.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 30,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 25,
+   "temperature_c": 26.0,
+   "humidity_pct": 30.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 30,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -181,12 +381,14 @@
     "carbs_g_per_h": 30,
     "fluid_ml_per_h": 650,
     "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 130,
     "interval_min": 20,
     "band": "hot",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -205,13 +407,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "hot",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 25,
+   "temperature_c": 22.0,
+   "humidity_pct": 75.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 30,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 25,
+   "temperature_c": 22.0,
+   "humidity_pct": 75.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 30,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -224,12 +474,14 @@
     "carbs_g_per_h": 30,
     "fluid_ml_per_h": 500,
     "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 100,
     "interval_min": 20,
     "band": "normal",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -248,13 +500,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "normal",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 25,
+   "temperature_c": 19.0,
+   "humidity_pct": 90.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 30,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 25,
+   "temperature_c": 19.0,
+   "humidity_pct": 90.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 30,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -267,12 +567,14 @@
     "carbs_g_per_h": 30,
     "fluid_ml_per_h": 800,
     "sodium_mg_per_h": 800,
+    "potassium_mg_per_h": 160,
     "interval_min": 20,
     "band": "very_hot",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -291,13 +593,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "very_hot",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 25,
+   "temperature_c": 33.0,
+   "humidity_pct": 50.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 30,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 800,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "very_hot",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 25,
+   "temperature_c": 33.0,
+   "humidity_pct": 50.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 30,
+    "fluid_ml_per_h": 800,
+    "sodium_mg_per_h": 800,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "very_hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -310,12 +660,14 @@
     "carbs_g_per_h": 30,
     "fluid_ml_per_h": 500,
     "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 100,
     "interval_min": 20,
     "band": "normal",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -334,13 +686,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "normal",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 60,
+   "temperature_c": null,
+   "humidity_pct": null,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 30,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 60,
+   "temperature_c": null,
+   "humidity_pct": null,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 30,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -353,12 +753,14 @@
     "carbs_g_per_h": 30,
     "fluid_ml_per_h": 650,
     "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 130,
     "interval_min": 20,
     "band": "hot",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -377,13 +779,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "hot",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 60,
+   "temperature_c": null,
+   "humidity_pct": 80.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 30,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 60,
+   "temperature_c": null,
+   "humidity_pct": 80.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 30,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -396,12 +846,14 @@
     "carbs_g_per_h": 30,
     "fluid_ml_per_h": 500,
     "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 100,
     "interval_min": 20,
     "band": "normal",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -420,13 +872,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "normal",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 60,
+   "temperature_c": 18.0,
+   "humidity_pct": 40.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 30,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 60,
+   "temperature_c": 18.0,
+   "humidity_pct": 40.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 30,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -439,12 +939,14 @@
     "carbs_g_per_h": 30,
     "fluid_ml_per_h": 650,
     "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 130,
     "interval_min": 20,
     "band": "hot",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -463,13 +965,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "hot",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 60,
+   "temperature_c": 26.0,
+   "humidity_pct": 30.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 30,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 60,
+   "temperature_c": 26.0,
+   "humidity_pct": 30.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 30,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -482,12 +1032,14 @@
     "carbs_g_per_h": 30,
     "fluid_ml_per_h": 650,
     "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 130,
     "interval_min": 20,
     "band": "hot",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -506,13 +1058,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "hot",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 60,
+   "temperature_c": 22.0,
+   "humidity_pct": 75.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 30,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 60,
+   "temperature_c": 22.0,
+   "humidity_pct": 75.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 30,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -525,12 +1125,14 @@
     "carbs_g_per_h": 30,
     "fluid_ml_per_h": 500,
     "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 100,
     "interval_min": 20,
     "band": "normal",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -549,13 +1151,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "normal",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 60,
+   "temperature_c": 19.0,
+   "humidity_pct": 90.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 30,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 60,
+   "temperature_c": 19.0,
+   "humidity_pct": 90.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 30,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -568,12 +1218,14 @@
     "carbs_g_per_h": 30,
     "fluid_ml_per_h": 800,
     "sodium_mg_per_h": 800,
+    "potassium_mg_per_h": 160,
     "interval_min": 20,
     "band": "very_hot",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -592,13 +1244,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "very_hot",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 60,
+   "temperature_c": 33.0,
+   "humidity_pct": 50.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 30,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 800,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "very_hot",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 60,
+   "temperature_c": 33.0,
+   "humidity_pct": 50.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 30,
+    "fluid_ml_per_h": 800,
+    "sodium_mg_per_h": 800,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "very_hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -611,12 +1311,14 @@
     "carbs_g_per_h": 60,
     "fluid_ml_per_h": 500,
     "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 100,
     "interval_min": 20,
     "band": "normal",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -635,13 +1337,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "normal",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 61,
+   "temperature_c": null,
+   "humidity_pct": null,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 61,
+   "temperature_c": null,
+   "humidity_pct": null,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -654,12 +1404,14 @@
     "carbs_g_per_h": 60,
     "fluid_ml_per_h": 650,
     "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 130,
     "interval_min": 20,
     "band": "hot",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -678,13 +1430,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "hot",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 61,
+   "temperature_c": null,
+   "humidity_pct": 80.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 61,
+   "temperature_c": null,
+   "humidity_pct": 80.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -697,12 +1497,14 @@
     "carbs_g_per_h": 60,
     "fluid_ml_per_h": 500,
     "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 100,
     "interval_min": 20,
     "band": "normal",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -721,13 +1523,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "normal",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 61,
+   "temperature_c": 18.0,
+   "humidity_pct": 40.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 61,
+   "temperature_c": 18.0,
+   "humidity_pct": 40.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -740,12 +1590,14 @@
     "carbs_g_per_h": 60,
     "fluid_ml_per_h": 650,
     "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 130,
     "interval_min": 20,
     "band": "hot",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -764,13 +1616,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "hot",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 61,
+   "temperature_c": 26.0,
+   "humidity_pct": 30.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 61,
+   "temperature_c": 26.0,
+   "humidity_pct": 30.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -783,12 +1683,14 @@
     "carbs_g_per_h": 60,
     "fluid_ml_per_h": 650,
     "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 130,
     "interval_min": 20,
     "band": "hot",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -807,13 +1709,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "hot",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 61,
+   "temperature_c": 22.0,
+   "humidity_pct": 75.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 61,
+   "temperature_c": 22.0,
+   "humidity_pct": 75.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -826,12 +1776,14 @@
     "carbs_g_per_h": 60,
     "fluid_ml_per_h": 500,
     "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 100,
     "interval_min": 20,
     "band": "normal",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -850,13 +1802,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "normal",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 61,
+   "temperature_c": 19.0,
+   "humidity_pct": 90.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 61,
+   "temperature_c": 19.0,
+   "humidity_pct": 90.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -869,12 +1869,14 @@
     "carbs_g_per_h": 60,
     "fluid_ml_per_h": 800,
     "sodium_mg_per_h": 800,
+    "potassium_mg_per_h": 160,
     "interval_min": 20,
     "band": "very_hot",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -893,13 +1895,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "very_hot",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 61,
+   "temperature_c": 33.0,
+   "humidity_pct": 50.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 800,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "very_hot",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 61,
+   "temperature_c": 33.0,
+   "humidity_pct": 50.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 800,
+    "sodium_mg_per_h": 800,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "very_hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -912,12 +1962,14 @@
     "carbs_g_per_h": 60,
     "fluid_ml_per_h": 500,
     "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 100,
     "interval_min": 20,
     "band": "normal",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -936,13 +1988,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "normal",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 119.5,
+   "temperature_c": null,
+   "humidity_pct": null,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 119.5,
+   "temperature_c": null,
+   "humidity_pct": null,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -955,12 +2055,14 @@
     "carbs_g_per_h": 60,
     "fluid_ml_per_h": 650,
     "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 130,
     "interval_min": 20,
     "band": "hot",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -979,13 +2081,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "hot",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 119.5,
+   "temperature_c": null,
+   "humidity_pct": 80.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 119.5,
+   "temperature_c": null,
+   "humidity_pct": 80.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -998,12 +2148,14 @@
     "carbs_g_per_h": 60,
     "fluid_ml_per_h": 500,
     "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 100,
     "interval_min": 20,
     "band": "normal",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -1022,13 +2174,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "normal",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 119.5,
+   "temperature_c": 18.0,
+   "humidity_pct": 40.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 119.5,
+   "temperature_c": 18.0,
+   "humidity_pct": 40.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -1041,12 +2241,14 @@
     "carbs_g_per_h": 60,
     "fluid_ml_per_h": 650,
     "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 130,
     "interval_min": 20,
     "band": "hot",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -1065,13 +2267,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "hot",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 119.5,
+   "temperature_c": 26.0,
+   "humidity_pct": 30.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 119.5,
+   "temperature_c": 26.0,
+   "humidity_pct": 30.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -1084,12 +2334,14 @@
     "carbs_g_per_h": 60,
     "fluid_ml_per_h": 650,
     "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 130,
     "interval_min": 20,
     "band": "hot",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -1108,13 +2360,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "hot",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 119.5,
+   "temperature_c": 22.0,
+   "humidity_pct": 75.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 119.5,
+   "temperature_c": 22.0,
+   "humidity_pct": 75.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -1127,12 +2427,14 @@
     "carbs_g_per_h": 60,
     "fluid_ml_per_h": 500,
     "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 100,
     "interval_min": 20,
     "band": "normal",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -1151,13 +2453,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "normal",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 119.5,
+   "temperature_c": 19.0,
+   "humidity_pct": 90.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 119.5,
+   "temperature_c": 19.0,
+   "humidity_pct": 90.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -1170,12 +2520,14 @@
     "carbs_g_per_h": 60,
     "fluid_ml_per_h": 800,
     "sodium_mg_per_h": 800,
+    "potassium_mg_per_h": 160,
     "interval_min": 20,
     "band": "very_hot",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -1194,13 +2546,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "very_hot",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 119.5,
+   "temperature_c": 33.0,
+   "humidity_pct": 50.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 800,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "very_hot",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 119.5,
+   "temperature_c": 33.0,
+   "humidity_pct": 50.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 800,
+    "sodium_mg_per_h": 800,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "very_hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -1213,12 +2613,14 @@
     "carbs_g_per_h": 60,
     "fluid_ml_per_h": 500,
     "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 100,
     "interval_min": 20,
     "band": "normal",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -1237,13 +2639,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "normal",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 120,
+   "temperature_c": null,
+   "humidity_pct": null,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 120,
+   "temperature_c": null,
+   "humidity_pct": null,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -1256,12 +2706,14 @@
     "carbs_g_per_h": 60,
     "fluid_ml_per_h": 650,
     "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 130,
     "interval_min": 20,
     "band": "hot",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -1280,13 +2732,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "hot",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 120,
+   "temperature_c": null,
+   "humidity_pct": 80.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 120,
+   "temperature_c": null,
+   "humidity_pct": 80.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -1299,12 +2799,14 @@
     "carbs_g_per_h": 60,
     "fluid_ml_per_h": 500,
     "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 100,
     "interval_min": 20,
     "band": "normal",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -1323,13 +2825,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "normal",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 120,
+   "temperature_c": 18.0,
+   "humidity_pct": 40.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 120,
+   "temperature_c": 18.0,
+   "humidity_pct": 40.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -1342,12 +2892,14 @@
     "carbs_g_per_h": 60,
     "fluid_ml_per_h": 650,
     "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 130,
     "interval_min": 20,
     "band": "hot",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -1366,13 +2918,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "hot",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 120,
+   "temperature_c": 26.0,
+   "humidity_pct": 30.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 120,
+   "temperature_c": 26.0,
+   "humidity_pct": 30.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -1385,12 +2985,14 @@
     "carbs_g_per_h": 60,
     "fluid_ml_per_h": 650,
     "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 130,
     "interval_min": 20,
     "band": "hot",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -1409,13 +3011,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "hot",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 120,
+   "temperature_c": 22.0,
+   "humidity_pct": 75.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 120,
+   "temperature_c": 22.0,
+   "humidity_pct": 75.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -1428,12 +3078,14 @@
     "carbs_g_per_h": 60,
     "fluid_ml_per_h": 500,
     "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 100,
     "interval_min": 20,
     "band": "normal",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -1452,13 +3104,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "normal",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 120,
+   "temperature_c": 19.0,
+   "humidity_pct": 90.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 120,
+   "temperature_c": 19.0,
+   "humidity_pct": 90.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -1471,12 +3171,14 @@
     "carbs_g_per_h": 60,
     "fluid_ml_per_h": 800,
     "sodium_mg_per_h": 800,
+    "potassium_mg_per_h": 160,
     "interval_min": 20,
     "band": "very_hot",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -1495,13 +3197,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "very_hot",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 120,
+   "temperature_c": 33.0,
+   "humidity_pct": 50.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 800,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "very_hot",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 120,
+   "temperature_c": 33.0,
+   "humidity_pct": 50.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 800,
+    "sodium_mg_per_h": 800,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "very_hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -1514,12 +3264,14 @@
     "carbs_g_per_h": 80,
     "fluid_ml_per_h": 500,
     "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 100,
     "interval_min": 20,
     "band": "normal",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -1538,13 +3290,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "normal",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 150,
+   "temperature_c": null,
+   "humidity_pct": null,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 80,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 150,
+   "temperature_c": null,
+   "humidity_pct": null,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 80,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -1557,12 +3357,14 @@
     "carbs_g_per_h": 80,
     "fluid_ml_per_h": 650,
     "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 130,
     "interval_min": 20,
     "band": "hot",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -1581,13 +3383,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "hot",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 150,
+   "temperature_c": null,
+   "humidity_pct": 80.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 80,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 150,
+   "temperature_c": null,
+   "humidity_pct": 80.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 80,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -1600,12 +3450,14 @@
     "carbs_g_per_h": 80,
     "fluid_ml_per_h": 500,
     "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 100,
     "interval_min": 20,
     "band": "normal",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -1624,13 +3476,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "normal",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 150,
+   "temperature_c": 18.0,
+   "humidity_pct": 40.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 80,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 150,
+   "temperature_c": 18.0,
+   "humidity_pct": 40.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 80,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -1643,12 +3543,14 @@
     "carbs_g_per_h": 80,
     "fluid_ml_per_h": 650,
     "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 130,
     "interval_min": 20,
     "band": "hot",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -1667,13 +3569,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "hot",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 150,
+   "temperature_c": 26.0,
+   "humidity_pct": 30.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 80,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 150,
+   "temperature_c": 26.0,
+   "humidity_pct": 30.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 80,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -1686,12 +3636,14 @@
     "carbs_g_per_h": 80,
     "fluid_ml_per_h": 650,
     "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 130,
     "interval_min": 20,
     "band": "hot",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -1710,13 +3662,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "hot",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 150,
+   "temperature_c": 22.0,
+   "humidity_pct": 75.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 80,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 150,
+   "temperature_c": 22.0,
+   "humidity_pct": 75.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 80,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -1729,12 +3729,14 @@
     "carbs_g_per_h": 80,
     "fluid_ml_per_h": 500,
     "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 100,
     "interval_min": 20,
     "band": "normal",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -1753,13 +3755,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "normal",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 150,
+   "temperature_c": 19.0,
+   "humidity_pct": 90.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 80,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 150,
+   "temperature_c": 19.0,
+   "humidity_pct": 90.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 80,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -1772,12 +3822,14 @@
     "carbs_g_per_h": 80,
     "fluid_ml_per_h": 800,
     "sodium_mg_per_h": 800,
+    "potassium_mg_per_h": 160,
     "interval_min": 20,
     "band": "very_hot",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -1796,13 +3848,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "very_hot",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 150,
+   "temperature_c": 33.0,
+   "humidity_pct": 50.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 80,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 800,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "very_hot",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 150,
+   "temperature_c": 33.0,
+   "humidity_pct": 50.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 80,
+    "fluid_ml_per_h": 800,
+    "sodium_mg_per_h": 800,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "very_hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -1815,12 +3915,14 @@
     "carbs_g_per_h": 80,
     "fluid_ml_per_h": 500,
     "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 100,
     "interval_min": 20,
     "band": "normal",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -1839,13 +3941,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "normal",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 240,
+   "temperature_c": null,
+   "humidity_pct": null,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 80,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 240,
+   "temperature_c": null,
+   "humidity_pct": null,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 80,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -1858,12 +4008,14 @@
     "carbs_g_per_h": 80,
     "fluid_ml_per_h": 650,
     "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 130,
     "interval_min": 20,
     "band": "hot",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -1882,13 +4034,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "hot",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 240,
+   "temperature_c": null,
+   "humidity_pct": 80.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 80,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 240,
+   "temperature_c": null,
+   "humidity_pct": 80.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 80,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -1901,12 +4101,14 @@
     "carbs_g_per_h": 80,
     "fluid_ml_per_h": 500,
     "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 100,
     "interval_min": 20,
     "band": "normal",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -1925,13 +4127,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "normal",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 240,
+   "temperature_c": 18.0,
+   "humidity_pct": 40.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 80,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 240,
+   "temperature_c": 18.0,
+   "humidity_pct": 40.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 80,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -1944,12 +4194,14 @@
     "carbs_g_per_h": 80,
     "fluid_ml_per_h": 650,
     "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 130,
     "interval_min": 20,
     "band": "hot",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -1968,13 +4220,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "hot",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 240,
+   "temperature_c": 26.0,
+   "humidity_pct": 30.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 80,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 240,
+   "temperature_c": 26.0,
+   "humidity_pct": 30.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 80,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -1987,12 +4287,14 @@
     "carbs_g_per_h": 80,
     "fluid_ml_per_h": 650,
     "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 130,
     "interval_min": 20,
     "band": "hot",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -2011,13 +4313,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "hot",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 240,
+   "temperature_c": 22.0,
+   "humidity_pct": 75.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 80,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 240,
+   "temperature_c": 22.0,
+   "humidity_pct": 75.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 80,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -2030,12 +4380,14 @@
     "carbs_g_per_h": 80,
     "fluid_ml_per_h": 500,
     "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 100,
     "interval_min": 20,
     "band": "normal",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -2054,13 +4406,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "normal",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 240,
+   "temperature_c": 19.0,
+   "humidity_pct": 90.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 80,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 240,
+   "temperature_c": 19.0,
+   "humidity_pct": 90.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 80,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -2073,12 +4473,14 @@
     "carbs_g_per_h": 80,
     "fluid_ml_per_h": 800,
     "sodium_mg_per_h": 800,
+    "potassium_mg_per_h": 160,
     "interval_min": 20,
     "band": "very_hot",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -2097,13 +4499,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "very_hot",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 240,
+   "temperature_c": 33.0,
+   "humidity_pct": 50.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 80,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 800,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "very_hot",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 240,
+   "temperature_c": 33.0,
+   "humidity_pct": 50.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 80,
+    "fluid_ml_per_h": 800,
+    "sodium_mg_per_h": 800,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "very_hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -2116,12 +4566,14 @@
     "carbs_g_per_h": 90,
     "fluid_ml_per_h": 500,
     "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 100,
     "interval_min": 20,
     "band": "normal",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -2140,13 +4592,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "normal",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 241,
+   "temperature_c": null,
+   "humidity_pct": null,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 90,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 241,
+   "temperature_c": null,
+   "humidity_pct": null,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 90,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -2159,12 +4659,14 @@
     "carbs_g_per_h": 90,
     "fluid_ml_per_h": 650,
     "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 130,
     "interval_min": 20,
     "band": "hot",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -2183,13 +4685,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "hot",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 241,
+   "temperature_c": null,
+   "humidity_pct": 80.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 90,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 241,
+   "temperature_c": null,
+   "humidity_pct": 80.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 90,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -2202,12 +4752,14 @@
     "carbs_g_per_h": 90,
     "fluid_ml_per_h": 500,
     "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 100,
     "interval_min": 20,
     "band": "normal",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -2226,13 +4778,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "normal",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 241,
+   "temperature_c": 18.0,
+   "humidity_pct": 40.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 90,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 241,
+   "temperature_c": 18.0,
+   "humidity_pct": 40.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 90,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -2245,12 +4845,14 @@
     "carbs_g_per_h": 90,
     "fluid_ml_per_h": 650,
     "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 130,
     "interval_min": 20,
     "band": "hot",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -2269,13 +4871,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "hot",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 241,
+   "temperature_c": 26.0,
+   "humidity_pct": 30.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 90,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 241,
+   "temperature_c": 26.0,
+   "humidity_pct": 30.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 90,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -2288,12 +4938,14 @@
     "carbs_g_per_h": 90,
     "fluid_ml_per_h": 650,
     "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 130,
     "interval_min": 20,
     "band": "hot",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -2312,13 +4964,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "hot",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 241,
+   "temperature_c": 22.0,
+   "humidity_pct": 75.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 90,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 241,
+   "temperature_c": 22.0,
+   "humidity_pct": 75.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 90,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -2331,12 +5031,14 @@
     "carbs_g_per_h": 90,
     "fluid_ml_per_h": 500,
     "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 100,
     "interval_min": 20,
     "band": "normal",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -2355,13 +5057,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "normal",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 241,
+   "temperature_c": 19.0,
+   "humidity_pct": 90.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 90,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 241,
+   "temperature_c": 19.0,
+   "humidity_pct": 90.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 90,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -2374,12 +5124,14 @@
     "carbs_g_per_h": 90,
     "fluid_ml_per_h": 800,
     "sodium_mg_per_h": 800,
+    "potassium_mg_per_h": 160,
     "interval_min": 20,
     "band": "very_hot",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -2398,13 +5150,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "very_hot",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 241,
+   "temperature_c": 33.0,
+   "humidity_pct": 50.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 90,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 800,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "very_hot",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 241,
+   "temperature_c": 33.0,
+   "humidity_pct": 50.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 90,
+    "fluid_ml_per_h": 800,
+    "sodium_mg_per_h": 800,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "very_hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -2417,12 +5217,14 @@
     "carbs_g_per_h": 90,
     "fluid_ml_per_h": 500,
     "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 100,
     "interval_min": 20,
     "band": "normal",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -2441,13 +5243,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "normal",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 600,
+   "temperature_c": null,
+   "humidity_pct": null,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 90,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 600,
+   "temperature_c": null,
+   "humidity_pct": null,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 90,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -2460,12 +5310,14 @@
     "carbs_g_per_h": 90,
     "fluid_ml_per_h": 650,
     "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 130,
     "interval_min": 20,
     "band": "hot",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -2484,13 +5336,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "hot",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 600,
+   "temperature_c": null,
+   "humidity_pct": 80.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 90,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 600,
+   "temperature_c": null,
+   "humidity_pct": 80.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 90,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -2503,12 +5403,14 @@
     "carbs_g_per_h": 90,
     "fluid_ml_per_h": 500,
     "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 100,
     "interval_min": 20,
     "band": "normal",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -2527,13 +5429,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "normal",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 600,
+   "temperature_c": 18.0,
+   "humidity_pct": 40.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 90,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 600,
+   "temperature_c": 18.0,
+   "humidity_pct": 40.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 90,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -2546,12 +5496,14 @@
     "carbs_g_per_h": 90,
     "fluid_ml_per_h": 650,
     "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 130,
     "interval_min": 20,
     "band": "hot",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -2570,13 +5522,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "hot",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 600,
+   "temperature_c": 26.0,
+   "humidity_pct": 30.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 90,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 600,
+   "temperature_c": 26.0,
+   "humidity_pct": 30.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 90,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -2589,12 +5589,14 @@
     "carbs_g_per_h": 90,
     "fluid_ml_per_h": 650,
     "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 130,
     "interval_min": 20,
     "band": "hot",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -2613,13 +5615,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "hot",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 600,
+   "temperature_c": 22.0,
+   "humidity_pct": 75.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 90,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 600,
+   "temperature_c": 22.0,
+   "humidity_pct": 75.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 90,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -2632,12 +5682,14 @@
     "carbs_g_per_h": 90,
     "fluid_ml_per_h": 500,
     "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 100,
     "interval_min": 20,
     "band": "normal",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -2656,13 +5708,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "normal",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 600,
+   "temperature_c": 19.0,
+   "humidity_pct": 90.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 90,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 600,
+   "temperature_c": 19.0,
+   "humidity_pct": 90.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 90,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   },
@@ -2675,12 +5775,14 @@
     "carbs_g_per_h": 90,
     "fluid_ml_per_h": 800,
     "sodium_mg_per_h": 800,
+    "potassium_mg_per_h": 160,
     "interval_min": 20,
     "band": "very_hot",
     "custom": {
      "carbs": false,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": false
     }
    }
@@ -2699,13 +5801,61 @@
     "carbs_g_per_h": 72,
     "fluid_ml_per_h": 900,
     "sodium_mg_per_h": 1000,
+    "potassium_mg_per_h": 180,
     "interval_min": 15,
     "band": "very_hot",
     "custom": {
      "carbs": true,
      "fluid": true,
      "sodium": true,
+     "potassium": false,
      "interval": true
+    }
+   }
+  },
+  {
+   "duration_min": 600,
+   "temperature_c": 33.0,
+   "humidity_pct": 50.0,
+   "override": {
+    "fluid": 733
+   },
+   "expected": {
+    "carbs_g_per_h": 90,
+    "fluid_ml_per_h": 733,
+    "sodium_mg_per_h": 800,
+    "potassium_mg_per_h": 147,
+    "interval_min": 20,
+    "band": "very_hot",
+    "custom": {
+     "carbs": false,
+     "fluid": true,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   }
+  },
+  {
+   "duration_min": 600,
+   "temperature_c": 33.0,
+   "humidity_pct": 50.0,
+   "override": {
+    "potassium": 240
+   },
+   "expected": {
+    "carbs_g_per_h": 90,
+    "fluid_ml_per_h": 800,
+    "sodium_mg_per_h": 800,
+    "potassium_mg_per_h": 240,
+    "interval_min": 20,
+    "band": "very_hot",
+    "custom": {
+     "carbs": false,
+     "fluid": false,
+     "sodium": false,
+     "potassium": true,
+     "interval": false
     }
    }
   }
@@ -2717,12 +5867,14 @@
     "carbs_g_per_h": 30,
     "fluid_ml_per_h": 500,
     "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 100,
     "interval_min": 20,
     "band": "normal",
     "custom": {
      "carbs": true,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": true
     }
    },
@@ -2737,6 +5889,7 @@
       "name": null,
       "carbs_g": 10,
       "sodium_mg": 0,
+      "potassium_mg": 0,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -2747,6 +5900,7 @@
       "name": null,
       "carbs_g": 10,
       "sodium_mg": 0,
+      "potassium_mg": 0,
       "fluid_ml": 0,
       "caffeine_mg": 0
      }
@@ -2754,12 +5908,14 @@
     "totals": {
      "carbs_g": 20,
      "sodium_mg": 0,
+     "potassium_mg": 0,
      "fluid_ml": 0,
      "caffeine_mg": 0
     },
     "per_hour": {
      "carbs_g": 27,
      "sodium_mg": 0,
+     "potassium_mg": 0,
      "fluid_ml": 0,
      "caffeine_mg": 0
     }
@@ -2771,12 +5927,14 @@
     "carbs_g_per_h": 60,
     "fluid_ml_per_h": 500,
     "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 100,
     "interval_min": 20,
     "band": "normal",
     "custom": {
      "carbs": true,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": true
     }
    },
@@ -2911,6 +6069,7 @@
       "name": "Gel",
       "carbs_g": 25.0,
       "sodium_mg": 50,
+      "potassium_mg": 0,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -2921,6 +6080,7 @@
       "name": "Gel",
       "carbs_g": 25.0,
       "sodium_mg": 50,
+      "potassium_mg": 0,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -2931,6 +6091,7 @@
       "name": "Gel",
       "carbs_g": 25.0,
       "sodium_mg": 50,
+      "potassium_mg": 0,
       "fluid_ml": 0,
       "caffeine_mg": 0
      }
@@ -2938,12 +6099,14 @@
     "totals": {
      "carbs_g": 75,
      "sodium_mg": 150,
+     "potassium_mg": 0,
      "fluid_ml": 0,
      "caffeine_mg": 0
     },
     "per_hour": {
      "carbs_g": 47,
      "sodium_mg": 95,
+     "potassium_mg": 0,
      "fluid_ml": 0,
      "caffeine_mg": 0
     }
@@ -2955,12 +6118,14 @@
     "carbs_g_per_h": 80,
     "fluid_ml_per_h": 500,
     "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 100,
     "interval_min": 20,
     "band": "normal",
     "custom": {
      "carbs": true,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": true
     }
    },
@@ -3208,6 +6373,7 @@
       "name": "Gel",
       "carbs_g": 25.0,
       "sodium_mg": 50,
+      "potassium_mg": 0,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -3218,6 +6384,7 @@
       "name": "Gel",
       "carbs_g": 25.0,
       "sodium_mg": 50,
+      "potassium_mg": 0,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -3228,6 +6395,7 @@
       "name": "Gel",
       "carbs_g": 25.0,
       "sodium_mg": 50,
+      "potassium_mg": 0,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -3238,6 +6406,7 @@
       "name": "Gel",
       "carbs_g": 25.0,
       "sodium_mg": 50,
+      "potassium_mg": 0,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -3248,6 +6417,7 @@
       "name": "Big Gel",
       "carbs_g": 40.0,
       "sodium_mg": 200,
+      "potassium_mg": 0,
       "fluid_ml": 0,
       "caffeine_mg": 100
      },
@@ -3258,6 +6428,7 @@
       "name": "Gel",
       "carbs_g": 25.0,
       "sodium_mg": 50,
+      "potassium_mg": 0,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -3268,6 +6439,7 @@
       "name": "Gel",
       "carbs_g": 25.0,
       "sodium_mg": 50,
+      "potassium_mg": 0,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -3278,6 +6450,7 @@
       "name": "Gel",
       "carbs_g": 25.0,
       "sodium_mg": 50,
+      "potassium_mg": 0,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -3288,6 +6461,7 @@
       "name": "Gel",
       "carbs_g": 25.0,
       "sodium_mg": 50,
+      "potassium_mg": 0,
       "fluid_ml": 0,
       "caffeine_mg": 0
      }
@@ -3295,12 +6469,14 @@
     "totals": {
      "carbs_g": 240,
      "sodium_mg": 600,
+     "potassium_mg": 0,
      "fluid_ml": 0,
      "caffeine_mg": 100
     },
     "per_hour": {
      "carbs_g": 76,
      "sodium_mg": 189,
+     "potassium_mg": 0,
      "fluid_ml": 0,
      "caffeine_mg": 32
     }
@@ -3312,12 +6488,14 @@
     "carbs_g_per_h": 80,
     "fluid_ml_per_h": 500,
     "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 100,
     "interval_min": 15,
     "band": "normal",
     "custom": {
      "carbs": true,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": true
     }
    },
@@ -3565,6 +6743,7 @@
       "name": "Gel",
       "carbs_g": 25.0,
       "sodium_mg": 50,
+      "potassium_mg": 0,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -3575,6 +6754,7 @@
       "name": "Gel",
       "carbs_g": 25.0,
       "sodium_mg": 50,
+      "potassium_mg": 0,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -3585,6 +6765,7 @@
       "name": "Gel",
       "carbs_g": 25.0,
       "sodium_mg": 50,
+      "potassium_mg": 0,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -3595,6 +6776,7 @@
       "name": "Gel",
       "carbs_g": 25.0,
       "sodium_mg": 50,
+      "potassium_mg": 0,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -3605,6 +6787,7 @@
       "name": "Gel",
       "carbs_g": 25.0,
       "sodium_mg": 50,
+      "potassium_mg": 0,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -3615,6 +6798,7 @@
       "name": "Gel",
       "carbs_g": 25.0,
       "sodium_mg": 50,
+      "potassium_mg": 0,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -3625,6 +6809,7 @@
       "name": "Gel",
       "carbs_g": 25.0,
       "sodium_mg": 50,
+      "potassium_mg": 0,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -3635,6 +6820,7 @@
       "name": "Gel",
       "carbs_g": 25.0,
       "sodium_mg": 50,
+      "potassium_mg": 0,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -3645,6 +6831,7 @@
       "name": "Gel",
       "carbs_g": 25.0,
       "sodium_mg": 50,
+      "potassium_mg": 0,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -3655,6 +6842,7 @@
       "name": "Gel",
       "carbs_g": 25.0,
       "sodium_mg": 50,
+      "potassium_mg": 0,
       "fluid_ml": 0,
       "caffeine_mg": 0
      }
@@ -3662,12 +6850,14 @@
     "totals": {
      "carbs_g": 250,
      "sodium_mg": 500,
+     "potassium_mg": 0,
      "fluid_ml": 0,
      "caffeine_mg": 0
     },
     "per_hour": {
      "carbs_g": 79,
      "sodium_mg": 158,
+     "potassium_mg": 0,
      "fluid_ml": 0,
      "caffeine_mg": 0
     }
@@ -3679,12 +6869,14 @@
     "carbs_g_per_h": 90,
     "fluid_ml_per_h": 500,
     "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 100,
     "interval_min": 20,
     "band": "normal",
     "custom": {
      "carbs": true,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": true
     }
    },
@@ -3695,7 +6887,8 @@
      "carbs_g": 45.5,
      "sodium_mg": 500,
      "fluid_ml": 500,
-     "caffeine_mg": 0
+     "caffeine_mg": 0,
+     "potassium_mg": 150
     },
     {
      "uid": "p-chew",
@@ -3703,7 +6896,8 @@
      "carbs_g": 12.5,
      "sodium_mg": 30,
      "fluid_ml": 0,
-     "caffeine_mg": 0
+     "caffeine_mg": 0,
+     "potassium_mg": 20
     },
     {
      "uid": "p-zero",
@@ -3724,6 +6918,7 @@
       "name": "Drink Mix",
       "carbs_g": 45.5,
       "sodium_mg": 500,
+      "potassium_mg": 150,
       "fluid_ml": 500,
       "caffeine_mg": 0
      },
@@ -3734,6 +6929,7 @@
       "name": "Chews",
       "carbs_g": 12.5,
       "sodium_mg": 30,
+      "potassium_mg": 20,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -3744,6 +6940,7 @@
       "name": "Drink Mix",
       "carbs_g": 45.5,
       "sodium_mg": 500,
+      "potassium_mg": 150,
       "fluid_ml": 500,
       "caffeine_mg": 0
      },
@@ -3754,6 +6951,7 @@
       "name": "Chews",
       "carbs_g": 12.5,
       "sodium_mg": 30,
+      "potassium_mg": 20,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -3764,6 +6962,7 @@
       "name": "Drink Mix",
       "carbs_g": 45.5,
       "sodium_mg": 500,
+      "potassium_mg": 150,
       "fluid_ml": 500,
       "caffeine_mg": 0
      },
@@ -3774,6 +6973,7 @@
       "name": "Chews",
       "carbs_g": 12.5,
       "sodium_mg": 30,
+      "potassium_mg": 20,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -3784,6 +6984,7 @@
       "name": "Drink Mix",
       "carbs_g": 45.5,
       "sodium_mg": 500,
+      "potassium_mg": 150,
       "fluid_ml": 500,
       "caffeine_mg": 0
      },
@@ -3794,6 +6995,7 @@
       "name": "Chews",
       "carbs_g": 12.5,
       "sodium_mg": 30,
+      "potassium_mg": 20,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -3804,6 +7006,7 @@
       "name": "Drink Mix",
       "carbs_g": 45.5,
       "sodium_mg": 500,
+      "potassium_mg": 150,
       "fluid_ml": 500,
       "caffeine_mg": 0
      },
@@ -3814,6 +7017,7 @@
       "name": "Chews",
       "carbs_g": 12.5,
       "sodium_mg": 30,
+      "potassium_mg": 20,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -3824,6 +7028,7 @@
       "name": "Drink Mix",
       "carbs_g": 45.5,
       "sodium_mg": 500,
+      "potassium_mg": 150,
       "fluid_ml": 500,
       "caffeine_mg": 0
      },
@@ -3834,6 +7039,7 @@
       "name": "Chews",
       "carbs_g": 12.5,
       "sodium_mg": 30,
+      "potassium_mg": 20,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -3844,6 +7050,7 @@
       "name": "Drink Mix",
       "carbs_g": 45.5,
       "sodium_mg": 500,
+      "potassium_mg": 150,
       "fluid_ml": 500,
       "caffeine_mg": 0
      },
@@ -3854,6 +7061,7 @@
       "name": "Chews",
       "carbs_g": 12.5,
       "sodium_mg": 30,
+      "potassium_mg": 20,
       "fluid_ml": 0,
       "caffeine_mg": 0
      }
@@ -3861,12 +7069,14 @@
     "totals": {
      "carbs_g": 406,
      "sodium_mg": 3710,
+     "potassium_mg": 1190,
      "fluid_ml": 3500,
      "caffeine_mg": 0
     },
     "per_hour": {
      "carbs_g": 81,
      "sodium_mg": 742,
+     "potassium_mg": 238,
      "fluid_ml": 700,
      "caffeine_mg": 0
     }
@@ -3878,12 +7088,14 @@
     "carbs_g_per_h": 90,
     "fluid_ml_per_h": 500,
     "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 100,
     "interval_min": 30,
     "band": "normal",
     "custom": {
      "carbs": true,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": true
     }
    },
@@ -4158,6 +7370,7 @@
       "name": null,
       "carbs_g": 45,
       "sodium_mg": 0,
+      "potassium_mg": 0,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -4168,6 +7381,7 @@
       "name": null,
       "carbs_g": 45,
       "sodium_mg": 0,
+      "potassium_mg": 0,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -4178,6 +7392,7 @@
       "name": null,
       "carbs_g": 45,
       "sodium_mg": 0,
+      "potassium_mg": 0,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -4188,6 +7403,7 @@
       "name": null,
       "carbs_g": 45,
       "sodium_mg": 0,
+      "potassium_mg": 0,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -4198,6 +7414,7 @@
       "name": null,
       "carbs_g": 45,
       "sodium_mg": 0,
+      "potassium_mg": 0,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -4208,6 +7425,7 @@
       "name": null,
       "carbs_g": 45,
       "sodium_mg": 0,
+      "potassium_mg": 0,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -4218,6 +7436,7 @@
       "name": null,
       "carbs_g": 45,
       "sodium_mg": 0,
+      "potassium_mg": 0,
       "fluid_ml": 0,
       "caffeine_mg": 0
      }
@@ -4225,12 +7444,14 @@
     "totals": {
      "carbs_g": 315,
      "sodium_mg": 0,
+     "potassium_mg": 0,
      "fluid_ml": 0,
      "caffeine_mg": 0
     },
     "per_hour": {
      "carbs_g": 79,
      "sodium_mg": 0,
+     "potassium_mg": 0,
      "fluid_ml": 0,
      "caffeine_mg": 0
     }
@@ -4242,12 +7463,14 @@
     "carbs_g_per_h": 60,
     "fluid_ml_per_h": 500,
     "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 100,
     "interval_min": 20,
     "band": "normal",
     "custom": {
      "carbs": true,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": true
     }
    },
@@ -4274,7 +7497,8 @@
      "carbs_g": 45.5,
      "sodium_mg": 500,
      "fluid_ml": 500,
-     "caffeine_mg": 0
+     "caffeine_mg": 0,
+     "potassium_mg": 150
     },
     {
      "uid": "p-chew",
@@ -4282,7 +7506,8 @@
      "carbs_g": 12.5,
      "sodium_mg": 30,
      "fluid_ml": 0,
-     "caffeine_mg": 0
+     "caffeine_mg": 0,
+     "potassium_mg": 20
     },
     {
      "uid": "p-zero",
@@ -4354,6 +7579,7 @@
       "name": "Gel",
       "carbs_g": 25.0,
       "sodium_mg": 50,
+      "potassium_mg": 0,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -4364,6 +7590,7 @@
       "name": "Chews",
       "carbs_g": 12.5,
       "sodium_mg": 30,
+      "potassium_mg": 20,
       "fluid_ml": 0,
       "caffeine_mg": 0
      }
@@ -4371,12 +7598,14 @@
     "totals": {
      "carbs_g": 38,
      "sodium_mg": 80,
+     "potassium_mg": 20,
      "fluid_ml": 0,
      "caffeine_mg": 0
     },
     "per_hour": {
      "carbs_g": 38,
      "sodium_mg": 80,
+     "potassium_mg": 20,
      "fluid_ml": 0,
      "caffeine_mg": 0
     }
@@ -4388,12 +7617,14 @@
     "carbs_g_per_h": 100,
     "fluid_ml_per_h": 500,
     "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 100,
     "interval_min": 25,
     "band": "normal",
     "custom": {
      "carbs": true,
      "fluid": false,
      "sodium": false,
+     "potassium": false,
      "interval": true
     }
    },
@@ -4404,7 +7635,8 @@
      "carbs_g": 12.5,
      "sodium_mg": 30,
      "fluid_ml": 0,
-     "caffeine_mg": 0
+     "caffeine_mg": 0,
+     "potassium_mg": 20
     }
    ],
    "laps": [
@@ -4918,6 +8150,7 @@
       "name": "Chews",
       "carbs_g": 12.5,
       "sodium_mg": 30,
+      "potassium_mg": 20,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -4928,6 +8161,7 @@
       "name": "Chews",
       "carbs_g": 12.5,
       "sodium_mg": 30,
+      "potassium_mg": 20,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -4938,6 +8172,7 @@
       "name": "Chews",
       "carbs_g": 12.5,
       "sodium_mg": 30,
+      "potassium_mg": 20,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -4948,6 +8183,7 @@
       "name": "Chews",
       "carbs_g": 12.5,
       "sodium_mg": 30,
+      "potassium_mg": 20,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -4958,6 +8194,7 @@
       "name": "Chews",
       "carbs_g": 12.5,
       "sodium_mg": 30,
+      "potassium_mg": 20,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -4968,6 +8205,7 @@
       "name": "Chews",
       "carbs_g": 12.5,
       "sodium_mg": 30,
+      "potassium_mg": 20,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -4978,6 +8216,7 @@
       "name": "Chews",
       "carbs_g": 12.5,
       "sodium_mg": 30,
+      "potassium_mg": 20,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -4988,6 +8227,7 @@
       "name": "Chews",
       "carbs_g": 12.5,
       "sodium_mg": 30,
+      "potassium_mg": 20,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -4998,6 +8238,7 @@
       "name": "Chews",
       "carbs_g": 12.5,
       "sodium_mg": 30,
+      "potassium_mg": 20,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -5008,6 +8249,7 @@
       "name": "Chews",
       "carbs_g": 12.5,
       "sodium_mg": 30,
+      "potassium_mg": 20,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -5018,6 +8260,7 @@
       "name": "Chews",
       "carbs_g": 12.5,
       "sodium_mg": 30,
+      "potassium_mg": 20,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -5028,6 +8271,7 @@
       "name": "Chews",
       "carbs_g": 12.5,
       "sodium_mg": 30,
+      "potassium_mg": 20,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -5038,6 +8282,7 @@
       "name": "Chews",
       "carbs_g": 12.5,
       "sodium_mg": 30,
+      "potassium_mg": 20,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -5048,6 +8293,7 @@
       "name": "Chews",
       "carbs_g": 12.5,
       "sodium_mg": 30,
+      "potassium_mg": 20,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -5058,6 +8304,7 @@
       "name": "Chews",
       "carbs_g": 12.5,
       "sodium_mg": 30,
+      "potassium_mg": 20,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -5068,6 +8315,7 @@
       "name": "Chews",
       "carbs_g": 12.5,
       "sodium_mg": 30,
+      "potassium_mg": 20,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -5078,6 +8326,7 @@
       "name": "Chews",
       "carbs_g": 12.5,
       "sodium_mg": 30,
+      "potassium_mg": 20,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -5088,6 +8337,7 @@
       "name": "Chews",
       "carbs_g": 12.5,
       "sodium_mg": 30,
+      "potassium_mg": 20,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -5098,6 +8348,7 @@
       "name": "Chews",
       "carbs_g": 12.5,
       "sodium_mg": 30,
+      "potassium_mg": 20,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -5108,6 +8359,7 @@
       "name": "Chews",
       "carbs_g": 12.5,
       "sodium_mg": 30,
+      "potassium_mg": 20,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -5118,6 +8370,7 @@
       "name": "Chews",
       "carbs_g": 12.5,
       "sodium_mg": 30,
+      "potassium_mg": 20,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -5128,6 +8381,7 @@
       "name": "Chews",
       "carbs_g": 12.5,
       "sodium_mg": 30,
+      "potassium_mg": 20,
       "fluid_ml": 0,
       "caffeine_mg": 0
      },
@@ -5138,6 +8392,7 @@
       "name": "Chews",
       "carbs_g": 12.5,
       "sodium_mg": 30,
+      "potassium_mg": 20,
       "fluid_ml": 0,
       "caffeine_mg": 0
      }
@@ -5145,12 +8400,14 @@
     "totals": {
      "carbs_g": 288,
      "sodium_mg": 690,
+     "potassium_mg": 460,
      "fluid_ml": 0,
      "caffeine_mg": 0
     },
     "per_hour": {
      "carbs_g": 29,
      "sodium_mg": 69,
+     "potassium_mg": 46,
      "fluid_ml": 0,
      "caffeine_mg": 0
     }
@@ -6112,6 +9369,7 @@
      "name": "Gel",
      "carbs_g": 25.0,
      "sodium_mg": 50,
+     "potassium_mg": 0,
      "fluid_ml": 0,
      "caffeine_mg": 0
     }
@@ -6245,6 +9503,7 @@
      "name": "Gel",
      "carbs_g": 25.0,
      "sodium_mg": 50,
+     "potassium_mg": 0,
      "fluid_ml": 0,
      "caffeine_mg": 0
     },
@@ -6255,6 +9514,7 @@
      "name": "Gel",
      "carbs_g": 25.0,
      "sodium_mg": 50,
+     "potassium_mg": 0,
      "fluid_ml": 0,
      "caffeine_mg": 0
     },
@@ -6265,6 +9525,7 @@
      "name": "Gel",
      "carbs_g": 25.0,
      "sodium_mg": 50,
+     "potassium_mg": 0,
      "fluid_ml": 0,
      "caffeine_mg": 0
     },
@@ -6275,6 +9536,7 @@
      "name": "Gel",
      "carbs_g": 25.0,
      "sodium_mg": 50,
+     "potassium_mg": 0,
      "fluid_ml": 0,
      "caffeine_mg": 0
     }
@@ -6556,6 +9818,7 @@
      "name": "Big Gel",
      "carbs_g": 40.0,
      "sodium_mg": 200,
+     "potassium_mg": 0,
      "fluid_ml": 0,
      "caffeine_mg": 100
     },
@@ -6566,6 +9829,7 @@
      "name": "Chews",
      "carbs_g": 12.5,
      "sodium_mg": 30,
+     "potassium_mg": 20,
      "fluid_ml": 0,
      "caffeine_mg": 0
     },
@@ -6576,6 +9840,7 @@
      "name": "Big Gel",
      "carbs_g": 40.0,
      "sodium_mg": 200,
+     "potassium_mg": 0,
      "fluid_ml": 0,
      "caffeine_mg": 100
     },
@@ -6586,6 +9851,7 @@
      "name": "Chews",
      "carbs_g": 12.5,
      "sodium_mg": 30,
+     "potassium_mg": 20,
      "fluid_ml": 0,
      "caffeine_mg": 0
     },
@@ -6596,6 +9862,7 @@
      "name": "Big Gel",
      "carbs_g": 40.0,
      "sodium_mg": 200,
+     "potassium_mg": 0,
      "fluid_ml": 0,
      "caffeine_mg": 100
     },
@@ -6606,6 +9873,7 @@
      "name": "Chews",
      "carbs_g": 12.5,
      "sodium_mg": 30,
+     "potassium_mg": 20,
      "fluid_ml": 0,
      "caffeine_mg": 0
     },
@@ -6616,6 +9884,7 @@
      "name": "Big Gel",
      "carbs_g": 40.0,
      "sodium_mg": 200,
+     "potassium_mg": 0,
      "fluid_ml": 0,
      "caffeine_mg": 100
     },
@@ -6626,6 +9895,7 @@
      "name": "Chews",
      "carbs_g": 12.5,
      "sodium_mg": 30,
+     "potassium_mg": 20,
      "fluid_ml": 0,
      "caffeine_mg": 0
     },
@@ -6636,6 +9906,7 @@
      "name": "Big Gel",
      "carbs_g": 40.0,
      "sodium_mg": 200,
+     "potassium_mg": 0,
      "fluid_ml": 0,
      "caffeine_mg": 100
     }
@@ -6859,6 +10130,7 @@
      "name": null,
      "carbs_g": 20,
      "sodium_mg": 0,
+     "potassium_mg": 0,
      "fluid_ml": 0,
      "caffeine_mg": 0
     },
@@ -6869,6 +10141,7 @@
      "name": null,
      "carbs_g": 20,
      "sodium_mg": 0,
+     "potassium_mg": 0,
      "fluid_ml": 0,
      "caffeine_mg": 0
     },
@@ -6879,6 +10152,7 @@
      "name": null,
      "carbs_g": 20,
      "sodium_mg": 0,
+     "potassium_mg": 0,
      "fluid_ml": 0,
      "caffeine_mg": 0
     }

@@ -25,8 +25,10 @@ OUT = Path("/spec/fixtures/fuel_plan.json")
 PRODUCTS = [
     {"uid": "p-gel", "name": "Gel", "carbs_g": 25.0, "sodium_mg": 50, "fluid_ml": 0, "caffeine_mg": 0},
     {"uid": "p-big", "name": "Big Gel", "carbs_g": 40.0, "sodium_mg": 200, "fluid_ml": 0, "caffeine_mg": 100},
-    {"uid": "p-mix", "name": "Drink Mix", "carbs_g": 45.5, "sodium_mg": 500, "fluid_ml": 500, "caffeine_mg": 0},
-    {"uid": "p-chew", "name": "Chews", "carbs_g": 12.5, "sodium_mg": 30, "fluid_ml": 0, "caffeine_mg": 0},
+    {"uid": "p-mix", "name": "Drink Mix", "carbs_g": 45.5, "sodium_mg": 500, "fluid_ml": 500, "caffeine_mg": 0,
+     "potassium_mg": 150},
+    {"uid": "p-chew", "name": "Chews", "carbs_g": 12.5, "sodium_mg": 30, "fluid_ml": 0, "caffeine_mg": 0,
+     "potassium_mg": 20},
     {"uid": "p-zero", "name": "Water", "carbs_g": 0.0, "sodium_mg": 0, "fluid_ml": 500, "caffeine_mg": 0},
 ]
 
@@ -48,7 +50,8 @@ def main() -> None:
 
     for dur in (25, 60, 61, 119.5, 120, 150, 240, 241, 600):
         for weather in ((None, None), (None, 80.0), (18.0, 40.0), (26.0, 30.0), (22.0, 75.0), (19.0, 90.0), (33.0, 50.0)):
-            for override in ({}, {"carbs": 72, "fluid": 900, "sodium": 1000, "interval": 15}):
+            for override in ({}, {"carbs": 72, "fluid": 900, "sodium": 1000, "interval": 15},
+                             {"fluid": 733}, {"potassium": 240}):
                 t = fp.targets(dur, temperature_c=weather[0], humidity_pct=weather[1], **override)
                 fx["targets"].append({"duration_min": dur, "temperature_c": weather[0],
                                       "humidity_pct": weather[1], "override": override, "expected": t})

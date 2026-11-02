@@ -56,6 +56,7 @@ class LocalRacePlans(private val sources: LocalSources) {
         val fuelCarbs: Int? = null,
         val fuelFluid: Int? = null,
         val fuelSodium: Int? = null,
+        val fuelPotassium: Int? = null,
         val fuelInterval: Int? = null,
         /** fuel_product uids the timeline may use, in the user's order. */
         val fuelProductUids: List<String> = emptyList(),
@@ -106,6 +107,7 @@ class LocalRacePlans(private val sources: LocalSources) {
             fuelCarbs = row.int("fuel_carbs_per_hour"),
             fuelFluid = row.int("fuel_fluid_ml_per_hour"),
             fuelSodium = row.int("fuel_sodium_mg_per_hour"),
+            fuelPotassium = row.int("fuel_potassium_mg_per_hour"),
             fuelInterval = row.int("fuel_interval_min"),
             fuelProductUids = (row.fields["fuel_product_uids"] as? JsonArray).orEmpty()
                 .mapNotNull { (it as? JsonPrimitive)?.contentOrNull },
@@ -121,13 +123,25 @@ class LocalRacePlans(private val sources: LocalSources) {
             carbsG = (it.fields["carbs_g"] as? JsonPrimitive)?.doubleOrNull ?: 0.0,
             sodiumMg = it.int("sodium_mg") ?: 0, fluidMl = it.int("fluid_ml") ?: 0,
             caffeineMg = it.int("caffeine_mg") ?: 0,
+            potassiumMg = it.int("potassium_mg") ?: 0,
         )
     }.sortedBy { (it.name ?: "").lowercase() }
 
-    suspend fun addProduct(name: String, kind: String, carbsG: Double, sodiumMg: Int, caffeineMg: Int, fluidMl: Int) {
+    /** A product as the user types it in, before it has a uid. */
+    data class ProductDraft(
+        val name: String,
+        val kind: String = "gel",
+        val carbsG: Double = 0.0,
+        val sodiumMg: Int = 0,
+        val potassiumMg: Int = 0,
+        val caffeineMg: Int = 0,
+        val fluidMl: Int = 0,
+    )
+
+    suspend fun addProduct(p: ProductDraft) {
         sources.createValues("fuel_product", mapOf(
-            "name" to name, "kind" to kind, "carbs_g" to carbsG, "sodium_mg" to sodiumMg,
-            "caffeine_mg" to caffeineMg, "fluid_ml" to fluidMl,
+            "name" to p.name, "kind" to p.kind, "carbs_g" to p.carbsG, "sodium_mg" to p.sodiumMg,
+            "potassium_mg" to p.potassiumMg, "caffeine_mg" to p.caffeineMg, "fluid_ml" to p.fluidMl,
         ))
     }
 
@@ -139,7 +153,7 @@ class LocalRacePlans(private val sources: LocalSources) {
     suspend fun fuel(goal: TrainingGoal, prediction: Prediction?): Fuel {
         val s = strategy(goal)
         val minutes = (prediction?.seconds ?: 0.0) / 60.0
-        val tg = FuelPlan.targets(minutes, null, null, s.fuelCarbs, s.fuelFluid, s.fuelSodium, s.fuelInterval)
+        val tg = FuelPlan.targets(minutes, null, null, s.fuelCarbs, s.fuelFluid, s.fuelSodium, s.fuelInterval, s.fuelPotassium)
         val all = products().associateBy { it.uid }
         val chosen = s.fuelProductUids.mapNotNull { all[it] }
         val timeline = if (minutes > 0) {

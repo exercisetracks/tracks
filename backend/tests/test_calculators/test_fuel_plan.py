@@ -50,3 +50,28 @@ def test_a_fuelling_reminder_names_the_lap_step_it_falls_in():
     data = generate_race_fit("5K", "running", laps, time_created_ms=1790000000000,
                              fuel_items=[{"distance_m": 2500, "name": "Gel", "carbs_g": 25.0}])
     assert b"Km 3 \xc2\xb7 Gel" in data and b"Km 2 \xc2\xb7" not in data
+
+
+def test_potassium_follows_the_fluid_target_unless_set():
+    """No position stand sets a potassium dose, so it tracks what is drunk:
+    0.2 mg per ml, mid-range sweat potassium (docs/race-fuelling-research.md)."""
+    assert fp.targets(120)["potassium_mg_per_h"] == 100                 # 500 ml/h
+    assert fp.targets(120, temperature_c=33)["potassium_mg_per_h"] == 160  # 800 ml/h in heat
+    assert fp.targets(120, fluid=733)["potassium_mg_per_h"] == 147      # the user's fluid counts
+    own = fp.targets(120, potassium=250)
+    assert own["potassium_mg_per_h"] == 250 and own["custom"]["potassium"]
+
+
+def test_the_timeline_counts_the_potassium_each_product_carries():
+    tg = fp.targets(120, carbs=60, interval=30)
+    chew = {"uid": "c", "name": "Chews", "carbs_g": 30.0, "potassium_mg": 40}
+    tl = fp.timeline(120, tg, [chew])
+    assert all(i["potassium_mg"] == 40 for i in tl["items"])
+    assert tl["totals"]["potassium_mg"] == 40 * len(tl["items"])
+
+
+def test_the_gauge_ceilings_are_an_elite_ultra_athletes_intake():
+    """Display scale only: the most anyone sensibly takes, never a cap on a target."""
+    assert fp.CEILINGS == {"carbs_g_per_h": 120, "sodium_mg_per_h": 1500,
+                           "potassium_mg_per_h": 375, "fluid_ml_per_h": 1200}
+    assert fp.targets(600, carbs=150)["carbs_g_per_h"] == 150

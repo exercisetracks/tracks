@@ -89,7 +89,7 @@ internal val ENTITY_SPECS: List<EntitySpec> = listOf(
     EntitySpec(
         name = "race_plan",
         kind = EntityKind.SOURCE,
-        fields = listOf("goal_uid", "split_type", "split_spread", "course_type", "pace_hr_mode", "pin_lat", "pin_lon", "use_gpx_distance", "course_segments", "course_path", "technicality_factor", "technicality_label", "target_hr_ceiling", "climb_target_w_per_kg", "lap_paces", "triathlon_splits_m", "watch_filename", "watch_uploaded_at", "fuel_carbs_per_hour", "fuel_fluid_ml_per_hour", "fuel_sodium_mg_per_hour", "fuel_interval_min", "fuel_product_uids"),
+        fields = listOf("goal_uid", "split_type", "split_spread", "course_type", "pace_hr_mode", "pin_lat", "pin_lon", "use_gpx_distance", "course_segments", "course_path", "technicality_factor", "technicality_label", "target_hr_ceiling", "climb_target_w_per_kg", "lap_paces", "triathlon_splits_m", "watch_filename", "watch_uploaded_at", "fuel_carbs_per_hour", "fuel_fluid_ml_per_hour", "fuel_sodium_mg_per_hour", "fuel_potassium_mg_per_hour", "fuel_interval_min", "fuel_product_uids"),
         refs = mapOf("goal_uid" to "goal"),
         uidKey = null,
         uidKeyFallback = null,
@@ -269,7 +269,7 @@ internal val ENTITY_SPECS: List<EntitySpec> = listOf(
     EntitySpec(
         name = "fuel_product",
         kind = EntityKind.SOURCE,
-        fields = listOf("name", "kind", "carbs_g", "sodium_mg", "caffeine_mg", "fluid_ml", "serving", "notes"),
+        fields = listOf("name", "kind", "carbs_g", "sodium_mg", "potassium_mg", "caffeine_mg", "fluid_ml", "serving", "notes"),
         refs = mapOf(),
         uidKey = null,
         uidKeyFallback = null,

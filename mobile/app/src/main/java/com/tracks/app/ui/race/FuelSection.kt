@@ -66,7 +66,7 @@ internal fun FuelSection(
     s: LocalRacePlans.Strategy,
     f: LocalRacePlans.Fuel,
     onSet: (String, Any?) -> Unit,
-    onAddProduct: (String, String, Double, Int, Int, Int) -> Unit,
+    onAddProduct: (LocalRacePlans.ProductDraft) -> Unit,
     onToggleProduct: (String) -> Unit,
 ) {
     val t = f.targets
@@ -130,9 +130,7 @@ internal fun FuelSection(
         )
     }
 
-    if (adding) ProductDialog(onDismiss = { adding = false }) { n, k, c, na, caf, ml ->
-        onAddProduct(n, k, c, na, caf, ml); adding = false
-    }
+    if (adding) ProductDialog(onDismiss = { adding = false }) { onAddProduct(it); adding = false }
     if (editing) {
         ModalBottomSheet(
             onDismissRequest = { editing = false },
@@ -199,13 +197,17 @@ internal fun FuelTargetsForm(
             TargetField("Sodium", "mg/h", s.fuelSodium, calc.sodiumMgPerH) {
                 onSet("fuel_sodium_mg_per_hour", it)
             }
+            TargetField("Potassium", "mg/h", s.fuelPotassium, calc.potassiumMgPerH) {
+                onSet("fuel_potassium_mg_per_hour", it)
+            }
             TargetField("Every", "min", s.fuelInterval, calc.intervalMin) {
                 onSet("fuel_interval_min", it)
             }
         }
         ButtonRow {
             NeutralButton("Reset to calculated", onClick = {
-                listOf("fuel_carbs_per_hour", "fuel_fluid_ml_per_hour", "fuel_sodium_mg_per_hour", "fuel_interval_min")
+                listOf("fuel_carbs_per_hour", "fuel_fluid_ml_per_hour", "fuel_sodium_mg_per_hour",
+                    "fuel_potassium_mg_per_hour", "fuel_interval_min")
                     .forEach { onSet(it, null) }
             })
             PrimaryButton("Done", onClick = onDone)
@@ -237,11 +239,12 @@ private fun TargetField(label: String, unit: String, value: Int?, fallback: Int,
 }
 
 @Composable
-private fun ProductDialog(onDismiss: () -> Unit, onAdd: (String, String, Double, Int, Int, Int) -> Unit) {
+private fun ProductDialog(onDismiss: () -> Unit, onAdd: (LocalRacePlans.ProductDraft) -> Unit) {
     var name by remember { mutableStateOf("") }
     var kind by remember { mutableStateOf("gel") }
     var carbs by remember { mutableStateOf("25") }
     var sodium by remember { mutableStateOf("0") }
+    var potassium by remember { mutableStateOf("0") }
     var caffeine by remember { mutableStateOf("0") }
     var fluid by remember { mutableStateOf("0") }
     AlertDialog(
@@ -258,6 +261,7 @@ private fun ProductDialog(onDismiss: () -> Unit, onAdd: (String, String, Double,
                 listOf(
                     Triple("Carbs (g)", carbs) { v: String -> carbs = v },
                     Triple("Sodium (mg)", sodium) { v: String -> sodium = v },
+                    Triple("Potassium (mg)", potassium) { v: String -> potassium = v },
                     Triple("Caffeine (mg)", caffeine) { v: String -> caffeine = v },
                     Triple("Fluid (ml)", fluid) { v: String -> fluid = v },
                 ).forEach { (label, value, set) ->
@@ -270,8 +274,11 @@ private fun ProductDialog(onDismiss: () -> Unit, onAdd: (String, String, Double,
         },
         confirmButton = {
             PrimaryButton("Add", onClick = {
-                onAdd(name.trim(), kind, carbs.toDoubleOrNull() ?: 0.0, sodium.toIntOrNull() ?: 0,
-                    caffeine.toIntOrNull() ?: 0, fluid.toIntOrNull() ?: 0)
+                onAdd(LocalRacePlans.ProductDraft(
+                    name.trim(), kind, carbsG = carbs.toDoubleOrNull() ?: 0.0, sodiumMg = sodium.toIntOrNull() ?: 0,
+                    potassiumMg = potassium.toIntOrNull() ?: 0, caffeineMg = caffeine.toIntOrNull() ?: 0,
+                    fluidMl = fluid.toIntOrNull() ?: 0,
+                ))
             }, enabled = name.isNotBlank())
         },
         dismissButton = { NeutralButton("Cancel", onClick = onDismiss) },

@@ -192,10 +192,10 @@ class RacePlansViewModel(private val container: AppContainer) : ViewModel() {
         container.pendingRoute.value = com.tracks.app.ui.Destination.Map.route
     }
 
-    fun addProduct(name: String, kind: String, carbsG: Double, sodiumMg: Int, caffeineMg: Int, fluidMl: Int, goal: TrainingGoal) {
+    fun addProduct(draft: LocalRacePlans.ProductDraft, goal: TrainingGoal) {
         viewModelScope.launch {
-            plans.addProduct(name, kind, carbsG, sodiumMg, caffeineMg, fluidMl)
-            val uid = plans.products().lastOrNull { it.name == name }?.uid
+            plans.addProduct(draft)
+            val uid = plans.products().lastOrNull { it.name == draft.name }?.uid
             if (uid != null) plans.set(goal, "fuel_product_uids", plans.strategy(goal).fuelProductUids + uid)
             load()
         }
@@ -270,7 +270,7 @@ data class CourseActions(
 )
 
 data class FuelActions(
-    val onAddProduct: (String, String, Double, Int, Int, Int, TrainingGoal) -> Unit = { _, _, _, _, _, _, _ -> },
+    val onAddProduct: (LocalRacePlans.ProductDraft, TrainingGoal) -> Unit = { _, _ -> },
     val onToggleProduct: (TrainingGoal, String) -> Unit = { _, _ -> },
 )
 
@@ -323,7 +323,7 @@ fun RacePlansContent(
                 tracks = state.tracks, linked = state.linked,
                 onUseTrack = { course.onUseTrack(open.goal, it) },
                 onDrawOnMap = { course.onDrawOnMap(open.goal) },
-                onAddProduct = { n, k, c, s, caf, f -> fuel.onAddProduct(n, k, c, s, caf, f, open.goal) },
+                onAddProduct = { fuel.onAddProduct(it, open.goal) },
                 onToggleProduct = { fuel.onToggleProduct(open.goal, it) },
             )
         }
@@ -400,7 +400,7 @@ private fun Detail(
     linked: Boolean = false,
     onUseTrack: (String) -> Unit = {},
     onDrawOnMap: () -> Unit = {},
-    onAddProduct: (String, String, Double, Int, Int, Int) -> Unit = { _, _, _, _, _, _ -> },
+    onAddProduct: (LocalRacePlans.ProductDraft) -> Unit = {},
     onToggleProduct: (String) -> Unit = {},
 ) {
     Card {

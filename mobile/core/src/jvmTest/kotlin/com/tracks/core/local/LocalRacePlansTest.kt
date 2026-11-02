@@ -125,7 +125,7 @@ class LocalRacePlansTest {
         val (sources, plans) = setup()
         sources.createValues("goal", mapOf("goal_type" to "event", "event_date" to "2026-11-01", "event_sport" to "running"))
         val goal = sources.goals().single()
-        plans.addProduct("Gel", "gel", 30.0, 50, 0, 0)
+        plans.addProduct(LocalRacePlans.ProductDraft("Gel", "gel", carbsG = 30.0, sodiumMg = 50))
         val gel = plans.products().single().uid!!
         plans.set(goal, "fuel_carbs_per_hour", 60)
         plans.set(goal, "fuel_product_uids", listOf(gel))

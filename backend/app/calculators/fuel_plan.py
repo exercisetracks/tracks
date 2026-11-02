@@ -30,6 +30,16 @@ FLUID_ML_PER_HOUR = {"normal": 500, "hot": 650, "very_hot": 800}
 SODIUM_MG_PER_HOUR = {"normal": 400, "hot": 600, "very_hot": 800}
 DEFAULT_INTERVAL_MIN = 20
 
+# Potassium follows the fluid drunk, at mid-range sweat potassium (~5 mmol/L,
+# 0.2 mg per ml): no position stand sets an hourly dose, and sweat potassium
+# varies far less between people than sodium does. docs/race-fuelling-research.md.
+POTASSIUM_MG_PER_ML = 0.2
+
+# The fuel gauges' full scale: what an elite ultra-endurance athlete takes per
+# hour (docs/race-fuelling-research.md has the sources). Display only — no
+# target is ever clamped to these.
+CEILINGS = {"carbs_g_per_h": 120, "sodium_mg_per_h": 1500, "potassium_mg_per_h": 375, "fluid_ml_per_h": 1200}
+
 # Gut training. A long session is one at least this long, of a sport that is
 # not strength or mobility — the only sessions where eating while moving is
 # the point.
@@ -69,18 +79,22 @@ def heat_band(temperature_c: float | None, humidity_pct: float | None) -> str:
 
 
 def targets(duration_min: float, *, temperature_c=None, humidity_pct=None,
-            carbs=None, fluid=None, sodium=None, interval=None) -> dict:
+            carbs=None, fluid=None, sodium=None, interval=None, potassium=None) -> dict:
     """Per-hour targets: the user's where set, the calculated default where not."""
     band = heat_band(temperature_c, humidity_pct)
     assert band in BANDS
+    fluid_ml = int(fluid) if fluid is not None else FLUID_ML_PER_HOUR[band]
     return {
         "carbs_g_per_h": int(carbs) if carbs is not None else default_carbs_per_hour(duration_min / 60.0),
-        "fluid_ml_per_h": int(fluid) if fluid is not None else FLUID_ML_PER_HOUR[band],
+        "fluid_ml_per_h": fluid_ml,
         "sodium_mg_per_h": int(sodium) if sodium is not None else SODIUM_MG_PER_HOUR[band],
+        # From the fluid in force, the user's own included.
+        "potassium_mg_per_h": int(potassium) if potassium is not None else _half_up(fluid_ml * POTASSIUM_MG_PER_ML),
         "interval_min": int(interval) if interval else DEFAULT_INTERVAL_MIN,
         "band": band,
         "custom": {"carbs": carbs is not None, "fluid": fluid is not None,
-                   "sodium": sodium is not None, "interval": bool(interval)},
+                   "sodium": sodium is not None, "potassium": potassium is not None,
+                   "interval": bool(interval)},
     }
 
 
@@ -119,7 +133,7 @@ def timeline(duration_min: float, tg: dict, products: list[dict], laps: list[dic
     usable = [p for p in products if float(p.get("carbs_g") or 0) > 0]
     items: list[dict] = []
     taken = 0.0
-    totals = {"carbs_g": 0.0, "sodium_mg": 0, "fluid_ml": 0, "caffeine_mg": 0}
+    totals = {"carbs_g": 0.0, "sodium_mg": 0, "potassium_mg": 0, "fluid_ml": 0, "caffeine_mg": 0}
     minute = interval
     while minute < duration_min:
         owed = rate * minute / 60.0 - taken
@@ -128,7 +142,7 @@ def timeline(duration_min: float, tg: dict, products: list[dict], laps: list[dic
             if grams > 0:
                 items.append({"minute": minute, "distance_m": _distance_at(minute, laps),
                               "product_uid": None, "name": None, "carbs_g": grams,
-                              "sodium_mg": 0, "fluid_ml": 0, "caffeine_mg": 0})
+                              "sodium_mg": 0, "potassium_mg": 0, "fluid_ml": 0, "caffeine_mg": 0})
                 taken += grams
                 totals["carbs_g"] += grams
         else:
@@ -144,12 +158,14 @@ def timeline(duration_min: float, tg: dict, products: list[dict], laps: list[dic
                     "minute": minute, "distance_m": _distance_at(minute, laps),
                     "product_uid": p.get("uid"), "name": p.get("name"),
                     "carbs_g": carbs, "sodium_mg": int(p.get("sodium_mg") or 0),
+                    "potassium_mg": int(p.get("potassium_mg") or 0),
                     "fluid_ml": int(p.get("fluid_ml") or 0),
                     "caffeine_mg": int(p.get("caffeine_mg") or 0),
                 })
                 taken += carbs
                 totals["carbs_g"] += carbs
                 totals["sodium_mg"] += int(p.get("sodium_mg") or 0)
+                totals["potassium_mg"] += int(p.get("potassium_mg") or 0)
                 totals["fluid_ml"] += int(p.get("fluid_ml") or 0)
                 totals["caffeine_mg"] += int(p.get("caffeine_mg") or 0)
         minute += interval

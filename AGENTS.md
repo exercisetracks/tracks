@@ -221,6 +221,10 @@ worth more than the code they explain:
   plan answers training it did not plan: fatigue shortening, moving or
   dropping the next sessions, and overall fitness setting how fast a sport
   may build. The thresholds and the research behind them.
+- [docs/race-fuelling-research.md](docs/race-fuelling-research.md) — where
+  the fuel gauges' elite ceilings, the potassium target and the homemade
+  mix's recipes come from, and which of those numbers are practice rather
+  than trials.
 - [docs/training-intensity-distribution-research.md](docs/training-intensity-distribution-research.md)
   — a summary of the research on how endurance training should split across
   intensity zones, for designing training plans.

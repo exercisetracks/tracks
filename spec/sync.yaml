@@ -190,7 +190,7 @@ entities:
              use_gpx_distance, course_segments, course_path, technicality_factor,
              technicality_label, target_hr_ceiling, climb_target_w_per_kg, lap_paces,
              triathlon_splits_m, watch_filename, watch_uploaded_at,
-             fuel_carbs_per_hour, fuel_fluid_ml_per_hour, fuel_sodium_mg_per_hour,
+             fuel_carbs_per_hour, fuel_fluid_ml_per_hour, fuel_sodium_mg_per_hour, fuel_potassium_mg_per_hour,
              fuel_interval_min, fuel_product_uids]
     refs: {goal_uid: goal}
     # fuel_*_per_hour: the user's own targets; null = the calculated default
@@ -360,7 +360,7 @@ entities:
     # fuelling timeline is built from these.
     kind: source
     table: fuel_products
-    fields: [name, kind, carbs_g, sodium_mg, caffeine_mg, fluid_ml, serving, notes]
+    fields: [name, kind, carbs_g, sodium_mg, potassium_mg, caffeine_mg, fluid_ml, serving, notes]
 
   gut_training_log:
     # How a fuelled long session went. Gut training adapts from these, so a

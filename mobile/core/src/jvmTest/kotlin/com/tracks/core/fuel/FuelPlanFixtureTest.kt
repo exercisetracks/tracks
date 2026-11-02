@@ -38,12 +38,14 @@ class FuelPlanFixtureTest {
         customFluid = o["custom"]!!.jsonObject["fluid"]!!.jsonPrimitive.booleanOrNull!!,
         customSodium = o["custom"]!!.jsonObject["sodium"]!!.jsonPrimitive.booleanOrNull!!,
         customInterval = o["custom"]!!.jsonObject["interval"]!!.jsonPrimitive.booleanOrNull!!,
+        potassiumMgPerH = o["potassium_mg_per_h"].i()!!,
+        customPotassium = o["custom"]!!.jsonObject["potassium"]!!.jsonPrimitive.booleanOrNull!!,
     )
 
     private fun productsOf(e: JsonElement) = e.jsonArray.map {
         val p = it.jsonObject
         FuelPlan.Product(p["uid"].s(), p["name"].s(), p["carbs_g"].d()!!, p["sodium_mg"].i() ?: 0,
-            p["fluid_ml"].i() ?: 0, p["caffeine_mg"].i() ?: 0)
+            p["fluid_ml"].i() ?: 0, p["caffeine_mg"].i() ?: 0, p["potassium_mg"].i() ?: 0)
     }
 
     private fun lapsOf(e: JsonElement?) = if (e == null || e is JsonNull) null else e.jsonArray.map {
@@ -56,7 +58,7 @@ class FuelPlanFixtureTest {
             val o = c["override"]!!.jsonObject
             val got = FuelPlan.targets(
                 c["duration_min"].d()!!, c["temperature_c"].d(), c["humidity_pct"].d(),
-                o["carbs"].i(), o["fluid"].i(), o["sodium"].i(), o["interval"].i(),
+                o["carbs"].i(), o["fluid"].i(), o["sodium"].i(), o["interval"].i(), o["potassium"].i(),
             )
             assertEquals(targetsOf(c["expected"]!!.jsonObject), got, c.toString())
         }
@@ -71,10 +73,11 @@ class FuelPlanFixtureTest {
             val want = e["items"]!!.jsonArray.map {
                 val o = it.jsonObject
                 FuelPlan.Item(o["minute"].i()!!, o["distance_m"].i(), o["product_uid"].s(), o["name"].s(),
-                    o["carbs_g"].d()!!, o["sodium_mg"].i()!!, o["fluid_ml"].i()!!, o["caffeine_mg"].i()!!)
+                    o["carbs_g"].d()!!, o["sodium_mg"].i()!!, o["fluid_ml"].i()!!, o["caffeine_mg"].i()!!,
+                    o["potassium_mg"].i()!!)
             }
             fun amounts(o: JsonObject) = FuelPlan.Amounts(o["carbs_g"].i()!!, o["sodium_mg"].i()!!,
-                o["fluid_ml"].i()!!, o["caffeine_mg"].i()!!)
+                o["fluid_ml"].i()!!, o["caffeine_mg"].i()!!, o["potassium_mg"].i()!!)
             assertEquals(want, got.items)
             assertEquals(amounts(e["totals"]!!.jsonObject), got.totals)
             assertEquals(amounts(e["per_hour"]!!.jsonObject), got.perHour)

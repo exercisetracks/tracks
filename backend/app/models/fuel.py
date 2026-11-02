@@ -23,6 +23,7 @@ class FuelProduct(Base, Synced):
     kind        = Column(String, nullable=False, server_default="gel")  # gel|drink|chew|bar|other
     carbs_g     = Column(Numeric(6, 1), nullable=False, server_default="0")
     sodium_mg   = Column(Integer, nullable=False, server_default="0")
+    potassium_mg = Column(Integer, nullable=False, server_default="0")
     caffeine_mg = Column(Integer, nullable=False, server_default="0")
     fluid_ml    = Column(Integer, nullable=False, server_default="0")
     serving     = Column(Text)
