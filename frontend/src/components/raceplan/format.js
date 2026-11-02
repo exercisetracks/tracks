@@ -31,15 +31,7 @@ export function fmtDistShort(meters, imperial = false) {
   return `${(meters / 1000).toFixed(1)} km`;
 }
 
-// ── Gradient colour / formatting for pace-table rows ──────────────────────────
-
-export function gradientColor(g) {
-  if (g >  0.05) return "text-red-600 dark:text-red-400";
-  if (g >  0.02) return "text-orange-500 dark:text-orange-400";
-  if (g < -0.05) return "text-blue-600 dark:text-blue-400";
-  if (g < -0.02) return "text-sky-500 dark:text-sky-400";
-  return "text-slate-500 dark:text-slate-400";
-}
+// ── Gradient formatting for the profile readout ──────────────────────────────
 
 export function fmtGradient(g) {
   const pct = (g * 100).toFixed(1);

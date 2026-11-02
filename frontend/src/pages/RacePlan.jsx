@@ -22,7 +22,6 @@ import ElevationChart from "../components/raceplan/ElevationChart";
 import RaceMap from "../components/raceplan/RaceMap";
 import FuelSection from "../components/raceplan/FuelSection";
 import CourseMenu from "../components/raceplan/CourseMenu";
-import PaceResults from "../components/raceplan/PaceResults";
 import RaceTargets from "../components/raceplan/RaceTargets";
 
 // ── Main page ─────────────────────────────────────────────────────────────────
@@ -322,8 +321,13 @@ export default function RacePlan() {
               />
             </div>
 
-            <ElevationChart coursePath={coursePath} laps={displayLaps} sport={sport} imperial={imperial}
-              onHover={setProfilePoint} />
+            {/* The plan's one view of its targets, course or not. A triathlon's
+                legs each have their own (TriathlonSection); here it is the
+                course's hills alone, which its legs are not fitted to. */}
+            {!isSwimming && (
+              <ElevationChart coursePath={coursePath} laps={isTriathlon ? [] : displayLaps} sport={sport}
+                imperial={imperial} onHover={setProfilePoint} />
+            )}
 
             {/* Pin controls — hidden when GPX is loaded (auto-set from course) */}
             {!hasCourse && (
@@ -422,9 +426,6 @@ export default function RacePlan() {
               <TriathlonSection
                 plan={plan}
                 imperial={imperial}
-                hrMode={plan?.pace_hr_mode}
-                maxHr={maxHr}
-                hasCourse={hasCourse}
               />
               <p className="text-xs text-slate-400 dark:text-slate-500 mt-2">
                 Swim uses CSS, bike uses Critical Power model, run uses VDOT.
@@ -434,27 +435,6 @@ export default function RacePlan() {
             </Section>
           )}
 
-          {/* Running / Cycling: km-by-km table */}
-          {!isSwimming && !isTriathlon && hasLaps && (
-            <Section title={
-              isCycling
-                ? `${imperial ? "Mile" : "Km"}-by-${imperial ? "mile" : "km"} power targets${hasCourse ? " (grade-adjusted)" : ""}`
-                : displayLaps.some(l => l.kind)
-                  ? "Targets by terrain"
-                  : `${imperial ? "Mile" : "Km"}-by-${imperial ? "mile" : "km"} targets${hasCourse ? " (grade-adjusted)" : ""}`
-            }>
-              <PaceResults
-                plan={plan}
-                laps={displayLaps}
-                imperial={imperial}
-                isCycling={isCycling}
-                hasCourse={hasCourse}
-                hrMode={plan?.pace_hr_mode}
-                maxHr={maxHr}
-                sport={sport}
-              />
-            </Section>
-          )}
         </>
       )}
     </div>

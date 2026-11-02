@@ -1,15 +1,17 @@
 // SPDX-FileCopyrightText: 2026 Hawk Fugagli
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// The race course's profile: elevation by distance with the plan's target
-// alongside, so the plot under the map shows how the target answers the
-// hills. Pure maths, no React, and the phone's twin is
+// The race's profile: the plan's target by distance — with the course's
+// elevation behind it when a course is loaded, so the plot shows how the
+// target answers the hills — plus the HR ceiling where the plan sets one.
+// It replaced the lap table, which ran to forty rows on a marathon and was
+// read far less than a picture of the same numbers. Pure maths, no React, and the phone's twin is
 // mobile/core/.../race/CourseProfile.kt — the two are kept to the same
 // algorithm and the same test numbers.
 //
 // Which target is drawn is the sport's own coaching number: pace for running,
 // power for cycling (and the bike laps of a triathlon), the HR ceiling for
-// mountain biking, whose laps carry no watts. An open-water swim has no plot:
-// flat water and a single lap.
+// mountain biking, whose laps carry no watts; a triathlon's swim leg is drawn
+// per 100 m. A swim race on its own has no plot: flat water and a single lap.
 //
 // The target is drawn smooth, through the middle of each lap, rather than as
 // steps: the user picked it as easier to read against a hill, at the cost of
@@ -22,6 +24,7 @@ const MAX_POINTS = 400;
 /** The lap field each metric reads. */
 export const METRICS = {
   pace:  { field: "target_sec_per_km" },
+  swim:  { field: "target_sec_per_km" },   // drawn per 100 m
   power: { field: "target_watts" },
   hr:    { field: "hr_ceiling" },
 };
@@ -79,29 +82,61 @@ function interpolate(anchorList, x) {
   return anchorList[anchorList.length - 1][1];
 }
 
+/** Without a course: enough evenly spaced points for a smooth line and a readout anywhere. */
+const LAP_SAMPLES = 200;
+
+/** The lap at each of `positions`, laps laid end to end over `length` metres. */
+function lapsAt(laps, positions, length) {
+  const total = laps.reduce((s, l) => s + (l.distance_m || 0), 0) || 1;
+  const ends = [];
+  let run = 0;
+  for (const l of laps) { run += (l.distance_m || 0) / total * length; ends.push(run); }
+  let k = 0;
+  return positions.map((m) => {
+    while (k < laps.length - 1 && m > ends[k]) k++;
+    return laps[k];
+  });
+}
+
 /**
- * Points for the plot: `{ m, ele, target, lat, lon }`, with `m` metres along
- * the course. Null when the course carries no elevation — without the hills
- * there is nothing for the target to be read against.
+ * Points for the plot: `{ m, ele, target, hr, lap, lat, lon }`, `m` metres
+ * along the race and `lap` the lap there (for the readout's ground and
+ * gradient). With a course carrying elevation, one point per course point;
+ * without, the laps alone, evenly sampled, with no elevation. Null when there
+ * is neither a course nor a lap.
  */
 export function courseProfile(coursePath, laps, metric) {
-  if (!(coursePath?.length > 1) || !coursePath.some((p) => p[2] != null)) return null;
-  const cum = [0];
-  for (let i = 1; i < coursePath.length; i++) cum.push(cum[i - 1] + haversine(coursePath[i - 1], coursePath[i]));
-  const courseM = cum[cum.length - 1];
   const field = metric ? METRICS[metric].field : null;
-  const anchorList = field && laps?.length ? anchors(laps, field, courseM) : [];
-  const step = Math.max(1, Math.ceil(coursePath.length / MAX_POINTS));
-  const pts = [];
-  for (let i = 0; i < coursePath.length; i += step) {
-    const p = coursePath[i];
-    if (p[2] == null) continue;
-    pts.push({ m: cum[i], ele: p[2], target: interpolate(anchorList, cum[i]), lat: p[0], lon: p[1] });
+  const hasLaps = laps?.length > 0;
+  const withHr = hasLaps && metric !== "hr" && laps.some((l) => l.hr_ceiling != null);
+  let positions, eles = null, coords = null, length;
+  if (coursePath?.length > 1 && coursePath.some((p) => p[2] != null)) {
+    const cum = [0];
+    for (let i = 1; i < coursePath.length; i++) cum.push(cum[i - 1] + haversine(coursePath[i - 1], coursePath[i]));
+    length = cum[cum.length - 1];
+    const step = Math.max(1, Math.ceil(coursePath.length / MAX_POINTS));
+    const idx = [];
+    for (let i = 0; i < coursePath.length; i += step) if (coursePath[i][2] != null) idx.push(i);
+    // The finish is always drawn, whatever the sampling step skipped.
+    const last = coursePath.length - 1;
+    if (idx[idx.length - 1] !== last && coursePath[last][2] != null) idx.push(last);
+    positions = idx.map((i) => cum[i]);
+    eles = idx.map((i) => coursePath[i][2]);
+    coords = idx.map((i) => [coursePath[i][0], coursePath[i][1]]);
+  } else if (hasLaps) {
+    length = laps.reduce((s, l) => s + (l.distance_m || 0), 0);
+    if (!length) return null;
+    positions = Array.from({ length: LAP_SAMPLES + 1 }, (_, i) => (i / LAP_SAMPLES) * length);
+  } else {
+    return null;
   }
-  // The finish is always drawn, whatever the sampling step skipped.
-  const last = coursePath[coursePath.length - 1];
-  if (pts[pts.length - 1]?.m !== courseM && last[2] != null) {
-    pts.push({ m: courseM, ele: last[2], target: interpolate(anchorList, courseM), lat: last[0], lon: last[1] });
-  }
+  const targets = field && hasLaps ? anchors(laps, field, length) : [];
+  const hrs = withHr ? anchors(laps, "hr_ceiling", length) : [];
+  const at = hasLaps ? lapsAt(laps, positions, length) : positions.map(() => null);
+  const pts = positions.map((m, i) => ({
+    m, ele: eles ? eles[i] : null,
+    target: interpolate(targets, m), hr: withHr ? interpolate(hrs, m) : null,
+    lap: at[i], lat: coords ? coords[i][0] : null, lon: coords ? coords[i][1] : null,
+  }));
   return pts.length > 1 ? pts : null;
 }

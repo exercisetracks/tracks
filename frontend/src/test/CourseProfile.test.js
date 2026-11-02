@@ -23,9 +23,11 @@ describe("the course profile", () => {
     expect(pts[2].m).toBeCloseTo(2223.9, 0);
   });
 
-  it("has no plot for a course without elevation", () => {
-    // Without the hills there is nothing to read the target against.
-    expect(courseProfile([[0, 0], [0, 0.01]], LAPS, "pace")).toBeNull();
+  it("draws a course without elevation from its laps", () => {
+    // A GPX with no heights has no hills to show, but its targets still do.
+    const pts = courseProfile([[0, 0], [0, 0.01]], LAPS, "pace");
+    expect(pts.every((p) => p.ele == null)).toBe(true);
+    expect(pts[0].target).toBe(300);
   });
 
   it("draws each sport's own coaching number", () => {
@@ -50,5 +52,34 @@ describe("the race-wide targets line", () => {
     expect(raceTargetsText({ target_hr_ceiling: 165, climb_target_w_per_kg: 3.7, climb_target_watts: 259 }))
       .toBe("Average HR ≤ 165 bpm · Climb at 3.7 W/kg (≈ 259 W)");
     expect(raceTargetsText({ target_hr_ceiling: null })).toBe("");
+  });
+});
+
+describe("the profile without a course", () => {
+  const laps = [
+    { distance_m: 1000, target_sec_per_km: 300, hr_ceiling: 150, label: "Climb 4%" },
+    { distance_m: 1000, target_sec_per_km: 360, hr_ceiling: 170, label: "Flat" },
+  ];
+
+  it("is drawn from the laps alone, with no elevation", () => {
+    // The graph replaced the lap table, so it has to show whether or not a
+    // course is loaded.
+    const pts = courseProfile(null, laps, "pace");
+    expect(pts.length).toBeGreaterThan(50);
+    expect(pts.every((p) => p.ele == null)).toBe(true);
+    expect(pts[0].target).toBe(300);
+    expect(pts[pts.length - 1].target).toBe(360);
+    expect(pts[pts.length - 1].m).toBe(2000);
+  });
+
+  it("carries the HR ceiling as its own line, and the ground at each point", () => {
+    const pts = courseProfile(null, laps, "pace");
+    expect(pts[0].hr).toBe(150);
+    expect(pts[0].lap.label).toBe("Climb 4%");
+    expect(pts[pts.length - 1].lap.label).toBe("Flat");
+  });
+
+  it("has nothing to draw with neither a course nor a lap", () => {
+    expect(courseProfile(null, [], "pace")).toBeNull();
   });
 });

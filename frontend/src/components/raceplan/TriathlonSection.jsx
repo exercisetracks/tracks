@@ -1,13 +1,13 @@
 // SPDX-FileCopyrightText: 2026 Hawk Fugagli
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Triathlon race plan: per-leg (swim / bike / run) summary cards, the total
-// time including transitions, and a PaceTable per leg that has lap paces. Legs
-// come from plan.weather_snapshot.triathlon_legs; fully driven by props.
+// time including transitions, and a graph of each leg's target. Legs come
+// from plan.weather_snapshot.triathlon_legs; fully driven by props.
 
-import PaceTable from "./PaceTable";
+import ElevationChart from "./ElevationChart";
 import { TRI_LEG_STYLES } from "./constants";
 
-export default function TriathlonSection({ plan, imperial, hrMode, maxHr, hasCourse }) {
+export default function TriathlonSection({ plan, imperial }) {
   const legs = plan.weather_snapshot?.triathlon_legs ?? [];
   if (!legs.length) return null;
 
@@ -37,23 +37,22 @@ export default function TriathlonSection({ plan, imperial, hrMode, maxHr, hasCou
         <span className="text-sm text-slate-500 dark:text-slate-400">total (incl. transitions)</span>
       </div>
 
-      {/* Per-leg lap tables */}
-      {legs.filter(l => l.lap_paces?.length).map(leg => {
+      {/* A graph per leg: the swim's pace per 100 m, the bike's power, the
+          run's pace — the lap tables they replaced ran to ninety rows on a 70.3. */}
+      {legs.map(leg => {
         const s = TRI_LEG_STYLES[leg.leg] ?? TRI_LEG_STYLES.run;
+        const laps = leg.leg === "swim"
+          ? (plan.css_sec_per_100m
+              ? [{ lap: 1, distance_m: leg.distance_m, target_sec_per_km: plan.css_sec_per_100m * 10 }]
+              : [])
+          : (leg.lap_paces ?? []);
+        if (!laps.length) return null;
         return (
-        <div key={leg.leg} className="space-y-2">
-          <h3 className="section-title">
-            {s.label} splits
-          </h3>
-          <PaceTable
-            laps={leg.lap_paces}
-            hasCourse={hasCourse && leg.leg !== "swim"}
-            imperial={imperial}
-            hrMode={hrMode}
-            maxHr={maxHr}
-            sport={leg.leg === "bike" ? "cycling" : "running"}
-          />
-        </div>
+          <div key={leg.leg}>
+            <h3 className="section-title">{s.label}</h3>
+            <ElevationChart laps={laps} sport={leg.leg === "bike" ? "cycling" : "running"}
+              metric={leg.leg === "swim" ? "swim" : undefined} imperial={imperial} height={120} />
+          </div>
         );
       })}
     </div>
