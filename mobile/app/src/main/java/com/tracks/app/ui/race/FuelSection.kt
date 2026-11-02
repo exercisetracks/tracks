@@ -19,8 +19,6 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -278,20 +276,6 @@ private fun ProductDialog(onDismiss: () -> Unit, onAdd: (String, String, Double,
         },
         dismissButton = { NeutralButton("Cancel", onClick = onDismiss) },
     )
-}
-
-/** "Choose saved course": a map track as the race course. */
-@Composable
-internal fun SavedCourseMenu(tracks: List<Pair<String, String>>, onPick: (String) -> Unit) {
-    var open by remember { mutableStateOf(false) }
-    Column {
-        TonalButton("Choose saved course", onClick = { open = true }, modifier = Modifier.fillMaxWidth())
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-            tracks.forEach { (uid, name) ->
-                DropdownMenuItem(text = { Text(name) }, onClick = { open = false; onPick(uid) })
-            }
-        }
-    }
 }
 
 private fun trim(v: Double): String = if (v % 1.0 == 0.0) v.toInt().toString() else v.toString()

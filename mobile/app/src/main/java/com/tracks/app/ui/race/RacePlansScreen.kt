@@ -18,8 +18,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
@@ -27,6 +25,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -43,7 +42,6 @@ import androidx.lifecycle.viewModelScope
 import com.tracks.app.AppContainer
 import com.tracks.app.ui.components.ButtonRow
 import com.tracks.app.ui.components.DangerButton
-import com.tracks.app.ui.components.NeutralButton
 import com.tracks.app.ui.components.TonalButton
 import com.tracks.app.ui.components.dayLabel
 import com.tracks.app.ui.goals.GoalOptions
@@ -172,6 +170,9 @@ class RacePlansViewModel(private val container: AppContainer) : ViewModel() {
         }
     }
 
+    /** A picked file that is not a GPX file. */
+    fun rejectCourseFile() = _state.update { it.copy(courseError = "Pick a .gpx file.") }
+
     /** A saved map track as the course — the same parse as a GPX file. */
     fun useTrack(goal: TrainingGoal, trackUid: String) {
         viewModelScope.launch {
@@ -221,11 +222,22 @@ fun RacePlansScreen(vm: RacePlansViewModel, modifier: Modifier = Modifier) {
     val state by vm.state.collectAsStateWithLifecycle()
     BackHandler(enabled = state.open != null) { vm.open(null) }
     val context = LocalContext.current
-    // Any file: GPX has no MIME type that file managers agree on, and a
-    // filter on application/gpx+xml hides most people's downloads.
+    // GPX has no MIME type file managers agree on: some say gpx+xml, some
+    // plain XML, and many give a downloaded .gpx application/octet-stream.
+    // Filtering on those types keeps PDFs and photos out of the picker while
+    // every .gpx stays pickable; whatever still gets through is checked by
+    // its name before it is read.
     val pick = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         val goal = state.open?.goal ?: return@rememberLauncherForActivityResult
         if (uri == null) return@rememberLauncherForActivityResult
+        val name = runCatching {
+            context.contentResolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)
+                ?.use { if (it.moveToFirst()) it.getString(0) else null }
+        }.getOrNull()
+        if (!isGpxName(name)) {
+            vm.rejectCourseFile()
+            return@rememberLauncherForActivityResult
+        }
         val text = runCatching {
             context.contentResolver.openInputStream(uri)?.use { it.readBytes().decodeToString() }
         }.getOrNull()
@@ -233,12 +245,23 @@ fun RacePlansScreen(vm: RacePlansViewModel, modifier: Modifier = Modifier) {
     }
     RacePlansContent(
         state, onOpen = vm::open, onSet = vm::set, modifier = modifier,
-        onImportCourse = { pick.launch(arrayOf("*/*")) },
+        onImportCourse = { pick.launch(GPX_MIME_TYPES) },
         onRemoveCourse = { goal -> vm.removeCourse(goal) },
         course = CourseActions(onUseTrack = vm::useTrack, onDrawOnMap = vm::drawOnMap),
         fuel = FuelActions(onAddProduct = vm::addProduct, onToggleProduct = vm::toggleProduct),
     )
 }
+
+/** The types the course picker offers; see the launcher in [RacePlansScreen]. */
+internal val GPX_MIME_TYPES = arrayOf(
+    "application/gpx+xml", "application/xml", "text/xml", "application/octet-stream",
+)
+
+/**
+ * Whether a picked file's name is a GPX file's. A name the provider will not
+ * give is let through: the parse that follows refuses a file with no track.
+ */
+internal fun isGpxName(name: String?): Boolean = name == null || name.lowercase().endsWith(".gpx")
 
 /** The course's other two sources: a saved track, or one drawn now. */
 data class CourseActions(
@@ -293,7 +316,7 @@ fun RacePlansContent(
             }
         } else {
             Detail(
-                open, state.maxHr, onBack = { onOpen(null) }, onSet = { f, v -> onSet(open.goal, f, v) },
+                open, state.maxHr, onSet = { f, v -> onSet(open.goal, f, v) },
                 courseError = state.courseError,
                 mapStyleJson = state.mapStyleJson,
                 onImportCourse = onImportCourse, onRemoveCourse = { onRemoveCourse(open.goal) },
@@ -368,7 +391,6 @@ private val COURSE = listOf(
 private fun Detail(
     c: RacePlanCard,
     maxHr: Int?,
-    onBack: () -> Unit,
     onSet: (String, Any?) -> Unit,
     courseError: String? = null,
     mapStyleJson: String? = null,
@@ -381,7 +403,6 @@ private fun Detail(
     onAddProduct: (String, String, Double, Int, Int, Int) -> Unit = { _, _, _, _, _, _ -> },
     onToggleProduct: (String) -> Unit = {},
 ) {
-    NeutralButton("Race Plans", onClick = onBack, icon = Icons.Default.ArrowBack)
     Card {
         Text(c.goal.eventName ?: "Unnamed event", style = MaterialTheme.typography.titleLarge)
         Text(
@@ -411,6 +432,7 @@ private fun Detail(
     }
 
     Section("Course", com.tracks.app.ui.components.MetricInfo("Course", "A GPX course gives each lap its real hills. Without one, pick the terrain.")) {
+        var choosing by remember { mutableStateOf(false) }
         if (c.strategy.hasCourse) {
             val totals = remember(c.strategy.segments) {
                 c.strategy.segments.takeIf { it.isNotEmpty() }?.let(RacePredictor::courseTotals)
@@ -426,22 +448,20 @@ private fun Detail(
             }
             com.tracks.app.ui.map.ActivityTrackMap(track = preview, styleJson = mapStyleJson)
             ButtonRow {
-                TonalButton("Replace course", onClick = onImportCourse)
+                TonalButton("Replace course", onClick = { choosing = true })
                 DangerButton("Remove course", onClick = onRemoveCourse)
             }
         } else {
             Choice(COURSE, c.strategy.courseType) { onSet("course_type", it) }
-            TonalButton("Import a GPX course", onClick = onImportCourse, modifier = Modifier.fillMaxWidth())
+            TonalButton("Add course", onClick = { choosing = true }, modifier = Modifier.fillMaxWidth())
         }
-        // Drawing needs the map, and basemaps need a server; a track already
-        // saved can be used either way.
-        if (linked) {
-            ButtonRow {
-                TonalButton("Draw on map", onClick = onDrawOnMap)
-                if (tracks.isNotEmpty()) SavedCourseMenu(tracks, onUseTrack)
-            }
-        } else if (tracks.isNotEmpty()) {
-            SavedCourseMenu(tracks, onUseTrack)
+        if (choosing) {
+            CourseSheet(
+                tracks = tracks, linked = linked, onDismiss = { choosing = false },
+                onImport = { choosing = false; onImportCourse() },
+                onDraw = { choosing = false; onDrawOnMap() },
+                onTrack = { choosing = false; onUseTrack(it) },
+            )
         }
         courseError?.let {
             Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error)
@@ -469,8 +489,6 @@ private fun Detail(
         )
         // What the race's watch workout carries; nothing reads it without a watch.
         if (com.tracks.app.ui.components.LocalHasDevice.current) {
-            Text("Garmin workout targets", style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
             Choice(listOf("pace" to "Pace only", "pace_hr" to "Pace + HR ceiling"), c.strategy.paceHrMode) {
                 onSet("pace_hr_mode", it)
             }

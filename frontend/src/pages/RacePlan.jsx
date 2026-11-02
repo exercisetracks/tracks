@@ -23,7 +23,7 @@ import ElevationChart from "../components/raceplan/ElevationChart";
 import RaceMap from "../components/raceplan/RaceMap";
 import StrategyPanel from "../components/raceplan/StrategyPanel";
 import FuelSection from "../components/raceplan/FuelSection";
-import SavedCoursePicker from "../components/raceplan/SavedCoursePicker";
+import CourseMenu from "../components/raceplan/CourseMenu";
 import PaceResults from "../components/raceplan/PaceResults";
 
 // ── Main page ─────────────────────────────────────────────────────────────────
@@ -42,7 +42,6 @@ export default function RacePlan() {
   const [gpxUploading, setGpxUploading]= useState(false);
   const [splitDraft,   setSplitDraft]  = useState(0);
 
-  const fileRef    = useRef(null);
   const splitTimer = useRef(null);
 
   // Derived from plan
@@ -259,21 +258,10 @@ export default function RacePlan() {
             </div>
           )}
 
-          {/* GPX upload */}
+          {/* One button: every way to get a course is behind it (CourseMenu). */}
           <div className="flex items-center gap-3 flex-wrap">
-            <button
-              onClick={() => fileRef.current?.click()} disabled={gpxUploading}
-              className="btn btn-tonal"
-            >
-              {gpxUploading ? "Uploading…" : hasCourse ? "Replace GPX" : "Upload GPX course"}
-            </button>
-            <input ref={fileRef} type="file" accept=".gpx" className="hidden" onChange={handleGpxUpload} />
-            <Link to={`/maps?raceGoal=${goalId}`}
-              className="px-2.5 py-1.5 text-sm rounded-lg border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-              Draw on map
-            </Link>
-            <SavedCoursePicker goalId={goalId}
-              onPicked={(updated) => { setPlan(updated); setSplitDraft(updated.split_spread ?? 0); }} />
+            <CourseMenu goalId={goalId} hasCourse={hasCourse} uploading={gpxUploading} onUpload={handleGpxUpload}
+              onPicked={(updated) => { setPlan(updated); setSplitDraft(updated.split_spread ?? 0); generate(); }} />
             {hasCourse && (
               <div className="flex items-center gap-3 flex-wrap text-sm text-accent-600 dark:text-accent-400">
                 <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
