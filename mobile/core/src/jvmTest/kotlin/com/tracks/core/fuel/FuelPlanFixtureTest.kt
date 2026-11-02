@@ -84,6 +84,51 @@ class FuelPlanFixtureTest {
         }
     }
 
+    /**
+     * The homemade mix: the same sip, the same timeline around it, and the
+     * same recipe to the gram and the spoon — a phone that said ¼ tsp of salt
+     * where the web said ⅜ would be the kind of disagreement people notice.
+     */
+    @Test
+    fun the_homemade_mix_is_sipped_and_made_as_the_server_says() {
+        for (c in fx["homemade"]!!.jsonArray.map { it.jsonObject }) {
+            val tg = targetsOf(c["targets"]!!.jsonObject)
+            val mix = FuelPlan.homemadeServing(tg)
+            val sv = c["serving"]!!.jsonObject
+            assertEquals(sv["carbs_g"].d(), mix.product.carbsG, c["targets"].toString())
+            assertEquals(sv["fluid_ml"].i(), mix.product.fluidMl)
+            assertEquals(sv["sodium_mg"].i(), mix.product.sodiumMg)
+            assertEquals(sv["potassium_mg"].i(), mix.product.potassiumMg)
+            assertEquals(sv["interval_min"].i(), mix.intervalMin)
+            assertEquals(sv["concentration_pct"].i(), mix.concentrationPct)
+
+            val tl = FuelPlan.timeline(c["duration_min"].d()!!, tg, productsOf(c["products"]!!), lapsOf(c["laps"]), mix)
+            val e = c["timeline"]!!.jsonObject
+            assertEquals(e["items"]!!.jsonArray.map { it.jsonObject["product_uid"].s() to it.jsonObject["minute"].i() },
+                tl.items.map { it.productUid to it.minute })
+            val ph = e["per_hour"]!!.jsonObject
+            assertEquals(FuelPlan.Amounts(ph["carbs_g"].i()!!, ph["sodium_mg"].i()!!, ph["fluid_ml"].i()!!,
+                ph["caffeine_mg"].i()!!, ph["potassium_mg"].i()!!), tl.perHour)
+            val drunk = tl.items.filter { it.productUid == FuelPlan.HOMEMADE_UID }.sumOf { it.fluidMl }
+            assertEquals(c["drunk_ml"].i(), drunk)
+            assertEquals(c["default_preset"].s(), FuelPlan.mixPreset(tg.carbsGPerH, null))
+
+            for (r in c["recipes"]!!.jsonArray.map { it.jsonObject }) {
+                val got = FuelPlan.homemadeRecipe(r["preset"].s()!!, r["bottle_ml"].i()!!, mix, tg.carbsGPerH, drunk)
+                val x = r["expected"]!!.jsonObject
+                val want = x["ingredients"]!!.jsonArray.map {
+                    val o = it.jsonObject
+                    FuelPlan.Ingredient(o["key"].s()!!, o["name"].s()!!, o["grams"].d(), o["ml"].d(), o["measure"].s()!!)
+                }
+                assertEquals(want, got.ingredients, r.toString())
+                val pb = x["per_bottle"]!!.jsonObject
+                assertEquals(listOf(pb["carbs_g"].i(), pb["sodium_mg"].i(), pb["potassium_mg"].i()),
+                    listOf(got.perBottleCarbsG, got.perBottleSodiumMg, got.perBottlePotassiumMg))
+                assertEquals(x["bottles"].i(), got.bottles)
+            }
+        }
+    }
+
     @Test
     fun gut_training_ramps_and_adapts_like_the_server() {
         for (c in fx["gut"]!!.jsonArray.map { it.jsonObject }) {

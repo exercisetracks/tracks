@@ -117,7 +117,8 @@ def _distance_at(minute: float, laps: list[dict] | None) -> int | None:
     return _half_up(d)
 
 
-def timeline(duration_min: float, tg: dict, products: list[dict], laps: list[dict] | None = None) -> dict:
+def timeline(duration_min: float, tg: dict, products: list[dict], laps: list[dict] | None = None,
+             mix: dict | None = None) -> dict:
     """What to take when.
 
     A slot every `interval_min`, never at the start or the finish. At each
@@ -127,24 +128,47 @@ def timeline(duration_min: float, tg: dict, products: list[dict], laps: list[dic
     every fifty minutes rather than every twenty. Ties go to the earlier
     product in the user's order. With no products, each slot names the grams
     to take instead.
+
+    With the homemade mix (`mix`, from homemade_serving) the slots are its
+    sips: every slot drinks one serving first, and the products then make up
+    whatever carbs the drink leaves owed, by the same rule. The drink is
+    capped at its heat band's strength, so on a hot day the gels carry more.
     """
     rate = float(tg["carbs_g_per_h"])
-    interval = int(tg["interval_min"])
+    interval = int(mix["interval_min"]) if mix else int(tg["interval_min"])
     usable = [p for p in products if float(p.get("carbs_g") or 0) > 0]
     items: list[dict] = []
     taken = 0.0
     totals = {"carbs_g": 0.0, "sodium_mg": 0, "potassium_mg": 0, "fluid_ml": 0, "caffeine_mg": 0}
+
+    def take(minute: int, p: dict) -> None:
+        nonlocal taken
+        carbs = float(p["carbs_g"])
+        items.append({
+            "minute": minute, "distance_m": _distance_at(minute, laps),
+            "product_uid": p.get("uid"), "name": p.get("name"),
+            "carbs_g": carbs, "sodium_mg": int(p.get("sodium_mg") or 0),
+            "potassium_mg": int(p.get("potassium_mg") or 0),
+            "fluid_ml": int(p.get("fluid_ml") or 0),
+            "caffeine_mg": int(p.get("caffeine_mg") or 0),
+        })
+        taken += carbs
+        totals["carbs_g"] += carbs
+        totals["sodium_mg"] += int(p.get("sodium_mg") or 0)
+        totals["potassium_mg"] += int(p.get("potassium_mg") or 0)
+        totals["fluid_ml"] += int(p.get("fluid_ml") or 0)
+        totals["caffeine_mg"] += int(p.get("caffeine_mg") or 0)
+
     minute = interval
     while minute < duration_min:
+        if mix:
+            take(minute, mix)
         owed = rate * minute / 60.0 - taken
         if not usable:
-            grams = _half_up(rate * interval / 60.0)
-            if grams > 0:
-                items.append({"minute": minute, "distance_m": _distance_at(minute, laps),
-                              "product_uid": None, "name": None, "carbs_g": grams,
-                              "sodium_mg": 0, "potassium_mg": 0, "fluid_ml": 0, "caffeine_mg": 0})
-                taken += grams
-                totals["carbs_g"] += grams
+            if not mix:
+                grams = _half_up(rate * interval / 60.0)
+                if grams > 0:
+                    take(minute, {"uid": None, "name": None, "carbs_g": grams})
         else:
             best = None
             for p in usable:
@@ -152,27 +176,163 @@ def timeline(duration_min: float, tg: dict, products: list[dict], laps: list[dic
                 if best is None or gap < best[0]:
                     best = (gap, p)
             p = best[1]
-            carbs = float(p["carbs_g"])
-            if owed >= carbs / 2.0:
-                items.append({
-                    "minute": minute, "distance_m": _distance_at(minute, laps),
-                    "product_uid": p.get("uid"), "name": p.get("name"),
-                    "carbs_g": carbs, "sodium_mg": int(p.get("sodium_mg") or 0),
-                    "potassium_mg": int(p.get("potassium_mg") or 0),
-                    "fluid_ml": int(p.get("fluid_ml") or 0),
-                    "caffeine_mg": int(p.get("caffeine_mg") or 0),
-                })
-                taken += carbs
-                totals["carbs_g"] += carbs
-                totals["sodium_mg"] += int(p.get("sodium_mg") or 0)
-                totals["potassium_mg"] += int(p.get("potassium_mg") or 0)
-                totals["fluid_ml"] += int(p.get("fluid_ml") or 0)
-                totals["caffeine_mg"] += int(p.get("caffeine_mg") or 0)
+            if owed >= float(p["carbs_g"]) / 2.0:
+                take(minute, p)
         minute += interval
     hours = duration_min / 60.0 if duration_min > 0 else 0.0
     per_hour = {k: (_half_up(v / hours) if hours else 0) for k, v in totals.items()}
     return {"items": items, "totals": {k: _half_up(v) for k, v in totals.items()},
             "per_hour": per_hour}
+
+
+# ── The homemade mix ─────────────────────────────────────────────────────────
+# A drink made from household ingredients, offered beside the user's own
+# products as a built-in one (its uid is HOMEMADE_UID in fuel_product_uids).
+# docs/race-fuelling-research.md has the reasoning and every source.
+
+HOMEMADE_UID = "homemade"
+HOMEMADE_NAME = "Homemade mix"
+DEFAULT_BOTTLE_ML = 750
+MIX_PRESETS = ("basic", "high_carb", "natural")
+
+# Per gram (per ml for coconut water), and grams per teaspoon.
+SUGAR = {"carbs_g": 1.0, "g_per_tsp": 4.2}
+MALTODEXTRIN = {"carbs_g": 0.95, "g_per_tsp": 2.5}
+HONEY = {"carbs_g": 0.82, "g_per_tsp": 7.0}
+TABLE_SALT = {"sodium_mg": 393.0, "g_per_tsp": 6.0}
+LITE_SALT = {"sodium_mg": 207.0, "potassium_mg": 250.0, "g_per_tsp": 5.6}
+COCONUT_WATER = {"potassium_mg": 2.5, "sodium_mg": 1.05, "carbs_g": 0.037, "ml_per_cup": 240}
+
+
+def _tenth(x: float) -> float:
+    return math.floor(x * 10 + 0.5) / 10
+
+
+def mix_preset(carbs_g_per_h: int, chosen: str | None) -> str:
+    """The user's recipe, or the default for the carb rate: sugar alone is a
+    fine 1:1 glucose:fructose below 60 g/h, where neither transporter is
+    saturated; above it the high-carb recipe sets the ratio."""
+    if chosen in MIX_PRESETS:
+        return chosen
+    return "basic" if carbs_g_per_h <= 60 else "high_carb"
+
+
+def homemade_serving(tg: dict) -> dict:
+    """One sip of the mix, as a product the timeline can take.
+
+    Sipped at the heat band's interval (the user's own interval if they set
+    one), each sip the fluid target's share of the hour, carrying that share
+    of the sodium and potassium in full and carbs up to the band's strength
+    or the carb target, whichever is less.
+    """
+    band = BANDS[tg["band"]]
+    interval = int(tg["interval_min"]) if tg["custom"]["interval"] else int(band["sip_interval_min"])
+    share = interval / 60.0
+    fluid = _half_up(tg["fluid_ml_per_h"] * share)
+    carbs = _tenth(min(fluid * band["concentration_pct"] / 100.0, tg["carbs_g_per_h"] * share))
+    return {"uid": HOMEMADE_UID, "name": HOMEMADE_NAME, "carbs_g": carbs,
+            "sodium_mg": _half_up(tg["sodium_mg_per_h"] * share),
+            "potassium_mg": _half_up(tg["potassium_mg_per_h"] * share),
+            "fluid_ml": fluid, "caffeine_mg": 0, "interval_min": interval,
+            "concentration_pct": band["concentration_pct"]}
+
+
+_FRACTIONS = {0: "", 1: "⅛", 2: "¼", 3: "⅜", 4: "½", 5: "⅝", 6: "¾", 7: "⅞"}
+
+
+def _eighths(x: float) -> str:
+    """1.375 -> "1⅜": whole and eighths, as spoons are marked."""
+    n = _half_up(x * 8)
+    whole, part = divmod(n, 8)
+    return (str(whole) if whole else "") + _FRACTIONS[part] or "0"
+
+
+def spoon_measure(grams: float, g_per_tsp: float, step_eighths: int) -> str:
+    """Grams as spoons: teaspoons to the nearest `step_eighths`/8, and
+    tablespoons (three teaspoons) once there are three or more. Salt is
+    measured in eighths of a teaspoon, sugar in halves."""
+    tsp = grams / g_per_tsp
+    if tsp >= 3:
+        tbsp = _half_up(tsp / 3 * 2) / 2
+        return f"{_eighths(tbsp)} tbsp"
+    step = step_eighths / 8
+    q = _half_up(tsp / step) * step
+    if q == 0:
+        return "a pinch"
+    return f"{_eighths(q)} tsp"
+
+
+def _ingredient(key: str, name: str, grams: float, g_per_tsp: float, step_eighths: int, salt: bool) -> dict:
+    g = _tenth(grams) if salt else float(_half_up(grams))
+    return {"key": key, "name": name, "grams": g, "ml": None,
+            "measure": spoon_measure(grams, g_per_tsp, step_eighths)}
+
+
+def homemade_recipe(preset: str, bottle_ml: int, serving: dict, carbs_g_per_h: int, race_fluid_ml: int) -> dict:
+    """One bottle of the mix, from household ingredients.
+
+    Per bottle: the serving's carbs, sodium and potassium per ml, times the
+    bottle. Potassium comes from lite salt (Basic, High-carb) or coconut
+    water (Natural), and table salt makes up the sodium. Lite salt carries
+    sodium too, so it is capped at the sodium budget; a potassium shortfall
+    then shows on the gauge rather than being hidden. `race_fluid_ml` is the
+    mix the whole race drinks, which sets how many bottles to make.
+    """
+    per_ml = 1.0 / serving["fluid_ml"] if serving["fluid_ml"] else 0.0
+    carbs = serving["carbs_g"] * per_ml * bottle_ml
+    sodium = serving["sodium_mg"] * per_ml * bottle_ml
+    potassium = serving["potassium_mg"] * per_ml * bottle_ml
+    out: list[dict] = []
+    got = {"carbs_g": 0.0, "sodium_mg": 0.0, "potassium_mg": 0.0}
+    if preset == "natural":
+        cw = min(float(bottle_ml), potassium / COCONUT_WATER["potassium_mg"])
+        cw = float(_half_up(cw / 10) * 10)
+        got["potassium_mg"] += cw * COCONUT_WATER["potassium_mg"]
+        got["sodium_mg"] += cw * COCONUT_WATER["sodium_mg"]
+        got["carbs_g"] += cw * COCONUT_WATER["carbs_g"]
+        honey = max(0.0, carbs - got["carbs_g"]) / HONEY["carbs_g"]
+        salt = max(0.0, sodium - got["sodium_mg"]) / TABLE_SALT["sodium_mg"]
+        if honey > 0:
+            out.append(_ingredient("honey", "Honey", honey, HONEY["g_per_tsp"], 4, False))
+            got["carbs_g"] += out[-1]["grams"] * HONEY["carbs_g"]
+        if cw > 0:
+            cups = cw / COCONUT_WATER["ml_per_cup"]
+            out.append({"key": "coconut_water", "name": "Coconut water", "grams": None, "ml": cw,
+                        "measure": f"{_eighths(_half_up(cups * 4) / 4) or '0'} cup"})
+        if salt > 0:
+            out.append(_ingredient("salt", "Table salt", salt, TABLE_SALT["g_per_tsp"], 1, True))
+            got["sodium_mg"] += out[-1]["grams"] * TABLE_SALT["sodium_mg"]
+    else:
+        lite = min(potassium / LITE_SALT["potassium_mg"], sodium / LITE_SALT["sodium_mg"])
+        salt = max(0.0, sodium - lite * LITE_SALT["sodium_mg"]) / TABLE_SALT["sodium_mg"]
+        if preset == "high_carb":
+            # Maltodextrin is glucose and sugar half glucose: 1 part to 2 gives
+            # 2:1 glucose:fructose; 1 part to 8 gives 1:0.8, for above 90 g/h.
+            share = 1 / 3 if carbs_g_per_h <= 90 else 1 / 9
+            malto = carbs * share / MALTODEXTRIN["carbs_g"]
+            sugar = carbs * (1 - share) / SUGAR["carbs_g"]
+            out.append(_ingredient("maltodextrin", "Maltodextrin", malto, MALTODEXTRIN["g_per_tsp"], 4, False))
+            got["carbs_g"] += out[-1]["grams"] * MALTODEXTRIN["carbs_g"]
+        else:
+            sugar = carbs / SUGAR["carbs_g"]
+        if sugar > 0:
+            out.append(_ingredient("sugar", "Table sugar", sugar, SUGAR["g_per_tsp"], 4, False))
+            got["carbs_g"] += out[-1]["grams"] * SUGAR["carbs_g"]
+        if salt > 0:
+            out.append(_ingredient("salt", "Table salt", salt, TABLE_SALT["g_per_tsp"], 1, True))
+            got["sodium_mg"] += out[-1]["grams"] * TABLE_SALT["sodium_mg"]
+        if lite > 0:
+            out.append(_ingredient("lite_salt", "Lite salt", lite, LITE_SALT["g_per_tsp"], 1, True))
+            got["sodium_mg"] += out[-1]["grams"] * LITE_SALT["sodium_mg"]
+            got["potassium_mg"] += out[-1]["grams"] * LITE_SALT["potassium_mg"]
+    return {
+        "preset": preset, "bottle_ml": bottle_ml,
+        "bottles": math.ceil(race_fluid_ml / bottle_ml) if bottle_ml else 0,
+        "concentration_pct": serving["concentration_pct"],
+        "sip_ml": serving["fluid_ml"], "interval_min": serving["interval_min"],
+        "ingredients": out,
+        "per_bottle": {k: _half_up(v) for k, v in got.items()},
+    }
 
 
 def _is_long(w: dict) -> bool:

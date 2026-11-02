@@ -57,6 +57,9 @@ class LocalRacePlans(private val sources: LocalSources) {
         val fuelFluid: Int? = null,
         val fuelSodium: Int? = null,
         val fuelPotassium: Int? = null,
+        /** The homemade mix's recipe (null = by carb rate) and bottle (null = 750 ml). */
+        val fuelMixPreset: String? = null,
+        val fuelMixBottleMl: Int? = null,
         val fuelInterval: Int? = null,
         /** fuel_product uids the timeline may use, in the user's order. */
         val fuelProductUids: List<String> = emptyList(),
@@ -68,6 +71,8 @@ class LocalRacePlans(private val sources: LocalSources) {
         val timeline: FuelPlan.Timeline,
         val products: List<FuelPlan.Product>,
         val gut: Map<String, Int>,
+        /** The homemade mix's recipe when it is carried, else null. */
+        val homemade: FuelPlan.Recipe? = null,
     )
 
     data class Prediction(val seconds: Double, val laps: List<RaceLap>)
@@ -111,6 +116,8 @@ class LocalRacePlans(private val sources: LocalSources) {
             fuelInterval = row.int("fuel_interval_min"),
             fuelProductUids = (row.fields["fuel_product_uids"] as? JsonArray).orEmpty()
                 .mapNotNull { (it as? JsonPrimitive)?.contentOrNull },
+            fuelMixPreset = row.str("fuel_mix_preset"),
+            fuelMixBottleMl = row.int("fuel_mix_bottle_ml"),
         )
     }
 
@@ -156,9 +163,16 @@ class LocalRacePlans(private val sources: LocalSources) {
         val tg = FuelPlan.targets(minutes, null, null, s.fuelCarbs, s.fuelFluid, s.fuelSodium, s.fuelInterval, s.fuelPotassium)
         val all = products().associateBy { it.uid }
         val chosen = s.fuelProductUids.mapNotNull { all[it] }
+        val mix = if (FuelPlan.HOMEMADE_UID in s.fuelProductUids) FuelPlan.homemadeServing(tg) else null
         val timeline = if (minutes > 0) {
-            FuelPlan.timeline(minutes, tg, chosen, prediction?.laps?.map { FuelPlan.Lap(it.distanceM.toDouble(), it.targetSecPerKm) })
+            FuelPlan.timeline(minutes, tg, chosen, prediction?.laps?.map { FuelPlan.Lap(it.distanceM.toDouble(), it.targetSecPerKm) }, mix)
         } else FuelPlan.Timeline(emptyList(), FuelPlan.Amounts(0, 0, 0, 0), FuelPlan.Amounts(0, 0, 0, 0))
+        // fuel_plan_for on the server: the bottles are what the race drinks.
+        val homemade = mix?.let {
+            val drunk = timeline.items.filter { i -> i.productUid == FuelPlan.HOMEMADE_UID }.sumOf { i -> i.fluidMl }
+            FuelPlan.homemadeRecipe(FuelPlan.mixPreset(tg.carbsGPerH, s.fuelMixPreset),
+                s.fuelMixBottleMl?.takeIf { b -> b > 0 } ?: FuelPlan.DEFAULT_BOTTLE_ML, it, tg.carbsGPerH, drunk)
+        }
         val gut = goal.eventDate?.let { race ->
             val plan = sources.replica.rows("plan").firstOrNull { it.str("goal_uid") == goal.uid }?.uid
             val workouts = sources.replica.rows("planned_workout")
@@ -174,7 +188,7 @@ class LocalRacePlans(private val sources: LocalSources) {
             }
             FuelPlan.gutTraining(tg.carbsGPerH, race, workouts, logs)
         }.orEmpty()
-        return Fuel(tg, timeline, all.values.toList(), gut)
+        return Fuel(tg, timeline, all.values.toList(), gut, homemade)
     }
 
     /**

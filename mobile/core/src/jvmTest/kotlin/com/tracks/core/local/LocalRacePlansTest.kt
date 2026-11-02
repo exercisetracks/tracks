@@ -7,6 +7,7 @@ import com.tracks.core.race.RacePredictor
 import com.tracks.core.replica.ReplicaStore
 import com.tracks.core.replica.TracksSchema
 import kotlinx.coroutines.runBlocking
+import com.tracks.core.fuel.FuelPlan
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -143,5 +144,26 @@ class LocalRacePlansTest {
 
         plans.logGut(first.uid, "2026-09-01", 100, 20.0, comfort = 1, notes = "cramps")
         assertEquals(listOf(40, 30), plans.fuel(goal, prediction).gut.values.toList())
+    }
+
+    /**
+     * Carrying the homemade mix — the reserved uid among the products — puts
+     * its sips on the timeline and its recipe in the plan, made to the race's
+     * own recipe and bottle.
+     */
+    @Test
+    fun the_homemade_mix_is_sipped_and_its_recipe_follows_the_race() = runBlocking {
+        val (sources, plans) = setup()
+        sources.createValues("goal", mapOf("goal_type" to "event", "event_date" to "2026-11-01", "event_sport" to "running"))
+        val goal = sources.goals().single()
+        plans.set(goal, "fuel_product_uids", listOf(FuelPlan.HOMEMADE_UID))
+        plans.set(goal, "fuel_mix_preset", "natural")
+        plans.set(goal, "fuel_mix_bottle_ml", 500)
+        val fuel = plans.fuel(goal, LocalRacePlans.Prediction(10800.0, emptyList()))
+        assertTrue(fuel.timeline.items.isNotEmpty() && fuel.timeline.items.all { it.productUid == FuelPlan.HOMEMADE_UID })
+        val recipe = fuel.homemade!!
+        assertEquals("natural", recipe.preset)
+        assertEquals(500, recipe.bottleMl)
+        assertTrue(recipe.ingredients.any { it.key == "honey" })
     }
 }

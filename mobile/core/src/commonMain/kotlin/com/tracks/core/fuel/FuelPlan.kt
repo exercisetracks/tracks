@@ -10,6 +10,7 @@ import com.tracks.core.spec.HUMIDITY_THRESHOLD_PCT
 import com.tracks.core.spec.VERY_HOT_THRESHOLD_C
 import com.tracks.core.spec.defaultCarbsPerHour
 import kotlin.math.abs
+import kotlin.math.ceil
 import kotlin.math.floor
 
 /**
@@ -159,9 +160,20 @@ object FuelPlan {
         return halfUp(d)
     }
 
-    fun timeline(durationMin: Double, tg: Targets, products: List<Product>, laps: List<Lap>? = null): Timeline {
+    /**
+     * What to take when — `timeline` in the Python, which says why. With the
+     * homemade [mix], every slot is one of its sips and the products make up
+     * the carbs it leaves owed.
+     */
+    fun timeline(
+        durationMin: Double,
+        tg: Targets,
+        products: List<Product>,
+        laps: List<Lap>? = null,
+        mix: Mix? = null,
+    ): Timeline {
         val rate = tg.carbsGPerH.toDouble()
-        val interval = tg.intervalMin
+        val interval = mix?.intervalMin ?: tg.intervalMin
         val usable = products.filter { it.carbsG > 0 }
         val items = mutableListOf<Item>()
         var taken = 0.0
@@ -170,15 +182,24 @@ object FuelPlan {
         var potassium = 0
         var fluid = 0
         var caffeine = 0
+        fun take(minute: Int, p: Product) {
+            items += Item(minute, distanceAt(minute.toDouble(), laps), p.uid, p.name, p.carbsG,
+                p.sodiumMg, p.fluidMl, p.caffeineMg, p.potassiumMg)
+            taken += p.carbsG
+            carbs += p.carbsG
+            sodium += p.sodiumMg
+            potassium += p.potassiumMg
+            fluid += p.fluidMl
+            caffeine += p.caffeineMg
+        }
         var minute = interval
         while (minute < durationMin) {
+            if (mix != null) take(minute, mix.product)
             val owed = rate * minute / 60.0 - taken
             if (usable.isEmpty()) {
-                val grams = halfUp(rate * interval / 60.0)
-                if (grams > 0) {
-                    items += Item(minute, distanceAt(minute.toDouble(), laps), null, null, grams.toDouble(), 0, 0, 0)
-                    taken += grams
-                    carbs += grams
+                if (mix == null) {
+                    val grams = halfUp(rate * interval / 60.0)
+                    if (grams > 0) take(minute, Product(null, null, grams.toDouble()))
                 }
             } else {
                 var best: Product? = null
@@ -191,16 +212,7 @@ object FuelPlan {
                     }
                 }
                 val p = best!!
-                if (owed >= p.carbsG / 2.0) {
-                    items += Item(minute, distanceAt(minute.toDouble(), laps), p.uid, p.name, p.carbsG,
-                        p.sodiumMg, p.fluidMl, p.caffeineMg, p.potassiumMg)
-                    taken += p.carbsG
-                    carbs += p.carbsG
-                    sodium += p.sodiumMg
-                    potassium += p.potassiumMg
-                    fluid += p.fluidMl
-                    caffeine += p.caffeineMg
-                }
+                if (owed >= p.carbsG / 2.0) take(minute, p)
             }
             minute += interval
         }
@@ -211,6 +223,158 @@ object FuelPlan {
             totals = Amounts(halfUp(carbs), sodium, fluid, caffeine, potassium),
             perHour = Amounts(perHour(carbs), perHour(sodium.toDouble()), perHour(fluid.toDouble()),
                 perHour(caffeine.toDouble()), perHour(potassium.toDouble())),
+        )
+    }
+
+    // ── The homemade mix ─────────────────────────────────────────────────────
+    // The Python's homemade_* functions, which (with
+    // docs/race-fuelling-research.md) explain every rule and number.
+
+    const val HOMEMADE_UID = "homemade"
+    const val HOMEMADE_NAME = "Homemade mix"
+    const val DEFAULT_BOTTLE_ML = 750
+    val MIX_PRESETS = listOf("basic", "high_carb", "natural")
+
+    private const val SUGAR_CARBS = 1.0
+    private const val SUGAR_G_PER_TSP = 4.2
+    private const val MALTO_CARBS = 0.95
+    private const val MALTO_G_PER_TSP = 2.5
+    private const val HONEY_CARBS = 0.82
+    private const val HONEY_G_PER_TSP = 7.0
+    private const val SALT_NA = 393.0
+    private const val SALT_G_PER_TSP = 6.0
+    private const val LITE_NA = 207.0
+    private const val LITE_K = 250.0
+    private const val LITE_G_PER_TSP = 5.6
+    private const val CW_K = 2.5
+    private const val CW_NA = 1.05
+    private const val CW_CARBS = 0.037
+    private const val CW_ML_PER_CUP = 240
+
+    /** One sip of the mix, as a product, with the interval it is sipped at and its strength. */
+    data class Mix(val product: Product, val intervalMin: Int, val concentrationPct: Int)
+
+    data class Ingredient(val key: String, val name: String, val grams: Double?, val ml: Double?, val measure: String)
+
+    data class Recipe(
+        val preset: String,
+        val bottleMl: Int,
+        val bottles: Int,
+        val concentrationPct: Int,
+        val sipMl: Int,
+        val intervalMin: Int,
+        val ingredients: List<Ingredient>,
+        /** What one bottle actually carries: carbs g, sodium mg, potassium mg. */
+        val perBottleCarbsG: Int,
+        val perBottleSodiumMg: Int,
+        val perBottlePotassiumMg: Int,
+    )
+
+    private fun tenth(x: Double): Double = floor(x * 10 + 0.5) / 10
+
+    fun mixPreset(carbsGPerH: Int, chosen: String?): String =
+        if (chosen in MIX_PRESETS) chosen!! else if (carbsGPerH <= 60) "basic" else "high_carb"
+
+    fun homemadeServing(tg: Targets): Mix {
+        val band = BANDS.getValue(tg.band)
+        val interval = if (tg.customInterval) tg.intervalMin else band.sipIntervalMin
+        val share = interval / 60.0
+        val fluid = halfUp(tg.fluidMlPerH * share)
+        val carbs = tenth(minOf(fluid * band.concentrationPct / 100.0, tg.carbsGPerH * share))
+        return Mix(
+            Product(HOMEMADE_UID, HOMEMADE_NAME, carbs, halfUp(tg.sodiumMgPerH * share), fluid, 0,
+                halfUp(tg.potassiumMgPerH * share)),
+            interval, band.concentrationPct,
+        )
+    }
+
+    private val FRACTIONS = listOf("", "⅛", "¼", "⅜", "½", "⅝", "¾", "⅞")
+
+    private fun eighths(x: Double): String {
+        val n = halfUp(x * 8)
+        val s = (if (n / 8 != 0) (n / 8).toString() else "") + FRACTIONS[n % 8]
+        return s.ifEmpty { "0" }
+    }
+
+    fun spoonMeasure(grams: Double, gPerTsp: Double, stepEighths: Int): String {
+        val tsp = grams / gPerTsp
+        if (tsp >= 3) {
+            val tbsp = halfUp(tsp / 3 * 2) / 2.0
+            return "${eighths(tbsp)} tbsp"
+        }
+        val step = stepEighths / 8.0
+        val q = halfUp(tsp / step) * step
+        if (q == 0.0) return "a pinch"
+        return "${eighths(q)} tsp"
+    }
+
+    private fun ingredient(key: String, name: String, grams: Double, gPerTsp: Double, stepEighths: Int, salt: Boolean) =
+        Ingredient(key, name, if (salt) tenth(grams) else halfUp(grams).toDouble(), null,
+            spoonMeasure(grams, gPerTsp, stepEighths))
+
+    fun homemadeRecipe(preset: String, bottleMl: Int, mix: Mix, carbsGPerH: Int, raceFluidMl: Int): Recipe {
+        val serving = mix.product
+        val perMl = if (serving.fluidMl != 0) 1.0 / serving.fluidMl else 0.0
+        val carbs = serving.carbsG * perMl * bottleMl
+        val sodium = serving.sodiumMg * perMl * bottleMl
+        val potassium = serving.potassiumMg * perMl * bottleMl
+        val out = mutableListOf<Ingredient>()
+        var gotCarbs = 0.0
+        var gotNa = 0.0
+        var gotK = 0.0
+        if (preset == "natural") {
+            var cw = minOf(bottleMl.toDouble(), potassium / CW_K)
+            cw = (halfUp(cw / 10) * 10).toDouble()
+            gotK += cw * CW_K
+            gotNa += cw * CW_NA
+            gotCarbs += cw * CW_CARBS
+            val honey = maxOf(0.0, carbs - gotCarbs) / HONEY_CARBS
+            val salt = maxOf(0.0, sodium - gotNa) / SALT_NA
+            if (honey > 0) {
+                out += ingredient("honey", "Honey", honey, HONEY_G_PER_TSP, 4, false)
+                gotCarbs += out.last().grams!! * HONEY_CARBS
+            }
+            if (cw > 0) {
+                val cups = cw / CW_ML_PER_CUP
+                out += Ingredient("coconut_water", "Coconut water", null, cw, "${eighths(halfUp(cups * 4) / 4.0)} cup")
+            }
+            if (salt > 0) {
+                out += ingredient("salt", "Table salt", salt, SALT_G_PER_TSP, 1, true)
+                gotNa += out.last().grams!! * SALT_NA
+            }
+        } else {
+            val lite = minOf(potassium / LITE_K, sodium / LITE_NA)
+            val salt = maxOf(0.0, sodium - lite * LITE_NA) / SALT_NA
+            val sugar: Double
+            if (preset == "high_carb") {
+                val share = if (carbsGPerH <= 90) 1.0 / 3 else 1.0 / 9
+                val malto = carbs * share / MALTO_CARBS
+                sugar = carbs * (1 - share) / SUGAR_CARBS
+                out += ingredient("maltodextrin", "Maltodextrin", malto, MALTO_G_PER_TSP, 4, false)
+                gotCarbs += out.last().grams!! * MALTO_CARBS
+            } else {
+                sugar = carbs / SUGAR_CARBS
+            }
+            if (sugar > 0) {
+                out += ingredient("sugar", "Table sugar", sugar, SUGAR_G_PER_TSP, 4, false)
+                gotCarbs += out.last().grams!! * SUGAR_CARBS
+            }
+            if (salt > 0) {
+                out += ingredient("salt", "Table salt", salt, SALT_G_PER_TSP, 1, true)
+                gotNa += out.last().grams!! * SALT_NA
+            }
+            if (lite > 0) {
+                out += ingredient("lite_salt", "Lite salt", lite, LITE_G_PER_TSP, 1, true)
+                gotNa += out.last().grams!! * LITE_NA
+                gotK += out.last().grams!! * LITE_K
+            }
+        }
+        return Recipe(
+            preset = preset, bottleMl = bottleMl,
+            bottles = if (bottleMl != 0) ceil(raceFluidMl.toDouble() / bottleMl).toInt() else 0,
+            concentrationPct = mix.concentrationPct, sipMl = serving.fluidMl, intervalMin = mix.intervalMin,
+            ingredients = out,
+            perBottleCarbsG = halfUp(gotCarbs), perBottleSodiumMg = halfUp(gotNa), perBottlePotassiumMg = halfUp(gotK),
         )
     }
 

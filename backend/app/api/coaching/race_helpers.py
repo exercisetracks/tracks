@@ -309,6 +309,8 @@ def _race_plan_out(rp: RacePlan, us: UserSettings | None = None,
         "fuel_potassium_mg_per_hour": rp.fuel_potassium_mg_per_hour,
         "fuel_interval_min":       rp.fuel_interval_min,
         "fuel_product_uids":       rp.fuel_product_uids,
+        "fuel_mix_preset":         rp.fuel_mix_preset,
+        "fuel_mix_bottle_ml":      rp.fuel_mix_bottle_ml,
         "mtb_discipline":    getattr(goal, "mtb_discipline", None) if goal else None,
         "cycling_discipline": getattr(goal, "cycling_discipline", None) if goal else None,
     }

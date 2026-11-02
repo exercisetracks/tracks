@@ -138,13 +138,22 @@ def fuel_plan_for(db: Session, user_id: int, goal: TrainingGoal, rp: RacePlan | 
     )
     all_products = db.query(FuelProduct).filter_by(user_id=user_id).all()
     by_uid = {p.uid: p for p in all_products}
-    chosen = [by_uid[u] for u in ((rp.fuel_product_uids if rp else None) or []) if u in by_uid]
+    uids = (rp.fuel_product_uids if rp else None) or []
+    chosen = [by_uid[u] for u in uids if u in by_uid]
     products = [{"uid": p.uid, "name": p.name, "carbs_g": float(p.carbs_g or 0),
                  "sodium_mg": p.sodium_mg or 0, "potassium_mg": p.potassium_mg or 0, "fluid_ml": p.fluid_ml or 0,
                  "caffeine_mg": p.caffeine_mg or 0} for p in chosen]
+    mix = fp.homemade_serving(tg) if fp.HOMEMADE_UID in uids else None
     timeline = fp.timeline(duration_min, tg, products,
                            [{"distance_m": l["distance_m"], "target_sec_per_km": l["target_sec_per_km"]}
-                            for l in laps]) if duration_min else {"items": [], "totals": {}, "per_hour": {}}
+                            for l in laps], mix=mix) if duration_min else {"items": [], "totals": {}, "per_hour": {}}
+    homemade = None
+    if mix:
+        drunk = sum(i["fluid_ml"] for i in timeline["items"] if i["product_uid"] == fp.HOMEMADE_UID)
+        homemade = fp.homemade_recipe(fp.mix_preset(tg["carbs_g_per_h"], rp.fuel_mix_preset),
+                                      rp.fuel_mix_bottle_ml if (rp.fuel_mix_bottle_ml or 0) > 0
+                                      else fp.DEFAULT_BOTTLE_ML, mix,
+                                      tg["carbs_g_per_h"], drunk)
 
     gut: dict[str, int] = {}
     if goal.event_date:
@@ -161,6 +170,7 @@ def fuel_plan_for(db: Session, user_id: int, goal: TrainingGoal, rp: RacePlan | 
                 for l in db.query(GutTrainingLog).filter_by(user_id=user_id).all()]
         gut = fp.gut_training(tg["carbs_g_per_h"], goal.event_date.isoformat(), workouts, logs)
     return {"targets": tg, "timeline": timeline, "gut_training": gut, "ceilings": fp.CEILINGS,
+            "homemade": homemade,
             "product_uids": [p["uid"] for p in products]}
 
 

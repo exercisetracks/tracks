@@ -46,7 +46,7 @@ def _laps(n_km: float, pace: float, spread: float = 0.0) -> list[dict]:
 
 
 def main() -> None:
-    fx: dict = {"targets": [], "timeline": [], "gut": [], "race_fit": []}
+    fx: dict = {"targets": [], "timeline": [], "gut": [], "race_fit": [], "homemade": []}
 
     for dur in (25, 60, 61, 119.5, 120, 150, 240, 241, 600):
         for weather in ((None, None), (None, 80.0), (18.0, 40.0), (26.0, 30.0), (22.0, 75.0), (19.0, 90.0), (33.0, 50.0)):
@@ -70,6 +70,28 @@ def main() -> None:
         tg = fp.targets(dur, carbs=carbs, interval=interval)
         fx["timeline"].append({"duration_min": dur, "targets": tg, "products": products, "laps": laps,
                                "expected": fp.timeline(dur, tg, products, laps)})
+
+    # The homemade mix: its sip in each heat band and with the user's own
+    # interval, the timeline it drives with and without gels, and every
+    # recipe at both glucose:fructose ratios and two bottle sizes.
+    for dur, carbs, temp, interval, products, laps in (
+        (240, 60, None, None, [], None),
+        (240, 90, None, None, [PRODUCTS[0]], _laps(42.195, 330)),
+        (240, 100, 27.0, None, [PRODUCTS[0], PRODUCTS[3]], None),
+        (300, 120, 34.0, None, [PRODUCTS[1]], None),
+        (180, 80, None, 25, [PRODUCTS[0]], None),
+        (50, 30, None, None, [], None),
+    ):
+        tg = fp.targets(dur, temperature_c=temp, carbs=carbs, interval=interval)
+        mix = fp.homemade_serving(tg)
+        tl = fp.timeline(dur, tg, products, laps, mix=mix)
+        drunk = sum(i["fluid_ml"] for i in tl["items"] if i["product_uid"] == fp.HOMEMADE_UID)
+        recipes = [{"preset": pr, "bottle_ml": b,
+                    "expected": fp.homemade_recipe(pr, b, mix, carbs, drunk)}
+                   for pr in fp.MIX_PRESETS for b in (500, 750)]
+        fx["homemade"].append({"duration_min": dur, "targets": tg, "products": products, "laps": laps,
+                               "serving": mix, "timeline": tl, "drunk_ml": drunk, "recipes": recipes,
+                               "default_preset": fp.mix_preset(carbs, None)})
 
     race = "2026-12-06"
     workouts = []

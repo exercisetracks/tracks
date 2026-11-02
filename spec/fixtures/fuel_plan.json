@@ -5887,7 +5887,7 @@
       "distance_m": null,
       "product_uid": null,
       "name": null,
-      "carbs_g": 10,
+      "carbs_g": 10.0,
       "sodium_mg": 0,
       "potassium_mg": 0,
       "fluid_ml": 0,
@@ -5898,7 +5898,7 @@
       "distance_m": null,
       "product_uid": null,
       "name": null,
-      "carbs_g": 10,
+      "carbs_g": 10.0,
       "sodium_mg": 0,
       "potassium_mg": 0,
       "fluid_ml": 0,
@@ -7368,7 +7368,7 @@
       "distance_m": 6250,
       "product_uid": null,
       "name": null,
-      "carbs_g": 45,
+      "carbs_g": 45.0,
       "sodium_mg": 0,
       "potassium_mg": 0,
       "fluid_ml": 0,
@@ -7379,7 +7379,7 @@
       "distance_m": 12500,
       "product_uid": null,
       "name": null,
-      "carbs_g": 45,
+      "carbs_g": 45.0,
       "sodium_mg": 0,
       "potassium_mg": 0,
       "fluid_ml": 0,
@@ -7390,7 +7390,7 @@
       "distance_m": 18750,
       "product_uid": null,
       "name": null,
-      "carbs_g": 45,
+      "carbs_g": 45.0,
       "sodium_mg": 0,
       "potassium_mg": 0,
       "fluid_ml": 0,
@@ -7401,7 +7401,7 @@
       "distance_m": 25000,
       "product_uid": null,
       "name": null,
-      "carbs_g": 45,
+      "carbs_g": 45.0,
       "sodium_mg": 0,
       "potassium_mg": 0,
       "fluid_ml": 0,
@@ -7412,7 +7412,7 @@
       "distance_m": 31250,
       "product_uid": null,
       "name": null,
-      "carbs_g": 45,
+      "carbs_g": 45.0,
       "sodium_mg": 0,
       "potassium_mg": 0,
       "fluid_ml": 0,
@@ -7423,7 +7423,7 @@
       "distance_m": 37500,
       "product_uid": null,
       "name": null,
-      "carbs_g": 45,
+      "carbs_g": 45.0,
       "sodium_mg": 0,
       "potassium_mg": 0,
       "fluid_ml": 0,
@@ -7434,7 +7434,7 @@
       "distance_m": 43750,
       "product_uid": null,
       "name": null,
-      "carbs_g": 45,
+      "carbs_g": 45.0,
       "sodium_mg": 0,
       "potassium_mg": 0,
       "fluid_ml": 0,
@@ -10128,7 +10128,7 @@
      "distance_m": 10000,
      "product_uid": null,
      "name": null,
-     "carbs_g": 20,
+     "carbs_g": 20.0,
      "sodium_mg": 0,
      "potassium_mg": 0,
      "fluid_ml": 0,
@@ -10139,7 +10139,7 @@
      "distance_m": 20000,
      "product_uid": null,
      "name": null,
-     "carbs_g": 20,
+     "carbs_g": 20.0,
      "sodium_mg": 0,
      "potassium_mg": 0,
      "fluid_ml": 0,
@@ -10150,7 +10150,7 @@
      "distance_m": 30000,
      "product_uid": null,
      "name": null,
-     "carbs_g": 20,
+     "carbs_g": 20.0,
      "sodium_mg": 0,
      "potassium_mg": 0,
      "fluid_ml": 0,
@@ -10159,6 +10159,3420 @@
    ],
    "time_created_ms": 1790000000000,
    "hex": "0e20d852c00600002e46495496f540000000000500010001028402028403048c04048600050100feff0100000080ef134541000031000200028401010201310a004200001a0006fe0284080b070401000b010005048c0602840200004772616e20466f6e646f000200200000002a004300001b0009fe02840701000101000204861404860d02840008070301000404860300000205000000000000000002005761726d2055700002000000004400001b000bfe02840701000101000204861404860d02840005070301000404860504860604860401000001a08601000000000002004b6d2031000000000000ef1c0000332500000402000001a08601000000000002004b6d2032000000000000ef1c0000332500000403000001a08601000000000002004b6d2033000000000000ef1c0000332500000404000001a08601000000000002004b6d2034000000000000ef1c0000332500000405000001a08601000000000002004b6d2035000000000000ef1c0000332500000406000001a08601000000000002004b6d2036000000000000ef1c0000332500000407000001a08601000000000002004b6d2037000000000000ef1c0000332500000408000001a08601000000000002004b6d2038000000000000ef1c0000332500000409000001a08601000000000002004b6d2039000000000000ef1c0000332500004500001b000bfe02840701000101000204861404860d0284000607030100040486050486060486050a000001a08601000000000002004b6d203130000000000000ef1c0000332500004600001b000bfe02840701000101000204861404860d0284001307030100040486050486060486060b000001a08601000000000002004b6d20313120c2b720323067206361726273000000000000ef1c000033250000050c000001a08601000000000002004b6d203132000000000000ef1c000033250000050d000001a08601000000000002004b6d203133000000000000ef1c000033250000050e000001a08601000000000002004b6d203134000000000000ef1c000033250000050f000001a08601000000000002004b6d203135000000000000ef1c0000332500000510000001a08601000000000002004b6d203136000000000000ef1c0000332500000511000001a08601000000000002004b6d203137000000000000ef1c0000332500000512000001a08601000000000002004b6d203138000000000000ef1c0000332500000513000001a08601000000000002004b6d203139000000000000ef1c0000332500000514000001a08601000000000002004b6d203230000000000000ef1c0000332500000615000001a08601000000000002004b6d20323120c2b720323067206361726273000000000000ef1c0000332500000516000001a08601000000000002004b6d203232000000000000ef1c0000332500000517000001a08601000000000002004b6d203233000000000000ef1c0000332500000518000001a08601000000000002004b6d203234000000000000ef1c0000332500000519000001a08601000000000002004b6d203235000000000000ef1c000033250000051a000001a08601000000000002004b6d203236000000000000ef1c000033250000051b000001a08601000000000002004b6d203237000000000000ef1c000033250000051c000001a08601000000000002004b6d203238000000000000ef1c000033250000051d000001a08601000000000002004b6d203239000000000000ef1c000033250000051e000001a08601000000000002004b6d203330000000000000ef1c000033250000061f000001a08601000000000002004b6d20333120c2b720323067206361726273000000000000ef1c0000332500000520000001a08601000000000002004b6d203332000000000000ef1c0000332500000521000001a08601000000000002004b6d203333000000000000ef1c0000332500000522000001a08601000000000002004b6d203334000000000000ef1c0000332500000523000001a08601000000000002004b6d203335000000000000ef1c0000332500000524000001a08601000000000002004b6d203336000000000000ef1c0000332500000525000001a08601000000000002004b6d203337000000000000ef1c0000332500000526000001a08601000000000002004b6d203338000000000000ef1c0000332500000527000001a08601000000000002004b6d203339000000000000ef1c0000332500000528000001a08601000000000002004b6d203430000000000000ef1c0000332500004700001b0009fe02840701000101000204861404860d0284000a07030100040486072900030500000000000000000200436f6f6c20446f776e0002000000003e1d"
+  }
+ ],
+ "homemade": [
+  {
+   "duration_min": 240,
+   "targets": {
+    "carbs_g_per_h": 60,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 100,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": true,
+     "fluid": false,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   },
+   "products": [],
+   "laps": null,
+   "serving": {
+    "uid": "homemade",
+    "name": "Homemade mix",
+    "carbs_g": 15.0,
+    "sodium_mg": 100,
+    "potassium_mg": 25,
+    "fluid_ml": 125,
+    "caffeine_mg": 0,
+    "interval_min": 15,
+    "concentration_pct": 12
+   },
+   "timeline": {
+    "items": [
+     {
+      "minute": 15,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 15.0,
+      "sodium_mg": 100,
+      "potassium_mg": 25,
+      "fluid_ml": 125,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 30,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 15.0,
+      "sodium_mg": 100,
+      "potassium_mg": 25,
+      "fluid_ml": 125,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 45,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 15.0,
+      "sodium_mg": 100,
+      "potassium_mg": 25,
+      "fluid_ml": 125,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 60,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 15.0,
+      "sodium_mg": 100,
+      "potassium_mg": 25,
+      "fluid_ml": 125,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 75,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 15.0,
+      "sodium_mg": 100,
+      "potassium_mg": 25,
+      "fluid_ml": 125,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 90,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 15.0,
+      "sodium_mg": 100,
+      "potassium_mg": 25,
+      "fluid_ml": 125,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 105,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 15.0,
+      "sodium_mg": 100,
+      "potassium_mg": 25,
+      "fluid_ml": 125,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 120,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 15.0,
+      "sodium_mg": 100,
+      "potassium_mg": 25,
+      "fluid_ml": 125,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 135,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 15.0,
+      "sodium_mg": 100,
+      "potassium_mg": 25,
+      "fluid_ml": 125,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 150,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 15.0,
+      "sodium_mg": 100,
+      "potassium_mg": 25,
+      "fluid_ml": 125,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 165,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 15.0,
+      "sodium_mg": 100,
+      "potassium_mg": 25,
+      "fluid_ml": 125,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 180,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 15.0,
+      "sodium_mg": 100,
+      "potassium_mg": 25,
+      "fluid_ml": 125,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 195,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 15.0,
+      "sodium_mg": 100,
+      "potassium_mg": 25,
+      "fluid_ml": 125,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 210,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 15.0,
+      "sodium_mg": 100,
+      "potassium_mg": 25,
+      "fluid_ml": 125,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 225,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 15.0,
+      "sodium_mg": 100,
+      "potassium_mg": 25,
+      "fluid_ml": 125,
+      "caffeine_mg": 0
+     }
+    ],
+    "totals": {
+     "carbs_g": 225,
+     "sodium_mg": 1500,
+     "potassium_mg": 375,
+     "fluid_ml": 1875,
+     "caffeine_mg": 0
+    },
+    "per_hour": {
+     "carbs_g": 56,
+     "sodium_mg": 375,
+     "potassium_mg": 94,
+     "fluid_ml": 469,
+     "caffeine_mg": 0
+    }
+   },
+   "drunk_ml": 1875,
+   "recipes": [
+    {
+     "preset": "basic",
+     "bottle_ml": 500,
+     "expected": {
+      "preset": "basic",
+      "bottle_ml": 500,
+      "bottles": 4,
+      "concentration_pct": 12,
+      "sip_ml": 125,
+      "interval_min": 15,
+      "ingredients": [
+       {
+        "key": "sugar",
+        "name": "Table sugar",
+        "grams": 60.0,
+        "ml": null,
+        "measure": "5 tbsp"
+       },
+       {
+        "key": "salt",
+        "name": "Table salt",
+        "grams": 0.8,
+        "ml": null,
+        "measure": "\u215b tsp"
+       },
+       {
+        "key": "lite_salt",
+        "name": "Lite salt",
+        "grams": 0.4,
+        "ml": null,
+        "measure": "\u215b tsp"
+       }
+      ],
+      "per_bottle": {
+       "carbs_g": 60,
+       "sodium_mg": 397,
+       "potassium_mg": 100
+      }
+     }
+    },
+    {
+     "preset": "basic",
+     "bottle_ml": 750,
+     "expected": {
+      "preset": "basic",
+      "bottle_ml": 750,
+      "bottles": 3,
+      "concentration_pct": 12,
+      "sip_ml": 125,
+      "interval_min": 15,
+      "ingredients": [
+       {
+        "key": "sugar",
+        "name": "Table sugar",
+        "grams": 90.0,
+        "ml": null,
+        "measure": "7 tbsp"
+       },
+       {
+        "key": "salt",
+        "name": "Table salt",
+        "grams": 1.2,
+        "ml": null,
+        "measure": "\u00bc tsp"
+       },
+       {
+        "key": "lite_salt",
+        "name": "Lite salt",
+        "grams": 0.6,
+        "ml": null,
+        "measure": "\u215b tsp"
+       }
+      ],
+      "per_bottle": {
+       "carbs_g": 90,
+       "sodium_mg": 596,
+       "potassium_mg": 150
+      }
+     }
+    },
+    {
+     "preset": "high_carb",
+     "bottle_ml": 500,
+     "expected": {
+      "preset": "high_carb",
+      "bottle_ml": 500,
+      "bottles": 4,
+      "concentration_pct": 12,
+      "sip_ml": 125,
+      "interval_min": 15,
+      "ingredients": [
+       {
+        "key": "maltodextrin",
+        "name": "Maltodextrin",
+        "grams": 21.0,
+        "ml": null,
+        "measure": "3 tbsp"
+       },
+       {
+        "key": "sugar",
+        "name": "Table sugar",
+        "grams": 40.0,
+        "ml": null,
+        "measure": "3 tbsp"
+       },
+       {
+        "key": "salt",
+        "name": "Table salt",
+        "grams": 0.8,
+        "ml": null,
+        "measure": "\u215b tsp"
+       },
+       {
+        "key": "lite_salt",
+        "name": "Lite salt",
+        "grams": 0.4,
+        "ml": null,
+        "measure": "\u215b tsp"
+       }
+      ],
+      "per_bottle": {
+       "carbs_g": 60,
+       "sodium_mg": 397,
+       "potassium_mg": 100
+      }
+     }
+    },
+    {
+     "preset": "high_carb",
+     "bottle_ml": 750,
+     "expected": {
+      "preset": "high_carb",
+      "bottle_ml": 750,
+      "bottles": 3,
+      "concentration_pct": 12,
+      "sip_ml": 125,
+      "interval_min": 15,
+      "ingredients": [
+       {
+        "key": "maltodextrin",
+        "name": "Maltodextrin",
+        "grams": 32.0,
+        "ml": null,
+        "measure": "4 tbsp"
+       },
+       {
+        "key": "sugar",
+        "name": "Table sugar",
+        "grams": 60.0,
+        "ml": null,
+        "measure": "5 tbsp"
+       },
+       {
+        "key": "salt",
+        "name": "Table salt",
+        "grams": 1.2,
+        "ml": null,
+        "measure": "\u00bc tsp"
+       },
+       {
+        "key": "lite_salt",
+        "name": "Lite salt",
+        "grams": 0.6,
+        "ml": null,
+        "measure": "\u215b tsp"
+       }
+      ],
+      "per_bottle": {
+       "carbs_g": 90,
+       "sodium_mg": 596,
+       "potassium_mg": 150
+      }
+     }
+    },
+    {
+     "preset": "natural",
+     "bottle_ml": 500,
+     "expected": {
+      "preset": "natural",
+      "bottle_ml": 500,
+      "bottles": 4,
+      "concentration_pct": 12,
+      "sip_ml": 125,
+      "interval_min": 15,
+      "ingredients": [
+       {
+        "key": "honey",
+        "name": "Honey",
+        "grams": 71.0,
+        "ml": null,
+        "measure": "3\u00bd tbsp"
+       },
+       {
+        "key": "coconut_water",
+        "name": "Coconut water",
+        "grams": null,
+        "ml": 40.0,
+        "measure": "\u00bc cup"
+       },
+       {
+        "key": "salt",
+        "name": "Table salt",
+        "grams": 0.9,
+        "ml": null,
+        "measure": "\u215b tsp"
+       }
+      ],
+      "per_bottle": {
+       "carbs_g": 60,
+       "sodium_mg": 396,
+       "potassium_mg": 100
+      }
+     }
+    },
+    {
+     "preset": "natural",
+     "bottle_ml": 750,
+     "expected": {
+      "preset": "natural",
+      "bottle_ml": 750,
+      "bottles": 3,
+      "concentration_pct": 12,
+      "sip_ml": 125,
+      "interval_min": 15,
+      "ingredients": [
+       {
+        "key": "honey",
+        "name": "Honey",
+        "grams": 107.0,
+        "ml": null,
+        "measure": "5 tbsp"
+       },
+       {
+        "key": "coconut_water",
+        "name": "Coconut water",
+        "grams": null,
+        "ml": 60.0,
+        "measure": "\u00bc cup"
+       },
+       {
+        "key": "salt",
+        "name": "Table salt",
+        "grams": 1.4,
+        "ml": null,
+        "measure": "\u00bc tsp"
+       }
+      ],
+      "per_bottle": {
+       "carbs_g": 90,
+       "sodium_mg": 613,
+       "potassium_mg": 150
+      }
+     }
+    }
+   ],
+   "default_preset": "basic"
+  },
+  {
+   "duration_min": 240,
+   "targets": {
+    "carbs_g_per_h": 90,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 100,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": true,
+     "fluid": false,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   },
+   "products": [
+    {
+     "uid": "p-gel",
+     "name": "Gel",
+     "carbs_g": 25.0,
+     "sodium_mg": 50,
+     "fluid_ml": 0,
+     "caffeine_mg": 0
+    }
+   ],
+   "laps": [
+    {
+     "lap": 1,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 330.0
+    },
+    {
+     "lap": 2,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 330.0
+    },
+    {
+     "lap": 3,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 330.0
+    },
+    {
+     "lap": 4,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 330.0
+    },
+    {
+     "lap": 5,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 330.0
+    },
+    {
+     "lap": 6,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 330.0
+    },
+    {
+     "lap": 7,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 330.0
+    },
+    {
+     "lap": 8,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 330.0
+    },
+    {
+     "lap": 9,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 330.0
+    },
+    {
+     "lap": 10,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 330.0
+    },
+    {
+     "lap": 11,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 330.0
+    },
+    {
+     "lap": 12,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 330.0
+    },
+    {
+     "lap": 13,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 330.0
+    },
+    {
+     "lap": 14,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 330.0
+    },
+    {
+     "lap": 15,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 330.0
+    },
+    {
+     "lap": 16,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 330.0
+    },
+    {
+     "lap": 17,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 330.0
+    },
+    {
+     "lap": 18,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 330.0
+    },
+    {
+     "lap": 19,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 330.0
+    },
+    {
+     "lap": 20,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 330.0
+    },
+    {
+     "lap": 21,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 330.0
+    },
+    {
+     "lap": 22,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 330.0
+    },
+    {
+     "lap": 23,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 330.0
+    },
+    {
+     "lap": 24,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 330.0
+    },
+    {
+     "lap": 25,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 330.0
+    },
+    {
+     "lap": 26,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 330.0
+    },
+    {
+     "lap": 27,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 330.0
+    },
+    {
+     "lap": 28,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 330.0
+    },
+    {
+     "lap": 29,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 330.0
+    },
+    {
+     "lap": 30,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 330.0
+    },
+    {
+     "lap": 31,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 330.0
+    },
+    {
+     "lap": 32,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 330.0
+    },
+    {
+     "lap": 33,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 330.0
+    },
+    {
+     "lap": 34,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 330.0
+    },
+    {
+     "lap": 35,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 330.0
+    },
+    {
+     "lap": 36,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 330.0
+    },
+    {
+     "lap": 37,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 330.0
+    },
+    {
+     "lap": 38,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 330.0
+    },
+    {
+     "lap": 39,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 330.0
+    },
+    {
+     "lap": 40,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 330.0
+    },
+    {
+     "lap": 41,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 330.0
+    },
+    {
+     "lap": 42,
+     "distance_m": 1000.0,
+     "target_sec_per_km": 330.0
+    },
+    {
+     "lap": 43,
+     "distance_m": 195.0,
+     "target_sec_per_km": 330
+    }
+   ],
+   "serving": {
+    "uid": "homemade",
+    "name": "Homemade mix",
+    "carbs_g": 15.0,
+    "sodium_mg": 100,
+    "potassium_mg": 25,
+    "fluid_ml": 125,
+    "caffeine_mg": 0,
+    "interval_min": 15,
+    "concentration_pct": 12
+   },
+   "timeline": {
+    "items": [
+     {
+      "minute": 15,
+      "distance_m": 2727,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 15.0,
+      "sodium_mg": 100,
+      "potassium_mg": 25,
+      "fluid_ml": 125,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 30,
+      "distance_m": 5455,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 15.0,
+      "sodium_mg": 100,
+      "potassium_mg": 25,
+      "fluid_ml": 125,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 30,
+      "distance_m": 5455,
+      "product_uid": "p-gel",
+      "name": "Gel",
+      "carbs_g": 25.0,
+      "sodium_mg": 50,
+      "potassium_mg": 0,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 45,
+      "distance_m": 8182,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 15.0,
+      "sodium_mg": 100,
+      "potassium_mg": 25,
+      "fluid_ml": 125,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 60,
+      "distance_m": 10909,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 15.0,
+      "sodium_mg": 100,
+      "potassium_mg": 25,
+      "fluid_ml": 125,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 75,
+      "distance_m": 13636,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 15.0,
+      "sodium_mg": 100,
+      "potassium_mg": 25,
+      "fluid_ml": 125,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 75,
+      "distance_m": 13636,
+      "product_uid": "p-gel",
+      "name": "Gel",
+      "carbs_g": 25.0,
+      "sodium_mg": 50,
+      "potassium_mg": 0,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 90,
+      "distance_m": 16364,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 15.0,
+      "sodium_mg": 100,
+      "potassium_mg": 25,
+      "fluid_ml": 125,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 105,
+      "distance_m": 19091,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 15.0,
+      "sodium_mg": 100,
+      "potassium_mg": 25,
+      "fluid_ml": 125,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 120,
+      "distance_m": 21818,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 15.0,
+      "sodium_mg": 100,
+      "potassium_mg": 25,
+      "fluid_ml": 125,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 135,
+      "distance_m": 24545,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 15.0,
+      "sodium_mg": 100,
+      "potassium_mg": 25,
+      "fluid_ml": 125,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 135,
+      "distance_m": 24545,
+      "product_uid": "p-gel",
+      "name": "Gel",
+      "carbs_g": 25.0,
+      "sodium_mg": 50,
+      "potassium_mg": 0,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 150,
+      "distance_m": 27273,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 15.0,
+      "sodium_mg": 100,
+      "potassium_mg": 25,
+      "fluid_ml": 125,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 165,
+      "distance_m": 30000,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 15.0,
+      "sodium_mg": 100,
+      "potassium_mg": 25,
+      "fluid_ml": 125,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 180,
+      "distance_m": 32727,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 15.0,
+      "sodium_mg": 100,
+      "potassium_mg": 25,
+      "fluid_ml": 125,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 180,
+      "distance_m": 32727,
+      "product_uid": "p-gel",
+      "name": "Gel",
+      "carbs_g": 25.0,
+      "sodium_mg": 50,
+      "potassium_mg": 0,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 195,
+      "distance_m": 35455,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 15.0,
+      "sodium_mg": 100,
+      "potassium_mg": 25,
+      "fluid_ml": 125,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 210,
+      "distance_m": 38182,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 15.0,
+      "sodium_mg": 100,
+      "potassium_mg": 25,
+      "fluid_ml": 125,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 225,
+      "distance_m": 40909,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 15.0,
+      "sodium_mg": 100,
+      "potassium_mg": 25,
+      "fluid_ml": 125,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 225,
+      "distance_m": 40909,
+      "product_uid": "p-gel",
+      "name": "Gel",
+      "carbs_g": 25.0,
+      "sodium_mg": 50,
+      "potassium_mg": 0,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     }
+    ],
+    "totals": {
+     "carbs_g": 350,
+     "sodium_mg": 1750,
+     "potassium_mg": 375,
+     "fluid_ml": 1875,
+     "caffeine_mg": 0
+    },
+    "per_hour": {
+     "carbs_g": 88,
+     "sodium_mg": 438,
+     "potassium_mg": 94,
+     "fluid_ml": 469,
+     "caffeine_mg": 0
+    }
+   },
+   "drunk_ml": 1875,
+   "recipes": [
+    {
+     "preset": "basic",
+     "bottle_ml": 500,
+     "expected": {
+      "preset": "basic",
+      "bottle_ml": 500,
+      "bottles": 4,
+      "concentration_pct": 12,
+      "sip_ml": 125,
+      "interval_min": 15,
+      "ingredients": [
+       {
+        "key": "sugar",
+        "name": "Table sugar",
+        "grams": 60.0,
+        "ml": null,
+        "measure": "5 tbsp"
+       },
+       {
+        "key": "salt",
+        "name": "Table salt",
+        "grams": 0.8,
+        "ml": null,
+        "measure": "\u215b tsp"
+       },
+       {
+        "key": "lite_salt",
+        "name": "Lite salt",
+        "grams": 0.4,
+        "ml": null,
+        "measure": "\u215b tsp"
+       }
+      ],
+      "per_bottle": {
+       "carbs_g": 60,
+       "sodium_mg": 397,
+       "potassium_mg": 100
+      }
+     }
+    },
+    {
+     "preset": "basic",
+     "bottle_ml": 750,
+     "expected": {
+      "preset": "basic",
+      "bottle_ml": 750,
+      "bottles": 3,
+      "concentration_pct": 12,
+      "sip_ml": 125,
+      "interval_min": 15,
+      "ingredients": [
+       {
+        "key": "sugar",
+        "name": "Table sugar",
+        "grams": 90.0,
+        "ml": null,
+        "measure": "7 tbsp"
+       },
+       {
+        "key": "salt",
+        "name": "Table salt",
+        "grams": 1.2,
+        "ml": null,
+        "measure": "\u00bc tsp"
+       },
+       {
+        "key": "lite_salt",
+        "name": "Lite salt",
+        "grams": 0.6,
+        "ml": null,
+        "measure": "\u215b tsp"
+       }
+      ],
+      "per_bottle": {
+       "carbs_g": 90,
+       "sodium_mg": 596,
+       "potassium_mg": 150
+      }
+     }
+    },
+    {
+     "preset": "high_carb",
+     "bottle_ml": 500,
+     "expected": {
+      "preset": "high_carb",
+      "bottle_ml": 500,
+      "bottles": 4,
+      "concentration_pct": 12,
+      "sip_ml": 125,
+      "interval_min": 15,
+      "ingredients": [
+       {
+        "key": "maltodextrin",
+        "name": "Maltodextrin",
+        "grams": 21.0,
+        "ml": null,
+        "measure": "3 tbsp"
+       },
+       {
+        "key": "sugar",
+        "name": "Table sugar",
+        "grams": 40.0,
+        "ml": null,
+        "measure": "3 tbsp"
+       },
+       {
+        "key": "salt",
+        "name": "Table salt",
+        "grams": 0.8,
+        "ml": null,
+        "measure": "\u215b tsp"
+       },
+       {
+        "key": "lite_salt",
+        "name": "Lite salt",
+        "grams": 0.4,
+        "ml": null,
+        "measure": "\u215b tsp"
+       }
+      ],
+      "per_bottle": {
+       "carbs_g": 60,
+       "sodium_mg": 397,
+       "potassium_mg": 100
+      }
+     }
+    },
+    {
+     "preset": "high_carb",
+     "bottle_ml": 750,
+     "expected": {
+      "preset": "high_carb",
+      "bottle_ml": 750,
+      "bottles": 3,
+      "concentration_pct": 12,
+      "sip_ml": 125,
+      "interval_min": 15,
+      "ingredients": [
+       {
+        "key": "maltodextrin",
+        "name": "Maltodextrin",
+        "grams": 32.0,
+        "ml": null,
+        "measure": "4 tbsp"
+       },
+       {
+        "key": "sugar",
+        "name": "Table sugar",
+        "grams": 60.0,
+        "ml": null,
+        "measure": "5 tbsp"
+       },
+       {
+        "key": "salt",
+        "name": "Table salt",
+        "grams": 1.2,
+        "ml": null,
+        "measure": "\u00bc tsp"
+       },
+       {
+        "key": "lite_salt",
+        "name": "Lite salt",
+        "grams": 0.6,
+        "ml": null,
+        "measure": "\u215b tsp"
+       }
+      ],
+      "per_bottle": {
+       "carbs_g": 90,
+       "sodium_mg": 596,
+       "potassium_mg": 150
+      }
+     }
+    },
+    {
+     "preset": "natural",
+     "bottle_ml": 500,
+     "expected": {
+      "preset": "natural",
+      "bottle_ml": 500,
+      "bottles": 4,
+      "concentration_pct": 12,
+      "sip_ml": 125,
+      "interval_min": 15,
+      "ingredients": [
+       {
+        "key": "honey",
+        "name": "Honey",
+        "grams": 71.0,
+        "ml": null,
+        "measure": "3\u00bd tbsp"
+       },
+       {
+        "key": "coconut_water",
+        "name": "Coconut water",
+        "grams": null,
+        "ml": 40.0,
+        "measure": "\u00bc cup"
+       },
+       {
+        "key": "salt",
+        "name": "Table salt",
+        "grams": 0.9,
+        "ml": null,
+        "measure": "\u215b tsp"
+       }
+      ],
+      "per_bottle": {
+       "carbs_g": 60,
+       "sodium_mg": 396,
+       "potassium_mg": 100
+      }
+     }
+    },
+    {
+     "preset": "natural",
+     "bottle_ml": 750,
+     "expected": {
+      "preset": "natural",
+      "bottle_ml": 750,
+      "bottles": 3,
+      "concentration_pct": 12,
+      "sip_ml": 125,
+      "interval_min": 15,
+      "ingredients": [
+       {
+        "key": "honey",
+        "name": "Honey",
+        "grams": 107.0,
+        "ml": null,
+        "measure": "5 tbsp"
+       },
+       {
+        "key": "coconut_water",
+        "name": "Coconut water",
+        "grams": null,
+        "ml": 60.0,
+        "measure": "\u00bc cup"
+       },
+       {
+        "key": "salt",
+        "name": "Table salt",
+        "grams": 1.4,
+        "ml": null,
+        "measure": "\u00bc tsp"
+       }
+      ],
+      "per_bottle": {
+       "carbs_g": 90,
+       "sodium_mg": 613,
+       "potassium_mg": 150
+      }
+     }
+    }
+   ],
+   "default_preset": "high_carb"
+  },
+  {
+   "duration_min": 240,
+   "targets": {
+    "carbs_g_per_h": 100,
+    "fluid_ml_per_h": 650,
+    "sodium_mg_per_h": 600,
+    "potassium_mg_per_h": 130,
+    "interval_min": 20,
+    "band": "hot",
+    "custom": {
+     "carbs": true,
+     "fluid": false,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   },
+   "products": [
+    {
+     "uid": "p-gel",
+     "name": "Gel",
+     "carbs_g": 25.0,
+     "sodium_mg": 50,
+     "fluid_ml": 0,
+     "caffeine_mg": 0
+    },
+    {
+     "uid": "p-chew",
+     "name": "Chews",
+     "carbs_g": 12.5,
+     "sodium_mg": 30,
+     "fluid_ml": 0,
+     "caffeine_mg": 0,
+     "potassium_mg": 20
+    }
+   ],
+   "laps": null,
+   "serving": {
+    "uid": "homemade",
+    "name": "Homemade mix",
+    "carbs_g": 10.4,
+    "sodium_mg": 120,
+    "potassium_mg": 26,
+    "fluid_ml": 130,
+    "caffeine_mg": 0,
+    "interval_min": 12,
+    "concentration_pct": 8
+   },
+   "timeline": {
+    "items": [
+     {
+      "minute": 12,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 10.4,
+      "sodium_mg": 120,
+      "potassium_mg": 26,
+      "fluid_ml": 130,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 12,
+      "distance_m": null,
+      "product_uid": "p-chew",
+      "name": "Chews",
+      "carbs_g": 12.5,
+      "sodium_mg": 30,
+      "potassium_mg": 20,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 24,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 10.4,
+      "sodium_mg": 120,
+      "potassium_mg": 26,
+      "fluid_ml": 130,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 24,
+      "distance_m": null,
+      "product_uid": "p-chew",
+      "name": "Chews",
+      "carbs_g": 12.5,
+      "sodium_mg": 30,
+      "potassium_mg": 20,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 36,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 10.4,
+      "sodium_mg": 120,
+      "potassium_mg": 26,
+      "fluid_ml": 130,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 48,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 10.4,
+      "sodium_mg": 120,
+      "potassium_mg": 26,
+      "fluid_ml": 130,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 48,
+      "distance_m": null,
+      "product_uid": "p-chew",
+      "name": "Chews",
+      "carbs_g": 12.5,
+      "sodium_mg": 30,
+      "potassium_mg": 20,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 60,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 10.4,
+      "sodium_mg": 120,
+      "potassium_mg": 26,
+      "fluid_ml": 130,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 60,
+      "distance_m": null,
+      "product_uid": "p-chew",
+      "name": "Chews",
+      "carbs_g": 12.5,
+      "sodium_mg": 30,
+      "potassium_mg": 20,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 72,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 10.4,
+      "sodium_mg": 120,
+      "potassium_mg": 26,
+      "fluid_ml": 130,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 72,
+      "distance_m": null,
+      "product_uid": "p-chew",
+      "name": "Chews",
+      "carbs_g": 12.5,
+      "sodium_mg": 30,
+      "potassium_mg": 20,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 84,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 10.4,
+      "sodium_mg": 120,
+      "potassium_mg": 26,
+      "fluid_ml": 130,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 96,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 10.4,
+      "sodium_mg": 120,
+      "potassium_mg": 26,
+      "fluid_ml": 130,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 96,
+      "distance_m": null,
+      "product_uid": "p-chew",
+      "name": "Chews",
+      "carbs_g": 12.5,
+      "sodium_mg": 30,
+      "potassium_mg": 20,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 108,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 10.4,
+      "sodium_mg": 120,
+      "potassium_mg": 26,
+      "fluid_ml": 130,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 108,
+      "distance_m": null,
+      "product_uid": "p-chew",
+      "name": "Chews",
+      "carbs_g": 12.5,
+      "sodium_mg": 30,
+      "potassium_mg": 20,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 120,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 10.4,
+      "sodium_mg": 120,
+      "potassium_mg": 26,
+      "fluid_ml": 130,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 120,
+      "distance_m": null,
+      "product_uid": "p-chew",
+      "name": "Chews",
+      "carbs_g": 12.5,
+      "sodium_mg": 30,
+      "potassium_mg": 20,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 132,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 10.4,
+      "sodium_mg": 120,
+      "potassium_mg": 26,
+      "fluid_ml": 130,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 144,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 10.4,
+      "sodium_mg": 120,
+      "potassium_mg": 26,
+      "fluid_ml": 130,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 144,
+      "distance_m": null,
+      "product_uid": "p-chew",
+      "name": "Chews",
+      "carbs_g": 12.5,
+      "sodium_mg": 30,
+      "potassium_mg": 20,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 156,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 10.4,
+      "sodium_mg": 120,
+      "potassium_mg": 26,
+      "fluid_ml": 130,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 156,
+      "distance_m": null,
+      "product_uid": "p-chew",
+      "name": "Chews",
+      "carbs_g": 12.5,
+      "sodium_mg": 30,
+      "potassium_mg": 20,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 168,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 10.4,
+      "sodium_mg": 120,
+      "potassium_mg": 26,
+      "fluid_ml": 130,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 168,
+      "distance_m": null,
+      "product_uid": "p-chew",
+      "name": "Chews",
+      "carbs_g": 12.5,
+      "sodium_mg": 30,
+      "potassium_mg": 20,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 180,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 10.4,
+      "sodium_mg": 120,
+      "potassium_mg": 26,
+      "fluid_ml": 130,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 180,
+      "distance_m": null,
+      "product_uid": "p-chew",
+      "name": "Chews",
+      "carbs_g": 12.5,
+      "sodium_mg": 30,
+      "potassium_mg": 20,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 192,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 10.4,
+      "sodium_mg": 120,
+      "potassium_mg": 26,
+      "fluid_ml": 130,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 204,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 10.4,
+      "sodium_mg": 120,
+      "potassium_mg": 26,
+      "fluid_ml": 130,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 204,
+      "distance_m": null,
+      "product_uid": "p-chew",
+      "name": "Chews",
+      "carbs_g": 12.5,
+      "sodium_mg": 30,
+      "potassium_mg": 20,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 216,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 10.4,
+      "sodium_mg": 120,
+      "potassium_mg": 26,
+      "fluid_ml": 130,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 216,
+      "distance_m": null,
+      "product_uid": "p-chew",
+      "name": "Chews",
+      "carbs_g": 12.5,
+      "sodium_mg": 30,
+      "potassium_mg": 20,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 228,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 10.4,
+      "sodium_mg": 120,
+      "potassium_mg": 26,
+      "fluid_ml": 130,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 228,
+      "distance_m": null,
+      "product_uid": "p-chew",
+      "name": "Chews",
+      "carbs_g": 12.5,
+      "sodium_mg": 30,
+      "potassium_mg": 20,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     }
+    ],
+    "totals": {
+     "carbs_g": 385,
+     "sodium_mg": 2730,
+     "potassium_mg": 794,
+     "fluid_ml": 2470,
+     "caffeine_mg": 0
+    },
+    "per_hour": {
+     "carbs_g": 96,
+     "sodium_mg": 683,
+     "potassium_mg": 199,
+     "fluid_ml": 618,
+     "caffeine_mg": 0
+    }
+   },
+   "drunk_ml": 2470,
+   "recipes": [
+    {
+     "preset": "basic",
+     "bottle_ml": 500,
+     "expected": {
+      "preset": "basic",
+      "bottle_ml": 500,
+      "bottles": 5,
+      "concentration_pct": 8,
+      "sip_ml": 130,
+      "interval_min": 12,
+      "ingredients": [
+       {
+        "key": "sugar",
+        "name": "Table sugar",
+        "grams": 40.0,
+        "ml": null,
+        "measure": "3 tbsp"
+       },
+       {
+        "key": "salt",
+        "name": "Table salt",
+        "grams": 1.0,
+        "ml": null,
+        "measure": "\u215b tsp"
+       },
+       {
+        "key": "lite_salt",
+        "name": "Lite salt",
+        "grams": 0.4,
+        "ml": null,
+        "measure": "\u215b tsp"
+       }
+      ],
+      "per_bottle": {
+       "carbs_g": 40,
+       "sodium_mg": 476,
+       "potassium_mg": 100
+      }
+     }
+    },
+    {
+     "preset": "basic",
+     "bottle_ml": 750,
+     "expected": {
+      "preset": "basic",
+      "bottle_ml": 750,
+      "bottles": 4,
+      "concentration_pct": 8,
+      "sip_ml": 130,
+      "interval_min": 12,
+      "ingredients": [
+       {
+        "key": "sugar",
+        "name": "Table sugar",
+        "grams": 60.0,
+        "ml": null,
+        "measure": "5 tbsp"
+       },
+       {
+        "key": "salt",
+        "name": "Table salt",
+        "grams": 1.4,
+        "ml": null,
+        "measure": "\u00bc tsp"
+       },
+       {
+        "key": "lite_salt",
+        "name": "Lite salt",
+        "grams": 0.6,
+        "ml": null,
+        "measure": "\u215b tsp"
+       }
+      ],
+      "per_bottle": {
+       "carbs_g": 60,
+       "sodium_mg": 674,
+       "potassium_mg": 150
+      }
+     }
+    },
+    {
+     "preset": "high_carb",
+     "bottle_ml": 500,
+     "expected": {
+      "preset": "high_carb",
+      "bottle_ml": 500,
+      "bottles": 5,
+      "concentration_pct": 8,
+      "sip_ml": 130,
+      "interval_min": 12,
+      "ingredients": [
+       {
+        "key": "maltodextrin",
+        "name": "Maltodextrin",
+        "grams": 5.0,
+        "ml": null,
+        "measure": "2 tsp"
+       },
+       {
+        "key": "sugar",
+        "name": "Table sugar",
+        "grams": 36.0,
+        "ml": null,
+        "measure": "3 tbsp"
+       },
+       {
+        "key": "salt",
+        "name": "Table salt",
+        "grams": 1.0,
+        "ml": null,
+        "measure": "\u215b tsp"
+       },
+       {
+        "key": "lite_salt",
+        "name": "Lite salt",
+        "grams": 0.4,
+        "ml": null,
+        "measure": "\u215b tsp"
+       }
+      ],
+      "per_bottle": {
+       "carbs_g": 41,
+       "sodium_mg": 476,
+       "potassium_mg": 100
+      }
+     }
+    },
+    {
+     "preset": "high_carb",
+     "bottle_ml": 750,
+     "expected": {
+      "preset": "high_carb",
+      "bottle_ml": 750,
+      "bottles": 4,
+      "concentration_pct": 8,
+      "sip_ml": 130,
+      "interval_min": 12,
+      "ingredients": [
+       {
+        "key": "maltodextrin",
+        "name": "Maltodextrin",
+        "grams": 7.0,
+        "ml": null,
+        "measure": "3 tsp"
+       },
+       {
+        "key": "sugar",
+        "name": "Table sugar",
+        "grams": 53.0,
+        "ml": null,
+        "measure": "4 tbsp"
+       },
+       {
+        "key": "salt",
+        "name": "Table salt",
+        "grams": 1.4,
+        "ml": null,
+        "measure": "\u00bc tsp"
+       },
+       {
+        "key": "lite_salt",
+        "name": "Lite salt",
+        "grams": 0.6,
+        "ml": null,
+        "measure": "\u215b tsp"
+       }
+      ],
+      "per_bottle": {
+       "carbs_g": 60,
+       "sodium_mg": 674,
+       "potassium_mg": 150
+      }
+     }
+    },
+    {
+     "preset": "natural",
+     "bottle_ml": 500,
+     "expected": {
+      "preset": "natural",
+      "bottle_ml": 500,
+      "bottles": 5,
+      "concentration_pct": 8,
+      "sip_ml": 130,
+      "interval_min": 12,
+      "ingredients": [
+       {
+        "key": "honey",
+        "name": "Honey",
+        "grams": 47.0,
+        "ml": null,
+        "measure": "2 tbsp"
+       },
+       {
+        "key": "coconut_water",
+        "name": "Coconut water",
+        "grams": null,
+        "ml": 40.0,
+        "measure": "\u00bc cup"
+       },
+       {
+        "key": "salt",
+        "name": "Table salt",
+        "grams": 1.1,
+        "ml": null,
+        "measure": "\u215b tsp"
+       }
+      ],
+      "per_bottle": {
+       "carbs_g": 40,
+       "sodium_mg": 474,
+       "potassium_mg": 100
+      }
+     }
+    },
+    {
+     "preset": "natural",
+     "bottle_ml": 750,
+     "expected": {
+      "preset": "natural",
+      "bottle_ml": 750,
+      "bottles": 4,
+      "concentration_pct": 8,
+      "sip_ml": 130,
+      "interval_min": 12,
+      "ingredients": [
+       {
+        "key": "honey",
+        "name": "Honey",
+        "grams": 70.0,
+        "ml": null,
+        "measure": "3\u00bd tbsp"
+       },
+       {
+        "key": "coconut_water",
+        "name": "Coconut water",
+        "grams": null,
+        "ml": 60.0,
+        "measure": "\u00bc cup"
+       },
+       {
+        "key": "salt",
+        "name": "Table salt",
+        "grams": 1.6,
+        "ml": null,
+        "measure": "\u00bc tsp"
+       }
+      ],
+      "per_bottle": {
+       "carbs_g": 60,
+       "sodium_mg": 692,
+       "potassium_mg": 150
+      }
+     }
+    }
+   ],
+   "default_preset": "high_carb"
+  },
+  {
+   "duration_min": 300,
+   "targets": {
+    "carbs_g_per_h": 120,
+    "fluid_ml_per_h": 800,
+    "sodium_mg_per_h": 800,
+    "potassium_mg_per_h": 160,
+    "interval_min": 20,
+    "band": "very_hot",
+    "custom": {
+     "carbs": true,
+     "fluid": false,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   },
+   "products": [
+    {
+     "uid": "p-big",
+     "name": "Big Gel",
+     "carbs_g": 40.0,
+     "sodium_mg": 200,
+     "fluid_ml": 0,
+     "caffeine_mg": 100
+    }
+   ],
+   "laps": null,
+   "serving": {
+    "uid": "homemade",
+    "name": "Homemade mix",
+    "carbs_g": 8.0,
+    "sodium_mg": 133,
+    "potassium_mg": 27,
+    "fluid_ml": 133,
+    "caffeine_mg": 0,
+    "interval_min": 10,
+    "concentration_pct": 6
+   },
+   "timeline": {
+    "items": [
+     {
+      "minute": 10,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 8.0,
+      "sodium_mg": 133,
+      "potassium_mg": 27,
+      "fluid_ml": 133,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 20,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 8.0,
+      "sodium_mg": 133,
+      "potassium_mg": 27,
+      "fluid_ml": 133,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 20,
+      "distance_m": null,
+      "product_uid": "p-big",
+      "name": "Big Gel",
+      "carbs_g": 40.0,
+      "sodium_mg": 200,
+      "potassium_mg": 0,
+      "fluid_ml": 0,
+      "caffeine_mg": 100
+     },
+     {
+      "minute": 30,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 8.0,
+      "sodium_mg": 133,
+      "potassium_mg": 27,
+      "fluid_ml": 133,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 40,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 8.0,
+      "sodium_mg": 133,
+      "potassium_mg": 27,
+      "fluid_ml": 133,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 50,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 8.0,
+      "sodium_mg": 133,
+      "potassium_mg": 27,
+      "fluid_ml": 133,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 50,
+      "distance_m": null,
+      "product_uid": "p-big",
+      "name": "Big Gel",
+      "carbs_g": 40.0,
+      "sodium_mg": 200,
+      "potassium_mg": 0,
+      "fluid_ml": 0,
+      "caffeine_mg": 100
+     },
+     {
+      "minute": 60,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 8.0,
+      "sodium_mg": 133,
+      "potassium_mg": 27,
+      "fluid_ml": 133,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 70,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 8.0,
+      "sodium_mg": 133,
+      "potassium_mg": 27,
+      "fluid_ml": 133,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 80,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 8.0,
+      "sodium_mg": 133,
+      "potassium_mg": 27,
+      "fluid_ml": 133,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 90,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 8.0,
+      "sodium_mg": 133,
+      "potassium_mg": 27,
+      "fluid_ml": 133,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 90,
+      "distance_m": null,
+      "product_uid": "p-big",
+      "name": "Big Gel",
+      "carbs_g": 40.0,
+      "sodium_mg": 200,
+      "potassium_mg": 0,
+      "fluid_ml": 0,
+      "caffeine_mg": 100
+     },
+     {
+      "minute": 100,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 8.0,
+      "sodium_mg": 133,
+      "potassium_mg": 27,
+      "fluid_ml": 133,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 110,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 8.0,
+      "sodium_mg": 133,
+      "potassium_mg": 27,
+      "fluid_ml": 133,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 120,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 8.0,
+      "sodium_mg": 133,
+      "potassium_mg": 27,
+      "fluid_ml": 133,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 120,
+      "distance_m": null,
+      "product_uid": "p-big",
+      "name": "Big Gel",
+      "carbs_g": 40.0,
+      "sodium_mg": 200,
+      "potassium_mg": 0,
+      "fluid_ml": 0,
+      "caffeine_mg": 100
+     },
+     {
+      "minute": 130,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 8.0,
+      "sodium_mg": 133,
+      "potassium_mg": 27,
+      "fluid_ml": 133,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 140,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 8.0,
+      "sodium_mg": 133,
+      "potassium_mg": 27,
+      "fluid_ml": 133,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 150,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 8.0,
+      "sodium_mg": 133,
+      "potassium_mg": 27,
+      "fluid_ml": 133,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 150,
+      "distance_m": null,
+      "product_uid": "p-big",
+      "name": "Big Gel",
+      "carbs_g": 40.0,
+      "sodium_mg": 200,
+      "potassium_mg": 0,
+      "fluid_ml": 0,
+      "caffeine_mg": 100
+     },
+     {
+      "minute": 160,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 8.0,
+      "sodium_mg": 133,
+      "potassium_mg": 27,
+      "fluid_ml": 133,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 170,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 8.0,
+      "sodium_mg": 133,
+      "potassium_mg": 27,
+      "fluid_ml": 133,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 180,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 8.0,
+      "sodium_mg": 133,
+      "potassium_mg": 27,
+      "fluid_ml": 133,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 190,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 8.0,
+      "sodium_mg": 133,
+      "potassium_mg": 27,
+      "fluid_ml": 133,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 190,
+      "distance_m": null,
+      "product_uid": "p-big",
+      "name": "Big Gel",
+      "carbs_g": 40.0,
+      "sodium_mg": 200,
+      "potassium_mg": 0,
+      "fluid_ml": 0,
+      "caffeine_mg": 100
+     },
+     {
+      "minute": 200,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 8.0,
+      "sodium_mg": 133,
+      "potassium_mg": 27,
+      "fluid_ml": 133,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 210,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 8.0,
+      "sodium_mg": 133,
+      "potassium_mg": 27,
+      "fluid_ml": 133,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 220,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 8.0,
+      "sodium_mg": 133,
+      "potassium_mg": 27,
+      "fluid_ml": 133,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 220,
+      "distance_m": null,
+      "product_uid": "p-big",
+      "name": "Big Gel",
+      "carbs_g": 40.0,
+      "sodium_mg": 200,
+      "potassium_mg": 0,
+      "fluid_ml": 0,
+      "caffeine_mg": 100
+     },
+     {
+      "minute": 230,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 8.0,
+      "sodium_mg": 133,
+      "potassium_mg": 27,
+      "fluid_ml": 133,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 240,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 8.0,
+      "sodium_mg": 133,
+      "potassium_mg": 27,
+      "fluid_ml": 133,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 250,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 8.0,
+      "sodium_mg": 133,
+      "potassium_mg": 27,
+      "fluid_ml": 133,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 250,
+      "distance_m": null,
+      "product_uid": "p-big",
+      "name": "Big Gel",
+      "carbs_g": 40.0,
+      "sodium_mg": 200,
+      "potassium_mg": 0,
+      "fluid_ml": 0,
+      "caffeine_mg": 100
+     },
+     {
+      "minute": 260,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 8.0,
+      "sodium_mg": 133,
+      "potassium_mg": 27,
+      "fluid_ml": 133,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 270,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 8.0,
+      "sodium_mg": 133,
+      "potassium_mg": 27,
+      "fluid_ml": 133,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 280,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 8.0,
+      "sodium_mg": 133,
+      "potassium_mg": 27,
+      "fluid_ml": 133,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 290,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 8.0,
+      "sodium_mg": 133,
+      "potassium_mg": 27,
+      "fluid_ml": 133,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 290,
+      "distance_m": null,
+      "product_uid": "p-big",
+      "name": "Big Gel",
+      "carbs_g": 40.0,
+      "sodium_mg": 200,
+      "potassium_mg": 0,
+      "fluid_ml": 0,
+      "caffeine_mg": 100
+     }
+    ],
+    "totals": {
+     "carbs_g": 592,
+     "sodium_mg": 5657,
+     "potassium_mg": 783,
+     "fluid_ml": 3857,
+     "caffeine_mg": 900
+    },
+    "per_hour": {
+     "carbs_g": 118,
+     "sodium_mg": 1131,
+     "potassium_mg": 157,
+     "fluid_ml": 771,
+     "caffeine_mg": 180
+    }
+   },
+   "drunk_ml": 3857,
+   "recipes": [
+    {
+     "preset": "basic",
+     "bottle_ml": 500,
+     "expected": {
+      "preset": "basic",
+      "bottle_ml": 500,
+      "bottles": 8,
+      "concentration_pct": 6,
+      "sip_ml": 133,
+      "interval_min": 10,
+      "ingredients": [
+       {
+        "key": "sugar",
+        "name": "Table sugar",
+        "grams": 30.0,
+        "ml": null,
+        "measure": "2\u00bd tbsp"
+       },
+       {
+        "key": "salt",
+        "name": "Table salt",
+        "grams": 1.1,
+        "ml": null,
+        "measure": "\u215b tsp"
+       },
+       {
+        "key": "lite_salt",
+        "name": "Lite salt",
+        "grams": 0.4,
+        "ml": null,
+        "measure": "\u215b tsp"
+       }
+      ],
+      "per_bottle": {
+       "carbs_g": 30,
+       "sodium_mg": 515,
+       "potassium_mg": 100
+      }
+     }
+    },
+    {
+     "preset": "basic",
+     "bottle_ml": 750,
+     "expected": {
+      "preset": "basic",
+      "bottle_ml": 750,
+      "bottles": 6,
+      "concentration_pct": 6,
+      "sip_ml": 133,
+      "interval_min": 10,
+      "ingredients": [
+       {
+        "key": "sugar",
+        "name": "Table sugar",
+        "grams": 45.0,
+        "ml": null,
+        "measure": "3\u00bd tbsp"
+       },
+       {
+        "key": "salt",
+        "name": "Table salt",
+        "grams": 1.6,
+        "ml": null,
+        "measure": "\u00bc tsp"
+       },
+       {
+        "key": "lite_salt",
+        "name": "Lite salt",
+        "grams": 0.6,
+        "ml": null,
+        "measure": "\u215b tsp"
+       }
+      ],
+      "per_bottle": {
+       "carbs_g": 45,
+       "sodium_mg": 753,
+       "potassium_mg": 150
+      }
+     }
+    },
+    {
+     "preset": "high_carb",
+     "bottle_ml": 500,
+     "expected": {
+      "preset": "high_carb",
+      "bottle_ml": 500,
+      "bottles": 8,
+      "concentration_pct": 6,
+      "sip_ml": 133,
+      "interval_min": 10,
+      "ingredients": [
+       {
+        "key": "maltodextrin",
+        "name": "Maltodextrin",
+        "grams": 4.0,
+        "ml": null,
+        "measure": "1\u00bd tsp"
+       },
+       {
+        "key": "sugar",
+        "name": "Table sugar",
+        "grams": 27.0,
+        "ml": null,
+        "measure": "2 tbsp"
+       },
+       {
+        "key": "salt",
+        "name": "Table salt",
+        "grams": 1.1,
+        "ml": null,
+        "measure": "\u215b tsp"
+       },
+       {
+        "key": "lite_salt",
+        "name": "Lite salt",
+        "grams": 0.4,
+        "ml": null,
+        "measure": "\u215b tsp"
+       }
+      ],
+      "per_bottle": {
+       "carbs_g": 31,
+       "sodium_mg": 515,
+       "potassium_mg": 100
+      }
+     }
+    },
+    {
+     "preset": "high_carb",
+     "bottle_ml": 750,
+     "expected": {
+      "preset": "high_carb",
+      "bottle_ml": 750,
+      "bottles": 6,
+      "concentration_pct": 6,
+      "sip_ml": 133,
+      "interval_min": 10,
+      "ingredients": [
+       {
+        "key": "maltodextrin",
+        "name": "Maltodextrin",
+        "grams": 5.0,
+        "ml": null,
+        "measure": "2 tsp"
+       },
+       {
+        "key": "sugar",
+        "name": "Table sugar",
+        "grams": 40.0,
+        "ml": null,
+        "measure": "3 tbsp"
+       },
+       {
+        "key": "salt",
+        "name": "Table salt",
+        "grams": 1.6,
+        "ml": null,
+        "measure": "\u00bc tsp"
+       },
+       {
+        "key": "lite_salt",
+        "name": "Lite salt",
+        "grams": 0.6,
+        "ml": null,
+        "measure": "\u215b tsp"
+       }
+      ],
+      "per_bottle": {
+       "carbs_g": 45,
+       "sodium_mg": 753,
+       "potassium_mg": 150
+      }
+     }
+    },
+    {
+     "preset": "natural",
+     "bottle_ml": 500,
+     "expected": {
+      "preset": "natural",
+      "bottle_ml": 500,
+      "bottles": 8,
+      "concentration_pct": 6,
+      "sip_ml": 133,
+      "interval_min": 10,
+      "ingredients": [
+       {
+        "key": "honey",
+        "name": "Honey",
+        "grams": 35.0,
+        "ml": null,
+        "measure": "1\u00bd tbsp"
+       },
+       {
+        "key": "coconut_water",
+        "name": "Coconut water",
+        "grams": null,
+        "ml": 40.0,
+        "measure": "\u00bc cup"
+       },
+       {
+        "key": "salt",
+        "name": "Table salt",
+        "grams": 1.2,
+        "ml": null,
+        "measure": "\u00bc tsp"
+       }
+      ],
+      "per_bottle": {
+       "carbs_g": 30,
+       "sodium_mg": 514,
+       "potassium_mg": 100
+      }
+     }
+    },
+    {
+     "preset": "natural",
+     "bottle_ml": 750,
+     "expected": {
+      "preset": "natural",
+      "bottle_ml": 750,
+      "bottles": 6,
+      "concentration_pct": 6,
+      "sip_ml": 133,
+      "interval_min": 10,
+      "ingredients": [
+       {
+        "key": "honey",
+        "name": "Honey",
+        "grams": 52.0,
+        "ml": null,
+        "measure": "2\u00bd tbsp"
+       },
+       {
+        "key": "coconut_water",
+        "name": "Coconut water",
+        "grams": null,
+        "ml": 60.0,
+        "measure": "\u00bc cup"
+       },
+       {
+        "key": "salt",
+        "name": "Table salt",
+        "grams": 1.7,
+        "ml": null,
+        "measure": "\u00bc tsp"
+       }
+      ],
+      "per_bottle": {
+       "carbs_g": 45,
+       "sodium_mg": 731,
+       "potassium_mg": 150
+      }
+     }
+    }
+   ],
+   "default_preset": "high_carb"
+  },
+  {
+   "duration_min": 180,
+   "targets": {
+    "carbs_g_per_h": 80,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 100,
+    "interval_min": 25,
+    "band": "normal",
+    "custom": {
+     "carbs": true,
+     "fluid": false,
+     "sodium": false,
+     "potassium": false,
+     "interval": true
+    }
+   },
+   "products": [
+    {
+     "uid": "p-gel",
+     "name": "Gel",
+     "carbs_g": 25.0,
+     "sodium_mg": 50,
+     "fluid_ml": 0,
+     "caffeine_mg": 0
+    }
+   ],
+   "laps": null,
+   "serving": {
+    "uid": "homemade",
+    "name": "Homemade mix",
+    "carbs_g": 25.0,
+    "sodium_mg": 167,
+    "potassium_mg": 42,
+    "fluid_ml": 208,
+    "caffeine_mg": 0,
+    "interval_min": 25,
+    "concentration_pct": 12
+   },
+   "timeline": {
+    "items": [
+     {
+      "minute": 25,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 25.0,
+      "sodium_mg": 167,
+      "potassium_mg": 42,
+      "fluid_ml": 208,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 50,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 25.0,
+      "sodium_mg": 167,
+      "potassium_mg": 42,
+      "fluid_ml": 208,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 50,
+      "distance_m": null,
+      "product_uid": "p-gel",
+      "name": "Gel",
+      "carbs_g": 25.0,
+      "sodium_mg": 50,
+      "potassium_mg": 0,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 75,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 25.0,
+      "sodium_mg": 167,
+      "potassium_mg": 42,
+      "fluid_ml": 208,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 100,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 25.0,
+      "sodium_mg": 167,
+      "potassium_mg": 42,
+      "fluid_ml": 208,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 125,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 25.0,
+      "sodium_mg": 167,
+      "potassium_mg": 42,
+      "fluid_ml": 208,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 125,
+      "distance_m": null,
+      "product_uid": "p-gel",
+      "name": "Gel",
+      "carbs_g": 25.0,
+      "sodium_mg": 50,
+      "potassium_mg": 0,
+      "fluid_ml": 0,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 150,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 25.0,
+      "sodium_mg": 167,
+      "potassium_mg": 42,
+      "fluid_ml": 208,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 175,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 25.0,
+      "sodium_mg": 167,
+      "potassium_mg": 42,
+      "fluid_ml": 208,
+      "caffeine_mg": 0
+     }
+    ],
+    "totals": {
+     "carbs_g": 225,
+     "sodium_mg": 1269,
+     "potassium_mg": 294,
+     "fluid_ml": 1456,
+     "caffeine_mg": 0
+    },
+    "per_hour": {
+     "carbs_g": 75,
+     "sodium_mg": 423,
+     "potassium_mg": 98,
+     "fluid_ml": 485,
+     "caffeine_mg": 0
+    }
+   },
+   "drunk_ml": 1456,
+   "recipes": [
+    {
+     "preset": "basic",
+     "bottle_ml": 500,
+     "expected": {
+      "preset": "basic",
+      "bottle_ml": 500,
+      "bottles": 3,
+      "concentration_pct": 12,
+      "sip_ml": 208,
+      "interval_min": 25,
+      "ingredients": [
+       {
+        "key": "sugar",
+        "name": "Table sugar",
+        "grams": 60.0,
+        "ml": null,
+        "measure": "5 tbsp"
+       },
+       {
+        "key": "salt",
+        "name": "Table salt",
+        "grams": 0.8,
+        "ml": null,
+        "measure": "\u215b tsp"
+       },
+       {
+        "key": "lite_salt",
+        "name": "Lite salt",
+        "grams": 0.4,
+        "ml": null,
+        "measure": "\u215b tsp"
+       }
+      ],
+      "per_bottle": {
+       "carbs_g": 60,
+       "sodium_mg": 397,
+       "potassium_mg": 100
+      }
+     }
+    },
+    {
+     "preset": "basic",
+     "bottle_ml": 750,
+     "expected": {
+      "preset": "basic",
+      "bottle_ml": 750,
+      "bottles": 2,
+      "concentration_pct": 12,
+      "sip_ml": 208,
+      "interval_min": 25,
+      "ingredients": [
+       {
+        "key": "sugar",
+        "name": "Table sugar",
+        "grams": 90.0,
+        "ml": null,
+        "measure": "7 tbsp"
+       },
+       {
+        "key": "salt",
+        "name": "Table salt",
+        "grams": 1.2,
+        "ml": null,
+        "measure": "\u00bc tsp"
+       },
+       {
+        "key": "lite_salt",
+        "name": "Lite salt",
+        "grams": 0.6,
+        "ml": null,
+        "measure": "\u215b tsp"
+       }
+      ],
+      "per_bottle": {
+       "carbs_g": 90,
+       "sodium_mg": 596,
+       "potassium_mg": 150
+      }
+     }
+    },
+    {
+     "preset": "high_carb",
+     "bottle_ml": 500,
+     "expected": {
+      "preset": "high_carb",
+      "bottle_ml": 500,
+      "bottles": 3,
+      "concentration_pct": 12,
+      "sip_ml": 208,
+      "interval_min": 25,
+      "ingredients": [
+       {
+        "key": "maltodextrin",
+        "name": "Maltodextrin",
+        "grams": 21.0,
+        "ml": null,
+        "measure": "3 tbsp"
+       },
+       {
+        "key": "sugar",
+        "name": "Table sugar",
+        "grams": 40.0,
+        "ml": null,
+        "measure": "3 tbsp"
+       },
+       {
+        "key": "salt",
+        "name": "Table salt",
+        "grams": 0.8,
+        "ml": null,
+        "measure": "\u215b tsp"
+       },
+       {
+        "key": "lite_salt",
+        "name": "Lite salt",
+        "grams": 0.4,
+        "ml": null,
+        "measure": "\u215b tsp"
+       }
+      ],
+      "per_bottle": {
+       "carbs_g": 60,
+       "sodium_mg": 397,
+       "potassium_mg": 100
+      }
+     }
+    },
+    {
+     "preset": "high_carb",
+     "bottle_ml": 750,
+     "expected": {
+      "preset": "high_carb",
+      "bottle_ml": 750,
+      "bottles": 2,
+      "concentration_pct": 12,
+      "sip_ml": 208,
+      "interval_min": 25,
+      "ingredients": [
+       {
+        "key": "maltodextrin",
+        "name": "Maltodextrin",
+        "grams": 32.0,
+        "ml": null,
+        "measure": "4 tbsp"
+       },
+       {
+        "key": "sugar",
+        "name": "Table sugar",
+        "grams": 60.0,
+        "ml": null,
+        "measure": "5 tbsp"
+       },
+       {
+        "key": "salt",
+        "name": "Table salt",
+        "grams": 1.2,
+        "ml": null,
+        "measure": "\u00bc tsp"
+       },
+       {
+        "key": "lite_salt",
+        "name": "Lite salt",
+        "grams": 0.6,
+        "ml": null,
+        "measure": "\u215b tsp"
+       }
+      ],
+      "per_bottle": {
+       "carbs_g": 90,
+       "sodium_mg": 596,
+       "potassium_mg": 150
+      }
+     }
+    },
+    {
+     "preset": "natural",
+     "bottle_ml": 500,
+     "expected": {
+      "preset": "natural",
+      "bottle_ml": 500,
+      "bottles": 3,
+      "concentration_pct": 12,
+      "sip_ml": 208,
+      "interval_min": 25,
+      "ingredients": [
+       {
+        "key": "honey",
+        "name": "Honey",
+        "grams": 71.0,
+        "ml": null,
+        "measure": "3\u00bd tbsp"
+       },
+       {
+        "key": "coconut_water",
+        "name": "Coconut water",
+        "grams": null,
+        "ml": 40.0,
+        "measure": "\u00bc cup"
+       },
+       {
+        "key": "salt",
+        "name": "Table salt",
+        "grams": 0.9,
+        "ml": null,
+        "measure": "\u215b tsp"
+       }
+      ],
+      "per_bottle": {
+       "carbs_g": 60,
+       "sodium_mg": 396,
+       "potassium_mg": 100
+      }
+     }
+    },
+    {
+     "preset": "natural",
+     "bottle_ml": 750,
+     "expected": {
+      "preset": "natural",
+      "bottle_ml": 750,
+      "bottles": 2,
+      "concentration_pct": 12,
+      "sip_ml": 208,
+      "interval_min": 25,
+      "ingredients": [
+       {
+        "key": "honey",
+        "name": "Honey",
+        "grams": 107.0,
+        "ml": null,
+        "measure": "5 tbsp"
+       },
+       {
+        "key": "coconut_water",
+        "name": "Coconut water",
+        "grams": null,
+        "ml": 60.0,
+        "measure": "\u00bc cup"
+       },
+       {
+        "key": "salt",
+        "name": "Table salt",
+        "grams": 1.4,
+        "ml": null,
+        "measure": "\u00bc tsp"
+       }
+      ],
+      "per_bottle": {
+       "carbs_g": 90,
+       "sodium_mg": 613,
+       "potassium_mg": 150
+      }
+     }
+    }
+   ],
+   "default_preset": "high_carb"
+  },
+  {
+   "duration_min": 50,
+   "targets": {
+    "carbs_g_per_h": 30,
+    "fluid_ml_per_h": 500,
+    "sodium_mg_per_h": 400,
+    "potassium_mg_per_h": 100,
+    "interval_min": 20,
+    "band": "normal",
+    "custom": {
+     "carbs": true,
+     "fluid": false,
+     "sodium": false,
+     "potassium": false,
+     "interval": false
+    }
+   },
+   "products": [],
+   "laps": null,
+   "serving": {
+    "uid": "homemade",
+    "name": "Homemade mix",
+    "carbs_g": 7.5,
+    "sodium_mg": 100,
+    "potassium_mg": 25,
+    "fluid_ml": 125,
+    "caffeine_mg": 0,
+    "interval_min": 15,
+    "concentration_pct": 12
+   },
+   "timeline": {
+    "items": [
+     {
+      "minute": 15,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 7.5,
+      "sodium_mg": 100,
+      "potassium_mg": 25,
+      "fluid_ml": 125,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 30,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 7.5,
+      "sodium_mg": 100,
+      "potassium_mg": 25,
+      "fluid_ml": 125,
+      "caffeine_mg": 0
+     },
+     {
+      "minute": 45,
+      "distance_m": null,
+      "product_uid": "homemade",
+      "name": "Homemade mix",
+      "carbs_g": 7.5,
+      "sodium_mg": 100,
+      "potassium_mg": 25,
+      "fluid_ml": 125,
+      "caffeine_mg": 0
+     }
+    ],
+    "totals": {
+     "carbs_g": 23,
+     "sodium_mg": 300,
+     "potassium_mg": 75,
+     "fluid_ml": 375,
+     "caffeine_mg": 0
+    },
+    "per_hour": {
+     "carbs_g": 27,
+     "sodium_mg": 360,
+     "potassium_mg": 90,
+     "fluid_ml": 450,
+     "caffeine_mg": 0
+    }
+   },
+   "drunk_ml": 375,
+   "recipes": [
+    {
+     "preset": "basic",
+     "bottle_ml": 500,
+     "expected": {
+      "preset": "basic",
+      "bottle_ml": 500,
+      "bottles": 1,
+      "concentration_pct": 12,
+      "sip_ml": 125,
+      "interval_min": 15,
+      "ingredients": [
+       {
+        "key": "sugar",
+        "name": "Table sugar",
+        "grams": 30.0,
+        "ml": null,
+        "measure": "2\u00bd tbsp"
+       },
+       {
+        "key": "salt",
+        "name": "Table salt",
+        "grams": 0.8,
+        "ml": null,
+        "measure": "\u215b tsp"
+       },
+       {
+        "key": "lite_salt",
+        "name": "Lite salt",
+        "grams": 0.4,
+        "ml": null,
+        "measure": "\u215b tsp"
+       }
+      ],
+      "per_bottle": {
+       "carbs_g": 30,
+       "sodium_mg": 397,
+       "potassium_mg": 100
+      }
+     }
+    },
+    {
+     "preset": "basic",
+     "bottle_ml": 750,
+     "expected": {
+      "preset": "basic",
+      "bottle_ml": 750,
+      "bottles": 1,
+      "concentration_pct": 12,
+      "sip_ml": 125,
+      "interval_min": 15,
+      "ingredients": [
+       {
+        "key": "sugar",
+        "name": "Table sugar",
+        "grams": 45.0,
+        "ml": null,
+        "measure": "3\u00bd tbsp"
+       },
+       {
+        "key": "salt",
+        "name": "Table salt",
+        "grams": 1.2,
+        "ml": null,
+        "measure": "\u00bc tsp"
+       },
+       {
+        "key": "lite_salt",
+        "name": "Lite salt",
+        "grams": 0.6,
+        "ml": null,
+        "measure": "\u215b tsp"
+       }
+      ],
+      "per_bottle": {
+       "carbs_g": 45,
+       "sodium_mg": 596,
+       "potassium_mg": 150
+      }
+     }
+    },
+    {
+     "preset": "high_carb",
+     "bottle_ml": 500,
+     "expected": {
+      "preset": "high_carb",
+      "bottle_ml": 500,
+      "bottles": 1,
+      "concentration_pct": 12,
+      "sip_ml": 125,
+      "interval_min": 15,
+      "ingredients": [
+       {
+        "key": "maltodextrin",
+        "name": "Maltodextrin",
+        "grams": 11.0,
+        "ml": null,
+        "measure": "1\u00bd tbsp"
+       },
+       {
+        "key": "sugar",
+        "name": "Table sugar",
+        "grams": 20.0,
+        "ml": null,
+        "measure": "1\u00bd tbsp"
+       },
+       {
+        "key": "salt",
+        "name": "Table salt",
+        "grams": 0.8,
+        "ml": null,
+        "measure": "\u215b tsp"
+       },
+       {
+        "key": "lite_salt",
+        "name": "Lite salt",
+        "grams": 0.4,
+        "ml": null,
+        "measure": "\u215b tsp"
+       }
+      ],
+      "per_bottle": {
+       "carbs_g": 30,
+       "sodium_mg": 397,
+       "potassium_mg": 100
+      }
+     }
+    },
+    {
+     "preset": "high_carb",
+     "bottle_ml": 750,
+     "expected": {
+      "preset": "high_carb",
+      "bottle_ml": 750,
+      "bottles": 1,
+      "concentration_pct": 12,
+      "sip_ml": 125,
+      "interval_min": 15,
+      "ingredients": [
+       {
+        "key": "maltodextrin",
+        "name": "Maltodextrin",
+        "grams": 16.0,
+        "ml": null,
+        "measure": "2 tbsp"
+       },
+       {
+        "key": "sugar",
+        "name": "Table sugar",
+        "grams": 30.0,
+        "ml": null,
+        "measure": "2\u00bd tbsp"
+       },
+       {
+        "key": "salt",
+        "name": "Table salt",
+        "grams": 1.2,
+        "ml": null,
+        "measure": "\u00bc tsp"
+       },
+       {
+        "key": "lite_salt",
+        "name": "Lite salt",
+        "grams": 0.6,
+        "ml": null,
+        "measure": "\u215b tsp"
+       }
+      ],
+      "per_bottle": {
+       "carbs_g": 45,
+       "sodium_mg": 596,
+       "potassium_mg": 150
+      }
+     }
+    },
+    {
+     "preset": "natural",
+     "bottle_ml": 500,
+     "expected": {
+      "preset": "natural",
+      "bottle_ml": 500,
+      "bottles": 1,
+      "concentration_pct": 12,
+      "sip_ml": 125,
+      "interval_min": 15,
+      "ingredients": [
+       {
+        "key": "honey",
+        "name": "Honey",
+        "grams": 35.0,
+        "ml": null,
+        "measure": "1\u00bd tbsp"
+       },
+       {
+        "key": "coconut_water",
+        "name": "Coconut water",
+        "grams": null,
+        "ml": 40.0,
+        "measure": "\u00bc cup"
+       },
+       {
+        "key": "salt",
+        "name": "Table salt",
+        "grams": 0.9,
+        "ml": null,
+        "measure": "\u215b tsp"
+       }
+      ],
+      "per_bottle": {
+       "carbs_g": 30,
+       "sodium_mg": 396,
+       "potassium_mg": 100
+      }
+     }
+    },
+    {
+     "preset": "natural",
+     "bottle_ml": 750,
+     "expected": {
+      "preset": "natural",
+      "bottle_ml": 750,
+      "bottles": 1,
+      "concentration_pct": 12,
+      "sip_ml": 125,
+      "interval_min": 15,
+      "ingredients": [
+       {
+        "key": "honey",
+        "name": "Honey",
+        "grams": 52.0,
+        "ml": null,
+        "measure": "2\u00bd tbsp"
+       },
+       {
+        "key": "coconut_water",
+        "name": "Coconut water",
+        "grams": null,
+        "ml": 60.0,
+        "measure": "\u00bc cup"
+       },
+       {
+        "key": "salt",
+        "name": "Table salt",
+        "grams": 1.4,
+        "ml": null,
+        "measure": "\u00bc tsp"
+       }
+      ],
+      "per_bottle": {
+       "carbs_g": 45,
+       "sodium_mg": 613,
+       "potassium_mg": 150
+      }
+     }
+    }
+   ],
+   "default_preset": "basic"
   }
  ]
 }

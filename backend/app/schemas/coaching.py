@@ -219,6 +219,8 @@ class RacePlanUpdate(BaseModel):
     fuel_potassium_mg_per_hour: int | None = None
     fuel_interval_min:       int | None = None
     fuel_product_uids:       list[str] | None = None
+    fuel_mix_preset:         str | None = None
+    fuel_mix_bottle_ml:      int | None = None
 
 
 class LapPaceOut(BaseModel):
@@ -288,6 +290,8 @@ class RacePlanOut(BaseModel):
     fuel_potassium_mg_per_hour: int | None = None
     fuel_interval_min:       int | None = None
     fuel_product_uids:       list[str] | None = None
+    fuel_mix_preset:         str | None = None
+    fuel_mix_bottle_ml:      int | None = None
     mtb_discipline:      str  | None = None     # mirror of goal.mtb_discipline
     cycling_discipline:  str  | None = None     # mirror of goal.cycling_discipline
 

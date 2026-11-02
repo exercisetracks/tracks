@@ -191,12 +191,14 @@ entities:
              technicality_label, target_hr_ceiling, climb_target_w_per_kg, lap_paces,
              triathlon_splits_m, watch_filename, watch_uploaded_at,
              fuel_carbs_per_hour, fuel_fluid_ml_per_hour, fuel_sodium_mg_per_hour, fuel_potassium_mg_per_hour,
-             fuel_interval_min, fuel_product_uids]
+             fuel_interval_min, fuel_product_uids, fuel_mix_preset, fuel_mix_bottle_ml]
     refs: {goal_uid: goal}
     # fuel_*_per_hour: the user's own targets; null = the calculated default
     # (calculators/fuel_plan.py and its Kotlin port). fuel_product_uids is an
     # ordered JSON list of fuel_product uids the timeline may use — plain data,
     # not a ref, because a list ref would need a join table for one feature.
+    # Its reserved entry "homemade" is the built-in homemade mix, made to
+    # fuel_mix_preset and fuel_mix_bottle_ml.
     # Derived, not synced: predicted_seconds, weather_snapshot, fit_b64, generated_at.
 
   plan:

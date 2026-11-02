@@ -160,6 +160,11 @@ class RacePlan(Base, Synced):
     fuel_potassium_mg_per_hour = Column(Integer, nullable=True)
     fuel_interval_min       = Column(Integer, nullable=True)
     fuel_product_uids       = Column(PJson, nullable=True)
+    # The homemade mix (a "homemade" entry in fuel_product_uids): its recipe —
+    # basic | high_carb | natural, null = picked by carb rate — and its bottle
+    # in ml, null = 750. See calculators/fuel_plan.py.
+    fuel_mix_preset         = Column(String, nullable=True)
+    fuel_mix_bottle_ml      = Column(Integer, nullable=True)
 
     generated_at = Column(DateTime(timezone=True), nullable=True)
     updated_at   = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
