@@ -21,8 +21,8 @@
 // Pace runs faster-up, as everywhere in the app: a climb shows as the pace
 // line dipping under the hill.
 
-import { useMemo } from "react";
-import { ComposedChart, Area, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+import { useMemo, useState } from "react";
+import { ComposedChart, Area, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ReferenceLine } from "recharts";
 import { courseProfile, targetMetric } from "./courseProfile";
 import { fmtPace, fmtGradient } from "./format";
 import { CHART_GRID } from "../../design/chartGrid";
@@ -67,7 +67,11 @@ export function swimPace(secPerKm) {
  * the course's hills do not belong to.
  */
 export default function ElevationChart({ coursePath, laps, sport, metric: forced, elevation = true,
-  imperial = false, onHover, height = 160 }) {
+  imperial = false, onHover, height = 160, handles = null, onHandles }) {
+  // `handles`: metres along the course a triathlon's T1 and T2 sit at,
+  // dragged to correct the automatic split; `onHandles` gets the new pair on
+  // release. Pressing near a handle picks it up; anywhere else reads the plot.
+  const [drag, setDrag] = useState(null);     // { i, m } while a handle is held
   const metric = forced ?? targetMetric(sport, laps);
   const data = useMemo(
     () => courseProfile(elevation ? coursePath : null, laps, metric),
@@ -93,6 +97,18 @@ export default function ElevationChart({ coursePath, laps, sport, metric: forced
     ...d, x: toDist(d.m), e: d.ele != null ? Math.round(imperial ? d.ele * 3.28084 : d.ele) : null,
   }));
   const faster = metric === "pace" || metric === "swim";
+  const toM = (x) => x * 1000 * (imperial ? KM_PER_MILE : 1);
+  const span = rows.length ? rows[rows.length - 1].x - rows[0].x : 1;
+  const shown = handles?.map((m, i) => (drag?.i === i ? drag.m : m));
+  const nearest = (x) => {
+    if (!shown) return null;
+    let best = null;
+    shown.forEach((m, i) => {
+      const d = Math.abs(toDist(m) - x);
+      if (d <= span * 0.04 && (best == null || d < best.d)) best = { i, d };
+    });
+    return best?.i ?? null;
+  };
 
   const tip = ({ active, payload }) => {
     const p = active && payload?.[0]?.payload;
@@ -132,15 +148,35 @@ export default function ElevationChart({ coursePath, laps, sport, metric: forced
       </div>
       <div style={{ height }} className="w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={rows} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}
+          <ComposedChart data={rows} margin={{ top: shown ? 18 : 4, right: 0, left: 0, bottom: 0 }}
+            onMouseDown={(s) => {
+              const i = s?.activeLabel != null ? nearest(s.activeLabel) : null;
+              if (i != null) setDrag({ i, m: shown[i] });
+            }}
             onMouseMove={(s) => {
               const p = s?.activePayload?.[0]?.payload;
               if (p?.lat != null) onHover?.([p.lat, p.lon]);
+              if (drag && s?.activeLabel != null) {
+                // T1 stays before T2, and both on the course.
+                const m = toM(s.activeLabel);
+                const lo = drag.i === 1 ? shown[0] + 50 : 0;
+                const hi = drag.i === 0 ? shown[1] - 50 : toM(rows[rows.length - 1].x);
+                setDrag({ i: drag.i, m: Math.max(lo, Math.min(hi, m)) });
+              }
             }}
-            onMouseLeave={() => onHover?.(null)}>
+            onMouseUp={() => {
+              if (!drag) return;
+              const next = shown.map((m) => Math.round(m * 10) / 10);
+              setDrag(null);
+              onHandles?.(next);
+            }}
+            onMouseLeave={() => { onHover?.(null); setDrag(null); }}
+            style={shown ? { cursor: drag ? "grabbing" : "default" } : undefined}>
             <CartesianGrid {...CHART_GRID} />
             <XAxis dataKey="x" type="number" domain={["dataMin", "dataMax"]} tick={TICK} axisLine={false}
-              tickLine={false} tickFormatter={(v) => `${Math.round(v)}`} unit={` ${distUnit}`} tickCount={6} />
+              tickLine={false} unit={` ${distUnit}`} tickCount={6}
+              // Tenths on a short race, where whole units repeat ("0 km, 0 km, 1 km").
+              tickFormatter={(v) => (span < 10 ? v.toFixed(1) : `${Math.round(v)}`)} />
             {hasEle && (
               <YAxis yAxisId="ele" domain={domainOf(rows.filter((r) => r.e != null).map((r) => r.e), MIN_SPAN.ele)} tick={TICK} axisLine={false} tickLine={false} width={40} />
             )}
@@ -159,6 +195,11 @@ export default function ElevationChart({ coursePath, laps, sport, metric: forced
               <Line yAxisId="target" type="monotone" dataKey="target" stroke={series.color} strokeWidth={2}
                 dot={false} isAnimationActive={false} connectNulls />
             )}
+            {shown?.map((m, i) => (
+              <ReferenceLine key={i} yAxisId={hasEle ? "ele" : "target"} x={toDist(m)} stroke="#475569"
+                strokeWidth={drag?.i === i ? 3 : 2} style={{ cursor: "ew-resize" }}
+                label={{ value: `T${i + 1}`, position: "top", fill: "#64748b", fontSize: 11, fontWeight: 600 }} />
+            ))}
             {hasHr && (
               <Line yAxisId="hr" type="monotone" dataKey="hr" stroke={HR_LINE} strokeWidth={1.5}
                 strokeDasharray="5 4" dot={false} isAnimationActive={false} connectNulls />

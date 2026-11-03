@@ -23,7 +23,7 @@ const PIN_SVG =
   '<path d="M13 0C5.8 0 0 5.8 0 13c0 9.2 13 23 13 23s13-13.8 13-23C26 5.8 20.2 0 13 0z" fill="#8b5cf6"/>' +
   '<circle cx="13" cy="13" r="5" fill="#fff"/></svg>';
 
-export default function RaceMap({ coursePath, pinLat, pinLon, onPin, disabled, theme, center, zoom, marker }) {
+export default function RaceMap({ coursePath, pinLat, pinLon, onPin, disabled, theme, center, zoom, marker, legs }) {
   const mapRef = useRef(null);
   const pinRef = useRef(null);
   const markerRef = useRef(null);
@@ -35,12 +35,15 @@ export default function RaceMap({ coursePath, pinLat, pinLon, onPin, disabled, t
   const disabledRef = useRef(disabled); disabledRef.current = disabled;
 
   // Course as a GeoJSON LineString FeatureCollection (empty until >1 point).
-  const courseFC = useMemo(() => ({
-    type: "FeatureCollection",
-    features: coursePath?.length > 1
-      ? [{ type: "Feature", geometry: { type: "LineString", coordinates: coursePath.map(p => [p[1], p[0]]) }, properties: {} }]
-      : [],
-  }), [coursePath]);
+  // A triathlon's legs, when given, are drawn each in its colour, over the
+  // whole course (which a leg's own file may not follow).
+  const courseFC = useMemo(() => {
+    const line = (path, color) => ({ type: "Feature", properties: { color },
+      geometry: { type: "LineString", coordinates: path.map(p => [p[1], p[0]]) } });
+    const features = coursePath?.length > 1 ? [line(coursePath, "#8b5cf6")] : [];
+    for (const l of legs ?? []) if (l.path?.length > 1) features.push(line(l.path, l.color));
+    return { type: "FeatureCollection", features };
+  }, [coursePath, legs]);
 
   // Add the course source/layer on first ready, or update its data thereafter.
   const ensureCourse = (map) => {
@@ -49,7 +52,7 @@ export default function RaceMap({ coursePath, pinLat, pinLon, onPin, disabled, t
       map.addLayer({
         id: "course-line", type: "line", source: "course",
         layout: { "line-cap": "round", "line-join": "round" },
-        paint: { "line-color": "#8b5cf6", "line-width": 3, "line-opacity": 0.85 },
+        paint: { "line-color": ["get", "color"], "line-width": 3, "line-opacity": 0.85 },
       });
     } else {
       map.getSource("course").setData(courseFC);
@@ -108,16 +111,16 @@ export default function RaceMap({ coursePath, pinLat, pinLon, onPin, disabled, t
 
   // fit to the course once it loads
   useEffect(() => {
-    if (!ready || didFit.current || !(coursePath?.length > 1)) return;
+    if (!ready || didFit.current || !(coursePath?.length > 1 || legs?.some((l) => l.path?.length > 1))) return;
     let minLat=90,maxLat=-90,minLng=180,maxLng=-180;
-    for (const [la, lo] of coursePath) {
+    for (const [la, lo] of [...(coursePath ?? []), ...(legs ?? []).flatMap((l) => l.path ?? [])]) {
       if (la<minLat) minLat=la; if (la>maxLat) maxLat=la;
       if (lo<minLng) minLng=lo; if (lo>maxLng) maxLng=lo;
     }
     didFit.current = true;
     mapRef.current.fitBounds([[minLng,minLat],[maxLng,maxLat]], { padding: 24, animate: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, coursePath]);
+  }, [ready, coursePath, legs]);
 
   return (
     <MapLibreMap

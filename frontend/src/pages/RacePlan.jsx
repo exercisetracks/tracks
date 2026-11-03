@@ -22,6 +22,7 @@ import ElevationChart from "../components/raceplan/ElevationChart";
 import RaceMap from "../components/raceplan/RaceMap";
 import FuelSection from "../components/raceplan/FuelSection";
 import CourseMenu from "../components/raceplan/CourseMenu";
+import TriCourses, { LEG_COLORS } from "../components/raceplan/TriCourses";
 import RaceTargets from "../components/raceplan/RaceTargets";
 
 // ── Main page ─────────────────────────────────────────────────────────────────
@@ -88,13 +89,13 @@ export default function RacePlan() {
     await patchPlan({ course_type: v });
   }
 
-  async function handleGpxUpload(e) {
+  async function handleGpxUpload(e, leg) {
     const file = e.target.files?.[0];
     if (!file) return;
     setGpxUploading(true);
     setError(null);
     try {
-      const updated = await api.uploadCoursGpx(goalId, file);
+      const updated = await api.uploadCoursGpx(goalId, file, leg);
       setPlan(updated);
       setSplitDraft(updated.split_spread ?? 0);
       generate();
@@ -106,8 +107,8 @@ export default function RacePlan() {
     }
   }
 
-  async function removeCourse() {
-    await api.deleteCourseGpx(goalId);
+  async function removeCourse(leg) {
+    await api.deleteCourseGpx(goalId, typeof leg === "string" ? leg : undefined);
     const updated = await api.getRacePlan(goalId);
     setPlan(updated);
     generate();
@@ -241,6 +242,7 @@ export default function RacePlan() {
           {/* One button: every way to get a course is behind it (CourseMenu). */}
           <div className="flex items-center gap-3 flex-wrap">
             <CourseMenu goalId={goalId} hasCourse={hasCourse} uploading={gpxUploading} onUpload={handleGpxUpload}
+              triathlon={isTriathlon} label={isTriathlon ? "Add course" : undefined}
               onPicked={(updated) => { setPlan(updated); setSplitDraft(updated.split_spread ?? 0); generate(); }} />
             {hasCourse && (
               <div className="flex items-center gap-3 flex-wrap text-sm text-accent-600 dark:text-accent-400">
@@ -258,16 +260,23 @@ export default function RacePlan() {
                     {plan.technicality_label}
                   </span>
                 )}
-                <button onClick={removeCourse}
+                <button onClick={() => removeCourse()}
                   className="btn btn-danger btn-sm">
-                  Remove
+                  {isTriathlon ? "Remove whole course" : "Remove"}
                 </button>
               </div>
             )}
           </div>
 
-          {/* Distance source toggle — only shown when GPX is loaded */}
-          {hasCourse && goal.event_distance_meters && plan.course_distance_m && (
+          {isTriathlon && (
+            <TriCourses goalId={goalId} plan={plan} imperial={imperial} uploading={gpxUploading}
+              onUpload={handleGpxUpload} onRemove={removeCourse}
+              onPicked={(updated) => { setPlan(updated); generate(); }} />
+          )}
+
+          {/* Distance source toggle — only shown when GPX is loaded. A
+              triathlon's legs are always raced at their course's length. */}
+          {hasCourse && !isTriathlon && goal.event_distance_meters && plan.course_distance_m && (
             <div className="flex flex-col gap-1.5">
               <p className="text-xs text-slate-500 dark:text-slate-400">Plan against which distance?</p>
               <div className="flex gap-2">
@@ -318,6 +327,9 @@ export default function RacePlan() {
                 center={mapCenter}
                 zoom={mapZoom}
                 marker={profilePoint}
+                legs={isTriathlon && plan.triathlon_courses
+                  ? ["swim", "bike", "run"].map((l) => ({ path: plan.triathlon_courses[l]?.path, color: LEG_COLORS[l] }))
+                  : null}
               />
             </div>
 
@@ -326,7 +338,11 @@ export default function RacePlan() {
                 course's hills alone, which its legs are not fitted to. */}
             {!isSwimming && (
               <ElevationChart coursePath={coursePath} laps={isTriathlon ? [] : displayLaps} sport={sport}
-                imperial={imperial} onHover={setProfilePoint} />
+                imperial={imperial} onHover={setProfilePoint}
+                // A triathlon's whole course: drag T1 and T2 to where the
+                // transitions really are; the split saves on release.
+                handles={isTriathlon && hasCourse ? plan.triathlon_transitions_m : null}
+                onHandles={(t) => patchPlan({ tri_transitions_m: t })} />
             )}
 
             {/* Pin controls — hidden when GPX is loaded (auto-set from course) */}

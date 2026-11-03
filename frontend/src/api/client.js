@@ -342,12 +342,13 @@ export const api = {
   getRacePlan:        (id) => get(`/coaching/goals/${id}/race-plan`),
   updateRacePlan:     (id, d) => { _cacheDelPrefix("GET", `/coaching/goals/${id}/race-plan`); return patch(`/coaching/goals/${id}/race-plan`, d); },
   generateRacePlan:   (id) => { _cacheDelPrefix("GET", `/coaching/goals/${id}/race-plan`); return post(`/coaching/goals/${id}/race-plan/generate`); },
-  uploadCoursGpx:     (id, file) => {
+  // `leg` (swim | bike | run): a triathlon leg's own course, not the whole.
+  uploadCoursGpx:     (id, file, leg) => {
     _cacheDelPrefix("GET", `/coaching/goals/${id}/race-plan`);
     const fd = new FormData();
     fd.append("file", file);
     const token = localStorage.getItem(TOKEN_KEY);
-    return fetch(`${BASE_URL}/coaching/goals/${id}/race-plan/course`, {
+    return fetch(`${BASE_URL}/coaching/goals/${id}/race-plan/course${leg ? `?leg=${leg}` : ""}`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
       body: fd,
@@ -373,7 +374,7 @@ export const api = {
       return data;
     });
   },
-  courseFromTrack:    (id, trackId) => { _cacheDelPrefix("GET", `/coaching/goals/${id}/race-plan`); return post(`/coaching/goals/${id}/race-plan/course/from-track/${trackId}`); },
+  courseFromTrack:    (id, trackId, leg) => { _cacheDelPrefix("GET", `/coaching/goals/${id}/race-plan`); return post(`/coaching/goals/${id}/race-plan/course/from-track/${trackId}${leg ? `?leg=${leg}` : ""}`); },
   getFuelProducts:    ()      => get("/fuel/products", { noCache: true }),
   createFuelProduct:  (d)     => post("/fuel/products", d),
   updateFuelProduct:  (id, d) => put(`/fuel/products/${id}`, d),
@@ -381,7 +382,7 @@ export const api = {
   getGutLogs:         ()      => get("/fuel/gut-logs", { noCache: true }),
   createGutLog:       (d)     => post("/fuel/gut-logs", d),
   getFuelPlan:        (goalId) => get(`/fuel/goals/${goalId}/plan`, { noCache: true }),
-  deleteCourseGpx:    (id) => { _cacheDelPrefix("GET", `/coaching/goals/${id}/race-plan`); return del(`/coaching/goals/${id}/race-plan/course`); },
+  deleteCourseGpx:    (id, leg) => { _cacheDelPrefix("GET", `/coaching/goals/${id}/race-plan`); return del(`/coaching/goals/${id}/race-plan/course${leg ? `?leg=${leg}` : ""}`); },
 
   // Garmin sync
   triggerGarminSync:       ()          => post("/training-plan/sync/trigger"),

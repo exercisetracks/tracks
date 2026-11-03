@@ -73,6 +73,7 @@ export default function MapView() {
   // that race's course, and the user is taken back to the plan.
   const [searchParams] = useSearchParams();
   const raceGoal = searchParams.get("raceGoal");
+  const raceLeg = searchParams.get("leg");   // a triathlon leg's own course
   const navigate = useNavigate();
   const [hideBanner, setHideBanner] = useState(false);
   const [routeDetail, setRouteDetail] = useState(null);   // {routeId, sectionId} | null
@@ -112,11 +113,11 @@ export default function MapView() {
     setSelected({ kind, id });
     setLibraryKey(`${kind}-${id}`);
     if (raceGoal && kind === "track") {
-      await api.courseFromTrack(raceGoal, id);
+      await api.courseFromTrack(raceGoal, id, raceLeg || undefined);
       navigate(`/race-plans/${raceGoal}`);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items.refresh, raceGoal, navigate]);
+  }, [items.refresh, raceGoal, raceLeg, navigate]);
   const editor = useItemEditor(map, { atlas: items.atlas, onSaved });
   // The item open in the editor is drawn by the editor, not the map's layers.
   useEffect(() => {
