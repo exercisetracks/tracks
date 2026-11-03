@@ -25,7 +25,7 @@ Bump `MIN_CLIENT_API_VERSION` only when you remove something old clients
 depend on — that's a deliberate act of dropping support, not a side effect.
 """
 
-SERVER_VERSION = "1.8.5"
+SERVER_VERSION = "1.9.0"
 
 # 2: /sync/push + /sync/pull replace /sync/delta and the old offline write
 # paths outright (docs/offline-first.md: no backwards compatibility), so a
@@ -46,5 +46,12 @@ SERVER_VERSION = "1.8.5"
 #
 # Nor for the activity list's `hidden` filter and field: the phone lists from
 # its own replica, and the web is served by the server it asks.
+#
+# Nor for 1.9.0's race plans: the new race_plan and fuel_product sync fields
+# (potassium, the homemade mix, triathlon leg courses and transitions, the
+# climb target) are additive — an older server refuses each as an unknown
+# field and keeps the rest of the row — and the dropped fueling_plan was
+# never written by a phone. The race-plan REST changes (?leg=, new response
+# fields) are read by the web alone; the phone plans races from its replica.
 API_VERSION = 2
 MIN_CLIENT_API_VERSION = 2
