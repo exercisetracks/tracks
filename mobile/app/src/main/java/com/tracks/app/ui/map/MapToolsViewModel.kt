@@ -1381,10 +1381,11 @@ class MapToolsViewModel(internal val container: AppContainer) : ViewModel() {
             // GPX parse as a file), and the user goes back to the plan.
             container.pendingRaceCourse.value?.let { goalUid ->
                 container.pendingRaceCourse.value = null
+                val leg = container.pendingRaceLeg.value.also { container.pendingRaceLeg.value = null }
                 val goal = container.sources.goals().firstOrNull { it.uid == goalUid }
                 val trackUid = container.sources.row("track", created.id)?.uid
                 if (goal != null && trackUid != null) {
-                    com.tracks.core.local.LocalRacePlans(container.sources).importTrack(goal, trackUid)
+                    com.tracks.core.local.LocalRacePlans(container.sources).importTrack(goal, trackUid, leg)
                 }
                 container.pendingRoute.value = com.tracks.app.ui.Destination.RacePlans.route
             }

@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -164,9 +165,9 @@ class RacePlansViewModel(private val container: AppContainer) : ViewModel() {
     }
 
     /** Load a GPX course read from a file the user picked. Says so when it holds no track. */
-    fun importCourse(goal: TrainingGoal, gpx: String?) {
+    fun importCourse(goal: TrainingGoal, gpx: String?, leg: String? = null) {
         viewModelScope.launch {
-            val ok = gpx != null && plans.importCourse(goal, gpx)
+            val ok = gpx != null && plans.importCourse(goal, gpx, leg)
             _state.update { it.copy(courseError = if (ok) null else "That file has no track to use as a course.") }
             load()
         }
@@ -176,9 +177,9 @@ class RacePlansViewModel(private val container: AppContainer) : ViewModel() {
     fun rejectCourseFile() = _state.update { it.copy(courseError = "Pick a .gpx file.") }
 
     /** A saved map track as the course — the same parse as a GPX file. */
-    fun useTrack(goal: TrainingGoal, trackUid: String) {
+    fun useTrack(goal: TrainingGoal, trackUid: String, leg: String? = null) {
         viewModelScope.launch {
-            val ok = plans.importTrack(goal, trackUid)
+            val ok = plans.importTrack(goal, trackUid, leg)
             _state.update { it.copy(courseError = if (ok) null else "That track has no usable points.") }
             load()
         }
@@ -187,9 +188,10 @@ class RacePlansViewModel(private val container: AppContainer) : ViewModel() {
     /**
      * Open the map to draw this race's course. The map's next saved track
      * becomes the course (see MapToolsViewModel.saveTrack), then the app
-     * returns here.
+     * returns here. With [leg], the drawn track is that triathlon leg's own.
      */
-    fun drawOnMap(goal: TrainingGoal) {
+    fun drawOnMap(goal: TrainingGoal, leg: String? = null) {
+        container.pendingRaceLeg.value = leg
         container.pendingRaceCourse.value = goal.uid
         container.pendingRoute.value = com.tracks.app.ui.Destination.Map.route
     }
@@ -211,9 +213,9 @@ class RacePlansViewModel(private val container: AppContainer) : ViewModel() {
         }
     }
 
-    fun removeCourse(goal: TrainingGoal) {
+    fun removeCourse(goal: TrainingGoal, leg: String? = null) {
         viewModelScope.launch {
-            plans.removeCourse(goal)
+            plans.removeCourse(goal, leg)
             load()
         }
     }
@@ -229,6 +231,8 @@ fun RacePlansScreen(vm: RacePlansViewModel, modifier: Modifier = Modifier) {
     // Filtering on those types keeps PDFs and photos out of the picker while
     // every .gpx stays pickable; whatever still gets through is checked by
     // its name before it is read.
+    // Which triathlon leg the picked file is for; null for the whole course.
+    var pickLeg by remember { mutableStateOf<String?>(null) }
     val pick = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         val goal = state.open?.goal ?: return@rememberLauncherForActivityResult
         if (uri == null) return@rememberLauncherForActivityResult
@@ -243,12 +247,12 @@ fun RacePlansScreen(vm: RacePlansViewModel, modifier: Modifier = Modifier) {
         val text = runCatching {
             context.contentResolver.openInputStream(uri)?.use { it.readBytes().decodeToString() }
         }.getOrNull()
-        vm.importCourse(goal, text)
+        vm.importCourse(goal, text, pickLeg)
     }
     RacePlansContent(
         state, onOpen = vm::open, onSet = vm::set, modifier = modifier,
-        onImportCourse = { pick.launch(GPX_MIME_TYPES) },
-        onRemoveCourse = { goal -> vm.removeCourse(goal) },
+        onImportCourse = { leg -> pickLeg = leg; pick.launch(GPX_MIME_TYPES) },
+        onRemoveCourse = { goal, leg -> vm.removeCourse(goal, leg) },
         course = CourseActions(onUseTrack = vm::useTrack, onDrawOnMap = vm::drawOnMap),
         fuel = FuelActions(onAddProduct = vm::addProduct, onToggleProduct = vm::toggleProduct),
     )
@@ -267,8 +271,8 @@ internal fun isGpxName(name: String?): Boolean = name == null || name.lowercase(
 
 /** The course's other two sources: a saved track, or one drawn now. */
 data class CourseActions(
-    val onUseTrack: (TrainingGoal, String) -> Unit = { _, _ -> },
-    val onDrawOnMap: (TrainingGoal) -> Unit = {},
+    val onUseTrack: (TrainingGoal, String, String?) -> Unit = { _, _, _ -> },
+    val onDrawOnMap: (TrainingGoal, String?) -> Unit = { _, _ -> },
 )
 
 data class FuelActions(
@@ -282,8 +286,8 @@ fun RacePlansContent(
     onOpen: (Int?) -> Unit,
     onSet: (TrainingGoal, String, Any?) -> Unit,
     modifier: Modifier = Modifier,
-    onImportCourse: () -> Unit = {},
-    onRemoveCourse: (TrainingGoal) -> Unit = {},
+    onImportCourse: (String?) -> Unit = {},
+    onRemoveCourse: (TrainingGoal, String?) -> Unit = { _, _ -> },
     course: CourseActions = CourseActions(),
     fuel: FuelActions = FuelActions(),
 ) {
@@ -321,10 +325,10 @@ fun RacePlansContent(
                 open, state.maxHr, onSet = { f, v -> onSet(open.goal, f, v) },
                 courseError = state.courseError,
                 mapStyleJson = state.mapStyleJson,
-                onImportCourse = onImportCourse, onRemoveCourse = { onRemoveCourse(open.goal) },
+                onImportCourse = onImportCourse, onRemoveCourse = { onRemoveCourse(open.goal, it) },
                 tracks = state.tracks, linked = state.linked,
-                onUseTrack = { course.onUseTrack(open.goal, it) },
-                onDrawOnMap = { course.onDrawOnMap(open.goal) },
+                onUseTrack = { uid, leg -> course.onUseTrack(open.goal, uid, leg) },
+                onDrawOnMap = { course.onDrawOnMap(open.goal, it) },
                 onAddProduct = { fuel.onAddProduct(it, open.goal) },
                 onToggleProduct = { fuel.onToggleProduct(open.goal, it) },
             )
@@ -396,12 +400,12 @@ private fun Detail(
     onSet: (String, Any?) -> Unit,
     courseError: String? = null,
     mapStyleJson: String? = null,
-    onImportCourse: () -> Unit = {},
-    onRemoveCourse: () -> Unit = {},
+    onImportCourse: (String?) -> Unit = {},
+    onRemoveCourse: (String?) -> Unit = {},
     tracks: List<Pair<String, String>> = emptyList(),
     linked: Boolean = false,
-    onUseTrack: (String) -> Unit = {},
-    onDrawOnMap: () -> Unit = {},
+    onUseTrack: (String, String?) -> Unit = { _, _ -> },
+    onDrawOnMap: (String?) -> Unit = {},
     onAddProduct: (LocalRacePlans.ProductDraft) -> Unit = {},
     onToggleProduct: (String) -> Unit = {},
 ) {
@@ -429,8 +433,27 @@ private fun Detail(
 
     Section("Course", com.tracks.app.ui.components.MetricInfo("Course", "A GPX course gives each lap its real hills. Without one, pick the terrain.")) {
         var choosing by remember { mutableStateOf(false) }
+        // The leg a leg row opened the sheet for; null for the race's own button.
+        var sheetLeg by remember { mutableStateOf<String?>(null) }
         // Where the profile is being read, marked on the course map.
         var held by remember { mutableStateOf<Pair<Double, Double>?>(null) }
+        val tri = com.tracks.core.plan.PlanBase.sportFamily((c.goal.eventSport ?: "running").lowercase()) == "triathlon"
+        // Each leg's course — its own file, else its stretch of the whole (TriCourse).
+        val triCourses = remember(c.strategy, tri) {
+            if (!tri) null else com.tracks.core.race.TriCourse.legCourses(
+                c.strategy.segments,
+                c.strategy.path.zip(c.strategy.elevations) { (lat, lon), ele -> com.tracks.core.race.TriCourse.PathPoint(lat, lon, ele) },
+                c.strategy.triLegFiles, c.strategy.triTransitionsM,
+                c.strategy.triSplits ?: com.tracks.core.race.SportPlan.inferTriathlonSplits(c.goal.eventDistanceMeters ?: 51_500.0),
+            )
+        }
+        if (tri && !c.strategy.hasCourse && c.strategy.triLegFiles.isNotEmpty()) {
+            // Leg files alone: their map, without a whole course under it.
+            com.tracks.app.ui.map.ActivityTrackMap(
+                track = triCourses!!.legs.values.flatMap { l -> l.path.map { com.tracks.core.api.TrackPoint(lat = it.lat, lng = it.lon) } },
+                styleJson = mapStyleJson, marker = held, legs = legTracks(triCourses),
+            )
+        }
         if (c.strategy.hasCourse) {
             val totals = remember(c.strategy.segments) {
                 c.strategy.segments.takeIf { it.isNotEmpty() }?.let(RacePredictor::courseTotals)
@@ -444,21 +467,26 @@ private fun Detail(
             val preview = remember(c.strategy.path) {
                 c.strategy.path.map { (lat, lon) -> com.tracks.core.api.TrackPoint(lat = lat, lng = lon) }
             }
-            com.tracks.app.ui.map.ActivityTrackMap(track = preview, styleJson = mapStyleJson, marker = held)
+            com.tracks.app.ui.map.ActivityTrackMap(track = preview, styleJson = mapStyleJson, marker = held,
+                legs = triCourses?.let(::legTracks).orEmpty())
             ButtonRow {
-                TonalButton("Replace course", onClick = { choosing = true })
-                DangerButton("Remove course", onClick = onRemoveCourse)
+                TonalButton(if (tri) "Add course" else "Replace course", onClick = { sheetLeg = null; choosing = true })
+                DangerButton(if (tri) "Remove whole" else "Remove course", onClick = { onRemoveCourse(null) })
             }
         } else {
             Choice(COURSE, c.strategy.courseType) { onSet("course_type", it) }
-            TonalButton("Add course", onClick = { choosing = true }, modifier = Modifier.fillMaxWidth())
+            TonalButton("Add course", onClick = { sheetLeg = null; choosing = true }, modifier = Modifier.fillMaxWidth())
+        }
+        triCourses?.let { tc ->
+            TriCourseRows(tc, onAdd = { sheetLeg = it; choosing = true }, onRemove = { onRemoveCourse(it) })
         }
         if (choosing) {
             CourseSheet(
                 tracks = tracks, linked = linked, onDismiss = { choosing = false },
-                onImport = { choosing = false; onImportCourse() },
-                onDraw = { choosing = false; onDrawOnMap() },
-                onTrack = { choosing = false; onUseTrack(it) },
+                onImport = { choosing = false; onImportCourse(it) },
+                onDraw = { choosing = false; onDrawOnMap(it) },
+                onTrack = { uid, leg -> choosing = false; onUseTrack(uid, leg) },
+                triathlon = tri, fixedLeg = sheetLeg,
             )
         }
         courseError?.let {
@@ -475,7 +503,13 @@ private fun Detail(
                 com.tracks.core.race.CourseProfile.points(c.strategy.path, c.strategy.elevations, laps, metric)
             }
             profile?.let { pts ->
-                CourseProfileChart(pts, metric) { p -> held = p?.lat?.let { lat -> lat to p.lon!! } }
+                CourseProfileChart(
+                    pts, metric,
+                    // A triathlon's whole course: hold and drag T1 or T2 to
+                    // where the transition really is; saved on release.
+                    handles = triCourses?.transitionsM,
+                    onHandles = { onSet("tri_transitions_m", it) },
+                ) { p -> held = p?.lat?.let { lat -> lat to p.lon!! } }
             }
         }
     }
@@ -540,6 +574,44 @@ internal fun raceTargetsText(p: LocalRacePlans.Prediction?, weightKg: Double? = 
         },
     )
     return parts.joinToString(" · ").ifEmpty { null }
+}
+
+/** The legs' colours, on the map and beside each row — the web's LEG_COLORS. */
+private val LEG_COLORS = mapOf("swim" to 0xFF2A78D6.toInt(), "bike" to 0xFFEDA100.toInt(), "run" to 0xFFE87BA4.toInt())
+
+private fun legTracks(tc: com.tracks.core.race.TriCourse.Courses) = tc.legs.map { (leg, c) ->
+    c.path.map { com.tracks.core.api.TrackPoint(lat = it.lat, lng = it.lon) } to LEG_COLORS.getValue(leg)
+}
+
+/**
+ * A triathlon's course, leg by leg: where each leg's course came from, and
+ * its own add or replace — and, for an own file, remove, which puts the leg
+ * back on the whole course. Named as well as coloured. The web's TriCourses.
+ */
+@Composable
+private fun TriCourseRows(tc: com.tracks.core.race.TriCourse.Courses, onAdd: (String) -> Unit, onRemove: (String) -> Unit) {
+    Column {
+        com.tracks.core.race.TriCourse.LEGS.forEach { leg ->
+            val c = tc.legs[leg]
+            Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Tokens.Space.s2)) {
+                androidx.compose.foundation.layout.Box(Modifier.size(12.dp, 4.dp)
+                    .background(Color(LEG_COLORS.getValue(leg)), RoundedCornerShape(2.dp)))
+                Column(Modifier.weight(1f)) {
+                    Text(LEG_NAMES.getValue(leg), style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        listOfNotNull(
+                            c?.segments?.takeIf { it.isNotEmpty() }?.let { distance(com.tracks.core.race.TriCourse.totalM(it)) },
+                            when (c?.source) { "own" -> "own file"; "whole" -> "from the whole course"; else -> "no course" },
+                        ).joinToString(" · "),
+                        style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                TonalButton(if (c?.source == "own") "Replace" else "Add", onClick = { onAdd(leg) })
+                if (c?.source == "own") DangerButton("Remove", onClick = { onRemove(leg) })
+            }
+        }
+    }
 }
 
 /** A triathlon: each leg's time and target, then a graph of each leg's targets. */

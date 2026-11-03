@@ -166,4 +166,30 @@ class LocalRacePlansTest {
         assertEquals(500, recipe.bottleMl)
         assertTrue(recipe.ingredients.any { it.key == "honey" })
     }
+
+    /**
+     * A triathlon's leg can take its own file, which wins over its stretch of
+     * the whole course and sets the leg's length; removing it puts the leg
+     * back on the whole course. Organisers publish either.
+     */
+    @Test
+    fun a_triathlon_legs_own_file_wins_and_can_be_removed() = runBlocking {
+        val (sources, plans) = setup()
+        sources.createValues("goal", mapOf("goal_type" to "event", "event_date" to "2026-12-01",
+            "event_sport" to "triathlon", "event_distance_meters" to 51500.0))
+        sources.createValues("settings", mapOf("ftp_mode" to "manual", "ftp_manual" to 250))
+        val goal = sources.goals().single()
+        val today = com.tracks.core.fit.decode.CivilDate(2026, 11, 2)
+        val flat = plans.plan(goal, plans.strategy(goal), false, today)
+        assertEquals(40000.0, flat.legs.single { it.leg == "bike" }.distanceM)
+
+        assertTrue(plans.importCourse(goal, climbGpx(), leg = "bike"))
+        val s = plans.strategy(goal)
+        assertEquals(setOf("bike"), s.triLegFiles.keys)
+        val hilly = plans.plan(goal, s, false, today).legs.single { it.leg == "bike" }
+        assertTrue(hilly.distanceM < 3000, "the leg is raced at its file's length")
+
+        plans.removeCourse(goal, leg = "bike")
+        assertTrue(plans.strategy(goal).triLegFiles.isEmpty())
+    }
 }

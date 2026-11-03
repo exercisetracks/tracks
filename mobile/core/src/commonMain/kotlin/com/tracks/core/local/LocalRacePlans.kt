@@ -14,6 +14,7 @@ import com.tracks.core.api.TrainingGoal
 import com.tracks.core.race.RaceLap
 import com.tracks.core.race.RacePredictor
 import com.tracks.core.race.SportPlan
+import com.tracks.core.race.TriCourse
 import com.tracks.core.plan.PlanBase
 import com.tracks.core.replica.SyncedRow
 import kotlinx.serialization.json.JsonPrimitive
@@ -62,6 +63,12 @@ class LocalRacePlans(private val sources: LocalSources) {
         /** The homemade mix's recipe (null = by carb rate) and bottle (null = 750 ml). */
         val fuelMixPreset: String? = null,
         val fuelMixBottleMl: Int? = null,
+        /** A triathlon's own leg files, each winning over its stretch of the whole course (TriCourse). */
+        val triLegFiles: Map<String, TriCourse.LegFile> = emptyMap(),
+        /** The user's T1/T2 along the whole course; null = the automatic split. */
+        val triTransitionsM: List<Double>? = null,
+        /** The race's leg distances, when set; null = the standard split for its distance. */
+        val triSplits: SportPlan.TriSplits? = null,
         val fuelInterval: Int? = null,
         /** fuel_product uids the timeline may use, in the user's order. */
         val fuelProductUids: List<String> = emptyList(),
@@ -129,10 +136,41 @@ class LocalRacePlans(private val sources: LocalSources) {
             fuelInterval = row.int("fuel_interval_min"),
             fuelProductUids = (row.fields["fuel_product_uids"] as? JsonArray).orEmpty()
                 .mapNotNull { (it as? JsonPrimitive)?.contentOrNull },
+            triLegFiles = (row.fields["tri_leg_courses"] as? JsonObject).orEmpty().mapNotNull { (leg, v) ->
+                val o = v as? JsonObject ?: return@mapNotNull null
+                leg to TriCourse.LegFile(segmentsOf(o["segments"]), pathOf(o["path"]))
+            }.toMap(),
+            triTransitionsM = (row.fields["tri_transitions_m"] as? JsonArray)
+                ?.mapNotNull { (it as? JsonPrimitive)?.doubleOrNull }?.takeIf { it.size == 2 },
+            triSplits = (row.fields["triathlon_splits_m"] as? JsonObject)?.let { o ->
+                fun d(k: String) = (o[k] as? JsonPrimitive)?.doubleOrNull
+                val sw = d("swim_m"); val bk = d("bike_m"); val rn = d("run_m")
+                if (sw != null && bk != null && rn != null) SportPlan.TriSplits(sw, bk, rn) else null
+            },
             fuelMixPreset = row.str("fuel_mix_preset"),
             fuelMixBottleMl = row.int("fuel_mix_bottle_ml"),
         )
     }
+
+    private fun segmentsOf(e: kotlinx.serialization.json.JsonElement?): List<Segment> =
+        (e as? JsonArray).orEmpty().mapNotNull { x ->
+            val o = x as? JsonObject ?: return@mapNotNull null
+            Segment(
+                distanceM = (o["distance_m"] as? JsonPrimitive)?.doubleOrNull ?: return@mapNotNull null,
+                gradient = (o["gradient"] as? JsonPrimitive)?.doubleOrNull ?: 0.0,
+                elevationGainM = (o["elevation_gain_m"] as? JsonPrimitive)?.doubleOrNull ?: 0.0,
+            )
+        }
+
+    private fun pathOf(e: kotlinx.serialization.json.JsonElement?): List<TriCourse.PathPoint> =
+        (e as? JsonArray).orEmpty().mapNotNull { x ->
+            val p = x as? JsonArray ?: return@mapNotNull null
+            TriCourse.PathPoint(
+                (p.getOrNull(0) as? JsonPrimitive)?.doubleOrNull ?: return@mapNotNull null,
+                (p.getOrNull(1) as? JsonPrimitive)?.doubleOrNull ?: return@mapNotNull null,
+                (p.getOrNull(2) as? JsonPrimitive)?.doubleOrNull,
+            )
+        }
 
     private fun SyncedRow.int(field: String): Int? = (fields[field] as? JsonPrimitive)?.doubleOrNull?.toInt()
 
@@ -209,7 +247,7 @@ class LocalRacePlans(private val sources: LocalSources) {
      * server: the geometry becomes GPX and goes through the same parser as a
      * file, so a drawn course and an uploaded one are the same thing.
      */
-    suspend fun importTrack(goal: TrainingGoal, trackUid: String): Boolean {
+    suspend fun importTrack(goal: TrainingGoal, trackUid: String, leg: String? = null): Boolean {
         val row = sources.replica.rows("track").firstOrNull { it.uid == trackUid } ?: return false
         val pts = (row.fields["geometry"] as? JsonArray).orEmpty().mapNotNull { e ->
             val a = e as? JsonArray ?: return@mapNotNull null
@@ -222,7 +260,7 @@ class LocalRacePlans(private val sources: LocalSources) {
         if (pts.size < 2) return false
         val gpx = "<?xml version=\"1.0\"?><gpx version=\"1.1\" xmlns=\"http://www.topografix.com/GPX/1/1\">" +
             "<trk><trkseg>${pts.joinToString("")}</trkseg></trk></gpx>"
-        return importCourse(goal, gpx)
+        return importCourse(goal, gpx, leg)
     }
 
     /** How a fuelled long session went — the log the gut-training ramp adapts from. */
@@ -239,10 +277,21 @@ class LocalRacePlans(private val sources: LocalSources) {
      * technicality they imply, the start as the weather pin, and the stale
      * lap paces and watch file cleared. False when the file has no course.
      */
-    suspend fun importCourse(goal: TrainingGoal, gpx: String): Boolean {
+    suspend fun importCourse(goal: TrainingGoal, gpx: String, leg: String? = null): Boolean {
         val segments = GpxCourse.segments(gpx)
         if (segments.isEmpty()) return false
         val path = GpxCourse.path(gpx)
+        if (leg != null) {
+            // One triathlon leg's own file (`_store_course` with a leg): it
+            // wins over its stretch of the whole course.
+            require(leg in TriCourse.LEGS) { "leg must be swim, bike or run" }
+            val s = strategy(goal)
+            val legs = s.triLegFiles + (leg to TriCourse.LegFile(segments, path.map { TriCourse.PathPoint(it.lat, it.lon, it.ele) }))
+            set(goal, "tri_leg_courses", legFilesJson(legs))
+            if (!s.hasCourse) path.firstOrNull()?.let { set(goal, "pin_lat", it.lat); set(goal, "pin_lon", it.lon) }
+            for (k in listOf("lap_paces", "watch_filename", "watch_uploaded_at")) set(goal, k, null)
+            return true
+        }
         val (factor, label) = RacePredictor.technicalityFactor(segments)
         val values = linkedMapOf<String, Any?>(
             "course_segments" to segments.map {
@@ -251,6 +300,8 @@ class LocalRacePlans(private val sources: LocalSources) {
             "course_path" to path.map { listOf(it.lat, it.lon, it.ele) },
             "technicality_factor" to factor,
             "technicality_label" to label,
+            // A new whole course is split afresh: the old T1/T2 were along another file.
+            "tri_transitions_m" to null,
             "lap_paces" to null,
             "watch_filename" to null,
             "watch_uploaded_at" to null,
@@ -260,11 +311,29 @@ class LocalRacePlans(private val sources: LocalSources) {
         return true
     }
 
-    /** `delete_course_gpx`: back to the terrain setting. */
-    suspend fun removeCourse(goal: TrainingGoal) {
-        for (k in listOf("course_segments", "course_path", "technicality_factor", "technicality_label", "lap_paces")) {
+    /**
+     * `delete_course_gpx`: back to the terrain setting — or, with [leg], one
+     * triathlon leg's own file gone, the leg back on its stretch of the whole.
+     */
+    suspend fun removeCourse(goal: TrainingGoal, leg: String? = null) {
+        if (leg != null) {
+            set(goal, "tri_leg_courses", legFilesJson(strategy(goal).triLegFiles - leg).takeIf { it.isNotEmpty() })
+            set(goal, "lap_paces", null)
+            return
+        }
+        for (k in listOf("course_segments", "course_path", "technicality_factor", "technicality_label",
+            "tri_transitions_m", "lap_paces")) {
             set(goal, k, null)
         }
+    }
+
+    private fun legFilesJson(legs: Map<String, TriCourse.LegFile>) = legs.mapValues { (_, f) ->
+        linkedMapOf(
+            "segments" to f.segments.map {
+                linkedMapOf("distance_m" to it.distanceM, "elevation_gain_m" to it.elevationGainM, "gradient" to it.gradient)
+            },
+            "path" to f.path.map { listOf(it.lat, it.lon, it.ele) },
+        )
     }
 
     /** Set one strategy field, creating the goal's race plan on first use. */
@@ -315,6 +384,9 @@ class LocalRacePlans(private val sources: LocalSources) {
                 distanceM = distance, courseType = s.courseType, splitSpread = s.splitSpread,
                 paceHr = s.paceHrMode == "pace_hr", imperial = imperial, segments = s.segments,
                 mtbDiscipline = goal.mtbDiscipline, cyclingDiscipline = goal.cyclingDiscipline,
+                triathlonSplits = s.triSplits,
+                path = s.path.zip(s.elevations) { (lat, lon), ele -> TriCourse.PathPoint(lat, lon, ele) },
+                triLegFiles = s.triLegFiles, triTransitionsM = s.triTransitionsM,
             ),
         )
         return Prediction(r.seconds, r.laps, r.legs, r.targetHrCeiling, r.climbTargetWPerKg, family)

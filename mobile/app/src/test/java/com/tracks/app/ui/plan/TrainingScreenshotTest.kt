@@ -349,6 +349,34 @@ class TrainingScreenshotTest {
         RacePlansContent(RacePlansState(loading = false, cards = listOf(card), openGoalId = 1), {}, { _, _, _ -> })
     }
 
+    /** A whole triathlon course returning to transition, with the bike from its own file. */
+    @Test
+    fun race_plan_triathlon_course_light() = shoot("race_plan_triathlon_course_light", ThemeMode.Light) {
+        val deg = 111_195.0
+        val pts = mutableListOf<Triple<Double, Double, Double>>()
+        fun go(n: Double, w: Double, e: Double) { pts += Triple(n / deg, -w / deg, e) }
+        (listOf(0, 1, 2, 3, 4, 5, 6, 7, 8) + (7 downTo 0)).forEach { go(it * 100.0, 0.0, 2.0) }
+        val sides = listOf<(Int) -> Pair<Int, Int>>({ 0 to it }, { it to 10 }, { 10 to 10 - it }, { 10 - it to 0 })
+        sides.forEach { side -> (1..10).forEach { t -> val (n, w) = side(t); go(n * 1000.0, w * 1000.0, 50 + 40 * kotlin.math.sin(pts.size / 4.0)) } }
+        ((1..5) + (4 downTo 0)).forEach { go(-it * 1000.0, 0.0, 30 + 20 * kotlin.math.sin(it.toDouble())) }
+        val segs = pts.zipWithNext { a, b ->
+            val d = com.tracks.core.race.RacePredictor.courseTotals(emptyList()).let { 0.0 } +
+                kotlin.math.hypot((b.first - a.first) * deg, (b.second - a.second) * deg)
+            com.tracks.core.race.Segment(d, (b.third - a.third) / d, maxOf(0.0, b.third - a.third))
+        }.filter { it.distanceM > 0 }
+        val strategy = LocalRacePlans.Strategy(uid = "r1", hasCourse = true, segments = segs,
+            path = pts.map { it.first to it.second }, elevations = pts.map { it.third },
+            triLegFiles = mapOf("bike" to com.tracks.core.race.TriCourse.LegFile(
+                segs.drop(16).take(40), emptyList())))
+        val g = goal.copy(eventName = "Lake Olympic", eventSport = "triathlon", eventDistanceMeters = 51_500.0)
+        val r = com.tracks.core.race.SportPlan.plan("triathlon",
+            com.tracks.core.race.SportPlan.Metrics(vdot = 50.0, ftp = 250.0, css = 100.0),
+            com.tracks.core.race.SportPlan.Inputs(51_500.0, segments = segs))
+        val pred = LocalRacePlans.Prediction(r.seconds, r.laps, r.legs, family = "triathlon")
+        RacePlansContent(RacePlansState(loading = false, cards = listOf(RacePlanCard(g, strategy, null, pred)), openGoalId = 1),
+            {}, { _, _, _ -> })
+    }
+
     @Test
     fun training_fuel_practice_light() = shoot("training_fuel_practice_light", ThemeMode.Light) {
         val long = w(9, today.toString(), "long", "Long run", min = 100, done = true)

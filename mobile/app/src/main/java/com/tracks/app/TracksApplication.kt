@@ -316,6 +316,8 @@ class AppContainer(private val context: Context) {
      * race's course, clears it, and returns to Race Plans.
      */
     val pendingRaceCourse = MutableStateFlow<String?>(null)
+    /** The triathlon leg a drawn race course is for; null for the whole course. */
+    val pendingRaceLeg = MutableStateFlow<String?>(null)
 
     /** When this phone last wrote a backup, or null — drives the reminder. */
     val lastBackupAt = MutableStateFlow(prefs().getLong(KEY_LAST_BACKUP, 0L).takeIf { it > 0 })

@@ -78,6 +78,8 @@ fun ActivityTrackMap(
     styleJson: String?,
     modifier: Modifier = Modifier,
     marker: Pair<Double, Double>? = null,
+    /** A triathlon's legs, each drawn over [track] in its colour (ARGB). */
+    legs: List<Pair<List<TrackPoint>, Int>> = emptyList(),
 ) {
     val positions = remember(track) {
         track.mapNotNull { p ->
@@ -104,7 +106,16 @@ fun ActivityTrackMap(
     val modes = remember(track) { availableRouteColours(track) }
     var mode by remember(track) { mutableStateOf(modes.firstOrNull()) }
     val plainColor = MaterialTheme.colorScheme.primary.toArgb()
-    val routeGeoJson = remember(track, mode, plainColor) { routeFeatures(track, mode, plainColor) }
+    val routeGeoJson = remember(track, mode, plainColor, legs) {
+        val base = routeFeatures(track, mode, plainColor)
+        if (legs.isEmpty()) base else FeatureCollection.fromFeatures(
+            base.features().orEmpty() + legs.filter { it.first.size >= 2 }.map { (pts, argb) ->
+                coloured(Feature.fromGeometry(LineString.fromLngLats(
+                    pts.mapNotNull { p -> p.lat?.let { lat -> p.lng?.let { Point.fromLngLat(it, lat) } } },
+                )), argb)
+            },
+        )
+    }
 
     var loaded by remember { mutableStateOf<Pair<MapLibreMap, Style>?>(null) }
     val density = LocalDensity.current.density

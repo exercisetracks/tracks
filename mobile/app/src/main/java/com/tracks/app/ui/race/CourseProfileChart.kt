@@ -63,6 +63,13 @@ import com.tracks.core.race.RacePredictor
 internal fun CourseProfileChart(
     points: List<CourseProfile.Point>,
     metric: CourseProfile.Metric?,
+    /**
+     * Metres along the course a triathlon's T1 and T2 sit at. A hold that
+     * starts on one picks it up and the drag moves it; [onHandles] gets the
+     * new pair on release. A hold anywhere else reads the plot.
+     */
+    handles: List<Double>? = null,
+    onHandles: (List<Double>) -> Unit = {},
     onInspect: (CourseProfile.Point?) -> Unit,
 ) {
     val imperial = Units.imperial
@@ -132,6 +139,12 @@ internal fun CourseProfileChart(
     }
     var inspectX by remember { mutableStateOf<Float?>(null) }
     var widthPx by remember { mutableFloatStateOf(0f) }
+    var dragging by remember { mutableStateOf<Int?>(null) }
+    var draft by remember(handles) { mutableStateOf(handles) }
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val total = points.last().m.takeIf { it > 0 } ?: 1.0
+    fun mAt(x: Float) = ((x - leftGutter) / (widthPx - rightGutter - leftGutter)).coerceIn(0f, 1f) * total
+    fun xAt(m: Double) = leftGutter + (m / total * (widthPx - rightGutter - leftGutter)).toFloat()
 
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -151,6 +164,28 @@ internal fun CourseProfileChart(
                     .onSizeChanged { widthPx = it.width.toFloat() }
                     .claimInspectDrags()
                     .holdToInspect { x ->
+                        val hs = draft
+                        when {
+                            x == null && dragging != null -> {
+                                dragging = null
+                                hs?.let { h -> onHandles(h.map { PyRound.tenth(it) }) }
+                            }
+                            x != null && dragging == null && inspectX == null && hs != null -> {
+                                // A hold that starts within a finger's width of a handle picks it up.
+                                val reach = with(density) { 24.dp.toPx() }
+                                dragging = hs.indices.minByOrNull { kotlin.math.abs(xAt(hs[it]) - x) }
+                                    ?.takeIf { kotlin.math.abs(xAt(hs[it]) - x) <= reach }
+                            }
+                        }
+                        val d = dragging
+                        if (d != null && x != null && hs != null) {
+                            // T1 stays before T2, and both on the course.
+                            val lo = if (d == 1) hs[0] + 50 else 0.0
+                            val hi = if (d == 0) hs[1] - 50 else total
+                            draft = hs.toMutableList().also { it[d] = mAt(x).coerceIn(lo, hi) }
+                            inspectX = null
+                            return@holdToInspect
+                        }
                         inspectX = x
                         onInspect(x?.let { pointAt(points, it, leftGutter, rightGutter, widthPx) })
                     },
@@ -214,6 +249,14 @@ internal fun CourseProfileChart(
                     drawPath(line({ it.target }, ::yT), color, style = Stroke(2.dp.toPx()))
                 }
 
+                draft?.forEachIndexed { i, m ->
+                    val hx = xOf(m)
+                    drawLine(muted, Offset(hx, 12.dp.toPx()), Offset(hx, plotH),
+                        strokeWidth = (if (dragging == i) 3 else 2).dp.toPx())
+                    val label = measurer.measure("T${i + 1}", labelStyle)
+                    drawText(label, color = muted, topLeft = Offset(hx - label.size.width / 2f, 0f))
+                }
+
                 // Distance labels at the start, middle and finish.
                 listOf(0.0, total / 2, total).forEach { m ->
                     // Whole units on a long race; tenths on a short one, where
@@ -250,6 +293,9 @@ internal fun CourseProfileChart(
         }
     }
 }
+
+/** Tenths, as the web rounds a dragged transition. */
+private object PyRound { fun tenth(x: Double) = kotlin.math.round(x * 10) / 10 }
 
 /**
  * Pace ticks on the clock's own steps — 15 s, 30 s, a minute — rather than
