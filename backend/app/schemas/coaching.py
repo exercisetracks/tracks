@@ -212,6 +212,7 @@ class RacePlanUpdate(BaseModel):
     pin_lat:          float | None = None
     pin_lon:          float | None = None
     use_gpx_distance: bool | None = None    # use GPX actual distance instead of goal distance
+    tri_transitions_m: list[float] | None = None   # triathlon: the user's T1/T2 along the whole course
     # Fuelling overrides; null = the calculated default (calculators/fuel_plan.py).
     fuel_carbs_per_hour:     int | None = None
     fuel_fluid_ml_per_hour:  int | None = None
@@ -280,6 +281,9 @@ class RacePlanOut(BaseModel):
     swim_target_pace:  str | None = None        # swimming: formatted target pace
     triathlon_legs:    list[TriathlonLegOut] | None = None  # triathlon: per-leg breakdown
     triathlon_splits_m: dict | None = None      # {"swim_m", "bike_m", "run_m"}
+    triathlon_courses:  dict | None = None      # {leg: {"path", "source", "distance_m"}}
+    triathlon_transitions_m: list[float] | None = None   # T1/T2 in force along the whole course
+    tri_transitions_m:  list[float] | None = None        # the user's own, null = automatic
     # MTB / road-cycling extras (None for other sports)
     target_hr_ceiling:   int  | None = None     # bpm cap during the race
     climb_target_w_per_kg: float | None = None  # hill climbs: the W/kg to aim for

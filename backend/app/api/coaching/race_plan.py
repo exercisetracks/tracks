@@ -18,7 +18,7 @@ them side-by-side is clearer than slicing the algorithm across files.
 import base64
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
@@ -605,9 +605,17 @@ def sport_plan(family: str, metrics: dict, rp, goal, plan_distance_m: float, *,
     elif family == "triathlon":
         splits = rp.triathlon_splits_m or _infer_triathlon_splits(plan_distance_m)
         rp.triathlon_splits_m = splits
-        swim_m = splits.get("swim_m", 1500)
-        bike_m = splits.get("bike_m", 40000)
-        run_m  = splits.get("run_m",  10000)
+        # Each leg's course — its own file, else its stretch of the whole
+        # course split at T1/T2 (race_predictor/triathlon.py). A leg with a
+        # course is raced at the course's length, and its hills shape its
+        # targets as a single-sport course does.
+        from app.calculators.race_predictor.triathlon import leg_courses, total_m
+        courses = leg_courses(rp.course_segments, rp.course_path, getattr(rp, "tri_leg_courses", None),
+                              getattr(rp, "tri_transitions_m", None), splits)["legs"]
+        leg_segs = {k: (v["segments"] or None) for k, v in courses.items()}
+        swim_m = total_m(leg_segs["swim"]) if leg_segs["swim"] else splits.get("swim_m", 1500)
+        bike_m = total_m(leg_segs["bike"]) if leg_segs["bike"] else splits.get("bike_m", 40000)
+        run_m  = total_m(leg_segs["run"]) if leg_segs["run"] else splits.get("run_m",  10000)
 
         T1_SEC, T2_SEC = 5 * 60, 3 * 60   # standard transition estimates
 
@@ -633,17 +641,22 @@ def sport_plan(family: str, metrics: dict, rp, goal, plan_distance_m: float, *,
         # Bike leg
         ftp = metrics["ftp"]
         if ftp:
+            from app.calculators.road_cycling import road_grade_multiplier
             ftp_adjusted = ftp * (2.0 - freshness_factor)
-            bike_sec     = predict_cycling_time_sec(ftp_adjusted, bike_m)
+            bike_sec     = predict_cycling_time_sec(ftp_adjusted, bike_m, leg_segs["bike"])
             avg_speed_kph = bike_m / bike_sec * 3.6
             bike_laps, _ = compute_cycling_lap_targets(
                 ftp           = ftp_adjusted,
                 distance_m    = bike_m,
                 split_spread  = split_spread,
                 lap_km        = lap_km,
+                course_segments = leg_segs["bike"],
                 max_hr        = max_hr_val if rp.pace_hr_mode == "pace_hr" else None,
                 predicted_sec = bike_sec,
             )
+            if leg_segs["bike"]:
+                for lap in bike_laps:
+                    lap["grade_multiplier"] = round(road_grade_multiplier(lap.get("gradient", 0.0) or 0.0), 4)
             base_watts_tri = round(ftp_adjusted * 0.85)   # ~85% FTP for IM bike leg
             tri_legs.append({
                 "leg":            "bike",
@@ -662,12 +675,16 @@ def sport_plan(family: str, metrics: dict, rp, goal, plan_distance_m: float, *,
         if vdot:
             adj_vdot = vdot * (2.0 - freshness_factor) * 0.95   # ~5% fatigue from swim+bike
             run_sec  = predict_race_time_sec(adj_vdot, run_m)
+            if leg_segs["run"]:
+                run_sec *= compute_technicality_factor(leg_segs["run"])[0]
             run_laps, _ = compute_lap_paces(
                 predicted_sec = run_sec,
                 distance_m    = run_m,
                 split_spread  = split_spread,
                 lap_km        = lap_km,
+                course_segments = leg_segs["run"],
                 max_hr        = max_hr_val if rp.pace_hr_mode == "pace_hr" else None,
+                terrain       = bool(leg_segs["run"]),
             )
             tri_legs.append({
                 "leg":            "run",
@@ -718,14 +735,42 @@ def sport_plan(family: str, metrics: dict, rp, goal, plan_distance_m: float, *,
     return laps, actual_sec, weather_snap
 
 
+_TRI_LEGS = ("swim", "bike", "run")
+
+
+def _check_leg(leg: str | None) -> str | None:
+    if leg is not None and leg not in _TRI_LEGS:
+        raise HTTPException(status_code=422, detail="leg must be swim, bike or run")
+    return leg
+
+
+def _store_course(rp: RacePlan, segments: list[dict], path: list[list], leg: str | None) -> None:
+    """A parsed course as the race's whole course, or as one triathlon leg's
+    own (race_predictor/triathlon.py), and the stale plan cleared."""
+    if leg:
+        rp.tri_leg_courses = {**(rp.tri_leg_courses or {}), leg: {"segments": segments, "path": path}}
+    else:
+        rp.technicality_factor, rp.technicality_label = compute_technicality_factor(segments)
+        rp.course_segments, rp.course_path = segments, path
+        # A new whole course is split afresh: the old T1/T2 were along another file.
+        rp.tri_transitions_m = None
+    # The weather pin follows the course start — the whole course's, or the
+    # first leg file's when there is no whole course.
+    if path and (not leg or not rp.course_segments):
+        rp.pin_lat, rp.pin_lon = path[0][0], path[0][1]
+    rp.lap_paces = rp.generated_at = rp.fit_b64 = rp.watch_filename = rp.watch_uploaded_at = None
+
+
 @router.post("/goals/{goal_id}/race-plan/course")
 def upload_course_gpx(
     goal_id: int,
     file: UploadFile = File(...),
+    leg: str | None = Query(None),
     user: User = Depends(require_auth),
     db: Session = Depends(get_db),
 ):
-    """Parse an uploaded GPX file and store the elevation profile."""
+    """Parse an uploaded GPX file and store the elevation profile — as the
+    whole course, or with `leg` as one triathlon leg's own."""
     user, us = _get_user_and_settings(db, user)
     goal = _goal_or_404(db, goal_id, user)
     if not file.filename.lower().endswith(".gpx"):
@@ -739,24 +784,7 @@ def upload_course_gpx(
     path = extract_path_points(content, max_points=300)
 
     rp = _get_or_create_plan(db, goal_id, user.id, flush=True)
-
-    tech_factor, tech_label    = compute_technicality_factor(segments)
-    rp.course_segments         = segments
-    rp.course_path             = path
-    rp.technicality_factor     = tech_factor
-    rp.technicality_label      = tech_label
-
-    # Auto-set the weather pin to the course start (first trackpoint).
-    if path:
-        rp.pin_lat = path[0][0]
-        rp.pin_lon = path[0][1]
-
-    # Clear stale generated results — the user must regenerate.
-    rp.lap_paces         = None
-    rp.generated_at      = None
-    rp.fit_b64           = None
-    rp.watch_filename    = None
-    rp.watch_uploaded_at = None
+    _store_course(rp, segments, path, _check_leg(leg))
     db.commit()
     db.refresh(rp)
     return _race_plan_out(rp, us, goal)
@@ -788,8 +816,8 @@ def _track_gpx(geometry: list) -> bytes:
 
 
 @router.post("/goals/{goal_id}/race-plan/course/from-track/{track_id}")
-def course_from_track(goal_id: int, track_id: int, user: User = Depends(require_auth),
-                      db: Session = Depends(get_db)):
+def course_from_track(goal_id: int, track_id: int, leg: str | None = Query(None),
+                      user: User = Depends(require_auth), db: Session = Depends(get_db)):
     """Use a saved (or just-drawn) map track as the race course — the same
     result as uploading it as GPX."""
     from app.models.custom_track import CustomTrack
@@ -804,28 +832,33 @@ def course_from_track(goal_id: int, track_id: int, user: User = Depends(require_
         raise HTTPException(status_code=422, detail="That track has no usable points")
     path = extract_path_points(content, max_points=300)
     rp = _get_or_create_plan(db, goal_id, user.id, flush=True)
-    rp.technicality_factor, rp.technicality_label = compute_technicality_factor(segments)
-    rp.course_segments, rp.course_path = segments, path
-    if path:
-        rp.pin_lat, rp.pin_lon = path[0][0], path[0][1]
-    rp.lap_paces = rp.generated_at = rp.fit_b64 = rp.watch_filename = rp.watch_uploaded_at = None
+    _store_course(rp, segments, path, _check_leg(leg))
     db.commit()
     db.refresh(rp)
     return _race_plan_out(rp, us, goal)
 
 
 @router.delete("/goals/{goal_id}/race-plan/course", status_code=204)
-def delete_course_gpx(goal_id: int, user: User = Depends(require_auth), db: Session = Depends(get_db)):
-    """Remove the uploaded GPX course profile."""
+def delete_course_gpx(goal_id: int, leg: str | None = Query(None), user: User = Depends(require_auth),
+                      db: Session = Depends(get_db)):
+    """Remove the uploaded GPX course profile — the whole course, or with
+    `leg` one triathlon leg's own file (the leg falls back to its stretch of
+    the whole course)."""
+    _check_leg(leg)
     rp = (
         db.query(RacePlan)
         .join(TrainingGoal, RacePlan.goal_id == TrainingGoal.id)
         .filter(TrainingGoal.user_id == user.id, RacePlan.goal_id == goal_id)
         .first()
     )
-    if rp:
+    if rp and leg:
+        rp.tri_leg_courses = {k: v for k, v in (rp.tri_leg_courses or {}).items() if k != leg} or None
+        rp.lap_paces = rp.generated_at = rp.fit_b64 = rp.watch_filename = rp.watch_uploaded_at = None
+        db.commit()
+    elif rp:
         rp.course_segments   = None
         rp.course_path       = None
+        rp.tri_transitions_m = None
         rp.lap_paces         = None
         rp.generated_at      = None
         rp.fit_b64           = None

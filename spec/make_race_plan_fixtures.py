@@ -23,7 +23,9 @@ from types import SimpleNamespace
 
 sys.path.insert(0, "/app")
 
+from app.api.coaching.race_helpers import _infer_triathlon_splits  # noqa: E402
 from app.api.coaching.race_plan import sport_plan  # noqa: E402
+from app.calculators.race_predictor.triathlon import leg_courses  # noqa: E402
 
 OUT = Path("/spec/fixtures/race_plan.json")
 
@@ -37,12 +39,39 @@ def _hills(km: int, amp: float = 0.05) -> list[dict]:
     return out
 
 
+def _tri_course():
+    """A whole triathlon course that returns to transition after the swim and
+    the bike, with rolling hills on the bike and the run."""
+    deg = 111_195.0
+    path = []
+    def go(north_m, west_m, ele):
+        path.append([round(north_m / deg, 6), round(-west_m / deg, 6), ele])
+    for i in list(range(9)) + list(range(7, -1, -1)):
+        go(i * 100, 0, 2.0)
+    for side in (lambda t: (0, t), lambda t: (t, 10), lambda t: (10, 10 - t), lambda t: (10 - t, 0)):
+        for t in range(1, 11):
+            n, w = side(t)
+            go(n * 1000, w * 1000, round(40 * math.sin(len(path) / 4.0) + 50, 1))
+    for i in list(range(1, 6)) + list(range(4, -1, -1)):
+        go(-i * 1000, 0, round(20 * math.sin(i) + 30, 1))
+    from app.calculators.race_predictor.geo import _haversine_m
+    segs = []
+    for a, b in zip(path, path[1:]):
+        d = _haversine_m(a[0], a[1], b[0], b[1])
+        if d > 0:
+            g = (b[2] - a[2]) / d
+            segs.append({"distance_m": round(d, 1), "elevation_gain_m": round(max(0.0, b[2] - a[2]), 1),
+                         "gradient": round(g, 4)})
+    return segs, path
+
+
 def case(name, family, distance, *, vdot=None, ftp=None, css=None, max_hr=None, lthr=None,
          course=None, course_type="flat", spread=0.0, pace_hr=False, imperial=False,
-         mtb=None, cycling=None, splits=None):
+         mtb=None, cycling=None, splits=None, path=None, leg_files=None, transitions=None):
     rp = SimpleNamespace(course_segments=course, course_type=course_type, pace_hr_mode="pace_hr" if pace_hr else "pace",
                          split_spread=spread, triathlon_splits_m=splits, technicality_factor=None,
-                         technicality_label=None, target_hr_ceiling=None, climb_target_w_per_kg=None)
+                         technicality_label=None, target_hr_ceiling=None, climb_target_w_per_kg=None,
+                         course_path=path, tri_leg_courses=leg_files, tri_transitions_m=transitions)
     goal = SimpleNamespace(mtb_discipline=mtb, cycling_discipline=cycling)
     metrics = {"family": family, "vdot": vdot, "run_indices": None, "ftp": ftp, "css": css,
                "max_hr": max_hr, "lthr": lthr}
@@ -51,19 +80,24 @@ def case(name, family, distance, *, vdot=None, ftp=None, css=None, max_hr=None, 
         "name": name, "family": family, "distance_m": distance,
         "metrics": metrics, "course_segments": course, "course_type": course_type, "split_spread": spread,
         "pace_hr": pace_hr, "imperial": imperial, "mtb_discipline": mtb, "cycling_discipline": cycling,
-        "triathlon_splits_m": splits,
+        "triathlon_splits_m": splits, "course_path": path, "tri_leg_courses": leg_files,
+        "tri_transitions_m": transitions,
         "expected": {
             "laps": laps, "seconds": seconds,
             "triathlon_legs": (snap or {}).get("triathlon_legs"),
             "triathlon_splits_m": rp.triathlon_splits_m,
             "technicality_factor": rp.technicality_factor, "technicality_label": rp.technicality_label,
             "target_hr_ceiling": rp.target_hr_ceiling, "climb_target_w_per_kg": rp.climb_target_w_per_kg,
+            "tri_courses": (leg_courses(course, path, leg_files, transitions,
+                                        splits or _infer_triathlon_splits(distance))
+                            if family == "triathlon" and (course or leg_files) else None),
         },
     }
 
 
 def main() -> None:
     hills = _hills(40)
+    tri = _tri_course()
     cases = [
         case("road race, flat", "cycling", 40_000, ftp=250, lthr=165),
         case("road race, rolling terrain", "cycling", 80_000, ftp=280, lthr=170, course_type="rolling", spread=0.4),
@@ -82,6 +116,15 @@ def main() -> None:
         case("70.3 with set splits", "triathlon", 113_000, css=98.0, ftp=260, vdot=52.0,
              splits={"swim_m": 1900, "bike_m": 90000, "run_m": 21097}),
         case("ironman, run only", "triathlon", 226_000, vdot=45.0),
+        case("olympic on a whole course", "triathlon", 51_500, css=100.0, ftp=250, vdot=50.0,
+             course=tri[0], path=tri[1]),
+        case("olympic, own bike file over the whole", "triathlon", 51_500, ftp=250, vdot=50.0,
+             course=tri[0], path=tri[1], leg_files={"bike": {"segments": _hills(41, 0.03), "path": []}}),
+        case("olympic, the user's transitions", "triathlon", 51_500, css=100.0, ftp=250, vdot=50.0,
+             course=tri[0], path=tri[1], transitions=[1700.0, 41000.0], pace_hr=True, max_hr=186),
+        case("sprint, leg files only", "triathlon", 25_750, css=100.0, ftp=230, vdot=48.0,
+             leg_files={"run": {"segments": _hills(5, 0.04), "path": []},
+                        "swim": {"segments": [{"distance_m": 780.0, "elevation_gain_m": 0.0, "gradient": 0.0}], "path": []}}),
         case("hike on VDOT", "hiking", 20_000, vdot=42.0, course_type="mountainous"),
         case("rowing on VDOT with HR", "rowing", 2_000, vdot=50.0, max_hr=190, pace_hr=True),
     ]

@@ -33,6 +33,11 @@ class SportPlanFixtureTest {
         Segment(o["distance_m"].d()!!, o["gradient"].d()!!, o["elevation_gain_m"].d() ?: 0.0)
     }
 
+    private fun pathOf(e: JsonElement?) = if (e == null || e is JsonNull) emptyList() else e.jsonArray.map {
+        val p = it.jsonArray
+        TriCourse.PathPoint(p[0].d()!!, p[1].d()!!, p.getOrNull(2).d())
+    }
+
     /** The fields a lap is coached by, as the server writes them. */
     private fun lapKey(o: JsonObject) = listOf(o["lap"].i(), o["distance_m"].d(), o["target_sec_per_km"].d(),
         o["gradient"].d(), o["grade_multiplier"].d(), o["cumulative_km"].d(), o["hr_ceiling"].i(),
@@ -60,6 +65,10 @@ class SportPlanFixtureTest {
                     imperial = c["imperial"]!!.jsonPrimitive.booleanOrNull!!, segments = segmentsOf(c["course_segments"]),
                     mtbDiscipline = c["mtb_discipline"].s(), cyclingDiscipline = c["cycling_discipline"].s(),
                     triathlonSplits = splits,
+                    path = pathOf(c["course_path"]),
+                    triLegFiles = c["tri_leg_courses"]?.takeIf { it !is JsonNull }?.jsonObject.orEmpty()
+                        .mapValues { (_, v) -> TriCourse.LegFile(segmentsOf(v.jsonObject["segments"]), pathOf(v.jsonObject["path"])) },
+                    triTransitionsM = c["tri_transitions_m"]?.takeIf { it !is JsonNull }?.jsonArray?.map { it.d()!! },
                 ),
             )
             val e = c["expected"]!!.jsonObject
@@ -68,6 +77,21 @@ class SportPlanFixtureTest {
             assertEquals(e["target_hr_ceiling"].i(), got.targetHrCeiling, name)
             assertEquals(e["climb_target_w_per_kg"].d(), got.climbTargetWPerKg, name)
             assertEquals(e["technicality_label"].s(), got.technicalityLabel, name)
+            e["tri_courses"]?.takeIf { it !is JsonNull }?.jsonObject?.let { tc ->
+                val got2 = TriCourse.legCourses(segmentsOf(c["course_segments"]), pathOf(c["course_path"]),
+                    c["tri_leg_courses"]?.takeIf { it !is JsonNull }?.jsonObject.orEmpty()
+                        .mapValues { (_, v) -> TriCourse.LegFile(segmentsOf(v.jsonObject["segments"]), pathOf(v.jsonObject["path"])) },
+                    c["tri_transitions_m"]?.takeIf { it !is JsonNull }?.jsonArray?.map { it.d()!! },
+                    splits ?: SportPlan.inferTriathlonSplits(c["distance_m"].d()!!))
+                assertEquals(tc["transitions_m"]?.takeIf { it !is JsonNull }?.jsonArray?.map { it.d()!! }, got2.transitionsM, name)
+                for ((leg, want) in tc["legs"]!!.jsonObject) {
+                    val w = want.jsonObject
+                    val g = got2.legs.getValue(leg)
+                    assertEquals(w["source"].s(), g.source, "$name $leg")
+                    assertEquals(w["path"]!!.jsonArray.size, g.path.size, "$name $leg path")
+                    assertEquals(segmentsOf(w["segments"]), g.segments.orEmpty(), "$name $leg segments")
+                }
+            }
             val legs = e["triathlon_legs"]?.takeIf { it !is JsonNull }?.jsonArray?.map { it.jsonObject }.orEmpty()
             assertEquals(legs.map { listOf(it["leg"].s(), it["distance_m"].d(), it["target_pace"].s(), it["target_watts"].i()) },
                 got.legs.map { listOf(it.leg, it.distanceM, it.targetPace, it.targetWatts) }, name)

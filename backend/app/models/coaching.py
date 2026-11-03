@@ -137,6 +137,12 @@ class RacePlan(Base, Synced):
 
     # Triathlon: per-leg distances in metres {"swim_m": 1900, "bike_m": 90000, "run_m": 21097}
     triathlon_splits_m = Column(PJson, nullable=True)
+    # A triathlon's own leg files, {leg: {"segments", "path"}}, each winning
+    # over its stretch of the whole course (course_segments / course_path),
+    # and the user's T1/T2 along that whole course, [t1_m, t2_m] (null = the
+    # automatic split). See calculators/race_predictor/triathlon.py.
+    tri_leg_courses    = Column(PJson, nullable=True)
+    tri_transitions_m  = Column(PJson, nullable=True)
 
     # MTB-specific (generalizable to other HR-ceiling sports later):
     #   target_hr_ceiling   bpm cap during the race (LTHR × discipline factor)

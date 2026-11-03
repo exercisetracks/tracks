@@ -246,6 +246,23 @@ def _fetch_weather_uncached(lat: float, lon: float, target_date: date) -> dict |
         return None
 
 
+def _triathlon_courses_out(rp: RacePlan, family: str, plan_distance: float | None) -> dict:
+    """Each leg's course for the map and its graph, and the T1/T2 in force."""
+    if family != "triathlon" or not (rp.course_segments or rp.tri_leg_courses):
+        return {"triathlon_courses": None, "triathlon_transitions_m": None}
+    from app.calculators.race_predictor.triathlon import leg_courses, total_m
+    splits = rp.triathlon_splits_m or _infer_triathlon_splits(plan_distance or 51_500)
+    got = leg_courses(rp.course_segments, rp.course_path, rp.tri_leg_courses, rp.tri_transitions_m, splits)
+    return {
+        "triathlon_courses": {
+            leg: {"path": c["path"], "source": c["source"],
+                  "distance_m": round(total_m(c["segments"]), 1) if c["segments"] else None}
+            for leg, c in got["legs"].items()
+        },
+        "triathlon_transitions_m": got["transitions_m"],
+    }
+
+
 def _race_plan_out(rp: RacePlan, us: UserSettings | None = None,
                    goal: TrainingGoal | None = None) -> dict:
     """Serialize a RacePlan into the API response dict, enriching with the
@@ -297,6 +314,8 @@ def _race_plan_out(rp: RacePlan, us: UserSettings | None = None,
         "swim_target_pace":  format_swim_pace(css, 1.0) if css and family in ("swimming", "triathlon") else None,
         "triathlon_legs":    rp.weather_snapshot.get("triathlon_legs") if rp.weather_snapshot else None,
         "triathlon_splits_m": rp.triathlon_splits_m,
+        **_triathlon_courses_out(rp, family, plan_distance=goal.event_distance_meters if goal else None),
+        "tri_transitions_m": rp.tri_transitions_m,
         # Cycling and MTB (None for other sports): the race's HR ceiling, and
         # a hill climb's W/kg with the watts it means at today's weight.
         "target_hr_ceiling": rp.target_hr_ceiling,

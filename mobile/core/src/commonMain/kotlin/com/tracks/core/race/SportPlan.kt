@@ -40,6 +40,12 @@ object SportPlan {
         val mtbDiscipline: String? = null,
         val cyclingDiscipline: String? = null,
         val triathlonSplits: TriSplits? = null,
+        /** The whole course's sampled path, which a triathlon's split reads. */
+        val path: List<TriCourse.PathPoint> = emptyList(),
+        /** A triathlon's own leg files, each winning over its stretch of the whole course. */
+        val triLegFiles: Map<String, TriCourse.LegFile> = emptyMap(),
+        /** The user's T1/T2 along the whole course; null = the automatic split. */
+        val triTransitionsM: List<Double>? = null,
     )
 
     data class TriSplits(val swimM: Double, val bikeM: Double, val runM: Double)
@@ -186,27 +192,41 @@ object SportPlan {
 
     private fun triathlon(m: Metrics, i: Inputs, lapKm: Double, maxHr: Int?): Result {
         val splits = i.triathlonSplits ?: inferTriathlonSplits(i.distanceM)
+        // Each leg's course — its own file, else its stretch of the whole —
+        // sets its length and shapes its targets (TriCourse).
+        val courses = TriCourse.legCourses(i.segments, i.path, i.triLegFiles, i.triTransitionsM, splits).legs
+        fun segsOf(leg: String) = courses[leg]?.segments?.ifEmpty { null }
+        val swimSegs = segsOf("swim")
+        val bikeSegs = segsOf("bike")
+        val runSegs = segsOf("run")
+        val swimM = swimSegs?.let(TriCourse::totalM) ?: splits.swimM
+        val bikeM = bikeSegs?.let(TriCourse::totalM) ?: splits.bikeM
+        val runM = runSegs?.let(TriCourse::totalM) ?: splits.runM
         val legs = mutableListOf<Leg>()
         var total = 0.0
         m.css?.let { css ->
-            val sec = RacePredictor.predictSwimTimeSec(css, splits.swimM, openWater = true)
-            legs += Leg("swim", splits.swimM, sec, RacePredictor.formatSwimPace(css), null, null, null, css * 10)
+            val sec = RacePredictor.predictSwimTimeSec(css, swimM, openWater = true)
+            legs += Leg("swim", swimM, sec, RacePredictor.formatSwimPace(css), null, null, null, css * 10)
             total += sec + T1_SEC
         }
         m.ftp?.let { ftp ->
-            val sec = RacePredictor.predictCyclingTimeSec(ftp, splits.bikeM)
-            val kph = splits.bikeM / sec * 3.6
-            val (laps, _) = RacePredictor.cyclingLapTargets(ftp, splits.bikeM, i.splitSpread, lapKm, null, maxHr, sec)
+            val sec = RacePredictor.predictCyclingTimeSec(ftp, bikeM, bikeSegs)
+            val kph = bikeM / sec * 3.6
+            val (raw, _) = RacePredictor.cyclingLapTargets(ftp, bikeM, i.splitSpread, lapKm, bikeSegs, maxHr, sec)
+            val laps = if (bikeSegs != null) {
+                raw.map { it.copy(gradeMultiplier = PyMath.round(RoadCycling.gradeMultiplier(it.gradient), 4)) }
+            } else raw
             val watts = PyMath.roundToLong(ftp * 0.85).toInt()
-            legs += Leg("bike", splits.bikeM, sec, "${PyMath.round(kph, 1)} km/h avg", watts,
+            legs += Leg("bike", bikeM, sec, "${PyMath.round(kph, 1)} km/h avg", watts,
                 PyMath.roundToLong(watts / ftp * 100).toInt(), laps)
             total += sec + T2_SEC
         }
         m.vdot?.let { vdot ->
             // About 5% slower for the swim and the bike before it.
-            val sec = RacePredictor.predictRaceTimeSec(vdot * 0.95, splits.runM)
-            val (laps, _) = RacePredictor.lapPaces(sec, splits.runM, i.splitSpread, lapKm, maxHr = maxHr)
-            legs += Leg("run", splits.runM, sec, laps.firstOrNull()?.targetPace, null, null, laps)
+            var sec = RacePredictor.predictRaceTimeSec(vdot * 0.95, runM)
+            if (runSegs != null) sec *= RacePredictor.technicalityFactor(runSegs).first
+            val (laps, _) = RacePredictor.lapPaces(sec, runM, i.splitSpread, lapKm, runSegs, maxHr, terrain = runSegs != null)
+            legs += Leg("run", runM, sec, laps.firstOrNull()?.targetPace, null, null, laps)
             total += sec
         }
         if (legs.isEmpty()) throw Missing("Set your FTP or CSS, or build a training plan, to plan a triathlon.")
