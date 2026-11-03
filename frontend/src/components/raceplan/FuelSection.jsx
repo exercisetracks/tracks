@@ -22,6 +22,7 @@ import AnchoredPopover from "../ui/AnchoredPopover";
 import Button, { PlusIcon } from "../ui/Button";
 import RadialGauge from "../RadialGauge";
 import Tabs from "../ui/Tabs";
+import Modal from "../ui/Modal";
 import { FUEL_CATALOG } from "../../spec/fuelCatalog";
 
 /** The built-in homemade mix's uid among the race's products (fuel_plan.HOMEMADE_UID). */
@@ -106,65 +107,69 @@ function TargetsEditor({ plan, calculated, onPatch, onClose }) {
 }
 
 /**
- * Add a product: first a searchable list of common race foods with their
- * label nutrition (spec/fuel_catalog.yaml), then the form, filled in from the
- * pick — or blank, for "Custom…" — so a label that differs can be corrected
- * before it is added.
+ * Add a product, in the kit's Modal: an "Add custom product" button for a
+ * product of the user's own (saved to their account, so every device has
+ * it), then a searchable list of common race foods with their label
+ * nutrition (spec/fuel_catalog.yaml). Either leads to the form — filled in
+ * from a pick, blank for custom — so a label that differs can be corrected
+ * before it is added. The phone shows the same as a full-screen page.
  */
 function ProductForm({ onAdd, onCancel }) {
   const [draft, setDraft] = useState(null);
   const [query, setQuery] = useState("");
+  const blank = { name: "", kind: "gel", carbs_g: 25, sodium_mg: 0, potassium_mg: 0, caffeine_mg: 0, fluid_ml: 0 };
   if (!draft) {
     const q = query.trim().toLowerCase();
     const shown = FUEL_CATALOG.filter((p) => !q || p.name.toLowerCase().includes(q));
     return (
-      <div className={PANEL}>
-        <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Add a product</h4>
-        <input className={INPUT} placeholder="Search" value={query} autoFocus aria-label="Search products"
-          onChange={(e) => setQuery(e.target.value)} />
-        <ul className="max-h-64 overflow-y-auto -mx-1" role="listbox" aria-label="Common products">
-          {shown.map((p) => (
-            <li key={p.name}>
-              <button role="option" aria-selected="false" onClick={() => setDraft({ ...p })}
-                className="w-full text-left px-2 py-1.5 rounded-lg text-sm hover:bg-slate-100 dark:hover:bg-slate-700">
-                <span className="block">{p.name}</span>
-                <span className="block text-xs tabular-nums text-slate-500 dark:text-slate-400">
-                  {p.carbs_g} g carbs · {p.sodium_mg} mg Na{p.potassium_mg ? ` · ${p.potassium_mg} mg K` : ""}
-                  {p.fluid_ml ? ` · ${p.fluid_ml} ml` : ""}{p.caffeine_mg ? ` · ${p.caffeine_mg} mg caffeine` : ""}
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
-        <div className="flex gap-2">
-          <Button variant="neutral" onClick={onCancel}>Cancel</Button>
-          <Button variant="tonal" onClick={() => setDraft({ name: query.trim(), kind: "gel", carbs_g: 25, sodium_mg: 0,
-            potassium_mg: 0, caffeine_mg: 0, fluid_ml: 0 })}>Custom…</Button>
+      <Modal title="Add a product" onClose={onCancel}>
+        <div className="space-y-3 text-slate-800 dark:text-slate-100">
+          <Button variant="primary" className="w-full" onClick={() => setDraft({ ...blank, name: query.trim() })}>
+            <PlusIcon /> Add custom product
+          </Button>
+          <p className="field-label pt-1">Common products</p>
+          <input className={INPUT} placeholder="Search" value={query} autoFocus aria-label="Search products"
+            onChange={(e) => setQuery(e.target.value)} />
+          <ul className="max-h-[50vh] overflow-y-auto -mx-1" role="listbox" aria-label="Common products">
+            {shown.map((p) => (
+              <li key={p.name}>
+                <button role="option" aria-selected="false" onClick={() => setDraft({ ...p })}
+                  className="w-full text-left px-2 py-2 rounded-lg text-sm hover:bg-slate-100 dark:hover:bg-slate-700">
+                  <span className="block">{p.name}</span>
+                  <span className="block text-xs tabular-nums text-slate-500 dark:text-slate-400">
+                    {p.carbs_g} g carbs · {p.sodium_mg} mg Na{p.potassium_mg ? ` · ${p.potassium_mg} mg K` : ""}
+                    {p.fluid_ml ? ` · ${p.fluid_ml} ml` : ""}{p.caffeine_mg ? ` · ${p.caffeine_mg} mg caffeine` : ""}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
         </div>
-      </div>
+      </Modal>
     );
   }
   return (
-    <div className={PANEL}>
-      <h4 className="text-sm font-semibold text-slate-900 dark:text-white">New product</h4>
-      <input className={INPUT} placeholder="Name" value={draft.name} autoFocus
-        onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
-      <select className={INPUT} value={draft.kind} onChange={(e) => setDraft({ ...draft, kind: e.target.value })}>
-        {KINDS.map((k) => <option key={k}>{k}</option>)}
-      </select>
-      <div className="grid grid-cols-2 gap-2">
-        {[["carbs_g", "Carbs (g)"], ["sodium_mg", "Sodium (mg)"], ["potassium_mg", "Potassium (mg)"], ["caffeine_mg", "Caffeine (mg)"], ["fluid_ml", "Fluid (ml)"]].map(([k, l]) => (
-          <label key={k} className="text-xs text-slate-500 dark:text-slate-400 flex flex-col gap-1">{l}
-            <input className={INPUT} type="number" min="0" value={draft[k]}
-              onChange={(e) => setDraft({ ...draft, [k]: Number(e.target.value) })} />
-          </label>
-        ))}
+    <Modal title="New product" onClose={onCancel}>
+      <div className="space-y-3">
+        <input className={INPUT} placeholder="Name" value={draft.name} autoFocus aria-label="Name"
+          onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
+        <select className={INPUT} value={draft.kind} aria-label="Kind" onChange={(e) => setDraft({ ...draft, kind: e.target.value })}>
+          {KINDS.map((k) => <option key={k}>{k}</option>)}
+        </select>
+        <div className="grid grid-cols-2 gap-2">
+          {[["carbs_g", "Carbs (g)"], ["sodium_mg", "Sodium (mg)"], ["potassium_mg", "Potassium (mg)"], ["caffeine_mg", "Caffeine (mg)"], ["fluid_ml", "Fluid (ml)"]].map(([k, l]) => (
+            <label key={k} className="field-label flex flex-col gap-1">{l}
+              <input className={INPUT} type="number" min="0" value={draft[k]}
+                onChange={(e) => setDraft({ ...draft, [k]: Number(e.target.value) })} />
+            </label>
+          ))}
+        </div>
+        <div className="flex justify-end gap-2 pt-1">
+          <Button variant="neutral" onClick={() => setDraft(null)}>Back</Button>
+          <Button variant="primary" disabled={!draft.name.trim()} onClick={() => onAdd(draft)}>Add</Button>
+        </div>
       </div>
-      <div className="flex gap-2">
-        <Button variant="neutral" onClick={() => setDraft(null)}>Back</Button>
-        <Button variant="primary" disabled={!draft.name.trim()} onClick={() => onAdd(draft)}>Add</Button>
-      </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -380,9 +385,7 @@ export default function FuelSection({ goalId, plan, onPatch }) {
           className="inline-flex items-center justify-center h-8 w-8 rounded-full border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700">
           <span className="w-4 h-4"><PlusIcon /></span>
         </button>
-        <AnchoredPopover anchorRef={addRef} open={open === "product"} onClose={() => setOpen(null)} align="left">
-          <ProductForm onAdd={addProduct} onCancel={() => setOpen(null)} />
-        </AnchoredPopover>
+        {open === "product" && <ProductForm onAdd={addProduct} onCancel={() => setOpen(null)} />}
       </div>
 
       {fuel.homemade && <MixCard mix={fuel.homemade} plan={plan} onPatch={onPatch} />}

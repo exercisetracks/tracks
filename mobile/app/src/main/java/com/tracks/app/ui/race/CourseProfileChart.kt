@@ -50,10 +50,12 @@ import com.tracks.core.race.RacePredictor
  * plan asks of it read together. The web draws the same plot
  * (ElevationChart.jsx).
  *
- * Two y-axes on purpose: the measures share only distance, and reading one
- * against the other at the same spot is the plot's whole job. Elevation is a
- * neutral area behind, the target a line in its metric's colour from the
- * activity graphs — an orange elevation sat too close to the HR line's red.
+ * The axes are the HR ceiling's (left) and the target's (right), or the
+ * target's alone on the left when the plan sets no HR. Elevation has no
+ * axis: the shape of the hills is what is read against the targets, and the
+ * height is in the readout. It is a neutral area behind, scaled as every
+ * elevation chart in the app is (streamScale's fixed 100 m margin); the
+ * lines take their metrics' colours from the activity graphs.
  * Pace runs faster-up, as everywhere in the app.
  *
  * Hold to read it; [onInspect] gets the point being read, which the screen
@@ -110,10 +112,12 @@ internal fun CourseProfileChart(
     val muted = MaterialTheme.colorScheme.onSurfaceVariant
     val grid = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f)
     val popup = chartPopupColors()
+    // Elevation is a shape, with no axis: drawn exactly as the activity
+    // elevation charts are, a fixed 100 m above the top and below the bottom
+    // (streamScale), so a flat course is a line through the middle.
     val eleScale = remember(points) {
-        if (hasEle) padded(eles.minOf { ele(it) }, eles.maxOf { ele(it) }, 10.0).let { (lo, hi) -> chartScale(lo, hi) } else null
+        if (hasEle) com.tracks.app.ui.activity.streamScale(eles, 0.0, null, com.tracks.app.ui.activity.ELEVATION_MARGIN_M) else null
     }
-    val eleFormat = remember(eleScale) { eleScale?.let { axisFormat(it) } }
     val targets = points.mapNotNull { it.target }
     val tScale = remember(points, series) {
         targets.takeIf { it.isNotEmpty() }?.let {
@@ -121,21 +125,21 @@ internal fun CourseProfileChart(
             else padded(it.min(), it.max(), MIN_SPAN.getValue(series!!)).let { (lo, hi) -> chartScale(lo, hi, target = 3) }
         }
     }
-    // No axis of its own for the HR line: its shape is drawn, its value read.
     val hrScale = remember(points) {
         hrs.takeIf { it.isNotEmpty() }?.let { padded(it.min(), it.max(), 10.0).let { (lo, hi) -> chartScale(lo, hi) } }
     }
-    // Elevation's axis on the left and the target's on the right; with no
-    // elevation the target's moves to the left.
-    val leftGutter = remember(eleScale, tScale) {
+    // The HR ceiling's axis on the left and the target's on the right; with
+    // no HR the target's moves to the left.
+    val hrFormat: (Double) -> String = { "${it.toInt()}" }
+    val leftGutter = remember(hrScale, tScale) {
         when {
-            eleScale != null -> measureGutter(eleScale, measurer, labelStyle, eleFormat!!)
+            hrScale != null -> measureGutter(hrScale, measurer, labelStyle, hrFormat)
             tScale != null -> measureGutter(tScale, measurer, labelStyle, tFormat)
             else -> 0f
         }
     }
-    val rightGutter = remember(tScale, eleScale) {
-        if (eleScale != null) tScale?.let { measureGutter(it, measurer, labelStyle, tFormat) } ?: 0f else 0f
+    val rightGutter = remember(tScale, hrScale) {
+        if (hrScale != null) tScale?.let { measureGutter(it, measurer, labelStyle, tFormat) } ?: 0f else 0f
     }
     var inspectX by remember { mutableStateOf<Float?>(null) }
     var widthPx by remember { mutableFloatStateOf(0f) }
@@ -195,7 +199,7 @@ internal fun CourseProfileChart(
                 val right = size.width - rightGutter
                 val total = points.last().m.takeIf { it > 0 } ?: 1.0
                 fun xOf(m: Double) = left + ((m / total) * (right - left)).toFloat()
-                fun yEle(v: Double) = plotH * (1f - eleScale!!.fraction(ele(v)))
+                fun yEle(v: Double) = plotH * (1f - eleScale!!.fraction(v))
                 fun yT(v: Double): Float {
                     val f = tScale!!.fraction(v)
                     // Faster-up: a smaller sec/km sits higher.
@@ -203,8 +207,8 @@ internal fun CourseProfileChart(
                 }
                 fun yHr(v: Double) = plotH * (1f - hrScale!!.fraction(v))
 
-                if (eleScale != null) {
-                    drawYAxis(eleScale, measurer, labelStyle, muted, grid, plotH, leftGutter, format = eleFormat!!)
+                if (hrScale != null) {
+                    drawYAxis(hrScale, measurer, labelStyle, muted, grid, plotH, leftGutter, format = hrFormat)
                     tScale?.ticks?.forEach { t ->
                         val layout = measurer.measure(tFormat(t), labelStyle)
                         val y = (yT(t) - layout.size.height / 2f).coerceIn(0f, plotH - layout.size.height)

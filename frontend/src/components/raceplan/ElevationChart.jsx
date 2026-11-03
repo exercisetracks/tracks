@@ -9,10 +9,13 @@
 // and its gradient, the HR ceiling) and reports it to the page, which marks
 // the same spot on the map. The phone draws the same plot (CourseProfileChart.kt).
 //
-// Two y-axes, deliberately: elevation and the target share nothing but
-// distance, and reading one against the other at the same place is the plot's
-// point. The HR line has no axis of its own — a third scale would crowd the
-// plot — so its shape is drawn and its value is in the readout. Elevation is
+// The axes: the HR ceiling on the left and the target on the right — or the
+// target on the left when the plan sets no HR. Elevation has no axis: what
+// matters is the shape of the hills under the targets, not their height
+// above the sea, which is in the readout. It is drawn as every elevation
+// profile in the app is (ElevationGraph.jsx), with a fixed 100 m above the
+// highest point and below the lowest, so a flat course is a line through
+// the middle rather than a ridge filling the chart. Elevation is
 // a neutral area behind, the lines in their metrics' colours from the
 // activity graphs; that keeps them apart for every colour vision (an orange
 // elevation was too close to the HR line's red, and the dashed HR line is
@@ -50,7 +53,9 @@ const TICK = { fontSize: 10, fill: "#94a3b8" };
  * a constant HR ceiling otherwise gives an axis of 255–256 with the line
  * pinned to an edge. The phone pads the same (CourseProfileChart.kt).
  */
-const MIN_SPAN = { power: 20, hr: 10, pace: 30, swim: 300, ele: 10 };
+const MIN_SPAN = { power: 20, hr: 10, pace: 30, swim: 300 };
+/** The app's elevation margin: 100 m, which is ElevationGraph's 330 ft. */
+const ELEVATION_MARGIN = { m: 100, ft: 330 };
 function domainOf(values, span) {
   const lo = Math.min(...values), hi = Math.max(...values);
   if (hi - lo >= span) return ["auto", "auto"];
@@ -181,14 +186,21 @@ export default function ElevationChart({ coursePath, laps, sport, metric: forced
               // Tenths on a short race, where whole units repeat ("0 km, 0 km, 1 km").
               tickFormatter={(v) => (span < 10 ? v.toFixed(1) : `${Math.round(v)}`)} />
             {hasEle && (
-              <YAxis yAxisId="ele" domain={domainOf(rows.filter((r) => r.e != null).map((r) => r.e), MIN_SPAN.ele)} tick={TICK} axisLine={false} tickLine={false} width={40} />
+              <YAxis yAxisId="ele" hide domain={(() => {
+                const es = rows.filter((r) => r.e != null).map((r) => r.e);
+                const pad = ELEVATION_MARGIN[eleUnit];
+                return [Math.floor((Math.min(...es) - pad) / 10) * 10, Math.ceil((Math.max(...es) + pad) / 10) * 10];
+              })()} />
             )}
             {series && (
-              <YAxis yAxisId="target" orientation={hasEle ? "right" : "left"} reversed={faster}
+              <YAxis yAxisId="target" orientation={hasHr ? "right" : "left"} reversed={faster}
                 domain={domainOf(rows.filter((r) => r.target != null).map((r) => r.target), MIN_SPAN[metric])} tick={TICK} axisLine={false} tickLine={false} width={faster ? 52 : 40}
                 tickFormatter={(v) => (faster ? fmtTarget(v).split("/")[0] : Math.round(v))} />
             )}
-            {hasHr && <YAxis yAxisId="hr" hide domain={domainOf(rows.filter((r) => r.hr != null).map((r) => r.hr), MIN_SPAN.hr)} />}
+            {hasHr && (
+              <YAxis yAxisId="hr" orientation="left" domain={domainOf(rows.filter((r) => r.hr != null).map((r) => r.hr), MIN_SPAN.hr)}
+                tick={TICK} axisLine={false} tickLine={false} width={36} />
+            )}
             <Tooltip cursor={{ stroke: "#64748b", strokeWidth: 1, strokeDasharray: "3 3" }} content={tip} />
             {hasEle && (
               <Area yAxisId="ele" type="monotone" dataKey="e" stroke={ELEVATION} strokeWidth={1}
@@ -199,7 +211,7 @@ export default function ElevationChart({ coursePath, laps, sport, metric: forced
                 dot={false} isAnimationActive={false} connectNulls />
             )}
             {shown?.map((m, i) => (
-              <ReferenceLine key={i} yAxisId={hasEle ? "ele" : "target"} x={toDist(m)} stroke="#475569"
+              <ReferenceLine key={i} yAxisId={hasEle ? "ele" : series ? "target" : "hr"} x={toDist(m)} stroke="#475569"
                 strokeWidth={drag?.i === i ? 3 : 2} style={{ cursor: "ew-resize" }}
                 label={{ value: `T${i + 1}`, position: "top", fill: "#64748b", fontSize: 11, fontWeight: 600 }} />
             ))}

@@ -16,6 +16,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -430,92 +434,96 @@ private fun TargetField(label: String, unit: String, value: Int?, fallback: Int,
 }
 
 /**
- * Add a product: first a searchable list of common race foods with their
- * label nutrition (spec/fuel_catalog.yaml), then the form, filled in from the
- * pick — or blank for "Custom" — so a label that differs can be corrected
- * before adding. The web's ProductForm does the same.
+ * Add a product, as a full-screen page in the app's colours: "Add custom
+ * product" for one of the user's own (saved to their account, so every
+ * device has it), then a searchable list of common race foods with their
+ * label nutrition (spec/fuel_catalog.yaml). Either opens the form — filled
+ * from a pick, blank for custom — so a label that differs can be corrected
+ * before adding. The web shows the same in its kit Modal (ProductForm).
  */
 @Composable
 private fun ProductDialog(onDismiss: () -> Unit, onAdd: (LocalRacePlans.ProductDraft) -> Unit) {
-    var name by remember { mutableStateOf("") }
-    var kind by remember { mutableStateOf("gel") }
-    var carbs by remember { mutableStateOf("25") }
-    var sodium by remember { mutableStateOf("0") }
-    var potassium by remember { mutableStateOf("0") }
-    var caffeine by remember { mutableStateOf("0") }
-    var fluid by remember { mutableStateOf("0") }
-    var picking by remember { mutableStateOf(true) }
-    var query by remember { mutableStateOf("") }
-    if (picking) {
-        AlertDialog(
-            onDismissRequest = onDismiss,
-            title = { Text("Add a product") },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(query, { query = it }, label = { Text("Search") }, singleLine = true)
-                    val q = query.trim().lowercase()
-                    androidx.compose.foundation.lazy.LazyColumn(Modifier.heightIn(max = 320.dp)) {
-                        items(FUEL_CATALOG.filter { q.isEmpty() || it.name.lowercase().contains(q) }, key = { it.name }) { p ->
-                            Column(Modifier.fillMaxWidth().clickable {
-                                name = p.name; kind = p.kind; carbs = trim(p.carbsG); sodium = "${p.sodiumMg}"
-                                potassium = "${p.potassiumMg}"; caffeine = "${p.caffeineMg}"; fluid = "${p.fluidMl}"
-                                picking = false
-                            }.padding(vertical = 8.dp)) {
-                                Text(p.name, style = MaterialTheme.typography.bodyLarge)
-                                Text(
-                                    listOfNotNull("${trim(p.carbsG)} g carbs", "${p.sodiumMg} mg Na",
-                                        p.potassiumMg.takeIf { it > 0 }?.let { "$it mg K" },
-                                        p.fluidMl.takeIf { it > 0 }?.let { "$it ml" },
-                                        p.caffeineMg.takeIf { it > 0 }?.let { "$it mg caffeine" }).joinToString(" · "),
-                                    style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                        }
-                    }
-                }
-            },
-            confirmButton = { TonalButton("Custom", onClick = { name = query.trim(); picking = false }) },
-            dismissButton = { NeutralButton("Cancel", onClick = onDismiss) },
-        )
-        return
-    }
-    AlertDialog(
+    androidx.compose.ui.window.Dialog(
         onDismissRequest = onDismiss,
-        title = { Text("New product") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(name, { name = it }, label = { Text("Name") }, singleLine = true)
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    listOf("gel", "drink", "chew", "bar").forEach { k ->
-                        FilterChip(selected = kind == k, onClick = { kind = k }, label = { Text(k) })
+        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
+    ) {
+        ProductPage(onDismiss, onAdd)
+    }
+}
+
+/** The page itself, apart from its window — which is what a screenshot test can render. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+internal fun ProductPage(onDismiss: () -> Unit, onAdd: (LocalRacePlans.ProductDraft) -> Unit) {
+    var draft by remember { mutableStateOf<LocalRacePlans.ProductDraft?>(null) }
+    var query by remember { mutableStateOf("") }
+    androidx.activity.compose.BackHandler { if (draft != null) draft = null else onDismiss() }
+    Column(
+        Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface).safeDrawingPadding()
+            .padding(horizontal = Tokens.Space.s4),
+        verticalArrangement = Arrangement.spacedBy(Tokens.Space.s3),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = { if (draft != null) draft = null else onDismiss() }) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+            }
+            Text(if (draft == null) "Add a product" else "New product", style = MaterialTheme.typography.titleLarge)
+        }
+        val d = draft
+        if (d == null) {
+            PrimaryButton("Add custom product", onClick = { draft = LocalRacePlans.ProductDraft(query.trim(), carbsG = 25.0) },
+                icon = Icons.Default.Add, modifier = Modifier.fillMaxWidth())
+            Text("COMMON PRODUCTS", style = Tokens.SectionHeader.style, color = MaterialTheme.colorScheme.primary)
+            OutlinedTextField(query, { query = it }, label = { Text("Search") }, singleLine = true,
+                modifier = Modifier.fillMaxWidth())
+            val q = query.trim().lowercase()
+            androidx.compose.foundation.lazy.LazyColumn(Modifier.weight(1f)) {
+                items(FUEL_CATALOG.filter { q.isEmpty() || it.name.lowercase().contains(q) }, key = { it.name }) { p ->
+                    Column(Modifier.fillMaxWidth().clickable {
+                        draft = LocalRacePlans.ProductDraft(p.name, p.kind, p.carbsG, p.sodiumMg, p.potassiumMg, p.caffeineMg, p.fluidMl)
+                    }.padding(vertical = Tokens.Space.s3)) {
+                        Text(p.name, style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            listOfNotNull("${trim(p.carbsG)} g carbs", "${p.sodiumMg} mg Na",
+                                p.potassiumMg.takeIf { it > 0 }?.let { "$it mg K" },
+                                p.fluidMl.takeIf { it > 0 }?.let { "$it ml" },
+                                p.caffeineMg.takeIf { it > 0 }?.let { "$it mg caffeine" }).joinToString(" · "),
+                            style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
-                }
-                listOf(
-                    Triple("Carbs (g)", carbs) { v: String -> carbs = v },
-                    Triple("Sodium (mg)", sodium) { v: String -> sodium = v },
-                    Triple("Potassium (mg)", potassium) { v: String -> potassium = v },
-                    Triple("Caffeine (mg)", caffeine) { v: String -> caffeine = v },
-                    Triple("Fluid (ml)", fluid) { v: String -> fluid = v },
-                ).forEach { (label, value, set) ->
-                    OutlinedTextField(
-                        value, { set(it.filter { c -> c.isDigit() || c == '.' }) }, label = { Text(label) },
-                        singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    )
                 }
             }
-        },
-        confirmButton = {
-            PrimaryButton("Add", onClick = {
-                onAdd(LocalRacePlans.ProductDraft(
-                    name.trim(), kind, carbsG = carbs.toDoubleOrNull() ?: 0.0, sodiumMg = sodium.toIntOrNull() ?: 0,
-                    potassiumMg = potassium.toIntOrNull() ?: 0, caffeineMg = caffeine.toIntOrNull() ?: 0,
-                    fluidMl = fluid.toIntOrNull() ?: 0,
-                ))
-            }, enabled = name.isNotBlank())
-        },
-        dismissButton = { NeutralButton("Back", onClick = { picking = true }) },
-    )
+        } else {
+            Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(Tokens.Space.s3)) {
+                OutlinedTextField(d.name, { draft = d.copy(name = it) }, label = { Text("Name") }, singleLine = true,
+                    modifier = Modifier.fillMaxWidth())
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(Tokens.Space.s1_5)) {
+                    listOf("gel", "drink", "chew", "bar", "other").forEach { k ->
+                        FilterChip(selected = d.kind == k, onClick = { draft = d.copy(kind = k) }, label = { Text(k) })
+                    }
+                }
+                fun num(v: String) = v.filter { c -> c.isDigit() || c == '.' }
+                EvenGrid(minColumns = 2, maxColumns = 2) {
+                    NumberField("Carbs (g)", trim(d.carbsG)) { draft = d.copy(carbsG = num(it).toDoubleOrNull() ?: 0.0) }
+                    NumberField("Sodium (mg)", "${d.sodiumMg}") { draft = d.copy(sodiumMg = num(it).toDoubleOrNull()?.toInt() ?: 0) }
+                    NumberField("Potassium (mg)", "${d.potassiumMg}") { draft = d.copy(potassiumMg = num(it).toDoubleOrNull()?.toInt() ?: 0) }
+                    NumberField("Caffeine (mg)", "${d.caffeineMg}") { draft = d.copy(caffeineMg = num(it).toDoubleOrNull()?.toInt() ?: 0) }
+                    NumberField("Fluid (ml)", "${d.fluidMl}") { draft = d.copy(fluidMl = num(it).toDoubleOrNull()?.toInt() ?: 0) }
+                }
+            }
+            ButtonRow(Modifier.padding(bottom = Tokens.Space.s3)) {
+                NeutralButton("Back", onClick = { draft = null })
+                PrimaryButton("Add", onClick = { onAdd(d.copy(name = d.name.trim())) }, enabled = d.name.isNotBlank())
+            }
+        }
+    }
 }
+
+@Composable
+private fun NumberField(label: String, value: String, onChange: (String) -> Unit) = OutlinedTextField(
+    value, onChange, label = { Text(label) }, singleLine = true,
+    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth(),
+)
 
 private fun trim(v: Double): String = if (v % 1.0 == 0.0) v.toInt().toString() else v.toString()
 

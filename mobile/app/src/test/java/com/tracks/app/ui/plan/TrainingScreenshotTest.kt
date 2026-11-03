@@ -396,6 +396,24 @@ class TrainingScreenshotTest {
     }
 
     @Test
+    fun race_plan_add_product_light() = shoot("race_plan_add_product_light", ThemeMode.Light) {
+        com.tracks.app.ui.race.ProductPage({}, {})
+    }
+
+    @Test
+    fun race_plan_add_product_dark() = shoot("race_plan_add_product_dark", ThemeMode.Dark) {
+        com.tracks.app.ui.race.ProductPage({}, {})
+    }
+
+    /** The hilly 5 km with HR ceilings: HR on the left axis, pace on the right. */
+    @Test
+    fun race_plan_course_hr_light() = shoot("race_plan_course_hr_light", ThemeMode.Light) {
+        val c = courseCard
+        val pred = LocalRacePlans.running(45.0, 5000.0, "flat", 0.0, imperial = false, maxHr = 190, segments = c.strategy.segments)
+        RacePlansContent(RacePlansState(loading = false, cards = listOf(c.copy(prediction = pred)), openGoalId = 1), {}, { _, _, _ -> })
+    }
+
+    @Test
     fun training_fuel_practice_light() = shoot("training_fuel_practice_light", ThemeMode.Light) {
         val long = w(9, today.toString(), "long", "Long run", min = 100, done = true)
         DayCard(today, listOf(long), {}, {}, {}, {}, gutTargets = mapOf(9 to 50))
