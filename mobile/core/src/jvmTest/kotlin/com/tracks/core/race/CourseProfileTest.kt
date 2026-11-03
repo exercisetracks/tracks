@@ -5,6 +5,7 @@ package com.tracks.core.race
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 /** The same cases as the web's CourseProfile.test.js: the two are one algorithm. */
 class CourseProfileTest {
@@ -27,9 +28,29 @@ class CourseProfileTest {
         assertEquals(2223.9, pts[2].m, 0.5)
     }
 
+    /** A GPX with no heights has no hills to show, but its targets still do. */
     @Test
-    fun `a course without elevation has no plot`() {
-        assertNull(CourseProfile.points(path.take(2), listOf(null, null), laps, CourseProfile.Metric.PACE))
+    fun `a course without elevation is drawn from its laps`() {
+        val pts = CourseProfile.points(path.take(2), listOf(null, null), laps, CourseProfile.Metric.PACE)!!
+        assertTrue(pts.all { it.ele == null })
+        assertEquals(300.0, pts.first().target)
+    }
+
+    /** The graph replaced the lap table, so it shows whether or not a course is loaded. */
+    @Test
+    fun `with no course the laps alone are drawn, HR ceiling and ground included`() {
+        val pts = CourseProfile.points(emptyList(), emptyList(), laps, CourseProfile.Metric.PACE)!!
+        assertTrue(pts.size > 50 && pts.all { it.ele == null && it.lat == null })
+        assertEquals(300.0, pts.first().target)
+        assertEquals(360.0, pts.last().target)
+        assertEquals(2000.0, pts.last().m)
+        assertEquals(160.0, pts.first().hr)
+        assertEquals(2, pts.last().lap?.lap)
+    }
+
+    @Test
+    fun `nothing is drawn with neither a course nor a lap`() {
+        assertNull(CourseProfile.points(emptyList(), emptyList(), emptyList(), CourseProfile.Metric.PACE))
     }
 
     @Test

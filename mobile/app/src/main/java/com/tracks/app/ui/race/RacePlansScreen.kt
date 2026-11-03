@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
@@ -81,6 +80,8 @@ data class RacePlanCard(
     val vdot: Double?,
     val prediction: LocalRacePlans.Prediction?,
     val fuel: LocalRacePlans.Fuel? = null,
+    /** Why there is no prediction: the threshold the sport needs (SportPlan.Missing). */
+    val missing: String? = null,
 )
 
 data class RacePlansState(
@@ -125,8 +126,6 @@ class RacePlansViewModel(private val container: AppContainer) : ViewModel() {
         viewModelScope.launch {
             val today = LocalDate.now().toString()
             val maxHr = runCatching { plans.maxHr() }.getOrNull()
-            // The marathon's volume correction reads the last 8 weeks of runs.
-            val indices = runCatching { plans.trainingIndices(LocalDate.now().civil()) }.getOrNull()
             val cards = runCatching {
                 container.sources.goals()
                     .filter { it.goalType == "event" && (it.eventDate ?: "") >= today }
@@ -134,13 +133,16 @@ class RacePlansViewModel(private val container: AppContainer) : ViewModel() {
                     .map { g ->
                         val s = plans.strategy(g)
                         val vdot = plans.vdot(g)
-                        val dist = g.eventDistanceMeters?.takeIf { it > 0 }
-                        val running = (g.eventSport ?: "running") == "running"
-                        val pred = if (running && vdot != null && dist != null) {
-                            LocalRacePlans.running(vdot, dist, s.courseType, s.splitSpread, Units.imperial,
-                                maxHr.takeIf { s.paceHrMode == "pace_hr" }, s.segments, s.useGpxDistance, indices)
-                        } else null
-                        RacePlanCard(g, s, vdot, pred, runCatching { plans.fuel(g, pred) }.getOrNull())
+                        // Every sport, as the server plans it (SportPlan); a
+                        // missing threshold says which one to set.
+                        var missing: String? = null
+                        val pred = try {
+                            plans.plan(g, s, Units.imperial, LocalDate.now().civil())
+                        } catch (e: com.tracks.core.race.SportPlan.Missing) {
+                            missing = e.message
+                            null
+                        }
+                        RacePlanCard(g, s, vdot, pred, runCatching { plans.fuel(g, pred) }.getOrNull(), missing)
                     }
             }.getOrDefault(emptyList())
             val tracks = runCatching {
@@ -419,13 +421,7 @@ private fun Detail(
             // point at what is missing.
             Text("Predicted ${RacePredictor.formatTime(it.seconds)}", style = Tokens.Stat.value)
         } ?: Text(
-            when {
-                (c.goal.eventSport ?: "running") != "running" ->
-                    "Pacing for this sport is on the web."
-                c.goal.eventDistanceMeters == null -> "Add a distance to predict a finish."
-                c.vdot == null -> "Build a training plan to predict a finish."
-                else -> ""
-            },
+            c.missing ?: "",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -433,6 +429,8 @@ private fun Detail(
 
     Section("Course", com.tracks.app.ui.components.MetricInfo("Course", "A GPX course gives each lap its real hills. Without one, pick the terrain.")) {
         var choosing by remember { mutableStateOf(false) }
+        // Where the profile is being read, marked on the course map.
+        var held by remember { mutableStateOf<Pair<Double, Double>?>(null) }
         if (c.strategy.hasCourse) {
             val totals = remember(c.strategy.segments) {
                 c.strategy.segments.takeIf { it.isNotEmpty() }?.let(RacePredictor::courseTotals)
@@ -446,17 +444,7 @@ private fun Detail(
             val preview = remember(c.strategy.path) {
                 c.strategy.path.map { (lat, lon) -> com.tracks.core.api.TrackPoint(lat = lat, lng = lon) }
             }
-            // The profile under it: the hills, and the target the plan sets on them.
-            var held by remember { mutableStateOf<Pair<Double, Double>?>(null) }
             com.tracks.app.ui.map.ActivityTrackMap(track = preview, styleJson = mapStyleJson, marker = held)
-            val laps = c.prediction?.laps.orEmpty()
-            val sport = c.goal.eventSport ?: "running"
-            val metric = remember(sport, laps) { com.tracks.core.race.CourseProfile.metric(sport, laps) }
-            val profile = remember(c.strategy.path, c.strategy.elevations, laps, metric) {
-                if (sport == "swimming") null
-                else com.tracks.core.race.CourseProfile.points(c.strategy.path, c.strategy.elevations, laps, metric)
-            }
-            profile?.let { pts -> CourseProfileChart(pts, metric) { p -> held = p?.let { it.lat to it.lon } } }
             ButtonRow {
                 TonalButton("Replace course", onClick = { choosing = true })
                 DangerButton("Remove course", onClick = onRemoveCourse)
@@ -476,9 +464,24 @@ private fun Detail(
         courseError?.let {
             Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error)
         }
+        // The plan's one view of its targets, course or not — it replaced the
+        // lap table. A triathlon's legs each have their own (TriathlonLegs);
+        // here it is the course's hills alone, which its legs are not fitted to.
+        val family = c.prediction?.family
+        if (family != "swimming") {
+            val laps = if (family == "triathlon") emptyList() else c.prediction?.laps.orEmpty()
+            val metric = remember(family, laps) { com.tracks.core.race.CourseProfile.metric(family, laps) }
+            val profile = remember(c.strategy.path, c.strategy.elevations, laps, metric) {
+                com.tracks.core.race.CourseProfile.points(c.strategy.path, c.strategy.elevations, laps, metric)
+            }
+            profile?.let { pts ->
+                CourseProfileChart(pts, metric) { p -> held = p?.lat?.let { lat -> lat to p.lon!! } }
+            }
+        }
     }
 
-    Section(
+    // A swim has one pace and no laps to spread.
+    if (c.prediction?.family != "swimming") Section(
         "Pacing strategy",
         com.tracks.app.ui.components.MetricInfo(
             "Pacing strategy",
@@ -497,6 +500,9 @@ private fun Detail(
             onChange = { spread = it },
             onDone = { onSet("split_spread", snapSplit(spread)) },
         )
+        raceTargetsText(c.prediction)?.let {
+            Text(it, style = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum"))
+        }
         // What the race's watch workout carries; nothing reads it without a watch.
         if (com.tracks.app.ui.components.LocalHasDevice.current) {
             Choice(listOf("pace" to "Pace only", "pace_hr" to "Pace + HR ceiling"), c.strategy.paceHrMode) {
@@ -510,44 +516,9 @@ private fun Detail(
     }
 
     c.prediction?.let { p ->
-        // Terrain splits (a course loaded) name their ground in the first
-        // column — "Climb 6%" — where kilometre splits number themselves.
-        val terrain = p.laps.any { it.kind != null }
-        Section(if (terrain) "Targets by terrain" else "Lap targets") {
-            val unit = if (Units.imperial) "mi" else "km"
-            Row {
-                Head(if (terrain) "Ground" else "Lap", Modifier.width(if (terrain) 112.dp else 40.dp))
-                Head("Pace /$unit", Modifier.weight(1f))
-                Head("Distance", Modifier.weight(1f))
-                if (p.laps.any { it.hrCeiling != null }) Head("HR ≤", Modifier.width(56.dp))
-            }
-            p.laps.forEach { lap ->
-                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
-                Row(Modifier.padding(vertical = 2.dp)) {
-                    Text(
-                        lap.label ?: "${lap.lap}",
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.width(if (terrain) 112.dp else 40.dp),
-                        maxLines = 1,
-                    )
-                    Text(
-                        RacePredictor.formatTime(lap.targetSecPerKm * if (Units.imperial) 1.60934 else 1.0),
-                        style = MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = "tnum"),
-                        modifier = Modifier.weight(1f),
-                    )
-                    Text(
-                        distance(lap.cumulativeKm * 1000),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.weight(1f),
-                    )
-                    lap.hrCeiling?.let {
-                        Text("$it", style = MaterialTheme.typography.bodySmall, modifier = Modifier.width(56.dp))
-                    }
-                }
-            }
-        }
-        c.fuel?.let { f ->
+        if (p.family == "triathlon") Section("Race plan by leg") { TriathlonLegs(p) }
+        if (p.family == "swimming") Section("Swim plan") { SwimPlan(p) }
+        if (p.family != "swimming") c.fuel?.let { f ->
             Section("Fuelling") {
                 FuelSection(c.strategy, f, onSet, onAddProduct, onToggleProduct, durationMin = p.seconds / 60.0)
             }
@@ -555,10 +526,69 @@ private fun Detail(
     }
 }
 
+/**
+ * The whole-race numbers a cycling or MTB plan sets beside its targets: the
+ * average HR ceiling, and a hill climb's W/kg with the watts it means at the
+ * rider's weight. The web's RaceTargets line; null when there are none.
+ */
+internal fun raceTargetsText(p: LocalRacePlans.Prediction?, weightKg: Double? = null): String? {
+    p ?: return null
+    val parts = listOfNotNull(
+        p.targetHrCeiling?.let { "Average HR ≤ $it bpm" },
+        p.climbTargetWPerKg?.let { w ->
+            "Climb at ${"%.1f".format(w)} W/kg" + (weightKg?.let { " (≈ ${kotlin.math.round(w * it).toInt()} W)" } ?: "")
+        },
+    )
+    return parts.joinToString(" · ").ifEmpty { null }
+}
+
+/** A triathlon: each leg's time and target, then a graph of each leg's targets. */
 @Composable
-private fun Head(text: String, modifier: Modifier) = Text(
-    text, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = modifier,
-)
+private fun TriathlonLegs(p: LocalRacePlans.Prediction) {
+    val names = mapOf("swim" to "Swim", "bike" to "Bike", "run" to "Run")
+    Row(horizontalArrangement = Arrangement.spacedBy(Tokens.Space.s2), modifier = Modifier.fillMaxWidth()) {
+        p.legs.forEach { leg ->
+            Column(Modifier.weight(1f)) {
+                Text(names[leg.leg] ?: leg.leg, style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(RacePredictor.formatTime(leg.seconds), style = MaterialTheme.typography.titleMedium)
+                leg.targetPace?.let { Text(it, style = MaterialTheme.typography.labelSmall) }
+            }
+        }
+    }
+    Text("${RacePredictor.formatTime(p.seconds)} total, with transitions",
+        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    p.legs.forEach { leg ->
+        // The swim has one pace; drawn per 100 m from the leg's CSS pace.
+        val laps = leg.laps ?: swimLap(leg)
+        val metric = if (leg.leg == "swim") com.tracks.core.race.CourseProfile.Metric.SWIM
+            else com.tracks.core.race.CourseProfile.metric(if (leg.leg == "bike") "cycling" else "running", laps)
+        val pts = remember(leg) { com.tracks.core.race.CourseProfile.points(emptyList(), emptyList(), laps, metric) }
+        pts?.let {
+            Text((names[leg.leg] ?: leg.leg).uppercase(), style = Tokens.SectionHeader.style,
+                color = MaterialTheme.colorScheme.primary)
+            CourseProfileChart(it, metric) {}
+        }
+    }
+}
+
+/** A swim leg as one lap at its CSS pace, as the web draws it, in the sec-per-km the profile reads. */
+private fun swimLap(leg: com.tracks.core.race.SportPlan.Leg): List<com.tracks.core.race.RaceLap> {
+    val perKm = leg.swimSecPerKm ?: return emptyList()
+    return listOf(com.tracks.core.race.RaceLap(1, leg.distanceM.toLong(), perKm, leg.targetPace ?: "", 0.0, 1.0,
+        perKm, leg.targetPace ?: "", leg.distanceM / 1000, null))
+}
+
+/** A swim race: the one pace to hold. */
+@Composable
+private fun SwimPlan(p: LocalRacePlans.Prediction) {
+    p.laps.firstOrNull()?.let {
+        Text("Target pace", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(it.targetPace, style = Tokens.Stat.value)
+        Text("Your CSS, held for the whole distance.", style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
 
 @Composable
 private fun Section(title: String, info: com.tracks.app.ui.components.MetricInfo? = null, content: @Composable () -> Unit) {

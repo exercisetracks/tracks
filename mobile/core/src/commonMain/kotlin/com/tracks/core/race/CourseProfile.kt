@@ -11,8 +11,10 @@ import kotlin.math.sin
 import kotlin.math.sqrt
 
 /**
- * The race course's profile: elevation by distance with the plan's target
- * alongside, for the plot under the race plan's map. The web's twin is
+ * The race's profile: the plan's target by distance — over the course's
+ * elevation when one is loaded — and the HR ceiling where the plan sets one,
+ * for the plot under the race plan's map. It replaced the lap table, which
+ * ran to forty rows on a marathon. The web's twin is
  * frontend/src/components/raceplan/courseProfile.js; the two are one
  * algorithm, tested with the same numbers (CourseProfileTest and
  * CourseProfile.test.js).
@@ -26,12 +28,23 @@ import kotlin.math.sqrt
  */
 object CourseProfile {
 
-    enum class Metric { PACE, POWER, HR }
+    /** SWIM is a triathlon swim leg's pace, drawn per 100 m. */
+    enum class Metric { PACE, SWIM, POWER, HR }
 
-    data class Point(val m: Double, val ele: Double, val target: Double?, val lat: Double, val lon: Double)
+    /** One point: metres along the race, the lap there (for the readout's ground), and no map spot without a course. */
+    data class Point(
+        val m: Double,
+        val ele: Double?,
+        val target: Double?,
+        val lat: Double?,
+        val lon: Double?,
+        val hr: Double? = null,
+        val lap: RaceLap? = null,
+    )
 
     private const val R = 6_371_000.0
     private const val MAX_POINTS = 400
+    private const val LAP_SAMPLES = 200
 
     /** Which target the plot draws, or null for none. A sport missing its own number falls back to pace. */
     fun metric(sport: String?, laps: List<RaceLap>): Metric? {
@@ -42,7 +55,7 @@ object CourseProfile {
     }
 
     private fun value(lap: RaceLap, metric: Metric): Double? = when (metric) {
-        Metric.PACE -> lap.targetSecPerKm
+        Metric.PACE, Metric.SWIM -> lap.targetSecPerKm
         Metric.POWER -> lap.targetWatts?.toDouble()
         Metric.HR -> lap.hrCeiling?.toDouble()
     }
@@ -56,14 +69,17 @@ object CourseProfile {
     }
 
     /** Each lap's target at its middle, with the plan's distance scaled to the course's length. */
-    private fun anchors(laps: List<RaceLap>, metric: Metric, courseM: Double): List<Pair<Double, Double>> {
+    private fun anchors(laps: List<RaceLap>, metric: Metric, courseM: Double): List<Pair<Double, Double>> =
+        anchorsOf(laps, courseM) { value(it, metric) }
+
+    private fun anchorsOf(laps: List<RaceLap>, courseM: Double, value: (RaceLap) -> Double?): List<Pair<Double, Double>> {
         val total = laps.sumOf { it.distanceM.toDouble() }
         if (total <= 0) return emptyList()
         var start = 0.0
         return buildList {
             for (l in laps) {
                 val d = l.distanceM.toDouble()
-                val v = value(l, metric)
+                val v = value(l)
                 if (v != null && d > 0) add((start + d / 2) / total * courseM to v)
                 start += d
             }
@@ -83,26 +99,56 @@ object CourseProfile {
         return a.last().second
     }
 
+    /** The lap at each of [positions], laps laid end to end over [length] metres. */
+    private fun lapsAt(laps: List<RaceLap>, positions: List<Double>, length: Double): List<RaceLap> {
+        val total = laps.sumOf { it.distanceM.toDouble() }.takeIf { it > 0 } ?: 1.0
+        val ends = mutableListOf<Double>()
+        var run = 0.0
+        for (l in laps) { run += l.distanceM / total * length; ends += run }
+        var k = 0
+        return positions.map { m ->
+            while (k < laps.size - 1 && m > ends[k]) k++
+            laps[k]
+        }
+    }
+
     /**
-     * The plot's points, or null when the course carries no elevation —
-     * without the hills there is nothing to read the target against.
-     * [elevations] runs alongside [path], null where a point has none.
+     * The plot's points — `courseProfile` in the web's courseProfile.js. With
+     * a course carrying elevation, one per course point; without, the laps
+     * alone, evenly sampled, with no elevation. [elevations] runs alongside
+     * [path], null where a point has none. Null with neither course nor lap.
      */
     fun points(path: List<Pair<Double, Double>>, elevations: List<Double?>, laps: List<RaceLap>, metric: Metric?): List<Point>? {
-        if (path.size < 2 || elevations.none { it != null }) return null
-        val cum = DoubleArray(path.size)
-        for (i in 1 until path.size) cum[i] = cum[i - 1] + haversine(path[i - 1], path[i])
-        val courseM = cum.last()
-        val a = if (metric != null) anchors(laps, metric, courseM) else emptyList()
-        val step = max(1, ceil(path.size / MAX_POINTS.toDouble()).toInt())
-        val out = mutableListOf<Point>()
-        fun add(i: Int) {
-            val e = elevations.getOrNull(i) ?: return
-            out += Point(cum[i], e, interpolate(a, cum[i]), path[i].first, path[i].second)
+        val withHr = laps.isNotEmpty() && metric != Metric.HR && laps.any { it.hrCeiling != null }
+        val positions: List<Double>
+        var eles: List<Double>? = null
+        var coords: List<Pair<Double, Double>>? = null
+        val length: Double
+        if (path.size >= 2 && elevations.any { it != null }) {
+            val cum = DoubleArray(path.size)
+            for (i in 1 until path.size) cum[i] = cum[i - 1] + haversine(path[i - 1], path[i])
+            length = cum.last()
+            val step = max(1, ceil(path.size / MAX_POINTS.toDouble()).toInt())
+            val idx = (path.indices step step).filter { elevations.getOrNull(it) != null }.toMutableList()
+            // The finish is always drawn, whatever the sampling step skipped.
+            if (idx.lastOrNull() != path.lastIndex && elevations.getOrNull(path.lastIndex) != null) idx += path.lastIndex
+            positions = idx.map { cum[it] }
+            eles = idx.map { elevations[it]!! }
+            coords = idx.map { path[it] }
+        } else if (laps.isNotEmpty()) {
+            length = laps.sumOf { it.distanceM.toDouble() }
+            if (length <= 0) return null
+            positions = (0..LAP_SAMPLES).map { it.toDouble() / LAP_SAMPLES * length }
+        } else {
+            return null
         }
-        for (i in path.indices step step) add(i)
-        // The finish is always drawn, whatever the sampling step skipped.
-        if (out.lastOrNull()?.m != courseM) add(path.lastIndex)
+        val targets = if (metric != null) anchors(laps, metric, length) else emptyList()
+        val hrs = if (withHr) anchorsOf(laps, length) { it.hrCeiling?.toDouble() } else emptyList()
+        val at = if (laps.isNotEmpty()) lapsAt(laps, positions, length) else null
+        val out = positions.mapIndexed { i, m ->
+            Point(m, eles?.get(i), interpolate(targets, m), coords?.get(i)?.first, coords?.get(i)?.second,
+                if (withHr) interpolate(hrs, m) else null, at?.get(i))
+        }
         return out.takeIf { it.size > 1 }
     }
 }

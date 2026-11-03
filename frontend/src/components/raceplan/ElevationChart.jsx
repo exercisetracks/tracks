@@ -42,6 +42,19 @@ const SERIES = {
 };
 const TICK = { fontSize: 10, fill: "#94a3b8" };
 
+/**
+ * A domain at least `span` wide around the data: a flat course's even power or
+ * a constant HR ceiling otherwise gives an axis of 255–256 with the line
+ * pinned to an edge. The phone pads the same (CourseProfileChart.kt).
+ */
+const MIN_SPAN = { power: 20, hr: 10, pace: 30, swim: 300, ele: 10 };
+function domainOf(values, span) {
+  const lo = Math.min(...values), hi = Math.max(...values);
+  if (hi - lo >= span) return ["auto", "auto"];
+  const mid = (lo + hi) / 2;
+  return [Math.floor(mid - span / 2), Math.ceil(mid + span / 2)];
+}
+
 /** A swim pace per 100 m from sec/km: "1:45/100m". */
 export function swimPace(secPerKm) {
   const s = secPerKm / 10;
@@ -129,14 +142,14 @@ export default function ElevationChart({ coursePath, laps, sport, metric: forced
             <XAxis dataKey="x" type="number" domain={["dataMin", "dataMax"]} tick={TICK} axisLine={false}
               tickLine={false} tickFormatter={(v) => `${Math.round(v)}`} unit={` ${distUnit}`} tickCount={6} />
             {hasEle && (
-              <YAxis yAxisId="ele" domain={["auto", "auto"]} tick={TICK} axisLine={false} tickLine={false} width={40} />
+              <YAxis yAxisId="ele" domain={domainOf(rows.filter((r) => r.e != null).map((r) => r.e), MIN_SPAN.ele)} tick={TICK} axisLine={false} tickLine={false} width={40} />
             )}
             {series && (
               <YAxis yAxisId="target" orientation={hasEle ? "right" : "left"} reversed={faster}
-                domain={["auto", "auto"]} tick={TICK} axisLine={false} tickLine={false} width={faster ? 52 : 40}
+                domain={domainOf(rows.filter((r) => r.target != null).map((r) => r.target), MIN_SPAN[metric])} tick={TICK} axisLine={false} tickLine={false} width={faster ? 52 : 40}
                 tickFormatter={(v) => (faster ? fmtTarget(v).split("/")[0] : Math.round(v))} />
             )}
-            {hasHr && <YAxis yAxisId="hr" hide domain={["auto", "auto"]} />}
+            {hasHr && <YAxis yAxisId="hr" hide domain={domainOf(rows.filter((r) => r.hr != null).map((r) => r.hr), MIN_SPAN.hr)} />}
             <Tooltip cursor={{ stroke: "#64748b", strokeWidth: 1, strokeDasharray: "3 3" }} content={tip} />
             {hasEle && (
               <Area yAxisId="ele" type="monotone" dataKey="e" stroke={ELEVATION} strokeWidth={1}

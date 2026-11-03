@@ -324,6 +324,31 @@ class TrainingScreenshotTest {
         RacePlansContent(RacePlansState(loading = false, cards = listOf(courseCard), openGoalId = 1), {}, { _, _, _ -> })
     }
 
+    /** Another sport's plan, as SportPlan makes it. */
+    private fun sportCard(sport: String, family: String, distanceM: Double, m: com.tracks.core.race.SportPlan.Metrics,
+                          cycling: String? = null): RacePlanCard {
+        val g = goal.copy(eventName = sport, eventSport = sport, eventDistanceMeters = distanceM, cyclingDiscipline = cycling)
+        val strategy = LocalRacePlans.Strategy(uid = "r1", paceHrMode = "pace_hr")
+        val r = com.tracks.core.race.SportPlan.plan(family, m,
+            com.tracks.core.race.SportPlan.Inputs(distanceM, paceHr = true, cyclingDiscipline = cycling))
+        val pred = LocalRacePlans.Prediction(r.seconds, r.laps, r.legs, r.targetHrCeiling, r.climbTargetWPerKg, family)
+        return RacePlanCard(g, strategy, null, pred)
+    }
+
+    @Test
+    fun race_plan_cycling_light() = shoot("race_plan_cycling_light", ThemeMode.Light) {
+        val card = sportCard("cycling", "cycling", 60_000.0,
+            com.tracks.core.race.SportPlan.Metrics(ftp = 260.0, maxHr = 188, lthr = 168), cycling = "road_race")
+        RacePlansContent(RacePlansState(loading = false, cards = listOf(card), openGoalId = 1), {}, { _, _, _ -> })
+    }
+
+    @Test
+    fun race_plan_triathlon_dark() = shoot("race_plan_triathlon_dark", ThemeMode.Dark) {
+        val card = sportCard("triathlon", "triathlon", 51_500.0,
+            com.tracks.core.race.SportPlan.Metrics(vdot = 50.0, ftp = 250.0, css = 100.0, maxHr = 188))
+        RacePlansContent(RacePlansState(loading = false, cards = listOf(card), openGoalId = 1), {}, { _, _, _ -> })
+    }
+
     @Test
     fun training_fuel_practice_light() = shoot("training_fuel_practice_light", ThemeMode.Light) {
         val long = w(9, today.toString(), "long", "Long run", min = 100, done = true)

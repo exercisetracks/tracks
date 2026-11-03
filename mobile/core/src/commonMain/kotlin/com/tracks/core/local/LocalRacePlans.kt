@@ -13,6 +13,8 @@ import kotlinx.serialization.json.booleanOrNull
 import com.tracks.core.api.TrainingGoal
 import com.tracks.core.race.RaceLap
 import com.tracks.core.race.RacePredictor
+import com.tracks.core.race.SportPlan
+import com.tracks.core.plan.PlanBase
 import com.tracks.core.replica.SyncedRow
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.doubleOrNull
@@ -75,7 +77,18 @@ class LocalRacePlans(private val sources: LocalSources) {
         val homemade: FuelPlan.Recipe? = null,
     )
 
-    data class Prediction(val seconds: Double, val laps: List<RaceLap>)
+    data class Prediction(
+        val seconds: Double,
+        val laps: List<RaceLap>,
+        /** A triathlon's legs, swim to run; empty for every other sport. */
+        val legs: List<SportPlan.Leg> = emptyList(),
+        /** Cycling and MTB: the race's average HR ceiling. */
+        val targetHrCeiling: Int? = null,
+        /** A hill climb's W/kg to aim for. */
+        val climbTargetWPerKg: Double? = null,
+        /** The sport family it was planned as (PlanBase.sportFamily). */
+        val family: String = "running",
+    )
 
     suspend fun strategy(goal: TrainingGoal): Strategy {
         val row = row(goal) ?: return Strategy(uid = null)
@@ -276,6 +289,36 @@ class LocalRacePlans(private val sources: LocalSources) {
      */
     suspend fun trainingIndices(today: CivilDate): Pair<Double, Double>? =
         LocalRunningEvidence(sources, sources.library).trainingIndices(today)
+
+    /**
+     * Any sport's race, as the server's `sport_plan` plans it ([SportPlan]):
+     * the athlete's thresholds as `_get_athlete_metrics` reads them, and the
+     * course's distance in place of the goal's when the plan says so. Throws
+     * [SportPlan.Missing] naming the threshold the sport needs.
+     *
+     * CSS is the manual one only: the server works its automatic CSS out from
+     * swim history, which the phone does not do yet, so an "auto" CSS plans
+     * no swim here — the message says to set one.
+     */
+    suspend fun plan(goal: TrainingGoal, s: Strategy, imperial: Boolean, today: CivilDate): Prediction {
+        val family = PlanBase.sportFamily((goal.eventSport ?: "running").lowercase())
+        val goalM = goal.eventDistanceMeters?.takeIf { it > 0 } ?: throw SportPlan.Missing("Add a distance to predict a finish.")
+        val distance = if (s.useGpxDistance && s.segments.isNotEmpty())
+            RacePredictor.courseTotals(s.segments).distanceM.toDouble() else goalM
+        val t = sources.importThresholds()
+        val css = if (sources.setting("css_mode") == "manual") sources.setting("css_manual")?.toDoubleOrNull() else null
+        val indices = if (family == "running") runCatching { trainingIndices(today) }.getOrNull() else null
+        val r = SportPlan.plan(
+            family,
+            SportPlan.Metrics(vdot(goal), t.ftp, css, t.maxHr?.toInt(), t.thresholdHr?.toInt(), indices),
+            SportPlan.Inputs(
+                distanceM = distance, courseType = s.courseType, splitSpread = s.splitSpread,
+                paceHr = s.paceHrMode == "pace_hr", imperial = imperial, segments = s.segments,
+                mtbDiscipline = goal.mtbDiscipline, cyclingDiscipline = goal.cyclingDiscipline,
+            ),
+        )
+        return Prediction(r.seconds, r.laps, r.legs, r.targetHrCeiling, r.climbTargetWPerKg, family)
+    }
 
     /** Max HR for the per-lap ceilings: manual, else auto from history, as race_helpers.py reads it. */
     suspend fun maxHr(): Int? = sources.importThresholds().maxHr?.toInt()
