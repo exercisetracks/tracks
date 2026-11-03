@@ -117,8 +117,60 @@ def _distance_at(minute: float, laps: list[dict] | None) -> int | None:
     return _half_up(d)
 
 
+def _schedule(duration_min: float, tg: dict, products: list[dict], laps, plain: bool) -> list[dict]:
+    """The products' stops: see timeline. `plain` names grams when there is
+    no product to take."""
+    rate = float(tg["carbs_g_per_h"])
+    interval = int(tg["interval_min"])
+    usable = [p for p in products if float(p.get("carbs_g") or 0) > 0]
+    items: list[dict] = []
+    taken = 0.0
+    minute = interval
+    while minute < duration_min:
+        owed = rate * minute / 60.0 - taken
+        if not usable:
+            grams = _half_up(rate * interval / 60.0)
+            if plain and grams > 0:
+                items.append(_item(minute, laps, {"uid": None, "name": None, "carbs_g": grams}))
+                taken += grams
+        else:
+            best = None
+            for p in usable:
+                gap = abs(owed - float(p["carbs_g"]))
+                if best is None or gap < best[0]:
+                    best = (gap, p)
+            p = best[1]
+            if owed >= float(p["carbs_g"]) / 2.0:
+                items.append(_item(minute, laps, p))
+                taken += float(p["carbs_g"])
+        minute += interval
+    return items
+
+
+def _item(minute: int, laps, p: dict) -> dict:
+    return {
+        "minute": minute, "distance_m": _distance_at(minute, laps),
+        "product_uid": p.get("uid"), "name": p.get("name"),
+        "carbs_g": float(p["carbs_g"]), "sodium_mg": int(p.get("sodium_mg") or 0),
+        "potassium_mg": int(p.get("potassium_mg") or 0),
+        "fluid_ml": int(p.get("fluid_ml") or 0),
+        "caffeine_mg": int(p.get("caffeine_mg") or 0),
+    }
+
+
+_KEYS = ("carbs_g", "sodium_mg", "potassium_mg", "fluid_ml", "caffeine_mg")
+
+
+def _totals(items: list[dict]) -> dict:
+    totals = {"carbs_g": 0.0, "sodium_mg": 0, "potassium_mg": 0, "fluid_ml": 0, "caffeine_mg": 0}
+    for i in items:
+        for k in _KEYS:
+            totals[k] += i[k]
+    return totals
+
+
 def timeline(duration_min: float, tg: dict, products: list[dict], laps: list[dict] | None = None,
-             mix: dict | None = None) -> dict:
+             mix: bool = False) -> dict:
     """What to take when.
 
     A slot every `interval_min`, never at the start or the finish. At each
@@ -129,60 +181,32 @@ def timeline(duration_min: float, tg: dict, products: list[dict], laps: list[dic
     product in the user's order. With no products, each slot names the grams
     to take instead.
 
-    With the homemade mix (`mix`, from homemade_serving) the slots are its
-    sips: every slot drinks one serving first, and the products then make up
-    whatever carbs the drink leaves owed, by the same rule. The drink is
-    capped at its heat band's strength, so on a hot day the gels carry more.
+    With the homemade mix (`mix`), the products are scheduled first, by the
+    same rule, and the mix then carries whatever they leave short of every
+    target — carbs, sodium, potassium and fluid — sipped at its heat band's
+    interval (homemade_serving). The result's "mix" is that serving.
     """
-    rate = float(tg["carbs_g_per_h"])
-    interval = int(mix["interval_min"]) if mix else int(tg["interval_min"])
-    usable = [p for p in products if float(p.get("carbs_g") or 0) > 0]
-    items: list[dict] = []
-    taken = 0.0
-    totals = {"carbs_g": 0.0, "sodium_mg": 0, "potassium_mg": 0, "fluid_ml": 0, "caffeine_mg": 0}
-
-    def take(minute: int, p: dict) -> None:
-        nonlocal taken
-        carbs = float(p["carbs_g"])
-        items.append({
-            "minute": minute, "distance_m": _distance_at(minute, laps),
-            "product_uid": p.get("uid"), "name": p.get("name"),
-            "carbs_g": carbs, "sodium_mg": int(p.get("sodium_mg") or 0),
-            "potassium_mg": int(p.get("potassium_mg") or 0),
-            "fluid_ml": int(p.get("fluid_ml") or 0),
-            "caffeine_mg": int(p.get("caffeine_mg") or 0),
-        })
-        taken += carbs
-        totals["carbs_g"] += carbs
-        totals["sodium_mg"] += int(p.get("sodium_mg") or 0)
-        totals["potassium_mg"] += int(p.get("potassium_mg") or 0)
-        totals["fluid_ml"] += int(p.get("fluid_ml") or 0)
-        totals["caffeine_mg"] += int(p.get("caffeine_mg") or 0)
-
-    minute = interval
-    while minute < duration_min:
-        if mix:
-            take(minute, mix)
-        owed = rate * minute / 60.0 - taken
-        if not usable:
-            if not mix:
-                grams = _half_up(rate * interval / 60.0)
-                if grams > 0:
-                    take(minute, {"uid": None, "name": None, "carbs_g": grams})
-        else:
-            best = None
-            for p in usable:
-                gap = abs(owed - float(p["carbs_g"]))
-                if best is None or gap < best[0]:
-                    best = (gap, p)
-            p = best[1]
-            if owed >= float(p["carbs_g"]) / 2.0:
-                take(minute, p)
-        minute += interval
+    items = _schedule(duration_min, tg, products, laps, plain=not mix)
     hours = duration_min / 60.0 if duration_min > 0 else 0.0
+    serving = None
+    if mix:
+        got = _totals(items)
+        delivered = {k: (got[k] / hours if hours else 0.0) for k in _KEYS}
+        serving = homemade_serving(tg, delivered, duration_min)
+        sips = []
+        minute = serving["interval_min"]
+        while minute < duration_min:
+            if serving["fluid_ml"] > 0:
+                sips.append(_item(minute, laps, serving))
+            minute += serving["interval_min"]
+        # A sip before a product at the same minute: drink, then eat.
+        items = sorted(sips + items, key=lambda i: (i["minute"], i["product_uid"] != HOMEMADE_UID))
+    totals = _totals(items)
     per_hour = {k: (_half_up(v / hours) if hours else 0) for k, v in totals.items()}
-    return {"items": items, "totals": {k: _half_up(v) for k, v in totals.items()},
-            "per_hour": per_hour}
+    out = {"items": items, "totals": {k: _half_up(v) for k, v in totals.items()}, "per_hour": per_hour}
+    if mix:
+        out["mix"] = serving
+    return out
 
 
 # ── The homemade mix ─────────────────────────────────────────────────────────
@@ -217,24 +241,46 @@ def mix_preset(carbs_g_per_h: int, chosen: str | None) -> str:
     return "basic" if carbs_g_per_h <= 60 else "high_carb"
 
 
-def homemade_serving(tg: dict) -> dict:
+def homemade_serving(tg: dict, delivered: dict | None = None, duration_min: float | None = None) -> dict:
     """One sip of the mix, as a product the timeline can take.
 
-    Sipped at the heat band's interval (the user's own interval if they set
-    one), each sip the fluid target's share of the hour, carrying that share
-    of the sodium and potassium in full and carbs up to the band's strength
-    or the carb target, whichever is less.
+    It carries what the other products leave short of each hourly target
+    (`delivered` is what they give per hour), sipped at the heat band's
+    interval — the user's own interval if they set one — so the targets are
+    always met. The heat band's strength is what absorbs well in that heat;
+    a mix stronger than it says so (`over_band`), with the carbs an hour
+    that gels or solid food would have to carry to bring it down to that
+    strength (`extra_carbs_g_per_h`).
     """
     band = BANDS[tg["band"]]
+    delivered = delivered or {}
+    short = {k: max(0.0, float(tg[t]) - float(delivered.get(k, 0.0))) for k, t in (
+        ("carbs_g", "carbs_g_per_h"), ("sodium_mg", "sodium_mg_per_h"),
+        ("potassium_mg", "potassium_mg_per_h"), ("fluid_ml", "fluid_ml_per_h"))}
     interval = int(tg["interval_min"]) if tg["custom"]["interval"] else int(band["sip_interval_min"])
-    share = interval / 60.0
-    fluid = _half_up(tg["fluid_ml_per_h"] * share)
-    carbs = _tenth(min(fluid * band["concentration_pct"] / 100.0, tg["carbs_g_per_h"] * share))
+    # Each sip's share of an hour. No sip falls at the start or the finish,
+    # so a race has one fewer sip than its length over the interval, and
+    # the sips are sized to give the whole race its hours' worth.
+    sips = len(range(interval, math.ceil(duration_min), interval)) if duration_min else 0
+    share = (duration_min / 60.0) / sips if sips else interval / 60.0
+    fluid = _half_up(short["fluid_ml"] * share)
+    if fluid > 0:
+        carbs = _tenth(short["carbs_g"] * share)
+        sodium = _half_up(short["sodium_mg"] * share)
+        potassium = _half_up(short["potassium_mg"] * share)
+        strength = _tenth(carbs / fluid * 100)
+    else:
+        # The products already bring all the fluid: there is nothing to drink
+        # the rest in, so it all falls to food.
+        carbs, sodium, potassium, strength = 0.0, 0, 0, 0.0
+    cap = band["concentration_pct"]
+    carried = short["fluid_ml"] * cap / 100.0 if fluid > 0 else 0.0
+    extra = _half_up(max(0.0, short["carbs_g"] - carried)) if strength > cap or fluid == 0 else 0
     return {"uid": HOMEMADE_UID, "name": HOMEMADE_NAME, "carbs_g": carbs,
-            "sodium_mg": _half_up(tg["sodium_mg_per_h"] * share),
-            "potassium_mg": _half_up(tg["potassium_mg_per_h"] * share),
+            "sodium_mg": sodium, "potassium_mg": potassium,
             "fluid_ml": fluid, "caffeine_mg": 0, "interval_min": interval,
-            "concentration_pct": band["concentration_pct"]}
+            "concentration_pct": strength, "band_pct": cap,
+            "over_band": strength > cap, "extra_carbs_g_per_h": extra}
 
 
 _FRACTIONS = {0: "", 1: "⅛", 2: "¼", 3: "⅜", 4: "½", 5: "⅝", 6: "¾", 7: "⅞"}
@@ -328,7 +374,8 @@ def homemade_recipe(preset: str, bottle_ml: int, serving: dict, carbs_g_per_h: i
     return {
         "preset": preset, "bottle_ml": bottle_ml,
         "bottles": math.ceil(race_fluid_ml / bottle_ml) if bottle_ml else 0,
-        "concentration_pct": serving["concentration_pct"],
+        "concentration_pct": serving["concentration_pct"], "band_pct": serving["band_pct"],
+        "over_band": serving["over_band"], "extra_carbs_g_per_h": serving["extra_carbs_g_per_h"],
         "sip_ml": serving["fluid_ml"], "interval_min": serving["interval_min"],
         "ingredients": out,
         "per_bottle": {k: _half_up(v) for k, v in got.items()},

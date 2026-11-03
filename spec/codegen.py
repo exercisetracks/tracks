@@ -901,6 +901,31 @@ object WorkoutColorsData {{
     return ROOT / "mobile/core/src/commonMain/kotlin/com/tracks/core/spec/WorkoutColorsData.kt", src
 
 
+# ── Fuel catalogue ───────────────────────────────────────────────────────────
+
+def gen_fuel_catalog_js(spec: dict) -> tuple[Path, str]:
+    banner = _banner("//").replace("spec/sport_taxonomy.yaml", "spec/fuel_catalog.yaml")
+    src = banner + "\n\n" + f"export const FUEL_CATALOG = {json.dumps(spec['products'], indent=2)};\n"
+    return ROOT / "frontend/src/spec/fuelCatalog.js", src
+
+
+def gen_fuel_catalog_kotlin(spec: dict) -> tuple[Path, str]:
+    banner = _banner("//").replace("spec/sport_taxonomy.yaml", "spec/fuel_catalog.yaml")
+    rows = "\n".join(
+        f"    CatalogProduct({_kstr(p['name'])}, {_kstr(p['kind'])}, {float(p['carbs_g'])}, {p['sodium_mg']}, "
+        f"{p['potassium_mg']}, {p['caffeine_mg']}, {p['fluid_ml']}),"
+        for p in spec["products"]
+    )
+    src = (
+        banner + "\n\n" + "package com.tracks.core.spec\n\n"
+        "/** One common race food, per serving as sold (spec/fuel_catalog.yaml). */\n"
+        "data class CatalogProduct(val name: String, val kind: String, val carbsG: Double, val sodiumMg: Int,\n"
+        "                          val potassiumMg: Int, val caffeineMg: Int, val fluidMl: Int)\n\n"
+        f"val FUEL_CATALOG: List<CatalogProduct> = listOf(\n{rows}\n)\n"
+    )
+    return ROOT / "mobile/core/src/commonMain/kotlin/com/tracks/core/spec/FuelCatalogData.kt", src
+
+
 GENERATORS = {
     "sport_taxonomy": [
         gen_sport_taxonomy_python,
@@ -926,6 +951,10 @@ GENERATORS = {
         gen_fueling_python,
         gen_fueling_js,
         gen_fueling_kotlin,
+    ],
+    "fuel_catalog": [
+        gen_fuel_catalog_js,
+        gen_fuel_catalog_kotlin,
     ],
     "sync": [
         gen_sync_kotlin,

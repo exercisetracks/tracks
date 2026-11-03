@@ -3,6 +3,7 @@
 package com.tracks.app.ui.race
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -58,6 +60,9 @@ import com.tracks.app.ui.theme.Tokens
 import com.tracks.core.format.distance
 import com.tracks.core.fuel.FuelPlan
 import com.tracks.core.local.LocalRacePlans
+import com.tracks.core.spec.FUEL_CATALOG
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.heightIn
 
 /**
  * Race fuelling on the phone, computed from synced rows
@@ -259,6 +264,15 @@ internal fun stopName(i: FuelPlan.Item): String = buildString {
 internal fun amountLabel(i: FuelPlan.Ingredient): String =
     i.ml?.let { "${trim(it)} ml (${i.measure})" } ?: "${trim(i.grams ?: 0.0)} g (${i.measure})"
 
+/** The web's mixAdvice: the mix is too strong to absorb well, and how much food would fix it. */
+internal fun mixAdvice(r: FuelPlan.Recipe): String? = when {
+    r.sipMl == 0 && r.extraCarbsGPerH > 0 ->
+        "Your drinks already bring all the fluid. Take about ${r.extraCarbsGPerH} g of carbs an hour as gels or food."
+    !r.overBand -> null
+    else -> "This mix is ${trim(r.concentrationPct)}%, stronger than the ${r.bandPct}% that absorbs well in these " +
+        "conditions. About ${r.extraCarbsGPerH} g of carbs an hour from gels or food would bring it to ${r.bandPct}%."
+}
+
 private val PRESETS = listOf("basic" to "Basic", "high_carb" to "High-carb", "natural" to "Natural")
 
 /** The homemade mix's recipe: pick a recipe, size the bottle, read what goes in. */
@@ -296,8 +310,16 @@ private fun MixCard(r: FuelPlan.Recipe, s: LocalRacePlans.Strategy, onSet: (Stri
             r.ingredients.forEach { IngredientRow(it.name, amountLabel(it)) }
             IngredientRow("Water", "to ${r.bottleMl} ml")
         }
+        mixAdvice(r)?.let {
+            // Amber, as the web's note: a warning, not an error.
+            val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+            Text(it, style = MaterialTheme.typography.bodySmall, color = if (dark) Color(0xFFFCD34D) else Color(0xFF92400E),
+                modifier = Modifier.fillMaxWidth()
+                    .background(if (dark) Color(0x33F59E0B) else Color(0xFFFEF3C7), RoundedCornerShape(Tokens.Radius.lg))
+                    .padding(horizontal = Tokens.Space.s3, vertical = Tokens.Space.s2))
+        }
         Text(
-            "${r.concentrationPct}% · sip ${r.sipMl} ml every ${r.intervalMin} min" +
+            "${trim(r.concentrationPct)}% · sip ${r.sipMl} ml every ${r.intervalMin} min" +
                 if (r.preset == "natural") " · coconut water varies: check its label" else "",
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -407,6 +429,12 @@ private fun TargetField(label: String, unit: String, value: Int?, fallback: Int,
     }
 }
 
+/**
+ * Add a product: first a searchable list of common race foods with their
+ * label nutrition (spec/fuel_catalog.yaml), then the form, filled in from the
+ * pick — or blank for "Custom" — so a label that differs can be corrected
+ * before adding. The web's ProductForm does the same.
+ */
 @Composable
 private fun ProductDialog(onDismiss: () -> Unit, onAdd: (LocalRacePlans.ProductDraft) -> Unit) {
     var name by remember { mutableStateOf("") }
@@ -416,6 +444,41 @@ private fun ProductDialog(onDismiss: () -> Unit, onAdd: (LocalRacePlans.ProductD
     var potassium by remember { mutableStateOf("0") }
     var caffeine by remember { mutableStateOf("0") }
     var fluid by remember { mutableStateOf("0") }
+    var picking by remember { mutableStateOf(true) }
+    var query by remember { mutableStateOf("") }
+    if (picking) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text("Add a product") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(query, { query = it }, label = { Text("Search") }, singleLine = true)
+                    val q = query.trim().lowercase()
+                    androidx.compose.foundation.lazy.LazyColumn(Modifier.heightIn(max = 320.dp)) {
+                        items(FUEL_CATALOG.filter { q.isEmpty() || it.name.lowercase().contains(q) }, key = { it.name }) { p ->
+                            Column(Modifier.fillMaxWidth().clickable {
+                                name = p.name; kind = p.kind; carbs = trim(p.carbsG); sodium = "${p.sodiumMg}"
+                                potassium = "${p.potassiumMg}"; caffeine = "${p.caffeineMg}"; fluid = "${p.fluidMl}"
+                                picking = false
+                            }.padding(vertical = 8.dp)) {
+                                Text(p.name, style = MaterialTheme.typography.bodyLarge)
+                                Text(
+                                    listOfNotNull("${trim(p.carbsG)} g carbs", "${p.sodiumMg} mg Na",
+                                        p.potassiumMg.takeIf { it > 0 }?.let { "$it mg K" },
+                                        p.fluidMl.takeIf { it > 0 }?.let { "$it ml" },
+                                        p.caffeineMg.takeIf { it > 0 }?.let { "$it mg caffeine" }).joinToString(" · "),
+                                    style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = { TonalButton("Custom", onClick = { name = query.trim(); picking = false }) },
+            dismissButton = { NeutralButton("Cancel", onClick = onDismiss) },
+        )
+        return
+    }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("New product") },
@@ -450,7 +513,7 @@ private fun ProductDialog(onDismiss: () -> Unit, onAdd: (LocalRacePlans.ProductD
                 ))
             }, enabled = name.isNotBlank())
         },
-        dismissButton = { NeutralButton("Cancel", onClick = onDismiss) },
+        dismissButton = { NeutralButton("Back", onClick = { picking = true }) },
     )
 }
 

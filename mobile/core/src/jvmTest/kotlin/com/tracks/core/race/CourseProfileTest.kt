@@ -17,15 +17,26 @@ class CourseProfileTest {
     )
     private val laps = listOf(lap(1, 300.0, 250, 160), lap(2, 360.0, 200, 170))
 
-    /** Laps cover 2 km and the course ~2.22 km: each lap's target sits at its middle on the course. */
+    /**
+     * Laps cover 2 km and the course ~2.22 km: each target holds for its lap
+     * and changes where the lap does. A line drifting between laps read as a
+     * target changing along a climb.
+     */
     @Test
-    fun `the plan's laps are laid along the course, whatever its own length`() {
+    fun `each lap's target steps at its boundary on the course, whatever its own length`() {
         val pts = CourseProfile.points(path, ele, laps, CourseProfile.Metric.PACE)!!
-        assertEquals(listOf(100.0, 200.0, 100.0), pts.map { it.ele })
-        assertEquals(300.0, pts[0].target)
-        assertEquals(330.0, pts[1].target!!, 1e-6)
-        assertEquals(360.0, pts[2].target)
-        assertEquals(2223.9, pts[2].m, 0.5)
+        val half = pts.last().m / 2
+        assertTrue(pts.filter { it.m < half }.all { it.target == 300.0 })
+        assertTrue(pts.filter { it.m >= half }.all { it.target == 360.0 })
+        assertEquals(2223.9, pts.last().m, 0.5)
+    }
+
+    @Test
+    fun `a boundary between course points gets its own point, so the step is sharp`() {
+        val pts = CourseProfile.points(listOf(0.0 to 0.0, 0.0 to 0.03), listOf(100.0, 130.0), laps, CourseProfile.Metric.PACE)!!
+        assertEquals(3, pts.size)
+        assertEquals(360.0, pts[1].target)
+        assertEquals(115.0, pts[1].ele!!, 1e-6)
     }
 
     /** A GPX with no heights has no hills to show, but its targets still do. */

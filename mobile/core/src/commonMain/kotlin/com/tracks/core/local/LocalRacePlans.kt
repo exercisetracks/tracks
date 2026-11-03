@@ -214,12 +214,12 @@ class LocalRacePlans(private val sources: LocalSources) {
         val tg = FuelPlan.targets(minutes, null, null, s.fuelCarbs, s.fuelFluid, s.fuelSodium, s.fuelInterval, s.fuelPotassium)
         val all = products().associateBy { it.uid }
         val chosen = s.fuelProductUids.mapNotNull { all[it] }
-        val mix = if (FuelPlan.HOMEMADE_UID in s.fuelProductUids) FuelPlan.homemadeServing(tg) else null
+        val carryMix = FuelPlan.HOMEMADE_UID in s.fuelProductUids
         val timeline = if (minutes > 0) {
-            FuelPlan.timeline(minutes, tg, chosen, prediction?.laps?.map { FuelPlan.Lap(it.distanceM.toDouble(), it.targetSecPerKm) }, mix)
+            FuelPlan.timeline(minutes, tg, chosen, prediction?.laps?.map { FuelPlan.Lap(it.distanceM.toDouble(), it.targetSecPerKm) }, carryMix)
         } else FuelPlan.Timeline(emptyList(), FuelPlan.Amounts(0, 0, 0, 0), FuelPlan.Amounts(0, 0, 0, 0))
         // fuel_plan_for on the server: the bottles are what the race drinks.
-        val homemade = mix?.let {
+        val homemade = timeline.mix?.let {
             val drunk = timeline.items.filter { i -> i.productUid == FuelPlan.HOMEMADE_UID }.sumOf { i -> i.fluidMl }
             FuelPlan.homemadeRecipe(FuelPlan.mixPreset(tg.carbsGPerH, s.fuelMixPreset),
                 s.fuelMixBottleMl?.takeIf { b -> b > 0 } ?: FuelPlan.DEFAULT_BOTTLE_ML, it, tg.carbsGPerH, drunk)

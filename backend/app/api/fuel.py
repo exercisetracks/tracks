@@ -143,12 +143,13 @@ def fuel_plan_for(db: Session, user_id: int, goal: TrainingGoal, rp: RacePlan | 
     products = [{"uid": p.uid, "name": p.name, "carbs_g": float(p.carbs_g or 0),
                  "sodium_mg": p.sodium_mg or 0, "potassium_mg": p.potassium_mg or 0, "fluid_ml": p.fluid_ml or 0,
                  "caffeine_mg": p.caffeine_mg or 0} for p in chosen]
-    mix = fp.homemade_serving(tg) if fp.HOMEMADE_UID in uids else None
+    carry_mix = fp.HOMEMADE_UID in uids
     timeline = fp.timeline(duration_min, tg, products,
                            [{"distance_m": l["distance_m"], "target_sec_per_km": l["target_sec_per_km"]}
-                            for l in laps], mix=mix) if duration_min else {"items": [], "totals": {}, "per_hour": {}}
+                            for l in laps], mix=carry_mix) if duration_min else {"items": [], "totals": {}, "per_hour": {}}
     homemade = None
-    if mix:
+    if carry_mix and timeline.get("mix"):
+        mix = timeline.pop("mix")
         drunk = sum(i["fluid_ml"] for i in timeline["items"] if i["product_uid"] == fp.HOMEMADE_UID)
         homemade = fp.homemade_recipe(fp.mix_preset(tg["carbs_g_per_h"], rp.fuel_mix_preset),
                                       rp.fuel_mix_bottle_ml if (rp.fuel_mix_bottle_ml or 0) > 0

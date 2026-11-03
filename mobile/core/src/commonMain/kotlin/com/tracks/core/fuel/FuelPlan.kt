@@ -83,7 +83,8 @@ object FuelPlan {
 
     data class Amounts(val carbsG: Int, val sodiumMg: Int, val fluidMl: Int, val caffeineMg: Int, val potassiumMg: Int = 0)
 
-    data class Timeline(val items: List<Item>, val totals: Amounts, val perHour: Amounts)
+    /** [mix] is the homemade mix's sip when it was carried. */
+    data class Timeline(val items: List<Item>, val totals: Amounts, val perHour: Amounts, val mix: Mix? = null)
 
     data class Workout(
         val uid: String,
@@ -160,46 +161,24 @@ object FuelPlan {
         return halfUp(d)
     }
 
-    /**
-     * What to take when — `timeline` in the Python, which says why. With the
-     * homemade [mix], every slot is one of its sips and the products make up
-     * the carbs it leaves owed.
-     */
-    fun timeline(
-        durationMin: Double,
-        tg: Targets,
-        products: List<Product>,
-        laps: List<Lap>? = null,
-        mix: Mix? = null,
-    ): Timeline {
+    private fun item(minute: Int, laps: List<Lap>?, p: Product) = Item(minute, distanceAt(minute.toDouble(), laps),
+        p.uid, p.name, p.carbsG, p.sodiumMg, p.fluidMl, p.caffeineMg, p.potassiumMg)
+
+    /** The products' stops — `_schedule` in the Python. */
+    private fun schedule(durationMin: Double, tg: Targets, products: List<Product>, laps: List<Lap>?, plain: Boolean): List<Item> {
         val rate = tg.carbsGPerH.toDouble()
-        val interval = mix?.intervalMin ?: tg.intervalMin
+        val interval = tg.intervalMin
         val usable = products.filter { it.carbsG > 0 }
         val items = mutableListOf<Item>()
         var taken = 0.0
-        var carbs = 0.0
-        var sodium = 0
-        var potassium = 0
-        var fluid = 0
-        var caffeine = 0
-        fun take(minute: Int, p: Product) {
-            items += Item(minute, distanceAt(minute.toDouble(), laps), p.uid, p.name, p.carbsG,
-                p.sodiumMg, p.fluidMl, p.caffeineMg, p.potassiumMg)
-            taken += p.carbsG
-            carbs += p.carbsG
-            sodium += p.sodiumMg
-            potassium += p.potassiumMg
-            fluid += p.fluidMl
-            caffeine += p.caffeineMg
-        }
         var minute = interval
         while (minute < durationMin) {
-            if (mix != null) take(minute, mix.product)
             val owed = rate * minute / 60.0 - taken
             if (usable.isEmpty()) {
-                if (mix == null) {
-                    val grams = halfUp(rate * interval / 60.0)
-                    if (grams > 0) take(minute, Product(null, null, grams.toDouble()))
+                val grams = halfUp(rate * interval / 60.0)
+                if (plain && grams > 0) {
+                    items += item(minute, laps, Product(null, null, grams.toDouble()))
+                    taken += grams
                 }
             } else {
                 var best: Product? = null
@@ -212,17 +191,65 @@ object FuelPlan {
                     }
                 }
                 val p = best!!
-                if (owed >= p.carbsG / 2.0) take(minute, p)
+                if (owed >= p.carbsG / 2.0) {
+                    items += item(minute, laps, p)
+                    taken += p.carbsG
+                }
             }
             minute += interval
         }
+        return items
+    }
+
+    /** Carbs (a float, summed in order), sodium, fluid, caffeine, potassium. */
+    private data class Sums(val carbs: Double, val sodium: Int, val fluid: Int, val caffeine: Int, val potassium: Int)
+
+    private fun sums(items: List<Item>): Sums {
+        var carbs = 0.0
+        var sodium = 0; var fluid = 0; var caffeine = 0; var potassium = 0
+        for (i in items) {
+            carbs += i.carbsG; sodium += i.sodiumMg; fluid += i.fluidMl; caffeine += i.caffeineMg; potassium += i.potassiumMg
+        }
+        return Sums(carbs, sodium, fluid, caffeine, potassium)
+    }
+
+    /**
+     * What to take when — `timeline` in the Python, which says why. With the
+     * homemade [mix], the products are scheduled first and the mix carries
+     * whatever they leave short of every target.
+     */
+    fun timeline(
+        durationMin: Double,
+        tg: Targets,
+        products: List<Product>,
+        laps: List<Lap>? = null,
+        mix: Boolean = false,
+    ): Timeline {
+        var items = schedule(durationMin, tg, products, laps, plain = !mix)
         val hours = if (durationMin > 0) durationMin / 60.0 else 0.0
+        var serving: Mix? = null
+        if (mix) {
+            val got = sums(items)
+            fun ph(v: Double) = if (hours != 0.0) v / hours else 0.0
+            serving = homemadeServing(tg, Delivered(ph(got.carbs), ph(got.sodium.toDouble()),
+                ph(got.potassium.toDouble()), ph(got.fluid.toDouble())), durationMin)
+            val sips = mutableListOf<Item>()
+            var minute = serving.intervalMin
+            while (minute < durationMin) {
+                if (serving.product.fluidMl > 0) sips += item(minute, laps, serving.product)
+                minute += serving.intervalMin
+            }
+            // A sip before a product at the same minute: drink, then eat.
+            items = (sips + items).sortedWith(compareBy<Item>({ it.minute }, { it.productUid != HOMEMADE_UID }))
+        }
+        val t = sums(items)
         fun perHour(v: Double) = if (hours != 0.0) halfUp(v / hours) else 0
         return Timeline(
             items = items,
-            totals = Amounts(halfUp(carbs), sodium, fluid, caffeine, potassium),
-            perHour = Amounts(perHour(carbs), perHour(sodium.toDouble()), perHour(fluid.toDouble()),
-                perHour(caffeine.toDouble()), perHour(potassium.toDouble())),
+            totals = Amounts(halfUp(t.carbs), t.sodium, t.fluid, t.caffeine, t.potassium),
+            perHour = Amounts(perHour(t.carbs), perHour(t.sodium.toDouble()), perHour(t.fluid.toDouble()),
+                perHour(t.caffeine.toDouble()), perHour(t.potassium.toDouble())),
+            mix = serving,
         )
     }
 
@@ -252,7 +279,22 @@ object FuelPlan {
     private const val CW_ML_PER_CUP = 240
 
     /** One sip of the mix, as a product, with the interval it is sipped at and its strength. */
-    data class Mix(val product: Product, val intervalMin: Int, val concentrationPct: Int)
+    /**
+     * One sip of the mix, as a product, with its interval and strength. A
+     * strength over the heat band's ([overBand]) comes with the carbs an hour
+     * food or gels would have to carry to bring it down ([extraCarbsGPerH]).
+     */
+    data class Mix(
+        val product: Product,
+        val intervalMin: Int,
+        val concentrationPct: Double,
+        val bandPct: Int = 0,
+        val overBand: Boolean = false,
+        val extraCarbsGPerH: Int = 0,
+    )
+
+    /** What the other products give per hour, which the mix makes up to the targets. */
+    data class Delivered(val carbsG: Double = 0.0, val sodiumMg: Double = 0.0, val potassiumMg: Double = 0.0, val fluidMl: Double = 0.0)
 
     data class Ingredient(val key: String, val name: String, val grams: Double?, val ml: Double?, val measure: String)
 
@@ -260,7 +302,10 @@ object FuelPlan {
         val preset: String,
         val bottleMl: Int,
         val bottles: Int,
-        val concentrationPct: Int,
+        val concentrationPct: Double,
+        val bandPct: Int,
+        val overBand: Boolean,
+        val extraCarbsGPerH: Int,
         val sipMl: Int,
         val intervalMin: Int,
         val ingredients: List<Ingredient>,
@@ -275,16 +320,32 @@ object FuelPlan {
     fun mixPreset(carbsGPerH: Int, chosen: String?): String =
         if (chosen in MIX_PRESETS) chosen!! else if (carbsGPerH <= 60) "basic" else "high_carb"
 
-    fun homemadeServing(tg: Targets): Mix {
+    fun homemadeServing(tg: Targets, delivered: Delivered = Delivered(), durationMin: Double? = null): Mix {
         val band = BANDS.getValue(tg.band)
+        val shortCarbs = maxOf(0.0, tg.carbsGPerH - delivered.carbsG)
+        val shortNa = maxOf(0.0, tg.sodiumMgPerH - delivered.sodiumMg)
+        val shortK = maxOf(0.0, tg.potassiumMgPerH - delivered.potassiumMg)
+        val shortFluid = maxOf(0.0, tg.fluidMlPerH - delivered.fluidMl)
         val interval = if (tg.customInterval) tg.intervalMin else band.sipIntervalMin
-        val share = interval / 60.0
-        val fluid = halfUp(tg.fluidMlPerH * share)
-        val carbs = tenth(minOf(fluid * band.concentrationPct / 100.0, tg.carbsGPerH * share))
+        // No sip at the start or the finish: the sips share the race's hours.
+        val sips = if (durationMin != null && durationMin > 0) (interval until ceil(durationMin).toInt() step interval).count() else 0
+        val share = if (sips > 0) (durationMin!! / 60.0) / sips else interval / 60.0
+        val fluid = halfUp(shortFluid * share)
+        val carbs: Double; val sodium: Int; val potassium: Int; val strength: Double
+        if (fluid > 0) {
+            carbs = tenth(shortCarbs * share)
+            sodium = halfUp(shortNa * share)
+            potassium = halfUp(shortK * share)
+            strength = tenth(carbs / fluid * 100)
+        } else {
+            carbs = 0.0; sodium = 0; potassium = 0; strength = 0.0
+        }
+        val cap = band.concentrationPct
+        val carried = if (fluid > 0) shortFluid * cap / 100.0 else 0.0
+        val extra = if (strength > cap || fluid == 0) halfUp(maxOf(0.0, shortCarbs - carried)) else 0
         return Mix(
-            Product(HOMEMADE_UID, HOMEMADE_NAME, carbs, halfUp(tg.sodiumMgPerH * share), fluid, 0,
-                halfUp(tg.potassiumMgPerH * share)),
-            interval, band.concentrationPct,
+            Product(HOMEMADE_UID, HOMEMADE_NAME, carbs, sodium, fluid, 0, potassium),
+            interval, strength, cap, strength > cap, extra,
         )
     }
 
@@ -372,7 +433,8 @@ object FuelPlan {
         return Recipe(
             preset = preset, bottleMl = bottleMl,
             bottles = if (bottleMl != 0) ceil(raceFluidMl.toDouble() / bottleMl).toInt() else 0,
-            concentrationPct = mix.concentrationPct, sipMl = serving.fluidMl, intervalMin = mix.intervalMin,
+            concentrationPct = mix.concentrationPct, bandPct = mix.bandPct, overBand = mix.overBand,
+            extraCarbsGPerH = mix.extraCarbsGPerH, sipMl = serving.fluidMl, intervalMin = mix.intervalMin,
             ingredients = out,
             perBottleCarbsG = halfUp(gotCarbs), perBottleSodiumMg = halfUp(gotNa), perBottlePotassiumMg = halfUp(gotK),
         )

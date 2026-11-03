@@ -25,7 +25,7 @@ vi.mock("../api/client", () => ({
   api: { getFuelPlan: () => Promise.resolve(PLAN), getFuelProducts: () => Promise.resolve([]) },
 }));
 
-import FuelSection, { GAUGES, HOMEMADE_UID, amountLabel } from "../components/raceplan/FuelSection";
+import FuelSection, { GAUGES, HOMEMADE_UID, amountLabel, mixAdvice } from "../components/raceplan/FuelSection";
 
 describe("the fuelling section", () => {
   it("has a gauge for carbs, sodium, potassium and fluid, each ticked at its target", async () => {
@@ -55,5 +55,24 @@ describe("the fuelling section", () => {
   it("writes a liquid in ml and a solid in grams, with the spoon beside", () => {
     expect(amountLabel({ grams: 1.2, ml: null, measure: "¼ tsp" })).toBe("1.2 g (¼ tsp)");
     expect(amountLabel({ grams: null, ml: 240, measure: "1 cup" })).toBe("240 ml (1 cup)");
+  });
+
+  it("says how much food would bring a too-strong mix back within its heat band", () => {
+    // The mix always meets the targets now; when that takes more than the
+    // band's strength, the athlete is told what to eat alongside it.
+    expect(mixAdvice({ sip_ml: 130, over_band: false })).toBeNull();
+    expect(mixAdvice({ sip_ml: 130, over_band: true, concentration_pct: 19.4, band_pct: 6, extra_carbs_g_per_h: 52 }))
+      .toBe("This mix is 19.4%, stronger than the 6% that absorbs well in these conditions. "
+        + "About 52 g of carbs an hour from gels or food would bring it to 6%.");
+    expect(mixAdvice({ sip_ml: 0, over_band: false, extra_carbs_g_per_h: 30 })).toMatch(/drinks already bring all the fluid/);
+  });
+
+  it("fills a new product in from the common-products list", async () => {
+    render(<FuelSection goalId={1} plan={{ predicted_seconds: 3600, fuel_product_uids: [] }} onPatch={() => {}} />);
+    fireEvent.click(await screen.findByRole("button", { name: "Add product" }));
+    fireEvent.change(screen.getByRole("textbox", { name: "Search products" }), { target: { value: "snick" } });
+    fireEvent.click(screen.getByRole("option", { name: /Snickers/ }));
+    expect(screen.getByDisplayValue("Snickers")).toBeTruthy();
+    expect(screen.getByDisplayValue("32")).toBeTruthy();
   });
 });

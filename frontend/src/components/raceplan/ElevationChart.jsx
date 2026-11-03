@@ -18,6 +18,9 @@
 // elevation was too close to the HR line's red, and the dashed HR line is
 // orange for the same reason beside pink pace).
 //
+// Target lines are steps (stepAfter): each lap's target holds to the next
+// lap's boundary, where courseProfile puts a point (see there).
+//
 // Pace runs faster-up, as everywhere in the app: a climb shows as the pace
 // line dipping under the hill.
 
@@ -192,7 +195,7 @@ export default function ElevationChart({ coursePath, laps, sport, metric: forced
                 fill={ELEVATION} fillOpacity={0.25} dot={false} isAnimationActive={false} />
             )}
             {series && (
-              <Line yAxisId="target" type="monotone" dataKey="target" stroke={series.color} strokeWidth={2}
+              <Line yAxisId="target" type="stepAfter" dataKey="target" stroke={series.color} strokeWidth={2}
                 dot={false} isAnimationActive={false} connectNulls />
             )}
             {shown?.map((m, i) => (
@@ -201,7 +204,7 @@ export default function ElevationChart({ coursePath, laps, sport, metric: forced
                 label={{ value: `T${i + 1}`, position: "top", fill: "#64748b", fontSize: 11, fontWeight: 600 }} />
             ))}
             {hasHr && (
-              <Line yAxisId="hr" type="monotone" dataKey="hr" stroke={HR_LINE} strokeWidth={1.5}
+              <Line yAxisId="hr" type="stepAfter" dataKey="hr" stroke={HR_LINE} strokeWidth={1.5}
                 strokeDasharray="5 4" dot={false} isAnimationActive={false} connectNulls />
             )}
           </ComposedChart>

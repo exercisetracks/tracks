@@ -231,13 +231,16 @@ internal fun CourseProfileChart(
                     }
                     drawPath(area, ELEVATION.copy(alpha = 0.25f))
                 }
+                // Steps: each value holds until the next point, then the line
+                // rises or falls straight to the new one (the web's stepAfter).
                 fun line(value: (CourseProfile.Point) -> Double?, y: (Double) -> Float): Path {
                     val path = Path()
-                    var started = false
+                    var lastY: Float? = null
                     points.forEach { p ->
                         val v = value(p) ?: return@forEach
-                        if (!started) path.moveTo(xOf(p.m), y(v)) else path.lineTo(xOf(p.m), y(v))
-                        started = true
+                        val x = xOf(p.m)
+                        if (lastY == null) path.moveTo(x, y(v)) else { path.lineTo(x, lastY!!); path.lineTo(x, y(v)) }
+                        lastY = y(v)
                     }
                     return path
                 }

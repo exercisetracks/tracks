@@ -21,10 +21,11 @@ import kotlin.math.sqrt
  *
  * The target drawn is the sport's own coaching number — pace for running,
  * power for cycling and a triathlon's bike laps, the HR ceiling for mountain
- * biking, whose laps carry no watts. An open-water swim has no plot. The
- * line is smooth through each lap's middle rather than stepped: the user
- * chose it as the easier read against a hill; the lap table says exactly
- * where each target starts.
+ * biking, whose laps carry no watts. An open-water swim has no plot. Each
+ * target is drawn as steps — flat for its lap, changing at its boundary, as
+ * the watch coaches it. A smooth line through each lap's middle was tried
+ * first and read as a target drifting along a climb. So a point is added at
+ * every lap boundary, and each point carries its own lap's value.
  */
 object CourseProfile {
 
@@ -68,46 +69,15 @@ object CourseProfile {
         return R * 2 * atan2(sqrt(h), sqrt(1 - h))
     }
 
-    /** Each lap's target at its middle, with the plan's distance scaled to the course's length. */
-    private fun anchors(laps: List<RaceLap>, metric: Metric, courseM: Double): List<Pair<Double, Double>> =
-        anchorsOf(laps, courseM) { value(it, metric) }
-
-    private fun anchorsOf(laps: List<RaceLap>, courseM: Double, value: (RaceLap) -> Double?): List<Pair<Double, Double>> {
-        val total = laps.sumOf { it.distanceM.toDouble() }
-        if (total <= 0) return emptyList()
-        var start = 0.0
-        return buildList {
-            for (l in laps) {
-                val d = l.distanceM.toDouble()
-                val v = value(l)
-                if (v != null && d > 0) add((start + d / 2) / total * courseM to v)
-                start += d
-            }
-        }
-    }
-
-    private fun interpolate(a: List<Pair<Double, Double>>, x: Double): Double? {
-        if (a.isEmpty()) return null
-        if (x <= a.first().first) return a.first().second
-        for (i in 1 until a.size) {
-            val (x1, y1) = a[i]
-            if (x <= x1) {
-                val (x0, y0) = a[i - 1]
-                return y0 + (y1 - y0) * (x - x0) / (x1 - x0).let { if (it == 0.0) 1.0 else it }
-            }
-        }
-        return a.last().second
-    }
-
     /** The lap at each of [positions], laps laid end to end over [length] metres. */
-    private fun lapsAt(laps: List<RaceLap>, positions: List<Double>, length: Double): List<RaceLap> {
+    private fun lapsAt(laps: List<RaceLap>, positions: List<Double>, length: Double, startsAt: Boolean = false): List<RaceLap> {
         val total = laps.sumOf { it.distanceM.toDouble() }.takeIf { it > 0 } ?: 1.0
         val ends = mutableListOf<Double>()
         var run = 0.0
         for (l in laps) { run += l.distanceM / total * length; ends += run }
         var k = 0
         return positions.map { m ->
-            while (k < laps.size - 1 && m > ends[k]) k++
+            while (k < laps.size - 1 && (if (startsAt) m >= ends[k] - 1e-6 else m > ends[k])) k++
             laps[k]
         }
     }
@@ -120,7 +90,7 @@ object CourseProfile {
      */
     fun points(path: List<Pair<Double, Double>>, elevations: List<Double?>, laps: List<RaceLap>, metric: Metric?): List<Point>? {
         val withHr = laps.isNotEmpty() && metric != Metric.HR && laps.any { it.hrCeiling != null }
-        val positions: List<Double>
+        var positions: List<Double>
         var eles: List<Double>? = null
         var coords: List<Pair<Double, Double>>? = null
         val length: Double
@@ -142,12 +112,31 @@ object CourseProfile {
         } else {
             return null
         }
-        val targets = if (metric != null) anchors(laps, metric, length) else emptyList()
-        val hrs = if (withHr) anchorsOf(laps, length) { it.hrCeiling?.toDouble() } else emptyList()
-        val at = if (laps.isNotEmpty()) lapsAt(laps, positions, length) else null
+        if (laps.isNotEmpty()) {
+            // A point at every lap boundary, so the step falls exactly there.
+            val total = laps.sumOf { it.distanceM.toDouble() }.takeIf { it > 0 } ?: 1.0
+            val pos = positions.toMutableList()
+            val es = eles?.toMutableList()
+            val cs = coords?.toMutableList()
+            var run = 0.0
+            for (l in laps.dropLast(1)) {
+                run += l.distanceM / total * length
+                val k = pos.indexOfFirst { it >= run }
+                if (k <= 0 || pos[k] == run) continue
+                val f = (run - pos[k - 1]) / (pos[k] - pos[k - 1])
+                pos.add(k, run)
+                es?.add(k, es[k - 1] + (es[k] - es[k - 1]) * f)
+                cs?.add(k, (cs[k - 1].first + (cs[k].first - cs[k - 1].first) * f) to
+                    (cs[k - 1].second + (cs[k].second - cs[k - 1].second) * f))
+            }
+            positions = pos; eles = es; coords = cs
+        }
+        // At a boundary the point belongs to the lap starting there.
+        val at = if (laps.isNotEmpty()) lapsAt(laps, positions, length, startsAt = true) else null
         val out = positions.mapIndexed { i, m ->
-            Point(m, eles?.get(i), interpolate(targets, m), coords?.get(i)?.first, coords?.get(i)?.second,
-                if (withHr) interpolate(hrs, m) else null, at?.get(i))
+            val lap = at?.get(i)
+            Point(m, eles?.get(i), lap?.let { l -> metric?.let { value(l, it) } }, coords?.get(i)?.first, coords?.get(i)?.second,
+                if (withHr) lap?.hrCeiling?.toDouble() else null, lap)
         }
         return out.takeIf { it.size > 1 }
     }

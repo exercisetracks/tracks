@@ -93,16 +93,19 @@ class FuelPlanFixtureTest {
     fun the_homemade_mix_is_sipped_and_made_as_the_server_says() {
         for (c in fx["homemade"]!!.jsonArray.map { it.jsonObject }) {
             val tg = targetsOf(c["targets"]!!.jsonObject)
-            val mix = FuelPlan.homemadeServing(tg)
+            val tl = FuelPlan.timeline(c["duration_min"].d()!!, tg, productsOf(c["products"]!!), lapsOf(c["laps"]), mix = true)
+            val mix = tl.mix!!
             val sv = c["serving"]!!.jsonObject
             assertEquals(sv["carbs_g"].d(), mix.product.carbsG, c["targets"].toString())
             assertEquals(sv["fluid_ml"].i(), mix.product.fluidMl)
             assertEquals(sv["sodium_mg"].i(), mix.product.sodiumMg)
             assertEquals(sv["potassium_mg"].i(), mix.product.potassiumMg)
             assertEquals(sv["interval_min"].i(), mix.intervalMin)
-            assertEquals(sv["concentration_pct"].i(), mix.concentrationPct)
+            assertEquals(sv["concentration_pct"].d(), mix.concentrationPct)
+            assertEquals(sv["band_pct"].i(), mix.bandPct)
+            assertEquals(sv["over_band"]!!.jsonPrimitive.booleanOrNull, mix.overBand)
+            assertEquals(sv["extra_carbs_g_per_h"].i(), mix.extraCarbsGPerH)
 
-            val tl = FuelPlan.timeline(c["duration_min"].d()!!, tg, productsOf(c["products"]!!), lapsOf(c["laps"]), mix)
             val e = c["timeline"]!!.jsonObject
             assertEquals(e["items"]!!.jsonArray.map { it.jsonObject["product_uid"].s() to it.jsonObject["minute"].i() },
                 tl.items.map { it.productUid to it.minute })

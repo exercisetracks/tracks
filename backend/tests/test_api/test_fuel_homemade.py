@@ -43,24 +43,34 @@ def test_the_recipe_is_picked_by_carb_rate_unless_chosen():
     assert fp.mix_preset(90, "nonsense") == "high_carb"
 
 
-def test_a_hot_day_makes_the_drink_weaker_and_the_gels_make_up_the_carbs():
-    cool = fp.targets(240, carbs=90)
-    hot = fp.targets(240, carbs=90, temperature_c=33)
-    assert fp.homemade_serving(hot)["concentration_pct"] < fp.homemade_serving(cool)["concentration_pct"]
-    gel = [{"uid": "g", "name": "Gel", "carbs_g": 25.0}]
-    hot_tl = fp.timeline(240, hot, gel, mix=fp.homemade_serving(hot))
-    assert any(i["product_uid"] == "g" for i in hot_tl["items"])
-    assert hot_tl["per_hour"]["carbs_g"] >= 80
+def test_the_mix_makes_up_whatever_the_other_products_leave_short():
+    """Pick the mix and every target is met: gels count first, the bottle
+    carries the rest of the carbs, sodium, potassium and fluid."""
+    tg = fp.targets(240, carbs=90)
+    gel = [{"uid": "g", "name": "Gel", "carbs_g": 25.0, "sodium_mg": 50}]
+    tl = fp.timeline(240, tg, gel, mix=True)
+    ph = tl["per_hour"]
+    assert abs(ph["carbs_g"] - 90) <= 2
+    assert abs(ph["fluid_ml"] - tg["fluid_ml_per_h"]) <= 15
+    assert abs(ph["sodium_mg"] - tg["sodium_mg_per_h"]) <= 15
+    assert any(i["product_uid"] == "g" for i in tl["items"])
 
 
-def test_lite_salt_never_pushes_sodium_past_its_budget():
-    """Lite salt carries sodium as well as potassium; a potassium-heavy plan
-    must not be told to over-salt to get it."""
-    tg = fp.targets(240, carbs=60, sodium=200, potassium=375)
-    r = fp.homemade_recipe("basic", 750, fp.homemade_serving(tg), 60, 3000)
-    per_ml = r["per_bottle"]["sodium_mg"] / 750
-    assert per_ml <= fp.homemade_serving(tg)["sodium_mg"] / fp.homemade_serving(tg)["fluid_ml"] + 0.05
-    assert r["per_bottle"]["potassium_mg"] < 375 * 750 / tg["fluid_ml_per_h"]
+def test_a_mix_stronger_than_the_heat_allows_says_how_much_food_to_add():
+    """The target is still met, but a 6% day's bottle at 19% is hard to
+    absorb: the card says how many grams an hour should come from food."""
+    tg = fp.targets(240, carbs=100, temperature_c=33)
+    mix = fp.timeline(240, tg, [], mix=True)["mix"]
+    assert mix["over_band"] and mix["band_pct"] == 6 and mix["concentration_pct"] > 6
+    # 800 ml/h at 6% carries 48 g; the other 52 g should be food.
+    assert mix["extra_carbs_g_per_h"] == 52
+
+
+def test_when_drinks_bring_all_the_fluid_the_mix_has_nothing_to_carry():
+    tg = fp.targets(180, carbs=70)
+    drink = [{"uid": "d", "name": "Drink", "carbs_g": 45.5, "sodium_mg": 500, "fluid_ml": 600}]
+    mix = fp.timeline(180, tg, drink, mix=True)["mix"]
+    assert mix["fluid_ml"] == 0 and mix["extra_carbs_g_per_h"] > 0
 
 
 def test_spoons_read_as_a_kitchen_does():

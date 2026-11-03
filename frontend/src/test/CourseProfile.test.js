@@ -12,15 +12,23 @@ const LAPS = [
 ];
 
 describe("the course profile", () => {
-  it("lays the plan's laps along the course, whatever its own length", () => {
-    // Laps cover 2 km; the course is ~2.22 km. Each lap's target sits at its
-    // middle on the course, and the line runs smooth between them.
+  it("steps each lap's target at the lap's boundary on the course, whatever its own length", () => {
+    // Laps cover 2 km; the course is ~2.22 km. Each target holds for its lap
+    // and changes where the lap does — a line drifting between laps read as
+    // a target that changes along a climb, which nobody is asked to run.
     const pts = courseProfile(PATH, LAPS, "pace");
-    expect(pts.map((p) => p.ele)).toEqual([100, 200, 100]);
-    expect(pts[0].target).toBe(300);
-    expect(pts[1].target).toBeCloseTo(330, 6);
-    expect(pts[2].target).toBe(360);
-    expect(pts[2].m).toBeCloseTo(2223.9, 0);
+    const half = pts[pts.length - 1].m / 2;
+    expect(pts.filter((p) => p.m < half).every((p) => p.target === 300)).toBe(true);
+    expect(pts.filter((p) => p.m >= half).every((p) => p.target === 360)).toBe(true);
+    expect(pts[pts.length - 1].m).toBeCloseTo(2223.9, 0);
+  });
+
+  it("adds a point at a boundary between course points, so the step is sharp", () => {
+    const path = [[0, 0, 100], [0, 0.03, 130]];        // one long leg, ~3.3 km
+    const pts = courseProfile(path, LAPS, "pace");
+    expect(pts).toHaveLength(3);
+    expect(pts[1].target).toBe(360);
+    expect(pts[1].ele).toBeCloseTo(115, 6);            // elevation interpolated there
   });
 
   it("draws a course without elevation from its laps", () => {

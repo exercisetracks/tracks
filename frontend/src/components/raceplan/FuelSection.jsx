@@ -22,6 +22,7 @@ import AnchoredPopover from "../ui/AnchoredPopover";
 import Button, { PlusIcon } from "../ui/Button";
 import RadialGauge from "../RadialGauge";
 import Tabs from "../ui/Tabs";
+import { FUEL_CATALOG } from "../../spec/fuelCatalog";
 
 /** The built-in homemade mix's uid among the race's products (fuel_plan.HOMEMADE_UID). */
 export const HOMEMADE_UID = "homemade";
@@ -104,8 +105,45 @@ function TargetsEditor({ plan, calculated, onPatch, onClose }) {
   );
 }
 
+/**
+ * Add a product: first a searchable list of common race foods with their
+ * label nutrition (spec/fuel_catalog.yaml), then the form, filled in from the
+ * pick — or blank, for "Custom…" — so a label that differs can be corrected
+ * before it is added.
+ */
 function ProductForm({ onAdd, onCancel }) {
-  const [draft, setDraft] = useState({ name: "", kind: "gel", carbs_g: 25, sodium_mg: 0, potassium_mg: 0, caffeine_mg: 0, fluid_ml: 0 });
+  const [draft, setDraft] = useState(null);
+  const [query, setQuery] = useState("");
+  if (!draft) {
+    const q = query.trim().toLowerCase();
+    const shown = FUEL_CATALOG.filter((p) => !q || p.name.toLowerCase().includes(q));
+    return (
+      <div className={PANEL}>
+        <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Add a product</h4>
+        <input className={INPUT} placeholder="Search" value={query} autoFocus aria-label="Search products"
+          onChange={(e) => setQuery(e.target.value)} />
+        <ul className="max-h-64 overflow-y-auto -mx-1" role="listbox" aria-label="Common products">
+          {shown.map((p) => (
+            <li key={p.name}>
+              <button role="option" aria-selected="false" onClick={() => setDraft({ ...p })}
+                className="w-full text-left px-2 py-1.5 rounded-lg text-sm hover:bg-slate-100 dark:hover:bg-slate-700">
+                <span className="block">{p.name}</span>
+                <span className="block text-xs tabular-nums text-slate-500 dark:text-slate-400">
+                  {p.carbs_g} g carbs · {p.sodium_mg} mg Na{p.potassium_mg ? ` · ${p.potassium_mg} mg K` : ""}
+                  {p.fluid_ml ? ` · ${p.fluid_ml} ml` : ""}{p.caffeine_mg ? ` · ${p.caffeine_mg} mg caffeine` : ""}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+        <div className="flex gap-2">
+          <Button variant="neutral" onClick={onCancel}>Cancel</Button>
+          <Button variant="tonal" onClick={() => setDraft({ name: query.trim(), kind: "gel", carbs_g: 25, sodium_mg: 0,
+            potassium_mg: 0, caffeine_mg: 0, fluid_ml: 0 })}>Custom…</Button>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className={PANEL}>
       <h4 className="text-sm font-semibold text-slate-900 dark:text-white">New product</h4>
@@ -123,7 +161,7 @@ function ProductForm({ onAdd, onCancel }) {
         ))}
       </div>
       <div className="flex gap-2">
-        <Button variant="neutral" onClick={onCancel}>Cancel</Button>
+        <Button variant="neutral" onClick={() => setDraft(null)}>Back</Button>
         <Button variant="primary" disabled={!draft.name.trim()} onClick={() => onAdd(draft)}>Add</Button>
       </div>
     </div>
@@ -203,6 +241,21 @@ export function amountLabel(i) {
   return i.ml != null ? `${i.ml} ml (${i.measure})` : `${i.grams} g (${i.measure})`;
 }
 
+/**
+ * When the mix cannot meet the targets at a strength that absorbs well: how
+ * strong it is against the heat band's, and how many grams an hour of gels
+ * or food would bring it down. Null when it is within the band. The phone
+ * words it the same (mixAdvice in FuelSection.kt).
+ */
+export function mixAdvice(mix) {
+  if (mix.sip_ml === 0 && mix.extra_carbs_g_per_h > 0) {
+    return `Your drinks already bring all the fluid. Take about ${mix.extra_carbs_g_per_h} g of carbs an hour as gels or food.`;
+  }
+  if (!mix.over_band) return null;
+  return `This mix is ${mix.concentration_pct}%, stronger than the ${mix.band_pct}% that absorbs well in these conditions. `
+    + `About ${mix.extra_carbs_g_per_h} g of carbs an hour from gels or food would bring it to ${mix.band_pct}%.`;
+}
+
 /** The homemade mix's recipe: pick a recipe, size the bottle, read what goes in. */
 function MixCard({ mix, plan, onPatch }) {
   const [bottle, setBottle] = useState(plan.fuel_mix_bottle_ml ?? "");
@@ -233,6 +286,12 @@ function MixCard({ mix, plan, onPatch }) {
           <span className="tabular-nums">to {mix.bottle_ml} ml</span>
         </li>
       </ul>
+      {mixAdvice(mix) && (
+        <p className="text-sm rounded-lg px-3 py-2 bg-amber-50 text-amber-800 dark:bg-amber-900/20 dark:text-amber-300"
+          role="note">
+          {mixAdvice(mix)}
+        </p>
+      )}
       <p className="text-xs tabular-nums text-slate-500 dark:text-slate-400">
         {mix.concentration_pct}% · sip {mix.sip_ml} ml every {mix.interval_min} min
         {mix.preset === "natural" && " · coconut water varies: check its label"}

@@ -81,10 +81,14 @@ def main() -> None:
         (300, 120, 34.0, None, [PRODUCTS[1]], None),
         (180, 80, None, 25, [PRODUCTS[0]], None),
         (50, 30, None, None, [], None),
+        # A drink product brings all the fluid: the rest falls to food.
+        (180, 70, None, None, [PRODUCTS[2], PRODUCTS[0]], None),
+        # A hot day the gels cannot cover: the mix goes past its band.
+        (240, 100, 33.0, None, [], None),
     ):
         tg = fp.targets(dur, temperature_c=temp, carbs=carbs, interval=interval)
-        mix = fp.homemade_serving(tg)
-        tl = fp.timeline(dur, tg, products, laps, mix=mix)
+        tl = fp.timeline(dur, tg, products, laps, mix=True)
+        mix = tl.pop("mix")
         drunk = sum(i["fluid_ml"] for i in tl["items"] if i["product_uid"] == fp.HOMEMADE_UID)
         recipes = [{"preset": pr, "bottle_ml": b,
                     "expected": fp.homemade_recipe(pr, b, mix, carbs, drunk)}

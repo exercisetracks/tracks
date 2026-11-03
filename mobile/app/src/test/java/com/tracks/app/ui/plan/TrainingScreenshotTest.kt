@@ -260,9 +260,9 @@ class TrainingScreenshotTest {
             fuelProductUids = listOf(com.tracks.core.fuel.FuelPlan.HOMEMADE_UID, "g", "b"))
         val minutes = pred.seconds / 60.0
         val tg = com.tracks.core.fuel.FuelPlan.targets(minutes, carbs = 60)
-        val mix = com.tracks.core.fuel.FuelPlan.homemadeServing(tg)
         val timeline = com.tracks.core.fuel.FuelPlan.timeline(minutes, tg, listOf(gel, big),
-            pred.laps.map { com.tracks.core.fuel.FuelPlan.Lap(it.distanceM.toDouble(), it.targetSecPerKm) }, mix)
+            pred.laps.map { com.tracks.core.fuel.FuelPlan.Lap(it.distanceM.toDouble(), it.targetSecPerKm) }, mix = true)
+        val mix = timeline.mix!!
         val drunk = timeline.items.filter { it.productUid == com.tracks.core.fuel.FuelPlan.HOMEMADE_UID }.sumOf { it.fluidMl }
         val fuel = LocalRacePlans.Fuel(
             tg, timeline, listOf(gel, big),
@@ -374,6 +374,24 @@ class TrainingScreenshotTest {
             com.tracks.core.race.SportPlan.Inputs(51_500.0, segments = segs))
         val pred = LocalRacePlans.Prediction(r.seconds, r.laps, r.legs, family = "triathlon")
         RacePlansContent(RacePlansState(loading = false, cards = listOf(RacePlanCard(g, strategy, null, pred)), openGoalId = 1),
+            {}, { _, _, _ -> })
+    }
+
+    /** A hot marathon whose gel leaves the mix past its band: the advice note shows. */
+    @Test
+    fun race_plan_fuel_hot_light() = shoot("race_plan_fuel_hot_light", ThemeMode.Light) {
+        val gel = com.tracks.core.fuel.FuelPlan.Product("g", "Gel", 25.0, 50)
+        val pred = LocalRacePlans.running(45.0, 42195.0, "flat", 0.0, imperial = false, maxHr = null)
+        val minutes = pred.seconds / 60.0
+        val tg = com.tracks.core.fuel.FuelPlan.targets(minutes, temperatureC = 33.0, carbs = 90)
+        val tl = com.tracks.core.fuel.FuelPlan.timeline(minutes, tg, listOf(gel), mix = true)
+        val drunk = tl.items.filter { it.productUid == com.tracks.core.fuel.FuelPlan.HOMEMADE_UID }.sumOf { it.fluidMl }
+        val fuel = LocalRacePlans.Fuel(tg, tl, listOf(gel), emptyMap(),
+            com.tracks.core.fuel.FuelPlan.homemadeRecipe("high_carb", 750, tl.mix!!, 90, drunk))
+        val strategy = LocalRacePlans.Strategy(uid = "r1", fuelCarbs = 90,
+            fuelProductUids = listOf(com.tracks.core.fuel.FuelPlan.HOMEMADE_UID, "g"))
+        RacePlansContent(RacePlansState(loading = false,
+            cards = listOf(RacePlanCard(goal.copy(eventDistanceMeters = 42195.0), strategy, 45.0, pred, fuel)), openGoalId = 1),
             {}, { _, _, _ -> })
     }
 

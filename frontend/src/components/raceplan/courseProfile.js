@@ -13,9 +13,13 @@
 // mountain biking, whose laps carry no watts; a triathlon's swim leg is drawn
 // per 100 m. A swim race on its own has no plot: flat water and a single lap.
 //
-// The target is drawn smooth, through the middle of each lap, rather than as
-// steps: the user picked it as easier to read against a hill, at the cost of
-// not showing exactly where a target changes (the lap table does that).
+// Each target is drawn as steps: flat for its lap, changing at the lap's
+// boundary, which is how the watch coaches it. A smooth line through each
+// lap's middle was tried first and read as a target that drifts along a
+// climb, which on a real course is not what anyone is asked to run. So a
+// point is added at every lap boundary (elevation and position interpolated
+// there), each point carries its lap's own value, and the line holds each
+// value until the next point.
 
 const R = 6_371_000;
 /** Enough points for a smooth line at any plot width, few enough to stay quick to draw. */
@@ -50,50 +54,18 @@ function haversine(a, b) {
   return R * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
 }
 
-/**
- * The target at each lap's middle, placed on the course: laps are laid along
- * the plan's distance, which may be the goal's rather than the GPX's, so
- * positions are scaled to the course's length.
- */
-function anchors(laps, field, courseM) {
-  const total = laps.reduce((s, l) => s + (l.distance_m || 0), 0);
-  if (!total) return [];
-  const out = [];
-  let start = 0;
-  for (const l of laps) {
-    const d = l.distance_m || 0;
-    if (l[field] != null && d > 0) out.push([(start + d / 2) / total * courseM, l[field]]);
-    start += d;
-  }
-  return out;
-}
-
-/** Linear between anchors, held level before the first and after the last. */
-function interpolate(anchorList, x) {
-  if (!anchorList.length) return null;
-  if (x <= anchorList[0][0]) return anchorList[0][1];
-  for (let i = 1; i < anchorList.length; i++) {
-    const [x1, y1] = anchorList[i];
-    if (x <= x1) {
-      const [x0, y0] = anchorList[i - 1];
-      return y0 + (y1 - y0) * (x - x0) / (x1 - x0 || 1);
-    }
-  }
-  return anchorList[anchorList.length - 1][1];
-}
-
 /** Without a course: enough evenly spaced points for a smooth line and a readout anywhere. */
 const LAP_SAMPLES = 200;
 
 /** The lap at each of `positions`, laps laid end to end over `length` metres. */
-function lapsAt(laps, positions, length) {
+function lapsAt(laps, positions, length, startsAt = false) {
   const total = laps.reduce((s, l) => s + (l.distance_m || 0), 0) || 1;
   const ends = [];
   let run = 0;
   for (const l of laps) { run += (l.distance_m || 0) / total * length; ends.push(run); }
   let k = 0;
   return positions.map((m) => {
-    while (k < laps.length - 1 && m > ends[k]) k++;
+    while (k < laps.length - 1 && (startsAt ? m >= ends[k] - 1e-6 : m > ends[k])) k++;
     return laps[k];
   });
 }
@@ -130,12 +102,28 @@ export function courseProfile(coursePath, laps, metric) {
   } else {
     return null;
   }
-  const targets = field && hasLaps ? anchors(laps, field, length) : [];
-  const hrs = withHr ? anchors(laps, "hr_ceiling", length) : [];
-  const at = hasLaps ? lapsAt(laps, positions, length) : positions.map(() => null);
+  if (hasLaps) {
+    // The lap boundaries, laid along the race's length as lapsAt lays them.
+    const total = laps.reduce((t, l) => t + (l.distance_m || 0), 0) || 1;
+    let run = 0;
+    const bounds = [];
+    for (const l of laps.slice(0, -1)) { run += (l.distance_m || 0) / total * length; bounds.push(run); }
+    for (const b of bounds) {
+      const k = positions.findIndex((m) => m >= b);
+      if (k <= 0 || positions[k] === b) continue;
+      const f = (b - positions[k - 1]) / (positions[k] - positions[k - 1]);
+      const lerp = (a, c) => (a == null || c == null ? null : a + (c - a) * f);
+      positions.splice(k, 0, b);
+      if (eles) eles.splice(k, 0, lerp(eles[k - 1], eles[k]));
+      if (coords) coords.splice(k, 0, [lerp(coords[k - 1][0], coords[k][0]), lerp(coords[k - 1][1], coords[k][1])]);
+    }
+  }
+  // At a boundary the point belongs to the lap starting there.
+  const at = hasLaps ? lapsAt(laps, positions, length, true) : positions.map(() => null);
   const pts = positions.map((m, i) => ({
     m, ele: eles ? eles[i] : null,
-    target: interpolate(targets, m), hr: withHr ? interpolate(hrs, m) : null,
+    target: field && at[i] ? at[i][field] ?? null : null,
+    hr: withHr && at[i] ? at[i].hr_ceiling ?? null : null,
     lap: at[i], lat: coords ? coords[i][0] : null, lon: coords ? coords[i][1] : null,
   }));
   return pts.length > 1 ? pts : null;
