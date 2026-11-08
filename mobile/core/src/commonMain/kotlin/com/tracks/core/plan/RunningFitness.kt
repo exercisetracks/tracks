@@ -10,17 +10,23 @@ import com.tracks.core.parse.PyMath
  * `calculators/plan/running_fitness.py`, held to it by
  * spec/fixtures/running_fitness.json (RunningFitnessFixtureTest).
  *
- * The reasoning — efforts as a floor that ages, heart rate on ordinary runs as
- * the central estimate, the watch's VO2max as its fallback, the profile only
- * with no running evidence at all, and the detraining curve — is written once,
+ * The reasoning — efforts as a floor that ages (never a treadmill's or a
+ * virtual run's), heart rate on ordinary runs as the central estimate, the
+ * watch's VO2max as its fallback (at [WATCH_VDOT] of itself), the training
+ * itself — Tanda's model of eight weeks' volume and pace — with neither, the
+ * profile only with no running evidence at all, and the detraining curve —
+ * is written once,
  * in the Python module's docstring and docs/running-pace-research.md; this is
  * the same arithmetic in the same order, so that a plan built on the phone and
  * one built on the server pace the same runs the same way.
  */
 object RunningFitness {
 
-    /** One pace best: the fastest stretch of a run at a standard distance. */
-    data class Effort(val date: CivilDate, val distanceM: Double, val speedMps: Double)
+    /**
+     * One pace best: the fastest stretch of a run at a standard distance.
+     * [sport] is its run's; a treadmill or virtual run's best is no floor.
+     */
+    data class Effort(val date: CivilDate, val distanceM: Double, val speedMps: Double, val sport: String? = null)
 
     /** One running activity; every field but the date may be missing. */
     data class Run(
@@ -34,7 +40,7 @@ object RunningFitness {
         val vo2max: Double? = null,
     )
 
-    /** The estimate: [source] is `effort`, `heart_rate`, `watch` or `profile`. */
+    /** The estimate: [source] is `effort`, `heart_rate`, `watch`, `training` or `profile`. */
     data class Estimate(
         val vdot: Double,
         val source: String,
@@ -42,6 +48,7 @@ object RunningFitness {
         val effortVdot: Double?,
     )
 
+    private const val MARATHON_M = 42_195.0
     const val EFFORT_CURRENT_DAYS = 42
     const val EFFORT_MAX_AGE_DAYS = 365
     const val EFFORT_MIN_DISTANCE_M = 3000
@@ -55,6 +62,10 @@ object RunningFitness {
     const val HR_MAX_SPEED_MPS = 7.0
     const val HR_MAX_CLIMB_M_PER_KM = 15.0
     private val HR_RUN_SPORTS = setOf("running", "road_running")
+    /** `_ESTIMATED_SPEED_SPORTS`: speed from a wrist, footpod or belt — no effort floor. */
+    private val ESTIMATED_SPEED_SPORTS = setOf("treadmill_running", "virtual_running")
+    /** `WATCH_VDOT`: a watch's VO2max as VDOT, less the economy gap (see the Python). */
+    const val WATCH_VDOT = 0.90
     private const val PLAUSIBLE_LO = 15.0
     private const val PLAUSIBLE_HI = 90.0
 
@@ -129,7 +140,14 @@ object RunningFitness {
             if (days(today, r.date) > RECENT_DAYS) continue
             if (latest == null || r.date > latest.first) latest = r.date to v
         }
-        return latest?.second
+        return latest?.second?.let { it * WATCH_VDOT }
+    }
+
+    /** `_training_estimate`: the VDOT of the marathon Tanda (2011) predicts from eight weeks' training. */
+    private fun trainingEstimate(runs: List<Run>, today: CivilDate): Double? {
+        val (weeklyKm, meanPace) = com.tracks.core.race.RacePredictor.trainingIndices(runs, today) ?: return null
+        val v = PlanBase.calculateVdot(MARATHON_M, com.tracks.core.race.RacePredictor.tandaMarathonSec(weeklyKm, meanPace, MARATHON_M))
+        return if (v in PLAUSIBLE_LO..PLAUSIBLE_HI) v else null
     }
 
     private fun effortEstimate(efforts: List<Effort>, today: CivilDate, layoffDays: Long): Double? {
@@ -137,6 +155,7 @@ object RunningFitness {
         for (e in efforts) {
             val age = days(today, e.date)
             if (e.distanceM < EFFORT_MIN_DISTANCE_M || e.speedMps <= 0 || age > EFFORT_MAX_AGE_DAYS) continue
+            if (e.sport in ESTIMATED_SPEED_SPORTS) continue
             var v = PlanBase.calculateVdot(e.distanceM, e.distanceM / e.speedMps)
             if (v < PLAUSIBLE_LO || v > PLAUSIBLE_HI) continue
             v *= detrainingFactor(maxOf(age - (EFFORT_CURRENT_DAYS - 7), layoffDays).toDouble())
@@ -202,6 +221,10 @@ object RunningFitness {
         if (central == null) {
             central = watchEstimate(pastRuns, today)
             source = "watch"
+        }
+        if (central == null) {
+            central = trainingEstimate(pastRuns, today)
+            source = "training"
         }
         if (central != null) central *= detrainingFactor(layoff.toDouble())
 

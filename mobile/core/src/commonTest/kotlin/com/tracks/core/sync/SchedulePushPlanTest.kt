@@ -113,6 +113,64 @@ class SchedulePushPlanTest {
         assertTrue(bundle.workouts.all { it.bytes.isNotEmpty() })
     }
 
+    private val raceLaps = (1..10).map {
+        com.tracks.core.fit.WorkoutFit.RaceLap(it, 1000.0, 300.0 - it, hrCeiling = 170 + it % 5,
+            label = if (it == 4) "Climb 6%" else null)
+    }
+    private val race = RaceDayWorkout(raceLaps, family = "running", hrTargets = false, maxHr = 190,
+        fuel = listOf(com.tracks.core.fit.WorkoutFit.RaceFuel(4500, "Gel", 25.0)))
+
+    /**
+     * The race day went out as the plan's step-less placeholder — warm up, go,
+     * cool down — so the watch's calendar had the race with none of its
+     * pacing, and the race plan's own file went by a route that only the
+     * server ever filled. It is the race now: the plan's laps and fuel, under
+     * the race session's id and timestamp, the pair its schedule entry names.
+     */
+    @Test
+    fun `the race day is the race, under the calendar's own identity`() {
+        val raceDay = workout(41, "2026-09-01", type = "race", title = "Race: Autumn 10K", steps = emptyList())
+        val bundle = buildScheduleBundle(
+            listOf(workout(40, "2026-08-30"), raceDay), "2026-08-29", context, fixedTimes, 1_788_000_000_000L,
+            races = mapOf(41 to race),
+        )
+        assertNotNull(bundle)
+        assertEquals(2, bundle.count)
+        val file = bundle.workouts.single { it.filename == "WKT_20260901_41.fit" }
+        val want = com.tracks.core.fit.WorkoutFit.race(
+            "Race: Autumn 10K", "running", raceLaps, fixedTimes(41), paceCoaching = true, hrCoaching = false,
+            maxHr = 190, fuel = race.fuel, workoutId = 41,
+        )
+        assertContentEquals(want, file.bytes)
+    }
+
+    @Test
+    fun `the race follows the watch coaching switch, then its own pace or HR choice`() {
+        val raceDay = workout(41, "2026-09-01", type = "race", steps = emptyList())
+        fun bytes(ctx: CoachingContext, r: RaceDayWorkout) = buildScheduleBundle(
+            listOf(raceDay), "2026-08-29", ctx, fixedTimes, 1_788_000_000_000L, races = mapOf(41 to r),
+        )!!.workouts.single().bytes
+        fun want(pace: Boolean, hr: Boolean, family: String = "running") = com.tracks.core.fit.WorkoutFit.race(
+            "Session", "running", raceLaps, fixedTimes(41), paceCoaching = pace, hrCoaching = hr, maxHr = 190,
+            fuel = race.fuel, workoutId = 41,
+        )
+        assertContentEquals(want(pace = true, hr = false), bytes(context, race))
+        assertContentEquals(want(pace = true, hr = true), bytes(context, RaceDayWorkout(raceLaps, "running", true, 190, race.fuel)))
+        // A ride is held to HR, never pace — as the race plan's own file always was.
+        assertContentEquals(want(pace = false, hr = false), bytes(context, RaceDayWorkout(raceLaps, "cycling", false, 190, race.fuel)))
+        val off = context.copy(paceCoaching = false)
+        assertContentEquals(want(pace = false, hr = false), bytes(off, RaceDayWorkout(raceLaps, "running", true, 190, race.fuel)))
+    }
+
+    @Test
+    fun `a race the phone cannot plan keeps its place on the calendar`() {
+        val raceDay = workout(41, "2026-09-01", type = "race", steps = emptyList())
+        val bundle = buildScheduleBundle(listOf(raceDay), "2026-08-29", context, fixedTimes, 1_788_000_000_000L)
+        assertNotNull(bundle)
+        assertEquals(1, bundle.count)
+        assertEquals("WKT_20260901_41.fit", bundle.workouts.single().filename)
+    }
+
     @Test
     fun `the same plan builds the same bytes twice`() {
         // The fingerprint that stops a sync resending the calendar is taken over

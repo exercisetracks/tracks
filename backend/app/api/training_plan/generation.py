@@ -61,6 +61,7 @@ from .helpers import (
     _get_goal_or_404,
     _get_pace_bests,
     _get_running_fitness,
+    _plan_adherence,
     _queue_orphan_deletes,
     _upsert_pending_delete,
 )
@@ -313,9 +314,15 @@ def _plan_workout_dicts(db: Session, goal: TrainingGoal, user_id: int,
             # the plan starts, overall how fast it may build (build_ramp).
             from app.api.coaching.helpers import _sport_and_overall_ctl
             overall_ctl, sport_ctl = _sport_and_overall_ctl(db, user_id, us, today, family)
+            # How much of this plan the last weeks delivered, which the pace
+            # progression is scaled by — so the race week paces the race the
+            # race plan predicts (calculators/plan/race_day.py). A plan with
+            # no history yet is the plan as written.
+            plan = db.query(TrainingPlan).filter_by(goal_id=goal.id).first()
+            adherence = _plan_adherence(db, user_id, plan.id, today) if plan else 1.0
             vdot, workout_dicts = generate_training_plan(
                 goal=goal, max_hr=_effective_max_hr(us),
-                overall_ctl=overall_ctl, sport_ctl=sport_ctl, **common)
+                overall_ctl=overall_ctl, sport_ctl=sport_ctl, adherence=adherence, **common)
 
     # The next few days answer the fatigue they will be done in: shortened,
     # moved or dropped (calculators/plan/adapt.py). Before the injections, so

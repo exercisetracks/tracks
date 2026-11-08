@@ -17,7 +17,8 @@ from app.models.coaching import TrainingGoal
 @pytest.fixture
 def goal(db, user, monkeypatch):
     monkeypatch.setattr("app.api.coaching.race_helpers._get_running_metrics",
-                        lambda db, user, us: (50.0, None))
+                        lambda db, user, us, goal: {"vdot": 50.0, "vdot_today": 50.0,
+                                                     "adherence": None, "run_indices": None})
     g = TrainingGoal(user_id=user.id, goal_type="event", event_name="10K", event_sport="running",
                      event_distance_meters=10_000, event_date=date.today() + timedelta(days=60))
     db.add(g)

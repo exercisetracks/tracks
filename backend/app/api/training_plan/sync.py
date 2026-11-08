@@ -37,7 +37,7 @@ from app.calculators.training_plan import _sport_family, vdot_to_paces
 from app.config import settings
 from app.database import get_db
 from app.models.activity import User
-from app.models.coaching import RacePlan, TrainingGoal
+from app.models.coaching import TrainingGoal
 from app.models.sync_agents import SyncAgent
 from app.models.training_plan import PlannedWorkout, TrainingPlan, WatchPendingDelete
 from app.models.user_settings import UserSettings
@@ -45,7 +45,7 @@ from app.services import activity_status
 from app.services.redis_client import get_redis
 from app.services.sync_agent_auth import require_sync_agent, resolve_sync_user_id
 
-from .helpers import _effective_ftp, _effective_threshold_hr
+from .helpers import _effective_ftp, _effective_max_hr, _effective_threshold_hr
 
 _log = logging.getLogger(__name__)
 
@@ -105,7 +105,71 @@ def _ensure_fit_time_created(w: PlannedWorkout, db: Session) -> int:
     return ts_ms
 
 
+def _race_day_fit(w: PlannedWorkout, db: Session) -> bytes | None:
+    """The race itself, as the calendar's race day: the race plan's laps —
+    worked out now, as its page works them out (race_plan.plan_race) — in
+    generate_race_fit, under this session's id and timestamp, so the
+    schedule binds the race day to it like any other workout.
+
+    The race used to be a file of its own on a route of its own, and the
+    calendar's race day went out as the plan's step-less placeholder, which
+    the endurance encoder turns into warm-up / open / cool-down: the watch's
+    calendar showed the race with none of its pacing. The phone encodes the
+    same entry the same way (SchedulePushPlan, LocalRacePlans.raceDayWorkouts).
+
+    Targets follow the watch-coaching switch, as every calendar workout's do;
+    with it on, the race plan's own choice decides them — pace (a ride is
+    held to HR, never pace), or HR ceilings when its targets are pace + HR.
+    None, and the placeholder stands, for a race the plan cannot pace: a swim
+    or a triathlon (paced by leg), or no measured fitness yet.
+    """
+    from app.api.coaching.race_plan import _fuel_items, plan_race
+    from app.calculators.race_predictor.fit import generate_race_fit
+
+    plan = db.query(TrainingPlan).filter_by(id=w.plan_id).first() if w.plan_id else None
+    goal = db.query(TrainingGoal).filter_by(id=plan.goal_id).first() if plan else None
+    if goal is None:
+        return None
+    family = _sport_family((goal.event_sport or "running").lower())
+    if family in ("swimming", "triathlon"):
+        return None
+    user = db.query(User).filter_by(id=w.user_id).first()
+    us = db.query(UserSettings).filter_by(user_id=w.user_id).first()
+    try:
+        rp = plan_race(db, user, us, goal, create=False)
+    except HTTPException:
+        return None
+    if not rp.lap_paces:
+        return None
+    coaching = bool(us and us.pace_coaching)
+    max_hr = _effective_max_hr(us)
+    return generate_race_fit(
+        name=_workout_display_name(w),
+        sport=(w.sport or "running").lower(),
+        lap_paces=rp.lap_paces,
+        pace_coaching=coaching and family != "cycling",
+        hr_coaching=coaching and rp.pace_hr_mode == "pace_hr",
+        max_hr=int(max_hr) if max_hr else None,
+        fuel_items=_fuel_items(db, rp, goal, rp.lap_paces, rp.predicted_seconds),
+        time_created_ms=_ensure_fit_time_created(w, db),
+        workout_id=w.id,
+    )
+
+
 def _build_fit_b64(w: PlannedWorkout, db: Session) -> str:
+    # The race day is the race (see _race_day_fit). A race that cannot be
+    # planned falls back to the placeholder rather than failing: the bundle
+    # leaves out a workout whose encoding raises, and a calendar missing its
+    # race day is worse than one whose race day has no laps.
+    if w.workout_type == "race":
+        try:
+            race = _race_day_fit(w, db)
+        except Exception:
+            _log.exception("Could not plan the race for workout %s; sending it unpaced", w.id)
+            race = None
+        if race is not None:
+            return base64.b64encode(race).decode()
+
     # Strength, mobility, and flexibility get a dedicated FIT encoder
     if w.workout_type in ("strength", "mobility", "flexibility"):
         file_ts = _ensure_fit_time_created(w, db)
@@ -162,9 +226,14 @@ def _build_fit_b64(w: PlannedWorkout, db: Session) -> str:
 # ── Upload / delete / schedule cycle ─────────────────────────────────────────
 
 def _upload_items_for_user(db: Session, user_id: int) -> list[dict]:
-    """Workouts scheduled in the next 7 days (plus pending race plans) that
-    have not yet been uploaded to the watch, each carrying its FIT as base64.
-    Shared by the garmin-sync (secret-auth) and browser (user-auth) routes."""
+    """Workouts scheduled in the next 7 days that have not yet been uploaded
+    to the watch, each carrying its FIT as base64. Shared by the garmin-sync
+    (secret-auth) and browser (user-auth) routes.
+
+    A race is one of them: its race-day session, encoded as the race
+    (``_race_day_fit``). Race plans were listed here as files of their own
+    until 2026-11, read with no user filter at all — every account's pending
+    race file was offered to whichever watch synced next."""
     today = user_today(db, user_id)
     cutoff = today + timedelta(days=_SYNC_DAYS_AHEAD)
 
@@ -203,25 +272,6 @@ def _upload_items_for_user(db: Session, user_id: int) -> list[dict]:
             "fit_b64":  fit_b64,
         })
 
-    # Include race plan FIT files that haven't been uploaded yet
-    race_plans = (
-        db.query(RacePlan)
-        .filter(
-            RacePlan.fit_b64.isnot(None),
-            RacePlan.watch_uploaded_at.is_(None),
-        )
-        .all()
-    )
-    for rp in race_plans:
-        items.append({
-            "id":       rp.id,
-            "type":     "race_plan",
-            "filename": rp.watch_filename or f"RACE_{rp.goal_id}.fit",
-            "title":    "Race Plan",
-            "date":     None,
-            "fit_b64":  rp.fit_b64,
-        })
-
     return items
 
 
@@ -238,16 +288,17 @@ def get_upload_list(
 
 
 def _apply_mark_uploaded(db: Session, uploads: list[dict], user_id: int) -> int:
-    """Record pushed workout/race-plan FIT files — only rows belonging to
-    `user_id`. Required, not optional: an id in the body is the caller's word,
-    and an agent once marked any account's workouts by naming their ids."""
+    """Record pushed workout FIT files — only rows belonging to `user_id`.
+    Required, not optional: an id in the body is the caller's word, and an
+    agent once marked any account's workouts by naming their ids."""
     now = datetime.now(timezone.utc)
     for item in uploads:
         if item.get("type") == "race_plan":
-            rp = db.query(RacePlan).filter_by(id=item["id"], user_id=user_id).first()
-            if rp is not None:
-                rp.watch_filename    = item["filename"]
-                rp.watch_uploaded_at = now
+            # A race file of its own, from a client that still pushes them.
+            # The race is its calendar session now (_race_day_fit), and this
+            # id is a race plan's: read as a workout's it would mark
+            # whichever session happened to share the number.
+            continue
         else:
             w = db.query(PlannedWorkout).filter_by(id=item["id"], user_id=user_id).first()
             if w is not None:

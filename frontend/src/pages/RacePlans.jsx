@@ -5,12 +5,15 @@ import { Link } from "react-router-dom";
 import { api } from "../api/client";
 import PageHeader from "../components/ui/PageHeader";
 
+// The race reaches the watch as the training calendar's race day, encoded from
+// this plan and sent with the calendar four days out — not as a file of its
+// own, which only opening the plan used to build. So there are two states:
+// on the watch, or going with the calendar.
 function SyncBadge({ status }) {
   if (!status) return null;
   const cfg = {
     synced:   { label: "Synced to watch",          cls: "bg-accent-50 text-accent-700 dark:bg-accent-900/20 dark:text-accent-400" },
-    pending:  { label: "Will sync on next connect", cls: "bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400" },
-    no_plan:  { label: "Not opened yet",         cls: "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400" },
+    pending:  { label: "Goes to the watch with the calendar", cls: "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400" },
   }[status] ?? { label: status, cls: "bg-slate-100 text-slate-500" };
   return (
     <span className={`inline-flex items-center text-xs font-medium px-1.5 py-0.5 rounded-full ${cfg.cls}`}>
@@ -35,9 +38,7 @@ function GoalCard({ goal, imperial }) {
         : `${(goal.event_distance_meters / 1000).toFixed(1)} km`)
     : null;
 
-  const syncStatus = plan?.generated_at
-    ? (plan.watch_uploaded_at ? "synced" : "pending")
-    : "no_plan";
+  const syncStatus = plan?.watch_uploaded_at ? "synced" : "pending";
 
   return (
     <div className="card flex items-start justify-between gap-4">

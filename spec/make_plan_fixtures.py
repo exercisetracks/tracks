@@ -343,6 +343,16 @@ def plan_cases() -> list:
         {"event_date": mon + timedelta(days=84), "event_sport": "triathlon", "event_distance_meters": 51500.0},
         _history(mon, Random("rf-2"), ["running", "cycling", "swimming"]), run_bests + swim_bests,
         running_fitness=measured, ftp=240)
+    # Adherence (race_day.adherence) scales the weekly VDOT gain the paces
+    # build with, so the race week paces what the race plan predicts.
+    add("fitness_measured_half_followed", wed, ten_k, _history(wed, Random("rf-1"), ["running"]), run_bests,
+        running_fitness=measured, adherence=0.5)
+    add("fitness_measured_not_followed", wed, dict(ten_k, event_distance_meters=42195.0), [], [],
+        running_fitness=hr_only, adherence=0.0)
+    add("fitness_triathlon_run_leg_part_followed", mon,
+        {"event_date": mon + timedelta(days=84), "event_sport": "triathlon", "event_distance_meters": 51500.0},
+        _history(mon, Random("rf-2"), ["running", "cycling", "swimming"]), run_bests + swim_bests,
+        running_fitness=measured, ftp=240, adherence=0.73)
     add("fitness_triathlon_profile", mon,
         {"event_date": mon + timedelta(days=84), "event_sport": "triathlon", "event_distance_meters": 25750.0},
         [], [], running_fitness=profile)

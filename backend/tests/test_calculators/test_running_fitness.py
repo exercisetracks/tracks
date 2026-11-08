@@ -89,17 +89,30 @@ def test_steady_runs_with_heart_rate_lift_a_runner_who_never_races():
     assert with_hr["effort_vdot"] == floor_only["vdot"]
 
 
-def test_the_heart_rate_estimate_reproduces_its_own_easy_pace():
-    """The calibration is self-consistent: runs held at ~70% of heart-rate
-    reserve come back with an easy pace close to the pace they were run at,
-    whatever the runner's height, weight or economy — which is what
-    personalises the paces."""
+def test_runs_at_the_top_of_easy_come_back_with_the_middle_of_easy():
+    """The calibration is self-consistent, whatever the runner's height,
+    weight or economy — which is what personalises the paces. Runs held at
+    70% of heart-rate reserve (78% of max here) are at the top of Daniels'
+    easy heart rates, so the easy pace they give is a little slower than they
+    were run: the middle of his easy band, where it used to be its fast edge
+    and an easy run sat at the limit of easy."""
     for pace in (300.0, 360.0, 420.0):
         hr = round(55 + 0.70 * (185 - 55))
         out = estimate_running_fitness([], [_run(d, pace_sec_km=pace, avg_hr=hr) for d in (1, 4, 8)],
                                        TODAY, **HR)
         assert out["source"] == "heart_rate"
-        assert abs(vdot_to_paces(out["vdot"])["easy"] - pace) < 15, pace
+        assert 15 < vdot_to_paces(out["vdot"])["easy"] - pace < 40, pace
+
+
+def test_the_paces_are_daniels_own():
+    """Daniels' table at VDOT 40 gives easy 6:07–6:44/km and threshold 5:06.
+    Easy is the band's middle (it was its fast edge, 6:06), recovery its slow
+    edge, threshold his 88% (it was 90%, 6 s/km quicker) — the share that
+    matched recreational runners' measured lactate-threshold pace."""
+    p = vdot_to_paces(40.0)
+    assert 367 < p["easy"] < 404 and abs(p["easy"] - (367 + 404) / 2) < 3
+    assert abs(p["recovery"] - 404) < 1.5
+    assert abs(p["threshold"] - 306) < 1.5
 
 
 def test_a_noisy_heart_rate_cannot_pull_fitness_below_a_real_race():
@@ -109,6 +122,48 @@ def test_a_noisy_heart_rate_cannot_pull_fitness_below_a_real_race():
     out = estimate_running_fitness([_effort(10, minutes=19.0)], runs, TODAY, **HR)
     assert out["source"] == "effort"
     assert out["vdot"] == round(calculate_vdot(5000, 19 * 60), 1)
+
+
+def test_a_treadmill_run_is_no_floor():
+    """Its speed is a wrist, footpod or belt estimate: one over-read session
+    would set every pace for six weeks. The HR method refused treadmills for
+    the same reason; the floor did not."""
+    fast = _effort(5, minutes=17.0)
+    road = estimate_running_fitness([fast], [_run(5, avg_hr=None)], TODAY)
+    treadmill = estimate_running_fitness([{**fast, "sport": "treadmill_running"}], [_run(5, avg_hr=None)], TODAY)
+    virtual = estimate_running_fitness([{**fast, "sport": "virtual_running"}], [_run(5, avg_hr=None)], TODAY)
+    assert road["source"] == "effort"
+    assert treadmill["source"] == virtual["source"] == "profile"
+
+
+def _weeks(n, pace_sec_km=360.0, per_week=3, km=8.0):
+    return [_run(1 + 7 * w + 2 * i, pace_sec_km=pace_sec_km, avg_hr=None, km=km)
+            for w in range(n) for i in range(per_week)]
+
+
+def test_a_phone_with_no_heart_rate_is_paced_from_its_training():
+    """GPS alone used to leave only the effort floor: for someone who only
+    runs easy, their easy pace read as a race — ten VDOT slow. Their eight
+    weeks of volume and pace (Tanda 2011) now set the estimate, as the VDOT
+    of the marathon those predict: slow for a 5 K, far closer than the floor."""
+    easy_floor = [_effort(4, minutes=5 * 360 / 60)]
+    out = estimate_running_fitness(easy_floor, _weeks(8), TODAY)
+    assert out["source"] == "training" and out["measured"]
+    assert out["vdot"] > out["effort_vdot"] + 5
+    assert vdot_to_paces(out["vdot"])["easy"] > 360  # still easier than every run they did
+
+
+def test_the_training_estimate_needs_six_of_the_eight_weeks():
+    """A history that starts partway through reads as low volume."""
+    assert estimate_running_fitness([], _weeks(5), TODAY)["source"] == "profile"
+    assert estimate_running_fitness([], _weeks(6), TODAY)["source"] == "training"
+
+
+def test_heart_rate_and_the_watch_go_before_the_training_estimate():
+    hr_runs = _weeks(8, pace_sec_km=330.0) + [_run(d) for d in (1, 3, 5)]
+    assert estimate_running_fitness([], hr_runs, TODAY, **HR)["source"] == "heart_rate"
+    watch = _weeks(8) + [_run(2, avg_hr=None, vo2max=50.0)]
+    assert estimate_running_fitness([], watch, TODAY)["source"] == "watch"
 
 
 def test_two_runs_are_not_enough_for_a_heart_rate_estimate():
@@ -134,11 +189,13 @@ def test_runs_outside_the_method_are_left_out_of_the_heart_rate_estimate(bad):
 
 
 def test_the_watch_vo2max_is_used_only_when_heart_rate_cannot_be():
-    """The dashboard's VO2max is the fallback: it errs fast (lab VO2max runs
-    above VDOT in recreational runners), so the HR estimate goes first."""
+    """The dashboard's VO2max is the fallback, at nine tenths of itself: the
+    watch estimates lab VO2max, which runs above VDOT by the recreational
+    runner's economy gap to Daniels' curve — taken whole, it paced them about
+    10% fast. The HR estimate, which measures the runner, goes first."""
     runs = [_run(d, vo2max=52.0) for d in (2, 5, 9)]
     no_rest = estimate_running_fitness([], runs, TODAY, max_hr=185)
-    assert no_rest["source"] == "watch" and no_rest["vdot"] == 52.0
+    assert no_rest["source"] == "watch" and no_rest["vdot"] == round(52.0 * rf.WATCH_VDOT, 1) == 46.8
     with_hr = estimate_running_fitness([], runs, TODAY, **HR)
     assert with_hr["source"] == "heart_rate"
 

@@ -56,14 +56,24 @@ handshake picks it, never which class happens to be in use.
 | Content | Route | Fallback, and what triggers it | Code | Verified |
 |---|---|---|---|---|
 | Recordings and health files, pulled | FileSyncService | Directory listing: a V1 (single-channel) watch, or one that never answered a file-list request. That is remembered per watch and cleared once it answers. | `GarminSupport.fetchRecordedData`, `decideSyncProtocol` | fenix 6X, both routes |
-| Training calendar + its workouts | Legacy `CREATE_FILE` into `GARMIN/NewFiles`, one batch | none: FileSyncService does not build a calendar (measured) | `WatchManager.pushSchedule` → `GarminIntegration.pushToInbox` | fenix 6X |
+| Training calendar + its workouts, the race day among them | Legacy `CREATE_FILE` into `GARMIN/NewFiles`, one batch | none: FileSyncService does not build a calendar (measured) | `WatchManager.pushSchedule` → `GarminIntegration.pushToInbox`; the race day is the race plan's laps (`RaceDayWorkout` → `WorkoutFit.race`, the server's `_race_day_fit`) | fenix 6X for the calendar. The race-day entry is held to the server's bytes by fixtures; it has **not** been run on a watch yet. |
 | Settings files (Wi-Fi uploads off, user profile) | Legacy, `GARMIN/NewFiles` | none | `stopWifiUploads`, `pushUserProfileIfDue` → `pushToInbox` | fenix 6X (sent; the watch does not confirm settings) |
-| Server-built files (race plans) | FileSyncService | Legacy, if the watch refuses it on file-sync | `pushFromServer` → `pushFile` | partly |
 | Watch apps (`.prg`) | Legacy (type 255/17 has no file-sync name) | none | `installWatchApp` → `pushFile` | fenix 6X |
 | Courses and saved places | Explore sync | FIT files over legacy (`CourseFitEncoder`, `LocationsFitEncoder`), if the handshake does not declare `EXPLORE_SYNC` | `ExploreSession`; fallback in `WatchManager.pushMapItems` | Explore on fenix 6X (which declares it, bit 69). The file fallback has **not** been run on an older watch. |
 | Courses/places listed by the server | never pushed from the list: the phone builds its own (avoids duplicates) | none | `pushFromServer` filter | fenix 6X |
 | Notifications, calls, weather, music, find-phone | GFDI messages (Gadgetbridge handlers) | none | `GarminSupport`, `GarminIntegration` | fenix 6X |
 | Live heart rate, activity status, live track | Realtime service, protobuf; the live track by subscription (`subscribeLivePositions`) | none | patches 0015–0018 | not yet on a watch |
+
+A race plan was a server-built file of its own until 2026-11, pushed over
+FileSyncService from the server's upload list. Only a visit to the race
+plan's page ever built it, so most races never had one, a phone with no
+server never did, and the calendar's race day went out as an empty workout.
+The race is now that calendar entry. It is encoded from the race plan's
+laps under the race session's id and timestamp, so the schedule binds it,
+and it travels in the calendar's batch on every transport: Bluetooth here,
+and the cable's `schedule-bundle` and the browser's `upload-list` on the
+server. A `RACE_*.fit` already on a watch is queued for deletion; only a
+cable can remove it.
 
 Every path needs a reason in its own comment, and every fallback needs a
 trigger the phone can detect. A path that is "probably needed by some watch" is

@@ -6,7 +6,6 @@ import com.tracks.core.fit.decode.CivilDate
 import com.tracks.core.parse.PyMath
 import com.tracks.core.plan.PlanBase.DEFAULT_RUN_PACES
 import com.tracks.core.plan.PlanBase.DEFAULT_VDOT
-import kotlin.math.ceil
 import kotlin.math.sqrt
 
 /**
@@ -53,9 +52,6 @@ object PlanGenerator {
         "quality",
         "css", "incline_intervals", "bounding", "ski_intervals", "power_endurance",
     )
-
-    /** Damsted et al. (2018): 10% weekly volume increase. */
-    private const val WEEKLY_GAIN_VOLUME = 0.10
 
     // ── Templates ────────────────────────────────────────────────────────────
 
@@ -647,6 +643,12 @@ object PlanGenerator {
         /** Fitness overall and in this sport alone; see [PlanBase.buildRamp]. */
         overallCtl: Double? = null,
         sportCtl: Double? = null,
+        /**
+         * How much of this plan the last weeks delivered ([RaceDay.adherence]),
+         * which scales the weekly VDOT gain — so the race week paces the race
+         * the race plan predicts ([RaceDay.raceDayVdot]). 1.0 is the plan as written.
+         */
+        adherence: Double = 1.0,
     ): Generated {
         val raceDate = goal.eventDate
         // `goal.event_distance_meters or 42195`: a float column, else an int.
@@ -665,12 +667,11 @@ object PlanGenerator {
 
         if (family == "triathlon") {
             return MultiSport.triathlonPlan(goal, history, paceBests, today, ftp, dpw, planIntensity,
-                baseEffectiveWeeks, imperial, lthr, runningFitness)
+                baseEffectiveWeeks, imperial, lthr, runningFitness, adherence)
         }
 
         val planMonday = CivilDate.fromEpochDay(today.epochDay - (today.epochDay + 3).mod(7L))
-        val totalDays = raceDate.epochDay - planMonday.epochDay
-        val totalWeeks = maxOf(1L, ceil(totalDays / 7.0).toLong())
+        val totalWeeks = RaceDay.planWeeks(today, raceDate)
 
         val vdots = if (family == "running") runningVdots(runningFitness, paceBests)
         else RunningVdots(null, DEFAULT_VDOT, null)
@@ -678,7 +679,8 @@ object PlanGenerator {
         val css = if (family == "swimming") PlanBase.cssPaceSecPer100m(paceBests) else null
 
         val baseVdot = vdot
-        val vdotStep = if (baseVdot != null) PlanBase.pyMin(WEEKLY_GAIN_VOLUME, 1.5 / maxOf(totalWeeks, 1L)) else 0.0
+        // The plan's progression, as the race plan projects it (RaceDay).
+        val vdotStep = if (baseVdot != null) RaceDay.vdotStep(totalWeeks) * adherence else 0.0
 
         var ewBase = effectiveWeeksBase(family, vdots.capacity, baseEffectiveWeeks)
 

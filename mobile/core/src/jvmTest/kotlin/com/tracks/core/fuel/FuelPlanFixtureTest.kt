@@ -156,7 +156,7 @@ class FuelPlanFixtureTest {
             val laps = c["laps"]!!.jsonArray.map {
                 val o = it.jsonObject
                 WorkoutFit.RaceLap(o["lap"].i()!!, o["distance_m"].d()!!, o["target_sec_per_km"].d()!!,
-                    o["hr_ceiling"].i())
+                    o["hr_ceiling"].i(), o["label"].s())
             }
             val fuel = c["fuel_items"]!!.jsonArray.map {
                 val o = it.jsonObject
@@ -167,6 +167,7 @@ class FuelPlanFixtureTest {
                 paceCoaching = c["pace_coaching"]!!.jsonPrimitive.booleanOrNull!!,
                 hrCoaching = c["hr_coaching"]!!.jsonPrimitive.booleanOrNull!!,
                 maxHr = c["max_hr"].i(), fuel = fuel,
+                workoutId = c["workout_id"]?.jsonPrimitive?.content?.toInt() ?: 0,
             )
             assertEquals(c["hex"].s(), bytes.joinToString("") { (it.toInt() and 0xff).toString(16).padStart(2, '0') },
                 c["name"].s())

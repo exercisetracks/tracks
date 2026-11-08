@@ -51,8 +51,6 @@ import com.tracks.device.garmin.WatchAppConfig
 import com.tracks.device.garmin.LocationsFitEncoder
 import com.tracks.device.garmin.WaypointLocation
 import java.io.File
-import kotlin.io.encoding.Base64
-import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -80,7 +78,6 @@ import kotlinx.coroutines.sync.withLock
  * the Garmin implementation is chosen once, at the bottom of this file. A Coros
  * implementation is a different constructor argument.
  */
-@OptIn(ExperimentalEncodingApi::class)
 class WatchManager(
     private val context: Context,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob()),
@@ -401,94 +398,25 @@ class WatchManager(
     data class UploadResult(val delivered: Int, val failed: Int)
 
     /**
-     * Push what the server has waiting — planned workouts, courses, the training
-     * schedule — onto the watch.
+     * Push everything the watch is owed — courses and saved places, the
+     * training calendar with every workout it names (the race day among
+     * them), the user profile — onto the watch.
      *
-     * The reverse of [uploadPulled] and the same ordering rule: a file is
-     * reported to the server as delivered only after the watch has accepted it.
-     * Getting that backwards would be worse here than on the pull side, because
-     * the server *stops offering* a file it believes was delivered, so a
-     * mistakenly-marked workout never reaches the watch and never retries.
-     *
-     * Unlike pulling, this needs a live session: the upload list is per-user
-     * data behind the JWT, not the agent token. That is the right trade — a
-     * planned workout the user cannot fetch is a nuisance, whereas an activity
-     * that cannot be uploaded is lost data, and only the second one gets the
-     * session-free path.
+     * Everything here is built on the phone; the server only hears about it
+     * afterwards, and that report queues like any offline write. The name is
+     * from when the server's upload list was read here: the last thing it
+     * still carried for this path was the race plan's own file, built on the
+     * server and pushed over FileSyncService — only ever there after a visit
+     * to the race plan's page, and never on a phone without a server. The
+     * race is the calendar's race day now, encoded on the phone and sent in
+     * the calendar's batch ([pushSchedule], RaceDayWorkout), so nothing is
+     * left to fetch. Workouts were never pushed from the list either: they
+     * travel with the schedule, and courses and places are the phone's own
+     * ([pushMapItems]).
      */
     suspend fun pushFromServer(client: TracksClient): PushResult {
-        // No early return on an empty queue: the schedule still has to go. The
-        // steady state of a working install is exactly this — every workout for
-        // the next week already pushed and marked, nothing new to send — and it
-        // is also when the calendar changes daily as workouts roll off the back
-        // of it. Returning here would mean the schedule was only ever sent on
-        // the runs that happened to carry a new file.
-        // Workouts are left to [pushSchedule], which sends the whole scheduled
-        // set alongside the schedule itself. Pushing them here as well would
-        // send every one of them twice in a single run — minutes of BLE for no
-        // gain — and the copy that matters is the one that travels with the
-        // schedule.
-        // The one part of a push that still needs the server: race-plan files
-        // are built there and have no on-device encoder. Everything else below
-        // — courses, saved places, the training calendar — is built here, so a
-        // server that cannot be reached costs exactly those items and not the
-        // rest of the push.
-        val pending = try {
-            client.pushList(bluetooth = true).items
-        } catch (e: CancellationException) {
-            // Never swallowed: the run was abandoned, and carrying on would push
-            // files on a coroutine the caller has already given up on.
-            throw e
-        } catch (e: Exception) {
-            Log.i(TAG, "no upload list (offline?); pushing what the phone can build", e)
-            emptyList()
-        }.filterNot { it.type == "workout" }
-            // Courses and places are never pushed from the server's list. The
-            // server lists them as files (GARMIN/Courses, Locations.fit) for
-            // USB; the phone sends its own, by [pushMapItems]. Pushed here as
-            // well they landed beside the Explore copies: every course and
-            // place on the watch twice ("test1 1"), the file copies in no
-            // collection, so nothing could ever take them off again
-            // (2026-10-13, after a factory reset).
-            .filterNot { it.type in MAP_ITEM_TYPES }
-
-        val delivered = mutableListOf<MarkItem>()
-        var failed = 0
-
-        for (item in pending) {
-            val encoded = item.dataB64
-            if (encoded == null) {
-                Log.w(TAG, "server offered ${item.filename} with no bytes")
-                failed++
-                continue
-            }
-            try {
-                integration.pushFile(item.folder, item.filename, Base64.decode(encoded))
-                delivered += MarkItem(type = item.type, id = item.id,
-                    filename = item.filename, ids = item.ids)
-            } catch (e: Exception) {
-                Log.w(TAG, "could not push ${item.filename}", e)
-                failed++
-            }
-        }
-
-        if (delivered.isNotEmpty()) {
-            // Queued when there is no signal, like every other write the phone
-            // makes: the bytes are already on the watch, and the server hearing
-            // about it later says the same thing.
-            // Server-built files (race plans) are server rows, told directly;
-            // a failure here only means the file is offered again next time.
-            try {
-                client.markUploaded(delivered)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Log.w(TAG, "pushed files but could not record it", e)
-            }
-        }
-
-        // Courses and waypoints, unlike everything above, never needed the
-        // server to reach the watch at all — see [pushMapItems]. Folded into
+        // Courses and waypoints never needed the server to reach the watch
+        // at all — see [pushMapItems]. Folded into
         // every full sync, not just a user's explicit "send now", so a
         // course flagged from across the house is on the watch by the time a
         // background sync next finds it in range.
@@ -520,8 +448,8 @@ class WatchManager(
             Log.w(TAG, "could not send the user profile", e)
         }
         return PushResult(
-            delivered = delivered.size + (mapPushed?.delivered ?: 0),
-            failed = failed + (mapPushed?.failed ?: 0),
+            delivered = mapPushed?.delivered ?: 0,
+            failed = mapPushed?.failed ?: 0,
             scheduled = scheduled,
         )
     }
@@ -538,13 +466,11 @@ class WatchManager(
 
     // ── Courses and waypoints: pushed with no server asked at all ───────────
     //
-    // Everything above this point — workouts, race plans, the schedule —
-    // still reads `/device-sync/upload-list` and fetches bytes the server
-    // already built. Courses and waypoints do not: the desired state (what
-    // is flagged) and the phone's own belief about what the watch already
-    // holds both live in the cached library [OfflineRepository] already
-    // keeps offline-capable, and the FIT bytes are built right here — see
-    // [com.tracks.device.garmin.CourseFitEncoder]/[LocationsFitEncoder].
+    // Like the training calendar, these are the phone's own: the desired
+    // state (what is flagged) and the phone's own belief about what the watch
+    // already holds both live in the cached library [OfflineRepository]
+    // already keeps offline-capable, and the FIT bytes are built right here —
+    // see [com.tracks.device.garmin.CourseFitEncoder]/[LocationsFitEncoder].
     // Only the follow-up call that tells the server what happened
     // ([OfflineRepository.markCourseUploaded]/[markWaypointsUploaded]) ever
     // touches the network, and that one queues like any other offline write.
@@ -1092,6 +1018,20 @@ class WatchManager(
         val coaching = localCoachingContext(container.sources)
         val stamps = loadFitTimestamps().toMutableMap()
         val now = System.currentTimeMillis()
+        // The race day is the race: its plan's laps, targets and fuelling,
+        // encoded and sent as one more calendar workout (RaceDayWorkout). A
+        // race the phone cannot plan keeps the placeholder rather than
+        // taking the calendar down with it.
+        val races = try {
+            com.tracks.core.local.LocalRacePlans(container.sources).raceDayWorkouts(
+                workouts, com.tracks.core.fit.decode.CivilDate(today.year, today.monthValue, today.dayOfMonth),
+            )
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.w(TAG, "could not plan the race for the calendar; sending its day unpaced", e)
+            emptyMap()
+        }
 
         val bundle = buildScheduleBundle(
             workouts = workouts,
@@ -1101,6 +1041,7 @@ class WatchManager(
             // every file, and so resend the whole calendar, on every sync.
             fitTimeCreated = { id -> stamps.getOrPut(id) { now } },
             nowMillis = now,
+            races = races,
         )
         saveFitTimestamps(stamps, keep = workouts.map { it.id }.toSet())
         return bundle
@@ -1642,9 +1583,6 @@ class WatchManager(
 
     internal companion object {
         const val TAG = "TracksWatch"
-
-        /** Upload-list types that a Garmin takes over Explore sync, never as files. */
-        private val MAP_ITEM_TYPES = setOf("course", "waypoint")
 
         private const val WIFI_SETTINGS_FILENAME = "TRACKS_WIFI.fit"
         private const val PROFILE_SETTINGS_FILENAME = "TRACKS_PROFILE.fit"

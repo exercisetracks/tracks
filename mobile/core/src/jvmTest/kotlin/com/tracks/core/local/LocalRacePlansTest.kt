@@ -7,6 +7,9 @@ import com.tracks.core.race.RacePredictor
 import com.tracks.core.replica.ReplicaStore
 import com.tracks.core.replica.TracksSchema
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+import com.tracks.core.fit.decode.CivilDate
 import com.tracks.core.fuel.FuelPlan
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -20,6 +23,22 @@ class LocalRacePlansTest {
         TracksSchema.create(driver)
         val sources = LocalSources(ReplicaStore(driver, { 1_790_000_000_000L }), LocalLibrary(driver))
         return sources to LocalRacePlans(sources)
+    }
+
+    /**
+     * A run in the library with a 5 km pace best — 20:00 by default, a VDOT
+     * ~50 floor — so today's running fitness is measured, as the race plan
+     * now requires (it reads the live estimate, as the server does, not the
+     * VDOT the training plan was last built at).
+     */
+    private fun LocalLibrary.run(uid: String, startedAt: String, seconds: Long = 1200) {
+        val detail = buildJsonObject { put("pace_curve", buildJsonObject { put("5000", 5000.0 / seconds) }) }
+        val summary = buildJsonObject {
+            put("started_at", startedAt); put("sport", "running"); put("duration_seconds", seconds)
+        }
+        q.upsertActivity(uid, "sha-$uid", "serial", startedAt, "running", null, null, seconds, 5000.0,
+            null, null, null, null, 5000.0 / seconds, null, null, null, null, null, summary.toString(), detail.toString())
+        q.insertAlias(uid)
     }
 
     @Test
@@ -49,6 +68,7 @@ class LocalRacePlansTest {
             "event_sport" to "running", "event_distance_meters" to 10_000.0))
         val goal = sources.goals().single()
         sources.createValues("plan", mapOf("goal_uid" to goal.uid, "vdot" to 50.0), mapOf("goal_uid" to goal.uid))
+        sources.library.run("r1", "2025-12-30T08:00:00Z")
         val today = com.tracks.core.fit.decode.CivilDate(2026, 1, 1)
         assertEquals(1.0, plans.strategy(goal).intensity)
         val asPredicted = plans.plan(goal, plans.strategy(goal), imperial = false, today = today)
@@ -63,6 +83,78 @@ class LocalRacePlansTest {
 
         plans.set(goal, "intensity", 1.4)
         assertEquals(1.1, plans.strategy(goal).intensity)
+    }
+
+    /**
+     * The race plan predicts race day, not today: today's fitness plus the
+     * plan's weeks still to come, and it says what today would be — the
+     * server's projection, on the phone (SportPlan.projection).
+     */
+    @Test
+    fun the_race_plan_predicts_race_day_and_says_what_today_would_be() = runBlocking {
+        val (sources, plans) = setup()
+        sources.createValues("goal", mapOf("goal_type" to "event", "event_date" to "2026-03-01",
+            "event_sport" to "running", "event_distance_meters" to 10_000.0))
+        val goal = sources.goals().single()
+        sources.createValues("plan", mapOf("goal_uid" to goal.uid, "vdot" to 49.8), mapOf("goal_uid" to goal.uid))
+        sources.library.run("r1", "2025-12-30T08:00:00Z")
+        val p = plans.plan(goal, plans.strategy(goal), imperial = false, today = CivilDate(2026, 1, 1))
+        val projection = p.projection!!
+        // A plan with no history yet is the plan as written: nine weeks to the
+        // race week from this Monday, +0.1 VDOT for each of the eight before it.
+        assertEquals(1.0, projection.adherence)
+        assertEquals(projection.vdotToday + 0.8, projection.vdotRaceDay, 1e-9)
+        assertTrue(projection.todaySeconds!! > p.seconds, "today is slower than race day")
+        assertEquals(p.seconds, plans.predictedSeconds(goal, CivilDate(2026, 1, 1))!!, p.seconds * 0.03,
+            "the goal card is the same race on a neutral day")
+    }
+
+    private suspend fun raceSession(sources: LocalSources, goal: com.tracks.core.api.TrainingGoal): Int {
+        sources.createValues("plan", mapOf("goal_uid" to goal.uid, "vdot" to 49.8), mapOf("goal_uid" to goal.uid))
+        val planUid = sources.replica.rows("plan").single().uid
+        sources.createValues("planned_workout", mapOf(
+            "plan_uid" to planUid, "scheduled_date" to goal.eventDate, "sport" to "running", "workout_type" to "race",
+            "title" to "Race: 10K", "steps" to emptyList<Any?>(), "is_complete" to false,
+        ))
+        return sources.idOf(sources.replica.rows("planned_workout").single().uid)
+    }
+
+    /**
+     * The calendar's race day is planned from the race plan, as the server's
+     * `_race_day_fit` plans it: the screen's laps, its pace-or-HR choice and
+     * fuelling — so the schedule bundle can send the race as one more
+     * calendar workout. The race used to reach the watch only as a file the
+     * server built, on a route of its own.
+     */
+    @Test
+    fun the_calendars_race_day_is_planned_from_the_race_plan() = runBlocking {
+        val (sources, plans) = setup()
+        sources.createValues("goal", mapOf("goal_type" to "event", "event_date" to "2026-01-03",
+            "event_sport" to "running", "event_distance_meters" to 10_000.0))
+        val goal = sources.goals().single()
+        val id = raceSession(sources, goal)
+        sources.library.run("r1", "2025-12-30T08:00:00Z")
+        val today = CivilDate(2026, 1, 1)
+        val raceDay = com.tracks.core.api.PlannedWorkout(id = id, scheduledDate = "2026-01-03", sport = "running",
+            workoutType = "race", title = "Race: 10K")
+        val races = plans.raceDayWorkouts(listOf(raceDay), today)
+        val shown = plans.plan(goal, plans.strategy(goal), imperial = false, today = today)
+        val r = races.getValue(id)
+        assertEquals(shown.laps.map { it.targetSecPerKm }, r.laps.map { it.targetSecPerKm })
+        assertEquals("running", r.family)
+        assertEquals(id, plans.raceWorkoutId(goal))
+    }
+
+    @Test
+    fun the_race_is_on_the_watch_when_its_race_day_session_is() = runBlocking {
+        val (sources, plans) = setup()
+        sources.createValues("goal", mapOf("goal_type" to "event", "event_date" to "2026-01-03",
+            "event_sport" to "running", "event_distance_meters" to 10_000.0))
+        val goal = sources.goals().single()
+        val id = raceSession(sources, goal)
+        assertEquals(null, plans.strategy(goal).watchUploadedAt)
+        sources.setValues("planned_workout", id, mapOf("watch_uploaded_at" to "2026-01-02T07:00:00Z"))
+        assertEquals("2026-01-02T07:00:00Z", plans.strategy(goal).watchUploadedAt)
     }
 
     /** A climbing course: 60 points ~45 m apart, rising 3 m each. */

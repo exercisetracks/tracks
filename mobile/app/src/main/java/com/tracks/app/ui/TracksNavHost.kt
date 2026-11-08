@@ -646,7 +646,9 @@ fun TracksNavHost(
                             RacePlansViewModel(container) as T
                     },
                 )
-                RacePlansScreen(vm = raceVm)
+                // Race day's Start opens the guided race: the race's own
+                // planned session, run with this plan's terrain legs and cues.
+                RacePlansScreen(vm = raceVm, onStartRace = { id -> navController.navigate("workout/$id") })
             }
             composable(Destination.Strength.route) {
                 val strengthVm: StrengthViewModel = viewModel(

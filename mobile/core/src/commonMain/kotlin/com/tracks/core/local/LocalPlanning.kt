@@ -143,6 +143,12 @@ class LocalPlanning(
                 runningFitness = runningFitness,
             )
         } else {
+            // How much of this plan the last weeks delivered, which scales the
+            // pace progression — so the race week paces the race the race plan
+            // predicts (RaceDay). A plan with no history yet is as written.
+            val adherence = LocalRaceDay(sources, library).let { rd ->
+                rd.planUid(goal)?.let { rd.adherence(it, today) }
+            } ?: 1.0
             PlanGenerator.generateTrainingPlan(
                 goal = planGoal,
                 history = history(today),
@@ -157,6 +163,7 @@ class LocalPlanning(
                 runningFitness = runningFitness,
                 overallCtl = ctlOverall,
                 sportCtl = ctlSport,
+                adherence = adherence,
             )
         }
         var workouts = generated.workouts.toMutableList()

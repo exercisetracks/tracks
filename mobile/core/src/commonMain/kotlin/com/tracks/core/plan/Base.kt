@@ -103,16 +103,23 @@ object PlanBase {
         return (-b + sqrt(b * b - 4 * a * c)) / (2 * a)
     }
 
+    /**
+     * `vdot_to_paces`' zones, as shares of VDOT on Daniels' curve: easy is
+     * the middle of Daniels' 62–70% easy band, threshold his 88% (the
+     * reasoning is in base.py).
+     */
     private val ZONES = listOf(
-        "recovery" to 0.62, "easy" to 0.70, "marathon" to 0.82,
-        "threshold" to 0.90, "interval" to 0.98, "repetition" to 1.05,
+        "recovery" to 0.62, "easy" to 0.66, "marathon" to 0.82,
+        "threshold" to 0.88, "interval" to 0.98, "repetition" to 1.05,
     )
 
     /**
      * Seconds per km for each zone, rounded to a tenth with Python's
-     * `round(x, 1)`. Not the FIT encoder's `vdotToPaces`, which rounds the
-     * scaled value half-even instead — the two agree nearly always, and
-     * "nearly" is not what a replica of a plan may be.
+     * `round(x, 1)`. The one table on the phone: the FIT encoder's
+     * `vdotToPaces` reads it too. It had a copy of its own that rounded the
+     * scaled value half-even instead — the two agreed nearly always, and
+     * "nearly" is not what a replica of a plan, or the watch's pace target,
+     * may be.
      */
     fun vdotToPaces(vdot: Double): Map<String, Double> =
         ZONES.associateTo(LinkedHashMap()) { (z, p) -> z to PyMath.round(1000 / velocityForPctVo2max(vdot, p) * 60, 1) }

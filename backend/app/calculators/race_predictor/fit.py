@@ -3,9 +3,16 @@
 """
 FIT race-workout generation (garmin-fit-sdk based).
 
-Encodes a race plan's per-km lap paces into a Garmin ``.fit`` workout file so a
+Encodes a race plan's laps into a Garmin ``.fit`` workout file so a
 Fenix-class watch lists, schedules, and runs it exactly like a Garmin-Connect-
-pushed workout. The file structure is:
+pushed workout. It is the race-day entry of the training calendar: the
+schedule bundle (training_plan/sync.py ``_build_fit_b64``, the phone's
+SchedulePushPlan) encodes the plan's ``race`` session with it, under that
+session's ``workout_id`` and ``time_created``, so the calendar binds the race
+day to it and it travels in the calendar's one NewFiles batch — the route
+verified on a watch. It used to be a file of its own, sent by a route of its
+own that only a visit to the race plan's page ever filled, while the
+calendar's race day went out as an empty workout. The file structure is:
 
   * one OPEN warm-up step,
   * one DISTANCE-based active step per lap (1 km / final partial km) carrying,
@@ -35,6 +42,7 @@ def generate_race_fit(
     max_hr: int | None = None,
     fuel_items: list[dict] | None = None,
     time_created_ms: int | None = None,
+    workout_id: int = 0,
 ) -> bytes:
     """
     Generate a FIT workout file for a race with per-lap targets.
@@ -63,8 +71,11 @@ def generate_race_fit(
     player. Verified by fixtures only, not yet on a watch.
 
     ``time_created_ms`` pins file_id.time_created; None means now, as before.
-    The phone's encoder (com.tracks.core.fit.RaceFit) passes it so its bytes
-    can be held to this function's.
+    ``workout_id`` is file_id.serial_number. With ``time_created_ms`` it is
+    the pair a schedule entry names, so a race-day calendar entry passes its
+    planned session's id and timestamp, as every calendar workout does. The
+    phone's encoder (com.tracks.core.fit.WorkoutFit.race) takes both so its
+    bytes can be held to this function's (spec/fixtures/fuel_plan.json).
 
     Returns raw FIT bytes ready to save and upload to Garmin.
     """
@@ -146,7 +157,7 @@ def generate_race_fit(
 
     # ── Assemble file via the shared SDK encoder helpers ─────────────────────
     enc = Encoder()
-    _write_file_id(enc, workout_id=0, time_created_ms=time_created_ms)
+    _write_file_id(enc, workout_id=workout_id, time_created_ms=time_created_ms)
     _write_file_creator(enc)
     _write_workout_mesg(enc, name=name, sport=sport_v, sub_sport=sub_sport_v,
                         num_valid_steps=len(steps))

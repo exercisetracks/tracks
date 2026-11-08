@@ -68,7 +68,8 @@ class RunningFitnessFixtureTest {
             val name = d(o["name"]) as String
             val efforts = arr(o["efforts"]).map {
                 @Suppress("UNCHECKED_CAST") val e = d(it) as Map<String, Any?>
-                RunningFitness.Effort(date(e["date"]), num(e["distance_m"])!!, num(e["speed_mps"])!!)
+                RunningFitness.Effort(date(e["date"]), num(e["distance_m"])!!, num(e["speed_mps"])!!,
+                    e["sport"] as String?)
             }
             val runs = arr(o["runs"]).map {
                 @Suppress("UNCHECKED_CAST") val r = d(it) as Map<String, Any?>

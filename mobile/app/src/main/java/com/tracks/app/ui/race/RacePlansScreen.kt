@@ -19,6 +19,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
@@ -71,9 +73,13 @@ import kotlinx.coroutines.withContext
  * One card per upcoming event goal; opening one shows its race-day strategy
  * and the pacing it implies. Strategy edits are synced `race_plan` fields;
  * the prediction and lap paces are worked out on the phone every time
- * ([LocalRacePlans]), with a GPX course read on the phone too. What it
- * cannot do yet — fetch race-day weather, build the race's watch file — is
- * said on the page rather than hidden.
+ * ([LocalRacePlans]), with a GPX course read on the phone too. The race's
+ * watch workout is built here as well: it is the training calendar's race
+ * day, sent with the calendar (com.tracks.core.sync.RaceDayWorkout). What it
+ * cannot do yet — fetch race-day weather — it leaves out rather than guess.
+ *
+ * On race day a Start race button opens the guided race: the plan's laps,
+ * paced and spoken as any guided run is (RaceGuide).
  */
 data class RacePlanCard(
     val goal: TrainingGoal,
@@ -83,6 +89,11 @@ data class RacePlanCard(
     val fuel: LocalRacePlans.Fuel? = null,
     /** Why there is no prediction: the threshold the sport needs (SportPlan.Missing). */
     val missing: String? = null,
+    /**
+     * Today is the race, and it is a run the phone can guide: the Start race
+     * button shows, on the card and in the plan, and on no other day.
+     */
+    val raceDay: Boolean = false,
 )
 
 data class RacePlansState(
@@ -133,7 +144,6 @@ class RacePlansViewModel(private val container: AppContainer) : ViewModel() {
                     .sortedBy { it.eventDate }
                     .map { g ->
                         val s = plans.strategy(g)
-                        val vdot = plans.vdot(g)
                         // Every sport, as the server plans it (SportPlan); a
                         // missing threshold says which one to set.
                         var missing: String? = null
@@ -143,7 +153,11 @@ class RacePlansViewModel(private val container: AppContainer) : ViewModel() {
                             missing = e.message
                             null
                         }
-                        RacePlanCard(g, s, vdot, pred, runCatching { plans.fuel(g, pred) }.getOrNull(), missing)
+                        RacePlanCard(
+                            g, s, pred?.projection?.vdotRaceDay, pred,
+                            runCatching { plans.fuel(g, pred) }.getOrNull(), missing,
+                            raceDay = isRaceDay(g, pred, today),
+                        )
                     }
             }.getOrDefault(emptyList())
             val tracks = runCatching {
@@ -156,6 +170,33 @@ class RacePlansViewModel(private val container: AppContainer) : ViewModel() {
     }
 
     fun open(goalId: Int?) = _state.update { it.copy(openGoalId = goalId) }
+
+    /**
+     * Race day's Start: the plan's own race session, so saving the run ticks
+     * the race off the plan; with none (no plan, or one built before races
+     * were scheduled), an unplanned race session on the event's day. Either
+     * way the guided screen swaps in this plan's terrain legs, pace targets
+     * and spoken cues (GuidedWorkoutViewModel.raceLegs, RaceGuide).
+     */
+    fun startRace(goal: TrainingGoal, onReady: (Int) -> Unit) {
+        viewModelScope.launch {
+            val id = runCatching { plans.raceWorkoutId(goal) }.getOrNull() ?: run {
+                val seconds = _state.value.cards.firstOrNull { it.goal.id == goal.id }?.prediction?.seconds
+                com.tracks.app.ui.workout.AdHocWorkouts.add(
+                    com.tracks.core.api.PlannedWorkout(
+                        id = 0,
+                        scheduledDate = goal.eventDate ?: LocalDate.now().toString(),
+                        sport = goal.eventSport ?: "running",
+                        workoutType = "race",
+                        title = goal.eventName ?: "Race",
+                        durationMinutes = seconds?.let { kotlin.math.round(it / 60).toInt() },
+                        distanceMeters = goal.eventDistanceMeters,
+                    ),
+                )
+            }
+            onReady(id)
+        }
+    }
 
     fun set(goal: TrainingGoal, field: String, value: Any?) {
         viewModelScope.launch {
@@ -222,7 +263,7 @@ class RacePlansViewModel(private val container: AppContainer) : ViewModel() {
 }
 
 @Composable
-fun RacePlansScreen(vm: RacePlansViewModel, modifier: Modifier = Modifier) {
+fun RacePlansScreen(vm: RacePlansViewModel, modifier: Modifier = Modifier, onStartRace: (Int) -> Unit = {}) {
     val state by vm.state.collectAsStateWithLifecycle()
     BackHandler(enabled = state.open != null) { vm.open(null) }
     val context = LocalContext.current
@@ -255,6 +296,7 @@ fun RacePlansScreen(vm: RacePlansViewModel, modifier: Modifier = Modifier) {
         onRemoveCourse = { goal, leg -> vm.removeCourse(goal, leg) },
         course = CourseActions(onUseTrack = vm::useTrack, onDrawOnMap = vm::drawOnMap),
         fuel = FuelActions(onAddProduct = vm::addProduct, onToggleProduct = vm::toggleProduct),
+        onStartRace = { goal -> vm.startRace(goal, onStartRace) },
     )
 }
 
@@ -268,6 +310,32 @@ internal val GPX_MIME_TYPES = arrayOf(
  * give is let through: the parse that follows refuses a file with no track.
  */
 internal fun isGpxName(name: String?): Boolean = name == null || name.lowercase().endsWith(".gpx")
+
+/**
+ * The line under the race-day prediction (SportPlan.projection): the same
+ * race at today's fitness and form, and what the race-day figure credits —
+ * the web's header and its tooltip say the same. Null when there is nothing
+ * to add: no projection, or race day already today.
+ */
+internal fun projectionLine(p: com.tracks.core.race.SportPlan.Projection?, raceTime: String): String? {
+    if (p == null) return null
+    val parts = mutableListOf<String>()
+    p.todayTime?.takeIf { it != raceTime }?.let { parts += "Today $it" }
+    val adherence = p.adherence
+    if (adherence != null) {
+        if (p.vdotRaceDay != p.vdotToday) parts += "VDOT ${p.vdotToday} → ${p.vdotRaceDay} by race day"
+        parts += "${kotlin.math.round(adherence * 100).toInt()}% of the plan done"
+    }
+    return parts.joinToString(" · ").ifEmpty { null }
+}
+
+/**
+ * Whether [goal] is raced today and the phone can guide it: a run (the
+ * guided race paces running legs) with a plan to pace. Hidden every other
+ * day — before, there is training to do; after, the race is history.
+ */
+internal fun isRaceDay(goal: TrainingGoal, prediction: LocalRacePlans.Prediction?, today: String): Boolean =
+    goal.eventDate?.take(10) == today && prediction?.family == "running" && prediction.laps.isNotEmpty()
 
 /** The course's other two sources: a saved track, or one drawn now. */
 data class CourseActions(
@@ -290,6 +358,7 @@ fun RacePlansContent(
     onRemoveCourse: (TrainingGoal, String?) -> Unit = { _, _ -> },
     course: CourseActions = CourseActions(),
     fuel: FuelActions = FuelActions(),
+    onStartRace: (TrainingGoal) -> Unit = {},
 ) {
     Column(
         modifier
@@ -317,8 +386,8 @@ fun RacePlansContent(
                 }
             }
             state.cards.forEachIndexed { i, c ->
-                if (i == 0) TourAnchor("raceplans-card") { GoalRow(c) { onOpen(c.goal.id) } }
-                else GoalRow(c) { onOpen(c.goal.id) }
+                if (i == 0) TourAnchor("raceplans-card") { GoalRow(c, { onOpen(c.goal.id) }, { onStartRace(c.goal) }) }
+                else GoalRow(c, { onOpen(c.goal.id) }, { onStartRace(c.goal) })
             }
         } else {
             Detail(
@@ -331,6 +400,7 @@ fun RacePlansContent(
                 onDrawOnMap = { course.onDrawOnMap(open.goal, it) },
                 onAddProduct = { fuel.onAddProduct(it, open.goal) },
                 onToggleProduct = { fuel.onToggleProduct(open.goal, it) },
+                onStartRace = { onStartRace(open.goal) },
             )
         }
     }
@@ -360,7 +430,7 @@ private fun Badge(text: String, color: Color) = Text(
 )
 
 @Composable
-private fun GoalRow(c: RacePlanCard, onClick: () -> Unit) {
+private fun GoalRow(c: RacePlanCard, onClick: () -> Unit, onStartRace: () -> Unit = {}) {
     Column(
         Modifier
             .fillMaxWidth()
@@ -386,7 +456,17 @@ private fun GoalRow(c: RacePlanCard, onClick: () -> Unit) {
         c.prediction?.let {
             Badge("Predicted ${RacePredictor.formatTime(it.seconds)}", Color(0xFF2563EB))
         }
+        if (c.raceDay) StartRaceButton(onStartRace)
     }
+}
+
+/** Race day's one action: run the race guided, with this plan's pacing and cues. */
+@Composable
+private fun StartRaceButton(onClick: () -> Unit) {
+    com.tracks.app.ui.components.PrimaryButton(
+        "Start race", onClick = onClick, modifier = Modifier.fillMaxWidth(),
+        icon = Icons.Filled.PlayArrow,
+    )
 }
 
 private val COURSE = listOf(
@@ -408,7 +488,9 @@ private fun Detail(
     onDrawOnMap: (String?) -> Unit = {},
     onAddProduct: (LocalRacePlans.ProductDraft) -> Unit = {},
     onToggleProduct: (String) -> Unit = {},
+    onStartRace: () -> Unit = {},
 ) {
+    if (c.raceDay) StartRaceButton(onStartRace)
     Card {
         Text(c.goal.eventName ?: "Unnamed event", style = MaterialTheme.typography.titleLarge)
         Text(
@@ -423,7 +505,15 @@ private fun Detail(
         c.prediction?.let {
             // No forecast on the phone: say nothing about one rather than
             // point at what is missing.
-            Text("Predicted ${RacePredictor.formatTime(it.seconds)}", style = Tokens.Stat.value)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Tokens.Space.s2)) {
+                Text("Predicted ${RacePredictor.formatTime(it.seconds)}", style = Tokens.Stat.value)
+                if (it.projection != null) com.tracks.app.ui.components.InfoTip(com.tracks.app.ui.components.Explain.RacePrediction)
+            }
+            // Race day is the headline; today's fitness beside it shows how
+            // much of it is still to be trained (SportPlan.projection).
+            projectionLine(it.projection, RacePredictor.formatTime(it.seconds))?.let { line ->
+                Text(line, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         } ?: Text(
             c.missing ?: "",
             style = MaterialTheme.typography.bodySmall,

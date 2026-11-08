@@ -46,6 +46,36 @@ class SportPlanFixtureTest {
     private fun lapKey(l: RaceLap) = listOf(l.lap, l.distanceM.toDouble(), l.targetSecPerKm, l.gradient,
         l.gradeMultiplier, l.cumulativeKm, l.hrCeiling, l.targetWatts, l.targetWattsPctFtp)
 
+    /**
+     * The race plan's race-day finish beside today's, and what made the
+     * difference: the phone's race plans screen shows the web's numbers.
+     */
+    @Test
+    fun the_race_day_projection_is_the_servers() {
+        val cases = fx["projections"]!!.jsonArray.map { it.jsonObject }
+        assert(cases.size >= 6) { "projection corpus shrank to ${cases.size}" }
+        for (c in cases) {
+            val m = c["metrics"]!!.jsonObject
+            val form = c["form"]!!.jsonObject
+            val got = SportPlan.projection(
+                c["family"].s()!!, m["vdot"].d(), m["vdot_today"].d(), m["adherence"].d(),
+                m["run_indices"]?.takeIf { it !is JsonNull }?.jsonArray?.let { it[0].d()!! to it[1].d()!! },
+                form["today"].d(), form["race_day"].d(), c["actual_sec"].d()!!, c["distance_m"].d()!!,
+            )
+            val e = c["expect"]
+            if (e == null || e is JsonNull) {
+                assertEquals(null, got, "$c")
+                continue
+            }
+            val o = e.jsonObject
+            assertEquals(
+                SportPlan.Projection(o["vdot_today"].d()!!, o["vdot_race_day"].d()!!, o["adherence"].d(),
+                    o["tsb_today"].d(), o["tsb_race_day"].d(), o["today_seconds"].d(), o["today_time"].s()),
+                got, "$c",
+            )
+        }
+    }
+
     @Test
     fun every_sport_is_planned_as_the_server_plans_it() {
         val cases = fx["cases"]!!.jsonArray.map { it.jsonObject }
@@ -58,7 +88,8 @@ class SportPlanFixtureTest {
             }
             val got = SportPlan.plan(
                 c["family"].s()!!,
-                SportPlan.Metrics(mt["vdot"].d(), mt["ftp"].d(), mt["css"].d(), mt["max_hr"].i(), mt["lthr"].i()),
+                SportPlan.Metrics(mt["vdot"].d(), mt["ftp"].d(), mt["css"].d(), mt["max_hr"].i(), mt["lthr"].i(),
+                    mt["run_indices"]?.takeIf { it !is JsonNull }?.jsonArray?.let { it[0].d()!! to it[1].d()!! }),
                 SportPlan.Inputs(
                     distanceM = c["distance_m"].d()!!, courseType = c["course_type"].s()!!,
                     splitSpread = c["split_spread"].d()!!, paceHr = c["pace_hr"]!!.jsonPrimitive.booleanOrNull!!,
@@ -70,6 +101,7 @@ class SportPlanFixtureTest {
                         .mapValues { (_, v) -> TriCourse.LegFile(segmentsOf(v.jsonObject["segments"]), pathOf(v.jsonObject["path"])) },
                     triTransitionsM = c["tri_transitions_m"]?.takeIf { it !is JsonNull }?.jsonArray?.map { it.d()!! },
                     intensity = SportPlan.intensityOf(c["intensity"].d()),
+                    freshness = c["freshness"].d() ?: 1.0,
                 ),
             )
             val e = c["expected"]!!.jsonObject

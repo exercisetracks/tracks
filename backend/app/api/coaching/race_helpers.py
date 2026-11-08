@@ -3,7 +3,7 @@
 """Race-plan support helpers.
 
 Athlete-metric resolution per sport family (running fitness / FTP / CSS / HR), standard
-triathlon leg splits, today's TSB (form) for the freshness adjustment, race-day
+triathlon leg splits, today's and race morning's TSB (form) for the freshness adjustment, race-day
 weather (Open-Meteo forecast or historical climate normals), and the RacePlan →
 API dict serializer. Consumed by the race-plan endpoint module.
 """
@@ -41,24 +41,38 @@ def race_intensity(rp) -> float:
     return 1.0 if k is None else min(RACE_INTENSITY_MAX, max(RACE_INTENSITY_MIN, float(k)))
 
 
-def _get_running_metrics(db: Session, user: User,
-                         us: UserSettings | None) -> tuple[float | None, tuple | None]:
-    """(VDOT, marathon training indices) for a running or triathlon goal.
+def _get_running_metrics(db: Session, user: User, us: UserSettings | None,
+                         goal: TrainingGoal) -> dict:
+    """Running fitness for a running or triathlon goal, today and on race day.
 
-    The VDOT is today's running-fitness estimate — the same one the training
-    plan is built from (training_plan.helpers._get_running_fitness) — and only
-    when it was measured: a race prediction from a profile guess would be a
-    number with nothing behind it, so the plan still asks for runs first. The
-    indices are the 8-week weekly distance and mean pace the marathon's volume
-    correction reads (race_predictor.running.training_indices).
+    ``vdot_today`` is today's running-fitness estimate — the same one the
+    training plan is built from (training_plan.helpers._get_running_fitness)
+    — and only when it was measured: a race prediction from a profile guess
+    would be a number with nothing behind it, so the plan still asks for runs
+    first. ``vdot`` is the race-day fitness every prediction reads: today's,
+    plus the plan's remaining gain at the rate the last weeks delivered
+    (``adherence``; calculators/plan/race_day.py). With no training plan for
+    the goal there is no calendar to project, and race day is today.
+    ``run_indices`` are the 8-week weekly distance and mean pace the
+    marathon's volume correction reads (race_predictor.running.training_indices).
     """
+    from app.calculators.plan.race_day import race_day_vdot
     from app.calculators.race_predictor import training_indices
-    from app.api.training_plan.helpers import _get_running_evidence, _get_running_fitness
+    from app.api.training_plan.helpers import (
+        _get_running_evidence, _get_running_fitness, _plan_adherence,
+    )
+    from app.models.training_plan import TrainingPlan
     today = user_today(db, user.id)
     evidence = _get_running_evidence(db, user.id, today)
     fitness = _get_running_fitness(db, user.id, us, today, evidence)
-    vdot = fitness["vdot"] if fitness["measured"] else None
-    return vdot, training_indices(evidence[1], today)
+    vdot_today = fitness["vdot"] if fitness["measured"] else None
+    plan = db.query(TrainingPlan).filter_by(goal_id=goal.id).first()
+    adherence = _plan_adherence(db, user.id, plan.id, today) if plan else None
+    vdot = vdot_today
+    if vdot_today is not None and adherence is not None and goal.event_date:
+        vdot = race_day_vdot(vdot_today, today, goal.event_date, adherence)
+    return {"vdot": vdot, "vdot_today": vdot_today, "adherence": adherence,
+            "run_indices": training_indices(evidence[1], today)}
 
 
 # Standard triathlon leg splits by total distance (metres)
@@ -80,15 +94,16 @@ def _get_athlete_metrics(goal: TrainingGoal, db: Session, user: User,
                          us: UserSettings | None) -> dict:
     """Return sport-specific athlete performance metrics for race prediction.
 
-    Keys: family, vdot (running VDOT), run_indices (8-week weekly km and mean
-    pace, for the marathon), ftp (cycling watts), css (swim sec/100m), max_hr,
+    Keys: family, vdot (race-day running VDOT), vdot_today, adherence (see
+    ``_get_running_metrics``), run_indices (8-week weekly km and mean pace,
+    for the marathon), ftp (cycling watts), css (swim sec/100m), max_hr,
     lthr — each None when not applicable / unavailable.
     """
     from app.calculators.training_plan import _sport_family
     family = _sport_family((goal.event_sport or "running").lower())
 
-    vdot, run_indices = (_get_running_metrics(db, user, us)
-                         if family in ("running", "triathlon") else (None, None))
+    running = (_get_running_metrics(db, user, us, goal) if family in ("running", "triathlon")
+               else {"vdot": None, "vdot_today": None, "adherence": None, "run_indices": None})
     ftp    = None
     css    = None
     max_hr = None
@@ -102,18 +117,35 @@ def _get_athlete_metrics(goal: TrainingGoal, db: Session, user: User,
         if family in ("swimming", "triathlon"):
             css = us.css_manual if us.css_mode == "manual" else us.css_auto
 
-    return {"family": family, "vdot": vdot, "run_indices": run_indices, "ftp": ftp,
-            "css": css, "max_hr": max_hr, "lthr": lthr}
+    return {"family": family, **running, "ftp": ftp, "css": css, "max_hr": max_hr, "lthr": lthr}
 
 
-def _get_tsb_today(db: Session, user: User) -> float | None:
-    """Return today's TSB (form) to reflect current freshness."""
+def _race_form(db: Session, user: User, goal: TrainingGoal, metrics: dict) -> dict:
+    """``{"today", "race_day"}`` TSB: today's form, and race morning's after the
+    plan's remaining sessions (calculators/plan/race_day.race_day_tsb). With
+    no plan to project through, race morning is read as today, as it always
+    was. Either is None with no load history."""
+    from app.api.training_plan.helpers import _planned_load
+    from app.calculators.plan.base import vdot_to_paces
+    from app.calculators.plan.race_day import race_day_tsb
+    from app.models.training_plan import TrainingPlan
+
     us = db.query(UserSettings).filter_by(user_id=user.id).first()
     tss_by_date = _build_tss_by_date(db, user.id, us)
-    if not tss_by_date:
-        return None
-    ctl, atl, _ = _ctl_atl_today(tss_by_date, user_today(db, user.id))
-    return round(ctl - atl, 1)
+    today = user_today(db, user.id)
+    tsb_today = None
+    if tss_by_date:
+        ctl, atl, _ = _ctl_atl_today(tss_by_date, today)
+        tsb_today = round(ctl - atl, 1)
+    plan = db.query(TrainingPlan).filter_by(goal_id=goal.id).first()
+    if plan is None or not goal.event_date or goal.event_date <= today:
+        return {"today": tsb_today, "race_day": tsb_today}
+    # The sessions' load at today's paces: the steps carry zones, and a
+    # distance-set interval lasts as long as its zone's pace says.
+    paces = vdot_to_paces(metrics["vdot_today"]) if metrics.get("vdot_today") else None
+    planned = _planned_load(db, plan.id, today, goal.event_date, paces)
+    return {"today": tsb_today,
+            "race_day": race_day_tsb(tss_by_date, planned, today, goal.event_date)}
 
 
 # ── Weather (Open-Meteo, free / keyless) ──────────────────────────────────────
@@ -277,10 +309,25 @@ def _triathlon_courses_out(rp: RacePlan, family: str, plan_distance: float | Non
     }
 
 
+def _race_session_uploaded_at(db: Session, goal: TrainingGoal):
+    """When the race reached the watch: its race-day calendar session's mark
+    (the race rides the calendar — race_plan.py ``_retire_race_file``), or
+    None when the goal's plan has no such session or it has not gone yet."""
+    from app.models.training_plan import PlannedWorkout, TrainingPlan
+    plan = db.query(TrainingPlan).filter_by(goal_id=goal.id).first()
+    if plan is None or not goal.event_date:
+        return None
+    session = (db.query(PlannedWorkout)
+               .filter_by(plan_id=plan.id, workout_type="race", scheduled_date=goal.event_date)
+               .first())
+    return session.watch_uploaded_at if session is not None else None
+
+
 def _race_plan_out(rp: RacePlan, us: UserSettings | None = None,
-                   goal: TrainingGoal | None = None) -> dict:
+                   goal: TrainingGoal | None = None, db: Session | None = None) -> dict:
     """Serialize a RacePlan into the API response dict, enriching with the
-    athlete's units/thresholds and the goal's discipline."""
+    athlete's units/thresholds and the goal's discipline. With ``db``, the
+    race's watch state is its calendar session's."""
     totals  = course_totals(rp.course_segments or [])
     units   = (us.units if us else None) or "metric"
     max_hr  = None
@@ -313,12 +360,16 @@ def _race_plan_out(rp: RacePlan, us: UserSettings | None = None,
         "course_path":       rp.course_path,
         "predicted_seconds": rp.predicted_seconds,
         "predicted_time":    format_time(rp.predicted_seconds) if rp.predicted_seconds else None,
-        # The blob carries the watch file's fingerprint too (race_plan.py);
-        # the page reads it as weather, so that stays server-side.
-        "weather_snapshot":  ({k: v for k, v in rp.weather_snapshot.items() if k != "fit_sig"} or None)
+        # The blob carries the watch file's fingerprint and the race-day
+        # projection too (race_plan.py); the page reads it as weather, so
+        # those are taken out of it — the projection into a field of its own.
+        "weather_snapshot":  ({k: v for k, v in rp.weather_snapshot.items()
+                               if k not in ("fit_sig", "projection")} or None)
                              if rp.weather_snapshot else None,
+        "projection":        (rp.weather_snapshot or {}).get("projection"),
         "lap_paces":         rp.lap_paces,
-        "watch_uploaded_at": rp.watch_uploaded_at,
+        "watch_uploaded_at": ((_race_session_uploaded_at(db, goal) if db is not None and goal is not None else None)
+                              or rp.watch_uploaded_at),
         "generated_at":      rp.generated_at,
         "units":             units,
         "max_hr":            max_hr,

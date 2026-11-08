@@ -16,7 +16,7 @@ import kotlinx.serialization.json.doubleOrNull
  * What today's running fitness is read from, gathered from this phone's own
  * library the way the server's `_get_running_evidence` gathers it from
  * Postgres (api/training_plan/helpers.py): every pace best of the last year
- * with its run's date, the last year's runs, and the median resting HR of the
+ * with its run's date and sport, the last year's runs, and the median resting HR of the
  * last 30 days. The estimate itself is [RunningFitness]; the plan and the race
  * predictions both read it from here, so the phone has one running fitness,
  * as the server does.
@@ -54,7 +54,7 @@ class LocalRunningEvidence(private val sources: LocalSources, private val librar
             for ((k, v) in curve) {
                 val dist = k.toDoubleOrNull() ?: continue
                 val speed = (v as? JsonPrimitive)?.doubleOrNull ?: continue
-                bests += RunningFitness.Effort(a.date, dist, speed)
+                bests += RunningFitness.Effort(a.date, dist, speed, a.sport)
             }
         }
         if (!efforts) return Evidence(bests, runs, null)

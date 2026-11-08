@@ -38,6 +38,37 @@ export function fmtGradient(g) {
   return g >= 0 ? `+${pct}%` : `${pct}%`;
 }
 
+// ── What the race-day prediction assumes ─────────────────────────────────────
+
+// The race plan predicts race day, not today (backend calculators/plan/
+// race_day.py): today's running fitness plus the gain the rest of the plan
+// should bring, at the rate the last four weeks of it were done, and the form
+// its taper should leave. This says so in plain words, from the plan's
+// `projection`; null when there is nothing to explain.
+export function projectionNote(p) {
+  if (!p) return null;
+  const sign = (n) => (n > 0 ? `+${n}` : `${n}`);
+  // One decimal, as the phone prints them (a JSON 45.0 arrives here as 45).
+  const v = (n) => Number(n).toFixed(1);
+  const parts = [];
+  if (p.adherence == null) {
+    parts.push(`No training plan for this race, so it is predicted at today's running fitness (VDOT ${v(p.vdot_today)}).`);
+  } else {
+    const done = Math.round(p.adherence * 100);
+    parts.push(
+      `Predicted for race day: today's running fitness (VDOT ${v(p.vdot_today)}) plus what the rest of the plan ` +
+      `should add — at the ${done}% of the plan the last four weeks delivered — VDOT ${v(p.vdot_race_day)} on race day.`,
+    );
+  }
+  if (p.tsb_race_day != null) {
+    parts.push(`Form on race morning ${sign(p.tsb_race_day)}${p.tsb_today != null ? ` (today ${sign(p.tsb_today)})` : ""}.`);
+  }
+  if (p.adherence != null) {
+    parts.push("Every run imported and every planned day missed moves it; on race day it is your measured fitness.");
+  }
+  return parts.join(" ");
+}
+
 // ── Weather time-adjustment formatting ────────────────────────────────────────
 
 // Render a +/- seconds adjustment as "+12s" or "−1:05"; null when negligible.

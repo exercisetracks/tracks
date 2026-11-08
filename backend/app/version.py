@@ -56,5 +56,12 @@ SERVER_VERSION = "1.9.2"
 #
 # Nor for 1.9.2's race-plan intensity: one more additive race_plan field,
 # refused by an older server as unknown, and a response field the web reads.
+#
+# Nor for the race day on the watch: /device-sync/upload-list stops offering
+# `race_plan` files, because the race now rides the training calendar as its
+# race-day workout, which every client encodes itself. An older phone simply
+# finds no race file to push (it never had one without a server); the cable
+# and the browser read the race day from the calendar as before. The race
+# plan's new `projection` response field is read by the web alone.
 API_VERSION = 2
 MIN_CLIENT_API_VERSION = 2

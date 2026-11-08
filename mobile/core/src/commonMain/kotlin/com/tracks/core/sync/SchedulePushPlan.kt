@@ -78,6 +78,23 @@ data class CoachingContext(
     val planEnd: String? = null,
 )
 
+/**
+ * The race behind a calendar's race day, for [buildScheduleBundle] to encode
+ * that entry from ([WorkoutFit.race]) instead of the plan's step-less
+ * placeholder — the server's `_race_day_fit`. Built by
+ * com.tracks.core.local.LocalRacePlans.raceDayWorkouts from the race plan
+ * as the Race Plans screen works it out.
+ */
+class RaceDayWorkout(
+    val laps: List<WorkoutFit.RaceLap>,
+    /** The race's sport family (PlanBase.sportFamily): a ride is held to HR, never pace. */
+    val family: String,
+    /** The race plan's targets are pace + HR (`pace_hr_mode == "pace_hr"`). */
+    val hrTargets: Boolean,
+    val maxHr: Int?,
+    val fuel: List<WorkoutFit.RaceFuel>,
+)
+
 /** Where a workout file lands on the watch. See `AGENTS.md` on the batch rule. */
 const val NEW_FILES_FOLDER = "GARMIN/NewFiles"
 
@@ -155,6 +172,12 @@ fun workoutFilename(workout: PlannedWorkout): String =
  * A workout whose steps cannot be encoded is left out of *both* halves rather
  * than only the file half: a schedule naming a file that is never sent is a
  * calendar with a hole in it, and the bundle stops being self-consistent.
+ *
+ * [races] is the race behind each race-day entry, by workout id. A race day
+ * with one is the race — its laps, targets and fuel — under that entry's id
+ * and timestamp, so it travels and binds exactly as every other calendar
+ * workout does; one without (a swim, a triathlon, no fitness yet) keeps the
+ * plan's placeholder.
  */
 fun buildScheduleBundle(
     workouts: List<PlannedWorkout>,
@@ -163,6 +186,7 @@ fun buildScheduleBundle(
     fitTimeCreated: (Int) -> Long,
     nowMillis: Long,
     daysAhead: Int = SCHEDULE_DAYS_AHEAD,
+    races: Map<Int, RaceDayWorkout> = emptyMap(),
 ): WatchPushBundle? {
     val scheduled = workoutsForSchedule(workouts, today, daysAhead)
     if (scheduled.isEmpty()) return null
@@ -172,7 +196,7 @@ fun buildScheduleBundle(
 
     for (workout in scheduled) {
         val timeCreated = fitTimeCreated(workout.id)
-        val bytes = runCatching { encodeWorkout(workout, context, timeCreated) }.getOrNull()
+        val bytes = runCatching { encodeWorkout(workout, context, timeCreated, races[workout.id]) }.getOrNull()
             ?: continue
         files += WatchPushFile(
             type = "workout",
@@ -223,8 +247,26 @@ private fun encodeWorkout(
     workout: PlannedWorkout,
     context: CoachingContext,
     timeCreatedMillis: Long,
+    race: RaceDayWorkout? = null,
 ): ByteArray {
     val name = workout.title.ifBlank { "Workout" }
+    if (workout.workoutType == "race" && race != null && race.laps.isNotEmpty()) {
+        // The race plan's laps, coached as `_race_day_fit` coaches them: the
+        // watch-coaching switch first, as for every calendar workout, then
+        // the plan's own pace-or-HR choice.
+        val coaching = context.paceCoaching
+        return WorkoutFit.race(
+            name = name,
+            sport = workout.sport.ifBlank { "running" },
+            laps = race.laps,
+            timeCreatedMillis = timeCreatedMillis,
+            paceCoaching = coaching && race.family != "cycling",
+            hrCoaching = coaching && race.hrTargets,
+            maxHr = race.maxHr,
+            fuel = race.fuel,
+            workoutId = watchSerial(workout.id),
+        )
+    }
     if (workout.workoutType in STRENGTH_ROUTED) {
         return WorkoutFit.strength(
             name = name,

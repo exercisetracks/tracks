@@ -25,19 +25,21 @@ import kotlinx.serialization.json.doubleOrNull
  * pacing it implies.
  *
  * The strategy (terrain, split, pace-or-HR targets) is a `race_plan` row and
- * syncs. The prediction and the per-lap paces are derived from it and from
- * the training plan's VDOT with the ported race predictor, every time, as
- * everything derived is — so they need no server and cannot disagree between
- * devices about inputs they share.
+ * syncs. The prediction and the per-lap paces are derived from it with the
+ * ported race predictor, every time, as everything derived is — so they need
+ * no server and cannot disagree between devices about inputs they share.
  *
- * ## What the phone's prediction leaves out, and says so
+ * The fitness they are derived from is race day's, as on the server
+ * ([LocalRaceDay], com.tracks.core.plan.RaceDay): today's running fitness
+ * plus the plan's gain still to come at the rate it has been done, and race
+ * morning's form after the plan's remaining sessions. It used to be the VDOT
+ * the plan was last built at, with no freshness, where the server read
+ * today's estimate and today's form — two predictions of one race.
  *
- * The server's `POST /race-plan/generate` also scales by race-day freshness
- * (from the fitness model) and by a weather forecast it fetches; the phone
- * predicts on a flat, neutral day. A GPX course is parsed on the server only
- * (the phone has no GPX parser yet), so a course arrives here as the synced
- * `course_segments` a server wrote, or not at all. Running is covered; the
- * cycling, swimming and triathlon breakdowns stay on the web.
+ * ## What the phone's prediction leaves out
+ *
+ * The server's `POST /race-plan/generate` also scales by a weather forecast
+ * it fetches; the phone predicts a still, mild day.
  */
 class LocalRacePlans(private val sources: LocalSources) {
 
@@ -97,10 +99,16 @@ class LocalRacePlans(private val sources: LocalSources) {
         val climbTargetWPerKg: Double? = null,
         /** The sport family it was planned as (PlanBase.sportFamily). */
         val family: String = "running",
+        /** What the race-day finish is made of, and today's beside it (SportPlan.projection). */
+        val projection: SportPlan.Projection? = null,
     )
 
     suspend fun strategy(goal: TrainingGoal): Strategy {
-        val row = row(goal) ?: return Strategy(uid = null)
+        // When the race reached the watch is its race-day session's mark: the
+        // race rides the calendar (RaceDayWorkout). The plan's own field is
+        // from when it was a file of its own, read only where no session is.
+        val sessionUploadedAt = raceWorkoutId(goal)?.let { sources.row("planned_workout", it)?.str("watch_uploaded_at") }
+        val row = row(goal) ?: return Strategy(uid = null, watchUploadedAt = sessionUploadedAt)
         return Strategy(
             uid = row.uid,
             courseType = row.str("course_type") ?: "flat",
@@ -108,7 +116,7 @@ class LocalRacePlans(private val sources: LocalSources) {
             intensity = SportPlan.intensityOf((row.fields["intensity"] as? JsonPrimitive)?.doubleOrNull),
             paceHrMode = row.str("pace_hr_mode") ?: "pace",
             hasCourse = row.fields["course_segments"].let { it != null && it.toString() != "null" && it.toString() != "[]" },
-            watchUploadedAt = row.str("watch_uploaded_at"),
+            watchUploadedAt = sessionUploadedAt ?: row.str("watch_uploaded_at"),
             segments = (row.fields["course_segments"] as? JsonArray).orEmpty().mapNotNull { e ->
                 val o = e as? JsonObject ?: return@mapNotNull null
                 Segment(
@@ -350,10 +358,20 @@ class LocalRacePlans(private val sources: LocalSources) {
         }
     }
 
-    /** The VDOT the goal's training plan was built at — the running model's one input. */
-    suspend fun vdot(goal: TrainingGoal): Double? = sources.replica.rows("plan")
-        .firstOrNull { it.str("goal_uid") == goal.uid }
-        ?.let { (it.fields["vdot"] as? JsonPrimitive)?.doubleOrNull }
+    /**
+     * The goal card's predicted finish, the server's `get_predicted_time`:
+     * race day's VDOT ([LocalRaceDay]) on a neutral day — no weather, course
+     * or freshness — at the race's intensity. Running only, as the card is.
+     */
+    suspend fun predictedSeconds(goal: TrainingGoal, today: CivilDate): Double? {
+        if (goal.goalType != "event") return null
+        val distance = goal.eventDistanceMeters?.takeIf { it > 0 } ?: return null
+        if (PlanBase.sportFamily((goal.eventSport ?: "running").lowercase()) != "running") return null
+        val fitness = LocalRaceDay(sources).fitness(goal, today)
+        val vdot = fitness.vdot?.takeIf { it != 0.0 } ?: return null
+        return RacePredictor.predictRunningRaceSec(vdot, distance, fitness.runIndices) /
+            SportPlan.intensityOf(strategy(goal).intensity)
+    }
 
     /**
      * The marathon's training indices — 8-week weekly distance and mean pace
@@ -379,10 +397,14 @@ class LocalRacePlans(private val sources: LocalSources) {
             RacePredictor.courseTotals(s.segments).distanceM.toDouble() else goalM
         val t = sources.importThresholds()
         val css = if (sources.setting("css_mode") == "manual") sources.setting("css_manual")?.toDoubleOrNull() else null
-        val indices = if (family == "running") runCatching { trainingIndices(today) }.getOrNull() else null
+        // Race day's running fitness and race morning's form, as the server's
+        // `_get_athlete_metrics` and `_race_form` read them.
+        val raceDay = LocalRaceDay(sources)
+        val fitness = if (family == "running" || family == "triathlon") raceDay.fitness(goal, today) else null
+        val form = raceDay.form(goal, today, fitness?.vdotToday)
         val r = SportPlan.plan(
             family,
-            SportPlan.Metrics(vdot(goal), t.ftp, css, t.maxHr?.toInt(), t.thresholdHr?.toInt(), indices),
+            SportPlan.Metrics(fitness?.vdot, t.ftp, css, t.maxHr?.toInt(), t.thresholdHr?.toInt(), fitness?.runIndices),
             SportPlan.Inputs(
                 distanceM = distance, courseType = s.courseType, splitSpread = s.splitSpread,
                 paceHr = s.paceHrMode == "pace_hr", imperial = imperial, segments = s.segments,
@@ -391,27 +413,99 @@ class LocalRacePlans(private val sources: LocalSources) {
                 path = s.path.zip(s.elevations) { (lat, lon), ele -> TriCourse.PathPoint(lat, lon, ele) },
                 triLegFiles = s.triLegFiles, triTransitionsM = s.triTransitionsM,
                 intensity = s.intensity,
+                freshness = com.tracks.core.plan.RaceDay.freshnessFactor(form.raceDay),
             ),
         )
-        return Prediction(r.seconds, r.laps, r.legs, r.targetHrCeiling, r.climbTargetWPerKg, family)
+        val projection = SportPlan.projection(
+            family, fitness?.vdot, fitness?.vdotToday, fitness?.adherence, fitness?.runIndices,
+            form.today, form.raceDay, r.seconds, distance,
+        )
+        return Prediction(r.seconds, r.laps, r.legs, r.targetHrCeiling, r.climbTargetWPerKg, family, projection)
     }
 
     /** Max HR for the per-lap ceilings: manual, else auto from history, as race_helpers.py reads it. */
     suspend fun maxHr(): Int? = sources.importThresholds().maxHr?.toInt()
 
     /**
-     * A running event's plan as the Race Plans screen works it out, with the
-     * course path it was built from — what the guided race on race day runs
-     * (RaceGuide). Null for any goal the screen would show no pacing for.
+     * A running event's plan as the Race Plans screen works it out — [plan]
+     * itself, so what the guided race on race day paces (RaceGuide) is what
+     * the screen showed, to the second — with the course path it was built
+     * from. Null for any goal the screen would show no running pacing for.
      */
     suspend fun runningPlan(goal: TrainingGoal, imperial: Boolean, today: CivilDate): Pair<Prediction, Strategy>? {
-        if ((goal.eventSport ?: "running") != "running") return null
-        val dist = goal.eventDistanceMeters?.takeIf { it > 0 } ?: return null
-        val vdot = vdot(goal) ?: return null
+        if (PlanBase.sportFamily((goal.eventSport ?: "running").lowercase()) != "running") return null
+        if ((goal.eventDistanceMeters ?: 0.0) <= 0.0) return null
         val s = strategy(goal)
-        val pred = running(vdot, dist, s.courseType, s.splitSpread, imperial, null, s.segments, s.useGpxDistance,
-            runCatching { trainingIndices(today) }.getOrNull(), s.intensity)
+        val pred = try {
+            plan(goal, s, imperial, today)
+        } catch (_: SportPlan.Missing) {
+            return null
+        }
         return pred to s
+    }
+
+    /**
+     * The race behind each race-day entry in [workouts], by workout id, for
+     * the schedule bundle to encode it as the race
+     * (com.tracks.core.sync.buildScheduleBundle) — the server's
+     * `_race_day_fit`: the race plan as the Race Plans screen works it out,
+     * with its fuelling reminders, its pace-or-HR choice and max HR. A race
+     * this cannot plan (a swim or triathlon, which are paced by leg; no
+     * fitness yet) is left out, and keeps the calendar's placeholder.
+     */
+    suspend fun raceDayWorkouts(
+        workouts: List<com.tracks.core.api.PlannedWorkout>,
+        today: CivilDate,
+    ): Map<Int, com.tracks.core.sync.RaceDayWorkout> {
+        val races = workouts.filter { it.workoutType == "race" }
+        if (races.isEmpty()) return emptyMap()
+        val goals = sources.goals()
+        val plans = sources.replica.rows("plan").filter { !it.isTombstone }
+        val imperial = sources.setting("units") == "imperial"
+        val maxHr = maxHr()
+        val out = LinkedHashMap<Int, com.tracks.core.sync.RaceDayWorkout>()
+        for (w in races) {
+            val planUid = sources.row("planned_workout", w.id)?.str("plan_uid") ?: continue
+            val goalUid = plans.firstOrNull { it.uid == planUid }?.str("goal_uid") ?: continue
+            val goal = goals.firstOrNull { it.uid == goalUid } ?: continue
+            val family = PlanBase.sportFamily((goal.eventSport ?: "running").lowercase())
+            if (family == "swimming" || family == "triathlon") continue
+            val s = strategy(goal)
+            val pred = try {
+                plan(goal, s, imperial, today)
+            } catch (_: SportPlan.Missing) {
+                continue
+            }
+            if (pred.laps.isEmpty()) continue
+            val fuel = runCatching { fuel(goal, pred) }.getOrNull()?.timeline?.items.orEmpty()
+            out[w.id] = com.tracks.core.sync.RaceDayWorkout(
+                laps = pred.laps.map {
+                    com.tracks.core.fit.WorkoutFit.RaceLap(it.lap, it.distanceM.toDouble(), it.targetSecPerKm, it.hrCeiling, it.label)
+                },
+                family = family,
+                hrTargets = s.paceHrMode == "pace_hr",
+                maxHr = maxHr,
+                fuel = fuel.map { com.tracks.core.fit.WorkoutFit.RaceFuel(it.distanceM, it.name, it.carbsG) },
+            )
+        }
+        return out
+    }
+
+    /**
+     * The race-day planned workout for [goal] — the plan's `race` session on
+     * the event's day — by its local id, for the guided race to open; null
+     * when the plan has none (no plan, or one built before races were
+     * scheduled). The Race Plans screen's Start button opens it, so the run
+     * ticks the race off the plan when it is saved.
+     */
+    suspend fun raceWorkoutId(goal: TrainingGoal): Int? {
+        val planUid = LocalRaceDay(sources).planUid(goal) ?: return null
+        val day = goal.eventDate?.take(10) ?: return null
+        val row = sources.replica.rows("planned_workout").firstOrNull {
+            !it.isTombstone && it.str("plan_uid") == planUid && it.str("workout_type") == "race" &&
+                it.str("scheduled_date")?.take(10) == day
+        } ?: return null
+        return sources.idOf(row.uid)
     }
 
     private suspend fun row(goal: TrainingGoal): SyncedRow? =

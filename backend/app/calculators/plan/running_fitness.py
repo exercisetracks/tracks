@@ -23,7 +23,10 @@ against a primary paper are marked there and here as unverified.
    six weeks (a training block — Daniels re-tests VDOT on about that cycle) and
    then ages along the detraining curve below; one older than a year is
    ignored, since long-term detraining (Mujika & Padilla 2000, Part II) puts
-   the loss anywhere from 6–20% to all of it.
+   the loss anywhere from 6–20% to all of it. A treadmill or virtual run is no
+   floor: its speed is a wrist, footpod or belt estimate, which the HR method
+   already refuses for the same reason, and one over-read treadmill session
+   would otherwise set every pace for six weeks.
 
 2. Heart rate on ordinary runs — the central estimate. Percent heart-rate
    reserve equals percent VO2 reserve (Swain & Leutholtz 1997; Swain et al.
@@ -38,10 +41,23 @@ against a primary paper are marked there and here as unverified.
 
    The watch's own VO2max (Firstbeat, read from the FIT file — the number on
    the dashboard's VO2max chart) is used instead only when the HR estimate
-   cannot be made (no resting HR, too few steady runs). It is taken as
-   VDOT-equivalent — unverified: Firstbeat estimates lab VO2max, and VDOT
-   runs below lab VO2max in recreational runners (Scudamore et al. 2018), so
-   it errs fast, which is why it is the fallback and not the default.
+   cannot be made (no resting HR, too few steady runs). Firstbeat is
+   calibrated to lab VO2max, and VDOT runs below lab VO2max — further in
+   recreational runners (Scudamore et al. 2018) — because VDOT folds in
+   running economy and Daniels' oxygen-cost curve is close to elite economy
+   (~190 ml/kg/km at 16 km/h, where recreational runners typically use
+   200–220). So the watch's number is taken at WATCH_VDOT (0.90) of itself —
+   a heuristic from that economy gap, unverified, chosen at its middle. It
+   was taken whole, which paced a recreational runner about 10% fast.
+
+   With neither — a phone with no heart-rate strap — the training itself is
+   the estimate: Tanda's (2011) marathon model from the last eight weeks'
+   weekly distance and mean pace (race_predictor/running.py), as the VDOT of
+   that marathon. It needs runs in six of the eight weeks. It is a marathon's
+   VDOT, which for a low-mileage runner sits below their 5 K VDOT (Vickers &
+   Vertosick 2016), so it errs slow — and it is far closer than the effort
+   floor alone, which for someone who only runs easy is their easy pace read
+   as a race.
 
    Whichever central estimate is used, the fitness is the greater of it and
    the effort floor: an old race cannot pull a current estimate down, and a
@@ -128,6 +144,14 @@ HR_MAX_CLIMB_M_PER_KM = 15.0
 # Treadmill speed comes from a wrist or footpod estimate, and trail terrain
 # costs oxygen the speed does not show; both would mislead the calibration.
 _HR_RUN_SPORTS = {"running", "road_running"}
+# Runs whose speed is estimated rather than measured: no effort floor from
+# these (module doc). Trail runs stay — GPS-measured and slow, which a floor
+# can only under-read.
+_ESTIMATED_SPEED_SPORTS = {"treadmill_running", "virtual_running"}
+
+# What a watch's VO2max is worth as VDOT: lab VO2max less the recreational
+# runner's economy gap to Daniels' curve (module doc) — a heuristic, unverified.
+WATCH_VDOT = 0.90
 
 # Any VDOT outside this is a sensor or data fault, not a person.
 PLAUSIBLE = (15.0, 90.0)
@@ -226,7 +250,8 @@ def _hr_estimate(runs: list[dict], today: date, max_hr: float | None,
 
 
 def _watch_estimate(runs: list[dict], today: date) -> float | None:
-    """The watch's most recent running VO2max inside the window."""
+    """The watch's most recent running VO2max inside the window, as VDOT
+    (WATCH_VDOT of it)."""
     latest = None
     for r in runs:
         v = r.get("vo2max")
@@ -236,7 +261,22 @@ def _watch_estimate(runs: list[dict], today: date) -> float | None:
             continue
         if latest is None or r["date"] > latest[0]:
             latest = (r["date"], float(v))
-    return latest[1] if latest else None
+    return latest[1] * WATCH_VDOT if latest else None
+
+
+def _training_estimate(runs: list[dict], today: date) -> float | None:
+    """The VDOT of the marathon Tanda (2011) predicts from the last eight
+    weeks' training — the estimate with no heart rate at all (module doc)."""
+    # Imported here: race_predictor reaches this package through
+    # training_plan, so a module-level import would be circular.
+    from app.calculators.race_predictor.running import (
+        MARATHON_M, tanda_marathon_sec, training_indices,
+    )
+    indices = training_indices(runs, today)
+    if indices is None:
+        return None
+    v = calculate_vdot(MARATHON_M, tanda_marathon_sec(indices[0], indices[1]))
+    return v if PLAUSIBLE[0] <= v <= PLAUSIBLE[1] else None
 
 
 def _effort_estimate(efforts: list[dict], today: date, layoff_days: int) -> float | None:
@@ -244,6 +284,8 @@ def _effort_estimate(efforts: list[dict], today: date, layoff_days: int) -> floa
     for e in efforts:
         age = (today - e["date"]).days
         if e["distance_m"] < EFFORT_MIN_DISTANCE_M or e["speed_mps"] <= 0 or age > EFFORT_MAX_AGE_DAYS:
+            continue
+        if e.get("sport") in _ESTIMATED_SPEED_SPORTS:
             continue
         v = calculate_vdot(e["distance_m"], e["distance_m"] / e["speed_mps"])
         if not PLAUSIBLE[0] <= v <= PLAUSIBLE[1]:
@@ -293,16 +335,18 @@ def estimate_running_fitness(
 ) -> dict:
     """Today's running fitness.
 
-    ``efforts``: pace bests, ``{"date", "distance_m", "speed_mps"}``.
+    ``efforts``: pace bests, ``{"date", "distance_m", "speed_mps", "sport"}``
+    (``sport`` optional; a treadmill or virtual run's is not a floor).
     ``runs``: running activities, ``{"date", "sport", "distance_m",
     "duration_s", "avg_speed", "avg_hr", "ascent_m", "vo2max"}`` (any may be
     None but the date and sport).
 
     Returns ``{"vdot", "source", "measured", "effort_vdot"}``, VDOT to one
-    decimal. ``source`` is ``effort``, ``heart_rate``, ``watch`` or
-    ``profile``; ``measured`` is False only for ``profile``. ``effort_vdot``
-    is the effort floor alone — what the runner has actually run, which is
-    what the run/walk capacity model reads (see plan.py) — or None.
+    decimal. ``source`` is ``effort``, ``heart_rate``, ``watch``,
+    ``training`` or ``profile``; ``measured`` is False only for ``profile``.
+    ``effort_vdot`` is the effort floor alone — what the runner has actually
+    run, which is what the run/walk capacity model reads (see plan.py) — or
+    None.
     """
     dates = [r["date"] for r in runs] + [e["date"] for e in efforts]
     last = max((d for d in dates if d <= today), default=None)
@@ -318,6 +362,8 @@ def estimate_running_fitness(
     central, source = _hr_estimate(past_runs, today, max_hr, resting_hr), "heart_rate"
     if central is None:
         central, source = _watch_estimate(past_runs, today), "watch"
+    if central is None:
+        central, source = _training_estimate(past_runs, today), "training"
     if central is not None:
         central *= detraining_factor(layoff)
 

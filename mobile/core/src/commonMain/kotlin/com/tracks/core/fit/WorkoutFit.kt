@@ -946,6 +946,8 @@ object WorkoutFit {
         val distanceM: Double,
         val targetSecPerKm: Double,
         val hrCeiling: Int? = null,
+        /** A terrain split's name ("Climb 6%"); null for a kilometre, which is "Km n". */
+        val label: String? = null,
     )
 
     /** A fuelling reminder: where, and what (null name = just grams). */
@@ -956,6 +958,12 @@ object WorkoutFit {
      * cool-down — a byte-for-byte port of
      * backend/app/calculators/race_predictor/fit.py `generate_race_fit`,
      * held to it by spec/fixtures/fuel_plan.json.
+     *
+     * It is the training calendar's race day (SchedulePushPlan): encoded under
+     * the race session's [workoutId] and [timeCreatedMillis], the pair its
+     * schedule entry names, and sent in the calendar's batch. A terrain
+     * split's name is the step's ("Climb 6%"), so the watch says when the
+     * hill comes; it was always "Km n" here, where the server had moved on.
      *
      * Fuelling reminders ride in the lap step's name ("Km 5 · Gel"), shown as
      * that step begins; see the Python for why a name and not step notes.
@@ -970,6 +978,7 @@ object WorkoutFit {
         hrCoaching: Boolean = false,
         maxHr: Int? = null,
         fuel: List<RaceFuel> = emptyList(),
+        workoutId: Int = 0,
     ): ByteArray {
         val margin = 15
         val routing = ENDURANCE_ROUTING[sport.ifBlank { "running" }.lowercase()] ?: DEFAULT_ENDURANCE_ROUTING
@@ -981,7 +990,8 @@ object WorkoutFit {
             val end = start + lap.distanceM
             val names = fuel.filter { it.distanceM != null && start <= it.distanceM && it.distanceM < end }
                 .map { it.name ?: "${floor(it.carbsG + 0.5).toLong()}g carbs" }
-            val label = "Km ${lap.lap}" + if (names.isEmpty()) "" else " · " + names.joinToString(", ")
+            val label = (lap.label?.ifEmpty { null } ?: "Km ${lap.lap}") +
+                if (names.isEmpty()) "" else " · " + names.joinToString(", ")
             start = end
             var targets = NO_TARGETS
             if (hrCoaching && maxHr != null && maxHr != 0) {
@@ -1001,7 +1011,7 @@ object WorkoutFit {
         steps += buildStep(steps.size, "Cool Down", INTENSITY_COOLDOWN, DURATION_OPEN, 0)
 
         val writer = FitWriter(PROTOCOL_VERSION, PROFILE_VERSION, bigEndian = false)
-        writeFileId(writer, 0, timeCreatedMillis)
+        writeFileId(writer, workoutId, timeCreatedMillis)
         writeFileCreator(writer, CREATOR_VERSION_LEGACY)
         writeWorkout(writer, name, routing, steps.size, null, totalTimeMillis = 0, modernFormat = false)
         writeSteps(writer, steps)

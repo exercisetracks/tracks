@@ -62,13 +62,14 @@ def predict_race_time_sec(vdot: float, distance_m: float) -> float:
 # shorter keep the VDOT prediction, which is calibrated there; ultras have no
 # comparable model and keep it too.
 MARATHON_BAND_M = (40_000.0, 44_000.0)
+MARATHON_M = 42_195.0
 TRAINING_WINDOW_DAYS = 56
 # A history that starts partway through the window reads as low volume.
 _MIN_WEEKS_WITH_RUNS = 6
 
 
 def tanda_marathon_sec(weekly_km: float, mean_pace_sec_km: float,
-                       distance_m: float = 42_195.0) -> float:
+                       distance_m: float = MARATHON_M) -> float:
     """Tanda (2011): marathon time from mean weekly km and mean training pace."""
     pace = 17.1 + 140.0 * math.exp(-0.0053 * weekly_km) + 0.55 * mean_pace_sec_km
     return pace * distance_m / 1000.0

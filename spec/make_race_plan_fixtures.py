@@ -4,11 +4,12 @@
 """Baseline the race-plan corpus: race_plan.sport_plan, every sport family.
 
 The phone plans every sport's race itself (com.tracks.core.local.LocalRacePlans)
-and replays each case here, so a cycling, mountain-bike, swim or triathlon
-plan on the phone is the one the web shows. The cases are a neutral day —
-no weather, no freshness adjustment — because that is what the phone plans:
-it has no forecast, and the web's own plan differs from these only by those
-two factors. Inputs are synthetic; nothing is personal.
+and replays each case here, so a running, cycling, mountain-bike, swim or
+triathlon plan on the phone is the one the web shows. The cases carry no
+weather, which the phone has no forecast for; race-morning freshness
+(calculators/plan/race_day.py) the phone works out as the server does, so
+cases with it are here for every sport. Inputs are synthetic; nothing is
+personal.
 
     docker run --rm --env-file .env -v "$PWD/backend:/app" -v "$PWD/spec:/spec" \\
         tracks-backend python /spec/make_race_plan_fixtures.py
@@ -24,7 +25,7 @@ from types import SimpleNamespace
 sys.path.insert(0, "/app")
 
 from app.api.coaching.race_helpers import _infer_triathlon_splits  # noqa: E402
-from app.api.coaching.race_plan import sport_plan  # noqa: E402
+from app.api.coaching.race_plan import race_projection, sport_plan  # noqa: E402
 from app.calculators.race_predictor.triathlon import leg_courses  # noqa: E402
 
 OUT = Path("/spec/fixtures/race_plan.json")
@@ -68,22 +69,23 @@ def _tri_course():
 def case(name, family, distance, *, vdot=None, ftp=None, css=None, max_hr=None, lthr=None,
          course=None, course_type="flat", spread=0.0, pace_hr=False, imperial=False,
          mtb=None, cycling=None, splits=None, path=None, leg_files=None, transitions=None,
-         intensity=None):
+         intensity=None, freshness=1.0, run_indices=None):
     rp = SimpleNamespace(course_segments=course, course_type=course_type, pace_hr_mode="pace_hr" if pace_hr else "pace",
                          split_spread=spread, triathlon_splits_m=splits, technicality_factor=None,
                          technicality_label=None, target_hr_ceiling=None, climb_target_w_per_kg=None,
                          course_path=path, tri_leg_courses=leg_files, tri_transitions_m=transitions,
                          intensity=intensity)
     goal = SimpleNamespace(mtb_discipline=mtb, cycling_discipline=cycling)
-    metrics = {"family": family, "vdot": vdot, "run_indices": None, "ftp": ftp, "css": css,
+    metrics = {"family": family, "vdot": vdot, "run_indices": run_indices, "ftp": ftp, "css": css,
                "max_hr": max_hr, "lthr": lthr}
-    laps, seconds, snap = sport_plan(family, metrics, rp, goal, distance, imperial=imperial)
+    laps, seconds, snap = sport_plan(family, metrics, rp, goal, distance, imperial=imperial,
+                                     freshness_factor=freshness)
     return {
         "name": name, "family": family, "distance_m": distance,
         "metrics": metrics, "course_segments": course, "course_type": course_type, "split_spread": spread,
         "pace_hr": pace_hr, "imperial": imperial, "mtb_discipline": mtb, "cycling_discipline": cycling,
         "triathlon_splits_m": splits, "course_path": path, "tri_leg_courses": leg_files,
-        "tri_transitions_m": transitions, "intensity": intensity,
+        "tri_transitions_m": transitions, "intensity": intensity, "freshness": freshness,
         "expected": {
             "laps": laps, "seconds": seconds,
             "triathlon_legs": (snap or {}).get("triathlon_legs"),
@@ -140,9 +142,49 @@ def main() -> None:
         case("olympic triathlon, held back", "triathlon", 51_500, css=100.0, ftp=250, vdot=50.0,
              course=tri[0], path=tri[1], intensity=0.95),
         case("hike, past the slider's end", "hiking", 20_000, vdot=42.0, intensity=1.5),
+        # Running — the plan the race-plans screen and the guided race both
+        # pace — then race-morning freshness (race_day.freshness_factor) in
+        # every model it reaches: VDOT and the marathon's volume half, power,
+        # speed with no FTP, CSS, a triathlon's three legs, VDOT's fallback.
+        case("10 K, flat", "running", 10_000, vdot=45.0),
+        case("10 K, hilly course, pace and HR", "running", 10_000, vdot=41.3, course=_hills(10, 0.04),
+             pace_hr=True, max_hr=191, spread=0.5),
+        case("half marathon in miles, rolling", "running", 21_097.5, vdot=38.0, course_type="rolling",
+             imperial=True, spread=-0.2),
+        case("marathon with its training volume", "running", 42_195, vdot=47.0, run_indices=[52.0, 331.0]),
+        case("marathon, fresh on race morning", "running", 42_195, vdot=47.0, run_indices=[52.0, 331.0],
+             freshness=0.976),
+        case("10 K, fresh and pushed", "running", 10_000, vdot=45.0, freshness=0.985, intensity=1.04),
+        case("5 K, tired", "running", 5_000, vdot=33.2, freshness=1.03),
+        case("road race, tapered", "cycling", 80_000, ftp=280, lthr=170, course=_hills(20, 0.03),
+             freshness=0.982),
+        case("mtb with FTP, tapered", "mountain_biking", 30_000, ftp=250, lthr=165, mtb="xco",
+             course=_hills(15, 0.08), freshness=0.99),
+        case("mtb without FTP, tapered", "mountain_biking", 50_000, lthr=162, mtb="xcm", freshness=0.99),
+        case("open water swim, tapered", "swimming", 3_800, css=105.0, freshness=0.98),
+        case("olympic triathlon, tapered", "triathlon", 51_500, css=100.0, ftp=250, vdot=50.0,
+             course=tri[0], path=tri[1], freshness=0.985),
+        case("hike, tired", "hiking", 20_000, vdot=42.0, freshness=1.012),
     ]
+    # What a race-day prediction is made of (race_plan.race_projection): the
+    # page's "today" finish beside race day's, for every family it answers.
+    projections = []
+    for family, vdot, today_vdot, adherence, indices, form, sec, dist in (
+        ("running", 46.1, 44.9, 0.86, None, {"today": -12.4, "race_day": 14.0}, 2743.6, 10_000.0),
+        ("running", 44.9, 44.9, None, None, {"today": 3.1, "race_day": 3.1}, 1290.2, 5_000.0),
+        ("running", 48.3, 47.0, 0.5, [52.0, 331.0], {"today": None, "race_day": None}, 12400.0, 42_195.0),
+        ("running", 39.0, 38.2, 1.0, None, {"today": -35.0, "race_day": 31.5}, 6611.0, 21_097.5),
+        ("running", 41.0, None, 0.333333, None, {"today": 0.0, "race_day": 9.9}, 3000.0, 10_000.0),
+        ("triathlon", 50.4, 49.0, 0.71, None, {"today": -5.0, "race_day": 12.0}, 9000.0, 51_500.0),
+        ("cycling", None, None, None, None, {"today": 1.0, "race_day": 2.0}, 7000.0, 80_000.0),
+        ("swimming", None, None, None, None, {"today": None, "race_day": None}, 900.0, 1_500.0),
+    ):
+        metrics = {"vdot": vdot, "vdot_today": today_vdot, "adherence": adherence, "run_indices": indices}
+        projections.append({"family": family, "metrics": metrics, "form": form, "actual_sec": sec,
+                            "distance_m": dist,
+                            "expect": race_projection(family, metrics, form, sec, dist)})
     OUT.write_text(json.dumps({"_comment": "Generated by spec/make_race_plan_fixtures.py. Do not edit.",
-                               "cases": cases}, indent=1) + "\n")
+                               "cases": cases, "projections": projections}, indent=1) + "\n")
 
 
 if __name__ == "__main__":

@@ -158,22 +158,20 @@ class PlanViewModel(private val container: AppContainer) : ViewModel() {
 
     /** The race's predicted duration, which sets the default carb target the ramp climbs to. */
     private suspend fun predictionFor(goal: TrainingGoal): LocalRacePlans.Prediction? {
-        if ((goal.eventSport ?: "running") != "running") return null
-        val distance = goal.eventDistanceMeters?.takeIf { it > 0 } ?: return null
-        val vdot = container.sources.replica.rows("plan")
-            .firstOrNull { it.str("goal_uid") == goal.uid }
-            ?.str("vdot")?.toDoubleOrNull() ?: return null
-        return LocalRacePlans.Prediction(predictRunning(vdot, distance), emptyList())
+        val seconds = predictedSeconds(goal) ?: return null
+        return LocalRacePlans.Prediction(seconds, emptyList())
     }
 
-    /** A running race's finish time as the race plans screen predicts it —
-     *  the marathon corrected by the last 8 weeks' volume. */
-    private suspend fun predictRunning(vdot: Double, distance: Double): Double {
-        val indices = runCatching {
-            LocalRacePlans(container.sources).trainingIndices(LocalDate.now().civil())
-        }.getOrNull()
-        return RacePredictor.predictRunningRaceSec(vdot, distance, indices)
-    }
+    /**
+     * The goal card's predicted finish, as the server's badge works it out
+     * (LocalRacePlans.predictedSeconds): race day's fitness, the marathon
+     * corrected by the last 8 weeks' volume, at the race's intensity. It read
+     * the VDOT the plan was last built at and ignored the intensity, so the
+     * phone's card and the web's disagreed whenever the slider had moved.
+     */
+    private suspend fun predictedSeconds(goal: TrainingGoal): Double? = runCatching {
+        LocalRacePlans(container.sources).predictedSeconds(goal, LocalDate.now().civil())
+    }.getOrNull()
 
     /** How a fuelled long session went; the ramp adapts from it on every device. */
     fun logFuel(workout: PlannedWorkout, carbsG: Double, comfort: Int, notes: String?) {
@@ -187,14 +185,7 @@ class PlanViewModel(private val container: AppContainer) : ViewModel() {
         }
     }
 
-    private suspend fun predicted(goal: TrainingGoal): String? {
-        if (goal.goalType != "event" || (goal.eventSport ?: "running") != "running") return null
-        val distance = goal.eventDistanceMeters?.takeIf { it > 0 } ?: return null
-        val vdot = container.sources.replica.rows("plan")
-            .firstOrNull { it.str("goal_uid") == goal.uid }
-            ?.str("vdot")?.toDoubleOrNull() ?: return null
-        return RacePredictor.formatTime(predictRunning(vdot, distance))
-    }
+    private suspend fun predicted(goal: TrainingGoal): String? = predictedSeconds(goal)?.let(RacePredictor::formatTime)
 
     // ── Workouts ─────────────────────────────────────────────────────────────
 

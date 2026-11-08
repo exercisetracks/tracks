@@ -46,9 +46,18 @@ def _plain(v):
     return v
 
 
-def _effort(days_ago, distance_m=5000, minutes=20.0):
-    return {"date": TODAY - timedelta(days=days_ago), "distance_m": distance_m,
-            "speed_mps": distance_m / (minutes * 60)}
+def _effort(days_ago, distance_m=5000, minutes=20.0, sport=None):
+    e = {"date": TODAY - timedelta(days=days_ago), "distance_m": distance_m,
+         "speed_mps": distance_m / (minutes * 60)}
+    if sport is not None:
+        e["sport"] = sport
+    return e
+
+
+def _weekly(weeks, per_week=3, pace=360.0, km=8.0, start=1, **kw):
+    """A runner's last ``weeks`` weeks: ``per_week`` runs in each, no HR."""
+    return [_run(start + 7 * w + 2 * i, pace=pace, km=km, hr=None, **kw)
+            for w in range(weeks) for i in range(per_week)]
 
 
 def _run(days_ago, pace=330.0, hr=145, km=8.0, sport="running", ascent=40.0,
@@ -139,6 +148,23 @@ def estimate_cases() -> list:
     add("watch with layoff", [], [_run(40, vo2max=52.0)])
     add("hr preferred over watch", [], [_run(d, vo2max=60.0) for d in (2, 5, 9)], **HR)
     add("effort beats watch", [_effort(5, minutes=18.0)], [_run(5, vo2max=45.0)])
+    add("treadmill effort is no floor", [_effort(5, minutes=18.0, sport="treadmill_running")],
+        [_run(5, hr=None)])
+    add("virtual effort is no floor", [_effort(5, minutes=18.0, sport="virtual_running")],
+        [_run(5, hr=None)])
+    add("trail effort is a floor", [_effort(5, minutes=24.0, sport="trail_running")], [_run(5, hr=None)])
+    add("treadmill beside a road effort", [_effort(5, minutes=18.0, sport="treadmill_running"),
+                                           _effort(9, minutes=22.0, sport="running")], [_run(5, hr=None)])
+    add("training with no hr", [], _weekly(8))
+    add("training, fast and high volume", [], _weekly(8, per_week=6, pace=280.0, km=14.0))
+    add("training, slow and low volume", [], _weekly(8, per_week=2, pace=470.0, km=5.0))
+    add("training needs six of eight weeks", [], _weekly(5))
+    add("training just six weeks", [], _weekly(6))
+    add("training under an effort", [_effort(4, minutes=19.0)], _weekly(8))
+    add("training over an easy effort", [_effort(4, minutes=5 * 360 / 60)], _weekly(8))
+    add("hr preferred over training", [], _weekly(8, pace=330.0) + [_run(d) for d in (1, 3, 5)], **HR)
+    add("watch preferred over training", [], _weekly(8) + [_run(2, hr=None, vo2max=50.0)])
+    add("training after ten days off", [], _weekly(7, start=10))
     add("future evidence ignored", [_effort(-10)], [_run(-5)], **HR)
     add("profile ignored once measured", [], steady, **HR, sex="female", height_cm=160, weight_kg=95)
 
@@ -155,7 +181,8 @@ def estimate_cases() -> list:
                 vo2max=rng.choice([None, None, round(rng.uniform(30, 70), 1)]),
                 avg_speed=rng.choice([None, round(rng.uniform(2, 5.5), 3)])))
         efforts = [_effort(rng.randint(0, 500), rng.choice([1000, 1609, 5000, 10000, 21097, 42195]),
-                           round(rng.uniform(3, 300), 2)) for _ in range(rng.randint(0, 6))]
+                           round(rng.uniform(3, 300), 2), rng.choice([None, *sports, "virtual_running"]))
+                   for _ in range(rng.randint(0, 6))]
         kw = {}
         if rng.random() < 0.7:
             kw["max_hr"] = rng.randint(160, 205)
@@ -167,6 +194,14 @@ def estimate_cases() -> list:
                       weight_kg=rng.choice([None, rng.randint(45, 120)]),
                       frequencies=rng.choice([None, {"running": rng.choice(["never", "1_2", "5_plus"])}]))
         add(f"random {i}", efforts, runs, **kw)
+    for i in range(20):
+        runs = [_run(rng.randint(0, 60), pace=round(rng.uniform(250, 520), 1), hr=None,
+                     km=round(rng.uniform(2, 25), 2), sport=rng.choice(sports),
+                     ascent=rng.choice([None, round(rng.uniform(0, 300), 1)]))
+                for _ in range(rng.randint(4, 30))]
+        efforts = [_effort(rng.randint(0, 120), rng.choice([3000, 5000, 10000]), round(rng.uniform(10, 80), 2),
+                           rng.choice([None, *sports])) for _ in range(rng.randint(0, 4))]
+        add(f"random dense {i}", efforts, runs)
     return cases
 
 

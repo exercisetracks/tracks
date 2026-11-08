@@ -80,6 +80,18 @@ object Explain {
             "of the pace — or, on a bike, the power — every target asks for, and the finish time follows.",
     )
 
+    /** The race plan's predicted finish — the web's tooltip beside it says the same. */
+    val RacePrediction = MetricInfo(
+        "Predicted finish",
+        "Predicted for race day: your running fitness today, plus what the rest of the training plan " +
+            "should add — credited at the rate the last four weeks of the plan were done — and the " +
+            "freshness its taper should leave on race morning.",
+        "Every run imported and every planned day missed moves it; on race day it is your measured " +
+            "fitness. Today is the same race at today's fitness and form.",
+        "A run counts in full. Cycling, skiing and other aerobic sports count part of their time, " +
+            "strength and climbing a little, and a session ticked off by hand counts half.",
+    )
+
     val StrengthFocus = MetricInfo(
         "Strength focus",
         "How many strength sessions a week the plan adds, 1 to 5, and how heavy the split is: " +

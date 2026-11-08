@@ -132,17 +132,28 @@ def vdot_to_paces(vdot: float) -> dict[str, float]:
     """
     Pace (sec/km) for each training zone at the given VDOT.
 
-    Zone fractions are % of VO2max velocity, synthesised from:
-      - Daniels (2013): recovery = ~59-66%, easy = ~66-74%, marathon = ~80-85%,
-        threshold = ~88-92%, interval = ~95-100%
-      - Pfitzinger, P., & Douglas, S. (2014). *Advanced Marathoning* (3rd ed.):
-        paces for repetition work at 105% VO2max velocity.
+    Each fraction is a share of VDOT as oxygen: the pace is the speed whose
+    cost on Daniels' curve is that share of VDOT — which is how Daniels'
+    own tables are built (Daniels 2013). Checked against those tables from
+    VDOT 30 to 60: his easy band runs from 62% (its slow end) to 70% (its
+    fast end), threshold is 88%, interval about 97.5%, and marathon pace is
+    the marathon prediction itself (80.5–82% across those VDOTs).
+
+    Easy is the middle of the band, 66%. It was 70%, the band's fast edge —
+    and the watch's ±10 s window around it then held every easy run in the
+    fastest third of what Daniels calls easy. Recovery stays at the slow
+    edge. Threshold is Daniels' 88%; it was 90%, about 6 s/km quicker, and
+    Daniels' 88% was what matched recreational runners' measured
+    lactate-threshold pace (Scudamore et al. 2018).
+
+    Repetition at 105% follows Pfitzinger & Douglas (2014, *Advanced
+    Marathoning*, 3rd ed.).
     """
     zones = {
         "recovery":    0.62,
-        "easy":        0.70,
+        "easy":        0.66,
         "marathon":    0.82,
-        "threshold":   0.90,
+        "threshold":   0.88,
         "interval":    0.98,
         "repetition":  1.05,
     }

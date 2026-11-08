@@ -15,7 +15,6 @@ branches share the same freshness / weather / course-factor setup and reading
 them side-by-side is clearer than slicing the algorithm across files.
 """
 
-import base64
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
@@ -23,6 +22,7 @@ from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
 from app.auth import require_auth
+from app.calculators.plan.race_day import freshness_factor as race_freshness
 from app.calculators.race_predictor import (
     compute_cycling_lap_targets,
     compute_cycling_wind_course_exposure,
@@ -51,8 +51,8 @@ from .helpers import _get_user_and_settings
 from .race_helpers import (
     _fetch_weather,
     _get_athlete_metrics,
-    _get_tsb_today,
     _infer_triathlon_splits,
+    _race_form,
     _race_plan_out,
     race_intensity,
 )
@@ -161,7 +161,7 @@ def get_race_plan(goal_id: int, user: User = Depends(require_auth), db: Session 
     user, us = _get_user_and_settings(db, user)
     goal = _goal_or_404(db, goal_id, user)
     rp = _get_or_create_plan(db, goal_id, user.id, flush=False)
-    return _race_plan_out(rp, us, goal)
+    return _race_plan_out(rp, us, goal, db)
 
 
 @router.patch("/goals/{goal_id}/race-plan")
@@ -174,7 +174,7 @@ def update_race_plan(goal_id: int, body: RacePlanUpdate, user: User = Depends(re
         setattr(rp, field, value)
     db.commit()
     db.refresh(rp)
-    return _race_plan_out(rp, us, goal)
+    return _race_plan_out(rp, us, goal, db)
 
 
 # ── Generate (the pacing engine) ─────────────────────────────────────────────
@@ -195,10 +195,36 @@ def generate_race_plan(goal_id: int, user: User = Depends(require_auth),
 def _do_generate_race_plan(goal_id: int, db: Session, user: User):
     _, us = _get_user_and_settings(db, user)
     goal = _goal_or_404(db, goal_id, user)
+    rp = plan_race(db, user, us, goal)
+    return _race_plan_out(rp, us, goal, db)
+
+
+def plan_race(db: Session, user: User, us: UserSettings | None, goal: TrainingGoal, *,
+              create: bool = True) -> RacePlan:
+    """Run the pacing engine for ``goal`` and store what it says: the race-day
+    prediction, its laps, the weather and the projection behind it.
+
+    Shared by the race plan's page (``_do_generate_race_plan``) and the
+    training calendar, whose race day is this plan's race
+    (training_plan/sync.py ``_race_day_fit``) — so the watch runs the laps
+    the page shows. The race is no longer a file of its own: see
+    ``_retire_race_file``. Raises the 422 the page shows when the sport's
+    threshold (VDOT, FTP, CSS) is not known.
+
+    With ``create`` false — the calendar's call — a goal that has no race
+    plan yet is planned on the plan's defaults and none is written: the row
+    syncs, ``goal_id`` is unique, and one made here beside the one a phone
+    makes for the same goal on its first edit would collide. The phone plans
+    such a goal the same way (LocalRacePlans.strategy's defaults).
+    """
     if goal.goal_type != "event" or not goal.event_distance_meters:
         raise HTTPException(status_code=422, detail="Goal must be an event goal with a distance")
 
-    rp = _get_or_create_plan(db, goal_id, user.id, flush=True)
+    rp = db.query(RacePlan).filter_by(goal_id=goal.id).first()
+    stored = rp is not None or create
+    if rp is None:
+        rp = _get_or_create_plan(db, goal.id, user.id, flush=True) if create \
+            else RacePlan(goal_id=goal.id, user_id=user.id)
 
     metrics = _get_athlete_metrics(goal, db, user, us)
     family  = metrics["family"]
@@ -213,10 +239,11 @@ def _do_generate_race_plan(goal_id: int, db: Session, user: User):
         raise HTTPException(status_code=422, detail="Goal must have a distance set")
 
     # ── Freshness adjustment (applies to all sports equally) ─────────────────
-    tsb = _get_tsb_today(db, user)
-    freshness_factor = 1.0
-    if tsb is not None:
-        freshness_factor = 1.0 - max(-0.03, min(0.03, tsb * 0.001))
+    # Race morning's form, after the plan's remaining sessions — not today's,
+    # which mid-build is a fatigue the taper will have cleared
+    # (calculators/plan/race_day.py).
+    form = _race_form(db, user, goal, metrics)
+    freshness_factor = race_freshness(form["race_day"])
 
     # ── Weather (cached by place and day — see race_helpers._fetch_weather) ──
     lat       = rp.pin_lat
@@ -289,66 +316,85 @@ def _do_generate_race_plan(goal_id: int, db: Session, user: User):
         freshness_factor=freshness_factor, weather_snap=weather_snap, weather_factor=weather_factor,
         net_wind_mps=net_wind_mps, annotate=_annotate_weather, imperial=bool(us and us.units == "imperial"),
     )
-    max_hr_val = metrics["max_hr"]
+    projection = race_projection(family, metrics, form, actual_sec, plan_distance_m)
 
-    # ── Generate FIT (running + cycling only — swim/tri use per-leg legs) ──────
-    #
-    # Plans regenerate on every visit now, so a regeneration that changes
-    # nothing must not look like a new plan to the watch: that re-queued the
-    # file for deletion and upload each time the page was opened. The file is
-    # compared by a fingerprint of its content with the creation time pinned
-    # (the real one is "now", so the bytes always differ); only a plan whose
-    # content actually changed replaces what is on the watch.
-    import hashlib
-
-    old_sig = (rp.weather_snapshot or {}).get("fit_sig") if rp.fit_b64 else None
-    new_fit, new_sig = None, None
-    if family not in ("swimming", "triathlon") and laps:
-        try:
-            fit_args = dict(
-                name          = goal.event_name or "Race",
-                sport         = (goal.event_sport or "running").lower(),
-                lap_paces     = laps,
-                pace_coaching = (family != "cycling"),   # cycling: no pace alert, use HR
-                hr_coaching   = (rp.pace_hr_mode == "pace_hr"),
-                max_hr        = max_hr_val,
-                fuel_items    = _fuel_items(db, rp, goal, laps, actual_sec),
-            )
-            new_sig = hashlib.sha256(generate_race_fit(**fit_args, time_created_ms=0)).hexdigest()
-            new_fit = generate_race_fit(**fit_args) if new_sig != old_sig else None
-        except Exception:
-            new_sig = None
-
-    unchanged = new_sig is not None and new_sig == old_sig
-    if not unchanged:
-        # Queue the old watch file for deletion: it describes another plan.
-        if rp.watch_filename and rp.watch_uploaded_at:
-            from app.models.training_plan import WatchPendingDelete
-            if not db.query(WatchPendingDelete).filter_by(
-                    user_id=rp.user_id, filename=rp.watch_filename).first():
-                db.add(WatchPendingDelete(user_id=rp.user_id, filename=rp.watch_filename))
-            rp.watch_uploaded_at = None
-        if new_fit is not None:
-            rp.fit_b64        = base64.b64encode(new_fit).decode()
-            rp.watch_filename = f"RACE_{goal.id}_{goal.event_date or 'undated'}.fit"
-        else:
-            rp.fit_b64        = None
-            rp.watch_filename = None
-    if weather_snap is not None or new_sig is not None:
+    _retire_race_file(db, rp)
+    if weather_snap is not None or projection is not None:
         # Carried in the snapshot blob, which already holds non-weather
-        # extras (triathlon_legs), rather than a column of its own.
-        weather_snap = {**(weather_snap or {}), "fit_sig": new_sig}
+        # extras (triathlon_legs), rather than a column of its own. The
+        # projection is derived — rebuilt on every generation, which every
+        # visit to the page runs — so it needs no column or sync either.
+        weather_snap = {**(weather_snap or {}), "projection": projection}
 
     rp.predicted_seconds  = actual_sec
     rp.weather_snapshot   = weather_snap
     rp.lap_paces          = laps
     rp.generated_at       = datetime.now(timezone.utc)
-    db.commit()
-    db.refresh(rp)
-    return _race_plan_out(rp, us, goal)
+    if stored:
+        db.commit()
+        db.refresh(rp)
+    return rp
+
+
+def _retire_race_file(db: Session, rp: RacePlan) -> None:
+    """Forget the race's file of its own, and take it off the watch.
+
+    A race plan used to be a ``RACE_*.fit`` stored here and offered on the
+    upload list, pushed by a route of its own (FileSyncService) that only a
+    visit to this page ever filled — while the training calendar's race day
+    went out as an empty workout. The race is now that calendar entry,
+    encoded from these laps (training_plan/sync.py ``_race_day_fit``), so a
+    file still on the watch is a second copy of the race: queued for
+    deletion (USB removes it; Bluetooth cannot delete a workout file), and
+    the plan stops naming it.
+    """
+    if rp.watch_filename and rp.watch_uploaded_at:
+        from app.models.training_plan import WatchPendingDelete
+        if not db.query(WatchPendingDelete).filter_by(
+                user_id=rp.user_id, filename=rp.watch_filename).first():
+            db.add(WatchPendingDelete(user_id=rp.user_id, filename=rp.watch_filename))
+    rp.fit_b64 = None
+    rp.watch_filename = None
+    rp.watch_uploaded_at = None
 
 
 # ── GPX course upload / delete ───────────────────────────────────────────────
+
+def race_projection(family: str, metrics: dict, form: dict, actual_sec: float,
+                    distance_m: float) -> dict | None:
+    """What a running race's race-day prediction is made of, for the page to
+    say: fitness today and on race day, the share of the plan the last four
+    weeks delivered, today's and race morning's form, and the finish at
+    today's fitness and form.
+
+    That finish is ``actual_sec`` rescaled by the flat prediction's ratio:
+    the intensity, the weather and the course multiply both alike
+    (sport_plan), so the ratio is exactly the fitness and the form. None
+    for a sport VDOT does not predict; ``today_seconds`` only for a running
+    race, the one whose whole time follows VDOT.
+    """
+    if metrics.get("vdot") is None or family not in ("running", "triathlon"):
+        return None
+    vdot, vdot_today = metrics["vdot"], metrics.get("vdot_today") or metrics["vdot"]
+    today_sec = None
+    if family == "running":
+        def flat(v: float, ff: float) -> float:
+            return predict_running_race_sec(v * (2.0 - ff), distance_m, metrics["run_indices"], ff)
+        today_sec = round(actual_sec * flat(vdot_today, race_freshness(form["today"]))
+                          / flat(vdot, race_freshness(form["race_day"])), 1)
+    adherence = metrics.get("adherence")
+    return {
+        "vdot_today": round(vdot_today, 1),
+        "vdot_race_day": round(vdot, 1),
+        "adherence": round(adherence, 2) if adherence is not None else None,
+        "tsb_today": form["today"],
+        "tsb_race_day": form["race_day"],
+        "today_seconds": today_sec,
+        # Formatted here, as predicted_time is: Python rounds ties to even and
+        # the browser would not, and the two times sit side by side.
+        "today_time": format_time(today_sec) if today_sec is not None else None,
+    }
+
 
 def sport_plan(family: str, metrics: dict, rp, goal, plan_distance_m: float, *,
                freshness_factor: float = 1.0, weather_snap: dict | None = None,
@@ -808,7 +854,7 @@ def upload_course_gpx(
     _store_course(rp, segments, path, _check_leg(leg))
     db.commit()
     db.refresh(rp)
-    return _race_plan_out(rp, us, goal)
+    return _race_plan_out(rp, us, goal, db)
 
 
 def _fuel_items(db, rp, goal, laps, predicted_sec) -> list[dict]:
@@ -856,7 +902,7 @@ def course_from_track(goal_id: int, track_id: int, leg: str | None = Query(None)
     _store_course(rp, segments, path, _check_leg(leg))
     db.commit()
     db.refresh(rp)
-    return _race_plan_out(rp, us, goal)
+    return _race_plan_out(rp, us, goal, db)
 
 
 @router.delete("/goals/{goal_id}/race-plan/course", status_code=204)

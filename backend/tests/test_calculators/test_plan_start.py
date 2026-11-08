@@ -13,6 +13,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from app.calculators.plan import starting
+from app.calculators.plan.base import _DEFAULT_VDOT, vdot_to_paces
 from app.calculators.plan.generator.dispatch import _HIGH_INTENSITY_TYPES
 from app.calculators.plan.generator.fitness import generate_fitness_plan
 from app.calculators.plan.generator.plan import generate_training_plan
@@ -183,7 +184,13 @@ def test_a_never_runners_first_weeks_hold_no_fartlek():
     ramp_end = TODAY - timedelta(days=TODAY.weekday()) + timedelta(weeks=starting.RAMP_WEEKS)
     early = [w for w in never if w["scheduled_date"] < ramp_end]
     assert early and not any(w["workout_type"] in _HIGH_INTENSITY_TYPES for w in early)
-    assert max(w["duration_minutes"] for w in early if w["workout_type"] != "long") <= 30
+    # About half an hour of running at most. The ramp is sized in distance
+    # (weekly_km_share) — the impact bone and tendon have to absorb — so the
+    # bound is that distance: 30 minutes at the easy pace it was set against
+    # (VDOT 42's, when easy was the fast edge of Daniels' band, 352.8 s/km),
+    # in minutes at today's easy pace, the band's middle.
+    half_hour = 30 * vdot_to_paces(_DEFAULT_VDOT)["easy"] / 352.8
+    assert max(w["duration_minutes"] for w in early if w["workout_type"] != "long") <= half_hour
     assert any(w["workout_type"] in _HIGH_INTENSITY_TYPES for w in never
                if w["scheduled_date"] >= ramp_end), "quality arrives once the ramp is over"
     # Someone who already runs three or four times a week keeps it from the first week.

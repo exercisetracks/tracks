@@ -11,7 +11,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { api } from "../api/client";
 import { useTheme } from "../context/ThemeContext";
-import { fmtDist, fmtDistShort, recomputeLaps } from "../components/raceplan/format";
+import { fmtDist, fmtDistShort, projectionNote, recomputeLaps } from "../components/raceplan/format";
+import InfoTooltip from "../components/ui/InfoTooltip";
 import { COURSE_OPTIONS_METRIC, COURSE_OPTIONS_IMPERIAL, HR_OPTIONS } from "../components/raceplan/constants";
 import { Section, RadioGroup, SyncStatus } from "../components/raceplan/ui";
 import SplitSlider from "../components/raceplan/SplitSlider";
@@ -204,10 +205,22 @@ export default function RacePlan() {
         </div>
         {plan?.predicted_time && (
           <div className="text-right shrink-0">
-            <div className="text-xs text-slate-400 dark:text-slate-500">Predicted finish</div>
+            <div className="flex items-center justify-end gap-1 text-xs text-slate-400 dark:text-slate-500">
+              Predicted finish
+              {projectionNote(plan.projection) && (
+                <InfoTooltip label="How the finish is predicted">{projectionNote(plan.projection)}</InfoTooltip>
+              )}
+            </div>
             <div className="text-2xl font-bold text-accent-600 dark:text-accent-400 font-mono">
               {plan.predicted_time}
             </div>
+            {/* Race day is the headline; today's fitness beside it shows how
+                much of it is still to be trained. */}
+            {plan.projection?.today_time && plan.projection.today_time !== plan.predicted_time && (
+              <div className="text-xs text-slate-500 dark:text-slate-400 font-mono">
+                Today {plan.projection.today_time}
+              </div>
+            )}
           </div>
         )}
       </div>

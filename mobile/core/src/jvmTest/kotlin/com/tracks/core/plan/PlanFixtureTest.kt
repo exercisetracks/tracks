@@ -196,6 +196,7 @@ class PlanFixtureTest {
                 imperial = kw["imperial"] as Boolean? ?: false, thresholdHr = num(kw["threshold_hr"]),
                 runningFitness = runningFitness(kw["running_fitness"]),
                 overallCtl = num(kw["overall_ctl"]), sportCtl = num(kw["sport_ctl"]),
+                adherence = num(kw["adherence"]) ?: 1.0,
             )
             val wantVdot = num(d(o["vdot"]))
             if (wantVdot == null) assertEquals(null, got.vdot, "$name") else assertUlps(wantVdot, got.vdot!!, "$name")

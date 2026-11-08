@@ -20,7 +20,6 @@ and literature references.
 
 from __future__ import annotations
 
-import math
 from datetime import date, timedelta
 from typing import Sequence
 
@@ -46,9 +45,8 @@ from app.calculators.plan.generator.week import (
     _generate_week,
     km_to_tss,
 )
+from app.calculators.plan.race_day import plan_weeks, vdot_step as _vdot_step
 from app.calculators.plan.starting import no_history_start, start_intensity, start_quality
-
-_WEEKLY_GAIN_VOLUME = 0.10  # 10% weekly volume increase per Damsted et al. (2018)
 
 
 def _goal_disciplines(goal) -> tuple[str, str]:
@@ -115,6 +113,7 @@ def generate_training_plan(
     running_fitness: dict | None = None,
     overall_ctl: float | None = None,
     sport_ctl: float | None = None,
+    adherence: float = 1.0,
 ) -> tuple[float | None, list[dict]]:
     """
     Generate a full day-by-day training plan.
@@ -122,6 +121,11 @@ def generate_training_plan(
     ``overall_ctl`` and ``sport_ctl`` are the dashboard's fitness overall and
     in this sport alone; together they set how fast volume may build
     (``build_ramp``). Without them the ramp is the default 10%.
+
+    ``adherence`` (race_day.adherence, 0–1) scales the weekly VDOT gain the
+    paces build with, so the race week paces the race the race plan predicts
+    (race_day.race_day_vdot) — both credit the gain still to come at the
+    rate the last weeks' training has delivered. 1.0 is the plan as written.
 
     ``activity_frequency`` is how often the person does this sport (a
     calculators/plan/starting.py level), read only when there is no history.
@@ -160,11 +164,11 @@ def generate_training_plan(
         return _generate_triathlon_plan(
             goal, activity_history, pace_bests, today, ftp=ftp, dpw=dpw,
             plan_intensity=plan_intensity, base_effective_weeks=base_effective_weeks,
-            imperial=imperial, lthr=lthr_int, running_fitness=running_fitness)
+            imperial=imperial, lthr=lthr_int, running_fitness=running_fitness,
+            adherence=adherence)
 
     plan_monday = today - timedelta(days=today.weekday())
-    total_days  = (race_date - plan_monday).days
-    total_weeks = max(1, math.ceil(total_days / 7))
+    total_weeks = plan_weeks(today, race_date)
 
     # ── Paces / power ────────────────────────────────────────────────────────
     if family == "running":
@@ -174,10 +178,8 @@ def generate_training_plan(
     css  = _css_pace_sec_per_100m(pace_bests) if family == "swimming" else None
 
     base_vdot = vdot
-    vdot_step = (
-        min(_WEEKLY_GAIN_VOLUME, 1.5 / max(total_weeks, 1))
-        if base_vdot is not None else 0.0
-    )
+    # The plan's progression, as the race plan projects it (race_day.py).
+    vdot_step = _vdot_step(total_weeks) * adherence if base_vdot is not None else 0.0
 
     # ── Effective-weeks baseline ─────────────────────────────────────────────
     ew_base = _effective_weeks_base(family, capacity_vdot, base_effective_weeks)
@@ -324,7 +326,8 @@ def _generate_triathlon_plan(goal, activity_history, pace_bests, today: date, *,
                              ftp, dpw: int, plan_intensity: float,
                              base_effective_weeks: float | None, imperial: bool,
                              lthr: int | None,
-                             running_fitness: dict | None = None) -> tuple[float | None, list[dict]]:
+                             running_fitness: dict | None = None,
+                             adherence: float = 1.0) -> tuple[float | None, list[dict]]:
     """A triathlon plan: swim, bike and run against one periodised load.
 
     The block periodisation, 3:1 cycles, 10% ramp, ACWR cap and taper are the
@@ -345,12 +348,12 @@ def _generate_triathlon_plan(goal, activity_history, pace_bests, today: date, *,
     race_date = goal.event_date
     race_distance_m = goal.event_distance_meters or 51_500.0
     plan_monday = today - timedelta(days=today.weekday())
-    total_weeks = max(1, math.ceil((race_date - plan_monday).days / 7))
+    total_weeks = plan_weeks(today, race_date)
 
     vdot, pace_vdot, capacity_vdot = running_vdots(running_fitness, pace_bests)
     css = _css_pace_sec_per_100m(pace_bests)
     ew_base = _effective_weeks_base("running", capacity_vdot, base_effective_weeks)
-    vdot_step = min(_WEEKLY_GAIN_VOLUME, 1.5 / max(total_weeks, 1)) if vdot is not None else 0.0
+    vdot_step = _vdot_step(total_weeks) * adherence if vdot is not None else 0.0
 
     hours = 0.0
     for fam in _TRI_FAMILIES:

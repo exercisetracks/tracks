@@ -8,8 +8,10 @@ targets, the race plan's lap splits — is derived from one number, a VDOT
 (Daniels 2013), and every one of them is only as good as that number. This file
 is the research behind how it is estimated
 (`backend/app/calculators/plan/running_fitness.py`, ported to the phone as
-`com.tracks.core.plan.RunningFitness`) and behind the race plan's marathon
-correction (`calculators/race_predictor/running.py`).
+`com.tracks.core.plan.RunningFitness`), how the training zones are cut from it
+(`plan/base.py vdot_to_paces`), how the race plan carries it to race day
+(`plan/race_day.py`, `com.tracks.core.plan.RaceDay`), and behind the race
+plan's marathon correction (`calculators/race_predictor/running.py`).
 
 It was compiled in September 2026 without full-text access to the journals: the
 environment it was written in could reach search results and abstracts but not
@@ -45,7 +47,10 @@ Pace bests are kept as evidence, but as what they are: the fastest a runner
 held a distance, which is a **floor** on their fitness when they ran it — no one
 holds a pace their fitness cannot sustain, but a training run held well below
 it. Each one is current for six weeks, then ages along the detraining curve;
-one older than a year is ignored.
+one older than a year is ignored. A treadmill or virtual run is no floor: its
+speed is a wrist, footpod or belt estimate — the HR method below has always
+refused those runs for that reason — and one over-read session set every pace
+for six weeks.
 
 **Detraining** — Coyle et al. (1984), seven endurance-trained subjects: VO2max
 fell 7% in the first 21 days without training and stabilised 16% below the
@@ -90,14 +95,42 @@ dashboard's VO2max chart) is used instead only when the HR estimate cannot be
 made. Firstbeat's white paper reports ~5% mean absolute percentage error
 against lab VO2max over 2,690 free runs (79 runners); independent studies put
 the error at roughly 3–5 ml/kg/min with a chest strap and 5–8 wrist-only
-(_secondary sources, unverified_). Tracks takes it as VDOT-equivalent, which is
-_unverified_ and errs fast: VDOT underestimates lab VO2max, and more so in
-recreational runners than in trained ones (Scudamore et al. 2018).
+(_secondary sources, unverified_). It is calibrated to **lab** VO2max, and VDOT
+runs below lab VO2max — significantly in collegiate runners and further still
+in recreational ones (Scudamore et al. 2018: d = 1.75 and 3.44) — because VDOT
+folds in running economy, and Daniels' oxygen-cost curve is near elite
+economy (≈190 ml/kg/km at 16 km/h, where recreational runners typically use
+200–220). It was taken whole, which paced a recreational runner about 10%
+fast; it is now taken at **0.90** of itself (`WATCH_VDOT`) — the middle of that
+economy gap, _a heuristic, unverified_. The HR method needs no such factor:
+it reads speed on Daniels' own curve, so it is economy-adjusted by
+construction.
+
+**The training itself**, with neither — a phone with no strap and no watch:
+Tanda's (2011) marathon model (below) from the last eight weeks' weekly
+distance and mean pace, as the VDOT of the marathon it predicts, when runs
+fall in six of the eight weeks. For a low-mileage runner that marathon VDOT
+sits below their 5 K VDOT (Vickers & Vertosick 2016), so it errs slow; the
+effort floor alone was far slower, since for someone who only runs easy it is
+their easy pace read as a race. With 24 km a week at 6:00/km it is VDOT 38.3,
+an easy pace of 6:28/km.
 
 Whichever central estimate is used, fitness is **the greater of it and the
 effort floor**: an old race cannot pull a current estimate down, and a noisy
 HR reading cannot pull fitness below a race actually run. The central estimate
 is scaled by the current layoff (days since the last run) on the same curve.
+
+**The HR method's most sensitive input is max HR.** VDOT − 3.5 scales with
+(max HR − resting HR), so a max HR 10 bpm high reads VDOT about 7% high —
+some 20 s/km on easy pace. Auto max HR is the single highest reading of any
+activity ever recorded (`user_stats._calc_max_hr`), so one strap spike or a
+cadence-locked optical reading sets it for good. It is left as it is —
+every spike-rejecting rule also lowers a genuine peak reached once, and the
+number sets every HR zone in the app — but a runner whose easy pace feels
+too quick should look there first, and set max HR by hand. Swain et al.
+(1998) measured %HRR ≈ 1.5 + 1.03·%VO2R on the treadmill; treating them as
+equal reads slightly *conservative* at easy intensities, as does the cardiac
+drift inside a run's average HR, so neither is corrected.
 
 ### 3. The person, only with no running evidence at all
 
@@ -134,6 +167,94 @@ that is what people can answer without arithmetic.
 A profile estimate sets the paces in a plan's notes and nothing else: it is not
 stored as the plan's VDOT, so the watch gets no pace targets from a guess, and
 it does not move the run/walk capacity model.
+
+## The zones
+
+`vdot_to_paces` cuts each zone as a share of VDOT on Daniels' curve, which is
+how Daniels' own tables are built. Checked against those tables from VDOT 30
+to 60 (as published by calculators that reproduce them): his easy band runs
+from 62% of VDOT (its slow end) to 70% (its fast end) at every VDOT,
+threshold is 88%, interval about 97.5%, and marathon pace is the marathon
+prediction itself (80.5–82%). At VDOT 40 that is easy 6:07–6:44/km,
+threshold 5:06, interval 4:41.
+
+| Zone | Was | Now | At VDOT 40 |
+|---|---|---|---|
+| Recovery | 62% | 62% — the easy band's slow edge | 6:43 |
+| Easy | 70% — the band's fast edge | **66% — its middle** | 6:24 (was 6:06) |
+| Marathon | 82% | 82% | 5:23 |
+| Threshold | 90% | **88% — Daniels' T** | 5:05 (was 5:00) |
+| Interval | 98% | 98% | 4:40 |
+| Repetition | 105% | 105% (Pfitzinger & Douglas) | 4:25 |
+
+The watch holds an easy step to ±10 s/km of its pace, so with easy at the
+band's fast edge every easy run was held to the fastest third of what Daniels
+calls easy — a run "right at the limit". Threshold at 88% is the share
+Scudamore et al. (2018) found indistinguishable from recreational runners'
+measured lactate-threshold pace (it was faster than it in collegiate
+runners); 90% was ~6 s/km quicker than both. A week's kilometres are turned
+into minutes at easy pace, so a slower easy pace is a few minutes more of
+easy running for the same distance, which is what the runner actually does.
+
+## Race day
+
+The race plan predicted from today's VDOT and today's TSB: a race three
+months out, mid-build, was predicted for a runner as tired as they are that
+week, and never as the plan meant them to arrive. The training calendar
+meanwhile built its race week from today's VDOT plus +0.1 VDOT a week, so the
+two disagreed about the race they were both for.
+
+Both now read `race_day.py`:
+
+    race-day VDOT = today's VDOT + 0.1 a week to the race week × adherence
+
+(+0.1 a week, at most +1.5 over a plan — the calendar's progression, as it
+was). It is conservative: recreational runners on a supervised ten-week plan
+took 3.6–5.0% off their 10 K (Muñoz et al. 2014), about +0.25 VDOT a week.
+On race day there are no weeks left, so the prediction **is** the
+measurement; between now and then, every import moves today's VDOT and every
+planned day left empty lowers adherence the next day, so it converges as the
+training goes in. Today's finish is shown beside race day's.
+
+**Adherence** is the last four weeks' training against the plan's (since the
+plan began, if later), at most 1, both counted in running minutes — each
+minute at what its sport transfers to running:
+
+| Sport | A minute is worth | Basis |
+|---|---|---|
+| Running | 1 | |
+| Cycling, MTB, cross-country skiing | 0.5 | Collegiate runners who swapped half their running for cycling for five weeks lost 3.4% over 3,000 m, against 1.4% running only (White et al. 2003) |
+| Rowing | 0.4 | between the two |
+| Swimming | 0.35 | Added swimming bought 37% of the 3.2 km time-trial gain added running did, in trained runners (Foster et al. 1995) |
+| Hiking (walks too), paddling | 0.3 | weight-bearing or aerobic, at a walk's effort |
+| Strength, alpine skiing, anything else | 0.1 | little running-specific stimulus |
+| Climbing | 0.05 | a climbing session should not move a 10 K |
+
+A session ticked off by hand counts half its planned minutes — it was
+probably done, but nothing measured it. A triathlon's rides and swims are
+planned minutes too, at the same weights, so riding every ride and skipping
+every run is not the run plan followed. Both sides carry 120 minutes of the
+plan done as planned, so a new plan's first missed run is not read as a
+runner who quit. _All of these are heuristics built on the cited work._
+
+**Form** is the race plan's freshness factor (±0.1% per point of TSB, at most
+±3%), now read on race morning: the dashboard's load through today, then each
+remaining planned session's load (`load.workout_tss`) through the eve of the
+race, by the dashboard's own CTL/ATL recurrence. A two-week taper cutting
+volume 41–60% is the strategy that maximises the gain (Bosquet et al. 2007).
+The remaining load is the plan as written — adherence counts running
+minutes, which say nothing of a ride's taper.
+
+None of this needs heart rate: adherence is minutes, form is the load
+estimate every activity has, and today's VDOT has the training estimate
+above. A phone that records with GPS alone predicts its race the way a
+watch-wearer's does.
+
+**The race on the watch** is the training calendar's race-day entry, encoded
+from the race plan's laps — its terrain names, fuelling reminders, and pace
+or HR targets per the watch-coaching switch — and sent in the calendar's
+batch (`docs/watch-sync.md`). On race day the phone's Race Plans screen
+offers Start race, which runs the same plan as a guided run.
 
 ## On height
 
@@ -205,7 +326,7 @@ Checked because a new, disconnected fitness metric would be worse than none.
 | Resting HR (daily metrics, readiness) | Watch's daily resting HR | **Shared input**: median of the last 30 days. |
 | Plan's stored VDOT | What the watch's pace targets are built from | **Is** the estimate (when measured), rounded to a tenth, as before. |
 | Fitness fingerprint `vdot` (`UserFitnessFingerprint`, matching.py) | Whole-activity VDOT of each matched run, ratcheting up only | **Written but never read** — a disconnected copy of the number this replaces. Left alone here (removing it touches the matching fixtures and the phone's replay), but it should either be deleted or become the stored form of this estimate. |
-| Plan's weekly VDOT progression | +≤0.1 VDOT a week over the plan, capped at +1.5 | Unchanged. Plans are rebuilt from measured fitness on every import, so the projection only ever covers a few days before the estimate replaces it. The watch's pace targets use the plan's base VDOT, not the week's, which the same rebuild keeps negligible. |
+| Plan's weekly VDOT progression | +≤0.1 VDOT a week over the plan, capped at +1.5, × adherence | **Is** the race plan's race-day projection (`race_day.race_day_vdot`): the calendar's race week paces the race the race plan predicts. Plans are rebuilt from measured fitness on every import, so for the training weeks the projection only ever covers a few days before the estimate replaces it. The watch's pace targets use the plan's base VDOT, not the week's, which the same rebuild keeps negligible. |
 
 Found on the way, outside running: the training plan computes swim CSS from
 `_get_pace_bests`, which returns *running* pace bests and never a 200 m one, so
@@ -220,23 +341,27 @@ the rest should be completed from the papers themselves.
 - Bacon, A. P., Carter, R. E., Ogle, E. A., & Joyner, M. J. (2013). VO2max trainability and high intensity interval training in humans: a meta-analysis. *PLoS ONE*. doi:10.1371/journal.pone.0073182
 - Barandun, U., Knechtle, B., et al. (2012). Running speed during training and percent body fat predict race time in recreational male marathoners. *Open Access Journal of Sports Medicine*. doi:10.2147/OAJSM.S33284
 - Blythe, D. A. J., & Király, F. J. (2016). Prediction and quantification of individual athletic performance of runners. *PLoS ONE*. doi:10.1371/journal.pone.0157257
+- Bosquet, L., Montpetit, J., Arvisais, D., & Mujika, I. (2007). Effects of tapering on performance: a meta-analysis. *Medicine and Science in Sports and Exercise*, 39(8), 1358–1365.
 - Bransford, D. R., & Howley, E. T. (1977). Oxygen cost of running in trained and untrained men and women. *Medicine and Science in Sports*, 9, 41–44.
 - Coyle, E. F., et al. (1984). Time course of loss of adaptations after stopping prolonged intense endurance training. *Journal of Applied Physiology*, 57(6), 1857 ff. doi:10.1152/jappl.1984.57.6.1857
 - Daniels, J. (2013). *Daniels' Running Formula* (3rd ed.). Human Kinetics.
 - Daniels, J., & Gilbert, J. (1979). *Oxygen Power: Performance Tables for Distance Runners*.
 - Firstbeat Technologies (2017). *Automated Fitness Level (VO2max) Estimation with Heart Rate and Speed Data* (white paper; not peer reviewed).
+- Foster, C., Hector, L. L., Welsh, R., Schrager, M., Green, M. A., & Snyder, A. C. (1995). Effects of specific versus cross-training on running performance. *European Journal of Applied Physiology*, 70(4), 367–372.
 - Hellard, P., et al. (2006). Assessing the limitations of the Banister model in monitoring training. *Journal of Sports Sciences*.
 - Jackson, A. S., Blair, S. N., Mahar, M. T., Wier, L. T., Ross, R. M., & Stuteville, J. E. (1990). Prediction of functional aerobic capacity without exercise testing. *Medicine and Science in Sports and Exercise*, 22(6), 863–870.
 - Maldonado, S., Mujika, I., & Padilla, S. (2002). Influence of body mass and height on the energy cost of running in highly trained middle- and long-distance runners. *International Journal of Sports Medicine*, 23(4), 268–272.
 - Matthews, C. E., Heil, D. P., Freedson, P. S., & Pastides, H. (1999). Classification of cardiorespiratory fitness without exercise testing. *Medicine and Science in Sports and Exercise*, 31(3), 486–493.
 - Morgan, D. W., Martin, P. E., & Krahenbuhl, G. S. (1989). Factors affecting running economy. *Sports Medicine*, 7(5), 310–330.
+- Muñoz, I., Seiler, S., Bautista, J., España, J., Larumbe, E., & Esteve-Lanao, J. (2014). Does polarized training improve performance in recreational runners? *International Journal of Sports Physiology and Performance*, 9(2), 265–272.
 - Mujika, I., & Padilla, S. (2000). Detraining: loss of training-induced physiological and performance adaptations, Parts I and II. *Sports Medicine*, 30.
 - Nes, B. M., Janszky, I., et al. (2011). Estimating VO2peak from a nonexercise prediction model: the HUNT Study, Norway. *Medicine and Science in Sports and Exercise*. (Considered: it uses resting HR, which Tracks has, but its coefficients could not be verified.)
-- Scudamore, E. M., Barry, V. W., & Coons, J. M. (2018). An evaluation of time-trial–based predictions of VO2max and recommended training paces for collegiate and recreational runners. *Journal of Strength and Conditioning Research*, 32(4).
+- Scudamore, E. M., Barry, V. W., & Coons, J. M. (2018). An evaluation of time-trial–based predictions of VO2max and recommended training paces for collegiate and recreational runners. *Journal of Strength and Conditioning Research*, 32(4), 1137–1143.
 - Swain, D. P., & Leutholtz, B. C. (1997). Heart rate reserve is equivalent to %VO2 reserve, not to %VO2max. *Medicine and Science in Sports and Exercise*.
-- Swain, D. P., et al. (1998). %HRR and %VO2 reserve in treadmill exercise. *Medicine and Science in Sports and Exercise*.
+- Swain, D. P., Leutholtz, B. C., King, M. E., Haas, L. A., & Branch, J. D. (1998). Relationship between % heart rate reserve and % VO2 reserve in treadmill exercise. *Medicine and Science in Sports and Exercise*, 30(2), 318–321.
 - Tanaka, H., & Seals, D. R. (2008). Endurance exercise performance in Masters athletes: age-associated changes and underlying physiological mechanisms. *Journal of Physiology*.
 - Tanda, G. (2011). Prediction of marathon performance time on the basis of training indices. *Journal of Human Sport and Exercise*.
 - Tanda, G. (2022). A simple relationship for predicting marathon performance from training: is it generally applicable? *Journal of Human Sport and Exercise*, 17(2). doi:10.14198/jhse.2022.172.05
 - Tanda, G., & Knechtle, B. (2013). Marathon performance in relation to body fat percentage and training indices in recreational male runners. *Open Access Journal of Sports Medicine*.
 - Vickers, A. J., & Vertosick, E. A. (2016). An empirical study of race times in recreational endurance runners. *BMC Sports Science, Medicine and Rehabilitation*. doi:10.1186/s13102-016-0052-y
+- White, L. J., Dressendorfer, R. H., Muller, S. M., & Ferguson, M. A. (2003). Effectiveness of cycle cross-training between competitive seasons in female distance runners. *Journal of Strength and Conditioning Research*, 17(2), 319–323.

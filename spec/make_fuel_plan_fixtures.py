@@ -131,20 +131,29 @@ def main() -> None:
             fx["gut"].append({"race_carbs": race_carbs, "race_date": race, "workouts": workouts, "logs": logs,
                               "expected": fp.gut_training(race_carbs, race, workouts, logs)})
 
-    for name, sport, laps, pace, hr, max_hr, products in (
-        ("10K", "running", _laps(10.0, 300), True, False, None, [PRODUCTS[0]]),
-        ("Half Marathon", "running", _laps(21.0975, 290, 0.04), True, False, None, [PRODUCTS[0], PRODUCTS[1]]),
+    # A course's terrain splits are named for their ground (race_predictor/
+    # terrain.py), and that name is what the watch shows as the step begins.
+    terrain = [dict(l, label=lbl) for l, lbl in zip(
+        _laps(10.0, 300),
+        ["Flat", "Climb 6%", "Climb 6%", "Downhill 4%", "Flat", None, "Steep climb 11%", "Flat", "Downhill 7%", "Flat"])]
+    for name, sport, laps, pace, hr, max_hr, products, workout_id in (
+        ("10K", "running", _laps(10.0, 300), True, False, None, [PRODUCTS[0]], 0),
+        ("Half Marathon", "running", _laps(21.0975, 290, 0.04), True, False, None, [PRODUCTS[0], PRODUCTS[1]], 0),
         ("Marathon", "running", [dict(l, hr_ceiling=150 + i % 20) for i, l in enumerate(_laps(42.195, 280))],
-         False, True, 190, [PRODUCTS[1], PRODUCTS[3]]),
-        ("Gran Fondo", "cycling", _laps(40.0, 120), True, False, None, []),
+         False, True, 190, [PRODUCTS[1], PRODUCTS[3]], 0),
+        ("Gran Fondo", "cycling", _laps(40.0, 120), True, False, None, [], 0),
+        # The race-day entry of a training calendar: the planned session's id,
+        # a course's terrain names, and — with watch coaching off — open steps.
+        ("Hill 10K", "running", terrain, True, False, None, [PRODUCTS[0]], 412),
+        ("Hill 10K, no coaching", "running", terrain, False, False, None, [PRODUCTS[0]], 1_000_000_007),
     ):
         dur = sum(l["distance_m"] / 1000 * l["target_sec_per_km"] for l in laps) / 60.0
         tl = fp.timeline(dur, fp.targets(dur), products, laps)
         data = generate_race_fit(name, sport, laps, pace_coaching=pace, hr_coaching=hr, max_hr=max_hr,
-                                 fuel_items=tl["items"], time_created_ms=1790000000000)
+                                 fuel_items=tl["items"], time_created_ms=1790000000000, workout_id=workout_id)
         fx["race_fit"].append({"name": name, "sport": sport, "laps": laps, "pace_coaching": pace,
                                "hr_coaching": hr, "max_hr": max_hr, "fuel_items": tl["items"],
-                               "time_created_ms": 1790000000000, "hex": data.hex()})
+                               "time_created_ms": 1790000000000, "workout_id": workout_id, "hex": data.hex()})
 
     OUT.write_text(json.dumps(fx, indent=1) + "\n")
     print(f"wrote {OUT}")

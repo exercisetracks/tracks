@@ -161,10 +161,18 @@ class LocalMetrics(private val library: LocalLibrary, private val sources: Local
     }
 
     /** Today's (CTL, ATL) from the same rows the dashboard's fitness chart reads. */
-    suspend fun ctlAtl(today: CivilDate, thresholdHr: Double?): Pair<Double, Double> = cpu {
-        val tss = TrainingLoad.tssByDate(rows(), thresholdHr, sources.mtbDiscipline())
-        val (ctl, atl, _) = TrainingLoad.ctlAtlToday(tss, today)
-        ctl to atl
+    suspend fun ctlAtl(today: CivilDate, thresholdHr: Double?): Pair<Double, Double> {
+        val (ctl, atl, _) = TrainingLoad.ctlAtlToday(tssByDate(thresholdHr), today)
+        return ctl to atl
+    }
+
+    /**
+     * Each day's load, by epoch day, from the rows the dashboard's fitness
+     * chart reads — the server's `_build_tss_by_date`, which the race plan's
+     * form (LocalRaceDay.form) projects from.
+     */
+    suspend fun tssByDate(thresholdHr: Double?): Map<Long, Double> = cpu {
+        TrainingLoad.tssByDate(rows(), thresholdHr, sources.mtbDiscipline())
     }
 
     /**

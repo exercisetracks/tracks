@@ -13,9 +13,11 @@ import com.tracks.core.parse.PyMath
  * (SportPlanFixtureTest). The phone used to plan running alone and say
  * "Pacing for this sport is on the web" for the rest.
  *
- * A neutral day, as the phone's running plan has always been: no forecast and
- * no freshness adjustment, which are the only two things the web's plan adds.
- * See the Python for the reasoning behind each sport's model.
+ * No forecast: the phone has no weather, which is the one thing the web's
+ * plan adds. Race-morning freshness ([Inputs.freshness],
+ * com.tracks.core.plan.RaceDay) is applied as the server applies it, in
+ * every sport — the phone used to leave it out, so the two predicted the
+ * same race up to 3% apart. See the Python for each sport's model.
  *
  * [Inputs.intensity] is the race-intensity slider, applied as the server's
  * sport_plan applies it: speed on foot and in the water, power on a bike,
@@ -57,6 +59,12 @@ object SportPlan {
          * [INTENSITY_RANGE].
          */
         val intensity: Double = 1.0,
+        /**
+         * Race-morning freshness as a time multiplier (RaceDay.freshnessFactor):
+         * below 1 when fresh. VDOT and FTP are raised by its complement, CSS
+         * and the marathon's volume half scaled by it, as `sport_plan` does.
+         */
+        val freshness: Double = 1.0,
     )
 
     data class TriSplits(val swimM: Double, val bikeM: Double, val runM: Double)
@@ -111,18 +119,60 @@ object SportPlan {
 
     fun inferTriathlonSplits(totalM: Double): TriSplits = TRI_SPLITS.minBy { kotlin.math.abs(it.first - totalM) }.second
 
+    /**
+     * What a race-day prediction is made of (`race_plan.race_projection`):
+     * fitness today and on race day, the share of the plan done, the form,
+     * and — for a running race, whose whole time follows VDOT — the finish at
+     * today's fitness and form. Null for a sport VDOT does not predict.
+     */
+    data class Projection(
+        val vdotToday: Double,
+        val vdotRaceDay: Double,
+        val adherence: Double?,
+        val tsbToday: Double?,
+        val tsbRaceDay: Double?,
+        val todaySeconds: Double?,
+        val todayTime: String?,
+    )
+
+    /**
+     * `race_projection`. [actualSec] is the race-day plan's finish; today's is
+     * it rescaled by the flat prediction's ratio, since intensity, weather and
+     * course multiply both alike.
+     */
+    fun projection(
+        family: String, vdot: Double?, vdotToday: Double?, adherence: Double?, runIndices: Pair<Double, Double>?,
+        tsbToday: Double?, tsbRaceDay: Double?, actualSec: Double, distanceM: Double,
+    ): Projection? {
+        if (vdot == null || (family != "running" && family != "triathlon")) return null
+        val today = vdotToday?.takeIf { it != 0.0 } ?: vdot
+        var todaySec: Double? = null
+        if (family == "running") {
+            fun flat(v: Double, f: Double) = RacePredictor.predictRunningRaceSec(v * (2.0 - f), distanceM, runIndices, f)
+            todaySec = PyMath.round(
+                actualSec * flat(today, com.tracks.core.plan.RaceDay.freshnessFactor(tsbToday)) /
+                    flat(vdot, com.tracks.core.plan.RaceDay.freshnessFactor(tsbRaceDay)), 1,
+            )
+        }
+        return Projection(
+            PyMath.round(today, 1), PyMath.round(vdot, 1), adherence?.let { PyMath.round(it, 2) },
+            tsbToday, tsbRaceDay, todaySec, todaySec?.let(RacePredictor::formatTime),
+        )
+    }
+
     /** The plan for [family] (PlanBase.sportFamily). Throws [Missing] when its threshold is not set. */
     fun plan(family: String, m: Metrics, i: Inputs): Result {
         val lapKm = if (i.imperial) 1.60934 else 1.0
         val segs = i.segments.ifEmpty { null }
         val maxHr = m.maxHr.takeIf { i.paceHr }
         val k = intensityOf(i.intensity)
+        val f = i.freshness
         return when (family) {
             "running" -> {
-                val vdot = m.vdot ?: throw Missing("Build a training plan to predict a finish.")
+                val vdot = m.vdot ?: throw Missing("Record a few runs to predict a finish.")
                 // Speed, not VDOT: the marathon's time is half the volume
                 // model, which a VDOT change would not reach (sport_plan).
-                var flat = RacePredictor.predictRunningRaceSec(vdot, i.distanceM, m.runIndices) / k
+                var flat = RacePredictor.predictRunningRaceSec(vdot * (2.0 - f), i.distanceM, m.runIndices, f) / k
                 var tech: Pair<Double, String>? = null
                 if (segs != null) {
                     tech = RacePredictor.technicalityFactor(segs)
@@ -133,12 +183,12 @@ object SportPlan {
                 val (laps, sec) = RacePredictor.lapPaces(flat, i.distanceM, i.splitSpread, lapKm, segs, maxHr, terrain = true)
                 Result(laps, sec, technicalityFactor = tech?.first, technicalityLabel = tech?.second)
             }
-            "mountain_biking" -> mtb(m, i, lapKm, segs, maxHr, k)
-            "cycling" -> cycling(m, i, lapKm, segs, maxHr, k)
+            "mountain_biking" -> mtb(m, i, lapKm, segs, maxHr, k, f)
+            "cycling" -> cycling(m, i, lapKm, segs, maxHr, k, f)
             "swimming" -> {
                 // The pace raced: CSS, quickened or eased by the intensity.
                 val css = (m.css ?: throw Missing("Set your CSS in Settings to plan a swim.")) / k
-                val sec = RacePredictor.predictSwimTimeSec(css, i.distanceM, i.distanceM > 1000)
+                val sec = RacePredictor.predictSwimTimeSec(css * f, i.distanceM, i.distanceM > 1000)
                 val pace = RacePredictor.formatSwimPace(css)
                 val perKm = PyMath.roundToLong(css * 10).toDouble()
                 val lap = RaceLap(
@@ -148,24 +198,24 @@ object SportPlan {
                 )
                 Result(listOf(lap), sec)
             }
-            "triathlon" -> triathlon(m, i, lapKm, maxHr, k)
+            "triathlon" -> triathlon(m, i, lapKm, maxHr, k, f)
             else -> {
-                val vdot = m.vdot ?: throw Missing("Build a training plan to predict a finish.")
-                val flat = RacePredictor.predictRaceTimeSec(vdot, i.distanceM) / k * (COURSE_FACTORS[i.courseType] ?: 1.0)
+                val vdot = m.vdot ?: throw Missing("Record a few runs to predict a finish.")
+                val flat = RacePredictor.predictRaceTimeSec(vdot * (2.0 - f), i.distanceM) / k * (COURSE_FACTORS[i.courseType] ?: 1.0)
                 val (laps, sec) = RacePredictor.lapPaces(flat, i.distanceM, i.splitSpread, lapKm, maxHr = maxHr)
                 Result(laps, sec)
             }
         }
     }
 
-    private fun cycling(m: Metrics, i: Inputs, lapKm: Double, segs: List<Segment>?, maxHr: Int?, k: Double): Result {
+    private fun cycling(m: Metrics, i: Inputs, lapKm: Double, segs: List<Segment>?, maxHr: Int?, k: Double, f: Double): Result {
         val ftp = m.ftp ?: throw Missing("Set your FTP in Settings to plan a ride.")
         val discipline = (i.cyclingDiscipline ?: "road_race").lowercase()
         // Drafting as a power multiplier: the rider's watts carry them as far
         // as ftp / df would solo. Watts are scaled back down for the targets,
         // and their share of FTP is of the real one, which the watch holds.
         val df = RoadCycling.draftingFactor(discipline)
-        val ftpEffective = ftp / df * k
+        val ftpEffective = ftp / df * (2.0 - f) * k
         var base = RacePredictor.predictCyclingTimeSec(ftpEffective, i.distanceM, segs)
         var tech: Pair<Double, String>? = null
         if (segs == null) base *= CY_COURSE_FACTORS[i.courseType] ?: 1.0 else tech = RacePredictor.technicalityFactor(segs)
@@ -186,9 +236,9 @@ object SportPlan {
         )
     }
 
-    private fun mtb(m: Metrics, i: Inputs, lapKm: Double, segs: List<Segment>?, maxHr: Int?, k: Double): Result {
+    private fun mtb(m: Metrics, i: Inputs, lapKm: Double, segs: List<Segment>?, maxHr: Int?, k: Double, f: Double): Result {
         val discipline = (i.mtbDiscipline ?: "trail").lowercase()
-        val ftp = m.ftp?.let { it * k }
+        val ftp = m.ftp?.let { it * (2.0 - f) * k }
         var base = if (ftp != null) {
             RacePredictor.predictCyclingTimeSec(ftp, i.distanceM, segs)
         } else {
@@ -213,7 +263,7 @@ object SportPlan {
         return Result(laps, sec, technicalityFactor = tech?.first, technicalityLabel = tech?.second, targetHrCeiling = hr)
     }
 
-    private fun triathlon(m: Metrics, i: Inputs, lapKm: Double, maxHr: Int?, k: Double): Result {
+    private fun triathlon(m: Metrics, i: Inputs, lapKm: Double, maxHr: Int?, k: Double, f: Double): Result {
         val splits = i.triathlonSplits ?: inferTriathlonSplits(i.distanceM)
         // Each leg's course — its own file, else its stretch of the whole —
         // sets its length and shapes its targets (TriCourse).
@@ -228,12 +278,12 @@ object SportPlan {
         val legs = mutableListOf<Leg>()
         var total = 0.0
         m.css?.let { it / k }?.let { css ->
-            val sec = RacePredictor.predictSwimTimeSec(css, swimM, openWater = true)
+            val sec = RacePredictor.predictSwimTimeSec(css * f, swimM, openWater = true)
             legs += Leg("swim", swimM, sec, RacePredictor.formatSwimPace(css), null, null, null, css * 10)
             total += sec + T1_SEC
         }
         m.ftp?.let { ftp ->
-            val raced = ftp * k
+            val raced = ftp * (2.0 - f) * k
             val sec = RacePredictor.predictCyclingTimeSec(raced, bikeM, bikeSegs)
             val kph = bikeM / sec * 3.6
             val (raw, _) = RacePredictor.cyclingLapTargets(raced, bikeM, i.splitSpread, lapKm, bikeSegs, maxHr, sec)
@@ -247,13 +297,13 @@ object SportPlan {
         }
         m.vdot?.let { vdot ->
             // About 5% slower for the swim and the bike before it.
-            var sec = RacePredictor.predictRaceTimeSec(vdot * 0.95, runM) / k
+            var sec = RacePredictor.predictRaceTimeSec(vdot * (2.0 - f) * 0.95, runM) / k
             if (runSegs != null) sec *= RacePredictor.technicalityFactor(runSegs).first
             val (laps, _) = RacePredictor.lapPaces(sec, runM, i.splitSpread, lapKm, runSegs, maxHr, terrain = runSegs != null)
             legs += Leg("run", runM, sec, laps.firstOrNull()?.targetPace, null, null, laps)
             total += sec
         }
-        if (legs.isEmpty()) throw Missing("Set your FTP or CSS, or build a training plan, to plan a triathlon.")
+        if (legs.isEmpty()) throw Missing("Set your FTP or CSS, or record a few runs, to plan a triathlon.")
         return Result(legs.firstNotNullOfOrNull { it.laps }.orEmpty(), total, legs, splits)
     }
 }

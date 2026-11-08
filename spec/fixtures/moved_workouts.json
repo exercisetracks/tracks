@@ -1797,10 +1797,10 @@
      "scheduled_date": "2026-10-08",
      "sport": "running",
      "workout_type": "easy",
-     "title": "Easy — 12.6 km",
-     "description": "Walk: 5 min — Brisk 5-min walk to warm up\n80 min: Conversational pace · 6:19/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
+     "title": "Easy — 12.1 km",
+     "description": "Walk: 5 min — Brisk 5-min walk to warm up\n80 min: Conversational pace · 6:37/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
      "duration_minutes": 90,
-     "distance_meters": 12648,
+     "distance_meters": 12075,
      "steps": [
       {
        "type": "walk",
@@ -1811,7 +1811,7 @@
        "type": "run",
        "duration_min": 80,
        "pace": "easy",
-       "note": "Conversational pace · 6:19/km (Zone 2)"
+       "note": "Conversational pace · 6:37/km (Zone 2)"
       },
       {
        "type": "walk",
@@ -1851,10 +1851,10 @@
      "scheduled_date": "2026-10-10",
      "sport": "running",
      "workout_type": "tempo",
-     "title": "Tempo — 10.4 km",
-     "description": "Walk: 5 min — Brisk 5-min walk to warm up\nWarmup: 15 min — Easy jog · 6:57/km\n35 min: Comfortably hard · 5:10/km (threshold)\nCooldown: 10 min — Easy jog · 6:57/km\nWalk: 5 min — 5-min walk to cool down and recover",
+     "title": "Tempo — 10.2 km",
+     "description": "Walk: 5 min — Brisk 5-min walk to warm up\nWarmup: 15 min — Easy jog · 6:57/km\n35 min: Comfortably hard · 5:16/km (threshold)\nCooldown: 10 min — Easy jog · 6:57/km\nWalk: 5 min — 5-min walk to cool down and recover",
      "duration_minutes": 70,
-     "distance_meters": 10353,
+     "distance_meters": 10234,
      "steps": [
       {
        "type": "walk",
@@ -1871,7 +1871,7 @@
        "type": "run",
        "duration_min": 35,
        "pace": "threshold",
-       "note": "Comfortably hard · 5:10/km (threshold)"
+       "note": "Comfortably hard · 5:16/km (threshold)"
       },
       {
        "type": "cooldown",
@@ -1890,10 +1890,10 @@
      "scheduled_date": "2026-10-11",
      "sport": "running",
      "workout_type": "long",
-     "title": "Long Session — 25.4 km",
-     "description": "Walk: 5 min — Brisk 5-min walk to warm up\n2× 12.7 km at 6:19/km / 60 s walk\nWalk: 5 min — 5-min walk to cool down and recover",
+     "title": "Long Session — 24.2 km",
+     "description": "Walk: 5 min — Brisk 5-min walk to warm up\n2× 12.1 km at 6:37/km / 60 s walk\nWalk: 5 min — 5-min walk to cool down and recover",
      "duration_minutes": 172,
-     "distance_meters": 25400,
+     "distance_meters": 24200,
      "steps": [
       {
        "type": "walk",
@@ -1903,10 +1903,10 @@
       {
        "type": "interval_set",
        "reps": 2,
-       "distance_m": 12700,
+       "distance_m": 12100,
        "rest_sec": 60,
        "pace": "easy",
-       "note": "2× 12.7 km at 6:19/km / 60 s walk"
+       "note": "2× 12.1 km at 6:37/km / 60 s walk"
       },
       {
        "type": "walk",
@@ -1919,10 +1919,10 @@
      "scheduled_date": "2026-10-13",
      "sport": "running",
      "workout_type": "easy",
-     "title": "Easy — 14.2 km",
-     "description": "Walk: 5 min — Brisk 5-min walk to warm up\n90 min: Conversational pace · 6:19/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
+     "title": "Easy — 13.6 km",
+     "description": "Walk: 5 min — Brisk 5-min walk to warm up\n90 min: Conversational pace · 6:37/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
      "duration_minutes": 100,
-     "distance_meters": 14229,
+     "distance_meters": 13585,
      "steps": [
       {
        "type": "walk",
@@ -1933,7 +1933,7 @@
        "type": "run",
        "duration_min": 90,
        "pace": "easy",
-       "note": "Conversational pace · 6:19/km (Zone 2)"
+       "note": "Conversational pace · 6:37/km (Zone 2)"
       },
       {
        "type": "walk",
@@ -1946,10 +1946,10 @@
      "scheduled_date": "2026-10-14",
      "sport": "running",
      "workout_type": "easy",
-     "title": "Easy — 12.6 km",
-     "description": "Walk: 5 min — Brisk 5-min walk to warm up\n80 min: Conversational pace · 6:19/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
+     "title": "Easy — 12.1 km",
+     "description": "Walk: 5 min — Brisk 5-min walk to warm up\n80 min: Conversational pace · 6:37/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
      "duration_minutes": 90,
-     "distance_meters": 12648,
+     "distance_meters": 12075,
      "steps": [
       {
        "type": "walk",
@@ -1960,7 +1960,7 @@
        "type": "run",
        "duration_min": 80,
        "pace": "easy",
-       "note": "Conversational pace · 6:19/km (Zone 2)"
+       "note": "Conversational pace · 6:37/km (Zone 2)"
       },
       {
        "type": "walk",
@@ -2000,10 +2000,10 @@
      "scheduled_date": "2026-10-17",
      "sport": "running",
      "workout_type": "tempo",
-     "title": "Tempo — 10.5 km",
-     "description": "Walk: 5 min — Brisk 5-min walk to warm up\nWarmup: 12 min — Easy jog · 6:57/km\n38 min: Comfortably hard · 5:10/km (threshold)\nCooldown: 10 min — Easy jog · 6:57/km\nWalk: 5 min — 5-min walk to cool down and recover",
+     "title": "Tempo — 10.4 km",
+     "description": "Walk: 5 min — Brisk 5-min walk to warm up\nWarmup: 12 min — Easy jog · 6:57/km\n38 min: Comfortably hard · 5:16/km (threshold)\nCooldown: 10 min — Easy jog · 6:57/km\nWalk: 5 min — 5-min walk to cool down and recover",
      "duration_minutes": 70,
-     "distance_meters": 10501,
+     "distance_meters": 10372,
      "steps": [
       {
        "type": "walk",
@@ -2020,7 +2020,7 @@
        "type": "run",
        "duration_min": 38,
        "pace": "threshold",
-       "note": "Comfortably hard · 5:10/km (threshold)"
+       "note": "Comfortably hard · 5:16/km (threshold)"
       },
       {
        "type": "cooldown",
@@ -2039,10 +2039,10 @@
      "scheduled_date": "2026-10-18",
      "sport": "running",
      "workout_type": "long",
-     "title": "Long Session — 26.8 km",
-     "description": "Walk: 5 min — Brisk 5-min walk to warm up\n2× 13.4 km at 6:19/km / 60 s walk\nWalk: 5 min — 5-min walk to cool down and recover",
+     "title": "Long Session — 25.6 km",
+     "description": "Walk: 5 min — Brisk 5-min walk to warm up\n2× 12.8 km at 6:37/km / 60 s walk\nWalk: 5 min — 5-min walk to cool down and recover",
      "duration_minutes": 181,
-     "distance_meters": 26800,
+     "distance_meters": 25600,
      "steps": [
       {
        "type": "walk",
@@ -2052,10 +2052,10 @@
       {
        "type": "interval_set",
        "reps": 2,
-       "distance_m": 13400,
+       "distance_m": 12800,
        "rest_sec": 60,
        "pace": "easy",
-       "note": "2× 13.4 km at 6:19/km / 60 s walk"
+       "note": "2× 12.8 km at 6:37/km / 60 s walk"
       },
       {
        "type": "walk",
@@ -2068,10 +2068,10 @@
      "scheduled_date": "2026-10-20",
      "sport": "running",
      "workout_type": "easy",
-     "title": "Easy — 14.5 km",
-     "description": "Walk: 5 min — Brisk 5-min walk to warm up\n92 min: Conversational pace · 6:19/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
+     "title": "Easy — 13.9 km",
+     "description": "Walk: 5 min — Brisk 5-min walk to warm up\n92 min: Conversational pace · 6:37/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
      "duration_minutes": 102,
-     "distance_meters": 14545,
+     "distance_meters": 13887,
      "steps": [
       {
        "type": "walk",
@@ -2082,7 +2082,7 @@
        "type": "run",
        "duration_min": 92,
        "pace": "easy",
-       "note": "Conversational pace · 6:19/km (Zone 2)"
+       "note": "Conversational pace · 6:37/km (Zone 2)"
       },
       {
        "type": "walk",
@@ -2095,10 +2095,10 @@
      "scheduled_date": "2026-10-22",
      "sport": "running",
      "workout_type": "easy",
-     "title": "Easy — 15.3 km",
-     "description": "Walk: 5 min — Brisk 5-min walk to warm up\n97 min: Conversational pace · 6:19/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
+     "title": "Easy — 14.6 km",
+     "description": "Walk: 5 min — Brisk 5-min walk to warm up\n97 min: Conversational pace · 6:37/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
      "duration_minutes": 107,
-     "distance_meters": 15336,
+     "distance_meters": 14642,
      "steps": [
       {
        "type": "walk",
@@ -2109,7 +2109,7 @@
        "type": "run",
        "duration_min": 97,
        "pace": "easy",
-       "note": "Conversational pace · 6:19/km (Zone 2)"
+       "note": "Conversational pace · 6:37/km (Zone 2)"
       },
       {
        "type": "walk",
@@ -2149,10 +2149,10 @@
      "scheduled_date": "2026-10-24",
      "sport": "running",
      "workout_type": "tempo",
-     "title": "Tempo — 10.3 km",
-     "description": "Walk: 5 min — Brisk 5-min walk to warm up\nWarmup: 15 min — Easy jog · 6:57/km\n33 min: Comfortably hard · 5:10/km (threshold)\nCooldown: 12 min — Easy jog · 6:57/km\nWalk: 5 min — 5-min walk to cool down and recover",
+     "title": "Tempo — 10.1 km",
+     "description": "Walk: 5 min — Brisk 5-min walk to warm up\nWarmup: 15 min — Easy jog · 6:57/km\n33 min: Comfortably hard · 5:16/km (threshold)\nCooldown: 12 min — Easy jog · 6:57/km\nWalk: 5 min — 5-min walk to cool down and recover",
      "duration_minutes": 70,
-     "distance_meters": 10255,
+     "distance_meters": 10142,
      "steps": [
       {
        "type": "walk",
@@ -2169,7 +2169,7 @@
        "type": "run",
        "duration_min": 33,
        "pace": "threshold",
-       "note": "Comfortably hard · 5:10/km (threshold)"
+       "note": "Comfortably hard · 5:16/km (threshold)"
       },
       {
        "type": "cooldown",
@@ -2188,10 +2188,10 @@
      "scheduled_date": "2026-10-25",
      "sport": "running",
      "workout_type": "long",
-     "title": "Long Session — 28.2 km",
-     "description": "Walk: 5 min — Brisk 5-min walk to warm up\n2× 14.1 km at 6:19/km / 60 s walk\nWalk: 5 min — 5-min walk to cool down and recover",
+     "title": "Long Session — 27.0 km",
+     "description": "Walk: 5 min — Brisk 5-min walk to warm up\n2× 13.5 km at 6:37/km / 60 s walk\nWalk: 5 min — 5-min walk to cool down and recover",
      "duration_minutes": 190,
-     "distance_meters": 28200,
+     "distance_meters": 27000,
      "steps": [
       {
        "type": "walk",
@@ -2201,10 +2201,10 @@
       {
        "type": "interval_set",
        "reps": 2,
-       "distance_m": 14100,
+       "distance_m": 13500,
        "rest_sec": 60,
        "pace": "easy",
-       "note": "2× 14.1 km at 6:19/km / 60 s walk"
+       "note": "2× 13.5 km at 6:37/km / 60 s walk"
       },
       {
        "type": "walk",
@@ -2217,10 +2217,10 @@
      "scheduled_date": "2026-10-27",
      "sport": "running",
      "workout_type": "easy",
-     "title": "Easy — 6.2 km",
-     "description": "Walk: 5 min — Brisk 5-min walk to warm up\n39 min: Conversational pace · 6:19/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
+     "title": "Easy — 5.9 km",
+     "description": "Walk: 5 min — Brisk 5-min walk to warm up\n39 min: Conversational pace · 6:37/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
      "duration_minutes": 49,
-     "distance_meters": 6166,
+     "distance_meters": 5887,
      "steps": [
       {
        "type": "walk",
@@ -2231,7 +2231,7 @@
        "type": "run",
        "duration_min": 39,
        "pace": "easy",
-       "note": "Conversational pace · 6:19/km (Zone 2)"
+       "note": "Conversational pace · 6:37/km (Zone 2)"
       },
       {
        "type": "walk",
@@ -2244,10 +2244,10 @@
      "scheduled_date": "2026-10-28",
      "sport": "running",
      "workout_type": "easy",
-     "title": "Easy — 6.6 km",
-     "description": "Walk: 5 min — Brisk 5-min walk to warm up\n42 min: Conversational pace · 6:19/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
+     "title": "Easy — 6.3 km",
+     "description": "Walk: 5 min — Brisk 5-min walk to warm up\n42 min: Conversational pace · 6:37/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
      "duration_minutes": 52,
-     "distance_meters": 6640,
+     "distance_meters": 6340,
      "steps": [
       {
        "type": "walk",
@@ -2258,7 +2258,7 @@
        "type": "run",
        "duration_min": 42,
        "pace": "easy",
-       "note": "Conversational pace · 6:19/km (Zone 2)"
+       "note": "Conversational pace · 6:37/km (Zone 2)"
       },
       {
        "type": "walk",
@@ -2272,7 +2272,7 @@
      "sport": "running",
      "workout_type": "fartlek",
      "title": "Fartlek — 2.2 km",
-     "description": "Walk: 5 min — Brisk 5-min walk to warm up\nWarmup: 10 min — Easy jog · 6:57/km\n3 min hard (5:10/km) / 2 min easy — 5 rounds\nCooldown: 5 min — Easy jog · 6:57/km\nWalk: 5 min — 5-min walk to cool down and recover",
+     "description": "Walk: 5 min — Brisk 5-min walk to warm up\nWarmup: 10 min — Easy jog · 6:57/km\n3 min hard (5:16/km) / 2 min easy — 5 rounds\nCooldown: 5 min — Easy jog · 6:57/km\nWalk: 5 min — 5-min walk to cool down and recover",
      "duration_minutes": 50,
      "distance_meters": 2157,
      "steps": [
@@ -2294,7 +2294,7 @@
        "easy_min": 2,
        "reps": 5,
        "pace": "threshold",
-       "note": "3 min hard (5:10/km) / 2 min easy — 5 rounds"
+       "note": "3 min hard (5:16/km) / 2 min easy — 5 rounds"
       },
       {
        "type": "cooldown",
@@ -2313,10 +2313,10 @@
      "scheduled_date": "2026-10-31",
      "sport": "running",
      "workout_type": "easy",
-     "title": "Easy — 7.4 km",
-     "description": "Walk: 5 min — Brisk 5-min walk to warm up\n47 min: Conversational pace · 6:19/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
+     "title": "Easy — 7.1 km",
+     "description": "Walk: 5 min — Brisk 5-min walk to warm up\n47 min: Conversational pace · 6:37/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
      "duration_minutes": 57,
-     "distance_meters": 7431,
+     "distance_meters": 7094,
      "steps": [
       {
        "type": "walk",
@@ -2327,7 +2327,7 @@
        "type": "run",
        "duration_min": 47,
        "pace": "easy",
-       "note": "Conversational pace · 6:19/km (Zone 2)"
+       "note": "Conversational pace · 6:37/km (Zone 2)"
       },
       {
        "type": "walk",
@@ -2340,10 +2340,10 @@
      "scheduled_date": "2026-11-01",
      "sport": "running",
      "workout_type": "long",
-     "title": "Long Session — 13.4 km",
-     "description": "Walk: 5 min — Brisk 5-min walk to warm up\n85 min: Easy conversational pace · 6:19/km\nWalk: 5 min — 5-min walk to cool down and recover",
+     "title": "Long Session — 12.8 km",
+     "description": "Walk: 5 min — Brisk 5-min walk to warm up\n85 min: Easy conversational pace · 6:37/km\nWalk: 5 min — 5-min walk to cool down and recover",
      "duration_minutes": 95,
-     "distance_meters": 13439,
+     "distance_meters": 12830,
      "steps": [
       {
        "type": "walk",
@@ -2354,7 +2354,7 @@
        "type": "run",
        "duration_min": 85,
        "pace": "easy",
-       "note": "Easy conversational pace · 6:19/km"
+       "note": "Easy conversational pace · 6:37/km"
       },
       {
        "type": "walk",
@@ -2429,10 +2429,10 @@
      "m3": {
       "sport": "running",
       "workout_type": "easy",
-      "title": "Easy — 14.2 km",
-      "description": "Walk: 5 min — Brisk 5-min walk to warm up\n90 min: Conversational pace · 6:19/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
+      "title": "Easy — 13.6 km",
+      "description": "Walk: 5 min — Brisk 5-min walk to warm up\n90 min: Conversational pace · 6:37/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
       "duration_minutes": 100,
-      "distance_meters": 14229,
+      "distance_meters": 13585,
       "steps": [
        {
         "type": "walk",
@@ -2443,7 +2443,7 @@
         "type": "run",
         "duration_min": 90,
         "pace": "easy",
-        "note": "Conversational pace · 6:19/km (Zone 2)"
+        "note": "Conversational pace · 6:37/km (Zone 2)"
        },
        {
         "type": "walk",
@@ -2455,10 +2455,10 @@
      "m6": {
       "sport": "running",
       "workout_type": "easy",
-      "title": "Easy — 12.6 km",
-      "description": "Walk: 5 min — Brisk 5-min walk to warm up\n80 min: Conversational pace · 6:19/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
+      "title": "Easy — 12.1 km",
+      "description": "Walk: 5 min — Brisk 5-min walk to warm up\n80 min: Conversational pace · 6:37/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
       "duration_minutes": 90,
-      "distance_meters": 12648,
+      "distance_meters": 12075,
       "steps": [
        {
         "type": "walk",
@@ -2469,7 +2469,7 @@
         "type": "run",
         "duration_min": 80,
         "pace": "easy",
-        "note": "Conversational pace · 6:19/km (Zone 2)"
+        "note": "Conversational pace · 6:37/km (Zone 2)"
        },
        {
         "type": "walk",
@@ -2481,10 +2481,10 @@
      "m9": {
       "sport": "running",
       "workout_type": "long",
-      "title": "Long Session — 28.2 km",
-      "description": "Walk: 5 min — Brisk 5-min walk to warm up\n2× 14.1 km at 6:19/km / 60 s walk\nWalk: 5 min — 5-min walk to cool down and recover",
+      "title": "Long Session — 27.0 km",
+      "description": "Walk: 5 min — Brisk 5-min walk to warm up\n2× 13.5 km at 6:37/km / 60 s walk\nWalk: 5 min — 5-min walk to cool down and recover",
       "duration_minutes": 190,
-      "distance_meters": 28200,
+      "distance_meters": 27000,
       "steps": [
        {
         "type": "walk",
@@ -2494,10 +2494,10 @@
        {
         "type": "interval_set",
         "reps": 2,
-        "distance_m": 14100,
+        "distance_m": 13500,
         "rest_sec": 60,
         "pace": "easy",
-        "note": "2× 14.1 km at 6:19/km / 60 s walk"
+        "note": "2× 13.5 km at 6:37/km / 60 s walk"
        },
        {
         "type": "walk",
@@ -2509,10 +2509,10 @@
      "m12": {
       "sport": "running",
       "workout_type": "easy",
-      "title": "Easy — 15.3 km",
-      "description": "Walk: 5 min — Brisk 5-min walk to warm up\n97 min: Conversational pace · 6:19/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
+      "title": "Easy — 14.6 km",
+      "description": "Walk: 5 min — Brisk 5-min walk to warm up\n97 min: Conversational pace · 6:37/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
       "duration_minutes": 107,
-      "distance_meters": 15336,
+      "distance_meters": 14642,
       "steps": [
        {
         "type": "walk",
@@ -2523,7 +2523,7 @@
         "type": "run",
         "duration_min": 97,
         "pace": "easy",
-        "note": "Conversational pace · 6:19/km (Zone 2)"
+        "note": "Conversational pace · 6:37/km (Zone 2)"
        },
        {
         "type": "walk",
@@ -2535,10 +2535,10 @@
      "m15": {
       "sport": "running",
       "workout_type": "easy",
-      "title": "Easy — 6.6 km",
-      "description": "Walk: 5 min — Brisk 5-min walk to warm up\n42 min: Conversational pace · 6:19/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
+      "title": "Easy — 6.3 km",
+      "description": "Walk: 5 min — Brisk 5-min walk to warm up\n42 min: Conversational pace · 6:37/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
       "duration_minutes": 52,
-      "distance_meters": 6640,
+      "distance_meters": 6340,
       "steps": [
        {
         "type": "walk",
@@ -2549,7 +2549,7 @@
         "type": "run",
         "duration_min": 42,
         "pace": "easy",
-        "note": "Conversational pace · 6:19/km (Zone 2)"
+        "note": "Conversational pace · 6:37/km (Zone 2)"
        },
        {
         "type": "walk",
@@ -3086,10 +3086,10 @@
      "scheduled_date": "2026-10-07",
      "sport": "running",
      "workout_type": "easy",
-     "title": "Easy — 10.6 km",
-     "description": "Walk: 5 min — Brisk 5-min walk to warm up\n67 min: Conversational pace · 6:19/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
+     "title": "Easy — 10.1 km",
+     "description": "Walk: 5 min — Brisk 5-min walk to warm up\n67 min: Conversational pace · 6:37/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
      "duration_minutes": 77,
-     "distance_meters": 10593,
+     "distance_meters": 10113,
      "steps": [
       {
        "type": "walk",
@@ -3100,7 +3100,7 @@
        "type": "run",
        "duration_min": 67,
        "pace": "easy",
-       "note": "Conversational pace · 6:19/km (Zone 2)"
+       "note": "Conversational pace · 6:37/km (Zone 2)"
       },
       {
        "type": "walk",
@@ -3181,10 +3181,10 @@
      "scheduled_date": "2026-10-10",
      "sport": "running",
      "workout_type": "tempo",
-     "title": "Tempo — 10.4 km",
-     "description": "Walk: 5 min — Brisk 5-min walk to warm up\nWarmup: 15 min — Easy jog · 6:57/km\n35 min: Comfortably hard · 5:10/km (threshold)\nCooldown: 10 min — Easy jog · 6:57/km\nWalk: 5 min — 5-min walk to cool down and recover",
+     "title": "Tempo — 10.2 km",
+     "description": "Walk: 5 min — Brisk 5-min walk to warm up\nWarmup: 15 min — Easy jog · 6:57/km\n35 min: Comfortably hard · 5:16/km (threshold)\nCooldown: 10 min — Easy jog · 6:57/km\nWalk: 5 min — 5-min walk to cool down and recover",
      "duration_minutes": 70,
-     "distance_meters": 10353,
+     "distance_meters": 10234,
      "steps": [
       {
        "type": "walk",
@@ -3201,7 +3201,7 @@
        "type": "run",
        "duration_min": 35,
        "pace": "threshold",
-       "note": "Comfortably hard · 5:10/km (threshold)"
+       "note": "Comfortably hard · 5:16/km (threshold)"
       },
       {
        "type": "cooldown",
@@ -3220,10 +3220,10 @@
      "scheduled_date": "2026-10-11",
      "sport": "running",
      "workout_type": "long",
-     "title": "Long Session — 21.4 km",
-     "description": "Walk: 5 min — Brisk 5-min walk to warm up\n2× 10.7 km at 6:19/km / 60 s walk\nWalk: 5 min — 5-min walk to cool down and recover",
+     "title": "Long Session — 20.4 km",
+     "description": "Walk: 5 min — Brisk 5-min walk to warm up\n2× 10.2 km at 6:37/km / 60 s walk\nWalk: 5 min — 5-min walk to cool down and recover",
      "duration_minutes": 147,
-     "distance_meters": 21400,
+     "distance_meters": 20400,
      "steps": [
       {
        "type": "walk",
@@ -3233,10 +3233,10 @@
       {
        "type": "interval_set",
        "reps": 2,
-       "distance_m": 10700,
+       "distance_m": 10200,
        "rest_sec": 60,
        "pace": "easy",
-       "note": "2× 10.7 km at 6:19/km / 60 s walk"
+       "note": "2× 10.2 km at 6:37/km / 60 s walk"
       },
       {
        "type": "walk",
@@ -3249,10 +3249,10 @@
      "scheduled_date": "2026-10-13",
      "sport": "running",
      "workout_type": "easy",
-     "title": "Easy — 12.0 km",
-     "description": "Walk: 5 min — Brisk 5-min walk to warm up\n76 min: Conversational pace · 6:19/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
+     "title": "Easy — 11.5 km",
+     "description": "Walk: 5 min — Brisk 5-min walk to warm up\n76 min: Conversational pace · 6:37/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
      "duration_minutes": 86,
-     "distance_meters": 12016,
+     "distance_meters": 11472,
      "steps": [
       {
        "type": "walk",
@@ -3263,7 +3263,7 @@
        "type": "run",
        "duration_min": 76,
        "pace": "easy",
-       "note": "Conversational pace · 6:19/km (Zone 2)"
+       "note": "Conversational pace · 6:37/km (Zone 2)"
       },
       {
        "type": "walk",
@@ -3317,10 +3317,10 @@
      "scheduled_date": "2026-10-15",
      "sport": "running",
      "workout_type": "easy",
-     "title": "Easy — 10.4 km",
-     "description": "Walk: 5 min — Brisk 5-min walk to warm up\n66 min: Conversational pace · 6:19/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
+     "title": "Easy — 10.0 km",
+     "description": "Walk: 5 min — Brisk 5-min walk to warm up\n66 min: Conversational pace · 6:37/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
      "duration_minutes": 76,
-     "distance_meters": 10435,
+     "distance_meters": 9962,
      "steps": [
       {
        "type": "walk",
@@ -3331,7 +3331,7 @@
        "type": "run",
        "duration_min": 66,
        "pace": "easy",
-       "note": "Conversational pace · 6:19/km (Zone 2)"
+       "note": "Conversational pace · 6:37/km (Zone 2)"
       },
       {
        "type": "walk",
@@ -3371,10 +3371,10 @@
      "scheduled_date": "2026-10-17",
      "sport": "running",
      "workout_type": "tempo",
-     "title": "Tempo — 10.5 km",
-     "description": "Walk: 5 min — Brisk 5-min walk to warm up\nWarmup: 12 min — Easy jog · 6:57/km\n38 min: Comfortably hard · 5:10/km (threshold)\nCooldown: 10 min — Easy jog · 6:57/km\nWalk: 5 min — 5-min walk to cool down and recover",
+     "title": "Tempo — 10.4 km",
+     "description": "Walk: 5 min — Brisk 5-min walk to warm up\nWarmup: 12 min — Easy jog · 6:57/km\n38 min: Comfortably hard · 5:16/km (threshold)\nCooldown: 10 min — Easy jog · 6:57/km\nWalk: 5 min — 5-min walk to cool down and recover",
      "duration_minutes": 70,
-     "distance_meters": 10501,
+     "distance_meters": 10372,
      "steps": [
       {
        "type": "walk",
@@ -3391,7 +3391,7 @@
        "type": "run",
        "duration_min": 38,
        "pace": "threshold",
-       "note": "Comfortably hard · 5:10/km (threshold)"
+       "note": "Comfortably hard · 5:16/km (threshold)"
       },
       {
        "type": "cooldown",
@@ -3410,10 +3410,10 @@
      "scheduled_date": "2026-10-18",
      "sport": "running",
      "workout_type": "long",
-     "title": "Long Session — 22.6 km",
-     "description": "Walk: 5 min — Brisk 5-min walk to warm up\n2× 11.3 km at 6:19/km / 60 s walk\nWalk: 5 min — 5-min walk to cool down and recover",
-     "duration_minutes": 154,
-     "distance_meters": 22600,
+     "title": "Long Session — 21.4 km",
+     "description": "Walk: 5 min — Brisk 5-min walk to warm up\n2× 10.7 km at 6:37/km / 60 s walk\nWalk: 5 min — 5-min walk to cool down and recover",
+     "duration_minutes": 153,
+     "distance_meters": 21400,
      "steps": [
       {
        "type": "walk",
@@ -3423,10 +3423,10 @@
       {
        "type": "interval_set",
        "reps": 2,
-       "distance_m": 11300,
+       "distance_m": 10700,
        "rest_sec": 60,
        "pace": "easy",
-       "note": "2× 11.3 km at 6:19/km / 60 s walk"
+       "note": "2× 10.7 km at 6:37/km / 60 s walk"
       },
       {
        "type": "walk",
@@ -3439,10 +3439,10 @@
      "scheduled_date": "2026-10-20",
      "sport": "running",
      "workout_type": "easy",
-     "title": "Easy — 11.7 km",
-     "description": "Walk: 5 min — Brisk 5-min walk to warm up\n74 min: Conversational pace · 6:19/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
+     "title": "Easy — 11.2 km",
+     "description": "Walk: 5 min — Brisk 5-min walk to warm up\n74 min: Conversational pace · 6:37/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
      "duration_minutes": 84,
-     "distance_meters": 11700,
+     "distance_meters": 11170,
      "steps": [
       {
        "type": "walk",
@@ -3453,7 +3453,7 @@
        "type": "run",
        "duration_min": 74,
        "pace": "easy",
-       "note": "Conversational pace · 6:19/km (Zone 2)"
+       "note": "Conversational pace · 6:37/km (Zone 2)"
       },
       {
        "type": "walk",
@@ -3466,10 +3466,10 @@
      "scheduled_date": "2026-10-21",
      "sport": "running",
      "workout_type": "easy",
-     "title": "Easy — 12.5 km",
-     "description": "Walk: 5 min — Brisk 5-min walk to warm up\n79 min: Conversational pace · 6:19/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
+     "title": "Easy — 11.9 km",
+     "description": "Walk: 5 min — Brisk 5-min walk to warm up\n79 min: Conversational pace · 6:37/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
      "duration_minutes": 89,
-     "distance_meters": 12490,
+     "distance_meters": 11925,
      "steps": [
       {
        "type": "walk",
@@ -3480,7 +3480,7 @@
        "type": "run",
        "duration_min": 79,
        "pace": "easy",
-       "note": "Conversational pace · 6:19/km (Zone 2)"
+       "note": "Conversational pace · 6:37/km (Zone 2)"
       },
       {
        "type": "walk",
@@ -3561,10 +3561,10 @@
      "scheduled_date": "2026-10-24",
      "sport": "running",
      "workout_type": "tempo",
-     "title": "Tempo — 10.3 km",
-     "description": "Walk: 5 min — Brisk 5-min walk to warm up\nWarmup: 15 min — Easy jog · 6:57/km\n33 min: Comfortably hard · 5:10/km (threshold)\nCooldown: 12 min — Easy jog · 6:57/km\nWalk: 5 min — 5-min walk to cool down and recover",
+     "title": "Tempo — 10.1 km",
+     "description": "Walk: 5 min — Brisk 5-min walk to warm up\nWarmup: 15 min — Easy jog · 6:57/km\n33 min: Comfortably hard · 5:16/km (threshold)\nCooldown: 12 min — Easy jog · 6:57/km\nWalk: 5 min — 5-min walk to cool down and recover",
      "duration_minutes": 70,
-     "distance_meters": 10255,
+     "distance_meters": 10142,
      "steps": [
       {
        "type": "walk",
@@ -3581,7 +3581,7 @@
        "type": "run",
        "duration_min": 33,
        "pace": "threshold",
-       "note": "Comfortably hard · 5:10/km (threshold)"
+       "note": "Comfortably hard · 5:16/km (threshold)"
       },
       {
        "type": "cooldown",
@@ -3600,10 +3600,10 @@
      "scheduled_date": "2026-10-25",
      "sport": "running",
      "workout_type": "long",
-     "title": "Long Session — 22.4 km",
-     "description": "Walk: 5 min — Brisk 5-min walk to warm up\n2× 11.2 km at 6:19/km / 60 s walk\nWalk: 5 min — 5-min walk to cool down and recover",
+     "title": "Long Session — 21.4 km",
+     "description": "Walk: 5 min — Brisk 5-min walk to warm up\n2× 10.7 km at 6:37/km / 60 s walk\nWalk: 5 min — 5-min walk to cool down and recover",
      "duration_minutes": 153,
-     "distance_meters": 22400,
+     "distance_meters": 21400,
      "steps": [
       {
        "type": "walk",
@@ -3613,10 +3613,10 @@
       {
        "type": "interval_set",
        "reps": 2,
-       "distance_m": 11200,
+       "distance_m": 10700,
        "rest_sec": 60,
        "pace": "easy",
-       "note": "2× 11.2 km at 6:19/km / 60 s walk"
+       "note": "2× 10.7 km at 6:37/km / 60 s walk"
       },
       {
        "type": "walk",
@@ -3629,10 +3629,10 @@
      "scheduled_date": "2026-10-27",
      "sport": "running",
      "workout_type": "easy",
-     "title": "Easy — 5.1 km",
-     "description": "Walk: 5 min — Brisk 5-min walk to warm up\n32 min: Conversational pace · 6:19/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
+     "title": "Easy — 4.8 km",
+     "description": "Walk: 5 min — Brisk 5-min walk to warm up\n32 min: Conversational pace · 6:37/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
      "duration_minutes": 42,
-     "distance_meters": 5059,
+     "distance_meters": 4830,
      "steps": [
       {
        "type": "walk",
@@ -3643,7 +3643,7 @@
        "type": "run",
        "duration_min": 32,
        "pace": "easy",
-       "note": "Conversational pace · 6:19/km (Zone 2)"
+       "note": "Conversational pace · 6:37/km (Zone 2)"
       },
       {
        "type": "walk",
@@ -3656,10 +3656,10 @@
      "scheduled_date": "2026-10-28",
      "sport": "running",
      "workout_type": "easy",
-     "title": "Easy — 5.5 km",
-     "description": "Walk: 5 min — Brisk 5-min walk to warm up\n35 min: Conversational pace · 6:19/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
+     "title": "Easy — 5.3 km",
+     "description": "Walk: 5 min — Brisk 5-min walk to warm up\n35 min: Conversational pace · 6:37/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
      "duration_minutes": 45,
-     "distance_meters": 5534,
+     "distance_meters": 5283,
      "steps": [
       {
        "type": "walk",
@@ -3670,7 +3670,7 @@
        "type": "run",
        "duration_min": 35,
        "pace": "easy",
-       "note": "Conversational pace · 6:19/km (Zone 2)"
+       "note": "Conversational pace · 6:37/km (Zone 2)"
       },
       {
        "type": "walk",
@@ -3684,7 +3684,7 @@
      "sport": "running",
      "workout_type": "fartlek",
      "title": "Fartlek — 2.2 km",
-     "description": "Walk: 5 min — Brisk 5-min walk to warm up\nWarmup: 10 min — Easy jog · 6:57/km\n3 min hard (5:10/km) / 2 min easy — 5 rounds\nCooldown: 5 min — Easy jog · 6:57/km\nWalk: 5 min — 5-min walk to cool down and recover",
+     "description": "Walk: 5 min — Brisk 5-min walk to warm up\nWarmup: 10 min — Easy jog · 6:57/km\n3 min hard (5:16/km) / 2 min easy — 5 rounds\nCooldown: 5 min — Easy jog · 6:57/km\nWalk: 5 min — 5-min walk to cool down and recover",
      "duration_minutes": 50,
      "distance_meters": 2157,
      "steps": [
@@ -3706,7 +3706,7 @@
        "easy_min": 2,
        "reps": 5,
        "pace": "threshold",
-       "note": "3 min hard (5:10/km) / 2 min easy — 5 rounds"
+       "note": "3 min hard (5:16/km) / 2 min easy — 5 rounds"
       },
       {
        "type": "cooldown",
@@ -3725,10 +3725,10 @@
      "scheduled_date": "2026-10-30",
      "sport": "running",
      "workout_type": "easy",
-     "title": "Easy — 6.3 km",
-     "description": "Walk: 5 min — Brisk 5-min walk to warm up\n40 min: Conversational pace · 6:19/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
+     "title": "Easy — 6.0 km",
+     "description": "Walk: 5 min — Brisk 5-min walk to warm up\n40 min: Conversational pace · 6:37/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
      "duration_minutes": 50,
-     "distance_meters": 6324,
+     "distance_meters": 6038,
      "steps": [
       {
        "type": "walk",
@@ -3739,7 +3739,7 @@
        "type": "run",
        "duration_min": 40,
        "pace": "easy",
-       "note": "Conversational pace · 6:19/km (Zone 2)"
+       "note": "Conversational pace · 6:37/km (Zone 2)"
       },
       {
        "type": "walk",
@@ -3752,10 +3752,10 @@
      "scheduled_date": "2026-10-31",
      "sport": "running",
      "workout_type": "easy",
-     "title": "Easy — 4.7 km",
-     "description": "Walk: 5 min — Brisk 5-min walk to warm up\n30 min: Conversational pace · 6:19/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
+     "title": "Easy — 4.5 km",
+     "description": "Walk: 5 min — Brisk 5-min walk to warm up\n30 min: Conversational pace · 6:37/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
      "duration_minutes": 40,
-     "distance_meters": 4743,
+     "distance_meters": 4528,
      "steps": [
       {
        "type": "walk",
@@ -3766,7 +3766,7 @@
        "type": "run",
        "duration_min": 30,
        "pace": "easy",
-       "note": "Conversational pace · 6:19/km (Zone 2)"
+       "note": "Conversational pace · 6:37/km (Zone 2)"
       },
       {
        "type": "walk",
@@ -3779,10 +3779,10 @@
      "scheduled_date": "2026-11-01",
      "sport": "running",
      "workout_type": "long",
-     "title": "Long Session — 11.2 km",
-     "description": "Walk: 5 min — Brisk 5-min walk to warm up\n71 min: Easy conversational pace · 6:19/km\nWalk: 5 min — 5-min walk to cool down and recover",
+     "title": "Long Session — 10.7 km",
+     "description": "Walk: 5 min — Brisk 5-min walk to warm up\n71 min: Easy conversational pace · 6:37/km\nWalk: 5 min — 5-min walk to cool down and recover",
      "duration_minutes": 81,
-     "distance_meters": 11225,
+     "distance_meters": 10717,
      "steps": [
       {
        "type": "walk",
@@ -3793,7 +3793,7 @@
        "type": "run",
        "duration_min": 71,
        "pace": "easy",
-       "note": "Easy conversational pace · 6:19/km"
+       "note": "Easy conversational pace · 6:37/km"
       },
       {
        "type": "walk",
@@ -3877,10 +3877,10 @@
      "m3": {
       "sport": "running",
       "workout_type": "easy",
-      "title": "Easy — 10.6 km",
-      "description": "Walk: 5 min — Brisk 5-min walk to warm up\n67 min: Conversational pace · 6:19/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
+      "title": "Easy — 10.1 km",
+      "description": "Walk: 5 min — Brisk 5-min walk to warm up\n67 min: Conversational pace · 6:37/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
       "duration_minutes": 77,
-      "distance_meters": 10593,
+      "distance_meters": 10113,
       "steps": [
        {
         "type": "walk",
@@ -3891,7 +3891,7 @@
         "type": "run",
         "duration_min": 67,
         "pace": "easy",
-        "note": "Conversational pace · 6:19/km (Zone 2)"
+        "note": "Conversational pace · 6:37/km (Zone 2)"
        },
        {
         "type": "walk",
@@ -3903,10 +3903,10 @@
      "m6": {
       "sport": "running",
       "workout_type": "easy",
-      "title": "Easy — 10.4 km",
-      "description": "Walk: 5 min — Brisk 5-min walk to warm up\n66 min: Conversational pace · 6:19/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
+      "title": "Easy — 10.0 km",
+      "description": "Walk: 5 min — Brisk 5-min walk to warm up\n66 min: Conversational pace · 6:37/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
       "duration_minutes": 76,
-      "distance_meters": 10435,
+      "distance_meters": 9962,
       "steps": [
        {
         "type": "walk",
@@ -3917,7 +3917,7 @@
         "type": "run",
         "duration_min": 66,
         "pace": "easy",
-        "note": "Conversational pace · 6:19/km (Zone 2)"
+        "note": "Conversational pace · 6:37/km (Zone 2)"
        },
        {
         "type": "walk",
@@ -3929,10 +3929,10 @@
      "m9": {
       "sport": "running",
       "workout_type": "easy",
-      "title": "Easy — 12.0 km",
-      "description": "Walk: 5 min — Brisk 5-min walk to warm up\n76 min: Conversational pace · 6:19/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
+      "title": "Easy — 11.5 km",
+      "description": "Walk: 5 min — Brisk 5-min walk to warm up\n76 min: Conversational pace · 6:37/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
       "duration_minutes": 86,
-      "distance_meters": 12016,
+      "distance_meters": 11472,
       "steps": [
        {
         "type": "walk",
@@ -3943,7 +3943,7 @@
         "type": "run",
         "duration_min": 76,
         "pace": "easy",
-        "note": "Conversational pace · 6:19/km (Zone 2)"
+        "note": "Conversational pace · 6:37/km (Zone 2)"
        },
        {
         "type": "walk",
@@ -3955,10 +3955,10 @@
      "m12": {
       "sport": "running",
       "workout_type": "easy",
-      "title": "Easy — 12.5 km",
-      "description": "Walk: 5 min — Brisk 5-min walk to warm up\n79 min: Conversational pace · 6:19/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
+      "title": "Easy — 11.9 km",
+      "description": "Walk: 5 min — Brisk 5-min walk to warm up\n79 min: Conversational pace · 6:37/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
       "duration_minutes": 89,
-      "distance_meters": 12490,
+      "distance_meters": 11925,
       "steps": [
        {
         "type": "walk",
@@ -3969,7 +3969,7 @@
         "type": "run",
         "duration_min": 79,
         "pace": "easy",
-        "note": "Conversational pace · 6:19/km (Zone 2)"
+        "note": "Conversational pace · 6:37/km (Zone 2)"
        },
        {
         "type": "walk",
@@ -3981,10 +3981,10 @@
      "m15": {
       "sport": "running",
       "workout_type": "easy",
-      "title": "Easy — 11.7 km",
-      "description": "Walk: 5 min — Brisk 5-min walk to warm up\n74 min: Conversational pace · 6:19/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
+      "title": "Easy — 11.2 km",
+      "description": "Walk: 5 min — Brisk 5-min walk to warm up\n74 min: Conversational pace · 6:37/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
       "duration_minutes": 84,
-      "distance_meters": 11700,
+      "distance_meters": 11170,
       "steps": [
        {
         "type": "walk",
@@ -3995,7 +3995,7 @@
         "type": "run",
         "duration_min": 74,
         "pace": "easy",
-        "note": "Conversational pace · 6:19/km (Zone 2)"
+        "note": "Conversational pace · 6:37/km (Zone 2)"
        },
        {
         "type": "walk",
@@ -4007,10 +4007,10 @@
      "m18": {
       "sport": "running",
       "workout_type": "easy",
-      "title": "Easy — 5.5 km",
-      "description": "Walk: 5 min — Brisk 5-min walk to warm up\n35 min: Conversational pace · 6:19/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
+      "title": "Easy — 5.3 km",
+      "description": "Walk: 5 min — Brisk 5-min walk to warm up\n35 min: Conversational pace · 6:37/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
       "duration_minutes": 45,
-      "distance_meters": 5534,
+      "distance_meters": 5283,
       "steps": [
        {
         "type": "walk",
@@ -4021,7 +4021,7 @@
         "type": "run",
         "duration_min": 35,
         "pace": "easy",
-        "note": "Conversational pace · 6:19/km (Zone 2)"
+        "note": "Conversational pace · 6:37/km (Zone 2)"
        },
        {
         "type": "walk",
@@ -4033,10 +4033,10 @@
      "m21": {
       "sport": "running",
       "workout_type": "easy",
-      "title": "Easy — 4.7 km",
-      "description": "Walk: 5 min — Brisk 5-min walk to warm up\n30 min: Conversational pace · 6:19/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
+      "title": "Easy — 4.5 km",
+      "description": "Walk: 5 min — Brisk 5-min walk to warm up\n30 min: Conversational pace · 6:37/km (Zone 2)\nWalk: 5 min — 5-min walk to cool down and recover",
       "duration_minutes": 40,
-      "distance_meters": 4743,
+      "distance_meters": 4528,
       "steps": [
        {
         "type": "walk",
@@ -4047,7 +4047,7 @@
         "type": "run",
         "duration_min": 30,
         "pace": "easy",
-        "note": "Conversational pace · 6:19/km (Zone 2)"
+        "note": "Conversational pace · 6:37/km (Zone 2)"
        },
        {
         "type": "walk",

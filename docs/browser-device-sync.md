@@ -1,9 +1,10 @@
 # Watch sync (one button, three connection methods)
 
 The **Sync device over USB** button in the sidebar (above Settings) runs a full
-two-way sync — import new activities/wellness data, push pending workouts,
-race plans, courses and the training calendar, and delete watch files marked
-for cleanup — over whichever connection is available, tried in this order:
+two-way sync — import new activities/wellness data, push pending workouts
+(a race among them: the training calendar's race day, encoded as the race),
+courses and the training calendar, and delete watch files marked for
+cleanup — over whichever connection is available, tried in this order:
 
 1. **Server USB** — if the watch is plugged into the host, the button fires
    the `garmin-sync` container's trigger and the cable path does everything.
@@ -133,7 +134,7 @@ Garmin's conventions (same as the cable sync):
 
 | Content | Device folder |
 |---|---|
-| Workouts, race plans, `SCHEDULE.fit` (training calendar) | `GARMIN/NewFiles/` |
+| Workouts (the race day is the race plan's laps), `SCHEDULE.fit` (training calendar) | `GARMIN/NewFiles/` |
 | Courses | `GARMIN/Courses/` |
 | AGPS (`CPE.bin`, when enabled and stale) | `GARMIN/REMOTESW/` (configurable) |
 | Music tracks + `.m3u` playlists (opt-in, see below) | `Music/` — storage **root**, not under `GARMIN/` |

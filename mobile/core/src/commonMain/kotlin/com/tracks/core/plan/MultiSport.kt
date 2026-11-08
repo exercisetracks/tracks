@@ -6,7 +6,6 @@ import com.tracks.core.fit.decode.CivilDate
 import com.tracks.core.parse.PyMath
 import com.tracks.core.plan.PlanGenerator.SportCtx
 import kotlin.math.abs
-import kotlin.math.ceil
 
 /**
  * Weeks that mix sports — a port of
@@ -346,7 +345,6 @@ object MultiSport {
     private val TRI_PEAK_TSS = listOf(40_000.0 to 420.0, 80_000.0 to 520.0, 170_000.0 to 650.0)
     private const val TRI_PEAK_TSS_FULL = 850.0
     private const val TRI_START_SHARE = 0.5
-    private const val WEEKLY_GAIN_VOLUME = 0.10
 
     private fun triPeakTss(raceDistanceM: Double): Double {
         for ((limit, tss) in TRI_PEAK_TSS) if (raceDistanceM < limit) return tss
@@ -358,17 +356,18 @@ object MultiSport {
         goal: PlanGoal, history: List<HistoryActivity>, paceBests: List<Pair<Long, Double>>, today: CivilDate,
         ftp: Double?, dpw: Long, planIntensity: Double, baseEffectiveWeeks: Double?, imperial: Boolean, lthr: Long?,
         runningFitness: RunningFitness.Estimate? = null,
+        adherence: Double = 1.0,
     ): PlanGenerator.Generated {
         val raceDate = goal.eventDate!!
         val raceDistanceM = goal.eventDistanceMeters?.takeIf { it != 0.0 } ?: 51_500.0
         val planMonday = CivilDate.fromEpochDay(today.epochDay - (today.epochDay + 3).mod(7L))
-        val totalWeeks = maxOf(1L, ceil((raceDate.epochDay - planMonday.epochDay) / 7.0).toLong())
+        val totalWeeks = RaceDay.planWeeks(today, raceDate)
 
         val vdots = PlanGenerator.runningVdots(runningFitness, paceBests)
         val vdot = vdots.plan
         val css = PlanBase.cssPaceSecPer100m(paceBests)
         val ewBase = PlanGenerator.effectiveWeeksBase("running", vdots.capacity, baseEffectiveWeeks)
-        val vdotStep = if (vdot != null) PlanBase.pyMin(WEEKLY_GAIN_VOLUME, 1.5 / maxOf(totalWeeks, 1L)) else 0.0
+        val vdotStep = if (vdot != null) RaceDay.vdotStep(totalWeeks) * adherence else 0.0
 
         var hours = 0.0
         for (fam in listOf("swimming", "cycling", "running")) hours += recentHours(history, fam, today)

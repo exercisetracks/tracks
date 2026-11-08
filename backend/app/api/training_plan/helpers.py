@@ -7,6 +7,7 @@ sub-modules:
   - goal ownership guard
   - running pace-bests + recent activity history
   - today's running fitness (the VDOT every running pace comes from)
+  - how much of a plan has been done, and the load it has left (race_day.py)
   - per-user effective FTP / max-HR / threshold-HR resolution
   - fitness-fingerprint effective-weeks lookup
   - watch orphan-delete queue (shared by plan regen, workout delete, and sync)
@@ -86,8 +87,9 @@ _RESTING_HR_DAYS = 30
 def _get_running_evidence(db: Session, user_id: int, today: date) -> tuple[list, list, float | None]:
     """(efforts, runs, resting HR) — what today's running fitness is read from.
 
-    Efforts are every pace best of the last year with its run's date (the
-    estimator ages each one); runs are the last year's running activities (it
+    Efforts are every pace best of the last year with its run's date and
+    sport (the estimator ages each one, and takes no floor from a treadmill
+    or virtual run); runs are the last year's running activities (it
     reads HR and the watch's VO2max from the last 90 days, and the date of the
     latest run for a layoff); resting HR is the median of the last 30 days.
     The phone gathers the same from its library
@@ -117,9 +119,11 @@ def _get_running_evidence(db: Session, user_id: int, today: date) -> tuple[list,
         "ascent_m": a.total_ascent, "vo2max": a.vo2max_estimate,
     } for a in rows]
     efforts = [
-        {"date": activity_local_date(started, tz), "distance_m": dist, "speed_mps": speed}
-        for dist, speed, started in (
-            db.query(PaceBest.distance_meters, PaceBest.avg_speed_mps, Activity.started_at)
+        {"date": activity_local_date(started, tz), "distance_m": dist, "speed_mps": speed,
+         "sport": sport}
+        for dist, speed, started, sport in (
+            db.query(PaceBest.distance_meters, PaceBest.avg_speed_mps, Activity.started_at,
+                     Activity.sport)
             .join(Activity, Activity.id == PaceBest.activity_id)
             .filter(Activity.user_id == user_id, Activity.sport.in_(_RUN_SPORTS),
                     Activity.is_merged.is_(False), Activity.started_at >= cutoff)
@@ -154,6 +158,51 @@ def _get_running_fitness(db: Session, user_id: int, us: UserSettings | None,
         birth_year=us.birth_year if us else None,
         frequencies=us.activity_frequency if us else None,
     )
+
+
+def _plan_sessions(db: Session, plan_id: int, today: date) -> list[dict]:
+    """The plan's sessions up to and including today, as
+    calculators/plan/race_day.adherence reads them — the phone's
+    LocalRaceDay.sessions reads the same rows from its replica."""
+    rows = (
+        db.query(PlannedWorkout.scheduled_date, PlannedWorkout.sport, PlannedWorkout.workout_type,
+                 PlannedWorkout.duration_minutes, PlannedWorkout.is_complete,
+                 PlannedWorkout.completed_activity_id)
+        .filter(PlannedWorkout.plan_id == plan_id, PlannedWorkout.scheduled_date <= today)
+        .all()
+    )
+    return [{"date": d, "sport": sport, "workout_type": wtype, "minutes": minutes,
+             "complete": bool(complete), "recorded": activity_id is not None}
+            for d, sport, wtype, minutes, complete, activity_id in rows]
+
+
+def _plan_adherence(db: Session, user_id: int, plan_id: int, today: date) -> float:
+    """How much of the plan the last four weeks delivered (race_day.adherence):
+    the plan's own history against every activity in the window."""
+    from app.calculators.plan.race_day import ADHERENCE_DAYS, adherence
+
+    done = [{"date": a.started_at, "sport": a.sport, "minutes": (a.duration_seconds or 0) / 60}
+            for a in _get_activity_history(db, user_id, days=ADHERENCE_DAYS) if a.started_at]
+    return adherence(_plan_sessions(db, plan_id, today), done, today)
+
+
+def _planned_load(db: Session, plan_id: int, today: date, until: date,
+                  paces: dict | None) -> dict[date, float]:
+    """Each day's planned load (load.workout_tss) after today and before
+    ``until``, from the sessions not yet done: what race-morning form is
+    projected through (race_day.race_day_tsb)."""
+    from app.calculators.plan.load import workout_tss
+    from app.calculators.plan.race_day import planned_load_by_day
+
+    return planned_load_by_day([
+        (d, workout_tss(steps or [], paces))
+        for d, steps in (
+            db.query(PlannedWorkout.scheduled_date, PlannedWorkout.steps)
+            .filter(PlannedWorkout.plan_id == plan_id, PlannedWorkout.scheduled_date > today,
+                    PlannedWorkout.scheduled_date < until, PlannedWorkout.is_complete.is_(False))
+            .all()
+        )
+    ])
 
 
 def _get_activity_history(db: Session, user_id: int, days: int = 90):
