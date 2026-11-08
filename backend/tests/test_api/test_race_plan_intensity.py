@@ -50,9 +50,20 @@ def test_a_harder_intensity_is_a_faster_plan_and_a_faster_badge(client, goal):
 
 
 def test_an_intensity_past_the_slider_is_refused(client, goal):
-    for v in (0.5, 1.2):
+    for v in (0.5, 0.79, 1.21, 1.5):
         r = client.patch(f"/coaching/goals/{goal.id}/race-plan", json={"intensity": v})
         assert r.status_code == 422, v
+
+
+def test_the_slider_reaches_a_fifth_either_way(client, goal):
+    """It was a tenth; a prediction from little or old data can sit further
+    off than that from what someone can run."""
+    before = _generate(client, goal)
+    for v in (0.8, 1.2):
+        assert client.patch(f"/coaching/goals/{goal.id}/race-plan", json={"intensity": v}).status_code == 200
+        after = _generate(client, goal)
+        assert after["intensity"] == v
+        assert after["predicted_seconds"] == pytest.approx(before["predicted_seconds"] / v, abs=3)
 
 
 def test_a_bike_races_on_more_power_but_its_share_is_of_the_real_ftp():

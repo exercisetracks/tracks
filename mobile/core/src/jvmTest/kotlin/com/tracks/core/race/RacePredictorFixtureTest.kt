@@ -177,6 +177,30 @@ class RacePredictorFixtureTest {
         }
     }
 
+    /**
+     * What the ground does to a finish (the samples' mean multiplier), the
+     * kilometre laps priced by the same samples as terrain splits, and the
+     * "Rolling" name: hills priced by their own ground, as the server does.
+     */
+    @Test
+    fun the_ground_is_priced_as_the_server_prices_it() {
+        val grades = fx.cases("course_grade")
+        assert(grades.size >= 20) { "course grade corpus shrank to ${grades.size}" }
+        for (c in grades) {
+            assertEquals(c["expected"].dbl(), Terrain.courseGradeFactor(course(c["course"].str()), c["d"].dbl()!!), "$c")
+        }
+        for (c in fx.cases("km_laps")) {
+            val (laps, total) = RacePredictor.lapPaces(
+                3000.0, c["d"].dbl()!!, 0.0, c["lap_km"].dbl()!!, course(c["course"].str()), null,
+            )
+            assertEquals(c["laps"]!!.jsonArray.map { lap(it.jsonObject) }, laps, "$c")
+            assertEquals(c["total"].dbl(), total, "$c")
+        }
+        for (c in fx.cases("labels")) {
+            assertEquals(c["expected"].str(), Terrain.label(c["kind"].str()!!, c["g"].dbl()!!, c["m"].dbl()), "$c")
+        }
+    }
+
     @Test
     fun cycling_laps_match_lap_for_lap() {
         for (c in fx.cases("bike_laps")) {

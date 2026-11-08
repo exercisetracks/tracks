@@ -29,6 +29,7 @@ from app.calculators.race_predictor import (
     compute_lap_paces,
     compute_technicality_factor,
     compute_wind_course_exposure,
+    course_grade_factor,
     course_totals,
     extract_path_points,
     format_swim_pace,
@@ -58,6 +59,40 @@ from .race_helpers import (
 )
 
 router = APIRouter()
+
+# ── Course types: a course chosen without a course file ──────────────────────
+# The time a terrain type adds, used in place of a course's own hills. Each
+# is close to what the grade model (race_predictor/grade.py) makes of a
+# course with the climbing the picker gives that type (metres per 100 km,
+# frontend/components/raceplan/constants.js): about +1 % for Rolling's 3 m a
+# kilometre, +3.5 % for Hilly's 10 m and +6–10 % for Mountainous's 15–25 m,
+# so choosing "Hilly" and loading a hilly course's file land within half a
+# point. Checked when the grade model was corrected (2026-11) and left alone.
+# Cycling is less affected by terrain labels (grade is already in physics).
+COURSE_FACTORS    = {"flat": 1.0, "rolling": 1.015, "hilly": 1.04, "mountainous": 1.08}
+CY_COURSE_FACTORS = {"flat": 1.0, "rolling": 1.008, "hilly": 1.02, "mountainous": 1.04}
+
+
+def _plan_distance(rp: RacePlan | None, goal: TrainingGoal) -> float | None:
+    """The distance the race is planned at: the course's own when the plan
+    says to race it, else the event's."""
+    if rp is not None and rp.use_gpx_distance and rp.course_segments:
+        return course_totals(rp.course_segments)["distance_m"]
+    return goal.event_distance_meters
+
+
+def running_course_factor(rp, distance_m: float) -> float:
+    """What the course does to a running finish on a neutral day, as
+    sport_plan's running branch prices it: with a course, its technicality
+    and its ground (race_predictor.course_grade_factor — the finish
+    compute_lap_paces gives its laps); without, its terrain type. The goal
+    card's badge uses it, so the card and the plan price the same hills."""
+    if rp is None:
+        return 1.0
+    if rp.course_segments:
+        return (compute_technicality_factor(rp.course_segments)[0]
+                * course_grade_factor(rp.course_segments, distance_m))
+    return COURSE_FACTORS.get(rp.course_type, 1.0)
 
 
 def _goal_or_404(db: Session, goal_id: int, user: User) -> TrainingGoal:
@@ -109,7 +144,11 @@ def get_predicted_time(goal_id: int, user: User = Depends(require_auth), db: Ses
                    "css": metrics["css"] / k if metrics["css"] else None}
 
     if family == "running" and metrics["vdot"]:
-        sec = predict_running_race_sec(metrics["vdot"], dist, metrics["run_indices"]) / k
+        # The plan's course too: the badge used to price every race flat,
+        # so a hilly course's card and plan disagreed by its hills.
+        run_m = _plan_distance(rp, goal)
+        sec = (predict_running_race_sec(metrics["vdot"], run_m, metrics["run_indices"]) / k
+               * running_course_factor(rp, run_m))
 
     elif family == "cycling" and metrics["ftp"]:
         sec = predict_cycling_time_sec(metrics["ftp"], dist)
@@ -230,10 +269,7 @@ def plan_race(db: Session, user: User, us: UserSettings | None, goal: TrainingGo
     family  = metrics["family"]
 
     # ── Decide distance ──────────────────────────────────────────────────────
-    if rp.use_gpx_distance and rp.course_segments:
-        plan_distance_m = course_totals(rp.course_segments)["distance_m"]
-    else:
-        plan_distance_m = goal.event_distance_meters
+    plan_distance_m = _plan_distance(rp, goal)
 
     if not plan_distance_m:
         raise HTTPException(status_code=422, detail="Goal must have a distance set")
@@ -410,7 +446,7 @@ def sport_plan(family: str, metrics: dict, rp, goal, plan_distance_m: float, *,
     weather into the time; it is only called when there is weather, which the
     phone, planning a neutral day, never has.
 
-    The plan's intensity (`race_intensity`, 0.90–1.10) scales what every
+    The plan's intensity (`race_intensity`, 0.80–1.20) scales what every
     target asks for: speed on foot and in the water, power on a bike. Running
     divides the finish time rather than raising VDOT, because a marathon's time
     is half VDOT and half the training-volume model, and a VDOT change would
@@ -419,10 +455,7 @@ def sport_plan(family: str, metrics: dict, rp, goal, plan_distance_m: float, *,
     5 % more power and the speed that buys; target_watts_pct_ftp stays a
     share of the real FTP, which is what the watch compares it to.
     """
-    # ── Course factors (terrain type — no GPX) ───────────────────────────────
-    course_factors = {"flat": 1.0, "rolling": 1.015, "hilly": 1.04, "mountainous": 1.08}
-    # Cycling is less affected by terrain labels (grade is already in physics).
-    cy_course_factors = {"flat": 1.0, "rolling": 1.008, "hilly": 1.02, "mountainous": 1.04}
+    course_factors, cy_course_factors = COURSE_FACTORS, CY_COURSE_FACTORS
 
     lap_km       = 1.60934 if imperial else 1.0
     split_spread = rp.split_spread if rp.split_spread is not None else 0.0
@@ -711,6 +744,9 @@ def sport_plan(family: str, metrics: dict, rp, goal, plan_distance_m: float, *,
             from app.calculators.road_cycling import road_grade_multiplier
             ftp_adjusted = ftp * (2.0 - freshness_factor) * k
             bike_sec     = predict_cycling_time_sec(ftp_adjusted, bike_m, leg_segs["bike"])
+            if not leg_segs["bike"]:
+                # Its terrain type, as a ride's, where the leg has no course.
+                bike_sec *= cy_course_factors.get(rp.course_type, 1.0)
             avg_speed_kph = bike_m / bike_sec * 3.6
             bike_laps, _ = compute_cycling_lap_targets(
                 ftp           = ftp_adjusted,
@@ -744,7 +780,9 @@ def sport_plan(family: str, metrics: dict, rp, goal, plan_distance_m: float, *,
             run_sec  = predict_race_time_sec(adj_vdot, run_m) / k
             if leg_segs["run"]:
                 run_sec *= compute_technicality_factor(leg_segs["run"])[0]
-            run_laps, _ = compute_lap_paces(
+            else:
+                run_sec *= course_factors.get(rp.course_type, 1.0)
+            run_laps, run_course_sec = compute_lap_paces(
                 predicted_sec = run_sec,
                 distance_m    = run_m,
                 split_spread  = split_spread,
@@ -753,6 +791,10 @@ def sport_plan(family: str, metrics: dict, rp, goal, plan_distance_m: float, *,
                 max_hr        = max_hr_val if rp.pace_hr_mode == "pace_hr" else None,
                 terrain       = bool(leg_segs["run"]),
             )
+            if leg_segs["run"]:
+                # The leg's time is the one its laps are paced to, hills in:
+                # it was the flat time, so the laps and the leg disagreed.
+                run_sec = run_course_sec
             tri_legs.append({
                 "leg":            "run",
                 "distance_m":     run_m,

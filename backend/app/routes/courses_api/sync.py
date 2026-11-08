@@ -46,8 +46,73 @@ def _sync_user_or_400(db: Session, agent: SyncAgent, serial: str | None) -> int:
     return uid
 
 
+# A triathlon's legs as courses, each sent alone where the race has no whole
+# course; the phone's LocalRacePlans.RACE_LEGS.
+_RACE_LEGS = (("swim", "swimming"), ("bike", "cycling"), ("run", "running"))
+
+
+def _race_course_items(db: Session, uid: int) -> list[dict]:
+    """The courses of the races on the watch's calendar this week — from
+    today to ``_SYNC_DAYS_AHEAD`` days on, as the calendar reaches — for the
+    watch's course list, where its map shows them while they are followed.
+
+    A Garmin workout file has no field for a course, so the race day (the
+    calendar's race session, training_plan/sync.py ``_race_day_fit``) and its
+    course travel side by side. The race plan's course under the race's
+    name; a triathlon with no whole course sends each leg file of its own.
+    The phone's LocalRacePlans.raceCourses chooses the same, for Explore sync.
+
+    Derived, not stored: nothing marks one sent (each item's id is negative,
+    so the course marks — a track's id, checked against its owner — pass it
+    by), and a cable or the browser rewrites the file, which they delete
+    first, on each sync in race week. Not taken off after the race: nothing
+    records that it reached the watch, and a delete of a file that is not
+    there fails the sync's report. It stays among the watch's courses until
+    deleted there, as a course loaded from Garmin Connect does."""
+    from datetime import timedelta
+
+    from app.api.training_plan.sync import _SYNC_DAYS_AHEAD
+    from app.calculators.local_day import user_today
+    from app.models.coaching import RacePlan, TrainingGoal
+
+    today = user_today(db, uid)
+    rows = (db.query(TrainingGoal, RacePlan)
+            .join(RacePlan, RacePlan.goal_id == TrainingGoal.id)
+            .filter(TrainingGoal.user_id == uid, RacePlan.user_id == uid,
+                    TrainingGoal.goal_type == "event",
+                    TrainingGoal.event_date >= today,
+                    TrainingGoal.event_date <= today + timedelta(days=_SYNC_DAYS_AHEAD))
+            .order_by(TrainingGoal.event_date, TrainingGoal.id)
+            .all())
+    items = []
+    for goal, rp in rows:
+        name = (goal.event_name or "").strip() or "Race"
+        courses = []
+        if rp.course_path and len(rp.course_path) >= 2:
+            courses.append((0, name, (goal.event_sport or "running").lower(), rp.course_path))
+        else:
+            for leg_i, (leg, sport) in enumerate(_RACE_LEGS, start=1):
+                path = ((rp.tri_leg_courses or {}).get(leg) or {}).get("path") or []
+                if len(path) >= 2:
+                    courses.append((leg_i, f"{name} · {leg.capitalize()}", sport, path))
+        for leg_i, course_name, sport, path in courses:
+            key = goal.id * 4 + leg_i
+            coords = [[p[1], p[0], p[2] if len(p) > 2 else None] for p in path]
+            eles = [p[2] for p in path if len(p) > 2 and p[2] is not None]
+            ascent = sum(b - a for a, b in zip(eles, eles[1:]) if b > a)
+            try:
+                fit = generate_course_fit(course_name, coords, sport=sport, course_id=key, ascent_m=ascent)
+            except Exception:
+                log.exception("course upload: encode failed for race %s", goal.id)
+                continue
+            items.append({"id": -key, "type": "course", "filename": f"RACE{key}.fit",
+                          "fit_b64": base64.b64encode(fit).decode()})
+    return items
+
+
 def _course_upload_items(db: Session, uid: int) -> list[dict]:
-    """Managed tracks the user has flagged for the watch that aren't on it yet."""
+    """Managed tracks the user has flagged for the watch that aren't on it
+    yet, and the week's race courses (``_race_course_items``)."""
     tracks = (db.query(CustomTrack).filter(
         CustomTrack.user_id == uid,
         CustomTrack.is_external.is_(False),
@@ -66,7 +131,7 @@ def _course_upload_items(db: Session, uid: int) -> list[dict]:
             continue
         items.append({"id": t.id, "type": "course", "filename": _course_filename(t),
                       "fit_b64": base64.b64encode(fit).decode()})
-    return items
+    return items + _race_course_items(db, uid)
 
 
 @course_sync_router.get("/course-upload-list")

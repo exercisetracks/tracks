@@ -15,7 +15,6 @@ import math
 from app.calculators.training_plan import calculate_vdot
 
 from .formatting import _fmt_pace
-from .grade import grade_cost_multiplier
 
 # ±8% pace difference between first and last lap at |split_spread| = 1.0.
 # Shared with the cycling lap-target ramp (same split convention).
@@ -164,10 +163,15 @@ def compute_lap_paces(
     The maximum spread at |split_spread|=1.0 is ±8% between first and last lap.
 
     Grade handling (when course_segments are provided):
-      - Each lap's target pace is scaled by the Minetti cost multiplier so that
-        the runner expends equal effort regardless of terrain.
-      - The total predicted time is adjusted by the course's mean cost multiplier
-        relative to flat (so a hilly course predicts a longer finish time).
+      - Each lap's target pace is scaled by the Minetti cost of the ground it
+        covers — the mean of its ~100 m samples' multipliers
+        (terrain.samples), not the multiplier of its mean grade — so that the
+        runner expends equal effort regardless of terrain, and a hill inside
+        a lap still counts.
+      - The total predicted time is adjusted by the course's mean cost
+        multiplier relative to flat (so a hilly course predicts a longer
+        finish time). Being the samples' total, it is the same however the
+        laps cut the course (terrain.course_grade_factor).
 
     With ``terrain`` and a course, the splits are the course's terrain
     (calculators/race_predictor/terrain.py) rather than one per ``lap_km``:
@@ -195,17 +199,18 @@ def compute_lap_paces(
             for i in range(n_laps)
         ]
 
-    # ── Per-lap grade multiplier from GPX segments ────────────────────────────
+    # ── Per-lap grade multiplier: the cost of the lap's ground ────────────────
     lap_multipliers: list[float] = [1.0] * n_laps
     lap_gradients:   list[float] = [0.0] * n_laps
     if kinds is not None:
         for lap_i, s in enumerate(segs):
             lap_gradients[lap_i]   = s["gradient"]
-            lap_multipliers[lap_i] = grade_cost_multiplier(s["gradient"])
+            lap_multipliers[lap_i] = s["multiplier"]
     elif course_segments:
-        for lap_i, grad in enumerate(_lap_gradients(lap_dists, course_segments)):
+        from .terrain import samples
+        for lap_i, (grad, mult) in enumerate(_lap_costs(lap_dists, samples(course_segments, distance_m))):
             lap_gradients[lap_i]   = grad
-            lap_multipliers[lap_i] = grade_cost_multiplier(grad)
+            lap_multipliers[lap_i] = mult
 
     # ── Adjust total time for course grade ───────────────────────────────────
     # weighted_dist = sum(d_i * m_i): flat-equivalent total distance in metres
@@ -246,7 +251,7 @@ def compute_lap_paces(
         extra = {}
         if kinds is not None:
             from .terrain import label as _terrain_label
-            extra = {"kind": kinds[i], "label": _terrain_label(kinds[i], grad),
+            extra = {"kind": kinds[i], "label": _terrain_label(kinds[i], grad, mult),
                      "start_km": round(start_km, 3)}
         laps.append({
             **extra,
@@ -290,6 +295,15 @@ def _split_ramp_by_distance(lap_dists: list[float], split_spread: float) -> list
         out.append(1.0 + slope * ((start + d / 2) / total - 0.5))
         start += d
     return out
+
+
+def _lap_costs(lap_dists: list[float], samples: list[tuple[float, float, float]]) -> list[tuple[float, float]]:
+    """(mean gradient, mean Minetti multiplier) for each lap, priced by the
+    course's samples (terrain.samples) it covers; ground past the samples'
+    end is flat."""
+    from .terrain import ground
+    return [(gain / d, cost / d) if d > 0 else (0.0, 1.0)
+            for d, (gain, cost) in zip(lap_dists, ground(samples, lap_dists))]
 
 
 def _lap_gradients(lap_dists: list[float], course_segments: list[dict]) -> list[float]:

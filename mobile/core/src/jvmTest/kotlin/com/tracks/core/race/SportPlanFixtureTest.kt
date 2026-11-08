@@ -76,6 +76,20 @@ class SportPlanFixtureTest {
         }
     }
 
+    /** The goal card's badge prices the plan's hills as the server's does (race_plan.running_course_factor). */
+    @Test
+    fun the_badge_prices_the_course_as_the_server_does() {
+        val cases = fx["course_factors"]!!.jsonArray.map { it.jsonObject }
+        assert(cases.size >= 6) { "course factor corpus shrank to ${cases.size}" }
+        for (c in cases) {
+            assertEquals(
+                c["expect"].d(),
+                SportPlan.runningCourseFactor(segmentsOf(c["course_segments"]), c["course_type"].s(), c["distance_m"].d()!!),
+                "$c",
+            )
+        }
+    }
+
     @Test
     fun every_sport_is_planned_as_the_server_plans_it() {
         val cases = fx["cases"]!!.jsonArray.map { it.jsonObject }

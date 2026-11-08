@@ -104,11 +104,16 @@ object RacePredictor {
 
     // ── grade (Minetti 2002) ─────────────────────────────────────────────────
 
-    private const val FLAT_COST = 2.5
+    /**
+     * Minetti's *running* cost — race_predictor/grade.py has why it is not
+     * the walking curve this used until 2026-11 (1.44× on a 5 % climb, where
+     * his runners measured 1.30×), and why downhills keep half its benefit.
+     */
+    private const val FLAT_COST = 3.6
 
     private fun minettiCost(g0: Double): Double {
         val g = max(-0.45, min(0.45, g0))
-        return 280.5 * g.pow(5) - 58.7 * g.pow(4) - 76.8 * g.pow(3) + 51.9 * g.pow(2) + 19.6 * g + FLAT_COST
+        return 155.4 * g.pow(5) - 30.4 * g.pow(4) - 43.3 * g.pow(3) + 46.3 * g.pow(2) + 19.5 * g + FLAT_COST
     }
 
     fun gradeCostMultiplier(gradient: Double): Double {
@@ -116,7 +121,7 @@ object RacePredictor {
         val cost = minettiCost(g)
         if (g >= 0) return min(3.0, max(0.5, cost / FLAT_COST))
         val benefit = 1.0 - cost / FLAT_COST
-        var mult = 1.0 - benefit * 0.35
+        var mult = 1.0 - benefit * 0.50
         if (g < -0.10) mult += abs(g - -0.10) * 2.50
         return max(0.70, mult)
     }
@@ -235,6 +240,15 @@ object RacePredictor {
         var start = 0.0
         return dists.map { d -> (1.0 + slope * ((start + d / 2) / total - 0.5)).also { start += d } }
     }
+
+    /**
+     * `_lap_costs`: (mean gradient, mean Minetti multiplier) per lap, priced
+     * by the course's [Terrain.samples] it covers ([Terrain.ground]).
+     */
+    internal fun lapCosts(lapDists: List<Double>, samples: List<Terrain.Sample>): List<Pair<Double, Double>> =
+        lapDists.zip(Terrain.ground(samples, lapDists)).map { (d, gc) ->
+            if (d > 0) (gc.first / d) to (gc.second / d) else 0.0 to 1.0
+        }
 
     internal fun lapGradients(lapDists: List<Double>, segments: List<Segment>): List<Double> {
         val out = ArrayList<Double>(lapDists.size)
@@ -368,12 +382,14 @@ object RacePredictor {
         val n = dists.size
         var grads = List(n) { 0.0 }
         var mults = List(n) { 1.0 }
+        // Each lap priced by the ground it covers (Terrain's samples), not its mean grade.
         if (pieces != null) {
             grads = pieces.map { it.gradient }
-            mults = grads.map(::gradeCostMultiplier)
+            mults = pieces.map { it.multiplier }
         } else if (!segments.isNullOrEmpty()) {
-            grads = lapGradients(dists, segments)
-            mults = grads.map(::gradeCostMultiplier)
+            val costs = lapCosts(dists, Terrain.samples(segments, distanceM))
+            grads = costs.map { it.first }
+            mults = costs.map { it.second }
         }
         val weighted = PyMath.sum(List(n) { dists[it] * mults[it] })
         val actualTotal = predictedSec * (weighted / distanceM)
@@ -391,7 +407,7 @@ object RacePredictor {
             if (pieces != null && i == n - 1) cum = distanceM / 1000.0
             RaceLap(
                 kind = pieces?.get(i)?.kind,
-                label = pieces?.get(i)?.let { Terrain.label(it.kind, grads[i]) },
+                label = pieces?.get(i)?.let { Terrain.label(it.kind, grads[i], mults[i]) },
                 startKm = if (pieces != null) PyMath.round(startKm, 3) else null,
                 lap = i + 1,
                 distanceM = PyMath.roundToLong(dists[i]),

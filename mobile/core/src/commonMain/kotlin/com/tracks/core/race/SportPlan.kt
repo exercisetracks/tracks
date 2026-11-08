@@ -95,6 +95,10 @@ object SportPlan {
     /** Why a sport could not be planned: the threshold it needs is missing. */
     class Missing(message: String) : Exception(message)
 
+    /**
+     * A terrain type chosen without a course file — `COURSE_FACTORS` in
+     * race_plan.py, which has why these stand beside the grade model.
+     */
     private val COURSE_FACTORS = mapOf("flat" to 1.0, "rolling" to 1.015, "hilly" to 1.04, "mountainous" to 1.08)
     private val CY_COURSE_FACTORS = mapOf("flat" to 1.0, "rolling" to 1.008, "hilly" to 1.02, "mountainous" to 1.04)
     private val MTB_COURSE_FACTORS = mapOf("flat" to 1.0, "rolling" to 1.04, "hilly" to 1.10, "mountainous" to 1.20)
@@ -108,8 +112,22 @@ object SportPlan {
         113_000.0 to TriSplits(1_900.0, 90_000.0, 21_097.0),
         226_000.0 to TriSplits(3_800.0, 180_000.0, 42_195.0),
     )
+    /**
+     * `running_course_factor`: what the course does to a running finish on a
+     * neutral day — its technicality and its ground with a course
+     * ([Terrain.courseGradeFactor], the finish [RacePredictor.lapPaces]
+     * gives), else its terrain type. The goal card's badge, so it prices the
+     * hills the plan does.
+     */
+    fun runningCourseFactor(segments: List<Segment>, courseType: String?, distanceM: Double): Double =
+        if (segments.isNotEmpty()) {
+            RacePredictor.technicalityFactor(segments).first * Terrain.courseGradeFactor(segments, distanceM)
+        } else {
+            COURSE_FACTORS[courseType] ?: 1.0
+        }
+
     /** The slider's ends, `RACE_INTENSITY_MIN/MAX` in race_helpers.py. */
-    val INTENSITY_RANGE = 0.9..1.1
+    val INTENSITY_RANGE = 0.8..1.2
 
     /** A synced intensity as the planner uses it: 1.0 when unset, clamped to [INTENSITY_RANGE]. */
     fun intensityOf(v: Double?): Double = v?.coerceIn(INTENSITY_RANGE) ?: 1.0
@@ -284,7 +302,9 @@ object SportPlan {
         }
         m.ftp?.let { ftp ->
             val raced = ftp * (2.0 - f) * k
-            val sec = RacePredictor.predictCyclingTimeSec(raced, bikeM, bikeSegs)
+            var sec = RacePredictor.predictCyclingTimeSec(raced, bikeM, bikeSegs)
+            // Its terrain type, as a ride's, where the leg has no course.
+            if (bikeSegs == null) sec *= CY_COURSE_FACTORS[i.courseType] ?: 1.0
             val kph = bikeM / sec * 3.6
             val (raw, _) = RacePredictor.cyclingLapTargets(raced, bikeM, i.splitSpread, lapKm, bikeSegs, maxHr, sec)
             val laps = if (bikeSegs != null) {
@@ -299,7 +319,10 @@ object SportPlan {
             // About 5% slower for the swim and the bike before it.
             var sec = RacePredictor.predictRaceTimeSec(vdot * (2.0 - f) * 0.95, runM) / k
             if (runSegs != null) sec *= RacePredictor.technicalityFactor(runSegs).first
-            val (laps, _) = RacePredictor.lapPaces(sec, runM, i.splitSpread, lapKm, runSegs, maxHr, terrain = runSegs != null)
+            else sec *= COURSE_FACTORS[i.courseType] ?: 1.0
+            val (laps, courseSec) = RacePredictor.lapPaces(sec, runM, i.splitSpread, lapKm, runSegs, maxHr, terrain = runSegs != null)
+            // The leg's time is the one its laps are paced to, hills in (sport_plan).
+            if (runSegs != null) sec = courseSec
             legs += Leg("run", runM, sec, laps.firstOrNull()?.targetPace, null, null, laps)
             total += sec
         }

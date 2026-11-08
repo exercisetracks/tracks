@@ -81,8 +81,10 @@ class LocalRacePlansTest {
         assertTrue(harder.laps.first().targetSecPerKm < asPredicted.laps.first().targetSecPerKm)
         assertEquals(harder.seconds, plans.runningPlan(goal, imperial = false, today = today)!!.first.seconds, 1e-9)
 
+        plans.set(goal, "intensity", 1.2)
+        assertEquals(1.2, plans.strategy(goal).intensity, "the slider reaches a fifth either way")
         plans.set(goal, "intensity", 1.4)
-        assertEquals(1.1, plans.strategy(goal).intensity)
+        assertEquals(1.2, plans.strategy(goal).intensity)
     }
 
     /**
@@ -189,6 +191,48 @@ class LocalRacePlansTest {
 
         plans.removeCourse(goal)
         assertTrue(!plans.strategy(goal).hasCourse)
+    }
+
+    /**
+     * A race's course goes to the watch's course list for the days its race
+     * day is on the calendar, beside it — a workout file cannot carry one —
+     * under the race's name, keyed where no track's key can be; and off again
+     * once the race is past. The server's `_race_course_items` is its twin.
+     */
+    @Test
+    fun a_race_this_week_puts_its_course_on_the_watch() = runBlocking {
+        val (sources, plans) = setup()
+        sources.createValues("goal", mapOf("goal_type" to "event", "event_date" to "2026-11-05",
+            "event_sport" to "running", "event_name" to "Bern 10K"))
+        val goal = sources.goals().single()
+        assertTrue(plans.importCourse(goal, climbGpx()))
+        val s = plans.strategy(goal)
+
+        val week = plans.raceCourses(com.tracks.core.fit.decode.CivilDate(2026, 11, 1))
+        val race = week.single()
+        assertEquals(LocalRacePlans.raceCourseRef(goal.id, 0), race.ref)
+        assertTrue(race.ref < 0 && LocalRacePlans.isRaceCourseRef(race.ref))
+        assertEquals("Bern 10K", race.name)
+        assertEquals(s.path.map { it.first }, race.points.map { it.first })
+        assertEquals(s.elevations, race.points.map { it.third })
+
+        assertTrue(plans.raceCourses(com.tracks.core.fit.decode.CivilDate(2026, 10, 31)).isEmpty(), "before race week")
+        assertEquals(1, plans.raceCourses(com.tracks.core.fit.decode.CivilDate(2026, 11, 5)).size, "race day")
+        assertTrue(plans.raceCourses(com.tracks.core.fit.decode.CivilDate(2026, 11, 6)).isEmpty(), "after the race")
+    }
+
+    /** A triathlon with no whole course sends each leg file of its own, named by the leg. */
+    @Test
+    fun a_triathlons_leg_files_go_to_the_watch_one_by_one() = runBlocking {
+        val (sources, plans) = setup()
+        sources.createValues("goal", mapOf("goal_type" to "event", "event_date" to "2026-12-01",
+            "event_sport" to "triathlon", "event_distance_meters" to 51500.0, "event_name" to "Lake Tri"))
+        val goal = sources.goals().single()
+        assertTrue(plans.importCourse(goal, climbGpx(), leg = "run"))
+        val race = plans.raceCourses(com.tracks.core.fit.decode.CivilDate(2026, 11, 29)).single()
+        assertEquals(LocalRacePlans.raceCourseRef(goal.id, 3), race.ref)
+        assertEquals("Lake Tri · Run", race.name)
+        assertEquals("running", race.sport)
     }
 
     /** A file with no track is refused rather than stored as an empty course. */

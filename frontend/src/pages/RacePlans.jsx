@@ -8,7 +8,9 @@ import PageHeader from "../components/ui/PageHeader";
 // The race reaches the watch as the training calendar's race day, encoded from
 // this plan and sent with the calendar four days out — not as a file of its
 // own, which only opening the plan used to build. So there are two states:
-// on the watch, or going with the calendar.
+// on the watch, or going with the calendar. Its course, when it has one,
+// goes to the watch's courses for the same days (courses_api/sync.py
+// _race_course_items), since a workout file cannot carry one.
 function SyncBadge({ status }) {
   if (!status) return null;
   const cfg = {

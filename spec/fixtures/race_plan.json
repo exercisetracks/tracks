@@ -13801,7 +13801,7 @@
       "hr_ceiling": null
      }
     ],
-    "seconds": 8916.099813616573,
+    "seconds": 8908.0,
     "triathlon_legs": [
      {
       "leg": "swim",
@@ -14388,22 +14388,22 @@
      {
       "leg": "run",
       "distance_m": 10000.2,
-      "predicted_seconds": 2590.8998136165737,
-      "predicted_time": "43:11",
-      "target_pace": "3:58/km",
+      "predicted_seconds": 2582.8,
+      "predicted_time": "43:03",
+      "target_pace": "3:52/km",
       "target_watts": null,
       "target_watts_pct_ftp": null,
       "lap_paces": [
        {
         "kind": "down",
-        "label": "Descent 3%",
+        "label": "Descent 4%",
         "start_km": 0.0,
         "lap": 1,
         "distance_m": 1000,
-        "target_sec_per_km": 238.5,
-        "target_pace": "3:58/km",
-        "gradient": -0.0317,
-        "grade_multiplier": 0.9205,
+        "target_sec_per_km": 232.2,
+        "target_pace": "3:52/km",
+        "gradient": -0.0428,
+        "grade_multiplier": 0.8963,
         "grade_adj_sec": 259.1,
         "grade_adj_pace": "4:19/km",
         "cumulative_km": 1.0,
@@ -14415,10 +14415,10 @@
         "start_km": 1.0,
         "lap": 2,
         "distance_m": 1800,
-        "target_sec_per_km": 256.9,
-        "target_pace": "4:16/km",
-        "gradient": -0.0031,
-        "grade_multiplier": 0.9916,
+        "target_sec_per_km": 255.6,
+        "target_pace": "4:15/km",
+        "gradient": -0.0061,
+        "grade_multiplier": 0.9864,
         "grade_adj_sec": 259.1,
         "grade_adj_pace": "4:19/km",
         "cumulative_km": 2.8,
@@ -14430,10 +14430,10 @@
         "start_km": 2.8,
         "lap": 3,
         "distance_m": 1800,
-        "target_sec_per_km": 256.9,
-        "target_pace": "4:16/km",
-        "gradient": -0.0031,
-        "grade_multiplier": 0.9916,
+        "target_sec_per_km": 250.3,
+        "target_pace": "4:10/km",
+        "gradient": -0.013,
+        "grade_multiplier": 0.9661,
         "grade_adj_sec": 259.1,
         "grade_adj_pace": "4:19/km",
         "cumulative_km": 4.6,
@@ -14445,10 +14445,10 @@
         "start_km": 4.6,
         "lap": 4,
         "distance_m": 1800,
-        "target_sec_per_km": 256.9,
-        "target_pace": "4:16/km",
-        "gradient": -0.0031,
-        "grade_multiplier": 0.9916,
+        "target_sec_per_km": 267.5,
+        "target_pace": "4:27/km",
+        "gradient": 0.0053,
+        "grade_multiplier": 1.0325,
         "grade_adj_sec": 259.1,
         "grade_adj_pace": "4:19/km",
         "cumulative_km": 6.4,
@@ -14460,10 +14460,10 @@
         "start_km": 6.4,
         "lap": 5,
         "distance_m": 1800,
-        "target_sec_per_km": 256.9,
-        "target_pace": "4:16/km",
-        "gradient": -0.0031,
-        "grade_multiplier": 0.9916,
+        "target_sec_per_km": 280.1,
+        "target_pace": "4:40/km",
+        "gradient": 0.0144,
+        "grade_multiplier": 1.0813,
         "grade_adj_sec": 259.1,
         "grade_adj_pace": "4:19/km",
         "cumulative_km": 8.2,
@@ -14475,10 +14475,10 @@
         "start_km": 8.2,
         "lap": 6,
         "distance_m": 1800,
-        "target_sec_per_km": 256.9,
-        "target_pace": "4:16/km",
-        "gradient": -0.0031,
-        "grade_multiplier": 0.9916,
+        "target_sec_per_km": 252.4,
+        "target_pace": "4:12/km",
+        "gradient": -0.01,
+        "grade_multiplier": 0.9741,
         "grade_adj_sec": 259.1,
         "grade_adj_pace": "4:19/km",
         "cumulative_km": 10.0,
@@ -16878,7 +16878,7 @@
       "hr_ceiling": null
      }
     ],
-    "seconds": 7162.299813616573,
+    "seconds": 7154.2,
     "triathlon_legs": [
      {
       "leg": "bike",
@@ -17468,22 +17468,22 @@
      {
       "leg": "run",
       "distance_m": 10000.2,
-      "predicted_seconds": 2590.8998136165737,
-      "predicted_time": "43:11",
-      "target_pace": "3:58/km",
+      "predicted_seconds": 2582.8,
+      "predicted_time": "43:03",
+      "target_pace": "3:52/km",
       "target_watts": null,
       "target_watts_pct_ftp": null,
       "lap_paces": [
        {
         "kind": "down",
-        "label": "Descent 3%",
+        "label": "Descent 4%",
         "start_km": 0.0,
         "lap": 1,
         "distance_m": 1000,
-        "target_sec_per_km": 238.5,
-        "target_pace": "3:58/km",
-        "gradient": -0.0317,
-        "grade_multiplier": 0.9205,
+        "target_sec_per_km": 232.2,
+        "target_pace": "3:52/km",
+        "gradient": -0.0428,
+        "grade_multiplier": 0.8963,
         "grade_adj_sec": 259.1,
         "grade_adj_pace": "4:19/km",
         "cumulative_km": 1.0,
@@ -17495,10 +17495,10 @@
         "start_km": 1.0,
         "lap": 2,
         "distance_m": 1800,
-        "target_sec_per_km": 256.9,
-        "target_pace": "4:16/km",
-        "gradient": -0.0031,
-        "grade_multiplier": 0.9916,
+        "target_sec_per_km": 255.6,
+        "target_pace": "4:15/km",
+        "gradient": -0.0061,
+        "grade_multiplier": 0.9864,
         "grade_adj_sec": 259.1,
         "grade_adj_pace": "4:19/km",
         "cumulative_km": 2.8,
@@ -17510,10 +17510,10 @@
         "start_km": 2.8,
         "lap": 3,
         "distance_m": 1800,
-        "target_sec_per_km": 256.9,
-        "target_pace": "4:16/km",
-        "gradient": -0.0031,
-        "grade_multiplier": 0.9916,
+        "target_sec_per_km": 250.3,
+        "target_pace": "4:10/km",
+        "gradient": -0.013,
+        "grade_multiplier": 0.9661,
         "grade_adj_sec": 259.1,
         "grade_adj_pace": "4:19/km",
         "cumulative_km": 4.6,
@@ -17525,10 +17525,10 @@
         "start_km": 4.6,
         "lap": 4,
         "distance_m": 1800,
-        "target_sec_per_km": 256.9,
-        "target_pace": "4:16/km",
-        "gradient": -0.0031,
-        "grade_multiplier": 0.9916,
+        "target_sec_per_km": 267.5,
+        "target_pace": "4:27/km",
+        "gradient": 0.0053,
+        "grade_multiplier": 1.0325,
         "grade_adj_sec": 259.1,
         "grade_adj_pace": "4:19/km",
         "cumulative_km": 6.4,
@@ -17540,10 +17540,10 @@
         "start_km": 6.4,
         "lap": 5,
         "distance_m": 1800,
-        "target_sec_per_km": 256.9,
-        "target_pace": "4:16/km",
-        "gradient": -0.0031,
-        "grade_multiplier": 0.9916,
+        "target_sec_per_km": 280.1,
+        "target_pace": "4:40/km",
+        "gradient": 0.0144,
+        "grade_multiplier": 1.0813,
         "grade_adj_sec": 259.1,
         "grade_adj_pace": "4:19/km",
         "cumulative_km": 8.2,
@@ -17555,10 +17555,10 @@
         "start_km": 8.2,
         "lap": 6,
         "distance_m": 1800,
-        "target_sec_per_km": 256.9,
-        "target_pace": "4:16/km",
-        "gradient": -0.0031,
-        "grade_multiplier": 0.9916,
+        "target_sec_per_km": 252.4,
+        "target_pace": "4:12/km",
+        "gradient": -0.01,
+        "grade_multiplier": 0.9741,
         "grade_adj_sec": 259.1,
         "grade_adj_pace": "4:19/km",
         "cumulative_km": 10.0,
@@ -19540,7 +19540,7 @@
       "hr_ceiling": 177
      }
     ],
-    "seconds": 9115.338038819908,
+    "seconds": 9109.4,
     "triathlon_legs": [
      {
       "leg": "swim",
@@ -20127,9 +20127,9 @@
      {
       "leg": "run",
       "distance_m": 10601.6,
-      "predicted_seconds": 2756.0380388199073,
-      "predicted_time": "45:56",
-      "target_pace": "4:16/km",
+      "predicted_seconds": 2750.1,
+      "predicted_time": "45:50",
+      "target_pace": "4:06/km",
       "target_watts": null,
       "target_watts_pct_ftp": null,
       "lap_paces": [
@@ -20139,10 +20139,10 @@
         "start_km": 0.0,
         "lap": 1,
         "distance_m": 1767,
-        "target_sec_per_km": 256.4,
-        "target_pace": "4:16/km",
-        "gradient": -0.005,
-        "grade_multiplier": 0.9863,
+        "target_sec_per_km": 246.1,
+        "target_pace": "4:06/km",
+        "gradient": -0.0232,
+        "grade_multiplier": 0.9469,
         "grade_adj_sec": 260.0,
         "grade_adj_pace": "4:19/km",
         "cumulative_km": 1.77,
@@ -20154,10 +20154,10 @@
         "start_km": 1.767,
         "lap": 2,
         "distance_m": 1767,
-        "target_sec_per_km": 256.4,
-        "target_pace": "4:16/km",
-        "gradient": -0.005,
-        "grade_multiplier": 0.9863,
+        "target_sec_per_km": 255.4,
+        "target_pace": "4:15/km",
+        "gradient": -0.0075,
+        "grade_multiplier": 0.9824,
         "grade_adj_sec": 260.0,
         "grade_adj_pace": "4:19/km",
         "cumulative_km": 3.53,
@@ -20169,10 +20169,10 @@
         "start_km": 3.534,
         "lap": 3,
         "distance_m": 1767,
-        "target_sec_per_km": 256.4,
-        "target_pace": "4:16/km",
-        "gradient": -0.005,
-        "grade_multiplier": 0.9863,
+        "target_sec_per_km": 251.6,
+        "target_pace": "4:11/km",
+        "gradient": -0.0123,
+        "grade_multiplier": 0.9679,
         "grade_adj_sec": 260.0,
         "grade_adj_pace": "4:19/km",
         "cumulative_km": 5.3,
@@ -20184,10 +20184,10 @@
         "start_km": 5.301,
         "lap": 4,
         "distance_m": 1767,
-        "target_sec_per_km": 256.4,
-        "target_pace": "4:16/km",
-        "gradient": -0.005,
-        "grade_multiplier": 0.9863,
+        "target_sec_per_km": 269.7,
+        "target_pace": "4:29/km",
+        "gradient": 0.0063,
+        "grade_multiplier": 1.0375,
         "grade_adj_sec": 260.0,
         "grade_adj_pace": "4:19/km",
         "cumulative_km": 7.07,
@@ -20199,10 +20199,10 @@
         "start_km": 7.068,
         "lap": 5,
         "distance_m": 1767,
-        "target_sec_per_km": 256.4,
-        "target_pace": "4:16/km",
-        "gradient": -0.005,
-        "grade_multiplier": 0.9863,
+        "target_sec_per_km": 280.5,
+        "target_pace": "4:40/km",
+        "gradient": 0.0139,
+        "grade_multiplier": 1.0789,
         "grade_adj_sec": 260.0,
         "grade_adj_pace": "4:19/km",
         "cumulative_km": 8.83,
@@ -20214,10 +20214,10 @@
         "start_km": 8.835,
         "lap": 6,
         "distance_m": 1767,
-        "target_sec_per_km": 256.4,
-        "target_pace": "4:16/km",
-        "gradient": -0.005,
-        "grade_multiplier": 0.9863,
+        "target_sec_per_km": 253.1,
+        "target_pace": "4:13/km",
+        "gradient": -0.0101,
+        "grade_multiplier": 0.9737,
         "grade_adj_sec": 260.0,
         "grade_adj_pace": "4:19/km",
         "cumulative_km": 10.6,
@@ -21316,7 +21316,7 @@
       "hr_ceiling": null
      }
     ],
-    "seconds": 4613.890627989209,
+    "seconds": 4793.8,
     "triathlon_legs": [
      {
       "leg": "swim",
@@ -21623,9 +21623,9 @@
      {
       "leg": "run",
       "distance_m": 5000.0,
-      "predicted_seconds": 1293.890627989209,
-      "predicted_time": "21:34",
-      "target_pace": "4:46/km",
+      "predicted_seconds": 1473.8,
+      "predicted_time": "24:34",
+      "target_pace": "4:37/km",
       "target_watts": null,
       "target_watts_pct_ftp": null,
       "lap_paces": [
@@ -21635,10 +21635,10 @@
         "start_km": 0.0,
         "lap": 1,
         "distance_m": 1500,
-        "target_sec_per_km": 286.8,
-        "target_pace": "4:46/km",
-        "gradient": 0.0133,
-        "grade_multiplier": 1.1083,
+        "target_sec_per_km": 277.3,
+        "target_pace": "4:37/km",
+        "gradient": 0.0126,
+        "grade_multiplier": 1.0715,
         "grade_adj_sec": 258.8,
         "grade_adj_pace": "4:18/km",
         "cumulative_km": 1.5,
@@ -21646,14 +21646,14 @@
        },
        {
         "kind": "up",
-        "label": "Climb 3%",
+        "label": "Climb 4%",
         "start_km": 1.5,
         "lap": 2,
         "distance_m": 1250,
-        "target_sec_per_km": 335.0,
-        "target_pace": "5:34/km",
-        "gradient": 0.0346,
-        "grade_multiplier": 1.2944,
+        "target_sec_per_km": 315.1,
+        "target_pace": "5:15/km",
+        "gradient": 0.037,
+        "grade_multiplier": 1.2175,
         "grade_adj_sec": 258.8,
         "grade_adj_pace": "4:18/km",
         "cumulative_km": 2.75,
@@ -21665,10 +21665,10 @@
         "start_km": 2.75,
         "lap": 3,
         "distance_m": 1250,
-        "target_sec_per_km": 335.0,
-        "target_pace": "5:34/km",
-        "gradient": 0.0346,
-        "grade_multiplier": 1.2944,
+        "target_sec_per_km": 310.3,
+        "target_pace": "5:10/km",
+        "gradient": 0.0341,
+        "grade_multiplier": 1.1993,
         "grade_adj_sec": 258.8,
         "grade_adj_pace": "4:18/km",
         "cumulative_km": 4.0,
@@ -21680,10 +21680,10 @@
         "start_km": 4.0,
         "lap": 4,
         "distance_m": 1000,
-        "target_sec_per_km": 286.6,
-        "target_pace": "4:46/km",
-        "gradient": 0.0133,
-        "grade_multiplier": 1.1077,
+        "target_sec_per_km": 276.1,
+        "target_pace": "4:36/km",
+        "gradient": 0.0119,
+        "grade_multiplier": 1.067,
         "grade_adj_sec": 258.8,
         "grade_adj_pace": "4:18/km",
         "cumulative_km": 5.0,
@@ -24970,7 +24970,7 @@
       "hr_ceiling": null
      }
     ],
-    "seconds": 9225.362961701656,
+    "seconds": 9216.9,
     "triathlon_legs": [
      {
       "leg": "swim",
@@ -25557,22 +25557,22 @@
      {
       "leg": "run",
       "distance_m": 10000.2,
-      "predicted_seconds": 2727.262961701657,
-      "predicted_time": "45:27",
-      "target_pace": "4:11/km",
+      "predicted_seconds": 2718.8,
+      "predicted_time": "45:19",
+      "target_pace": "4:04/km",
       "target_watts": null,
       "target_watts_pct_ftp": null,
       "lap_paces": [
        {
         "kind": "down",
-        "label": "Descent 3%",
+        "label": "Descent 4%",
         "start_km": 0.0,
         "lap": 1,
         "distance_m": 1000,
-        "target_sec_per_km": 251.0,
-        "target_pace": "4:11/km",
-        "gradient": -0.0317,
-        "grade_multiplier": 0.9205,
+        "target_sec_per_km": 244.4,
+        "target_pace": "4:04/km",
+        "gradient": -0.0428,
+        "grade_multiplier": 0.8963,
         "grade_adj_sec": 272.7,
         "grade_adj_pace": "4:32/km",
         "cumulative_km": 1.0,
@@ -25584,10 +25584,10 @@
         "start_km": 1.0,
         "lap": 2,
         "distance_m": 1800,
-        "target_sec_per_km": 270.4,
-        "target_pace": "4:30/km",
-        "gradient": -0.0031,
-        "grade_multiplier": 0.9916,
+        "target_sec_per_km": 269.0,
+        "target_pace": "4:29/km",
+        "gradient": -0.0061,
+        "grade_multiplier": 0.9864,
         "grade_adj_sec": 272.7,
         "grade_adj_pace": "4:32/km",
         "cumulative_km": 2.8,
@@ -25599,10 +25599,10 @@
         "start_km": 2.8,
         "lap": 3,
         "distance_m": 1800,
-        "target_sec_per_km": 270.4,
-        "target_pace": "4:30/km",
-        "gradient": -0.0031,
-        "grade_multiplier": 0.9916,
+        "target_sec_per_km": 263.5,
+        "target_pace": "4:23/km",
+        "gradient": -0.013,
+        "grade_multiplier": 0.9661,
         "grade_adj_sec": 272.7,
         "grade_adj_pace": "4:32/km",
         "cumulative_km": 4.6,
@@ -25614,10 +25614,10 @@
         "start_km": 4.6,
         "lap": 4,
         "distance_m": 1800,
-        "target_sec_per_km": 270.4,
-        "target_pace": "4:30/km",
-        "gradient": -0.0031,
-        "grade_multiplier": 0.9916,
+        "target_sec_per_km": 281.6,
+        "target_pace": "4:41/km",
+        "gradient": 0.0053,
+        "grade_multiplier": 1.0325,
         "grade_adj_sec": 272.7,
         "grade_adj_pace": "4:32/km",
         "cumulative_km": 6.4,
@@ -25629,10 +25629,10 @@
         "start_km": 6.4,
         "lap": 5,
         "distance_m": 1800,
-        "target_sec_per_km": 270.4,
-        "target_pace": "4:30/km",
-        "gradient": -0.0031,
-        "grade_multiplier": 0.9916,
+        "target_sec_per_km": 294.9,
+        "target_pace": "4:54/km",
+        "gradient": 0.0144,
+        "grade_multiplier": 1.0813,
         "grade_adj_sec": 272.7,
         "grade_adj_pace": "4:32/km",
         "cumulative_km": 8.2,
@@ -25644,10 +25644,10 @@
         "start_km": 8.2,
         "lap": 6,
         "distance_m": 1800,
-        "target_sec_per_km": 270.4,
-        "target_pace": "4:30/km",
-        "gradient": -0.0031,
-        "grade_multiplier": 0.9916,
+        "target_sec_per_km": 265.6,
+        "target_pace": "4:25/km",
+        "gradient": -0.01,
+        "grade_multiplier": 0.9741,
         "grade_adj_sec": 272.7,
         "grade_adj_pace": "4:32/km",
         "cumulative_km": 10.0,
@@ -26392,245 +26392,245 @@
      {
       "lap": 1,
       "distance_m": 1000,
-      "target_sec_per_km": 274.0,
-      "target_pace": "4:33/km",
+      "target_sec_per_km": 251.2,
+      "target_pace": "4:11/km",
       "gradient": 0.0,
       "grade_multiplier": 1.0,
-      "grade_adj_sec": 274.0,
-      "grade_adj_pace": "4:33/km",
+      "grade_adj_sec": 251.2,
+      "grade_adj_pace": "4:11/km",
       "cumulative_km": 1.0,
       "hr_ceiling": null
      },
      {
       "lap": 2,
       "distance_m": 1000,
-      "target_sec_per_km": 274.0,
-      "target_pace": "4:33/km",
+      "target_sec_per_km": 251.2,
+      "target_pace": "4:11/km",
       "gradient": 0.0,
       "grade_multiplier": 1.0,
-      "grade_adj_sec": 274.0,
-      "grade_adj_pace": "4:33/km",
+      "grade_adj_sec": 251.2,
+      "grade_adj_pace": "4:11/km",
       "cumulative_km": 2.0,
       "hr_ceiling": null
      },
      {
       "lap": 3,
       "distance_m": 1000,
-      "target_sec_per_km": 274.0,
-      "target_pace": "4:33/km",
+      "target_sec_per_km": 251.2,
+      "target_pace": "4:11/km",
       "gradient": 0.0,
       "grade_multiplier": 1.0,
-      "grade_adj_sec": 274.0,
-      "grade_adj_pace": "4:33/km",
+      "grade_adj_sec": 251.2,
+      "grade_adj_pace": "4:11/km",
       "cumulative_km": 3.0,
       "hr_ceiling": null
      },
      {
       "lap": 4,
       "distance_m": 1000,
-      "target_sec_per_km": 274.0,
-      "target_pace": "4:33/km",
+      "target_sec_per_km": 251.2,
+      "target_pace": "4:11/km",
       "gradient": 0.0,
       "grade_multiplier": 1.0,
-      "grade_adj_sec": 274.0,
-      "grade_adj_pace": "4:33/km",
+      "grade_adj_sec": 251.2,
+      "grade_adj_pace": "4:11/km",
       "cumulative_km": 4.0,
       "hr_ceiling": null
      },
      {
       "lap": 5,
       "distance_m": 1000,
-      "target_sec_per_km": 274.0,
-      "target_pace": "4:33/km",
+      "target_sec_per_km": 251.2,
+      "target_pace": "4:11/km",
       "gradient": 0.0,
       "grade_multiplier": 1.0,
-      "grade_adj_sec": 274.0,
-      "grade_adj_pace": "4:33/km",
+      "grade_adj_sec": 251.2,
+      "grade_adj_pace": "4:11/km",
       "cumulative_km": 5.0,
       "hr_ceiling": null
      },
      {
       "lap": 6,
       "distance_m": 1000,
-      "target_sec_per_km": 274.0,
-      "target_pace": "4:33/km",
+      "target_sec_per_km": 251.2,
+      "target_pace": "4:11/km",
       "gradient": 0.0,
       "grade_multiplier": 1.0,
-      "grade_adj_sec": 274.0,
-      "grade_adj_pace": "4:33/km",
+      "grade_adj_sec": 251.2,
+      "grade_adj_pace": "4:11/km",
       "cumulative_km": 6.0,
       "hr_ceiling": null
      },
      {
       "lap": 7,
       "distance_m": 1000,
-      "target_sec_per_km": 274.0,
-      "target_pace": "4:33/km",
+      "target_sec_per_km": 251.2,
+      "target_pace": "4:11/km",
       "gradient": 0.0,
       "grade_multiplier": 1.0,
-      "grade_adj_sec": 274.0,
-      "grade_adj_pace": "4:33/km",
+      "grade_adj_sec": 251.2,
+      "grade_adj_pace": "4:11/km",
       "cumulative_km": 7.0,
       "hr_ceiling": null
      },
      {
       "lap": 8,
       "distance_m": 1000,
-      "target_sec_per_km": 274.0,
-      "target_pace": "4:33/km",
+      "target_sec_per_km": 251.2,
+      "target_pace": "4:11/km",
       "gradient": 0.0,
       "grade_multiplier": 1.0,
-      "grade_adj_sec": 274.0,
-      "grade_adj_pace": "4:33/km",
+      "grade_adj_sec": 251.2,
+      "grade_adj_pace": "4:11/km",
       "cumulative_km": 8.0,
       "hr_ceiling": null
      },
      {
       "lap": 9,
       "distance_m": 1000,
-      "target_sec_per_km": 274.0,
-      "target_pace": "4:33/km",
+      "target_sec_per_km": 251.2,
+      "target_pace": "4:11/km",
       "gradient": 0.0,
       "grade_multiplier": 1.0,
-      "grade_adj_sec": 274.0,
-      "grade_adj_pace": "4:33/km",
+      "grade_adj_sec": 251.2,
+      "grade_adj_pace": "4:11/km",
       "cumulative_km": 9.0,
       "hr_ceiling": null
      },
      {
       "lap": 10,
       "distance_m": 1000,
-      "target_sec_per_km": 274.0,
-      "target_pace": "4:33/km",
+      "target_sec_per_km": 251.2,
+      "target_pace": "4:11/km",
       "gradient": 0.0,
       "grade_multiplier": 1.0,
-      "grade_adj_sec": 274.0,
-      "grade_adj_pace": "4:33/km",
+      "grade_adj_sec": 251.2,
+      "grade_adj_pace": "4:11/km",
       "cumulative_km": 10.0,
       "hr_ceiling": null
      },
      {
       "lap": 11,
       "distance_m": 1000,
-      "target_sec_per_km": 274.0,
-      "target_pace": "4:33/km",
+      "target_sec_per_km": 251.2,
+      "target_pace": "4:11/km",
       "gradient": 0.0,
       "grade_multiplier": 1.0,
-      "grade_adj_sec": 274.0,
-      "grade_adj_pace": "4:33/km",
+      "grade_adj_sec": 251.2,
+      "grade_adj_pace": "4:11/km",
       "cumulative_km": 11.0,
       "hr_ceiling": null
      },
      {
       "lap": 12,
       "distance_m": 1000,
-      "target_sec_per_km": 274.0,
-      "target_pace": "4:33/km",
+      "target_sec_per_km": 251.2,
+      "target_pace": "4:11/km",
       "gradient": 0.0,
       "grade_multiplier": 1.0,
-      "grade_adj_sec": 274.0,
-      "grade_adj_pace": "4:33/km",
+      "grade_adj_sec": 251.2,
+      "grade_adj_pace": "4:11/km",
       "cumulative_km": 12.0,
       "hr_ceiling": null
      },
      {
       "lap": 13,
       "distance_m": 1000,
-      "target_sec_per_km": 274.0,
-      "target_pace": "4:33/km",
+      "target_sec_per_km": 251.2,
+      "target_pace": "4:11/km",
       "gradient": 0.0,
       "grade_multiplier": 1.0,
-      "grade_adj_sec": 274.0,
-      "grade_adj_pace": "4:33/km",
+      "grade_adj_sec": 251.2,
+      "grade_adj_pace": "4:11/km",
       "cumulative_km": 13.0,
       "hr_ceiling": null
      },
      {
       "lap": 14,
       "distance_m": 1000,
-      "target_sec_per_km": 274.0,
-      "target_pace": "4:33/km",
+      "target_sec_per_km": 251.2,
+      "target_pace": "4:11/km",
       "gradient": 0.0,
       "grade_multiplier": 1.0,
-      "grade_adj_sec": 274.0,
-      "grade_adj_pace": "4:33/km",
+      "grade_adj_sec": 251.2,
+      "grade_adj_pace": "4:11/km",
       "cumulative_km": 14.0,
       "hr_ceiling": null
      },
      {
       "lap": 15,
       "distance_m": 1000,
-      "target_sec_per_km": 274.0,
-      "target_pace": "4:33/km",
+      "target_sec_per_km": 251.2,
+      "target_pace": "4:11/km",
       "gradient": 0.0,
       "grade_multiplier": 1.0,
-      "grade_adj_sec": 274.0,
-      "grade_adj_pace": "4:33/km",
+      "grade_adj_sec": 251.2,
+      "grade_adj_pace": "4:11/km",
       "cumulative_km": 15.0,
       "hr_ceiling": null
      },
      {
       "lap": 16,
       "distance_m": 1000,
-      "target_sec_per_km": 274.0,
-      "target_pace": "4:33/km",
+      "target_sec_per_km": 251.2,
+      "target_pace": "4:11/km",
       "gradient": 0.0,
       "grade_multiplier": 1.0,
-      "grade_adj_sec": 274.0,
-      "grade_adj_pace": "4:33/km",
+      "grade_adj_sec": 251.2,
+      "grade_adj_pace": "4:11/km",
       "cumulative_km": 16.0,
       "hr_ceiling": null
      },
      {
       "lap": 17,
       "distance_m": 1000,
-      "target_sec_per_km": 274.0,
-      "target_pace": "4:33/km",
+      "target_sec_per_km": 251.2,
+      "target_pace": "4:11/km",
       "gradient": 0.0,
       "grade_multiplier": 1.0,
-      "grade_adj_sec": 274.0,
-      "grade_adj_pace": "4:33/km",
+      "grade_adj_sec": 251.2,
+      "grade_adj_pace": "4:11/km",
       "cumulative_km": 17.0,
       "hr_ceiling": null
      },
      {
       "lap": 18,
       "distance_m": 1000,
-      "target_sec_per_km": 274.0,
-      "target_pace": "4:33/km",
+      "target_sec_per_km": 251.2,
+      "target_pace": "4:11/km",
       "gradient": 0.0,
       "grade_multiplier": 1.0,
-      "grade_adj_sec": 274.0,
-      "grade_adj_pace": "4:33/km",
+      "grade_adj_sec": 251.2,
+      "grade_adj_pace": "4:11/km",
       "cumulative_km": 18.0,
       "hr_ceiling": null
      },
      {
       "lap": 19,
       "distance_m": 1000,
-      "target_sec_per_km": 274.0,
-      "target_pace": "4:33/km",
+      "target_sec_per_km": 251.2,
+      "target_pace": "4:11/km",
       "gradient": 0.0,
       "grade_multiplier": 1.0,
-      "grade_adj_sec": 274.0,
-      "grade_adj_pace": "4:33/km",
+      "grade_adj_sec": 251.2,
+      "grade_adj_pace": "4:11/km",
       "cumulative_km": 19.0,
       "hr_ceiling": null
      },
      {
       "lap": 20,
       "distance_m": 1000,
-      "target_sec_per_km": 274.0,
-      "target_pace": "4:33/km",
+      "target_sec_per_km": 251.2,
+      "target_pace": "4:11/km",
       "gradient": 0.0,
       "grade_multiplier": 1.0,
-      "grade_adj_sec": 274.0,
-      "grade_adj_pace": "4:33/km",
+      "grade_adj_sec": 251.2,
+      "grade_adj_pace": "4:11/km",
       "cumulative_km": 20.0,
       "hr_ceiling": null
      }
     ],
-    "seconds": 5480.0,
+    "seconds": 5023.3,
     "triathlon_legs": null,
     "triathlon_splits_m": null,
     "technicality_factor": null,
@@ -26638,6 +26638,5223 @@
     "target_hr_ceiling": null,
     "climb_target_w_per_kg": null,
     "tri_courses": null
+   }
+  },
+  {
+   "name": "10 K, raced a fifth harder",
+   "family": "running",
+   "distance_m": 10000,
+   "metrics": {
+    "family": "running",
+    "vdot": 45.0,
+    "run_indices": null,
+    "ftp": null,
+    "css": null,
+    "max_hr": null,
+    "lthr": null
+   },
+   "course_segments": null,
+   "course_type": "flat",
+   "split_spread": 0.0,
+   "pace_hr": false,
+   "imperial": false,
+   "mtb_discipline": null,
+   "cycling_discipline": null,
+   "triathlon_splits_m": null,
+   "course_path": null,
+   "tri_leg_courses": null,
+   "tri_transitions_m": null,
+   "intensity": 1.2,
+   "freshness": 1.0,
+   "expected": {
+    "laps": [
+     {
+      "lap": 1,
+      "distance_m": 1000,
+      "target_sec_per_km": 226.1,
+      "target_pace": "3:46/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 226.1,
+      "grade_adj_pace": "3:46/km",
+      "cumulative_km": 1.0,
+      "hr_ceiling": null
+     },
+     {
+      "lap": 2,
+      "distance_m": 1000,
+      "target_sec_per_km": 226.1,
+      "target_pace": "3:46/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 226.1,
+      "grade_adj_pace": "3:46/km",
+      "cumulative_km": 2.0,
+      "hr_ceiling": null
+     },
+     {
+      "lap": 3,
+      "distance_m": 1000,
+      "target_sec_per_km": 226.1,
+      "target_pace": "3:46/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 226.1,
+      "grade_adj_pace": "3:46/km",
+      "cumulative_km": 3.0,
+      "hr_ceiling": null
+     },
+     {
+      "lap": 4,
+      "distance_m": 1000,
+      "target_sec_per_km": 226.1,
+      "target_pace": "3:46/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 226.1,
+      "grade_adj_pace": "3:46/km",
+      "cumulative_km": 4.0,
+      "hr_ceiling": null
+     },
+     {
+      "lap": 5,
+      "distance_m": 1000,
+      "target_sec_per_km": 226.1,
+      "target_pace": "3:46/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 226.1,
+      "grade_adj_pace": "3:46/km",
+      "cumulative_km": 5.0,
+      "hr_ceiling": null
+     },
+     {
+      "lap": 6,
+      "distance_m": 1000,
+      "target_sec_per_km": 226.1,
+      "target_pace": "3:46/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 226.1,
+      "grade_adj_pace": "3:46/km",
+      "cumulative_km": 6.0,
+      "hr_ceiling": null
+     },
+     {
+      "lap": 7,
+      "distance_m": 1000,
+      "target_sec_per_km": 226.1,
+      "target_pace": "3:46/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 226.1,
+      "grade_adj_pace": "3:46/km",
+      "cumulative_km": 7.0,
+      "hr_ceiling": null
+     },
+     {
+      "lap": 8,
+      "distance_m": 1000,
+      "target_sec_per_km": 226.1,
+      "target_pace": "3:46/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 226.1,
+      "grade_adj_pace": "3:46/km",
+      "cumulative_km": 8.0,
+      "hr_ceiling": null
+     },
+     {
+      "lap": 9,
+      "distance_m": 1000,
+      "target_sec_per_km": 226.1,
+      "target_pace": "3:46/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 226.1,
+      "grade_adj_pace": "3:46/km",
+      "cumulative_km": 9.0,
+      "hr_ceiling": null
+     },
+     {
+      "lap": 10,
+      "distance_m": 1000,
+      "target_sec_per_km": 226.1,
+      "target_pace": "3:46/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 226.1,
+      "grade_adj_pace": "3:46/km",
+      "cumulative_km": 10.0,
+      "hr_ceiling": null
+     }
+    ],
+    "seconds": 2261.2,
+    "triathlon_legs": null,
+    "triathlon_splits_m": null,
+    "technicality_factor": null,
+    "technicality_label": null,
+    "target_hr_ceiling": null,
+    "climb_target_w_per_kg": null,
+    "tri_courses": null
+   }
+  },
+  {
+   "name": "half marathon, a fifth easier",
+   "family": "running",
+   "distance_m": 21097.5,
+   "metrics": {
+    "family": "running",
+    "vdot": 40.0,
+    "run_indices": null,
+    "ftp": null,
+    "css": null,
+    "max_hr": null,
+    "lthr": null
+   },
+   "course_segments": [
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0098,
+     "elevation_gain_m": 4.9
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0186,
+     "elevation_gain_m": 9.3
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0252,
+     "elevation_gain_m": 12.6
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0292,
+     "elevation_gain_m": 14.6
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0299,
+     "elevation_gain_m": 14.9
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0273,
+     "elevation_gain_m": 13.7
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0217,
+     "elevation_gain_m": 10.8
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0137,
+     "elevation_gain_m": 6.9
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0042,
+     "elevation_gain_m": 2.1
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0057,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.015,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0227,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0279,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.03,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0288,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0244,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0173,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0084,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0015,
+     "elevation_gain_m": 0.8
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0112,
+     "elevation_gain_m": 5.6
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0197,
+     "elevation_gain_m": 9.8
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.026,
+     "elevation_gain_m": 13.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0295,
+     "elevation_gain_m": 14.8
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0297,
+     "elevation_gain_m": 14.8
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0266,
+     "elevation_gain_m": 13.3
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0206,
+     "elevation_gain_m": 10.3
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0124,
+     "elevation_gain_m": 6.2
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0027,
+     "elevation_gain_m": 1.4
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0072,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0163,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0237,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0284,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.03,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0283,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0235,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0161,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0069,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.003,
+     "elevation_gain_m": 1.5
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0126,
+     "elevation_gain_m": 6.3
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0208,
+     "elevation_gain_m": 10.4
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0267,
+     "elevation_gain_m": 13.4
+    }
+   ],
+   "course_type": "flat",
+   "split_spread": 0.0,
+   "pace_hr": false,
+   "imperial": false,
+   "mtb_discipline": null,
+   "cycling_discipline": null,
+   "triathlon_splits_m": null,
+   "course_path": null,
+   "tri_leg_courses": null,
+   "tri_transitions_m": null,
+   "intensity": 0.8,
+   "freshness": 1.0,
+   "expected": {
+    "laps": [
+     {
+      "kind": "flat",
+      "label": "Flat",
+      "start_km": 0.0,
+      "lap": 1,
+      "distance_m": 1005,
+      "target_sec_per_km": 404.9,
+      "target_pace": "6:44/km",
+      "gradient": 0.0049,
+      "grade_multiplier": 1.0272,
+      "grade_adj_sec": 394.2,
+      "grade_adj_pace": "6:34/km",
+      "cumulative_km": 1.0,
+      "hr_ceiling": null
+     },
+     {
+      "kind": "flat",
+      "label": "Flat",
+      "start_km": 1.005,
+      "lap": 2,
+      "distance_m": 1005,
+      "target_sec_per_km": 443.4,
+      "target_pace": "7:23/km",
+      "gradient": 0.0219,
+      "grade_multiplier": 1.1248,
+      "grade_adj_sec": 394.2,
+      "grade_adj_pace": "6:34/km",
+      "cumulative_km": 2.01,
+      "hr_ceiling": null
+     },
+     {
+      "kind": "up",
+      "label": "Climb 3%",
+      "start_km": 2.009,
+      "lap": 3,
+      "distance_m": 1507,
+      "target_sec_per_km": 459.8,
+      "target_pace": "7:39/km",
+      "gradient": 0.0288,
+      "grade_multiplier": 1.1664,
+      "grade_adj_sec": 394.2,
+      "grade_adj_pace": "6:34/km",
+      "cumulative_km": 3.52,
+      "hr_ceiling": null
+     },
+     {
+      "kind": "flat",
+      "label": "Flat",
+      "start_km": 3.516,
+      "lap": 4,
+      "distance_m": 1507,
+      "target_sec_per_km": 423.5,
+      "target_pace": "7:03/km",
+      "gradient": 0.0132,
+      "grade_multiplier": 1.0743,
+      "grade_adj_sec": 394.2,
+      "grade_adj_pace": "6:34/km",
+      "cumulative_km": 5.02,
+      "hr_ceiling": null
+     },
+     {
+      "kind": "flat",
+      "label": "Flat",
+      "start_km": 5.023,
+      "lap": 5,
+      "distance_m": 1507,
+      "target_sec_per_km": 379.5,
+      "target_pace": "6:19/km",
+      "gradient": -0.0145,
+      "grade_multiplier": 0.9625,
+      "grade_adj_sec": 394.2,
+      "grade_adj_pace": "6:34/km",
+      "cumulative_km": 6.53,
+      "hr_ceiling": null
+     },
+     {
+      "kind": "down",
+      "label": "Descent 3%",
+      "start_km": 6.53,
+      "lap": 6,
+      "distance_m": 1507,
+      "target_sec_per_km": 365.6,
+      "target_pace": "6:05/km",
+      "gradient": -0.0289,
+      "grade_multiplier": 0.9272,
+      "grade_adj_sec": 394.2,
+      "grade_adj_pace": "6:34/km",
+      "cumulative_km": 8.04,
+      "hr_ceiling": null
+     },
+     {
+      "kind": "flat",
+      "label": "Flat",
+      "start_km": 8.037,
+      "lap": 7,
+      "distance_m": 1507,
+      "target_sec_per_km": 377.2,
+      "target_pace": "6:17/km",
+      "gradient": -0.0167,
+      "grade_multiplier": 0.9569,
+      "grade_adj_sec": 394.2,
+      "grade_adj_pace": "6:34/km",
+      "cumulative_km": 9.54,
+      "hr_ceiling": null
+     },
+     {
+      "kind": "flat",
+      "label": "Flat",
+      "start_km": 9.544,
+      "lap": 8,
+      "distance_m": 1507,
+      "target_sec_per_km": 418.2,
+      "target_pace": "6:58/km",
+      "gradient": 0.0108,
+      "grade_multiplier": 1.0607,
+      "grade_adj_sec": 394.2,
+      "grade_adj_pace": "6:34/km",
+      "cumulative_km": 11.05,
+      "hr_ceiling": null
+     },
+     {
+      "kind": "up",
+      "label": "Climb 3%",
+      "start_km": 11.051,
+      "lap": 9,
+      "distance_m": 1005,
+      "target_sec_per_km": 457.3,
+      "target_pace": "7:37/km",
+      "gradient": 0.0277,
+      "grade_multiplier": 1.16,
+      "grade_adj_sec": 394.2,
+      "grade_adj_pace": "6:34/km",
+      "cumulative_km": 12.06,
+      "hr_ceiling": null
+     },
+     {
+      "kind": "up",
+      "label": "Climb 3%",
+      "start_km": 12.056,
+      "lap": 10,
+      "distance_m": 1005,
+      "target_sec_per_km": 458.3,
+      "target_pace": "7:38/km",
+      "gradient": 0.0282,
+      "grade_multiplier": 1.1624,
+      "grade_adj_sec": 394.2,
+      "grade_adj_pace": "6:34/km",
+      "cumulative_km": 13.06,
+      "hr_ceiling": null
+     },
+     {
+      "kind": "flat",
+      "label": "Flat",
+      "start_km": 13.06,
+      "lap": 11,
+      "distance_m": 1507,
+      "target_sec_per_km": 420.6,
+      "target_pace": "7:00/km",
+      "gradient": 0.0119,
+      "grade_multiplier": 1.0669,
+      "grade_adj_sec": 394.2,
+      "grade_adj_pace": "6:34/km",
+      "cumulative_km": 14.57,
+      "hr_ceiling": null
+     },
+     {
+      "kind": "flat",
+      "label": "Flat",
+      "start_km": 14.567,
+      "lap": 12,
+      "distance_m": 1507,
+      "target_sec_per_km": 378.2,
+      "target_pace": "6:18/km",
+      "gradient": -0.0157,
+      "grade_multiplier": 0.9593,
+      "grade_adj_sec": 394.2,
+      "grade_adj_pace": "6:34/km",
+      "cumulative_km": 16.07,
+      "hr_ceiling": null
+     },
+     {
+      "kind": "down",
+      "label": "Descent 3%",
+      "start_km": 16.074,
+      "lap": 13,
+      "distance_m": 1507,
+      "target_sec_per_km": 365.6,
+      "target_pace": "6:05/km",
+      "gradient": -0.0289,
+      "grade_multiplier": 0.9272,
+      "grade_adj_sec": 394.2,
+      "grade_adj_pace": "6:34/km",
+      "cumulative_km": 17.58,
+      "hr_ceiling": null
+     },
+     {
+      "kind": "flat",
+      "label": "Flat",
+      "start_km": 17.581,
+      "lap": 14,
+      "distance_m": 1507,
+      "target_sec_per_km": 378.4,
+      "target_pace": "6:18/km",
+      "gradient": -0.0155,
+      "grade_multiplier": 0.9599,
+      "grade_adj_sec": 394.2,
+      "grade_adj_pace": "6:34/km",
+      "cumulative_km": 19.09,
+      "hr_ceiling": null
+     },
+     {
+      "kind": "flat",
+      "label": "Flat",
+      "start_km": 19.088,
+      "lap": 15,
+      "distance_m": 1507,
+      "target_sec_per_km": 421.1,
+      "target_pace": "7:01/km",
+      "gradient": 0.0121,
+      "grade_multiplier": 1.0683,
+      "grade_adj_sec": 394.2,
+      "grade_adj_pace": "6:34/km",
+      "cumulative_km": 20.6,
+      "hr_ceiling": null
+     },
+     {
+      "kind": "up",
+      "label": "Climb 3%",
+      "start_km": 20.595,
+      "lap": 16,
+      "distance_m": 502,
+      "target_sec_per_km": 454.8,
+      "target_pace": "7:34/km",
+      "gradient": 0.0267,
+      "grade_multiplier": 1.1536,
+      "grade_adj_sec": 394.2,
+      "grade_adj_pace": "6:34/km",
+      "cumulative_km": 21.1,
+      "hr_ceiling": null
+     }
+    ],
+    "seconds": 8612.7,
+    "triathlon_legs": null,
+    "triathlon_splits_m": null,
+    "technicality_factor": 1.0,
+    "technicality_label": "Smooth",
+    "target_hr_ceiling": null,
+    "climb_target_w_per_kg": null,
+    "tri_courses": null
+   }
+  },
+  {
+   "name": "road race, a fifth harder",
+   "family": "cycling",
+   "distance_m": 40000,
+   "metrics": {
+    "family": "cycling",
+    "vdot": null,
+    "run_indices": null,
+    "ftp": 250,
+    "css": null,
+    "max_hr": null,
+    "lthr": 165
+   },
+   "course_segments": null,
+   "course_type": "flat",
+   "split_spread": 0.0,
+   "pace_hr": false,
+   "imperial": false,
+   "mtb_discipline": null,
+   "cycling_discipline": null,
+   "triathlon_splits_m": null,
+   "course_path": null,
+   "tri_leg_courses": null,
+   "tri_transitions_m": null,
+   "intensity": 1.2,
+   "freshness": 1.0,
+   "expected": {
+    "laps": [
+     {
+      "lap": 1,
+      "distance_m": 1000,
+      "target_watts": 296,
+      "target_watts_pct_ftp": 118,
+      "target_sec_per_km": 84.4,
+      "target_pace": "1:24/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 84.4,
+      "grade_adj_pace": "1:24/km",
+      "cumulative_km": 1.0,
+      "hr_ceiling": 152
+     },
+     {
+      "lap": 2,
+      "distance_m": 1000,
+      "target_watts": 296,
+      "target_watts_pct_ftp": 118,
+      "target_sec_per_km": 84.4,
+      "target_pace": "1:24/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 84.4,
+      "grade_adj_pace": "1:24/km",
+      "cumulative_km": 2.0,
+      "hr_ceiling": 152
+     },
+     {
+      "lap": 3,
+      "distance_m": 1000,
+      "target_watts": 296,
+      "target_watts_pct_ftp": 118,
+      "target_sec_per_km": 84.4,
+      "target_pace": "1:24/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 84.4,
+      "grade_adj_pace": "1:24/km",
+      "cumulative_km": 3.0,
+      "hr_ceiling": 152
+     },
+     {
+      "lap": 4,
+      "distance_m": 1000,
+      "target_watts": 296,
+      "target_watts_pct_ftp": 118,
+      "target_sec_per_km": 84.4,
+      "target_pace": "1:24/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 84.4,
+      "grade_adj_pace": "1:24/km",
+      "cumulative_km": 4.0,
+      "hr_ceiling": 152
+     },
+     {
+      "lap": 5,
+      "distance_m": 1000,
+      "target_watts": 296,
+      "target_watts_pct_ftp": 118,
+      "target_sec_per_km": 84.4,
+      "target_pace": "1:24/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 84.4,
+      "grade_adj_pace": "1:24/km",
+      "cumulative_km": 5.0,
+      "hr_ceiling": 152
+     },
+     {
+      "lap": 6,
+      "distance_m": 1000,
+      "target_watts": 296,
+      "target_watts_pct_ftp": 118,
+      "target_sec_per_km": 84.4,
+      "target_pace": "1:24/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 84.4,
+      "grade_adj_pace": "1:24/km",
+      "cumulative_km": 6.0,
+      "hr_ceiling": 152
+     },
+     {
+      "lap": 7,
+      "distance_m": 1000,
+      "target_watts": 296,
+      "target_watts_pct_ftp": 118,
+      "target_sec_per_km": 84.4,
+      "target_pace": "1:24/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 84.4,
+      "grade_adj_pace": "1:24/km",
+      "cumulative_km": 7.0,
+      "hr_ceiling": 152
+     },
+     {
+      "lap": 8,
+      "distance_m": 1000,
+      "target_watts": 296,
+      "target_watts_pct_ftp": 118,
+      "target_sec_per_km": 84.4,
+      "target_pace": "1:24/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 84.4,
+      "grade_adj_pace": "1:24/km",
+      "cumulative_km": 8.0,
+      "hr_ceiling": 152
+     },
+     {
+      "lap": 9,
+      "distance_m": 1000,
+      "target_watts": 296,
+      "target_watts_pct_ftp": 118,
+      "target_sec_per_km": 84.4,
+      "target_pace": "1:24/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 84.4,
+      "grade_adj_pace": "1:24/km",
+      "cumulative_km": 9.0,
+      "hr_ceiling": 152
+     },
+     {
+      "lap": 10,
+      "distance_m": 1000,
+      "target_watts": 296,
+      "target_watts_pct_ftp": 118,
+      "target_sec_per_km": 84.4,
+      "target_pace": "1:24/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 84.4,
+      "grade_adj_pace": "1:24/km",
+      "cumulative_km": 10.0,
+      "hr_ceiling": 152
+     },
+     {
+      "lap": 11,
+      "distance_m": 1000,
+      "target_watts": 296,
+      "target_watts_pct_ftp": 118,
+      "target_sec_per_km": 84.4,
+      "target_pace": "1:24/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 84.4,
+      "grade_adj_pace": "1:24/km",
+      "cumulative_km": 11.0,
+      "hr_ceiling": 152
+     },
+     {
+      "lap": 12,
+      "distance_m": 1000,
+      "target_watts": 296,
+      "target_watts_pct_ftp": 118,
+      "target_sec_per_km": 84.4,
+      "target_pace": "1:24/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 84.4,
+      "grade_adj_pace": "1:24/km",
+      "cumulative_km": 12.0,
+      "hr_ceiling": 152
+     },
+     {
+      "lap": 13,
+      "distance_m": 1000,
+      "target_watts": 296,
+      "target_watts_pct_ftp": 118,
+      "target_sec_per_km": 84.4,
+      "target_pace": "1:24/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 84.4,
+      "grade_adj_pace": "1:24/km",
+      "cumulative_km": 13.0,
+      "hr_ceiling": 152
+     },
+     {
+      "lap": 14,
+      "distance_m": 1000,
+      "target_watts": 296,
+      "target_watts_pct_ftp": 118,
+      "target_sec_per_km": 84.4,
+      "target_pace": "1:24/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 84.4,
+      "grade_adj_pace": "1:24/km",
+      "cumulative_km": 14.0,
+      "hr_ceiling": 152
+     },
+     {
+      "lap": 15,
+      "distance_m": 1000,
+      "target_watts": 296,
+      "target_watts_pct_ftp": 118,
+      "target_sec_per_km": 84.4,
+      "target_pace": "1:24/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 84.4,
+      "grade_adj_pace": "1:24/km",
+      "cumulative_km": 15.0,
+      "hr_ceiling": 152
+     },
+     {
+      "lap": 16,
+      "distance_m": 1000,
+      "target_watts": 296,
+      "target_watts_pct_ftp": 118,
+      "target_sec_per_km": 84.4,
+      "target_pace": "1:24/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 84.4,
+      "grade_adj_pace": "1:24/km",
+      "cumulative_km": 16.0,
+      "hr_ceiling": 152
+     },
+     {
+      "lap": 17,
+      "distance_m": 1000,
+      "target_watts": 296,
+      "target_watts_pct_ftp": 118,
+      "target_sec_per_km": 84.4,
+      "target_pace": "1:24/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 84.4,
+      "grade_adj_pace": "1:24/km",
+      "cumulative_km": 17.0,
+      "hr_ceiling": 152
+     },
+     {
+      "lap": 18,
+      "distance_m": 1000,
+      "target_watts": 296,
+      "target_watts_pct_ftp": 118,
+      "target_sec_per_km": 84.4,
+      "target_pace": "1:24/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 84.4,
+      "grade_adj_pace": "1:24/km",
+      "cumulative_km": 18.0,
+      "hr_ceiling": 152
+     },
+     {
+      "lap": 19,
+      "distance_m": 1000,
+      "target_watts": 296,
+      "target_watts_pct_ftp": 118,
+      "target_sec_per_km": 84.4,
+      "target_pace": "1:24/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 84.4,
+      "grade_adj_pace": "1:24/km",
+      "cumulative_km": 19.0,
+      "hr_ceiling": 152
+     },
+     {
+      "lap": 20,
+      "distance_m": 1000,
+      "target_watts": 296,
+      "target_watts_pct_ftp": 118,
+      "target_sec_per_km": 84.4,
+      "target_pace": "1:24/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 84.4,
+      "grade_adj_pace": "1:24/km",
+      "cumulative_km": 20.0,
+      "hr_ceiling": 152
+     },
+     {
+      "lap": 21,
+      "distance_m": 1000,
+      "target_watts": 296,
+      "target_watts_pct_ftp": 118,
+      "target_sec_per_km": 84.4,
+      "target_pace": "1:24/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 84.4,
+      "grade_adj_pace": "1:24/km",
+      "cumulative_km": 21.0,
+      "hr_ceiling": 152
+     },
+     {
+      "lap": 22,
+      "distance_m": 1000,
+      "target_watts": 296,
+      "target_watts_pct_ftp": 118,
+      "target_sec_per_km": 84.4,
+      "target_pace": "1:24/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 84.4,
+      "grade_adj_pace": "1:24/km",
+      "cumulative_km": 22.0,
+      "hr_ceiling": 152
+     },
+     {
+      "lap": 23,
+      "distance_m": 1000,
+      "target_watts": 296,
+      "target_watts_pct_ftp": 118,
+      "target_sec_per_km": 84.4,
+      "target_pace": "1:24/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 84.4,
+      "grade_adj_pace": "1:24/km",
+      "cumulative_km": 23.0,
+      "hr_ceiling": 152
+     },
+     {
+      "lap": 24,
+      "distance_m": 1000,
+      "target_watts": 296,
+      "target_watts_pct_ftp": 118,
+      "target_sec_per_km": 84.4,
+      "target_pace": "1:24/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 84.4,
+      "grade_adj_pace": "1:24/km",
+      "cumulative_km": 24.0,
+      "hr_ceiling": 152
+     },
+     {
+      "lap": 25,
+      "distance_m": 1000,
+      "target_watts": 296,
+      "target_watts_pct_ftp": 118,
+      "target_sec_per_km": 84.4,
+      "target_pace": "1:24/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 84.4,
+      "grade_adj_pace": "1:24/km",
+      "cumulative_km": 25.0,
+      "hr_ceiling": 152
+     },
+     {
+      "lap": 26,
+      "distance_m": 1000,
+      "target_watts": 296,
+      "target_watts_pct_ftp": 118,
+      "target_sec_per_km": 84.4,
+      "target_pace": "1:24/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 84.4,
+      "grade_adj_pace": "1:24/km",
+      "cumulative_km": 26.0,
+      "hr_ceiling": 152
+     },
+     {
+      "lap": 27,
+      "distance_m": 1000,
+      "target_watts": 296,
+      "target_watts_pct_ftp": 118,
+      "target_sec_per_km": 84.4,
+      "target_pace": "1:24/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 84.4,
+      "grade_adj_pace": "1:24/km",
+      "cumulative_km": 27.0,
+      "hr_ceiling": 152
+     },
+     {
+      "lap": 28,
+      "distance_m": 1000,
+      "target_watts": 296,
+      "target_watts_pct_ftp": 118,
+      "target_sec_per_km": 84.4,
+      "target_pace": "1:24/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 84.4,
+      "grade_adj_pace": "1:24/km",
+      "cumulative_km": 28.0,
+      "hr_ceiling": 152
+     },
+     {
+      "lap": 29,
+      "distance_m": 1000,
+      "target_watts": 296,
+      "target_watts_pct_ftp": 118,
+      "target_sec_per_km": 84.4,
+      "target_pace": "1:24/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 84.4,
+      "grade_adj_pace": "1:24/km",
+      "cumulative_km": 29.0,
+      "hr_ceiling": 152
+     },
+     {
+      "lap": 30,
+      "distance_m": 1000,
+      "target_watts": 296,
+      "target_watts_pct_ftp": 118,
+      "target_sec_per_km": 84.4,
+      "target_pace": "1:24/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 84.4,
+      "grade_adj_pace": "1:24/km",
+      "cumulative_km": 30.0,
+      "hr_ceiling": 152
+     },
+     {
+      "lap": 31,
+      "distance_m": 1000,
+      "target_watts": 296,
+      "target_watts_pct_ftp": 118,
+      "target_sec_per_km": 84.4,
+      "target_pace": "1:24/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 84.4,
+      "grade_adj_pace": "1:24/km",
+      "cumulative_km": 31.0,
+      "hr_ceiling": 152
+     },
+     {
+      "lap": 32,
+      "distance_m": 1000,
+      "target_watts": 296,
+      "target_watts_pct_ftp": 118,
+      "target_sec_per_km": 84.4,
+      "target_pace": "1:24/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 84.4,
+      "grade_adj_pace": "1:24/km",
+      "cumulative_km": 32.0,
+      "hr_ceiling": 152
+     },
+     {
+      "lap": 33,
+      "distance_m": 1000,
+      "target_watts": 296,
+      "target_watts_pct_ftp": 118,
+      "target_sec_per_km": 84.4,
+      "target_pace": "1:24/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 84.4,
+      "grade_adj_pace": "1:24/km",
+      "cumulative_km": 33.0,
+      "hr_ceiling": 152
+     },
+     {
+      "lap": 34,
+      "distance_m": 1000,
+      "target_watts": 296,
+      "target_watts_pct_ftp": 118,
+      "target_sec_per_km": 84.4,
+      "target_pace": "1:24/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 84.4,
+      "grade_adj_pace": "1:24/km",
+      "cumulative_km": 34.0,
+      "hr_ceiling": 152
+     },
+     {
+      "lap": 35,
+      "distance_m": 1000,
+      "target_watts": 296,
+      "target_watts_pct_ftp": 118,
+      "target_sec_per_km": 84.4,
+      "target_pace": "1:24/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 84.4,
+      "grade_adj_pace": "1:24/km",
+      "cumulative_km": 35.0,
+      "hr_ceiling": 152
+     },
+     {
+      "lap": 36,
+      "distance_m": 1000,
+      "target_watts": 296,
+      "target_watts_pct_ftp": 118,
+      "target_sec_per_km": 84.4,
+      "target_pace": "1:24/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 84.4,
+      "grade_adj_pace": "1:24/km",
+      "cumulative_km": 36.0,
+      "hr_ceiling": 152
+     },
+     {
+      "lap": 37,
+      "distance_m": 1000,
+      "target_watts": 296,
+      "target_watts_pct_ftp": 118,
+      "target_sec_per_km": 84.4,
+      "target_pace": "1:24/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 84.4,
+      "grade_adj_pace": "1:24/km",
+      "cumulative_km": 37.0,
+      "hr_ceiling": 152
+     },
+     {
+      "lap": 38,
+      "distance_m": 1000,
+      "target_watts": 296,
+      "target_watts_pct_ftp": 118,
+      "target_sec_per_km": 84.4,
+      "target_pace": "1:24/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 84.4,
+      "grade_adj_pace": "1:24/km",
+      "cumulative_km": 38.0,
+      "hr_ceiling": 152
+     },
+     {
+      "lap": 39,
+      "distance_m": 1000,
+      "target_watts": 296,
+      "target_watts_pct_ftp": 118,
+      "target_sec_per_km": 84.4,
+      "target_pace": "1:24/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 84.4,
+      "grade_adj_pace": "1:24/km",
+      "cumulative_km": 39.0,
+      "hr_ceiling": 152
+     },
+     {
+      "lap": 40,
+      "distance_m": 1000,
+      "target_watts": 296,
+      "target_watts_pct_ftp": 118,
+      "target_sec_per_km": 84.4,
+      "target_pace": "1:24/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 84.4,
+      "grade_adj_pace": "1:24/km",
+      "cumulative_km": 40.0,
+      "hr_ceiling": 152
+     }
+    ],
+    "seconds": 3377.6,
+    "triathlon_legs": null,
+    "triathlon_splits_m": null,
+    "technicality_factor": null,
+    "technicality_label": null,
+    "target_hr_ceiling": 152,
+    "climb_target_w_per_kg": null,
+    "tri_courses": null
+   }
+  },
+  {
+   "name": "10 K over three bridges",
+   "family": "running",
+   "distance_m": 10000,
+   "metrics": {
+    "family": "running",
+    "vdot": 47.0,
+    "run_indices": null,
+    "ftp": null,
+    "css": null,
+    "max_hr": null,
+    "lthr": null
+   },
+   "course_segments": [
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 4.0,
+     "gradient": 0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 4.0,
+     "gradient": 0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 4.0,
+     "gradient": 0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": -0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": -0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": -0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 4.0,
+     "gradient": 0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 4.0,
+     "gradient": 0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 4.0,
+     "gradient": 0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": -0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": -0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": -0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 4.0,
+     "gradient": 0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 4.0,
+     "gradient": 0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 4.0,
+     "gradient": 0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": -0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": -0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": -0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    }
+   ],
+   "course_type": "flat",
+   "split_spread": 0.0,
+   "pace_hr": false,
+   "imperial": false,
+   "mtb_discipline": null,
+   "cycling_discipline": null,
+   "triathlon_splits_m": null,
+   "course_path": null,
+   "tri_leg_courses": null,
+   "tri_transitions_m": null,
+   "intensity": null,
+   "freshness": 1.0,
+   "expected": {
+    "laps": [
+     {
+      "kind": "flat",
+      "label": "Flat",
+      "start_km": 0.0,
+      "lap": 1,
+      "distance_m": 2000,
+      "target_sec_per_km": 261.4,
+      "target_pace": "4:21/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 261.4,
+      "grade_adj_pace": "4:21/km",
+      "cumulative_km": 2.0,
+      "hr_ceiling": null
+     },
+     {
+      "kind": "up",
+      "label": "Climb 4%",
+      "start_km": 2.0,
+      "lap": 2,
+      "distance_m": 300,
+      "target_sec_per_km": 323.3,
+      "target_pace": "5:23/km",
+      "gradient": 0.04,
+      "grade_multiplier": 1.2365,
+      "grade_adj_sec": 261.4,
+      "grade_adj_pace": "4:21/km",
+      "cumulative_km": 2.3,
+      "hr_ceiling": null
+     },
+     {
+      "kind": "down",
+      "label": "Descent 4%",
+      "start_km": 2.3,
+      "lap": 3,
+      "distance_m": 300,
+      "target_sec_per_km": 235.9,
+      "target_pace": "3:55/km",
+      "gradient": -0.04,
+      "grade_multiplier": 0.9023,
+      "grade_adj_sec": 261.4,
+      "grade_adj_pace": "4:21/km",
+      "cumulative_km": 2.6,
+      "hr_ceiling": null
+     },
+     {
+      "kind": "flat",
+      "label": "Flat",
+      "start_km": 2.6,
+      "lap": 4,
+      "distance_m": 2000,
+      "target_sec_per_km": 261.4,
+      "target_pace": "4:21/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 261.4,
+      "grade_adj_pace": "4:21/km",
+      "cumulative_km": 4.6,
+      "hr_ceiling": null
+     },
+     {
+      "kind": "up",
+      "label": "Climb 4%",
+      "start_km": 4.6,
+      "lap": 5,
+      "distance_m": 300,
+      "target_sec_per_km": 323.3,
+      "target_pace": "5:23/km",
+      "gradient": 0.04,
+      "grade_multiplier": 1.2365,
+      "grade_adj_sec": 261.4,
+      "grade_adj_pace": "4:21/km",
+      "cumulative_km": 4.9,
+      "hr_ceiling": null
+     },
+     {
+      "kind": "down",
+      "label": "Descent 4%",
+      "start_km": 4.9,
+      "lap": 6,
+      "distance_m": 300,
+      "target_sec_per_km": 235.9,
+      "target_pace": "3:55/km",
+      "gradient": -0.04,
+      "grade_multiplier": 0.9023,
+      "grade_adj_sec": 261.4,
+      "grade_adj_pace": "4:21/km",
+      "cumulative_km": 5.2,
+      "hr_ceiling": null
+     },
+     {
+      "kind": "flat",
+      "label": "Flat",
+      "start_km": 5.2,
+      "lap": 7,
+      "distance_m": 2000,
+      "target_sec_per_km": 261.4,
+      "target_pace": "4:21/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 261.4,
+      "grade_adj_pace": "4:21/km",
+      "cumulative_km": 7.2,
+      "hr_ceiling": null
+     },
+     {
+      "kind": "up",
+      "label": "Climb 4%",
+      "start_km": 7.2,
+      "lap": 8,
+      "distance_m": 300,
+      "target_sec_per_km": 323.3,
+      "target_pace": "5:23/km",
+      "gradient": 0.04,
+      "grade_multiplier": 1.2365,
+      "grade_adj_sec": 261.4,
+      "grade_adj_pace": "4:21/km",
+      "cumulative_km": 7.5,
+      "hr_ceiling": null
+     },
+     {
+      "kind": "down",
+      "label": "Descent 4%",
+      "start_km": 7.5,
+      "lap": 9,
+      "distance_m": 300,
+      "target_sec_per_km": 235.9,
+      "target_pace": "3:55/km",
+      "gradient": -0.04,
+      "grade_multiplier": 0.9023,
+      "grade_adj_sec": 261.4,
+      "grade_adj_pace": "4:21/km",
+      "cumulative_km": 7.8,
+      "hr_ceiling": null
+     },
+     {
+      "kind": "flat",
+      "label": "Flat",
+      "start_km": 7.8,
+      "lap": 10,
+      "distance_m": 1100,
+      "target_sec_per_km": 261.4,
+      "target_pace": "4:21/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 261.4,
+      "grade_adj_pace": "4:21/km",
+      "cumulative_km": 8.9,
+      "hr_ceiling": null
+     },
+     {
+      "kind": "flat",
+      "label": "Flat",
+      "start_km": 8.9,
+      "lap": 11,
+      "distance_m": 1100,
+      "target_sec_per_km": 261.4,
+      "target_pace": "4:21/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 261.4,
+      "grade_adj_pace": "4:21/km",
+      "cumulative_km": 10.0,
+      "hr_ceiling": null
+     }
+    ],
+    "seconds": 2647.1,
+    "triathlon_legs": null,
+    "triathlon_splits_m": null,
+    "technicality_factor": 1.0,
+    "technicality_label": "Smooth",
+    "target_hr_ceiling": null,
+    "climb_target_w_per_kg": null,
+    "tri_courses": null
+   }
+  },
+  {
+   "name": "10 K over three bridges, a longer race",
+   "family": "running",
+   "distance_m": 12000,
+   "metrics": {
+    "family": "running",
+    "vdot": 47.0,
+    "run_indices": null,
+    "ftp": null,
+    "css": null,
+    "max_hr": 188,
+    "lthr": null
+   },
+   "course_segments": [
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 4.0,
+     "gradient": 0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 4.0,
+     "gradient": 0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 4.0,
+     "gradient": 0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": -0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": -0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": -0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 4.0,
+     "gradient": 0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 4.0,
+     "gradient": 0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 4.0,
+     "gradient": 0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": -0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": -0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": -0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 4.0,
+     "gradient": 0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 4.0,
+     "gradient": 0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 4.0,
+     "gradient": 0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": -0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": -0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": -0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    }
+   ],
+   "course_type": "flat",
+   "split_spread": 0.4,
+   "pace_hr": true,
+   "imperial": false,
+   "mtb_discipline": null,
+   "cycling_discipline": null,
+   "triathlon_splits_m": null,
+   "course_path": null,
+   "tri_leg_courses": null,
+   "tri_transitions_m": null,
+   "intensity": null,
+   "freshness": 1.0,
+   "expected": {
+    "laps": [
+     {
+      "kind": "flat",
+      "label": "Flat",
+      "start_km": 0.0,
+      "lap": 1,
+      "distance_m": 1200,
+      "target_sec_per_km": 271.9,
+      "target_pace": "4:31/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 271.9,
+      "grade_adj_pace": "4:31/km",
+      "cumulative_km": 1.2,
+      "hr_ceiling": 137
+     },
+     {
+      "kind": "flat",
+      "label": "Flat",
+      "start_km": 1.2,
+      "lap": 2,
+      "distance_m": 1200,
+      "target_sec_per_km": 270.2,
+      "target_pace": "4:30/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 270.2,
+      "grade_adj_pace": "4:30/km",
+      "cumulative_km": 2.4,
+      "hr_ceiling": 139
+     },
+     {
+      "kind": "up",
+      "label": "Climb 4%",
+      "start_km": 2.4,
+      "lap": 3,
+      "distance_m": 360,
+      "target_sec_per_km": 332.8,
+      "target_pace": "5:32/km",
+      "gradient": 0.04,
+      "grade_multiplier": 1.2365,
+      "grade_adj_sec": 269.1,
+      "grade_adj_pace": "4:29/km",
+      "cumulative_km": 2.76,
+      "hr_ceiling": 140
+     },
+     {
+      "kind": "down",
+      "label": "Descent 4%",
+      "start_km": 2.76,
+      "lap": 4,
+      "distance_m": 360,
+      "target_sec_per_km": 242.4,
+      "target_pace": "4:02/km",
+      "gradient": -0.04,
+      "grade_multiplier": 0.9023,
+      "grade_adj_sec": 268.6,
+      "grade_adj_pace": "4:28/km",
+      "cumulative_km": 3.12,
+      "hr_ceiling": 142
+     },
+     {
+      "kind": "flat",
+      "label": "Flat",
+      "start_km": 3.12,
+      "lap": 5,
+      "distance_m": 1200,
+      "target_sec_per_km": 267.5,
+      "target_pace": "4:27/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 267.5,
+      "grade_adj_pace": "4:27/km",
+      "cumulative_km": 4.32,
+      "hr_ceiling": 145
+     },
+     {
+      "kind": "flat",
+      "label": "Flat",
+      "start_km": 4.32,
+      "lap": 6,
+      "distance_m": 1200,
+      "target_sec_per_km": 265.8,
+      "target_pace": "4:25/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 265.8,
+      "grade_adj_pace": "4:25/km",
+      "cumulative_km": 5.52,
+      "hr_ceiling": 148
+     },
+     {
+      "kind": "up",
+      "label": "Climb 4%",
+      "start_km": 5.52,
+      "lap": 7,
+      "distance_m": 360,
+      "target_sec_per_km": 327.3,
+      "target_pace": "5:27/km",
+      "gradient": 0.04,
+      "grade_multiplier": 1.2365,
+      "grade_adj_sec": 264.7,
+      "grade_adj_pace": "4:24/km",
+      "cumulative_km": 5.88,
+      "hr_ceiling": 151
+     },
+     {
+      "kind": "down",
+      "label": "Descent 4%",
+      "start_km": 5.88,
+      "lap": 8,
+      "distance_m": 360,
+      "target_sec_per_km": 238.4,
+      "target_pace": "3:58/km",
+      "gradient": -0.04,
+      "grade_multiplier": 0.9023,
+      "grade_adj_sec": 264.2,
+      "grade_adj_pace": "4:24/km",
+      "cumulative_km": 6.24,
+      "hr_ceiling": 154
+     },
+     {
+      "kind": "flat",
+      "label": "Flat",
+      "start_km": 6.24,
+      "lap": 9,
+      "distance_m": 1200,
+      "target_sec_per_km": 263.1,
+      "target_pace": "4:23/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 263.1,
+      "grade_adj_pace": "4:23/km",
+      "cumulative_km": 7.44,
+      "hr_ceiling": 157
+     },
+     {
+      "kind": "flat",
+      "label": "Flat",
+      "start_km": 7.44,
+      "lap": 10,
+      "distance_m": 1200,
+      "target_sec_per_km": 261.4,
+      "target_pace": "4:21/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 261.4,
+      "grade_adj_pace": "4:21/km",
+      "cumulative_km": 8.64,
+      "hr_ceiling": 161
+     },
+     {
+      "kind": "up",
+      "label": "Climb 4%",
+      "start_km": 8.64,
+      "lap": 11,
+      "distance_m": 360,
+      "target_sec_per_km": 321.9,
+      "target_pace": "5:21/km",
+      "gradient": 0.04,
+      "grade_multiplier": 1.2365,
+      "grade_adj_sec": 260.3,
+      "grade_adj_pace": "4:20/km",
+      "cumulative_km": 9.0,
+      "hr_ceiling": 165
+     },
+     {
+      "kind": "down",
+      "label": "Descent 4%",
+      "start_km": 9.0,
+      "lap": 12,
+      "distance_m": 360,
+      "target_sec_per_km": 234.4,
+      "target_pace": "3:54/km",
+      "gradient": -0.04,
+      "grade_multiplier": 0.9023,
+      "grade_adj_sec": 259.8,
+      "grade_adj_pace": "4:19/km",
+      "cumulative_km": 9.36,
+      "hr_ceiling": 169
+     },
+     {
+      "kind": "flat",
+      "label": "Flat",
+      "start_km": 9.36,
+      "lap": 13,
+      "distance_m": 1320,
+      "target_sec_per_km": 258.6,
+      "target_pace": "4:18/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 258.6,
+      "grade_adj_pace": "4:18/km",
+      "cumulative_km": 10.68,
+      "hr_ceiling": 173
+     },
+     {
+      "kind": "flat",
+      "label": "Flat",
+      "start_km": 10.68,
+      "lap": 14,
+      "distance_m": 1320,
+      "target_sec_per_km": 256.8,
+      "target_pace": "4:16/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 256.8,
+      "grade_adj_pace": "4:16/km",
+      "cumulative_km": 12.0,
+      "hr_ceiling": 178
+     }
+    ],
+    "seconds": 3211.4,
+    "triathlon_legs": null,
+    "triathlon_splits_m": null,
+    "technicality_factor": 1.0,
+    "technicality_label": "Smooth",
+    "target_hr_ceiling": null,
+    "climb_target_w_per_kg": null,
+    "tri_courses": null
+   }
+  },
+  {
+   "name": "sprint triathlon, hilly, no course",
+   "family": "triathlon",
+   "distance_m": 25750,
+   "metrics": {
+    "family": "triathlon",
+    "vdot": 48.0,
+    "run_indices": null,
+    "ftp": 230,
+    "css": 100.0,
+    "max_hr": null,
+    "lthr": null
+   },
+   "course_segments": null,
+   "course_type": "hilly",
+   "split_spread": 0.0,
+   "pace_hr": false,
+   "imperial": false,
+   "mtb_discipline": null,
+   "cycling_discipline": null,
+   "triathlon_splits_m": null,
+   "course_path": null,
+   "tri_leg_courses": null,
+   "tri_transitions_m": null,
+   "intensity": null,
+   "freshness": 1.0,
+   "expected": {
+    "laps": [
+     {
+      "lap": 1,
+      "distance_m": 1000,
+      "target_watts": 234,
+      "target_watts_pct_ftp": 102,
+      "target_sec_per_km": 101.9,
+      "target_pace": "1:41/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 101.9,
+      "grade_adj_pace": "1:41/km",
+      "cumulative_km": 1.0,
+      "hr_ceiling": null
+     },
+     {
+      "lap": 2,
+      "distance_m": 1000,
+      "target_watts": 234,
+      "target_watts_pct_ftp": 102,
+      "target_sec_per_km": 101.9,
+      "target_pace": "1:41/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 101.9,
+      "grade_adj_pace": "1:41/km",
+      "cumulative_km": 2.0,
+      "hr_ceiling": null
+     },
+     {
+      "lap": 3,
+      "distance_m": 1000,
+      "target_watts": 234,
+      "target_watts_pct_ftp": 102,
+      "target_sec_per_km": 101.9,
+      "target_pace": "1:41/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 101.9,
+      "grade_adj_pace": "1:41/km",
+      "cumulative_km": 3.0,
+      "hr_ceiling": null
+     },
+     {
+      "lap": 4,
+      "distance_m": 1000,
+      "target_watts": 234,
+      "target_watts_pct_ftp": 102,
+      "target_sec_per_km": 101.9,
+      "target_pace": "1:41/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 101.9,
+      "grade_adj_pace": "1:41/km",
+      "cumulative_km": 4.0,
+      "hr_ceiling": null
+     },
+     {
+      "lap": 5,
+      "distance_m": 1000,
+      "target_watts": 234,
+      "target_watts_pct_ftp": 102,
+      "target_sec_per_km": 101.9,
+      "target_pace": "1:41/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 101.9,
+      "grade_adj_pace": "1:41/km",
+      "cumulative_km": 5.0,
+      "hr_ceiling": null
+     },
+     {
+      "lap": 6,
+      "distance_m": 1000,
+      "target_watts": 234,
+      "target_watts_pct_ftp": 102,
+      "target_sec_per_km": 101.9,
+      "target_pace": "1:41/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 101.9,
+      "grade_adj_pace": "1:41/km",
+      "cumulative_km": 6.0,
+      "hr_ceiling": null
+     },
+     {
+      "lap": 7,
+      "distance_m": 1000,
+      "target_watts": 234,
+      "target_watts_pct_ftp": 102,
+      "target_sec_per_km": 101.9,
+      "target_pace": "1:41/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 101.9,
+      "grade_adj_pace": "1:41/km",
+      "cumulative_km": 7.0,
+      "hr_ceiling": null
+     },
+     {
+      "lap": 8,
+      "distance_m": 1000,
+      "target_watts": 234,
+      "target_watts_pct_ftp": 102,
+      "target_sec_per_km": 101.9,
+      "target_pace": "1:41/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 101.9,
+      "grade_adj_pace": "1:41/km",
+      "cumulative_km": 8.0,
+      "hr_ceiling": null
+     },
+     {
+      "lap": 9,
+      "distance_m": 1000,
+      "target_watts": 234,
+      "target_watts_pct_ftp": 102,
+      "target_sec_per_km": 101.9,
+      "target_pace": "1:41/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 101.9,
+      "grade_adj_pace": "1:41/km",
+      "cumulative_km": 9.0,
+      "hr_ceiling": null
+     },
+     {
+      "lap": 10,
+      "distance_m": 1000,
+      "target_watts": 234,
+      "target_watts_pct_ftp": 102,
+      "target_sec_per_km": 101.9,
+      "target_pace": "1:41/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 101.9,
+      "grade_adj_pace": "1:41/km",
+      "cumulative_km": 10.0,
+      "hr_ceiling": null
+     },
+     {
+      "lap": 11,
+      "distance_m": 1000,
+      "target_watts": 234,
+      "target_watts_pct_ftp": 102,
+      "target_sec_per_km": 101.9,
+      "target_pace": "1:41/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 101.9,
+      "grade_adj_pace": "1:41/km",
+      "cumulative_km": 11.0,
+      "hr_ceiling": null
+     },
+     {
+      "lap": 12,
+      "distance_m": 1000,
+      "target_watts": 234,
+      "target_watts_pct_ftp": 102,
+      "target_sec_per_km": 101.9,
+      "target_pace": "1:41/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 101.9,
+      "grade_adj_pace": "1:41/km",
+      "cumulative_km": 12.0,
+      "hr_ceiling": null
+     },
+     {
+      "lap": 13,
+      "distance_m": 1000,
+      "target_watts": 234,
+      "target_watts_pct_ftp": 102,
+      "target_sec_per_km": 101.9,
+      "target_pace": "1:41/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 101.9,
+      "grade_adj_pace": "1:41/km",
+      "cumulative_km": 13.0,
+      "hr_ceiling": null
+     },
+     {
+      "lap": 14,
+      "distance_m": 1000,
+      "target_watts": 234,
+      "target_watts_pct_ftp": 102,
+      "target_sec_per_km": 101.9,
+      "target_pace": "1:41/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 101.9,
+      "grade_adj_pace": "1:41/km",
+      "cumulative_km": 14.0,
+      "hr_ceiling": null
+     },
+     {
+      "lap": 15,
+      "distance_m": 1000,
+      "target_watts": 234,
+      "target_watts_pct_ftp": 102,
+      "target_sec_per_km": 101.9,
+      "target_pace": "1:41/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 101.9,
+      "grade_adj_pace": "1:41/km",
+      "cumulative_km": 15.0,
+      "hr_ceiling": null
+     },
+     {
+      "lap": 16,
+      "distance_m": 1000,
+      "target_watts": 234,
+      "target_watts_pct_ftp": 102,
+      "target_sec_per_km": 101.9,
+      "target_pace": "1:41/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 101.9,
+      "grade_adj_pace": "1:41/km",
+      "cumulative_km": 16.0,
+      "hr_ceiling": null
+     },
+     {
+      "lap": 17,
+      "distance_m": 1000,
+      "target_watts": 234,
+      "target_watts_pct_ftp": 102,
+      "target_sec_per_km": 101.9,
+      "target_pace": "1:41/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 101.9,
+      "grade_adj_pace": "1:41/km",
+      "cumulative_km": 17.0,
+      "hr_ceiling": null
+     },
+     {
+      "lap": 18,
+      "distance_m": 1000,
+      "target_watts": 234,
+      "target_watts_pct_ftp": 102,
+      "target_sec_per_km": 101.9,
+      "target_pace": "1:41/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 101.9,
+      "grade_adj_pace": "1:41/km",
+      "cumulative_km": 18.0,
+      "hr_ceiling": null
+     },
+     {
+      "lap": 19,
+      "distance_m": 1000,
+      "target_watts": 234,
+      "target_watts_pct_ftp": 102,
+      "target_sec_per_km": 101.9,
+      "target_pace": "1:41/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 101.9,
+      "grade_adj_pace": "1:41/km",
+      "cumulative_km": 19.0,
+      "hr_ceiling": null
+     },
+     {
+      "lap": 20,
+      "distance_m": 1000,
+      "target_watts": 234,
+      "target_watts_pct_ftp": 102,
+      "target_sec_per_km": 101.9,
+      "target_pace": "1:41/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 101.9,
+      "grade_adj_pace": "1:41/km",
+      "cumulative_km": 20.0,
+      "hr_ceiling": null
+     }
+    ],
+    "seconds": 4675.622253108777,
+    "triathlon_legs": [
+     {
+      "leg": "swim",
+      "distance_m": 750,
+      "predicted_seconds": 770.4,
+      "predicted_time": "12:50",
+      "target_pace": "1:40/100m",
+      "target_sec_per_km": 1000.0,
+      "target_watts": null,
+      "target_watts_pct_ftp": null,
+      "lap_paces": null
+     },
+     {
+      "leg": "bike",
+      "distance_m": 20000,
+      "predicted_seconds": 2079.576,
+      "predicted_time": "34:40",
+      "target_pace": "34.6 km/h avg",
+      "target_watts": 196,
+      "target_watts_pct_ftp": 85,
+      "lap_paces": [
+       {
+        "lap": 1,
+        "distance_m": 1000,
+        "target_watts": 234,
+        "target_watts_pct_ftp": 102,
+        "target_sec_per_km": 101.9,
+        "target_pace": "1:41/km",
+        "gradient": 0.0,
+        "grade_multiplier": 1.0,
+        "grade_adj_sec": 101.9,
+        "grade_adj_pace": "1:41/km",
+        "cumulative_km": 1.0,
+        "hr_ceiling": null
+       },
+       {
+        "lap": 2,
+        "distance_m": 1000,
+        "target_watts": 234,
+        "target_watts_pct_ftp": 102,
+        "target_sec_per_km": 101.9,
+        "target_pace": "1:41/km",
+        "gradient": 0.0,
+        "grade_multiplier": 1.0,
+        "grade_adj_sec": 101.9,
+        "grade_adj_pace": "1:41/km",
+        "cumulative_km": 2.0,
+        "hr_ceiling": null
+       },
+       {
+        "lap": 3,
+        "distance_m": 1000,
+        "target_watts": 234,
+        "target_watts_pct_ftp": 102,
+        "target_sec_per_km": 101.9,
+        "target_pace": "1:41/km",
+        "gradient": 0.0,
+        "grade_multiplier": 1.0,
+        "grade_adj_sec": 101.9,
+        "grade_adj_pace": "1:41/km",
+        "cumulative_km": 3.0,
+        "hr_ceiling": null
+       },
+       {
+        "lap": 4,
+        "distance_m": 1000,
+        "target_watts": 234,
+        "target_watts_pct_ftp": 102,
+        "target_sec_per_km": 101.9,
+        "target_pace": "1:41/km",
+        "gradient": 0.0,
+        "grade_multiplier": 1.0,
+        "grade_adj_sec": 101.9,
+        "grade_adj_pace": "1:41/km",
+        "cumulative_km": 4.0,
+        "hr_ceiling": null
+       },
+       {
+        "lap": 5,
+        "distance_m": 1000,
+        "target_watts": 234,
+        "target_watts_pct_ftp": 102,
+        "target_sec_per_km": 101.9,
+        "target_pace": "1:41/km",
+        "gradient": 0.0,
+        "grade_multiplier": 1.0,
+        "grade_adj_sec": 101.9,
+        "grade_adj_pace": "1:41/km",
+        "cumulative_km": 5.0,
+        "hr_ceiling": null
+       },
+       {
+        "lap": 6,
+        "distance_m": 1000,
+        "target_watts": 234,
+        "target_watts_pct_ftp": 102,
+        "target_sec_per_km": 101.9,
+        "target_pace": "1:41/km",
+        "gradient": 0.0,
+        "grade_multiplier": 1.0,
+        "grade_adj_sec": 101.9,
+        "grade_adj_pace": "1:41/km",
+        "cumulative_km": 6.0,
+        "hr_ceiling": null
+       },
+       {
+        "lap": 7,
+        "distance_m": 1000,
+        "target_watts": 234,
+        "target_watts_pct_ftp": 102,
+        "target_sec_per_km": 101.9,
+        "target_pace": "1:41/km",
+        "gradient": 0.0,
+        "grade_multiplier": 1.0,
+        "grade_adj_sec": 101.9,
+        "grade_adj_pace": "1:41/km",
+        "cumulative_km": 7.0,
+        "hr_ceiling": null
+       },
+       {
+        "lap": 8,
+        "distance_m": 1000,
+        "target_watts": 234,
+        "target_watts_pct_ftp": 102,
+        "target_sec_per_km": 101.9,
+        "target_pace": "1:41/km",
+        "gradient": 0.0,
+        "grade_multiplier": 1.0,
+        "grade_adj_sec": 101.9,
+        "grade_adj_pace": "1:41/km",
+        "cumulative_km": 8.0,
+        "hr_ceiling": null
+       },
+       {
+        "lap": 9,
+        "distance_m": 1000,
+        "target_watts": 234,
+        "target_watts_pct_ftp": 102,
+        "target_sec_per_km": 101.9,
+        "target_pace": "1:41/km",
+        "gradient": 0.0,
+        "grade_multiplier": 1.0,
+        "grade_adj_sec": 101.9,
+        "grade_adj_pace": "1:41/km",
+        "cumulative_km": 9.0,
+        "hr_ceiling": null
+       },
+       {
+        "lap": 10,
+        "distance_m": 1000,
+        "target_watts": 234,
+        "target_watts_pct_ftp": 102,
+        "target_sec_per_km": 101.9,
+        "target_pace": "1:41/km",
+        "gradient": 0.0,
+        "grade_multiplier": 1.0,
+        "grade_adj_sec": 101.9,
+        "grade_adj_pace": "1:41/km",
+        "cumulative_km": 10.0,
+        "hr_ceiling": null
+       },
+       {
+        "lap": 11,
+        "distance_m": 1000,
+        "target_watts": 234,
+        "target_watts_pct_ftp": 102,
+        "target_sec_per_km": 101.9,
+        "target_pace": "1:41/km",
+        "gradient": 0.0,
+        "grade_multiplier": 1.0,
+        "grade_adj_sec": 101.9,
+        "grade_adj_pace": "1:41/km",
+        "cumulative_km": 11.0,
+        "hr_ceiling": null
+       },
+       {
+        "lap": 12,
+        "distance_m": 1000,
+        "target_watts": 234,
+        "target_watts_pct_ftp": 102,
+        "target_sec_per_km": 101.9,
+        "target_pace": "1:41/km",
+        "gradient": 0.0,
+        "grade_multiplier": 1.0,
+        "grade_adj_sec": 101.9,
+        "grade_adj_pace": "1:41/km",
+        "cumulative_km": 12.0,
+        "hr_ceiling": null
+       },
+       {
+        "lap": 13,
+        "distance_m": 1000,
+        "target_watts": 234,
+        "target_watts_pct_ftp": 102,
+        "target_sec_per_km": 101.9,
+        "target_pace": "1:41/km",
+        "gradient": 0.0,
+        "grade_multiplier": 1.0,
+        "grade_adj_sec": 101.9,
+        "grade_adj_pace": "1:41/km",
+        "cumulative_km": 13.0,
+        "hr_ceiling": null
+       },
+       {
+        "lap": 14,
+        "distance_m": 1000,
+        "target_watts": 234,
+        "target_watts_pct_ftp": 102,
+        "target_sec_per_km": 101.9,
+        "target_pace": "1:41/km",
+        "gradient": 0.0,
+        "grade_multiplier": 1.0,
+        "grade_adj_sec": 101.9,
+        "grade_adj_pace": "1:41/km",
+        "cumulative_km": 14.0,
+        "hr_ceiling": null
+       },
+       {
+        "lap": 15,
+        "distance_m": 1000,
+        "target_watts": 234,
+        "target_watts_pct_ftp": 102,
+        "target_sec_per_km": 101.9,
+        "target_pace": "1:41/km",
+        "gradient": 0.0,
+        "grade_multiplier": 1.0,
+        "grade_adj_sec": 101.9,
+        "grade_adj_pace": "1:41/km",
+        "cumulative_km": 15.0,
+        "hr_ceiling": null
+       },
+       {
+        "lap": 16,
+        "distance_m": 1000,
+        "target_watts": 234,
+        "target_watts_pct_ftp": 102,
+        "target_sec_per_km": 101.9,
+        "target_pace": "1:41/km",
+        "gradient": 0.0,
+        "grade_multiplier": 1.0,
+        "grade_adj_sec": 101.9,
+        "grade_adj_pace": "1:41/km",
+        "cumulative_km": 16.0,
+        "hr_ceiling": null
+       },
+       {
+        "lap": 17,
+        "distance_m": 1000,
+        "target_watts": 234,
+        "target_watts_pct_ftp": 102,
+        "target_sec_per_km": 101.9,
+        "target_pace": "1:41/km",
+        "gradient": 0.0,
+        "grade_multiplier": 1.0,
+        "grade_adj_sec": 101.9,
+        "grade_adj_pace": "1:41/km",
+        "cumulative_km": 17.0,
+        "hr_ceiling": null
+       },
+       {
+        "lap": 18,
+        "distance_m": 1000,
+        "target_watts": 234,
+        "target_watts_pct_ftp": 102,
+        "target_sec_per_km": 101.9,
+        "target_pace": "1:41/km",
+        "gradient": 0.0,
+        "grade_multiplier": 1.0,
+        "grade_adj_sec": 101.9,
+        "grade_adj_pace": "1:41/km",
+        "cumulative_km": 18.0,
+        "hr_ceiling": null
+       },
+       {
+        "lap": 19,
+        "distance_m": 1000,
+        "target_watts": 234,
+        "target_watts_pct_ftp": 102,
+        "target_sec_per_km": 101.9,
+        "target_pace": "1:41/km",
+        "gradient": 0.0,
+        "grade_multiplier": 1.0,
+        "grade_adj_sec": 101.9,
+        "grade_adj_pace": "1:41/km",
+        "cumulative_km": 19.0,
+        "hr_ceiling": null
+       },
+       {
+        "lap": 20,
+        "distance_m": 1000,
+        "target_watts": 234,
+        "target_watts_pct_ftp": 102,
+        "target_sec_per_km": 101.9,
+        "target_pace": "1:41/km",
+        "gradient": 0.0,
+        "grade_multiplier": 1.0,
+        "grade_adj_sec": 101.9,
+        "grade_adj_pace": "1:41/km",
+        "cumulative_km": 20.0,
+        "hr_ceiling": null
+       }
+      ]
+     },
+     {
+      "leg": "run",
+      "distance_m": 5000,
+      "predicted_seconds": 1345.6462531087773,
+      "predicted_time": "22:26",
+      "target_pace": "4:29/km",
+      "target_watts": null,
+      "target_watts_pct_ftp": null,
+      "lap_paces": [
+       {
+        "lap": 1,
+        "distance_m": 1000,
+        "target_sec_per_km": 269.1,
+        "target_pace": "4:29/km",
+        "gradient": 0.0,
+        "grade_multiplier": 1.0,
+        "grade_adj_sec": 269.1,
+        "grade_adj_pace": "4:29/km",
+        "cumulative_km": 1.0,
+        "hr_ceiling": null
+       },
+       {
+        "lap": 2,
+        "distance_m": 1000,
+        "target_sec_per_km": 269.1,
+        "target_pace": "4:29/km",
+        "gradient": 0.0,
+        "grade_multiplier": 1.0,
+        "grade_adj_sec": 269.1,
+        "grade_adj_pace": "4:29/km",
+        "cumulative_km": 2.0,
+        "hr_ceiling": null
+       },
+       {
+        "lap": 3,
+        "distance_m": 1000,
+        "target_sec_per_km": 269.1,
+        "target_pace": "4:29/km",
+        "gradient": 0.0,
+        "grade_multiplier": 1.0,
+        "grade_adj_sec": 269.1,
+        "grade_adj_pace": "4:29/km",
+        "cumulative_km": 3.0,
+        "hr_ceiling": null
+       },
+       {
+        "lap": 4,
+        "distance_m": 1000,
+        "target_sec_per_km": 269.1,
+        "target_pace": "4:29/km",
+        "gradient": 0.0,
+        "grade_multiplier": 1.0,
+        "grade_adj_sec": 269.1,
+        "grade_adj_pace": "4:29/km",
+        "cumulative_km": 4.0,
+        "hr_ceiling": null
+       },
+       {
+        "lap": 5,
+        "distance_m": 1000,
+        "target_sec_per_km": 269.1,
+        "target_pace": "4:29/km",
+        "gradient": 0.0,
+        "grade_multiplier": 1.0,
+        "grade_adj_sec": 269.1,
+        "grade_adj_pace": "4:29/km",
+        "cumulative_km": 5.0,
+        "hr_ceiling": null
+       }
+      ]
+     }
+    ],
+    "triathlon_splits_m": {
+     "swim_m": 750,
+     "bike_m": 20000,
+     "run_m": 5000
+    },
+    "technicality_factor": null,
+    "technicality_label": null,
+    "target_hr_ceiling": null,
+    "climb_target_w_per_kg": null,
+    "tri_courses": null
+   }
+  },
+  {
+   "name": "sprint, a run file, rolling elsewhere",
+   "family": "triathlon",
+   "distance_m": 25750,
+   "metrics": {
+    "family": "triathlon",
+    "vdot": 48.0,
+    "run_indices": null,
+    "ftp": 230,
+    "css": null,
+    "max_hr": null,
+    "lthr": null
+   },
+   "course_segments": null,
+   "course_type": "rolling",
+   "split_spread": 0.0,
+   "pace_hr": false,
+   "imperial": false,
+   "mtb_discipline": null,
+   "cycling_discipline": null,
+   "triathlon_splits_m": null,
+   "course_path": null,
+   "tri_leg_courses": {
+    "run": {
+     "segments": [
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 4.0,
+       "gradient": 0.04
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 4.0,
+       "gradient": 0.04
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 4.0,
+       "gradient": 0.04
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": -0.04
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": -0.04
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": -0.04
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 4.0,
+       "gradient": 0.04
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 4.0,
+       "gradient": 0.04
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 4.0,
+       "gradient": 0.04
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": -0.04
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": -0.04
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": -0.04
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 4.0,
+       "gradient": 0.04
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 4.0,
+       "gradient": 0.04
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 4.0,
+       "gradient": 0.04
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": -0.04
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": -0.04
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": -0.04
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      },
+      {
+       "distance_m": 100.0,
+       "elevation_gain_m": 0.0,
+       "gradient": 0.0
+      }
+     ],
+     "path": []
+    }
+   },
+   "tri_transitions_m": null,
+   "intensity": null,
+   "freshness": 1.0,
+   "expected": {
+    "laps": [
+     {
+      "lap": 1,
+      "distance_m": 1000,
+      "target_watts": 234,
+      "target_watts_pct_ftp": 102,
+      "target_sec_per_km": 101.9,
+      "target_pace": "1:41/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 101.9,
+      "grade_adj_pace": "1:41/km",
+      "cumulative_km": 1.0,
+      "hr_ceiling": null
+     },
+     {
+      "lap": 2,
+      "distance_m": 1000,
+      "target_watts": 234,
+      "target_watts_pct_ftp": 102,
+      "target_sec_per_km": 101.9,
+      "target_pace": "1:41/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 101.9,
+      "grade_adj_pace": "1:41/km",
+      "cumulative_km": 2.0,
+      "hr_ceiling": null
+     },
+     {
+      "lap": 3,
+      "distance_m": 1000,
+      "target_watts": 234,
+      "target_watts_pct_ftp": 102,
+      "target_sec_per_km": 101.9,
+      "target_pace": "1:41/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 101.9,
+      "grade_adj_pace": "1:41/km",
+      "cumulative_km": 3.0,
+      "hr_ceiling": null
+     },
+     {
+      "lap": 4,
+      "distance_m": 1000,
+      "target_watts": 234,
+      "target_watts_pct_ftp": 102,
+      "target_sec_per_km": 101.9,
+      "target_pace": "1:41/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 101.9,
+      "grade_adj_pace": "1:41/km",
+      "cumulative_km": 4.0,
+      "hr_ceiling": null
+     },
+     {
+      "lap": 5,
+      "distance_m": 1000,
+      "target_watts": 234,
+      "target_watts_pct_ftp": 102,
+      "target_sec_per_km": 101.9,
+      "target_pace": "1:41/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 101.9,
+      "grade_adj_pace": "1:41/km",
+      "cumulative_km": 5.0,
+      "hr_ceiling": null
+     },
+     {
+      "lap": 6,
+      "distance_m": 1000,
+      "target_watts": 234,
+      "target_watts_pct_ftp": 102,
+      "target_sec_per_km": 101.9,
+      "target_pace": "1:41/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 101.9,
+      "grade_adj_pace": "1:41/km",
+      "cumulative_km": 6.0,
+      "hr_ceiling": null
+     },
+     {
+      "lap": 7,
+      "distance_m": 1000,
+      "target_watts": 234,
+      "target_watts_pct_ftp": 102,
+      "target_sec_per_km": 101.9,
+      "target_pace": "1:41/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 101.9,
+      "grade_adj_pace": "1:41/km",
+      "cumulative_km": 7.0,
+      "hr_ceiling": null
+     },
+     {
+      "lap": 8,
+      "distance_m": 1000,
+      "target_watts": 234,
+      "target_watts_pct_ftp": 102,
+      "target_sec_per_km": 101.9,
+      "target_pace": "1:41/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 101.9,
+      "grade_adj_pace": "1:41/km",
+      "cumulative_km": 8.0,
+      "hr_ceiling": null
+     },
+     {
+      "lap": 9,
+      "distance_m": 1000,
+      "target_watts": 234,
+      "target_watts_pct_ftp": 102,
+      "target_sec_per_km": 101.9,
+      "target_pace": "1:41/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 101.9,
+      "grade_adj_pace": "1:41/km",
+      "cumulative_km": 9.0,
+      "hr_ceiling": null
+     },
+     {
+      "lap": 10,
+      "distance_m": 1000,
+      "target_watts": 234,
+      "target_watts_pct_ftp": 102,
+      "target_sec_per_km": 101.9,
+      "target_pace": "1:41/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 101.9,
+      "grade_adj_pace": "1:41/km",
+      "cumulative_km": 10.0,
+      "hr_ceiling": null
+     },
+     {
+      "lap": 11,
+      "distance_m": 1000,
+      "target_watts": 234,
+      "target_watts_pct_ftp": 102,
+      "target_sec_per_km": 101.9,
+      "target_pace": "1:41/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 101.9,
+      "grade_adj_pace": "1:41/km",
+      "cumulative_km": 11.0,
+      "hr_ceiling": null
+     },
+     {
+      "lap": 12,
+      "distance_m": 1000,
+      "target_watts": 234,
+      "target_watts_pct_ftp": 102,
+      "target_sec_per_km": 101.9,
+      "target_pace": "1:41/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 101.9,
+      "grade_adj_pace": "1:41/km",
+      "cumulative_km": 12.0,
+      "hr_ceiling": null
+     },
+     {
+      "lap": 13,
+      "distance_m": 1000,
+      "target_watts": 234,
+      "target_watts_pct_ftp": 102,
+      "target_sec_per_km": 101.9,
+      "target_pace": "1:41/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 101.9,
+      "grade_adj_pace": "1:41/km",
+      "cumulative_km": 13.0,
+      "hr_ceiling": null
+     },
+     {
+      "lap": 14,
+      "distance_m": 1000,
+      "target_watts": 234,
+      "target_watts_pct_ftp": 102,
+      "target_sec_per_km": 101.9,
+      "target_pace": "1:41/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 101.9,
+      "grade_adj_pace": "1:41/km",
+      "cumulative_km": 14.0,
+      "hr_ceiling": null
+     },
+     {
+      "lap": 15,
+      "distance_m": 1000,
+      "target_watts": 234,
+      "target_watts_pct_ftp": 102,
+      "target_sec_per_km": 101.9,
+      "target_pace": "1:41/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 101.9,
+      "grade_adj_pace": "1:41/km",
+      "cumulative_km": 15.0,
+      "hr_ceiling": null
+     },
+     {
+      "lap": 16,
+      "distance_m": 1000,
+      "target_watts": 234,
+      "target_watts_pct_ftp": 102,
+      "target_sec_per_km": 101.9,
+      "target_pace": "1:41/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 101.9,
+      "grade_adj_pace": "1:41/km",
+      "cumulative_km": 16.0,
+      "hr_ceiling": null
+     },
+     {
+      "lap": 17,
+      "distance_m": 1000,
+      "target_watts": 234,
+      "target_watts_pct_ftp": 102,
+      "target_sec_per_km": 101.9,
+      "target_pace": "1:41/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 101.9,
+      "grade_adj_pace": "1:41/km",
+      "cumulative_km": 17.0,
+      "hr_ceiling": null
+     },
+     {
+      "lap": 18,
+      "distance_m": 1000,
+      "target_watts": 234,
+      "target_watts_pct_ftp": 102,
+      "target_sec_per_km": 101.9,
+      "target_pace": "1:41/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 101.9,
+      "grade_adj_pace": "1:41/km",
+      "cumulative_km": 18.0,
+      "hr_ceiling": null
+     },
+     {
+      "lap": 19,
+      "distance_m": 1000,
+      "target_watts": 234,
+      "target_watts_pct_ftp": 102,
+      "target_sec_per_km": 101.9,
+      "target_pace": "1:41/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 101.9,
+      "grade_adj_pace": "1:41/km",
+      "cumulative_km": 19.0,
+      "hr_ceiling": null
+     },
+     {
+      "lap": 20,
+      "distance_m": 1000,
+      "target_watts": 234,
+      "target_watts_pct_ftp": 102,
+      "target_sec_per_km": 101.9,
+      "target_pace": "1:41/km",
+      "gradient": 0.0,
+      "grade_multiplier": 1.0,
+      "grade_adj_sec": 101.9,
+      "grade_adj_pace": "1:41/km",
+      "cumulative_km": 20.0,
+      "hr_ceiling": null
+     }
+    ],
+    "seconds": 4951.5104,
+    "triathlon_legs": [
+     {
+      "leg": "bike",
+      "distance_m": 20000,
+      "predicted_seconds": 2055.1104,
+      "predicted_time": "34:15",
+      "target_pace": "35.0 km/h avg",
+      "target_watts": 196,
+      "target_watts_pct_ftp": 85,
+      "lap_paces": [
+       {
+        "lap": 1,
+        "distance_m": 1000,
+        "target_watts": 234,
+        "target_watts_pct_ftp": 102,
+        "target_sec_per_km": 101.9,
+        "target_pace": "1:41/km",
+        "gradient": 0.0,
+        "grade_multiplier": 1.0,
+        "grade_adj_sec": 101.9,
+        "grade_adj_pace": "1:41/km",
+        "cumulative_km": 1.0,
+        "hr_ceiling": null
+       },
+       {
+        "lap": 2,
+        "distance_m": 1000,
+        "target_watts": 234,
+        "target_watts_pct_ftp": 102,
+        "target_sec_per_km": 101.9,
+        "target_pace": "1:41/km",
+        "gradient": 0.0,
+        "grade_multiplier": 1.0,
+        "grade_adj_sec": 101.9,
+        "grade_adj_pace": "1:41/km",
+        "cumulative_km": 2.0,
+        "hr_ceiling": null
+       },
+       {
+        "lap": 3,
+        "distance_m": 1000,
+        "target_watts": 234,
+        "target_watts_pct_ftp": 102,
+        "target_sec_per_km": 101.9,
+        "target_pace": "1:41/km",
+        "gradient": 0.0,
+        "grade_multiplier": 1.0,
+        "grade_adj_sec": 101.9,
+        "grade_adj_pace": "1:41/km",
+        "cumulative_km": 3.0,
+        "hr_ceiling": null
+       },
+       {
+        "lap": 4,
+        "distance_m": 1000,
+        "target_watts": 234,
+        "target_watts_pct_ftp": 102,
+        "target_sec_per_km": 101.9,
+        "target_pace": "1:41/km",
+        "gradient": 0.0,
+        "grade_multiplier": 1.0,
+        "grade_adj_sec": 101.9,
+        "grade_adj_pace": "1:41/km",
+        "cumulative_km": 4.0,
+        "hr_ceiling": null
+       },
+       {
+        "lap": 5,
+        "distance_m": 1000,
+        "target_watts": 234,
+        "target_watts_pct_ftp": 102,
+        "target_sec_per_km": 101.9,
+        "target_pace": "1:41/km",
+        "gradient": 0.0,
+        "grade_multiplier": 1.0,
+        "grade_adj_sec": 101.9,
+        "grade_adj_pace": "1:41/km",
+        "cumulative_km": 5.0,
+        "hr_ceiling": null
+       },
+       {
+        "lap": 6,
+        "distance_m": 1000,
+        "target_watts": 234,
+        "target_watts_pct_ftp": 102,
+        "target_sec_per_km": 101.9,
+        "target_pace": "1:41/km",
+        "gradient": 0.0,
+        "grade_multiplier": 1.0,
+        "grade_adj_sec": 101.9,
+        "grade_adj_pace": "1:41/km",
+        "cumulative_km": 6.0,
+        "hr_ceiling": null
+       },
+       {
+        "lap": 7,
+        "distance_m": 1000,
+        "target_watts": 234,
+        "target_watts_pct_ftp": 102,
+        "target_sec_per_km": 101.9,
+        "target_pace": "1:41/km",
+        "gradient": 0.0,
+        "grade_multiplier": 1.0,
+        "grade_adj_sec": 101.9,
+        "grade_adj_pace": "1:41/km",
+        "cumulative_km": 7.0,
+        "hr_ceiling": null
+       },
+       {
+        "lap": 8,
+        "distance_m": 1000,
+        "target_watts": 234,
+        "target_watts_pct_ftp": 102,
+        "target_sec_per_km": 101.9,
+        "target_pace": "1:41/km",
+        "gradient": 0.0,
+        "grade_multiplier": 1.0,
+        "grade_adj_sec": 101.9,
+        "grade_adj_pace": "1:41/km",
+        "cumulative_km": 8.0,
+        "hr_ceiling": null
+       },
+       {
+        "lap": 9,
+        "distance_m": 1000,
+        "target_watts": 234,
+        "target_watts_pct_ftp": 102,
+        "target_sec_per_km": 101.9,
+        "target_pace": "1:41/km",
+        "gradient": 0.0,
+        "grade_multiplier": 1.0,
+        "grade_adj_sec": 101.9,
+        "grade_adj_pace": "1:41/km",
+        "cumulative_km": 9.0,
+        "hr_ceiling": null
+       },
+       {
+        "lap": 10,
+        "distance_m": 1000,
+        "target_watts": 234,
+        "target_watts_pct_ftp": 102,
+        "target_sec_per_km": 101.9,
+        "target_pace": "1:41/km",
+        "gradient": 0.0,
+        "grade_multiplier": 1.0,
+        "grade_adj_sec": 101.9,
+        "grade_adj_pace": "1:41/km",
+        "cumulative_km": 10.0,
+        "hr_ceiling": null
+       },
+       {
+        "lap": 11,
+        "distance_m": 1000,
+        "target_watts": 234,
+        "target_watts_pct_ftp": 102,
+        "target_sec_per_km": 101.9,
+        "target_pace": "1:41/km",
+        "gradient": 0.0,
+        "grade_multiplier": 1.0,
+        "grade_adj_sec": 101.9,
+        "grade_adj_pace": "1:41/km",
+        "cumulative_km": 11.0,
+        "hr_ceiling": null
+       },
+       {
+        "lap": 12,
+        "distance_m": 1000,
+        "target_watts": 234,
+        "target_watts_pct_ftp": 102,
+        "target_sec_per_km": 101.9,
+        "target_pace": "1:41/km",
+        "gradient": 0.0,
+        "grade_multiplier": 1.0,
+        "grade_adj_sec": 101.9,
+        "grade_adj_pace": "1:41/km",
+        "cumulative_km": 12.0,
+        "hr_ceiling": null
+       },
+       {
+        "lap": 13,
+        "distance_m": 1000,
+        "target_watts": 234,
+        "target_watts_pct_ftp": 102,
+        "target_sec_per_km": 101.9,
+        "target_pace": "1:41/km",
+        "gradient": 0.0,
+        "grade_multiplier": 1.0,
+        "grade_adj_sec": 101.9,
+        "grade_adj_pace": "1:41/km",
+        "cumulative_km": 13.0,
+        "hr_ceiling": null
+       },
+       {
+        "lap": 14,
+        "distance_m": 1000,
+        "target_watts": 234,
+        "target_watts_pct_ftp": 102,
+        "target_sec_per_km": 101.9,
+        "target_pace": "1:41/km",
+        "gradient": 0.0,
+        "grade_multiplier": 1.0,
+        "grade_adj_sec": 101.9,
+        "grade_adj_pace": "1:41/km",
+        "cumulative_km": 14.0,
+        "hr_ceiling": null
+       },
+       {
+        "lap": 15,
+        "distance_m": 1000,
+        "target_watts": 234,
+        "target_watts_pct_ftp": 102,
+        "target_sec_per_km": 101.9,
+        "target_pace": "1:41/km",
+        "gradient": 0.0,
+        "grade_multiplier": 1.0,
+        "grade_adj_sec": 101.9,
+        "grade_adj_pace": "1:41/km",
+        "cumulative_km": 15.0,
+        "hr_ceiling": null
+       },
+       {
+        "lap": 16,
+        "distance_m": 1000,
+        "target_watts": 234,
+        "target_watts_pct_ftp": 102,
+        "target_sec_per_km": 101.9,
+        "target_pace": "1:41/km",
+        "gradient": 0.0,
+        "grade_multiplier": 1.0,
+        "grade_adj_sec": 101.9,
+        "grade_adj_pace": "1:41/km",
+        "cumulative_km": 16.0,
+        "hr_ceiling": null
+       },
+       {
+        "lap": 17,
+        "distance_m": 1000,
+        "target_watts": 234,
+        "target_watts_pct_ftp": 102,
+        "target_sec_per_km": 101.9,
+        "target_pace": "1:41/km",
+        "gradient": 0.0,
+        "grade_multiplier": 1.0,
+        "grade_adj_sec": 101.9,
+        "grade_adj_pace": "1:41/km",
+        "cumulative_km": 17.0,
+        "hr_ceiling": null
+       },
+       {
+        "lap": 18,
+        "distance_m": 1000,
+        "target_watts": 234,
+        "target_watts_pct_ftp": 102,
+        "target_sec_per_km": 101.9,
+        "target_pace": "1:41/km",
+        "gradient": 0.0,
+        "grade_multiplier": 1.0,
+        "grade_adj_sec": 101.9,
+        "grade_adj_pace": "1:41/km",
+        "cumulative_km": 18.0,
+        "hr_ceiling": null
+       },
+       {
+        "lap": 19,
+        "distance_m": 1000,
+        "target_watts": 234,
+        "target_watts_pct_ftp": 102,
+        "target_sec_per_km": 101.9,
+        "target_pace": "1:41/km",
+        "gradient": 0.0,
+        "grade_multiplier": 1.0,
+        "grade_adj_sec": 101.9,
+        "grade_adj_pace": "1:41/km",
+        "cumulative_km": 19.0,
+        "hr_ceiling": null
+       },
+       {
+        "lap": 20,
+        "distance_m": 1000,
+        "target_watts": 234,
+        "target_watts_pct_ftp": 102,
+        "target_sec_per_km": 101.9,
+        "target_pace": "1:41/km",
+        "gradient": 0.0,
+        "grade_multiplier": 1.0,
+        "grade_adj_sec": 101.9,
+        "grade_adj_pace": "1:41/km",
+        "cumulative_km": 20.0,
+        "hr_ceiling": null
+       }
+      ]
+     },
+     {
+      "leg": "run",
+      "distance_m": 10000.0,
+      "predicted_seconds": 2716.4,
+      "predicted_time": "45:16",
+      "target_pace": "4:28/km",
+      "target_watts": null,
+      "target_watts_pct_ftp": null,
+      "lap_paces": [
+       {
+        "kind": "flat",
+        "label": "Flat",
+        "start_km": 0.0,
+        "lap": 1,
+        "distance_m": 2000,
+        "target_sec_per_km": 268.3,
+        "target_pace": "4:28/km",
+        "gradient": 0.0,
+        "grade_multiplier": 1.0,
+        "grade_adj_sec": 268.3,
+        "grade_adj_pace": "4:28/km",
+        "cumulative_km": 2.0,
+        "hr_ceiling": null
+       },
+       {
+        "kind": "up",
+        "label": "Climb 4%",
+        "start_km": 2.0,
+        "lap": 2,
+        "distance_m": 300,
+        "target_sec_per_km": 331.7,
+        "target_pace": "5:31/km",
+        "gradient": 0.04,
+        "grade_multiplier": 1.2365,
+        "grade_adj_sec": 268.3,
+        "grade_adj_pace": "4:28/km",
+        "cumulative_km": 2.3,
+        "hr_ceiling": null
+       },
+       {
+        "kind": "down",
+        "label": "Descent 4%",
+        "start_km": 2.3,
+        "lap": 3,
+        "distance_m": 300,
+        "target_sec_per_km": 242.1,
+        "target_pace": "4:02/km",
+        "gradient": -0.04,
+        "grade_multiplier": 0.9023,
+        "grade_adj_sec": 268.3,
+        "grade_adj_pace": "4:28/km",
+        "cumulative_km": 2.6,
+        "hr_ceiling": null
+       },
+       {
+        "kind": "flat",
+        "label": "Flat",
+        "start_km": 2.6,
+        "lap": 4,
+        "distance_m": 2000,
+        "target_sec_per_km": 268.3,
+        "target_pace": "4:28/km",
+        "gradient": 0.0,
+        "grade_multiplier": 1.0,
+        "grade_adj_sec": 268.3,
+        "grade_adj_pace": "4:28/km",
+        "cumulative_km": 4.6,
+        "hr_ceiling": null
+       },
+       {
+        "kind": "up",
+        "label": "Climb 4%",
+        "start_km": 4.6,
+        "lap": 5,
+        "distance_m": 300,
+        "target_sec_per_km": 331.7,
+        "target_pace": "5:31/km",
+        "gradient": 0.04,
+        "grade_multiplier": 1.2365,
+        "grade_adj_sec": 268.3,
+        "grade_adj_pace": "4:28/km",
+        "cumulative_km": 4.9,
+        "hr_ceiling": null
+       },
+       {
+        "kind": "down",
+        "label": "Descent 4%",
+        "start_km": 4.9,
+        "lap": 6,
+        "distance_m": 300,
+        "target_sec_per_km": 242.1,
+        "target_pace": "4:02/km",
+        "gradient": -0.04,
+        "grade_multiplier": 0.9023,
+        "grade_adj_sec": 268.3,
+        "grade_adj_pace": "4:28/km",
+        "cumulative_km": 5.2,
+        "hr_ceiling": null
+       },
+       {
+        "kind": "flat",
+        "label": "Flat",
+        "start_km": 5.2,
+        "lap": 7,
+        "distance_m": 2000,
+        "target_sec_per_km": 268.3,
+        "target_pace": "4:28/km",
+        "gradient": 0.0,
+        "grade_multiplier": 1.0,
+        "grade_adj_sec": 268.3,
+        "grade_adj_pace": "4:28/km",
+        "cumulative_km": 7.2,
+        "hr_ceiling": null
+       },
+       {
+        "kind": "up",
+        "label": "Climb 4%",
+        "start_km": 7.2,
+        "lap": 8,
+        "distance_m": 300,
+        "target_sec_per_km": 331.7,
+        "target_pace": "5:31/km",
+        "gradient": 0.04,
+        "grade_multiplier": 1.2365,
+        "grade_adj_sec": 268.3,
+        "grade_adj_pace": "4:28/km",
+        "cumulative_km": 7.5,
+        "hr_ceiling": null
+       },
+       {
+        "kind": "down",
+        "label": "Descent 4%",
+        "start_km": 7.5,
+        "lap": 9,
+        "distance_m": 300,
+        "target_sec_per_km": 242.1,
+        "target_pace": "4:02/km",
+        "gradient": -0.04,
+        "grade_multiplier": 0.9023,
+        "grade_adj_sec": 268.3,
+        "grade_adj_pace": "4:28/km",
+        "cumulative_km": 7.8,
+        "hr_ceiling": null
+       },
+       {
+        "kind": "flat",
+        "label": "Flat",
+        "start_km": 7.8,
+        "lap": 10,
+        "distance_m": 1100,
+        "target_sec_per_km": 268.3,
+        "target_pace": "4:28/km",
+        "gradient": 0.0,
+        "grade_multiplier": 1.0,
+        "grade_adj_sec": 268.3,
+        "grade_adj_pace": "4:28/km",
+        "cumulative_km": 8.9,
+        "hr_ceiling": null
+       },
+       {
+        "kind": "flat",
+        "label": "Flat",
+        "start_km": 8.9,
+        "lap": 11,
+        "distance_m": 1100,
+        "target_sec_per_km": 268.3,
+        "target_pace": "4:28/km",
+        "gradient": 0.0,
+        "grade_multiplier": 1.0,
+        "grade_adj_sec": 268.3,
+        "grade_adj_pace": "4:28/km",
+        "cumulative_km": 10.0,
+        "hr_ceiling": null
+       }
+      ]
+     }
+    ],
+    "triathlon_splits_m": {
+     "swim_m": 750,
+     "bike_m": 20000,
+     "run_m": 5000
+    },
+    "technicality_factor": null,
+    "technicality_label": null,
+    "target_hr_ceiling": null,
+    "climb_target_w_per_kg": null,
+    "tri_courses": {
+     "legs": {
+      "swim": {
+       "segments": null,
+       "path": [],
+       "source": null
+      },
+      "bike": {
+       "segments": null,
+       "path": [],
+       "source": null
+      },
+      "run": {
+       "segments": [
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 4.0,
+         "gradient": 0.04
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 4.0,
+         "gradient": 0.04
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 4.0,
+         "gradient": 0.04
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": -0.04
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": -0.04
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": -0.04
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 4.0,
+         "gradient": 0.04
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 4.0,
+         "gradient": 0.04
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 4.0,
+         "gradient": 0.04
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": -0.04
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": -0.04
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": -0.04
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 4.0,
+         "gradient": 0.04
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 4.0,
+         "gradient": 0.04
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 4.0,
+         "gradient": 0.04
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": -0.04
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": -0.04
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": -0.04
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        },
+        {
+         "distance_m": 100.0,
+         "elevation_gain_m": 0.0,
+         "gradient": 0.0
+        }
+       ],
+       "path": [],
+       "source": "own"
+      }
+     },
+     "transitions_m": null
+    }
    }
   },
   {
@@ -26934,26 +32151,26 @@
       "start_km": 0.0,
       "lap": 1,
       "distance_m": 1500,
-      "target_sec_per_km": 333.9,
-      "target_pace": "5:33/km",
-      "gradient": 0.0133,
-      "grade_multiplier": 1.1083,
-      "grade_adj_sec": 301.2,
+      "target_sec_per_km": 322.9,
+      "target_pace": "5:22/km",
+      "gradient": 0.0126,
+      "grade_multiplier": 1.0715,
+      "grade_adj_sec": 301.4,
       "grade_adj_pace": "5:01/km",
       "cumulative_km": 1.5,
       "hr_ceiling": 144
      },
      {
       "kind": "up",
-      "label": "Climb 3%",
+      "label": "Climb 4%",
       "start_km": 1.5,
       "lap": 2,
       "distance_m": 1250,
-      "target_sec_per_km": 385.8,
-      "target_pace": "6:25/km",
-      "gradient": 0.0346,
-      "grade_multiplier": 1.2944,
-      "grade_adj_sec": 298.0,
+      "target_sec_per_km": 363.0,
+      "target_pace": "6:03/km",
+      "gradient": 0.037,
+      "grade_multiplier": 1.2175,
+      "grade_adj_sec": 298.2,
       "grade_adj_pace": "4:58/km",
       "cumulative_km": 2.75,
       "hr_ceiling": 148
@@ -26964,11 +32181,11 @@
       "start_km": 2.75,
       "lap": 3,
       "distance_m": 1250,
-      "target_sec_per_km": 382.0,
-      "target_pace": "6:22/km",
-      "gradient": 0.0346,
-      "grade_multiplier": 1.2944,
-      "grade_adj_sec": 295.1,
+      "target_sec_per_km": 354.1,
+      "target_pace": "5:54/km",
+      "gradient": 0.0341,
+      "grade_multiplier": 1.1993,
+      "grade_adj_sec": 295.3,
       "grade_adj_pace": "4:55/km",
       "cumulative_km": 4.0,
       "hr_ceiling": 153
@@ -26979,41 +32196,41 @@
       "start_km": 4.0,
       "lap": 4,
       "distance_m": 2000,
-      "target_sec_per_km": 290.6,
-      "target_pace": "4:50/km",
-      "gradient": -0.0009,
-      "grade_multiplier": 0.9975,
-      "grade_adj_sec": 291.3,
+      "target_sec_per_km": 296.0,
+      "target_pace": "4:56/km",
+      "gradient": -0.001,
+      "grade_multiplier": 1.0155,
+      "grade_adj_sec": 291.5,
       "grade_adj_pace": "4:51/km",
       "cumulative_km": 6.0,
       "hr_ceiling": 160
      },
      {
       "kind": "down",
-      "label": "Descent 3%",
+      "label": "Descent 4%",
       "start_km": 6.0,
       "lap": 5,
       "distance_m": 1250,
       "target_sec_per_km": 262.8,
       "target_pace": "4:22/km",
-      "gradient": -0.0347,
-      "grade_multiplier": 0.914,
-      "grade_adj_sec": 287.5,
+      "gradient": -0.035,
+      "grade_multiplier": 0.9134,
+      "grade_adj_sec": 287.7,
       "grade_adj_pace": "4:47/km",
       "cumulative_km": 7.25,
       "hr_ceiling": 169
      },
      {
       "kind": "down",
-      "label": "Descent 3%",
+      "label": "Descent 4%",
       "start_km": 7.25,
       "lap": 6,
       "distance_m": 1250,
-      "target_sec_per_km": 260.1,
-      "target_pace": "4:20/km",
-      "gradient": -0.0347,
-      "grade_multiplier": 0.914,
-      "grade_adj_sec": 284.6,
+      "target_sec_per_km": 259.3,
+      "target_pace": "4:19/km",
+      "gradient": -0.0364,
+      "grade_multiplier": 0.9104,
+      "grade_adj_sec": 284.8,
       "grade_adj_pace": "4:44/km",
       "cumulative_km": 8.5,
       "hr_ceiling": 178
@@ -27024,17 +32241,17 @@
       "start_km": 8.5,
       "lap": 7,
       "distance_m": 1500,
-      "target_sec_per_km": 272.8,
-      "target_pace": "4:32/km",
-      "gradient": -0.0115,
-      "grade_multiplier": 0.9693,
-      "grade_adj_sec": 281.4,
+      "target_sec_per_km": 274.3,
+      "target_pace": "4:34/km",
+      "gradient": -0.0108,
+      "grade_multiplier": 0.9741,
+      "grade_adj_sec": 281.6,
       "grade_adj_pace": "4:41/km",
       "cumulative_km": 10.0,
       "hr_ceiling": 188
      }
     ],
-    "seconds": 3104.6,
+    "seconds": 3036.8,
     "triathlon_legs": null,
     "triathlon_splits_m": null,
     "technicality_factor": 1.0,
@@ -32643,7 +37860,7 @@
       "hr_ceiling": null
      }
     ],
-    "seconds": 8834.004977605142,
+    "seconds": 8826.0,
     "triathlon_legs": [
      {
       "leg": "swim",
@@ -33230,22 +38447,22 @@
      {
       "leg": "run",
       "distance_m": 10000.2,
-      "predicted_seconds": 2558.1049776051414,
-      "predicted_time": "42:38",
-      "target_pace": "3:55/km",
+      "predicted_seconds": 2550.1,
+      "predicted_time": "42:30",
+      "target_pace": "3:49/km",
       "target_watts": null,
       "target_watts_pct_ftp": null,
       "lap_paces": [
        {
         "kind": "down",
-        "label": "Descent 3%",
+        "label": "Descent 4%",
         "start_km": 0.0,
         "lap": 1,
         "distance_m": 1000,
-        "target_sec_per_km": 235.5,
-        "target_pace": "3:55/km",
-        "gradient": -0.0317,
-        "grade_multiplier": 0.9205,
+        "target_sec_per_km": 229.3,
+        "target_pace": "3:49/km",
+        "gradient": -0.0428,
+        "grade_multiplier": 0.8963,
         "grade_adj_sec": 255.8,
         "grade_adj_pace": "4:15/km",
         "cumulative_km": 1.0,
@@ -33257,10 +38474,10 @@
         "start_km": 1.0,
         "lap": 2,
         "distance_m": 1800,
-        "target_sec_per_km": 253.7,
-        "target_pace": "4:13/km",
-        "gradient": -0.0031,
-        "grade_multiplier": 0.9916,
+        "target_sec_per_km": 252.3,
+        "target_pace": "4:12/km",
+        "gradient": -0.0061,
+        "grade_multiplier": 0.9864,
         "grade_adj_sec": 255.8,
         "grade_adj_pace": "4:15/km",
         "cumulative_km": 2.8,
@@ -33272,10 +38489,10 @@
         "start_km": 2.8,
         "lap": 3,
         "distance_m": 1800,
-        "target_sec_per_km": 253.7,
-        "target_pace": "4:13/km",
-        "gradient": -0.0031,
-        "grade_multiplier": 0.9916,
+        "target_sec_per_km": 247.1,
+        "target_pace": "4:07/km",
+        "gradient": -0.013,
+        "grade_multiplier": 0.9661,
         "grade_adj_sec": 255.8,
         "grade_adj_pace": "4:15/km",
         "cumulative_km": 4.6,
@@ -33287,10 +38504,10 @@
         "start_km": 4.6,
         "lap": 4,
         "distance_m": 1800,
-        "target_sec_per_km": 253.7,
-        "target_pace": "4:13/km",
-        "gradient": -0.0031,
-        "grade_multiplier": 0.9916,
+        "target_sec_per_km": 264.1,
+        "target_pace": "4:24/km",
+        "gradient": 0.0053,
+        "grade_multiplier": 1.0325,
         "grade_adj_sec": 255.8,
         "grade_adj_pace": "4:15/km",
         "cumulative_km": 6.4,
@@ -33302,10 +38519,10 @@
         "start_km": 6.4,
         "lap": 5,
         "distance_m": 1800,
-        "target_sec_per_km": 253.7,
-        "target_pace": "4:13/km",
-        "gradient": -0.0031,
-        "grade_multiplier": 0.9916,
+        "target_sec_per_km": 276.6,
+        "target_pace": "4:36/km",
+        "gradient": 0.0144,
+        "grade_multiplier": 1.0813,
         "grade_adj_sec": 255.8,
         "grade_adj_pace": "4:15/km",
         "cumulative_km": 8.2,
@@ -33317,10 +38534,10 @@
         "start_km": 8.2,
         "lap": 6,
         "distance_m": 1800,
-        "target_sec_per_km": 253.7,
-        "target_pace": "4:13/km",
-        "gradient": -0.0031,
-        "grade_multiplier": 0.9916,
+        "target_sec_per_km": 249.2,
+        "target_pace": "4:09/km",
+        "gradient": -0.01,
+        "grade_multiplier": 0.9741,
         "grade_adj_sec": 255.8,
         "grade_adj_pace": "4:15/km",
         "cumulative_km": 10.0,
@@ -34493,6 +39710,1560 @@
    "actual_sec": 900.0,
    "distance_m": 1500.0,
    "expect": null
+  }
+ ],
+ "course_factors": [
+  {
+   "course_segments": null,
+   "course_type": "flat",
+   "distance_m": 10000.0,
+   "expect": 1.0
+  },
+  {
+   "course_segments": null,
+   "course_type": "hilly",
+   "distance_m": 10000.0,
+   "expect": 1.04
+  },
+  {
+   "course_segments": null,
+   "course_type": "mountainous",
+   "distance_m": 42195.0,
+   "expect": 1.08
+  },
+  {
+   "course_segments": null,
+   "course_type": null,
+   "distance_m": 5000.0,
+   "expect": 1.0
+  },
+  {
+   "course_segments": [
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 4.0,
+     "gradient": 0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 4.0,
+     "gradient": 0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 4.0,
+     "gradient": 0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": -0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": -0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": -0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 4.0,
+     "gradient": 0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 4.0,
+     "gradient": 0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 4.0,
+     "gradient": 0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": -0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": -0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": -0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 4.0,
+     "gradient": 0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 4.0,
+     "gradient": 0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 4.0,
+     "gradient": 0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": -0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": -0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": -0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    }
+   ],
+   "course_type": "hilly",
+   "distance_m": 10000.0,
+   "expect": 1.012490640512
+  },
+  {
+   "course_segments": [
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 4.0,
+     "gradient": 0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 4.0,
+     "gradient": 0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 4.0,
+     "gradient": 0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": -0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": -0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": -0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 4.0,
+     "gradient": 0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 4.0,
+     "gradient": 0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 4.0,
+     "gradient": 0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": -0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": -0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": -0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 4.0,
+     "gradient": 0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 4.0,
+     "gradient": 0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 4.0,
+     "gradient": 0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": -0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": -0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": -0.04
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    },
+    {
+     "distance_m": 100.0,
+     "elevation_gain_m": 0.0,
+     "gradient": 0.0
+    }
+   ],
+   "course_type": "flat",
+   "distance_m": 12000.0,
+   "expect": 1.012490640512
+  },
+  {
+   "course_segments": [
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0131,
+     "elevation_gain_m": 6.6
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0247,
+     "elevation_gain_m": 12.3
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0337,
+     "elevation_gain_m": 16.9
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0389,
+     "elevation_gain_m": 19.4
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0398,
+     "elevation_gain_m": 19.9
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0364,
+     "elevation_gain_m": 18.2
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0289,
+     "elevation_gain_m": 14.4
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0183,
+     "elevation_gain_m": 9.2
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0056,
+     "elevation_gain_m": 2.8
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0076,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0201,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0303,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0372,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.04,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0384,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0325,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0231,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0112,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.002,
+     "elevation_gain_m": 1.0
+    }
+   ],
+   "course_type": "flat",
+   "distance_m": 10000.0,
+   "expect": 1.0400232633931588
+  },
+  {
+   "course_segments": [
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0164,
+     "elevation_gain_m": 8.2
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0309,
+     "elevation_gain_m": 15.5
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0421,
+     "elevation_gain_m": 21.1
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0486,
+     "elevation_gain_m": 24.3
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0498,
+     "elevation_gain_m": 24.9
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0455,
+     "elevation_gain_m": 22.8
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0362,
+     "elevation_gain_m": 18.1
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0229,
+     "elevation_gain_m": 11.4
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0071,
+     "elevation_gain_m": 3.6
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0095,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0251,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0378,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0465,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0499,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0479,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0407,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0289,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.014,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0025,
+     "elevation_gain_m": 1.2
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0187,
+     "elevation_gain_m": 9.4
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0328,
+     "elevation_gain_m": 16.4
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0434,
+     "elevation_gain_m": 21.7
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0491,
+     "elevation_gain_m": 24.5
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0495,
+     "elevation_gain_m": 24.8
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0444,
+     "elevation_gain_m": 22.2
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0344,
+     "elevation_gain_m": 17.2
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0206,
+     "elevation_gain_m": 10.3
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0046,
+     "elevation_gain_m": 2.3
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.012,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0272,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0394,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0473,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.05,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0472,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0392,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0268,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0115,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.005,
+     "elevation_gain_m": 2.5
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.021,
+     "elevation_gain_m": 10.5
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0347,
+     "elevation_gain_m": 17.4
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0446,
+     "elevation_gain_m": 22.3
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0495,
+     "elevation_gain_m": 24.8
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.049,
+     "elevation_gain_m": 24.5
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0432,
+     "elevation_gain_m": 21.6
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0325,
+     "elevation_gain_m": 16.2
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0183,
+     "elevation_gain_m": 9.2
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0021,
+     "elevation_gain_m": 1.1
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0144,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0293,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0409,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0481,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0499,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0463,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0375,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0247,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0091,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0075,
+     "elevation_gain_m": 3.8
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0233,
+     "elevation_gain_m": 11.7
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0365,
+     "elevation_gain_m": 18.2
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0456,
+     "elevation_gain_m": 22.8
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0498,
+     "elevation_gain_m": 24.9
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0485,
+     "elevation_gain_m": 24.2
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0418,
+     "elevation_gain_m": 20.9
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0306,
+     "elevation_gain_m": 15.3
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0159,
+     "elevation_gain_m": 8.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0004,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0168,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0313,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0423,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0487,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0497,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0453,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0358,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0225,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": -0.0066,
+     "elevation_gain_m": 0.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.01,
+     "elevation_gain_m": 5.0
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0254,
+     "elevation_gain_m": 12.7
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0381,
+     "elevation_gain_m": 19.1
+    },
+    {
+     "distance_m": 500.0,
+     "gradient": 0.0466,
+     "elevation_gain_m": 23.3
+    }
+   ],
+   "course_type": "rolling",
+   "distance_m": 42195.0,
+   "expect": 1.0605416917015298
   }
  ]
 }

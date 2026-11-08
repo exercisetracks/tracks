@@ -706,7 +706,39 @@ class WatchManager(
         val places = items.waypoints()
             .filter { it.id >= 0 && it.loadToDevice }
             .map { DesiredWaypoint(it.id, it.name, it.lat, it.lng, it.elevationMetres, 0, group = groupOf(it.folderId)) }
-        wantedOnWatch = courses to places
+        // The week's races, each beside its race day on the calendar: in the
+        // default collection, off again once the race is past, as an item
+        // the library no longer wants is (docs/watch-sync.md).
+        val races = raceCoursesForWatch().map { DesiredCourse(it.ref, it.name, it.points, 0) }
+        wantedOnWatch = (courses + races) to places
+    }
+
+    /**
+     * The courses of the races on the watch's calendar this week
+     * ([com.tracks.core.local.LocalRacePlans.raceCourses]), less any the
+     * owner deleted on the watch, which stays their decision. Their names are
+     * remembered so a copy read back off the watch is known as Tracks' own
+     * ([isOwnCourse]) rather than imported as a course of the watch's.
+     */
+    private suspend fun raceCoursesForWatch(): List<com.tracks.core.local.LocalRacePlans.RaceCourse> {
+        val today = java.time.LocalDate.now()
+        val all = try {
+            com.tracks.core.local.LocalRacePlans(containerProvider().sources)
+                .raceCourses(com.tracks.core.fit.decode.CivilDate(today.year, today.monthValue, today.dayOfMonth))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.w(TAG, "could not read the week's race courses; the watch keeps what it has", e)
+            return emptyList()
+        }
+        val refused = prefs().getStringSet(KEY_RACE_COURSES_REFUSED, null).orEmpty()
+        val wanted = all.filter { "${it.ref}" !in refused }
+        val known = prefs().getStringSet(KEY_RACE_COURSE_NAMES, null).orEmpty()
+        if (!known.containsAll(wanted.map { it.name })) {
+            val names = (wanted.map { it.name } + known).distinct().take(MAX_RACE_COURSE_NAMES).toSet()
+            prefs().edit().putStringSet(KEY_RACE_COURSE_NAMES, names).apply()
+        }
+        return wanted
     }
 
     /**
@@ -725,6 +757,15 @@ class WatchManager(
             }
             for (id in report.coursesOff) if (courses[id]?.deviceStatus in setOf("on_device", "pending_remove")) {
                 items.markCourseOffWatch(id, at)
+            }
+            // A race's course deleted on the watch stays off it: the same
+            // decision, about a course that is not a track to flag.
+            val refusedRaces = report.coursesDeletedOnWatch
+                .filter { com.tracks.core.local.LocalRacePlans.isRaceCourseRef(it) }
+            if (refusedRaces.isNotEmpty()) {
+                val refused = prefs().getStringSet(KEY_RACE_COURSES_REFUSED, null).orEmpty() + refusedRaces.map { "$it" }
+                prefs().edit().putStringSet(KEY_RACE_COURSES_REFUSED, refused).apply()
+                Log.i(TAG, "race course(s) $refusedRaces deleted on the watch; not re-sent")
             }
             for (id in report.coursesDeletedOnWatch) {
                 // Kept, and not sent again: deleted on the watch is the owner's
@@ -856,12 +897,53 @@ class WatchManager(
                 Outcome.Nothing -> {}
             }
         }
+        for (race in raceCoursesForWatch()) {
+            when (pushRaceCourseFile(race)) {
+                is Outcome.Sent -> delivered++
+                is Outcome.Failed -> failed++
+                Outcome.Nothing -> {}
+            }
+        }
         when (pushWaypointPlan(waypointPushPlan(items.waypoints()))) {
             is Outcome.Sent -> delivered++
             is Outcome.Failed -> failed++
             Outcome.Nothing -> {}
         }
         return MapPushCounts(delivered, failed)
+    }
+
+    /**
+     * A race's course as a FIT course file, for a watch whose handshake does
+     * not declare Explore sync — the course fallback in docs/watch-sync.md,
+     * which has **not** been run on such a watch. Sent once per version of
+     * the course ([KEY_RACE_COURSE_FILES]). Bluetooth cannot delete a file,
+     * so on such a watch it stays after the race, as every course sent this
+     * way does, until the watch or a cable removes it.
+     */
+    private suspend fun pushRaceCourseFile(race: com.tracks.core.local.LocalRacePlans.RaceCourse): Outcome {
+        val sent = prefs().getStringSet(KEY_RACE_COURSE_FILES, null).orEmpty()
+        val version = "${race.ref}:${listOf(race.name, race.points).hashCode()}"
+        if (version in sent) return Outcome.Nothing
+        val coordinates = race.points.map { (lat, lon, ele) -> if (ele != null) listOf(lon, lat, ele) else listOf(lon, lat) }
+        var ascent = 0.0
+        for (i in 1 until race.points.size) {
+            val a = race.points[i - 1].third
+            val b = race.points[i].third
+            if (a != null && b != null && b > a) ascent += b - a
+        }
+        val bytes = CourseFitEncoder.encode(
+            name = race.name, sport = race.sport, courseId = -race.ref,
+            coordinates = coordinates, distanceMetres = 0.0, ascentMetres = ascent,
+        ) ?: return Outcome.Failed("That race's course could not be turned into a course file")
+        return try {
+            integration.pushFile("GARMIN/Courses", "RACE${-race.ref}.fit", bytes)
+            val others = sent.filterNot { it.startsWith("${race.ref}:") }
+            prefs().edit().putStringSet(KEY_RACE_COURSE_FILES, (others + version).toSet()).apply()
+            Outcome.Sent(1)
+        } catch (e: Exception) {
+            Log.w(TAG, "could not push the course of race ${race.ref}", e)
+            Outcome.Failed(e.message ?: "the watch refused the file")
+        }
     }
 
     private data class MapPushCounts(val delivered: Int, val failed: Int)
@@ -874,6 +956,14 @@ class WatchManager(
      */
     private suspend fun isOwnCourse(bytes: ByteArray): Boolean {
         val id = CourseFitEncoder.identify(bytes) ?: return false
+        // A race's course (raceCoursesForWatch): not a track, so known by its
+        // name alone — whole as Explore sync sent it, or cut to the FIT
+        // file's 15 bytes.
+        val name = id.name
+        if (!name.isNullOrEmpty()) {
+            val races = prefs().getStringSet(KEY_RACE_COURSE_NAMES, null).orEmpty()
+            if (races.any { it == name || (name.length >= 10 && it.startsWith(name)) }) return true
+        }
         // A course Tracks delivered over Explore sync is written to a file by
         // the watch itself; its name is the one Tracks sent.
         if (garmin != null && id.name != null &&
@@ -884,7 +974,6 @@ class WatchManager(
         val course = containerProvider().mapItems.courses().firstOrNull { it.id.toLong() == serial && !it.isExternal }
             ?: return false
         // The file holds the name cut to 15 bytes; a prefix is the watch-side form.
-        val name = id.name
         return !name.isNullOrEmpty() && course.name.startsWith(name)
     }
 
@@ -1601,6 +1690,16 @@ class WatchManager(
 
         /** Per-workout `file_id.time_created`, as `id:millis` pairs. */
         private const val KEY_FIT_TIMESTAMPS = "fit_time_created"
+
+        /** Race courses ([raceCoursesForWatch]) deleted on the watch, by library key: not sent again. */
+        private const val KEY_RACE_COURSES_REFUSED = "race_courses_refused"
+
+        /** Names race courses have gone to the watch under, for [isOwnCourse]; at most [MAX_RACE_COURSE_NAMES]. */
+        private const val KEY_RACE_COURSE_NAMES = "race_course_names"
+        private const val MAX_RACE_COURSE_NAMES = 64
+
+        /** Race course files pushed without Explore sync, as `key:version`, so each version goes once. */
+        private const val KEY_RACE_COURSE_FILES = "race_course_files"
 
         /**
          * How much plan to keep cached. Wider than the calendar's own week so

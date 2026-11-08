@@ -214,8 +214,8 @@ class RacePlanUpdate(BaseModel):
     use_gpx_distance: bool | None = None    # use GPX actual distance instead of goal distance
     tri_transitions_m: list[float] | None = None   # triathlon: the user's T1/T2 along the whole course
     # How hard to race against the prediction (race_plan.sport_plan): 1.0 as
-    # predicted, 0.90 a tenth easier, 1.10 a tenth harder; null resets it.
-    intensity:        float | None = Field(None, ge=0.9, le=1.1)
+    # predicted, 0.80 a fifth easier, 1.20 a fifth harder; null resets it.
+    intensity:        float | None = Field(None, ge=0.8, le=1.2)
     # Fuelling overrides; null = the calculated default (calculators/fuel_plan.py).
     fuel_carbs_per_hour:     int | None = None
     fuel_fluid_ml_per_hour:  int | None = None
@@ -260,7 +260,7 @@ class RacePlanOut(BaseModel):
     id:                int
     goal_id:           int
     split_spread:      float = 0.0
-    intensity:         float = 1.0     # 0.90–1.10, how hard against the prediction
+    intensity:         float = 1.0     # 0.80–1.20, how hard against the prediction
     course_type:       str
     pace_hr_mode:      str
     pin_lat:           float | None = None

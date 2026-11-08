@@ -256,6 +256,71 @@ or HR targets per the watch-coaching switch — and sent in the calendar's
 batch (`docs/watch-sync.md`). On race day the phone's Race Plans screen
 offers Start race, which runs the same plan as a guided run.
 
+## Hills
+
+A race plan's course sets each split's pace by its ground, for equal effort:
+the split's target is the flat pace times what Minetti et al. (2002)
+measured running there to cost. Two things were wrong with that until
+2026-11, both of which made hills count unevenly.
+
+**The curve was the walking one.** The code was fed Minetti's walking
+polynomial (2.5 J/kg/m on the flat) under the running curve's name. It
+priced every climb about a third dearer than his runners measured. The
+running curve agrees with the field where it can be checked:
+
+| Climb | Walking curve (was) | Minetti running (now) | ACSM treadmill | Strava, from heart rate |
+|---|---|---|---|---|
+| +2 % | 1.17× | 1.11× | 1.09× | 1.06× |
+| +5 % | 1.44× | 1.30× | 1.23× | 1.18× |
+| +10 % | 1.96× | 1.66× | 1.45× | 1.44× |
+
+Mount Washington's course record (12.2 km at 12 %, 4:39/km) is roughly 1.7×
+a world-class runner's flat pace over the distance — _a rough estimate, from
+the record against flat 10–15 K paces_; the running curve says 1.81×, the
+walking one 2.18×. Heart
+rate lags a climb and a short one is run above threshold, which is why the
+field numbers sit under the metabolic curve; equal metabolic effort is what
+the plan paces, so it keeps Minetti's. Descents keep the calibration they
+had, about half the curve's benefit (−5 % is 12 % faster, −10 % 20 %, −20 %
+even), which is close to Strava's data: Minetti's own paper found its model
+overstated downhill race speeds threefold. The Strava figures are an
+approximation of their published curve, _not their own numbers_.
+
+**A split was priced by its mean grade.** The splits follow the terrain
+(`race_predictor/terrain.py`), and a split too short to stand on its own
+was folded into a neighbour — then priced at the merged split's mean grade.
+Because a descent does not give back what the climb before it took, that
+erased hills: a 200 m climb at 5 % folded into two kilometres of flat
+raised that split's target by under 1 %, and a road of 200 m rises and dips
+read as dead flat, adding nothing to the finish where the ground costs about
+7 %. Each split is now priced by the ground it covers, ~100 m at a time,
+and the finish is the samples' total, the same however the course is cut.
+Climbs from 200 m long get a split of their own (it was 300 m), and the top
+of a climb that runs straight into a descent is shared between the two, so
+rolling roads keep their climbs. A flat split priced over its grade is
+named "Rolling".
+
+What changed, on synthetic courses, for the finish over a flat one:
+
+| Course | Before | After |
+|---|---|---|
+| Flat 10 K, three 300 m bridges at 4 % | +0.0 % | +1.2 % |
+| Rolling 10 K, 500 m rises and dips at 4 % | +1.0 % | +6.9 % |
+| Flat 10 K, one 1 km climb at 5 % | +4.4 % | +3.0 % |
+| Mountain 10 K, 2 km up and down at 8 % | +11.1 % | +6.7 % |
+
+Short and rolling hills now count; a long steady climb counts a little less,
+at the running curve's cost. The finish is priced from the raw samples, so
+a course whose elevation is GPS noise rather than a map's or a barometer's
+reads as rolling, a few per cent over a clean file of the same road. The
+terrain types chosen without a file (Flat, Rolling, Hilly, Mountainous) were
+checked against the corrected model at the climbing the picker gives each,
+and left as they were (`race_plan.py`, `COURSE_FACTORS`).
+
+The goal card's predicted time prices the same hills (it priced every race
+flat), and a triathlon's run leg is timed with its course, as its splits
+were already paced.
+
 ## On height
 
 The request that started this work was that a tall person naturally jogs
@@ -351,12 +416,15 @@ the rest should be completed from the papers themselves.
 - Hellard, P., et al. (2006). Assessing the limitations of the Banister model in monitoring training. *Journal of Sports Sciences*.
 - Jackson, A. S., Blair, S. N., Mahar, M. T., Wier, L. T., Ross, R. M., & Stuteville, J. E. (1990). Prediction of functional aerobic capacity without exercise testing. *Medicine and Science in Sports and Exercise*, 22(6), 863–870.
 - Maldonado, S., Mujika, I., & Padilla, S. (2002). Influence of body mass and height on the energy cost of running in highly trained middle- and long-distance runners. *International Journal of Sports Medicine*, 23(4), 268–272.
+- American College of Sports Medicine. *ACSM's Guidelines for Exercise Testing and Prescription* — the running metabolic equation, VO2 = 0.2·v + 0.9·v·grade + 3.5 (ml/kg/min, v in m/min).
 - Matthews, C. E., Heil, D. P., Freedson, P. S., & Pastides, H. (1999). Classification of cardiorespiratory fitness without exercise testing. *Medicine and Science in Sports and Exercise*, 31(3), 486–493.
+- Minetti, A. E., Moia, C., Roi, G. S., Susta, D., & Ferretti, G. (2002). Energy cost of walking and running at extreme uphill and downhill slopes. *Journal of Applied Physiology*, 93(3), 1039–1046. doi:10.1152/japplphysiol.01177.2001
 - Morgan, D. W., Martin, P. E., & Krahenbuhl, G. S. (1989). Factors affecting running economy. *Sports Medicine*, 7(5), 310–330.
 - Muñoz, I., Seiler, S., Bautista, J., España, J., Larumbe, E., & Esteve-Lanao, J. (2014). Does polarized training improve performance in recreational runners? *International Journal of Sports Physiology and Performance*, 9(2), 265–272.
 - Mujika, I., & Padilla, S. (2000). Detraining: loss of training-induced physiological and performance adaptations, Parts I and II. *Sports Medicine*, 30.
 - Nes, B. M., Janszky, I., et al. (2011). Estimating VO2peak from a nonexercise prediction model: the HUNT Study, Norway. *Medicine and Science in Sports and Exercise*. (Considered: it uses resting HR, which Tracks has, but its coefficients could not be verified.)
 - Scudamore, E. M., Barry, V. W., & Coons, J. M. (2018). An evaluation of time-trial–based predictions of VO2max and recommended training paces for collegiate and recreational runners. *Journal of Strength and Conditioning Research*, 32(4), 1137–1143.
+- Robb, D. (2017). An improved GAP model. *Strava Engineering* (blog; the curve is read from secondary approximations, e.g. fellrnr.com's "Grade Adjusted Pace", not from Strava's own coefficients).
 - Swain, D. P., & Leutholtz, B. C. (1997). Heart rate reserve is equivalent to %VO2 reserve, not to %VO2max. *Medicine and Science in Sports and Exercise*.
 - Swain, D. P., Leutholtz, B. C., King, M. E., Haas, L. A., & Branch, J. D. (1998). Relationship between % heart rate reserve and % VO2 reserve in treadmill exercise. *Medicine and Science in Sports and Exercise*, 30(2), 318–321.
 - Tanaka, H., & Seals, D. R. (2008). Endurance exercise performance in Masters athletes: age-associated changes and underlying physiological mechanisms. *Journal of Physiology*.

@@ -47,7 +47,7 @@ class LocalRacePlans(private val sources: LocalSources) {
         val uid: String?,
         val courseType: String = "flat",
         val splitSpread: Double = 0.0,
-        /** How hard to race against the prediction, 0.90–1.10 (SportPlan.Inputs.intensity). */
+        /** How hard to race against the prediction, 0.80–1.20 (SportPlan.Inputs.intensity). */
         val intensity: Double = 1.0,
         val paceHrMode: String = "pace",
         val hasCourse: Boolean = false,
@@ -360,17 +360,23 @@ class LocalRacePlans(private val sources: LocalSources) {
 
     /**
      * The goal card's predicted finish, the server's `get_predicted_time`:
-     * race day's VDOT ([LocalRaceDay]) on a neutral day — no weather, course
-     * or freshness — at the race's intensity. Running only, as the card is.
+     * race day's VDOT ([LocalRaceDay]) over the plan's course, on a neutral
+     * day — no weather or freshness — at the race's intensity. Running only,
+     * as the card is. The course's hills are in it
+     * ([SportPlan.runningCourseFactor]), so the card and the plan agree on a
+     * hilly course; it used to price every race flat.
      */
     suspend fun predictedSeconds(goal: TrainingGoal, today: CivilDate): Double? {
         if (goal.goalType != "event") return null
-        val distance = goal.eventDistanceMeters?.takeIf { it > 0 } ?: return null
+        val goalM = goal.eventDistanceMeters?.takeIf { it > 0 } ?: return null
         if (PlanBase.sportFamily((goal.eventSport ?: "running").lowercase()) != "running") return null
         val fitness = LocalRaceDay(sources).fitness(goal, today)
         val vdot = fitness.vdot?.takeIf { it != 0.0 } ?: return null
+        val s = strategy(goal)
+        val distance = if (s.useGpxDistance && s.segments.isNotEmpty())
+            RacePredictor.courseTotals(s.segments).distanceM.toDouble() else goalM
         return RacePredictor.predictRunningRaceSec(vdot, distance, fitness.runIndices) /
-            SportPlan.intensityOf(strategy(goal).intensity)
+            SportPlan.intensityOf(s.intensity) * SportPlan.runningCourseFactor(s.segments, s.courseType, distance)
     }
 
     /**
@@ -508,10 +514,73 @@ class LocalRacePlans(private val sources: LocalSources) {
         return sources.idOf(row.uid)
     }
 
+    /** A race's course on its way to the watch's course list: see [raceCourses]. */
+    data class RaceCourse(
+        /** Its key in the watch library, [raceCourseRef]: negative, so never a track's. */
+        val ref: Int,
+        val name: String,
+        val sport: String,
+        /** (lat, lon, elevation or null) per point, as the race plan keeps its course. */
+        val points: List<Triple<Double, Double, Double?>>,
+    )
+
+    /**
+     * The courses of the races whose race day is on the watch's calendar —
+     * from today to [daysAhead] days on, as the calendar reaches — for the
+     * watch's course list, where a map shows them while they are followed.
+     * A Garmin workout file has no field for a course, so the race day
+     * (RaceDayWorkout) and its course travel side by side, and come off
+     * together once the race is past. The race plan's course, under the
+     * race's name; a triathlon with no whole course sends each leg file of
+     * its own. The server's `_race_course_items` offers the same to a cable
+     * and the browser.
+     */
+    suspend fun raceCourses(
+        today: CivilDate,
+        daysAhead: Int = com.tracks.core.sync.SCHEDULE_DAYS_AHEAD,
+    ): List<RaceCourse> {
+        val from = today.isoformat()
+        val until = CivilDate.fromEpochDay(today.epochDay + daysAhead).isoformat()
+        val out = ArrayList<RaceCourse>()
+        for (goal in sources.goals()) {
+            val day = goal.eventDate?.take(10) ?: continue
+            if (goal.goalType != "event" || day < from || day > until) continue
+            val s = strategy(goal)
+            if (s.uid == null) continue
+            val name = goal.eventName?.trim()?.ifEmpty { null } ?: "Race"
+            val whole = s.path.zip(s.elevations) { (lat, lon), ele -> Triple(lat, lon, ele) }
+            if (whole.size >= 2) {
+                out += RaceCourse(raceCourseRef(goal.id, 0), name, (goal.eventSport ?: "running").lowercase(), whole)
+                continue
+            }
+            RACE_LEGS.forEachIndexed { i, (leg, sport) ->
+                val path = s.triLegFiles[leg]?.path.orEmpty()
+                if (path.size >= 2) {
+                    out += RaceCourse(raceCourseRef(goal.id, i + 1), "$name · ${leg.replaceFirstChar { it.uppercase() }}",
+                        sport, path.map { Triple(it.lat, it.lon, it.ele) })
+                }
+            }
+        }
+        return out
+    }
+
     private suspend fun row(goal: TrainingGoal): SyncedRow? =
         sources.replica.rows("race_plan").firstOrNull { it.str("goal_uid") == goal.uid }
 
     companion object {
+        /** A triathlon's legs as courses: each sent alone where the race has no whole course. */
+        private val RACE_LEGS = listOf("swim" to "swimming", "bike" to "cycling", "run" to "running")
+
+        /**
+         * A race course's key in the watch library: negative, so it can never
+         * be a track's (whose keys are local ids, all positive), and one per
+         * leg — 0 the whole course, 1–3 a triathlon's legs.
+         */
+        fun raceCourseRef(goalId: Int, leg: Int): Int = -(goalId * 4 + leg)
+
+        /** Whether a watch-library key is a race course's ([raceCourseRef]). */
+        fun isRaceCourseRef(ref: Int): Boolean = ref < 0
+
         /** `course_factors` in race_plan.py: terrain costs time even with no course file. */
         val COURSE_FACTORS = mapOf("flat" to 1.0, "rolling" to 1.015, "hilly" to 1.04, "mountainous" to 1.08)
 

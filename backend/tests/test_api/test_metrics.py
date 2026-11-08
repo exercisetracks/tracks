@@ -310,7 +310,9 @@ class TestSportLoad:
     chart picks a sport: a week of riding is fitness, but not running fitness."""
 
     def test_a_sport_counts_only_its_own_load(self, client, user, db):
-        day = datetime.now() - timedelta(days=3)
+        # At a fixed morning hour: from 21:00 the ride three hours later fell
+        # on the next day, and the test failed every evening.
+        day = (datetime.now() - timedelta(days=3)).replace(hour=9, minute=0, second=0, microsecond=0)
         _make_activity(db, user, sport="running", started_at=day, training_stress_score=50.0)
         _make_activity(db, user, sport="cycling", started_at=day + timedelta(hours=3),
                        training_stress_score=200.0)

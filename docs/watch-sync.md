@@ -60,6 +60,7 @@ handshake picks it, never which class happens to be in use.
 | Settings files (Wi-Fi uploads off, user profile) | Legacy, `GARMIN/NewFiles` | none | `stopWifiUploads`, `pushUserProfileIfDue` → `pushToInbox` | fenix 6X (sent; the watch does not confirm settings) |
 | Watch apps (`.prg`) | Legacy (type 255/17 has no file-sync name) | none | `installWatchApp` → `pushFile` | fenix 6X |
 | Courses and saved places | Explore sync | FIT files over legacy (`CourseFitEncoder`, `LocationsFitEncoder`), if the handshake does not declare `EXPLORE_SYNC` | `ExploreSession`; fallback in `WatchManager.pushMapItems` | Explore on fenix 6X (which declares it, bit 69). The file fallback has **not** been run on an older watch. |
+| A race's course, the week its race day is on the calendar | Explore sync, as a course in the default collection | the FIT course file (`RACE<n>.fit`), if the handshake does not declare `EXPLORE_SYNC` | `LocalRacePlans.raceCourses` → `WatchManager.refreshWatchLibrary`; fallback `pushRaceCourseFile`; the server's `_race_course_items` for the cable and the browser | **not yet on a watch**: built on the course route above, which is verified on the fenix 6X |
 | Courses/places listed by the server | never pushed from the list: the phone builds its own (avoids duplicates) | none | `pushFromServer` filter | fenix 6X |
 | Notifications, calls, weather, music, find-phone | GFDI messages (Gadgetbridge handlers) | none | `GarminSupport`, `GarminIntegration` | fenix 6X |
 | Live heart rate, activity status, live track | Realtime service, protobuf; the live track by subscription (`subscribeLivePositions`) | none | patches 0015–0018 | not yet on a watch |
@@ -74,6 +75,18 @@ and it travels in the calendar's batch on every transport: Bluetooth here,
 and the cable's `schedule-bundle` and the browser's `upload-list` on the
 server. A `RACE_*.fit` already on a watch is queued for deletion; only a
 cable can remove it.
+
+A workout file has no field for a course, so the race's course cannot ride
+inside the race day. It goes to the watch's course list beside it instead,
+for the days the race day is on the calendar (today and four days on), so
+the map shows it once it is followed: on race day, start the race workout
+and then the course from the navigation menu. It is derived, not stored:
+the phone keys it in the watch library under a negative number, which no
+track's local id can be, and Explore sync takes it off as an item the
+library no longer wants once the race is past. One deleted on the watch is
+not sent again. The cable and the browser rewrite it on each sync in race
+week, under a negative id their course marks pass by, and leave it after
+the race, since nothing records that it arrived.
 
 Every path needs a reason in its own comment, and every fallback needs a
 trigger the phone can detect. A path that is "probably needed by some watch" is

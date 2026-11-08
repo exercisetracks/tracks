@@ -217,19 +217,19 @@ export const INTENSITY_INFO = [
   "Too hard? Turn it down any time — the plan rebuilds from today, and what you have done stays.",
 ];
 
-// ── Race intensity slider (a race plan's `intensity`, 0.90–1.10) ──────────────
+// ── Race intensity slider (a race plan's `intensity`, 0.80–1.20) ──────────────
 // Drawn as the plan-intensity slider is, on the same track: the race's
 // value is a share of what the prediction asks for, so 1.0 is "Predicted" in
-// the middle and the ends are a tenth either way (RACE_INTENSITY_MIN/MAX in
-// backend race_helpers.py; the phone's RACE_INTENSITY_STOPS).
-export const RACE_INTENSITY_MIN = 0.9;
-export const RACE_INTENSITY_MAX = 1.1;
+// the middle and the ends are a fifth either way (RACE_INTENSITY_MIN/MAX in
+// backend race_helpers.py, which has why; the phone's RACE_INTENSITY_STOPS).
+export const RACE_INTENSITY_MIN = 0.8;
+export const RACE_INTENSITY_MAX = 1.2;
 export const RACE_INTENSITY_STOPS = [
-  { value: 0.9,  label: "Easy" },
-  { value: 0.95, label: "Steady" },
-  { value: 1.0,  label: "Predicted" },
-  { value: 1.05, label: "Hard" },
-  { value: 1.1,  label: "All out" },
+  { value: 0.8, label: "Easy" },
+  { value: 0.9, label: "Steady" },
+  { value: 1.0, label: "Predicted" },
+  { value: 1.1, label: "Hard" },
+  { value: 1.2, label: "All out" },
 ];
 
 // Behind the race intensity slider's "?". The phone's Explain.RaceIntensity says the same.

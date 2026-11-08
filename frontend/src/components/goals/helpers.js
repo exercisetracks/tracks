@@ -75,12 +75,16 @@ export function raceIntensityColor(v) {
   return intensityColor(0.5 + f);
 }
 
-// "Predicted", "Hard (+5%)", "Easy (−10%)".
+// "Predicted", "Hard (+5%)", "Easy (−20%)": the nearest stop's word, worked
+// in whole per cents; halfway between two stops takes the one further from
+// Predicted, so +5 % reads "Hard". The phone's raceIntensityLabel.
 export function raceIntensityLabel(v) {
-  const stop = RACE_INTENSITY_STOPS.reduce((best, s) =>
-    Math.abs(s.value - v) < Math.abs(best.value - v) ? s : best
-  );
   const pct = Math.round((v - 1) * 100);
+  const stop = RACE_INTENSITY_STOPS.map((s) => ({ pct: Math.round((s.value - 1) * 100), label: s.label }))
+    .reduce((best, s) => {
+      const d = Math.abs(s.pct - pct), bd = Math.abs(best.pct - pct);
+      return d < bd || (d === bd && Math.abs(s.pct) > Math.abs(best.pct)) ? s : best;
+    });
   return pct === 0 ? stop.label : `${stop.label} (${pct > 0 ? "+" : "−"}${Math.abs(pct)}%)`;
 }
 

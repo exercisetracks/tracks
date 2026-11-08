@@ -13,22 +13,26 @@ import { intensityColor, raceIntensityColor, raceIntensityLabel } from "../compo
 describe("the race intensity slider", () => {
   it("says the prediction plainly, and how far either side of it", () => {
     expect(raceIntensityLabel(1)).toBe("Predicted");
+    expect(raceIntensityLabel(1.04)).toBe("Predicted (+4%)");
     expect(raceIntensityLabel(1.05)).toBe("Hard (+5%)");
-    expect(raceIntensityLabel(0.9)).toBe("Easy (−10%)");
-    expect(raceIntensityLabel(1.1)).toBe("All out (+10%)");
+    expect(raceIntensityLabel(0.95)).toBe("Steady (−5%)");
+    expect(raceIntensityLabel(1.1)).toBe("Hard (+10%)");
+    expect(raceIntensityLabel(1.15)).toBe("All out (+15%)");
+    expect(raceIntensityLabel(0.8)).toBe("Easy (−20%)");
+    expect(raceIntensityLabel(1.2)).toBe("All out (+20%)");
   });
 
   it("is coloured from the training plan's track, ends to ends", () => {
-    expect(raceIntensityColor(0.9)).toBe(intensityColor(0.5));
+    expect(raceIntensityColor(0.8)).toBe(intensityColor(0.5));
     expect(raceIntensityColor(1)).toBe(intensityColor(1));
-    expect(raceIntensityColor(1.1)).toBe(intensityColor(1.5));
+    expect(raceIntensityColor(1.2)).toBe(intensityColor(1.5));
   });
 
-  it("moves a hundredth at a time between a tenth either way", () => {
+  it("moves a hundredth at a time between a fifth either way", () => {
     const onChange = vi.fn();
     render(<RaceIntensitySlider value={1} onChange={onChange} />);
     const input = screen.getByLabelText("Race intensity");
-    expect([input.min, input.max, input.step]).toEqual(["0.9", "1.1", "0.01"]);
+    expect([input.min, input.max, input.step]).toEqual(["0.8", "1.2", "0.01"]);
     fireEvent.change(input, { target: { value: "1.03" } });
     expect(onChange).toHaveBeenCalledWith(1.03);
     for (const stop of ["Easy", "Steady", "Predicted", "Hard", "All out"]) {

@@ -17,6 +17,7 @@ Modules:
   course.py      GPX parsing, path-point sampling, technicality, totals
   running.py     VDOT race prediction (volume-corrected marathon), HR ceilings,
                  grade-aware lap paces
+  terrain.py     course samples, terrain splits and what the ground costs
   cycling.py     Critical-Power prediction, power/speed solver, lap power targets
   swimming.py    CSS race prediction
   fit.py         FIT race-workout encoder
@@ -37,6 +38,7 @@ from .cycling import (
 from .fit import generate_race_fit
 from .formatting import format_swim_pace, format_time
 from .grade import grade_adjustment_factor, grade_cost_multiplier
+from .terrain import course_grade_factor
 from .running import (
     compute_hr_ceilings,
     compute_lap_paces,
@@ -58,6 +60,7 @@ __all__ = [
     "training_indices",
     "compute_hr_ceilings",
     "compute_lap_paces",
+    "course_grade_factor",
     # cycling
     "predict_cycling_time_sec",
     "compute_cycling_hr_ceilings",

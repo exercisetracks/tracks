@@ -136,14 +136,51 @@ def main() -> None:
             + [{"distance_m": 100.0, "elevation_gain_m": 9.0, "gradient": 0.09}] * 3
             + [{"distance_m": 100.0, "elevation_gain_m": 0.0, "gradient": 0.0}] * 27)
     fx["courses"]["wall"] = wall
-    terrain_courses = {**COURSES, "wall": wall}
+    # The hills a split used to lose (terrain.py's header): climbs too short
+    # for the old 300 m minimum, bridges up and straight down, rolls whose
+    # crests have to be shared between climb and descent, and noise.
+    flat = {"distance_m": 100.0, "elevation_gain_m": 0.0, "gradient": 0.0}
+
+    def hill(n, g):
+        return [{"distance_m": 100.0, "elevation_gain_m": round(max(0.0, g * 100), 1), "gradient": g}] * n
+
+    rise = [flat] * 40 + hill(2, 0.05) + [flat] * 58
+    bridges = ([flat] * 20 + hill(3, 0.04) + hill(3, -0.04)) * 3 + [flat] * 22
+    rolls = (hill(5, 0.04) + hill(5, -0.04)) * 10
+    short_rolls = (hill(2, 0.03) + hill(2, -0.03)) * 25
+    rnd_noise = random.Random(11)
+    noisy = [{"distance_m": round(95 + rnd_noise.random() * 10, 1), "elevation_gain_m": 0.0,
+              "gradient": round(rnd_noise.gauss(0, 0.02), 4)} for _ in range(100)]
+    extra = {"rise": rise, "bridges": bridges, "rolls": rolls, "short_rolls": short_rolls, "noisy": noisy}
+    fx["courses"].update(extra)
+    terrain_courses = {**COURSES, "wall": wall, **extra}
     fx["terrain_laps"] = []
-    for course in ("wall", "rolling", "hilly", "steep"):
+    for course in ("wall", "rolling", "hilly", "steep", "rise", "bridges", "rolls", "short_rolls", "noisy"):
         for spread in (-1.0, 0.0, 0.5):
             for d, pred, hr in ((5000.0, 1500.0, 190), (21097.5, 6600.0, None), (42195.0, 13000.0, 185)):
                 laps, total = rp.compute_lap_paces(pred, d, spread, 1.0, terrain_courses[course], hr, terrain=True)
                 fx["terrain_laps"].append({"course": course, "spread": spread, "d": d, "pred": pred,
                                            "hr": hr, "laps": _laps(laps), "total": total})
+    # What the ground does to the finish: the samples' mean multiplier,
+    # however the course is cut — and so the same for kilometre laps.
+    from app.calculators.race_predictor.terrain import course_grade_factor, label
+    fx["course_grade"] = [{"course": c, "d": d, "expected": course_grade_factor(terrain_courses[c], d)}
+                          for c in ("flat", "wall", "rolling", "hilly", "steep", "rise", "bridges",
+                                    "rolls", "short_rolls", "noisy")
+                          for d in (5000.0, 10000.0, 42195.0)]
+    fx["course_grade"].append({"course": None, "d": 10000.0, "expected": course_grade_factor(None, 10000.0)})
+    fx["km_laps"] = []
+    for course in ("rise", "bridges", "short_rolls"):
+        for d, lap_km in ((10000.0, 1.0), (10000.0, 1.60934), (21097.5, 1.0)):
+            laps, total = rp.compute_lap_paces(3000.0, d, 0.0, lap_km, terrain_courses[course], None)
+            fx["km_laps"].append({"course": course, "d": d, "lap_km": lap_km, "laps": _laps(laps), "total": total})
+    # A segment's name: "Rolling" for flat ground priced over its own grade.
+    fx["labels"] = [{"kind": k, "g": g, "m": m, "expected": label(k, g, m)}
+                    for k, g, m in (("flat", 0.0, None), ("flat", 0.0, 1.0), ("flat", 0.0, 1.0199),
+                                    ("flat", 0.0, 1.02), ("flat", 0.0, 1.05), ("flat", 0.02, 1.12),
+                                    ("flat", 0.02, 1.15), ("flat", -0.02, 0.96), ("flat", -0.02, 0.98),
+                                    ("up", 0.045, 1.4), ("up", 0.004, 1.0), ("steep_down", -0.085, 0.9),
+                                    ("down", -0.025, 0.93))]
     fx["bike_predict"] = [{"ftp": f, "d": d, "course": c, "wind": w,
                            "expected": rp.predict_cycling_time_sec(f, d, COURSES[c], w)}
                           for f in (150.0, 260.0) for d in (20000.0, 90000.0)

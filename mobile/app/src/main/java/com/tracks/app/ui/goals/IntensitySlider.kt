@@ -71,7 +71,7 @@ fun IntensitySlider(
 
 /**
  * The race plan's intensity — how hard to race against the prediction,
- * 0.90–1.10 — drawn as [IntensitySlider] is, so the two read as one control:
+ * 0.80–1.20 — drawn as [IntensitySlider] is, so the two read as one control:
  * the same track, the stop words beneath, the value's word above in its
  * colour (the screen draws that line). The web's `RaceIntensitySlider` is
  * its twin. Hundredths, as on the web, without a stepped Slider's 19 ticks.
@@ -114,11 +114,11 @@ fun RaceIntensitySlider(
 }
 
 /** The slider's ends: SportPlan.INTENSITY_RANGE, as floats for the Slider. */
-internal const val RACE_INTENSITY_MIN = 0.9f
-internal const val RACE_INTENSITY_MAX = 1.1f
+internal const val RACE_INTENSITY_MIN = 0.8f
+internal const val RACE_INTENSITY_MAX = 1.2f
 
 /** The web's RACE_INTENSITY_STOPS. */
-internal val RACE_INTENSITY_STOPS = listOf(0.9 to "Easy", 0.95 to "Steady", 1.0 to "Predicted", 1.05 to "Hard", 1.1 to "All out")
+internal val RACE_INTENSITY_STOPS = listOf(0.8 to "Easy", 0.9 to "Steady", 1.0 to "Predicted", 1.1 to "Hard", 1.2 to "All out")
 
 /** Hundredths, held to the slider's ends. */
 internal fun snapRace(v: Float): Float = ((v * 100f).roundToInt() / 100f).coerceIn(RACE_INTENSITY_MIN, RACE_INTENSITY_MAX)
@@ -126,7 +126,7 @@ internal fun snapRace(v: Float): Float = ((v * 100f).roundToInt() / 100f).coerce
 /**
  * A race intensity's colour: its place on the plan-intensity track (Easy
  * blue, Predicted green, All out red). Worked in doubles from the planner's
- * range: the Float ends are not exactly 0.9 and 1.1, and Easy came out a
+ * range: the Float ends are not exactly 0.8 and 1.2, and Easy came out a
  * shade into the next stop.
  */
 fun raceIntensityColor(v: Double): Color {
@@ -134,10 +134,19 @@ fun raceIntensityColor(v: Double): Color {
     return intensityColor(0.5 + (v - r.start) / (r.endInclusive - r.start))
 }
 
-/** "Predicted", "Hard (+5%)", "Easy (−10%)" — the web's raceIntensityLabel. */
+/**
+ * "Predicted", "Hard (+5%)", "Easy (−20%)" — the web's raceIntensityLabel.
+ * The nearest stop's word, worked in whole per cents; halfway between two
+ * stops takes the one further from Predicted, so +5 % reads "Hard".
+ */
 fun raceIntensityLabel(v: Double): String {
-    val stop = RACE_INTENSITY_STOPS.minBy { kotlin.math.abs(it.first - v) }.second
     val pct = ((v - 1) * 100).roundToInt()
+    val stop = RACE_INTENSITY_STOPS.map { ((it.first - 1) * 100).roundToInt() to it.second }
+        .reduce { best, s ->
+            val d = kotlin.math.abs(s.first - pct)
+            val bd = kotlin.math.abs(best.first - pct)
+            if (d < bd || (d == bd && kotlin.math.abs(s.first) > kotlin.math.abs(best.first))) s else best
+        }.second
     return if (pct == 0) stop else "$stop (${if (pct > 0) "+" else "−"}${kotlin.math.abs(pct)}%)"
 }
 

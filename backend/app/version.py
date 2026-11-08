@@ -63,5 +63,11 @@ SERVER_VERSION = "1.9.2"
 # finds no race file to push (it never had one without a server); the cable
 # and the browser read the race day from the calendar as before. The race
 # plan's new `projection` response field is read by the web alone.
+#
+# Nor for the race's course beside it, or the wider race intensity
+# (0.80–1.20): the course rides the upload lists as one more course item,
+# under a negative id that no track mark matches, and the phone builds its
+# own; an older server takes a synced intensity past its 0.90–1.10 and
+# plans it at the end of its own range, as it clamps any value.
 API_VERSION = 2
 MIN_CLIENT_API_VERSION = 2

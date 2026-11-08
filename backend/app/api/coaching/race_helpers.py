@@ -26,12 +26,15 @@ from app.models.user_settings import UserSettings
 
 from .helpers import _build_tss_by_date, _ctl_atl_today
 
-# The race-intensity slider's ends: a tenth easier or harder than predicted.
-# Wider was not offered because the prediction is already the athlete's own
-# fitness; ±10 % covers a good or bad block of training, and past that the
-# targets describe a different athlete. The phone's SportPlan.INTENSITY_RANGE.
-RACE_INTENSITY_MIN = 0.9
-RACE_INTENSITY_MAX = 1.1
+# The race-intensity slider's ends: a fifth easier or harder than predicted.
+# It was ±10 % until 2026-11, on the reasoning that the prediction is already
+# the athlete's own fitness. Users asked for more: a prediction from little
+# or old data can sit well off what someone can run, and a race run as a
+# training day or a time trial is a different effort from the predicted one.
+# Beyond a fifth the targets describe a different athlete. The phone's
+# SportPlan.INTENSITY_RANGE.
+RACE_INTENSITY_MIN = 0.8
+RACE_INTENSITY_MAX = 1.2
 
 
 def race_intensity(rp) -> float:
