@@ -25,7 +25,7 @@ Bump `MIN_CLIENT_API_VERSION` only when you remove something old clients
 depend on — that's a deliberate act of dropping support, not a side effect.
 """
 
-SERVER_VERSION = "1.9.1"
+SERVER_VERSION = "1.9.2"
 
 # 2: /sync/push + /sync/pull replace /sync/delta and the old offline write
 # paths outright (docs/offline-first.md: no backwards compatibility), so a
@@ -53,5 +53,8 @@ SERVER_VERSION = "1.9.1"
 # field and keeps the rest of the row — and the dropped fueling_plan was
 # never written by a phone. The race-plan REST changes (?leg=, new response
 # fields) are read by the web alone; the phone plans races from its replica.
+#
+# Nor for 1.9.2's race-plan intensity: one more additive race_plan field,
+# refused by an older server as unknown, and a response field the web reads.
 API_VERSION = 2
 MIN_CLIENT_API_VERSION = 2
