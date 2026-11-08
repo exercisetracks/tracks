@@ -255,13 +255,83 @@ class TestCalculateCtlAtlTsb:
         # CTL on day 10 should be lower than on day 1 after a week of rest
         assert result[-1]["ctl"] < result[0]["ctl"]
 
-    def test_continuous_training_grows_ctl(self):
-        """Consistent daily load should monotonically grow CTL."""
+    def test_continuous_training_never_lowers_ctl(self):
+        """Consistent daily load never reads as lost fitness, and from two
+        weeks in it reads as the load itself (see the next class)."""
         loads = [{"date": date(2024, 1, 1) + timedelta(days=i), "tss": 80.0}
                  for i in range(60)]
         result = calculate_ctl_atl_tsb(loads)
         ctls = [p["ctl"] for p in result]
         assert ctls == sorted(ctls)
+        assert ctls[-1] == 80.0
+
+
+def _raw_ema(daily: list[float], tau: float) -> float:
+    """The uncorrected zero-started average, as CTL was computed before."""
+    from math import exp
+    k = exp(-1 / tau)
+    v = 0.0
+    for t in daily:
+        v = v * k + t * (1 - k)
+    return v
+
+
+class TestShortHistories:
+    """Fitness at the start of a history (training_load.LoadAverages).
+
+    A zero-started 42-day average reads a new history as almost no fitness:
+    someone training with only a phone has no back-catalogue to import, and
+    three runs a week read as CTL ~8 after three weeks against ~19 for the
+    same training with years behind it — so a fitness plan planned them as
+    a beginner."""
+
+    @staticmethod
+    def _days(tss_per_day, n, start=date(2024, 3, 1)):
+        return [{"date": start + timedelta(days=i), "tss": tss_per_day(i)} for i in range(n)]
+
+    def test_three_weeks_of_steady_training_read_as_that_training(self):
+        result = calculate_ctl_atl_tsb(self._days(lambda i: 30.0, 21))
+        assert result[-1]["ctl"] == 30.0
+        assert result[-1]["atl"] == 30.0
+        assert result[-1]["tsb"] == 0.0
+        # Uncorrected it was well under half of that.
+        assert _raw_ema([30.0] * 21, 42) < 12
+
+    def test_a_new_history_matches_a_long_one_doing_the_same_training(self):
+        week = [45.0, 0, 40.0, 0, 50.0, 0, 0]
+        short = calculate_ctl_atl_tsb(self._days(lambda i: week[i % 7], 28))
+        long = calculate_ctl_atl_tsb(self._days(lambda i: week[i % 7], 28 * 13))
+        assert abs(short[-1]["ctl"] - long[-1]["ctl"]) < 1.5
+
+    def test_a_single_session_is_not_taken_for_a_habit(self):
+        """Undivided, the correction would read one 45-TSS run as CTL 45.
+        Held at two weeks' weight, one run is one run spread over a fortnight."""
+        result = calculate_ctl_atl_tsb([{"date": date(2024, 3, 1), "tss": 45.0}])
+        assert 3 < result[0]["ctl"] < 4
+
+    def test_it_never_credits_more_than_was_done(self):
+        """A first-ever week of training reads as no more than that week's
+        daily average: the correction cannot invent a past."""
+        days = self._days(lambda i: [40.0, 0, 40.0, 0, 40.0, 0, 0][i], 7)
+        mean = sum(d["tss"] for d in days) / 7
+        result = calculate_ctl_atl_tsb(days)
+        assert all(p["ctl"] <= mean for p in result)
+
+    def test_a_long_history_reads_as_it_always_did(self):
+        """The correction fades: after a year it changes nothing visible."""
+        daily = [[60.0, 0, 30.0, 0, 90.0, 20.0, 0][i % 7] for i in range(365)]
+        result = calculate_ctl_atl_tsb(self._days(lambda i: daily[i], 365))
+        assert result[-1]["ctl"] == round(_raw_ema(daily, 42), 1)
+        assert result[-1]["atl"] == round(_raw_ema(daily, 7), 1)
+
+    def test_the_coaching_projection_starts_from_the_charts_fitness(self):
+        """The weekly projection runs its own average; it must not tell a
+        different story about the same days."""
+        from app.calculators.coaching.signal import _compute_ctl_atl
+        days = self._days(lambda i: [50.0, 0, 35.0][i % 3], 20)
+        chart = calculate_ctl_atl_tsb(days)[-1]
+        ctl, atl = _compute_ctl_atl({d["date"]: d["tss"] for d in days}, days[-1]["date"])
+        assert (round(ctl, 1), round(atl, 1)) == (chart["ctl"], chart["atl"])
 
     def test_output_fills_rest_days(self):
         """Gaps between load days should produce entries with tss=0."""

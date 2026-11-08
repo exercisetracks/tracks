@@ -13,7 +13,7 @@ from __future__ import annotations
 from datetime import date, timedelta
 
 from app.calculators.coaching.models import TrainingSignal
-from app.calculators.coaching.tables import _ATL_DECAY, _CTL_DECAY, _PHASE_WEEKS
+from app.calculators.coaching.tables import _PHASE_WEEKS
 
 
 def _event_phase(goal, today: date) -> tuple[float, str]:
@@ -112,20 +112,23 @@ def _build_signal(
 
 def _compute_ctl_atl(tss_by_date: dict[date, float], end: date) -> tuple[float, float] | None:
     """
-    Return (CTL, ATL) as of `end`, starting from zero.
+    Return (CTL, ATL) as of `end`, from the first recorded day, corrected
+    for a short history exactly as the dashboard's are
+    (training_load.LoadAverages) — the projected week must start from the
+    fitness the chart shows.
     Returns None if there is no training data on or before `end`
     (used to distinguish "genuinely zero CTL" from "no data yet").
     """
+    from app.calculators.training_load import LoadAverages
+
     if not tss_by_date:
         return None
     start = min(tss_by_date)
     if end < start:
         return None  # end is before any recorded data
-    ctl = atl = 0.0
+    load = LoadAverages()
     cur = start
     while cur <= end:
-        tss = tss_by_date.get(cur, 0.0)
-        ctl = ctl * _CTL_DECAY + tss * (1 - _CTL_DECAY)
-        atl = atl * _ATL_DECAY + tss * (1 - _ATL_DECAY)
+        load.add(tss_by_date.get(cur, 0.0))
         cur += timedelta(days=1)
-    return ctl, atl
+    return load.ctl, load.atl

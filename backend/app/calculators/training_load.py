@@ -35,6 +35,81 @@ _CTL_DECAY = exp(-1 / 42)
 _ATL_DECAY = exp(-1 / 7)
 
 
+# ── The start of a history ──────────────────────────────────────────────────
+#
+# CTL and ATL are exponential averages, and an exponential average started at
+# zero is not an average yet: after k days it holds only ``1 − decay^k`` of
+# the weight it will have, so it reads low until it warms up — for CTL, about
+# 63% after six weeks and 95% after four months. Anyone whose history begins
+# recently reads as having almost no fitness: a runner with three years in
+# their legs who starts recording today, a watch user's first sync, and above
+# all someone who trains with only a phone, who has no back-catalogue to
+# import at all. Three runs a week read as CTL 7.6 after three weeks for them,
+# against ~19 for the same training with a long history behind it — and a
+# fitness plan, which sizes its weeks from CTL, planned them as beginners.
+#
+# So each average is divided by the weight it has accumulated so far — the
+# same average of a series of ones, run alongside (the standard bias
+# correction for a zero-started exponential average). That makes it the
+# weighted mean of the days actually recorded, which is the honest reading of
+# a short history: it assumes the athlete trained before the first recording
+# about as they have since, and claims nothing the recorded days do not show.
+#
+# Except over the first two weeks (_WARM_DAYS), where the divisor stops at
+# what two weeks would give: a single session is not evidence of a habit, and
+# undivided it would read one 45-TSS run as a CTL of 45. Held there, a lone
+# session counts as if spread over a fortnight (≈3.7), and a person training
+# for the first time cannot be credited with more than they have done.
+#
+# The correction fades on its own — under 1.5% for CTL after six months, so
+# a long history is untouched where it is read today. It is applied to what
+# is reported, never to the running averages themselves, and the weight is
+# accumulated by the same multiply-and-add as the averages, so the phone's
+# port (TrainingLoad.LoadAverages) gets the same doubles.
+_WARM_DAYS = 14
+
+
+def _weight_after(decay: float, days: int) -> float:
+    """The weight a zero-started average with ``decay`` holds after ``days``."""
+    w = 0.0
+    for _ in range(days):
+        w = w * decay + (1 - decay)
+    return w
+
+
+_CTL_WARM = _weight_after(_CTL_DECAY, _WARM_DAYS)
+_ATL_WARM = _weight_after(_ATL_DECAY, _WARM_DAYS)
+
+
+class LoadAverages:
+    """CTL and ATL over consecutive days, bias-corrected (see above).
+
+    ``add(tss)`` takes one calendar day's load — 0 on a rest day — and
+    ``ctl`` / ``atl`` are the corrected values after it. Shared by every
+    from-scratch CTL here (the chart, the gauge and the coaching projection),
+    so none of them can tell a different story about the same days.
+    """
+
+    __slots__ = ("_ctl", "_atl", "_ctl_w", "_atl_w")
+
+    def __init__(self):
+        self._ctl = self._atl = self._ctl_w = self._atl_w = 0.0
+
+    def add(self, tss: float) -> None:
+        self._ctl = self._ctl * _CTL_DECAY + tss * (1 - _CTL_DECAY)
+        self._atl = self._atl * _ATL_DECAY + tss * (1 - _ATL_DECAY)
+        self._ctl_w = self._ctl_w * _CTL_DECAY + (1 - _CTL_DECAY)
+        self._atl_w = self._atl_w * _ATL_DECAY + (1 - _ATL_DECAY)
+
+    @property
+    def ctl(self) -> float:
+        return self._ctl / max(self._ctl_w, _CTL_WARM)
+
+    @property
+    def atl(self) -> float:
+        return self._atl / max(self._atl_w, _ATL_WARM)
+
+
 def scale_tss(sport: str | None, tss: float | None, mtb_discipline: str | None) -> float | None:
     """The sport multipliers on an activity's computed load.
 
@@ -337,13 +412,12 @@ def calculate_ctl_atl_tsb(daily_loads: list[dict]) -> list[dict]:
         current += timedelta(days=1)
 
     result = []
-    ctl = 0.0
-    atl = 0.0
+    load = LoadAverages()
 
     for d in all_dates:
         tss = tss_by_date.get(d, 0.0)
-        ctl = ctl * _CTL_DECAY + tss * (1 - _CTL_DECAY)
-        atl = atl * _ATL_DECAY + tss * (1 - _ATL_DECAY)
+        load.add(tss)
+        ctl, atl = load.ctl, load.atl
         result.append({
             "date": d,
             "tss":  round(tss, 1),

@@ -94,6 +94,45 @@ object TrainingLoad {
     internal val CTL_DECAY = Double.fromBits(0x3fef3f418cf485e5L)
     internal val ATL_DECAY = Double.fromBits(0x3febbd76b8a1ab98L)
 
+    /**
+     * `_WARM_DAYS`: how much history the start-of-history correction
+     * ([LoadAverages]) needs before it divides by the weight actually held.
+     */
+    private const val WARM_DAYS = 14
+
+    private fun weightAfter(decay: Double, days: Int): Double {
+        var w = 0.0
+        repeat(days) { w = w * decay + (1 - decay) }
+        return w
+    }
+
+    private val CTL_WARM = weightAfter(CTL_DECAY, WARM_DAYS)
+    private val ATL_WARM = weightAfter(ATL_DECAY, WARM_DAYS)
+
+    /**
+     * `training_load.LoadAverages`: CTL and ATL over consecutive days, each
+     * divided by the weight it has accumulated (held at two weeks' worth
+     * until there are two weeks), so a short history reads as the mean of
+     * the days it has rather than as an average still warming up from zero.
+     * The Python has the reasoning; this is its arithmetic in its order.
+     */
+    class LoadAverages {
+        private var ctlSum = 0.0
+        private var atlSum = 0.0
+        private var ctlWeight = 0.0
+        private var atlWeight = 0.0
+
+        fun add(tss: Double) {
+            ctlSum = ctlSum * CTL_DECAY + tss * (1 - CTL_DECAY)
+            atlSum = atlSum * ATL_DECAY + tss * (1 - ATL_DECAY)
+            ctlWeight = ctlWeight * CTL_DECAY + (1 - CTL_DECAY)
+            atlWeight = atlWeight * ATL_DECAY + (1 - ATL_DECAY)
+        }
+
+        val ctl: Double get() = ctlSum / maxOf(ctlWeight, CTL_WARM)
+        val atl: Double get() = atlSum / maxOf(atlWeight, ATL_WARM)
+    }
+
     /** `_effective_threshold_hr`: manual or auto LTHR, whichever mode says. */
     fun effectiveThresholdHr(settings: ThresholdSettings?): Double? {
         settings ?: return null
@@ -286,12 +325,12 @@ object TrainingLoad {
         if (dailyLoads.isEmpty()) return emptyList()
         val byDate = dailyLoads.associate { it.first.epochDay to it.second }
         val out = ArrayList<LoadPoint>()
-        var ctl = 0.0
-        var atl = 0.0
+        val load = LoadAverages()
         for (day in dailyLoads.first().first.epochDay..dailyLoads.last().first.epochDay) {
             val tss = byDate[day] ?: 0.0
-            ctl = ctl * CTL_DECAY + tss * (1 - CTL_DECAY)
-            atl = atl * ATL_DECAY + tss * (1 - ATL_DECAY)
+            load.add(tss)
+            val ctl = load.ctl
+            val atl = load.atl
             out += LoadPoint(
                 CivilDate.fromEpochDay(day),
                 PyMath.round(tss, 1), PyMath.round(ctl, 1), PyMath.round(atl, 1),

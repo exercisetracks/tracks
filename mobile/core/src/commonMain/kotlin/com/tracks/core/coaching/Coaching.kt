@@ -155,19 +155,20 @@ object Coaching {
         return TrainingSignal(PyMath.round(ctl, 1), PyMath.round(atl, 1), PyMath.round(tsb, 1), ramp, warning, phase)
     }
 
-    /** `_compute_ctl_atl`: CTL/ATL as of [end] from zero, or null before any data. */
+    /**
+     * `_compute_ctl_atl`: CTL/ATL as of [end] from the first recorded day,
+     * corrected for a short history as the dashboard's are
+     * ([TrainingLoad.LoadAverages]), or null before any data.
+     */
     fun computeCtlAtl(tssByDate: Map<CivilDate, Double>, end: CivilDate): Pair<Double, Double>? {
         if (tssByDate.isEmpty()) return null
         val start = tssByDate.keys.minBy { it.epochDay }
         if (end < start) return null
-        var ctl = 0.0
-        var atl = 0.0
+        val load = TrainingLoad.LoadAverages()
         for (day in start.epochDay..end.epochDay) {
-            val tss = tssByDate[CivilDate.fromEpochDay(day)] ?: 0.0
-            ctl = ctl * TrainingLoad.CTL_DECAY + tss * (1 - TrainingLoad.CTL_DECAY)
-            atl = atl * TrainingLoad.ATL_DECAY + tss * (1 - TrainingLoad.ATL_DECAY)
+            load.add(tssByDate[CivilDate.fromEpochDay(day)] ?: 0.0)
         }
-        return ctl to atl
+        return load.ctl to load.atl
     }
 
     // ── Context ──────────────────────────────────────────────────────────────
