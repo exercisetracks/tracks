@@ -54,6 +54,7 @@ from .race_helpers import (
     _get_tsb_today,
     _infer_triathlon_splits,
     _race_plan_out,
+    race_intensity,
 )
 
 router = APIRouter()
@@ -98,9 +99,17 @@ def get_predicted_time(goal_id: int, user: User = Depends(require_auth), db: Ses
     family  = metrics["family"]
     dist    = goal.event_distance_meters
     sec     = None
+    rp      = db.query(RacePlan).filter_by(goal_id=goal_id).first()
+    # The badge follows the race plan's intensity, so the goal card and the
+    # plan agree on how hard the race is run (see sport_plan).
+    k       = race_intensity(rp)
+    if k != 1.0:
+        metrics = {**metrics,
+                   "ftp": metrics["ftp"] * k if metrics["ftp"] else None,
+                   "css": metrics["css"] / k if metrics["css"] else None}
 
     if family == "running" and metrics["vdot"]:
-        sec = predict_running_race_sec(metrics["vdot"], dist, metrics["run_indices"])
+        sec = predict_running_race_sec(metrics["vdot"], dist, metrics["run_indices"]) / k
 
     elif family == "cycling" and metrics["ftp"]:
         sec = predict_cycling_time_sec(metrics["ftp"], dist)
@@ -115,7 +124,7 @@ def get_predicted_time(goal_id: int, user: User = Depends(require_auth), db: Ses
             sec = road_sec * mtb_factor
         else:
             est_speed_kmh = {"xco": 22.0, "xcm": 18.0, "enduro": 12.0, "trail": 16.0}.get(disc, 16.0)
-            sec = dist / (est_speed_kmh * 1000 / 3600)
+            sec = dist / (est_speed_kmh * 1000 / 3600) / k
 
     elif family == "swimming" and metrics["css"]:
         sec = predict_swim_time_sec(metrics["css"], dist, open_water=False)
@@ -128,7 +137,7 @@ def get_predicted_time(goal_id: int, user: User = Depends(require_auth), db: Ses
         if metrics["ftp"]:
             sec += predict_cycling_time_sec(metrics["ftp"], splits["bike_m"])
         if metrics["vdot"]:
-            sec += predict_race_time_sec(metrics["vdot"], splits["run_m"])
+            sec += predict_race_time_sec(metrics["vdot"], splits["run_m"]) / k
         sec += 5 * 60 + 3 * 60   # T1 5 min + T2 3 min transitions
         if sec == 0.0:
             sec = None
@@ -136,7 +145,6 @@ def get_predicted_time(goal_id: int, user: User = Depends(require_auth), db: Ses
     if sec is None:
         return PredictedTimeOut(vdot=metrics.get("vdot"))
 
-    rp = db.query(RacePlan).filter_by(goal_id=goal_id).first()
     return PredictedTimeOut(
         predicted_seconds=round(sec, 1),
         predicted_time=format_time(sec),
@@ -355,6 +363,15 @@ def sport_plan(family: str, metrics: dict, rp, goal, plan_distance_m: float, *,
     port (LocalRacePlans, per sport) be held to it. `annotate` folds race-day
     weather into the time; it is only called when there is weather, which the
     phone, planning a neutral day, never has.
+
+    The plan's intensity (`race_intensity`, 0.90–1.10) scales what every
+    target asks for: speed on foot and in the water, power on a bike. Running
+    divides the finish time rather than raising VDOT, because a marathon's time
+    is half VDOT and half the training-volume model, and a VDOT change would
+    reach only the first half; 1.05 is 5 % faster whatever the distance. The
+    bike scales the FTP its physics and targets are worked from, so 1.05 is
+    5 % more power and the speed that buys; target_watts_pct_ftp stays a
+    share of the real FTP, which is what the watch compares it to.
     """
     # ── Course factors (terrain type — no GPX) ───────────────────────────────
     course_factors = {"flat": 1.0, "rolling": 1.015, "hilly": 1.04, "mountainous": 1.08}
@@ -364,6 +381,7 @@ def sport_plan(family: str, metrics: dict, rp, goal, plan_distance_m: float, *,
     lap_km       = 1.60934 if imperial else 1.0
     split_spread = rp.split_spread if rp.split_spread is not None else 0.0
     max_hr_val   = metrics["max_hr"]
+    k            = race_intensity(rp)
 
     # ══════════════════════════════════════════════════════════════════════════
     # RUNNING
@@ -377,7 +395,7 @@ def sport_plan(family: str, metrics: dict, rp, goal, plan_distance_m: float, *,
             )
         adjusted_vdot = vdot * (2.0 - freshness_factor)
         base_sec      = predict_running_race_sec(adjusted_vdot, plan_distance_m,
-                                                 metrics["run_indices"], freshness_factor)
+                                                 metrics["run_indices"], freshness_factor) / k
 
         if weather_snap and "heat_penalty_pct" not in weather_snap:
             weather_factor, net_wind_mps = annotate(weather_snap, base_sec)
@@ -419,14 +437,14 @@ def sport_plan(family: str, metrics: dict, rp, goal, plan_distance_m: float, *,
         # Time prediction: prefer cycling physics when FTP is available;
         # otherwise estimate from typical MTB speed by discipline.
         if ftp:
-            ftp_adjusted = ftp * (2.0 - freshness_factor)
+            ftp_adjusted = ftp * (2.0 - freshness_factor) * k
             base_sec = predict_cycling_time_sec(
                 ftp_adjusted, plan_distance_m, rp.course_segments or None,
             )
         else:
             # XCO ~22 km/h, XCM ~18 km/h, Enduro ~12 km/h transfers, Trail ~16.
             est_speed_kmh = {"xco": 22.0, "xcm": 18.0, "enduro": 12.0, "trail": 16.0}.get(discipline, 16.0)
-            base_sec = plan_distance_m / (est_speed_kmh * 1000 / 3600)
+            base_sec = plan_distance_m / (est_speed_kmh * 1000 / 3600) / k
             ftp_adjusted = None
 
         if weather_snap and "heat_penalty_pct" not in weather_snap:
@@ -511,7 +529,7 @@ def sport_plan(family: str, metrics: dict, rp, goal, plan_distance_m: float, *,
         # produces watts_effective = ftp / drafting_factor for the same speed,
         # so the physics model uses the inflated power for the finish time.
         df = cy_drafting_factor(cycling_discipline)
-        ftp_effective = (ftp / df) * (2.0 - freshness_factor)
+        ftp_effective = (ftp / df) * (2.0 - freshness_factor) * k
 
         base_sec = predict_cycling_time_sec(ftp_effective, plan_distance_m,
                                              rp.course_segments or None)
@@ -580,6 +598,7 @@ def sport_plan(family: str, metrics: dict, rp, goal, plan_distance_m: float, *,
             )
         # Heuristic: > 1000 m events are usually open water.
         open_water = plan_distance_m > 1000
+        css = css / k   # the pace raced: CSS, quickened or eased by the intensity
         actual_sec = predict_swim_time_sec(css * freshness_factor, plan_distance_m, open_water)
 
         # No lap table — emit a single "lap" carrying the target pace.
@@ -623,7 +642,7 @@ def sport_plan(family: str, metrics: dict, rp, goal, plan_distance_m: float, *,
         total_sec_acc = 0.0
 
         # Swim leg
-        css = metrics["css"]
+        css = metrics["css"] / k if metrics["css"] else None
         if css:
             swim_sec = predict_swim_time_sec(css * freshness_factor, swim_m, open_water=True)
             tri_legs.append({
@@ -632,6 +651,8 @@ def sport_plan(family: str, metrics: dict, rp, goal, plan_distance_m: float, *,
                 "predicted_seconds": swim_sec,
                 "predicted_time": format_time(swim_sec),
                 "target_pace":    format_swim_pace(css),
+                # The pace the swim's graph draws (per km, as every lap's is).
+                "target_sec_per_km": round(css * 10, 1),
                 "target_watts":   None,
                 "target_watts_pct_ftp": None,
                 "lap_paces":      None,
@@ -642,7 +663,7 @@ def sport_plan(family: str, metrics: dict, rp, goal, plan_distance_m: float, *,
         ftp = metrics["ftp"]
         if ftp:
             from app.calculators.road_cycling import road_grade_multiplier
-            ftp_adjusted = ftp * (2.0 - freshness_factor)
+            ftp_adjusted = ftp * (2.0 - freshness_factor) * k
             bike_sec     = predict_cycling_time_sec(ftp_adjusted, bike_m, leg_segs["bike"])
             avg_speed_kph = bike_m / bike_sec * 3.6
             bike_laps, _ = compute_cycling_lap_targets(
@@ -674,7 +695,7 @@ def sport_plan(family: str, metrics: dict, rp, goal, plan_distance_m: float, *,
         vdot = metrics["vdot"]
         if vdot:
             adj_vdot = vdot * (2.0 - freshness_factor) * 0.95   # ~5% fatigue from swim+bike
-            run_sec  = predict_race_time_sec(adj_vdot, run_m)
+            run_sec  = predict_race_time_sec(adj_vdot, run_m) / k
             if leg_segs["run"]:
                 run_sec *= compute_technicality_factor(leg_segs["run"])[0]
             run_laps, _ = compute_lap_paces(
@@ -722,7 +743,7 @@ def sport_plan(family: str, metrics: dict, rp, goal, plan_distance_m: float, *,
                         "please set relevant thresholds in settings",
             )
         adjusted_vdot = vdot * (2.0 - freshness_factor)
-        base_sec = predict_race_time_sec(adjusted_vdot, plan_distance_m)
+        base_sec = predict_race_time_sec(adjusted_vdot, plan_distance_m) / k
         flat_sec = base_sec * weather_factor * course_factors.get(rp.course_type, 1.0)
         laps, actual_sec = compute_lap_paces(
             predicted_sec = flat_sec,

@@ -217,6 +217,27 @@ export const INTENSITY_INFO = [
   "Too hard? Turn it down any time — the plan rebuilds from today, and what you have done stays.",
 ];
 
+// ── Race intensity slider (a race plan's `intensity`, 0.90–1.10) ──────────────
+// Drawn as the plan-intensity slider is, on the same track: the race's
+// value is a share of what the prediction asks for, so 1.0 is "Predicted" in
+// the middle and the ends are a tenth either way (RACE_INTENSITY_MIN/MAX in
+// backend race_helpers.py; the phone's RACE_INTENSITY_STOPS).
+export const RACE_INTENSITY_MIN = 0.9;
+export const RACE_INTENSITY_MAX = 1.1;
+export const RACE_INTENSITY_STOPS = [
+  { value: 0.9,  label: "Easy" },
+  { value: 0.95, label: "Steady" },
+  { value: 1.0,  label: "Predicted" },
+  { value: 1.05, label: "Hard" },
+  { value: 1.1,  label: "All out" },
+];
+
+// Behind the race intensity slider's "?". The phone's Explain.RaceIntensity says the same.
+export const RACE_INTENSITY_INFO = [
+  "How hard to race, against what your training predicts. Predicted is the plan your measured fitness gives.",
+  "Move it right if you believe you can go faster than that, left to race within yourself. Each step is 1% of the pace — or, on a bike, the power — every target asks for, and the finish time follows.",
+];
+
 // ── Strength focus slider (the goal's strength_tier, 1–5) ─────────────────────
 // Sessions a week, and the word for each stop. The phone's GoalOptions.STRENGTH_FOCUS.
 export const STRENGTH_FOCUS = [

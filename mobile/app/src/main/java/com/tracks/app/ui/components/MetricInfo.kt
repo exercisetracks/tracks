@@ -72,6 +72,14 @@ object Explain {
         "Too hard? Turn it down any time — the plan rebuilds from today, and what you have done stays.",
     )
 
+    /** The race plan's intensity slider; the web's RACE_INTENSITY_INFO says the same. */
+    val RaceIntensity = MetricInfo(
+        "Race intensity",
+        "How hard to race, against what your training predicts. Predicted is the plan your measured fitness gives.",
+        "Move it right if you believe you can go faster than that, left to race within yourself. Each step is 1% " +
+            "of the pace — or, on a bike, the power — every target asks for, and the finish time follows.",
+    )
+
     val StrengthFocus = MetricInfo(
         "Strength focus",
         "How many strength sessions a week the plan adds, 1 to 5, and how heavy the split is: " +

@@ -56,6 +56,32 @@ const TICK = { fontSize: 10, fill: "#94a3b8" };
 const MIN_SPAN = { power: 20, hr: 10, pace: 30, swim: 300 };
 /** The app's elevation margin: 100 m, which is ElevationGraph's 330 ft. */
 const ELEVATION_MARGIN = { m: 100, ft: 330 };
+
+/**
+ * The hidden elevation axis: the course's lowest and highest points with the
+ * app's fixed margin beyond each, rounded out to tens — ElevationGraph's
+ * domain, so a course 4 m from end to end is a line through the middle and
+ * not a ridge filling the plot. `es` are in `unit` ("m" or "ft").
+ */
+export function elevationDomain(es, unit) {
+  const pad = ELEVATION_MARGIN[unit];
+  return [Math.floor((Math.min(...es) - pad) / 10) * 10, Math.ceil((Math.max(...es) + pad) / 10) * 10];
+}
+
+/**
+ * The readout for one point of the plot, line by line: where it is and the
+ * ground there, the elevation, the target, the HR ceiling — each only when
+ * the point has it. The phone's readout carries the same (CourseProfileChart.kt).
+ */
+export function readoutLines(p, { distUnit, eleUnit, fmtTarget, series }) {
+  const ground = p.lap?.label ?? (p.lap?.gradient ? fmtGradient(p.lap.gradient) : null);
+  return [
+    `${p.x.toFixed(1)} ${distUnit}${ground ? ` · ${ground}` : ""}`,
+    p.e != null ? `${p.e} ${eleUnit}` : null,
+    series ? fmtTarget(p.target) : null,
+    p.hr != null ? `HR ≤ ${Math.round(p.hr)}` : null,
+  ].filter((l) => l != null);
+}
 function domainOf(values, span) {
   const lo = Math.min(...values), hi = Math.max(...values);
   if (hi - lo >= span) return ["auto", "auto"];
@@ -121,13 +147,11 @@ export default function ElevationChart({ coursePath, laps, sport, metric: forced
   const tip = ({ active, payload }) => {
     const p = active && payload?.[0]?.payload;
     if (!p) return null;
-    const ground = p.lap?.label ?? (p.lap?.gradient ? fmtGradient(p.lap.gradient) : null);
+    const [where, ...values] = readoutLines(p, { distUnit, eleUnit, fmtTarget, series });
     return (
       <div className="bg-slate-900/90 text-white text-xs rounded-lg px-2.5 py-1.5 shadow-lg pointer-events-none tabular-nums space-y-0.5">
-        <p className="text-slate-400">{p.x.toFixed(1)} {distUnit}{ground ? ` · ${ground}` : ""}</p>
-        {p.e != null && <p>{p.e} {eleUnit}</p>}
-        {series && <p>{fmtTarget(p.target)}</p>}
-        {p.hr != null && <p>HR ≤ {Math.round(p.hr)}</p>}
+        <p className="text-slate-400">{where}</p>
+        {values.map((v) => <p key={v}>{v}</p>)}
       </div>
     );
   };
@@ -186,11 +210,8 @@ export default function ElevationChart({ coursePath, laps, sport, metric: forced
               // Tenths on a short race, where whole units repeat ("0 km, 0 km, 1 km").
               tickFormatter={(v) => (span < 10 ? v.toFixed(1) : `${Math.round(v)}`)} />
             {hasEle && (
-              <YAxis yAxisId="ele" hide domain={(() => {
-                const es = rows.filter((r) => r.e != null).map((r) => r.e);
-                const pad = ELEVATION_MARGIN[eleUnit];
-                return [Math.floor((Math.min(...es) - pad) / 10) * 10, Math.ceil((Math.max(...es) + pad) / 10) * 10];
-              })()} />
+              <YAxis yAxisId="ele" hide
+                domain={elevationDomain(rows.filter((r) => r.e != null).map((r) => r.e), eleUnit)} />
             )}
             {series && (
               <YAxis yAxisId="target" orientation={hasHr ? "right" : "left"} reversed={faster}

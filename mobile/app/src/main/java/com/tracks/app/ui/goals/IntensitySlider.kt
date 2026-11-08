@@ -70,6 +70,78 @@ fun IntensitySlider(
 }
 
 /**
+ * The race plan's intensity — how hard to race against the prediction,
+ * 0.90–1.10 — drawn as [IntensitySlider] is, so the two read as one control:
+ * the same track, the stop words beneath, the value's word above in its
+ * colour (the screen draws that line). The web's `RaceIntensitySlider` is
+ * its twin. Hundredths, as on the web, without a stepped Slider's 19 ticks.
+ */
+@Composable
+fun RaceIntensitySlider(
+    value: Float,
+    onValueChange: (Float) -> Unit,
+    modifier: Modifier = Modifier,
+    onValueChangeFinished: (() -> Unit)? = null,
+) {
+    Column(modifier.fillMaxWidth()) {
+        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(8.dp)
+                    .background(Brush.horizontalGradient(INTENSITY_GRADIENT), RoundedCornerShape(50)),
+            )
+            Slider(
+                value = value,
+                onValueChange = { onValueChange(snapRace(it)) },
+                onValueChangeFinished = onValueChangeFinished,
+                valueRange = RACE_INTENSITY_MIN..RACE_INTENSITY_MAX,
+                colors = SliderDefaults.colors(
+                    thumbColor = raceIntensityColor(value.toDouble()),
+                    activeTrackColor = Color.Transparent,
+                    inactiveTrackColor = Color.Transparent,
+                    activeTickColor = Color.Transparent,
+                    inactiveTickColor = Color.Transparent,
+                ),
+            )
+        }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            RACE_INTENSITY_STOPS.forEach { (_, label) ->
+                Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+    }
+}
+
+/** The slider's ends: SportPlan.INTENSITY_RANGE, as floats for the Slider. */
+internal const val RACE_INTENSITY_MIN = 0.9f
+internal const val RACE_INTENSITY_MAX = 1.1f
+
+/** The web's RACE_INTENSITY_STOPS. */
+internal val RACE_INTENSITY_STOPS = listOf(0.9 to "Easy", 0.95 to "Steady", 1.0 to "Predicted", 1.05 to "Hard", 1.1 to "All out")
+
+/** Hundredths, held to the slider's ends. */
+internal fun snapRace(v: Float): Float = ((v * 100f).roundToInt() / 100f).coerceIn(RACE_INTENSITY_MIN, RACE_INTENSITY_MAX)
+
+/**
+ * A race intensity's colour: its place on the plan-intensity track (Easy
+ * blue, Predicted green, All out red). Worked in doubles from the planner's
+ * range: the Float ends are not exactly 0.9 and 1.1, and Easy came out a
+ * shade into the next stop.
+ */
+fun raceIntensityColor(v: Double): Color {
+    val r = com.tracks.core.race.SportPlan.INTENSITY_RANGE
+    return intensityColor(0.5 + (v - r.start) / (r.endInclusive - r.start))
+}
+
+/** "Predicted", "Hard (+5%)", "Easy (−10%)" — the web's raceIntensityLabel. */
+fun raceIntensityLabel(v: Double): String {
+    val stop = RACE_INTENSITY_STOPS.minBy { kotlin.math.abs(it.first - v) }.second
+    val pct = ((v - 1) * 100).roundToInt()
+    return if (pct == 0) stop else "$stop (${if (pct > 0) "+" else "−"}${kotlin.math.abs(pct)}%)"
+}
+
+/**
  * The strength-focus slider (strength_tier, 1–5), drawn as [IntensitySlider]
  * is — the web's `StrengthSlider` is its twin. It replaced a row of five
  * numbered buttons whose numbers meant nothing until the label above them

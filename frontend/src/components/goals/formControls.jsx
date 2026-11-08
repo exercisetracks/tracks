@@ -19,12 +19,19 @@ import {
   RAMP_MAX,
   RAMP_STEP,
   RAMP_RISK,
+  RACE_INTENSITY_INFO,
+  RACE_INTENSITY_MAX,
+  RACE_INTENSITY_MIN,
+  RACE_INTENSITY_STOPS,
   SPORT_VARIANTS,
   sportChip,
 } from "./constants";
 import InfoTooltip from "../ui/InfoTooltip";
 import { EXPERIENCE_OPTIONS } from "../../lib/experienceLevels";
-import { fmtDistance, intensityColor, intensityLabel, rampColor, rampLabel, rampWord, strengthColor } from "./helpers";
+import {
+  fmtDistance, intensityColor, intensityLabel, raceIntensityColor, raceIntensityLabel, rampColor, rampLabel, rampWord,
+  strengthColor,
+} from "./helpers";
 
 // Strength-training experience picker (brand new → advanced). `value` is the
 // selected level key; `onChange` receives the key.
@@ -186,6 +193,43 @@ export function IntensitySlider({ value, onChange }) {
       </div>
       <div className="flex justify-between text-[10px] text-slate-400 dark:text-slate-500">
         {INTENSITY_STOPS.map(s => <span key={s.value}>{s.label}</span>)}
+      </div>
+    </div>
+  );
+}
+
+// The race plan's intensity (0.90–1.10 of what the prediction asks for),
+// drawn as IntensitySlider is so the two read as one control: the same track,
+// the value's word in its colour, the stops beneath. The phone's
+// RaceIntensitySlider is its twin.
+export function RaceIntensitySlider({ value, onChange, disabled = false }) {
+  const color = raceIntensityColor(value);
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center gap-2">
+        <span className="text-xs font-semibold" style={{ color }}>{raceIntensityLabel(value)}</span>
+        <InfoTooltip>
+          {RACE_INTENSITY_INFO.map(p => <p key={p}>{p}</p>)}
+        </InfoTooltip>
+      </div>
+      <div className="relative flex items-center h-5">
+        <div className="absolute inset-x-0 h-2 rounded-full"
+          style={{ background: "linear-gradient(to right, #60a5fa, #34d399, #10b981, #f59e0b, #ef4444)" }} />
+        <input
+          type="range"
+          min={RACE_INTENSITY_MIN}
+          max={RACE_INTENSITY_MAX}
+          step={0.01}
+          value={value}
+          disabled={disabled}
+          aria-label="Race intensity"
+          onChange={e => onChange(parseFloat(e.target.value))}
+          className="relative w-full h-2 appearance-none bg-transparent cursor-pointer disabled:cursor-not-allowed"
+          style={{ "--thumb-color": color }}
+        />
+      </div>
+      <div className="flex justify-between text-[10px] text-slate-400 dark:text-slate-500">
+        {RACE_INTENSITY_STOPS.map(s => <span key={s.value}>{s.label}</span>)}
       </div>
     </div>
   );

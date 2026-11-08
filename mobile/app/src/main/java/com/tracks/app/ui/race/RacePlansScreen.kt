@@ -431,6 +431,22 @@ private fun Detail(
         )
     }
 
+    // How hard to race against the prediction — every sport, the swim too.
+    // Moves freely, writes on release: every write re-plans the race.
+    Section("Race intensity", com.tracks.app.ui.components.Explain.RaceIntensity) {
+        var intensity by remember(c.strategy.intensity) { mutableFloatStateOf(c.strategy.intensity.toFloat()) }
+        Text(
+            com.tracks.app.ui.goals.raceIntensityLabel(intensity.toDouble()),
+            style = MaterialTheme.typography.labelMedium,
+            color = com.tracks.app.ui.goals.raceIntensityColor(intensity.toDouble()),
+        )
+        com.tracks.app.ui.goals.RaceIntensitySlider(
+            value = intensity,
+            onValueChange = { intensity = it },
+            onValueChangeFinished = { onSet("intensity", intensity.toDouble()) },
+        )
+    }
+
     Section("Course", com.tracks.app.ui.components.MetricInfo("Course", "A GPX course gives each lap its real hills. Without one, pick the terrain.")) {
         var choosing by remember { mutableStateOf(false) }
         // The leg a leg row opened the sheet for; null for the race's own button.
@@ -551,7 +567,7 @@ private fun Detail(
 
     c.prediction?.let { p ->
         if (p.family == "triathlon") Section("Race plan by leg") { TriathlonLegs(p) }
-        if (p.family == "swimming") Section("Swim plan") { SwimPlan(p) }
+        if (p.family == "swimming") Section("Swim plan") { SwimPlan(p, c.strategy.intensity) }
         if (p.family != "swimming") c.fuel?.let { f ->
             Section("Fuelling") {
                 FuelSection(c.strategy, f, onSet, onAddProduct, onToggleProduct, durationMin = p.seconds / 60.0)
@@ -653,11 +669,12 @@ private fun swimLap(leg: com.tracks.core.race.SportPlan.Leg): List<com.tracks.co
 
 /** A swim race: the one pace to hold. */
 @Composable
-private fun SwimPlan(p: LocalRacePlans.Prediction) {
+private fun SwimPlan(p: LocalRacePlans.Prediction, intensity: Double = 1.0) {
     p.laps.firstOrNull()?.let {
         Text("Target pace", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(it.targetPace, style = Tokens.Stat.value)
-        Text("Your CSS, held for the whole distance.", style = MaterialTheme.typography.bodySmall,
+        Text(if (intensity == 1.0) "Your CSS, held for the whole distance."
+            else "Your CSS at the race's intensity, held for the whole distance.", style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }

@@ -26,6 +26,20 @@ from app.models.user_settings import UserSettings
 
 from .helpers import _build_tss_by_date, _ctl_atl_today
 
+# The race-intensity slider's ends: a tenth easier or harder than predicted.
+# Wider was not offered because the prediction is already the athlete's own
+# fitness; ±10 % covers a good or bad block of training, and past that the
+# targets describe a different athlete. The phone's SportPlan.INTENSITY_RANGE.
+RACE_INTENSITY_MIN = 0.9
+RACE_INTENSITY_MAX = 1.1
+
+
+def race_intensity(rp) -> float:
+    """The plan's race intensity, 1.0 when unset, held to the slider's range
+    (a synced value from an older or newer client is clamped, not trusted)."""
+    k = getattr(rp, "intensity", None)
+    return 1.0 if k is None else min(RACE_INTENSITY_MAX, max(RACE_INTENSITY_MIN, float(k)))
+
 
 def _get_running_metrics(db: Session, user: User,
                          us: UserSettings | None) -> tuple[float | None, tuple | None]:
@@ -285,6 +299,7 @@ def _race_plan_out(rp: RacePlan, us: UserSettings | None = None,
         "id":                rp.id,
         "goal_id":           rp.goal_id,
         "split_spread":      rp.split_spread if rp.split_spread is not None else 0.0,
+        "intensity":         rp.intensity if rp.intensity is not None else 1.0,
         "course_type":       rp.course_type,
         "pace_hr_mode":      rp.pace_hr_mode,
         "pin_lat":           rp.pin_lat,
@@ -311,7 +326,10 @@ def _race_plan_out(rp: RacePlan, us: UserSettings | None = None,
         "sport":             family,
         "ftp":               int(ftp) if ftp else None,
         "css_sec_per_100m":  css,
-        "swim_target_pace":  format_swim_pace(css, 1.0) if css and family in ("swimming", "triathlon") else None,
+        # The pace the plan asks for: CSS, quickened or eased by the race's
+        # intensity (race_plan.sport_plan), as the swim's lap carries it.
+        "swim_target_pace":  (format_swim_pace(css, 1.0 / race_intensity(rp))
+                              if css and family in ("swimming", "triathlon") else None),
         "triathlon_legs":    rp.weather_snapshot.get("triathlon_legs") if rp.weather_snapshot else None,
         "triathlon_splits_m": rp.triathlon_splits_m,
         **_triathlon_courses_out(rp, family, plan_distance=goal.event_distance_meters if goal else None),

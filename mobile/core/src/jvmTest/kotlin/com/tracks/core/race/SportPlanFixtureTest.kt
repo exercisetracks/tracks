@@ -69,6 +69,7 @@ class SportPlanFixtureTest {
                     triLegFiles = c["tri_leg_courses"]?.takeIf { it !is JsonNull }?.jsonObject.orEmpty()
                         .mapValues { (_, v) -> TriCourse.LegFile(segmentsOf(v.jsonObject["segments"]), pathOf(v.jsonObject["path"])) },
                     triTransitionsM = c["tri_transitions_m"]?.takeIf { it !is JsonNull }?.jsonArray?.map { it.d()!! },
+                    intensity = SportPlan.intensityOf(c["intensity"].d()),
                 ),
             )
             val e = c["expected"]!!.jsonObject

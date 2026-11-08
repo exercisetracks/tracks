@@ -35,6 +35,36 @@ class LocalRacePlansTest {
         assertEquals(-0.2, s.splitSpread)
     }
 
+    /**
+     * The race-intensity slider is a synced field the phone's plan follows —
+     * the screen's and the guided race's alike, or the watch would coach the
+     * predicted pace while the screen showed the chosen one. Unset is as
+     * predicted, and a value past the slider's end (from an older or newer
+     * client) is held to it rather than trusted.
+     */
+    @Test
+    fun a_harder_race_intensity_is_a_faster_plan_everywhere_it_is_used() = runBlocking {
+        val (sources, plans) = setup()
+        sources.createValues("goal", mapOf("goal_type" to "event", "event_date" to "2099-11-01",
+            "event_sport" to "running", "event_distance_meters" to 10_000.0))
+        val goal = sources.goals().single()
+        sources.createValues("plan", mapOf("goal_uid" to goal.uid, "vdot" to 50.0), mapOf("goal_uid" to goal.uid))
+        val today = com.tracks.core.fit.decode.CivilDate(2026, 1, 1)
+        assertEquals(1.0, plans.strategy(goal).intensity)
+        val asPredicted = plans.plan(goal, plans.strategy(goal), imperial = false, today = today)
+
+        plans.set(goal, "intensity", 1.05)
+        val s = plans.strategy(goal)
+        assertEquals(1.05, s.intensity)
+        val harder = plans.plan(goal, s, imperial = false, today = today)
+        assertEquals(asPredicted.seconds / 1.05, harder.seconds, 2.0)
+        assertTrue(harder.laps.first().targetSecPerKm < asPredicted.laps.first().targetSecPerKm)
+        assertEquals(harder.seconds, plans.runningPlan(goal, imperial = false, today = today)!!.first.seconds, 1e-9)
+
+        plans.set(goal, "intensity", 1.4)
+        assertEquals(1.1, plans.strategy(goal).intensity)
+    }
+
     /** A climbing course: 60 points ~45 m apart, rising 3 m each. */
     private fun climbGpx(): String {
         val pts = (0 until 60).joinToString("") { i ->

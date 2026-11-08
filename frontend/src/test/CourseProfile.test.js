@@ -3,6 +3,7 @@
 // The same cases as mobile/core's CourseProfileTest: the two are one algorithm.
 import { describe, expect, it } from "vitest";
 import { courseProfile, targetMetric } from "../components/raceplan/courseProfile";
+import { elevationDomain, readoutLines } from "../components/raceplan/ElevationChart";
 
 // Two equal legs along the equator, up and down a 100 m hill.
 const PATH = [[0, 0, 100], [0, 0.01, 200], [0, 0.02, 100]];
@@ -89,5 +90,29 @@ describe("the profile without a course", () => {
 
   it("has nothing to draw with neither a course nor a lap", () => {
     expect(courseProfile(null, [], "pace")).toBeNull();
+  });
+});
+
+describe("the profile's elevation", () => {
+  it("leaves the app's 100 m margin above and below, so a flat course looks flat", () => {
+    // A riverside course that varies by 4 m: without the margin, its
+    // 4 m filled the plot's height and read as a climb.
+    const [lo, hi] = elevationDomain([12, 14, 16, 13], "m");
+    expect(lo).toBeLessThanOrEqual(12 - 100);
+    expect(hi).toBeGreaterThanOrEqual(16 + 100);
+    // In feet, the same 100 m: ElevationGraph's 330 ft.
+    const [flo, fhi] = elevationDomain([40, 52], "ft");
+    expect(flo).toBeLessThanOrEqual(40 - 330);
+    expect(fhi).toBeGreaterThanOrEqual(52 + 330);
+  });
+
+  it("names the elevation in the readout wherever the course has one", () => {
+    const opts = { distUnit: "km", eleUnit: "m", fmtTarget: (v) => `${v} s/km`, series: { label: "Target pace" } };
+    const lines = readoutLines({ x: 3.25, e: 142, target: 300, hr: 161, lap: { gradient: 0.021 } }, opts);
+    expect(lines).toContain("142 m");
+    expect(lines).toContain("300 s/km");
+    expect(lines).toContain("HR ≤ 161");
+    // With no course there is no elevation to name, and no empty line for it.
+    expect(readoutLines({ x: 1, e: null, target: 300, hr: null, lap: null }, opts)).toEqual(["1.0 km", "300 s/km"]);
   });
 });

@@ -41,10 +41,11 @@ export default function TriathlonSection({ plan, imperial }) {
           run's pace — the lap tables they replaced ran to ninety rows on a 70.3. */}
       {legs.map(leg => {
         const s = TRI_LEG_STYLES[leg.leg] ?? TRI_LEG_STYLES.run;
+        // The swim's pace is the leg's own — CSS at the race's intensity — or,
+        // on a plan generated before legs carried it, CSS itself.
+        const swimPerKm = leg.target_sec_per_km ?? (plan.css_sec_per_100m ? plan.css_sec_per_100m * 10 : null);
         const laps = leg.leg === "swim"
-          ? (plan.css_sec_per_100m
-              ? [{ lap: 1, distance_m: leg.distance_m, target_sec_per_km: plan.css_sec_per_100m * 10 }]
-              : [])
+          ? (swimPerKm ? [{ lap: 1, distance_m: leg.distance_m, target_sec_per_km: swimPerKm }] : [])
           : (leg.lap_paces ?? []);
         if (!laps.length) return null;
         return (

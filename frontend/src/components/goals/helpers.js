@@ -4,7 +4,10 @@
 // colour mapping, the new-goal draft factory, and the training-phase maths that
 // mirrors the backend. Kept framework-free so they're trivially testable.
 
-import { EVENT_PRESETS, INTENSITY_STOPS, PRESET_NAMES, RAMP_RISK, presetName } from "./constants";
+import {
+  EVENT_PRESETS, INTENSITY_STOPS, PRESET_NAMES, RACE_INTENSITY_MAX, RACE_INTENSITY_MIN, RACE_INTENSITY_STOPS,
+  RAMP_RISK, presetName,
+} from "./constants";
 import { todayDate, todayIso } from "../../lib/today";
 
 // ── Formatting helpers ────────────────────────────────────────────────────────
@@ -61,6 +64,24 @@ export function intensityLabel(v) {
     Math.abs(s.value - v) < Math.abs(best.value - v) ? s : best
   );
   return stop.label;
+}
+
+// ── Race intensity ────────────────────────────────────────────────────────────
+
+// A race intensity's colour: its place on the plan-intensity track, Easy at
+// the blue end and All out at the red, Predicted in the middle's green.
+export function raceIntensityColor(v) {
+  const f = (v - RACE_INTENSITY_MIN) / (RACE_INTENSITY_MAX - RACE_INTENSITY_MIN);
+  return intensityColor(0.5 + f);
+}
+
+// "Predicted", "Hard (+5%)", "Easy (−10%)".
+export function raceIntensityLabel(v) {
+  const stop = RACE_INTENSITY_STOPS.reduce((best, s) =>
+    Math.abs(s.value - v) < Math.abs(best.value - v) ? s : best
+  );
+  const pct = Math.round((v - 1) * 100);
+  return pct === 0 ? stop.label : `${stop.label} (${pct > 0 ? "+" : "−"}${Math.abs(pct)}%)`;
 }
 
 // ── Fitness goal ramp ─────────────────────────────────────────────────────────

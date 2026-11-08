@@ -45,6 +45,8 @@ class LocalRacePlans(private val sources: LocalSources) {
         val uid: String?,
         val courseType: String = "flat",
         val splitSpread: Double = 0.0,
+        /** How hard to race against the prediction, 0.90–1.10 (SportPlan.Inputs.intensity). */
+        val intensity: Double = 1.0,
         val paceHrMode: String = "pace",
         val hasCourse: Boolean = false,
         val watchUploadedAt: String? = null,
@@ -103,6 +105,7 @@ class LocalRacePlans(private val sources: LocalSources) {
             uid = row.uid,
             courseType = row.str("course_type") ?: "flat",
             splitSpread = (row.fields["split_spread"] as? JsonPrimitive)?.doubleOrNull ?: 0.0,
+            intensity = SportPlan.intensityOf((row.fields["intensity"] as? JsonPrimitive)?.doubleOrNull),
             paceHrMode = row.str("pace_hr_mode") ?: "pace",
             hasCourse = row.fields["course_segments"].let { it != null && it.toString() != "null" && it.toString() != "[]" },
             watchUploadedAt = row.str("watch_uploaded_at"),
@@ -387,6 +390,7 @@ class LocalRacePlans(private val sources: LocalSources) {
                 triathlonSplits = s.triSplits,
                 path = s.path.zip(s.elevations) { (lat, lon), ele -> TriCourse.PathPoint(lat, lon, ele) },
                 triLegFiles = s.triLegFiles, triTransitionsM = s.triTransitionsM,
+                intensity = s.intensity,
             ),
         )
         return Prediction(r.seconds, r.laps, r.legs, r.targetHrCeiling, r.climbTargetWPerKg, family)
@@ -406,7 +410,7 @@ class LocalRacePlans(private val sources: LocalSources) {
         val vdot = vdot(goal) ?: return null
         val s = strategy(goal)
         val pred = running(vdot, dist, s.courseType, s.splitSpread, imperial, null, s.segments, s.useGpxDistance,
-            runCatching { trainingIndices(today) }.getOrNull())
+            runCatching { trainingIndices(today) }.getOrNull(), s.intensity)
         return pred to s
     }
 
@@ -423,6 +427,8 @@ class LocalRacePlans(private val sources: LocalSources) {
          * ([trainingIndices], as the server's race plan does) — scaled by
          * terrain, then split into laps (a mile when [imperial], as the server
          * does) with the chosen spread and, when [maxHr] is given, HR ceilings.
+         * [intensity] is the race's, as SportPlan applies it to running: the
+         * speed, so the guided race coaches the plan the screen shows.
          */
         fun running(
             vdot: Double,
@@ -434,6 +440,7 @@ class LocalRacePlans(private val sources: LocalSources) {
             segments: List<Segment> = emptyList(),
             useGpxDistance: Boolean = false,
             indices: Pair<Double, Double>? = null,
+            intensity: Double = 1.0,
         ): Prediction {
             // The server's order: a loaded course sets the distance (when the
             // plan says to use it) and replaces the terrain factor with the
@@ -442,7 +449,7 @@ class LocalRacePlans(private val sources: LocalSources) {
                 RacePredictor.courseTotals(segments).distanceM.toDouble() else distanceM
             val terrain = if (segments.isNotEmpty()) RacePredictor.technicalityFactor(segments).first
             else COURSE_FACTORS[courseType] ?: 1.0
-            val flat = RacePredictor.predictRunningRaceSec(vdot, distance, indices) * terrain
+            val flat = RacePredictor.predictRunningRaceSec(vdot, distance, indices) / SportPlan.intensityOf(intensity) * terrain
             val (laps, actual) = RacePredictor.lapPaces(
                 predictedSec = flat,
                 distanceM = distance,

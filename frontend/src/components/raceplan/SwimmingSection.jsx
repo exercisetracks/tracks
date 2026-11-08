@@ -32,7 +32,9 @@ export default function SwimmingSection({ plan }) {
           </p>
           {cssStr && (
             <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
-              CSS {cssStr} — sustaining this pace for the full distance
+              {(plan.intensity ?? 1) === 1
+                ? <>CSS {cssStr} — sustaining this pace for the full distance</>
+                : <>Your CSS of {cssStr} at the race&apos;s intensity, held for the full distance</>}
             </p>
           )}
         </div>

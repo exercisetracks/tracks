@@ -122,6 +122,12 @@ class RacePlan(Base, Synced):
     pace_hr_mode = Column(String, nullable=False, default="pace")   # pace | pace_hr
     pin_lat      = Column(Float, nullable=True)
     pin_lon      = Column(Float, nullable=True)
+    # How hard to race against the prediction: 0.90–1.10, null = 1.0. It
+    # scales what the targets ask for — pace on foot or in the water, power
+    # on a bike — so somebody who believes they are fitter (or less fit) than
+    # their measured numbers can plan the race they mean to run. Applied in
+    # race_plan.sport_plan; the phone's SportPlan.kt does the same.
+    intensity    = Column(Float, nullable=True)
 
     # Parsed course data
     use_gpx_distance    = Column(Boolean, nullable=False, default=False)

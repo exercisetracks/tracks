@@ -24,6 +24,7 @@ import FuelSection from "../components/raceplan/FuelSection";
 import CourseMenu from "../components/raceplan/CourseMenu";
 import TriCourses, { LEG_COLORS } from "../components/raceplan/TriCourses";
 import RaceTargets from "../components/raceplan/RaceTargets";
+import { RaceIntensitySlider } from "../components/goals/formControls";
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 
@@ -40,9 +41,11 @@ export default function RacePlan() {
   const [error,        setError]       = useState(null);
   const [gpxUploading, setGpxUploading]= useState(false);
   const [splitDraft,   setSplitDraft]  = useState(0);
+  const [intensityDraft, setIntensityDraft] = useState(1);
   const [profilePoint, setProfilePoint]= useState(null);
 
   const splitTimer = useRef(null);
+  const intensityTimer = useRef(null);
 
   // Derived from plan
   const imperial = plan?.units === "imperial";
@@ -59,7 +62,9 @@ export default function RacePlan() {
 
   useEffect(() => {
     Promise.all([api.getGoal(goalId), api.getRacePlan(goalId)])
-      .then(([g, p]) => { setGoal(g); setPlan(p); setSplitDraft(p.split_spread ?? 0); generate(); })
+      .then(([g, p]) => {
+        setGoal(g); setPlan(p); setSplitDraft(p.split_spread ?? 0); setIntensityDraft(p.intensity ?? 1); generate();
+      })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -70,6 +75,7 @@ export default function RacePlan() {
       const updated = await api.updateRacePlan(goalId, updates);
       setPlan(updated);
       if (updates.split_spread !== undefined) setSplitDraft(updates.split_spread);
+      if (updates.intensity !== undefined) setIntensityDraft(updated.intensity ?? 1);
       generate();
     } catch (e) {
       setError(e.message);
@@ -81,6 +87,13 @@ export default function RacePlan() {
     setSplitDraft(val);
     clearTimeout(splitTimer.current);
     splitTimer.current = setTimeout(() => patchPlan({ split_spread: val }), 500);
+  }
+
+  // Intensity: the slider moves at once, the plan is rebuilt once it settles.
+  function handleIntensityChange(val) {
+    setIntensityDraft(val);
+    clearTimeout(intensityTimer.current);
+    intensityTimer.current = setTimeout(() => patchPlan({ intensity: val }), 500);
   }
 
   function handlePin(lat, lon) { patchPlan({ pin_lat: lat, pin_lon: lon }); }
@@ -208,6 +221,11 @@ export default function RacePlan() {
           <button className="icon-btn icon-btn-sm icon-btn-danger ml-auto" onClick={() => setError(null)}>✕</button>
         </div>
       )}
+
+      {/* How hard to race against the prediction — every sport, the swim too. */}
+      <Section title="Race intensity">
+        <RaceIntensitySlider value={intensityDraft} onChange={handleIntensityChange} />
+      </Section>
 
       {/* Split strategy — hide for swimming (no laps) */}
       {!isSwimming && (

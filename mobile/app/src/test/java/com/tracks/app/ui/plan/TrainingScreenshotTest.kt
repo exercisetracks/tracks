@@ -236,9 +236,9 @@ class TrainingScreenshotTest {
     }
 
     private val card get() = RacePlanCard(
-        goal, LocalRacePlans.Strategy(uid = "r1", splitSpread = -0.1, paceHrMode = "pace_hr"),
+        goal, LocalRacePlans.Strategy(uid = "r1", splitSpread = -0.1, paceHrMode = "pace_hr", intensity = 1.04),
         vdot = 45.0,
-        prediction = LocalRacePlans.running(45.0, 5000.0, "flat", -0.1, imperial = false, maxHr = 190),
+        prediction = LocalRacePlans.running(45.0, 5000.0, "flat", -0.1, imperial = false, maxHr = 190, intensity = 1.04),
     )
 
     @Test
@@ -322,6 +322,23 @@ class TrainingScreenshotTest {
     @Test
     fun race_plan_course_dark() = shoot("race_plan_course_dark", ThemeMode.Dark) {
         RacePlansContent(RacePlansState(loading = false, cards = listOf(courseCard), openGoalId = 1), {}, { _, _, _ -> })
+    }
+
+    /**
+     * A riverside 10 km that varies by 4 m: drawn with the app's 100 m
+     * margin, the elevation is a level band through the middle, not hills.
+     */
+    @Test
+    fun race_plan_flat_course_light() = shoot("race_plan_flat_course_light", ThemeMode.Light) {
+        val n = 100
+        val path = (0..n).map { 46.0 to 7.0 + it * 0.0013 }
+        val elevations = (0..n).map { 12.0 + 2.0 * kotlin.math.sin(it * 0.3) }
+        val segments = List(10) { com.tracks.core.race.Segment(distanceM = 1000.0, gradient = 0.0, elevationGainM = 2.0) }
+        val strategy = LocalRacePlans.Strategy(uid = "r1", hasCourse = true, segments = segments, path = path,
+            elevations = elevations)
+        val pred = LocalRacePlans.running(45.0, 10_000.0, "flat", 0.0, imperial = false, maxHr = null, segments = segments)
+        RacePlansContent(RacePlansState(loading = false, cards = listOf(RacePlanCard(goal, strategy, 45.0, pred)),
+            openGoalId = 1), {}, { _, _, _ -> })
     }
 
     /** Another sport's plan, as SportPlan makes it. */
