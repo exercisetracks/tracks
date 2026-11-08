@@ -117,6 +117,39 @@ class LocalMatchingTest {
     }
 
     @Test
+    fun a_phone_run_given_back_its_length_ticks_off_the_workout_it_matched() = runBlocking {
+        // Matched while it read as one second long (LocalImporter.repairDurations):
+        // left unticked, so the plan counted the run as missed.
+        val r = replica()
+        val run = r.workout("2026-09-25", "running", minutes = 60)
+        val m = LocalMatching(r)
+        m.match("act-1", "2026-09-25T07:00:00", PlanAssembly.DoneActivity("running", null, 1))
+        assertEquals(false, (r.row("planned_workout", run)!!.fields["is_complete"] as JsonPrimitive).booleanOrNull)
+
+        val now = LocalMatching.Held("act-1", "2026-09-25T07:00:00", PlanAssembly.DoneActivity("running", null, 3600))
+        assertEquals(1, m.refreshCompletion(listOf(now)))
+        val row = r.row("planned_workout", run)!!
+        assertEquals(1.0, (row.fields["completion_pct"] as JsonPrimitive).doubleOrNull)
+        assertEquals(true, (row.fields["is_complete"] as JsonPrimitive).booleanOrNull)
+        assertEquals(0, m.refreshCompletion(listOf(now)), "an up-to-date match was edited again")
+    }
+
+    @Test
+    fun a_rescore_never_lowers_a_match_or_unticks_it() = runBlocking {
+        val r = replica()
+        val run = r.workout("2026-09-25", "running", minutes = 60)
+        val m = LocalMatching(r)
+        m.match("act-1", "2026-09-25T07:00:00", PlanAssembly.DoneActivity("running", null, 3600))
+        r.edit("planned_workout", run, mapOf("is_complete" to JsonPrimitive(false)))   // unticked by hand
+
+        val shorter = LocalMatching.Held("act-1", "2026-09-25T07:00:00", PlanAssembly.DoneActivity("running", null, 1800))
+        assertEquals(0, m.refreshCompletion(listOf(shorter)))
+        val row = r.row("planned_workout", run)!!
+        assertEquals(1.0, (row.fields["completion_pct"] as JsonPrimitive).doubleOrNull)
+        assertEquals(false, (row.fields["is_complete"] as JsonPrimitive).booleanOrNull)
+    }
+
+    @Test
     fun an_already_matched_workout_is_not_taken_twice() = runBlocking {
         val r = replica()
         r.workout("2026-09-25", "running")

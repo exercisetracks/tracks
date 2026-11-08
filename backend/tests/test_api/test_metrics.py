@@ -217,6 +217,31 @@ class TestPhoneOnlyLoad:
                     avg_heart_rate=None, max_heart_rate=None, training_stress_score=None,
                 )
 
+    def test_a_run_recorded_on_the_phone_carries_load_from_its_file(self, client, user, db):
+        """The whole path, from the file the phone writes: upload, parse,
+        device claim, then the numbers the dashboard draws. The rows the
+        other cases build by hand hid that every phone recording was read
+        1000 times too short (parsers/activity._repaired_elapsed) — 25 minutes
+        as 1.5 seconds, no load, no VO2max — so for someone with no watch
+        fitness and readiness never left their defaults."""
+        from pathlib import Path
+
+        from app.services import fit_import
+        from tests.test_services.test_fit_import import _key_material
+
+        material, _ = _key_material()
+        content = Path("/spec/fixtures/fit/activity_phone_recorded.fit").read_bytes()
+        fit_import.import_uploaded_bytes(user.id, content, "phone-run.fit", material)
+
+        run = db.query(Activity).filter_by(user_id=user.id).one()
+        assert run.duration_seconds == 1500
+        load = client.get("/metrics/activity-load").json()
+        # 25 minutes at the running estimate's IF ~0.78: ~25 TSS, not 0.
+        assert [p["activity_id"] for p in load] == [run.id]
+        assert 15 < load[0]["tss"] < 40
+        vo2 = client.get("/metrics/vo2max-history", params={"after": "2000-01-01"}).json()
+        assert len(vo2) == 1 and 25 < vo2[0]["value"] < 50
+
     def test_a_phone_only_history_builds_fitness(self, client, user, db):
         """With no heart rate these runs used to score zero, so CTL stayed
         flat however consistently someone trained."""

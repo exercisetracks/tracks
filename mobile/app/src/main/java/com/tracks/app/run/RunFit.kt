@@ -219,8 +219,7 @@ object RunFit {
             setStartPositionLat(first.lat)
             setStartPositionLong(first.lng)
             setTotalDistance(distanceM)
-            // The session's elapsed field is whole seconds; the lap's is not.
-            setTotalElapsedTime(elapsedMs / 1000L)
+            setTotalElapsedTime(sessionElapsed(elapsedMs))
             setTotalTimerTime(movingSec)
             setTotalAscent(ascentM.toInt())
             setFirstLapIndex(0)
@@ -284,7 +283,7 @@ object RunFit {
             setStartTime(startSec)
             setSport(sport)
             setSubSport(subSport)
-            setTotalElapsedTime(elapsedMs / 1000L)
+            setTotalElapsedTime(sessionElapsed(elapsedMs))
             setTotalTimerTime(movingSec)
             setFirstLapIndex(0)
             setNumLaps(1)
@@ -300,6 +299,26 @@ object RunFit {
         }.build(LOCAL_ACTIVITY)
         return FitFile(records).outgoingMessage
     }
+
+    /**
+     * The session's `total_elapsed_time`, as the raw value the builder writes.
+     *
+     * The FIT profile stores it in milliseconds (scale 1000), as it does the
+     * lap's. Gadgetbridge's profile (fit-codegen's fit_profile.json, vendored)
+     * gives the *session* field no scale, so its builder writes whatever it is
+     * handed unconverted — and this used to hand it seconds, trusting it. Every
+     * reader that uses the real profile (the server's fitdecode, the phone's
+     * own com.tracks.core.parse, Garmin's SDK) then read a 40-minute run as
+     * 2.4 seconds: its load scored 0, so someone with no watch had fitness and
+     * readiness flat at their defaults however much they trained. Only
+     * Gadgetbridge's reader agreed with the file, and that was the one
+     * [RunFitTest] checked it with; RunFitLoadTest reads it with Tracks' own.
+     *
+     * Milliseconds, then, whatever the builder thinks. Files written before
+     * this are repaired where they are read (ActivityParser.repairedElapsed,
+     * app/parsers/activity.py `_repaired_elapsed`).
+     */
+    private fun sessionElapsed(elapsedMs: Long): Long = elapsedMs
 
     private fun timerEvent(timestampSec: Long, eventType: EventType): FitEvent =
         FitEvent.Builder().apply {

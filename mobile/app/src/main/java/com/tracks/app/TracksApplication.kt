@@ -278,17 +278,30 @@ class AppContainer(private val context: Context) {
                     }
                     .onFailure { android.util.Log.w("TracksImport", "daily re-read failed", it) }
             }
-            // Same once-per-launch, no-op-when-current shape: see repairUtcDayMatches.
-            runCatching {
-                matching.repairUtcDayMatches(
-                    library.activityRows().mapNotNull { a ->
-                        com.tracks.core.local.LocalMatching.Held(
-                            a.uid, a.started_at ?: return@mapNotNull null,
-                            com.tracks.core.plan.PlanAssembly.DoneActivity(a.sport, a.distance_meters, a.duration_seconds),
-                        )
-                    },
+            fun held() = library.activityRows().mapNotNull { a ->
+                com.tracks.core.local.LocalMatching.Held(
+                    a.uid, a.started_at ?: return@mapNotNull null,
+                    com.tracks.core.plan.PlanAssembly.DoneActivity(a.sport, a.distance_meters, a.duration_seconds),
                 )
             }
+            // Once per install: runs this phone recorded before November 2026,
+            // imported 1000 times too short and so with no load at all
+            // (LocalImporter.repairDurations) -- and the planned workouts they
+            // matched, scored from that length and left unticked
+            // (LocalMatching.refreshCompletion). Redraws the dashboard if any.
+            if (!prefs.getBoolean(PHONE_RUN_DURATIONS, false)) {
+                runCatching {
+                    val repaired = files.repairDurations()
+                    repaired to (if (repaired > 0) matching.refreshCompletion(held()) else 0)
+                }
+                    .onSuccess { (repaired, raised) ->
+                        android.util.Log.i("TracksImport", "gave $repaired phone recording(s) back their length; re-scored $raised match(es)")
+                        prefs.edit().putBoolean(PHONE_RUN_DURATIONS, true).apply()
+                    }
+                    .onFailure { android.util.Log.w("TracksImport", "duration repair failed", it) }
+            }
+            // Same once-per-launch, no-op-when-current shape: see repairUtcDayMatches.
+            runCatching { matching.repairUtcDayMatches(held()) }
                 .onSuccess { if (it > 0) android.util.Log.i("TracksImport", "moved $it workout match(es) off the UTC day") }
                 .onFailure { android.util.Log.w("TracksImport", "match repair failed", it) }
         }
@@ -1212,3 +1225,6 @@ private const val SLEEP_STAGE_ENDS = "sleep_stage_ends_v1"
 
 /** Migration flag for the one-time daily re-read (intensity minutes, floors). */
 private const val DAILY_INTENSITY = "daily_intensity_floors_v1"
+
+/** Migration flag for the one-time repair of phone recordings' durations. */
+private const val PHONE_RUN_DURATIONS = "phone_run_durations_v1"

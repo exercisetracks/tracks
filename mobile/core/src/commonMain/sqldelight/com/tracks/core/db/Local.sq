@@ -156,6 +156,15 @@ SELECT uid, sha256, summary FROM local_activity WHERE json_type(summary, '$.' ||
 updateActivitySummary:
 UPDATE local_activity SET summary = ? WHERE uid = ?;
 
+-- Activities short enough to be a phone recording read 1000 times too short
+-- before the parser repaired them (LocalImporter.repairDurations).
+activitiesWithShortDuration:
+SELECT uid, sha256, duration_seconds, summary FROM local_activity
+WHERE duration_seconds IS NOT NULL AND duration_seconds < :below;
+
+updateActivityDuration:
+UPDATE local_activity SET duration_seconds = ?, summary = ? WHERE uid = ?;
+
 deleteActivity:
 DELETE FROM local_activity WHERE uid = ?;
 

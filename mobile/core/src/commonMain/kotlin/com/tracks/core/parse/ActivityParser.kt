@@ -93,8 +93,22 @@ internal object ActivityParser {
         )
     }
 
+    /**
+     * `_repaired_elapsed`: a phone recording from before November 2026 wrote
+     * the session's elapsed time in seconds where the profile has
+     * milliseconds — the Python has why, and why a tenth of the timer time is
+     * the tell. Python's float multiply and `round`, so the same file gives
+     * the same whole second on both.
+     */
+    internal fun repairedElapsed(elapsed: Any?, timer: Any?): Any? {
+        if (elapsed == null || timer == null) return elapsed
+        val e = Py.float(elapsed)
+        if (e * 10 < Py.float(timer)) return PyMath.roundToLong(e * 1000)
+        return elapsed
+    }
+
     private fun parseSession(frame: FitDataMessage): MutableMap<String, Any?> {
-        val elapsed = frame.get("total_elapsed_time")
+        val elapsed = repairedElapsed(frame.get("total_elapsed_time"), frame.get("total_timer_time"))
         return linkedMapOf(
             "name" to frame.get("sport_profile_name"),
             "sport" to resolveSport(frame),

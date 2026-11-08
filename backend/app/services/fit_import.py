@@ -497,13 +497,22 @@ def _set_intensity_totals(row, extra: dict) -> None:
 
 
 # Which session fields an activity's import has read: 1 is workout_feel and
-# workout_rpe (FIT session fields 192/193, parsed since 2026-09-30). Written on
-# the Import row that parsed the activity, so backfill_activity_summaries_for_user
-# can tell "read, and the prompt was skipped" (both null, marked) from "never
-# read" (both null, unmarked) without a schema change. Bump it, and add the
-# columns to _SUMMARY_BACKFILL_FIELDS, when the parser learns another one.
-SUMMARY_FIELDS_VERSION = 1
+# workout_rpe (FIT session fields 192/193, parsed since 2026-09-30); 2 is the
+# phone recorder's elapsed time read in its real unit (2026-11, see
+# parsers/activity._repaired_elapsed). Written on the Import row that parsed
+# the activity, so backfill_activity_summaries_for_user can tell "read, and the
+# prompt was skipped" (both null, marked) from "never read" (both null,
+# unmarked) without a schema change. Bump it, and add the columns to
+# _SUMMARY_BACKFILL_FIELDS, when the parser learns another one.
+SUMMARY_FIELDS_VERSION = 2
 _SUMMARY_BACKFILL_FIELDS = ("workout_feel", "workout_rpe")
+
+# The durations version 2 re-reads. A phone recording read before the parser
+# repaired it is a thousandth of its length, so under 1000 s for anything
+# shorter than eleven days; nothing else can be one. A watch session that
+# short is opened once too, and re-reads as the duration it already has.
+# The phone draws the same line (LocalImporter.DURATION_SUSPECT_BELOW).
+_DURATION_SUSPECT_BELOW = 1000
 
 
 def _record_import(db, activity_id: int | None, user_id: int, content_hash: str, filename: str,
@@ -827,7 +836,8 @@ def backfill_activity_summaries_for_user(user_id: int, material: UserKeyMaterial
                                          sid: str | None = None) -> dict:
     """Fill the session fields an older parser walked past into activities
     imported before it learned them — today, the watch's feel and perceived
-    effort (``_SUMMARY_BACKFILL_FIELDS``).
+    effort (``_SUMMARY_BACKFILL_FIELDS``) — and correct the one it misread:
+    the elapsed time of a run recorded on the phone (``_repair_duration``).
 
     ## Why at login
 
@@ -840,11 +850,20 @@ def backfill_activity_summaries_for_user(user_id: int, material: UserKeyMaterial
 
     ## What it may change
 
-    Only those columns, and only where they are null: a value already stored —
+    Those columns, and only where they are null: a value already stored —
     by this build's import, or by anything else — is never replaced, and no
     other field of the activity is touched. It reads the retained file directly rather than going through
     _insert_parsed, whose "already imported" check is right for imports and
     exactly wrong here.
+
+    The one exception is ``duration_seconds``, and only to lengthen it. Until
+    November 2026 every activity the phone recorded was read 1000 times too
+    short (parsers/activity._repaired_elapsed), so it scored no load, and
+    someone training with only a phone had fitness and readiness flat at
+    their defaults. The parser now reads those files right; this re-reads the
+    ones already in, once each (version 2), where the stored duration is
+    short enough to be one (``_DURATION_SUSPECT_BELOW``). A duration the
+    person set themselves is theirs and stays.
 
     ## How it knows what is done
 
@@ -868,10 +887,16 @@ def backfill_activity_summaries_for_user(user_id: int, material: UserKeyMaterial
             .order_by(Import.id)
             .all()
         )
-        read = filled = failed = 0
+        read = filled = repaired = failed = 0
         for imp, activity in todo:
             try:
-                if all(getattr(activity, f) is None for f in _SUMMARY_BACKFILL_FIELDS):
+                # Which versions this import has had: each is read for only
+                # what it added, so a file opened for version 1 is not opened
+                # again for version 2 unless its duration is suspect.
+                done = int((imp.extra or {}).get("summary_fields") or 0)
+                want_summary = done < 1 and all(getattr(activity, f) is None for f in _SUMMARY_BACKFILL_FIELDS)
+                want_duration = done < 2 and _duration_suspect(activity)
+                if want_summary or want_duration:
                     found = {}
                     raw = retained_plaintext(db, user_id, imp.source_id, material)
                     if raw is not None:
@@ -879,7 +904,8 @@ def backfill_activity_summaries_for_user(user_id: int, material: UserKeyMaterial
                         parsed = _parse_bytes(raw, (imp.extra or {}).get("filename") or "unknown.fit")
                         if parsed and parsed.get("type") == "activity":
                             found = parsed.get("activity") or {}
-                    values = {f: found[f] for f in _SUMMARY_BACKFILL_FIELDS if found.get(f) is not None}
+                    values = {f: found[f] for f in _SUMMARY_BACKFILL_FIELDS
+                              if want_summary and found.get(f) is not None}
                     if values:
                         # Derived from the file, as the import's own write is:
                         # these columns are not synced, and a phone works out
@@ -889,6 +915,9 @@ def backfill_activity_summaries_for_user(user_id: int, material: UserKeyMaterial
                                 if getattr(activity, field) is None:
                                     setattr(activity, field, value)
                         filled += 1
+                    if want_duration and _repair_duration(db, activity, found.get("duration_seconds")):
+                        _raise_match(db, activity)
+                        repaired += 1
                 # A new dict, so the JSON column registers the change.
                 imp.extra = {**(imp.extra or {}), "summary_fields": SUMMARY_FIELDS_VERSION}
                 db.commit()
@@ -902,11 +931,66 @@ def backfill_activity_summaries_for_user(user_id: int, material: UserKeyMaterial
                     crypto_context.renew_session_key(sid)
 
         if todo:
-            log.info("Backfilled activity summaries for user %s: %d files read, %d filled, %d failed",
-                     user_id, read, filled, failed)
-        return {"files": read, "filled": filled, "failed": failed}
+            log.info("Backfilled activity summaries for user %s: %d files read, %d filled, "
+                     "%d durations repaired, %d failed", user_id, read, filled, repaired, failed)
+        if repaired:
+            # Load, fitness, readiness and VO2max all read the duration, and
+            # each is cached or planned from it: refreshed as an import would.
+            _schedule_cache_warm()
+            _schedule_plan_refresh(user_id, material)
+        return {"files": read, "filled": filled, "repaired": repaired, "failed": failed}
     finally:
         db.close()
+
+
+def _duration_suspect(activity) -> bool:
+    """Short enough to be a phone recording read before the parser repaired it."""
+    d = activity.duration_seconds
+    return d is not None and d < _DURATION_SUSPECT_BELOW
+
+
+def _repair_duration(db, activity, parsed_duration) -> bool:
+    """Lengthen a stored duration to what its file now reads as, if it does.
+
+    Only ever longer: the misread made durations 1000 times too short, and a
+    re-read that came out shorter would be some other change this job has no
+    business applying. Never over the person's own value (a field in the
+    row's clock was said, not derived).
+    """
+    if parsed_duration is None or activity.duration_seconds is None:
+        return False
+    if "duration_seconds" in (activity.clock or {}):
+        return False
+    if parsed_duration <= activity.duration_seconds:
+        return False
+    with sync_store.derived(db):
+        activity.duration_seconds = int(parsed_duration)
+    return True
+
+
+def _raise_match(db, activity) -> None:
+    """Re-score the planned workout a repaired activity matched.
+
+    It was scored from the misread length — on distance alone, about half —
+    so it stayed below the 0.8 that ticks a workout off, and the plan read a
+    phone-only athlete's runs as missed. Only ever upward, and a tick only
+    ever added: a lower score or an untick may be the person's own edit.
+    These are synced fields, written as matching writes them; the phone's
+    LocalMatching.refreshCompletion computes the same percentage, so the two
+    agree. The fingerprint and field-test effects of the original match are
+    not replayed.
+    """
+    from app.api.training_plan.matching import _compute_completion_pct
+    from app.models.training_plan import PlannedWorkout
+
+    for workout in db.query(PlannedWorkout).filter_by(user_id=activity.user_id,
+                                                      completed_activity_id=activity.id):
+        pct = _compute_completion_pct(workout, activity)
+        if workout.completion_pct is not None and pct <= workout.completion_pct:
+            continue
+        workout.completion_pct = pct
+        if pct >= 0.8:
+            workout.is_complete = True
 
 
 #: Which daily-health fields a health file's import has read: 1 is intensity

@@ -14,6 +14,18 @@
   },
   {
    "effective_tss": {
+    "hr_only": null,
+    "none": null,
+    "power_and_hr": null
+   },
+   "file": "activity_phone_recorded.fit",
+   "parser": "ActivityParser",
+   "sha256": "c6f89812e7577fd4d4d76ba7c468943beb00b646620941e0836c8d2dd6333883",
+   "type": "activity",
+   "uid": "775e5dfb-e726-57ce-91f8-0ca736870ba0"
+  },
+  {
+   "effective_tss": {
     "hr_only": 13.8,
     "none": 20.8,
     "power_and_hr": 17.6
@@ -47,6 +59,18 @@
    "sha256": "80a495509a33038e1db7cac8f0efa0a34b000d2aee1ac35f28ca4e3140c9e15d",
    "type": "activity",
    "uid": "e75c6b18-a653-540f-863b-f976610e5890"
+  },
+  {
+   "effective_tss": {
+    "hr_only": null,
+    "none": null,
+    "power_and_hr": null
+   },
+   "file": "activity_timer_over_elapsed.fit",
+   "parser": "ActivityParser",
+   "sha256": "0aafaad322cf2a3a87e50896785a45af2496eda94d3023aa76ae84ffd5f58b4b",
+   "type": "activity",
+   "uid": "0d6f7c4d-ec8f-52f1-8c39-915d31178e9e"
   },
   {
    "effective_tss": {

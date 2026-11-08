@@ -80,6 +80,44 @@ class LocalMatching(
     class Held(val uid: String, val startedAt: String, val done: PlanAssembly.DoneActivity)
 
     /**
+     * Re-score matches whose activity now reads longer. Returns how many rose.
+     *
+     * A run recorded on the phone before November 2026 was imported 1000
+     * times too short (LocalImporter.repairDurations), so the workout it
+     * matched scored on distance alone — about half — and stayed unticked
+     * under [Matching.isComplete]'s 0.8: a phone-only athlete's plan read
+     * every run as missed. Once the duration is repaired, this scores each
+     * match again from the activity as it is now.
+     *
+     * Only ever upward, and a tick is only ever added: a lower score or an
+     * untick may be the person's own edit, and is theirs to keep. Every device
+     * computes the same percentage from the same file (the server's
+     * `_raise_match` included), so concurrent writes agree, as matching's do.
+     */
+    suspend fun refreshCompletion(activities: List<Held>): Int {
+        val byUid = activities.associateBy { it.uid }
+        var raised = 0
+        for (row in replica.rows("planned_workout")) {
+            val held = byUid[row.str("completed_activity_uid") ?: continue] ?: continue
+            val pct = PlanAssembly.completionPct(
+                PlanAssembly.PlannedTarget(
+                    workoutType = row.str("workout_type") ?: "",
+                    distanceMeters = (row.fields["distance_meters"] as? JsonPrimitive)?.doubleOrNull,
+                    durationMinutes = (row.fields["duration_minutes"] as? JsonPrimitive)?.longOrNull,
+                ),
+                held.done,
+            )
+            val stored = (row.fields["completion_pct"] as? JsonPrimitive)?.doubleOrNull
+            if (stored != null && pct <= stored) continue
+            val edit = mutableMapOf<String, kotlinx.serialization.json.JsonElement>("completion_pct" to JsonPrimitive(pct))
+            if (Matching.isComplete(pct)) edit["is_complete"] = JsonPrimitive(true)
+            replica.edit("planned_workout", row.uid, edit)
+            raised++
+        }
+        return raised
+    }
+
+    /**
      * Move matches an older build made by the UTC day onto the right workout.
      * Returns how many moved.
      *

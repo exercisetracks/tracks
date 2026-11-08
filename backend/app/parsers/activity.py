@@ -29,6 +29,32 @@ _VO2MAX_MIN = 15.0
 _VO2MAX_MAX = 90.0
 
 
+def _repaired_elapsed(elapsed, timer):
+    """A session's elapsed time, read back from a file that wrote it in seconds.
+
+    The FIT profile stores ``total_elapsed_time`` in milliseconds. Tracks'
+    phone recorder (mobile RunFit) wrote the session's in whole seconds until
+    November 2026, trusting the vendored Gadgetbridge profile, which gives that
+    one field no scale. Read with the real profile, a 40-minute phone run was
+    2.4 seconds long and scored no load at all — the whole training of someone
+    with no watch — and those files are kept, and re-read, for good.
+
+    The tell is a session whose elapsed time is under a tenth of its timer
+    time. The timer stops at pauses and the elapsed clock does not, so elapsed
+    is never the shorter of the two in an honest file: not by a rounding
+    millisecond (which a tenth cannot mistake), and not for a recording paused
+    for most of its length (which only widens the gap the other way). The
+    recorder wrote the timer correctly, so it is what gives the error away; and
+    the error is exactly the unit, so ×1000 restores what the phone measured.
+    Ported, operation for operation, to ActivityParser.repairedElapsed.
+    """
+    if elapsed is None or timer is None:
+        return elapsed
+    if elapsed * 10 < timer:
+        return round(elapsed * 1000)
+    return elapsed
+
+
 class ActivityParser(BaseParser):
     """Parses activity FIT files (runs, rides, swims, etc.)"""
 
@@ -166,7 +192,7 @@ class ActivityParser(BaseParser):
         }
 
     def _parse_session(self, frame) -> dict:
-        elapsed = get(frame, "total_elapsed_time")
+        elapsed = _repaired_elapsed(get(frame, "total_elapsed_time"), get(frame, "total_timer_time"))
         return {
             "name":                      get(frame, "sport_profile_name"),
             "sport":                     self._resolve_sport(frame),

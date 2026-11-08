@@ -436,6 +436,64 @@ def sample_unknown_sport() -> bytes:
     return w.to_bytes()
 
 
+def sample_phone_run() -> bytes:
+    """A run recorded on the phone before November 2026, laid out as mobile
+    RunFit wrote one: manufacturer ``development``, GPS and no heart rate, one
+    lap — and the session's elapsed time in seconds where the profile has
+    milliseconds, which made every such run 1000 times too short to score any
+    load (app/parsers/activity.py ``_repaired_elapsed``). The timer, the lap
+    and the activity message always had their units right."""
+    w = FitWriter()
+    t0 = START + 40_000
+    elapsed, moving, speed = 1500, 1495.25, 2.9
+    w.message(0, "file_id", {
+        "type": enum("file", "activity"), "manufacturer": enum("manufacturer", "development"),
+        "product": 1, "serial_number": t0, "time_created": fit_ts(t0),
+    })
+    w.message(1, "file_creator", {"software_version": 1})
+    w.message(2, "event", {"timestamp": fit_ts(t0), "event": enum("event", "timer"),
+                           "event_type": enum("event_type", "start"), "event_group": 0})
+    lat0, lon0 = 46.21, 6.15
+    for s in range(0, elapsed + 1, 10):
+        w.message(3, "record", {
+            "timestamp": fit_ts(t0 + s),
+            "position_lat": semicircles(lat0 + speed * s / 111_320), "position_long": semicircles(lon0),
+            "distance": int(speed * s * 100), "altitude": int(round((400 + (s % 300) / 10 + 500) * 5)),
+            "speed": int(speed * 1000), "gps_accuracy": 5,
+        })
+    w.message(2, "event", {"timestamp": fit_ts(t0 + elapsed), "event": enum("event", "timer"),
+                           "event_type": enum("event_type", "stop_all"), "event_group": 0})
+    distance = int(speed * elapsed * 100)
+    common = {
+        "timestamp": fit_ts(t0 + elapsed), "message_index": 0, "start_time": fit_ts(t0),
+        "sport": enum("sport", "running"), "sub_sport": enum("sub_sport", "generic"),
+        "start_position_lat": semicircles(lat0), "start_position_long": semicircles(lon0),
+        "total_distance": distance, "total_timer_time": int(moving * 1000), "total_ascent": 42,
+        "avg_speed": int(speed * 1000),
+    }
+    w.message(4, "lap", {**common, "total_elapsed_time": elapsed * 1000})
+    w.message(5, "session", {**common, "total_elapsed_time": elapsed, "first_lap_index": 0, "num_laps": 1})
+    w.message(6, "activity", {
+        "timestamp": fit_ts(t0 + elapsed), "total_timer_time": int(moving * 1000), "num_sessions": 1,
+        "type": enum("activity", "manual"), "event": enum("event", "activity"),
+        "event_type": enum("event_type", "stop"), "local_timestamp": fit_ts(t0 + elapsed),
+    })
+    return w.to_bytes()
+
+
+def sample_timer_over_elapsed() -> bytes:
+    """A watch's session whose timer runs a millisecond past its elapsed
+    time — rounding, not a unit error — which must be read as written."""
+    w = FitWriter()
+    file_id(w, "activity", created=START + 50_000)
+    w.message(1, "session", {
+        "timestamp": fit_ts(START + 50_600), "start_time": fit_ts(START + 50_000),
+        "sport": enum("sport", "running"), "total_elapsed_time": 600_000,
+        "total_timer_time": 600_001, "total_distance": 180_000,
+    })
+    return w.to_bytes()
+
+
 def sample_monitoring() -> bytes:
     """A monitoring file straddling local midnight, the way a fenix writes one."""
     rng = random.Random(33)
@@ -632,6 +690,8 @@ SAMPLES = {
     "activity_strength.fit": sample_strength,
     "activity_climb.fit": sample_climb,
     "activity_unknown_sport.fit": sample_unknown_sport,
+    "activity_phone_recorded.fit": sample_phone_run,
+    "activity_timer_over_elapsed.fit": sample_timer_over_elapsed,
     "monitoring.fit": sample_monitoring,
     "hrv.fit": sample_hrv,
     "sleep.fit": lambda: _sleep(summary=True, nap=True),

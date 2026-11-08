@@ -64,7 +64,7 @@ class TestSummaryBackfill:
         db.expire_all()
         row = db.get(Activity, activity.id)
         assert (row.workout_feel, row.workout_rpe) == (75, 60)
-        assert result == {"files": 1, "filled": 1, "failed": 0}
+        assert result == {"files": 1, "filled": 1, "repaired": 0, "failed": 0}
         # The file it opened is the one that activity was parsed from.
         raw, _filename = parse.call_args.args
         assert hashlib.sha256(raw).hexdigest() == imp.source_id
@@ -133,7 +133,7 @@ class TestSummaryBackfill:
         with patch.object(fit_import, "_parse_bytes") as parse:
             result = fit_import.backfill_activity_summaries_for_user(user.id, material)
         parse.assert_not_called()
-        assert result == {"files": 0, "filled": 0, "failed": 0}
+        assert result == {"files": 0, "filled": 0, "repaired": 0, "failed": 0}
 
     def test_an_activity_imported_by_this_build_is_never_reread(self, db, user):
         """The import already read every field it knows, so it marks its own
@@ -197,7 +197,7 @@ class TestSummaryBackfill:
                 patch.object(fit_import, "_parse_bytes") as parse:
             result = fit_import.backfill_activity_summaries_for_user(user.id, material)
         parse.assert_not_called()
-        assert result == {"files": 0, "filled": 0, "failed": 0}
+        assert result == {"files": 0, "filled": 0, "repaired": 0, "failed": 0}
         assert _marker(db, imp) == fit_import.SUMMARY_FIELDS_VERSION
 
     def test_another_users_activities_are_not_touched(self, db, user):
@@ -223,6 +223,127 @@ class TestSummaryBackfill:
                 patch.object(fit_import.crypto_context, "renew_session_key") as renew:
             fit_import.backfill_activity_summaries_for_user(user.id, material, sid="s")
         assert renew.call_count == 2
+
+
+class TestPhoneRunDurations:
+    """Version 2: runs recorded on the phone were read 1000 times too short
+    (parsers/activity._repaired_elapsed) and scored no load, so a phone-only
+    athlete's fitness and readiness never left their defaults. The parser
+    reads them right now; these are the ones already imported."""
+
+    def _misread(self, db, user, material, pubkey, done=1, **stored):
+        """A phone run as the old parser stored it: 1500 s read as 1."""
+        activity, imp = _older_activity(db, user, pubkey, material, duration_seconds=1,
+                                        avg_heart_rate=None, max_heart_rate=None, **stored)
+        imp.extra = {**imp.extra, "summary_fields": done}
+        db.commit()
+        return activity, imp
+
+    def test_a_misread_phone_run_gets_its_duration_back(self, db, user):
+        material, pubkey = _key_material()
+        activity, imp = self._misread(db, user, material, pubkey)
+
+        with patch.object(fit_import, "_parse_bytes", return_value=_parsed(duration_seconds=1500)), \
+                patch.object(fit_import, "_schedule_cache_warm"), \
+                patch.object(fit_import, "_schedule_plan_refresh"):
+            result = fit_import.backfill_activity_summaries_for_user(user.id, material)
+
+        db.expire_all()
+        assert db.get(Activity, activity.id).duration_seconds == 1500
+        assert result == {"files": 1, "filled": 0, "repaired": 1, "failed": 0}
+        assert _marker(db, imp) == 2
+
+    def test_its_load_reaches_the_charts_and_the_plan(self, db, user):
+        """Fitness is cached and plans are built from it: refreshed as an
+        import refreshes them, or the repair would wait for the next run."""
+        material, pubkey = _key_material()
+        self._misread(db, user, material, pubkey)
+        with patch.object(fit_import, "_parse_bytes", return_value=_parsed(duration_seconds=1500)), \
+                patch.object(fit_import, "_schedule_cache_warm") as warm, \
+                patch.object(fit_import, "_schedule_plan_refresh") as plans:
+            fit_import.backfill_activity_summaries_for_user(user.id, material)
+        warm.assert_called_once()
+        assert plans.call_args.args[0] == user.id
+
+    def test_a_long_activity_is_not_opened_for_it(self, db, user):
+        """A file read for feel and effort already need not be read again
+        unless its duration could be a misread one."""
+        material, pubkey = _key_material()
+        activity, imp = _older_activity(db, user, pubkey, material)   # 1800 s
+        imp.extra = {**imp.extra, "summary_fields": 1}
+        db.commit()
+        with patch.object(fit_import, "_parse_bytes") as parse:
+            fit_import.backfill_activity_summaries_for_user(user.id, material)
+        parse.assert_not_called()
+        assert _marker(db, imp) == 2
+
+    def test_a_reread_never_shortens_a_duration(self, db, user):
+        material, pubkey = _key_material()
+        activity, _ = _older_activity(db, user, pubkey, material, duration_seconds=600)
+        with patch.object(fit_import, "_parse_bytes", return_value=_parsed(duration_seconds=500)):
+            result = fit_import.backfill_activity_summaries_for_user(user.id, material)
+        db.expire_all()
+        assert db.get(Activity, activity.id).duration_seconds == 600
+        assert result["repaired"] == 0
+
+    def test_a_duration_the_person_set_stays(self, db, user):
+        material, pubkey = _key_material()
+        activity, _ = self._misread(db, user, material, pubkey)
+        activity.clock = {**(activity.clock or {}), "duration_seconds": "said on the phone"}
+        db.commit()
+        with patch.object(fit_import, "_parse_bytes", return_value=_parsed(duration_seconds=1500)):
+            fit_import.backfill_activity_summaries_for_user(user.id, material)
+        db.expire_all()
+        assert db.get(Activity, activity.id).duration_seconds == 1
+
+    def _matched(self, db, user, activity, pct, complete=False):
+        from app.models.training_plan import PlannedWorkout
+        w = PlannedWorkout(user_id=user.id, plan_id=None, scheduled_date=activity.started_at.date(),
+                           sport="running", workout_type="easy", title="Easy run",
+                           duration_minutes=25, distance_meters=5000.0,
+                           completed_activity_id=activity.id, completion_pct=pct, is_complete=complete)
+        db.add(w)
+        db.commit()
+        return w
+
+    def _repair(self, db, user, material):
+        with patch.object(fit_import, "_parse_bytes", return_value=_parsed(duration_seconds=1500)), \
+                patch.object(fit_import, "_schedule_cache_warm"), \
+                patch.object(fit_import, "_schedule_plan_refresh"):
+            fit_import.backfill_activity_summaries_for_user(user.id, material)
+        db.expire_all()
+
+    def test_the_workout_it_matched_is_ticked_off(self, db, user):
+        """Scored from a one-second run, a matched workout was about half
+        done — under the 0.8 that ticks it — so the plan read every phone run
+        as missed."""
+        from app.models.training_plan import PlannedWorkout
+        material, pubkey = _key_material()
+        activity, _ = self._misread(db, user, material, pubkey)
+        w = self._matched(db, user, activity, pct=0.5)
+        self._repair(db, user, material)
+        row = db.get(PlannedWorkout, w.id)
+        assert row.completion_pct == 1.0 and row.is_complete
+
+    def test_a_match_already_scored_higher_is_left_as_it_is(self, db, user):
+        from app.models.training_plan import PlannedWorkout
+        material, pubkey = _key_material()
+        activity, _ = self._misread(db, user, material, pubkey)
+        w = self._matched(db, user, activity, pct=1.0, complete=False)   # unticked by hand
+        self._repair(db, user, material)
+        row = db.get(PlannedWorkout, w.id)
+        assert row.completion_pct == 1.0 and not row.is_complete
+
+    def test_a_repaired_run_is_not_read_again(self, db, user):
+        material, pubkey = _key_material()
+        self._misread(db, user, material, pubkey)
+        with patch.object(fit_import, "_parse_bytes", return_value=_parsed(duration_seconds=1500)), \
+                patch.object(fit_import, "_schedule_cache_warm"), \
+                patch.object(fit_import, "_schedule_plan_refresh"):
+            fit_import.backfill_activity_summaries_for_user(user.id, material)
+        with patch.object(fit_import, "_parse_bytes") as parse:
+            fit_import.backfill_activity_summaries_for_user(user.id, material)
+        parse.assert_not_called()
 
 
 class TestTheTriggers:

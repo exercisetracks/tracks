@@ -214,6 +214,37 @@ class LocalImporterTest {
     }
 
     @Test
+    fun a_phone_recording_imported_a_thousand_times_too_short_gets_its_length_back() = runBlocking {
+        // How every run this phone recorded before November 2026 was stored:
+        // 25 minutes as one second (ActivityParser.repairedElapsed), which
+        // scored no load and left fitness and readiness at their defaults.
+        val lib = library()
+        val run = bytes("activity_phone_recorded.fit")
+        LocalImporter(lib).import("sha-phone", run)
+        val uid = lib.activityRows().single().uid
+        val misread = JsonObject(lib.summaryJson(uid)!! + ("duration_seconds" to JsonPrimitive(1)))
+        lib.locked { lib.q.updateActivityDuration(1, misread.toString(), uid) }
+
+        assertEquals(1, LocalImporter(lib).repairDurations { if (it == "sha-phone") run else null })
+
+        assertEquals(1500L, lib.q.selectActivity(uid).executeAsOne().duration_seconds)
+        assertEquals(1500, lib.summaryJson(uid)!!["duration_seconds"]!!.jsonPrimitive.content.toDouble().toInt())
+        assertEquals(0, LocalImporter(lib).repairDurations { run }, "a repaired run was repaired again")
+    }
+
+    @Test
+    fun a_short_watch_session_is_read_and_left_as_it_is() = runBlocking {
+        val lib = library()
+        val session = bytes("activity_timer_over_elapsed.fit")
+        LocalImporter(lib).import("sha-short", session)
+        val uid = lib.activityRows().single().uid
+        assertEquals(600L, lib.q.selectActivity(uid).executeAsOne().duration_seconds)
+
+        assertEquals(0, LocalImporter(lib).repairDurations { session })
+        assertEquals(600L, lib.q.selectActivity(uid).executeAsOne().duration_seconds)
+    }
+
+    @Test
     fun an_activity_whose_file_is_gone_is_marked_done_rather_than_retried() = runBlocking {
         val lib = library()
         LocalImporter(lib).import("sha-run", bytes("activity_run.fit"))

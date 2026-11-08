@@ -125,6 +125,49 @@ class LocalImporter(
     }
 
     /**
+     * Give runs recorded on this phone back their length.
+     *
+     * Until November 2026 the phone's recorder wrote a session's elapsed time
+     * in seconds where the FIT profile has milliseconds (RunFit.sessionElapsed),
+     * so every recording was imported 1000 times too short — 25 minutes as one
+     * second — and scored no load. For someone with no watch that was all of
+     * their training, and fitness and readiness never left their defaults. The
+     * parser reads those files right now (ActivityParser.repairedElapsed); this
+     * re-reads the ones already imported, as the server's login backfill does
+     * for its copies (fit_import `_repair_duration`).
+     *
+     * Only activities short enough to be one ([DURATION_SUSPECT_BELOW]), and a
+     * duration is only ever lengthened: the column and the summary's copy of
+     * it, nothing else. A file that is missing or no longer parses is left as
+     * it is. Returns how many were repaired.
+     */
+    suspend fun repairDurations(file: suspend (sha256: String) -> ByteArray?): Int {
+        val short = library.locked {
+            library.q.activitiesWithShortDuration(DURATION_SUSPECT_BELOW).executeAsList()
+        }
+        var repaired = 0
+        for (row in short) {
+            val stored = row.duration_seconds ?: continue
+            val parsed = runCatching {
+                val bytes = file(row.sha256) ?: return@runCatching null
+                if (FitParsing.select(bytes) != FitParsing.Kind.Activity) return@runCatching null
+                @Suppress("UNCHECKED_CAST")
+                FitParsing.parse(FitParsing.Kind.Activity, bytes)["activity"] as? Map<String, Any?>
+            }.getOrNull() ?: continue
+            val duration = (parsed["duration_seconds"] as? Number)?.toLong() ?: continue
+            if (duration <= stored) continue
+            val summary = runCatching {
+                com.tracks.core.api.TracksJson.parseToJsonElement(row.summary) as JsonObject
+            }.getOrNull() ?: continue
+            val fixed = JsonObject(summary + ("duration_seconds" to JsonPrimitive(duration)))
+            library.locked { library.q.updateActivityDuration(duration, fixed.toString(), row.uid) }
+            repaired++
+        }
+        if (repaired > 0) library.changed()
+        return repaired
+    }
+
+    /**
      * Redraw every stored night with the current sleep parser.
      *
      * The import keeps a night's first totals and its longer timeline, so a
@@ -287,6 +330,15 @@ class LocalImporter(
     companion object {
         /** Summary keys [backfillSummaries] adds to activities parsed before them. */
         val BACKFILLED_SUMMARY_KEYS = listOf("workout_feel", "workout_rpe")
+
+        /**
+         * The durations [repairDurations] re-reads: a misread phone recording
+         * is a thousandth of its length, so under 1000 s for anything shorter
+         * than eleven days. A watch session that short is read once and comes
+         * back as the duration it already has. The server's
+         * `_DURATION_SUSPECT_BELOW` draws the same line.
+         */
+        const val DURATION_SUSPECT_BELOW = 1000L
 
         /** `_DAILY_METRIC_FIELDS`: what a health file may set on a day. */
         val DAILY_FIELDS = setOf(
