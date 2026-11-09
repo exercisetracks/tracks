@@ -27,9 +27,28 @@ def test_a_run_does_not_complete_a_workout_of_another_sport():
     assert got.uid == "b"
 
 
-def test_rest_race_other_days_and_matched_workouts_are_never_picked():
-    cands = [_w("a", kind="rest"), _w("b", kind="race"), _w("c", day=date(2026, 9, 24)), _w("d", done=7)]
+def test_rest_other_days_and_matched_workouts_are_never_picked():
+    cands = [_w("a", kind="rest"), _w("c", day=date(2026, 9, 24)), _w("d", done=7)]
     assert pick_workout(cands, DAY, "running") is None
+
+
+def test_the_race_day_run_completes_the_race(db, user):
+    """Race day was once only a marker on the calendar, never matched. It is a
+    session now — on the watch with its splits — and a race imported from the
+    watch left it unticked on the plan."""
+    started = datetime.combine(DAY, datetime.min.time(), tzinfo=timezone.utc).replace(hour=8)
+    race = PlannedWorkout(user_id=user.id, plan_id=None, scheduled_date=DAY, sport="running",
+                          workout_type="race", title="Race: 10K", distance_meters=10_000.0, duration_minutes=45)
+    act = Activity(user_id=user.id, sport="running", started_at=started, duration_seconds=2700,
+                   distance_meters=10_050.0)
+    db.add_all([race, act])
+    db.flush()
+
+    match_activity_to_workout(db, act.id, user.id)
+
+    db.refresh(race)
+    assert race.completed_activity_id == act.id and race.is_complete
+    assert pick_workout([_w("r", kind="race")], DAY, "cycling") is None, "a ride is not the run's race"
 
 
 def test_a_hand_added_workout_is_completed_by_its_activity(db, user):

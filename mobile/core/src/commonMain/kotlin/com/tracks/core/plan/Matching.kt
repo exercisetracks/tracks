@@ -34,8 +34,9 @@ object Matching {
 
     /**
      * The server's `pick_workout`: same day, same sport family (a run never
-     * ticks off a strength session), not rest or race, not yet matched —
-     * hand-added workouts included. Candidates are sorted here by
+     * ticks off a strength session), not rest, not yet matched — hand-added
+     * workouts and the race included (the race-day run completes the race,
+     * as on the server; see `_NEVER_MATCHED`). Candidates are sorted here by
      * (scheduled date, uid) so the caller's order cannot change the answer.
      */
     fun pickWorkout(activityDate: String, activitySport: String?, candidates: List<Candidate>): Candidate? {
@@ -44,7 +45,7 @@ object Matching {
             .sortedWith(compareBy<Candidate>({ it.scheduledDate }, { it.uid }))
             .firstOrNull {
                 it.scheduledDate == activityDate &&
-                    it.workoutType != "rest" && it.workoutType != "race" &&
+                    it.workoutType != "rest" &&
                     it.completedActivityUid == null &&
                     PlanBase.sportFamily(it.sport ?: "") == family
             }

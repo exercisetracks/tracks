@@ -177,7 +177,8 @@ entities:
     # different one offline, so this is resolved on read, never by rejecting a
     # write: the active goal is the is_active=true row whose `is_active` stamp
     # is greatest.
-    fields: [goal_type, is_active, event_name, event_sport, event_date, event_distance_meters,
+    # completed_at: the day the goal was marked done (it is then inactive too).
+    fields: [goal_type, is_active, completed_at, event_name, event_sport, event_date, event_distance_meters,
              ctl_ramp_per_week, fitness_sports, target_weekly_km, volume_sport,
              days_per_week, plan_intensity, mtb_discipline,
              cycling_discipline, schedule_tests, include_strength, strength_tier,

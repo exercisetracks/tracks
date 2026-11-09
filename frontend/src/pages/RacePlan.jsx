@@ -177,6 +177,14 @@ export default function RacePlan() {
   const sport       = plan?.sport ?? "running";
   const isCycling   = sport === "cycling";
   const isSwimming  = sport === "swimming";
+  // How hard to race against the prediction — every sport, the swim too.
+  // Beside the split it shapes (below it), not a section of its own.
+  const intensityControl = (
+    <div className="mt-4">
+      <p className="field-label">Race intensity</p>
+      <RaceIntensitySlider value={intensityDraft} onChange={handleIntensityChange} />
+    </div>
+  );
   const isTriathlon = sport === "triathlon";
 
   // Map center: prefer course path bounds (handled by FitBounds), then pin, then world
@@ -235,11 +243,6 @@ export default function RacePlan() {
         </div>
       )}
 
-      {/* How hard to race against the prediction — every sport, the swim too. */}
-      <Section title="Race intensity">
-        <RaceIntensitySlider value={intensityDraft} onChange={handleIntensityChange} />
-      </Section>
-
       {/* Split strategy — hide for swimming (no laps) */}
       {!isSwimming && (
         <Section title="Split strategy">
@@ -250,6 +253,7 @@ export default function RacePlan() {
             imperial={imperial}
             isCycling={isCycling}
           />
+          {intensityControl}
           <RaceTargets plan={plan} />
         </Section>
       )}
@@ -406,6 +410,8 @@ export default function RacePlan() {
             )}
           </div>
         </div>
+        {/* A swim has no split to sit under: below the course, as on the phone. */}
+        {isSwimming && intensityControl}
       </Section>
 
       {/* Garmin targets — hide for swimming (no watch file generated) */}

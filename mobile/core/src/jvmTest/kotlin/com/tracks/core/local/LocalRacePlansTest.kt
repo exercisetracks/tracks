@@ -358,4 +358,126 @@ class LocalRacePlansTest {
         plans.removeCourse(goal, leg = "bike")
         assertTrue(plans.strategy(goal).triLegFiles.isEmpty())
     }
+
+    /**
+     * The fitness estimate reads each run's pace curve straight out of SQLite
+     * rather than parsing the run's whole detail (every GPS point) for it.
+     * The numbers must be the parser's to the last digit, or the phone's
+     * fitness drifts from the server's; a run whose curve is empty, or that
+     * has none, gives nothing.
+     */
+    @Test
+    fun pace_curves_read_by_sqlite_are_the_details_own_numbers() = runBlocking {
+        val (sources, _) = setup()
+        val lib = sources.library
+        fun put(uid: String, detail: String) {
+            lib.q.upsertActivity(uid, "sha-$uid", "serial", "2026-01-01T08:00:00Z", "running", null, null, 1200, 5000.0,
+                null, null, null, null, 4.1, null, null, null, null, null, "{}", detail)
+            lib.q.insertAlias(uid)
+        }
+        put("a", """{"points":[[39.7,-105.2,1800.0]],"pace_curve":{"400":4.123456789012345,"1000":3.3333333333333335,"5000":3.0E-1},"laps":[]}""")
+        put("b", """{"points":[],"pace_curve":{}}""")
+        put("c", """{"points":[]}""")
+        val curves = lib.paceCurves()
+        assertEquals(setOf("a"), curves.keys)
+        assertEquals(lib.detailJson("a")!!["pace_curve"], curves["a"])
+        val speeds = curves.getValue("a").mapValues { (it.value as kotlinx.serialization.json.JsonPrimitive).content.toDouble() }
+        assertEquals(mapOf("400" to 4.123456789012345, "1000" to 3.3333333333333335, "5000" to 0.3), speeds)
+    }
+
+    /**
+     * The curves are kept per run and read again only when its row changes:
+     * every screen's reload used to decrypt every detail on a phone, which
+     * was half the app's CPU and held up taps while a sync ran. A run
+     * imported again is read again, a removed one is gone, and an activity
+     * that is not a run is never read for one.
+     */
+    @Test
+    fun pace_curves_are_kept_until_their_run_is_imported_again() = runBlocking {
+        val (sources, _) = setup()
+        val lib = sources.library
+        fun put(uid: String, sport: String, speed: Double) {
+            lib.q.upsertActivity(uid, "sha-$uid", "serial", "2026-01-01T08:00:00Z", sport, null, null, 1200, 5000.0,
+                null, null, null, null, 4.1, null, null, null, null, null, "{}",
+                """{"points":[],"pace_curve":{"1000":$speed}}""")
+        }
+        put("run", "running", 4.0)
+        put("ride", "cycling", 9.0)
+        assertEquals(setOf("run"), lib.paceCurves().keys, "a ride's detail is not read for a curve")
+        put("run", "running", 4.5)
+        assertEquals("4.5", (lib.paceCurves().getValue("run")["1000"] as kotlinx.serialization.json.JsonPrimitive).content)
+        lib.q.deleteActivity("run")
+        assertTrue(lib.paceCurves().isEmpty())
+    }
+
+    /**
+     * The Health page's days are kept until a day is written: it reloads on
+     * any change at all, and parsing every day's series again each time was
+     * a sixth of the app's CPU. A day written is read at once.
+     */
+    @Test
+    fun the_days_are_read_again_once_a_day_is_written() = runBlocking {
+        val (sources, _) = setup()
+        val metrics = LocalMetrics(sources.library, sources)
+        sources.library.q.upsertDay("2026-01-01", """{"resting_hr":50}""", "{}")
+        assertEquals(50, metrics.dailyMetrics(after = null).single().restingHr?.toInt())
+        sources.library.q.upsertDay("2026-01-01", """{"resting_hr":48}""", "{}")
+        assertEquals(48, metrics.dailyMetrics(after = null).single().restingHr?.toInt())
+        sources.library.q.upsertDay("2026-01-02", """{"resting_hr":47}""", "{}")
+        assertEquals(2, metrics.dailyMetrics(after = null).size)
+    }
+
+    /**
+     * The Race Plans screen reads a race's inputs once and re-plans from them
+     * as the intensity slider moves. What it shows mid-drag has to be what
+     * the full read gives once the value is written — the finish, the laps
+     * and the fuel — or the plan would jump when the thumb is let go.
+     */
+    @Test
+    fun the_slider_replans_from_what_was_read_exactly_as_a_fresh_read_does() = runBlocking {
+        val (sources, plans) = setup()
+        sources.createValues("goal", mapOf("goal_type" to "event", "event_date" to "2026-03-01",
+            "event_sport" to "running", "event_distance_meters" to 21_097.5))
+        val goal = sources.goals().single()
+        sources.createValues("plan", mapOf("goal_uid" to goal.uid, "vdot" to 49.8), mapOf("goal_uid" to goal.uid))
+        sources.library.run("r1", "2025-12-30T08:00:00Z")
+        assertTrue(plans.importCourse(goal, climbGpx()))
+        plans.set(goal, "fuel_product_uids", listOf(FuelPlan.HOMEMADE_UID))
+        val today = CivilDate(2026, 1, 1)
+        val inputs = plans.inputs(goal, today)
+        val fuelInputs = plans.fuelInputs(goal)
+
+        val moved = plans.strategy(goal).copy(intensity = 1.07)
+        val shown = plans.plan(goal, moved, imperial = false, inputs = inputs)
+        val shownFuel = plans.fuel(goal, moved, shown, fuelInputs)
+
+        plans.set(goal, "intensity", 1.07)
+        val written = plans.plan(goal, plans.strategy(goal), imperial = false, today = today)
+        assertEquals(written, shown)
+        assertEquals(plans.fuel(goal, written), shownFuel)
+    }
+
+    /**
+     * One LocalRaceDay serves every race on the screen, reading the running
+     * history once; each race's answer is what a fresh one gives it alone.
+     */
+    @Test
+    fun one_read_of_the_history_answers_every_race_as_its_own_would() = runBlocking {
+        val (sources, plans) = setup()
+        for ((date, m) in listOf("2026-03-01" to 10_000.0, "2026-05-01" to 42_195.0)) {
+            sources.createValues("goal", mapOf("goal_type" to "event", "event_date" to date,
+                "event_sport" to "running", "event_distance_meters" to m))
+        }
+        val goals = sources.goals().sortedBy { it.eventDate }
+        sources.createValues("plan", mapOf("goal_uid" to goals[0].uid, "vdot" to 49.8), mapOf("goal_uid" to goals[0].uid))
+        sources.library.run("r1", "2025-12-30T08:00:00Z")
+        sources.library.run("r2", "2025-12-20T08:00:00Z", seconds = 1260)
+        val today = CivilDate(2026, 1, 1)
+        val shared = LocalRaceDay(sources)
+        for (g in goals) {
+            assertEquals(plans.inputs(g, today), plans.inputs(g, today, shared))
+        }
+        assertTrue(plans.inputs(goals[0], today, shared).fitness!!.adherence != null, "the planned race reads its plan")
+        assertEquals(null, plans.inputs(goals[1], today, shared).fitness!!.adherence, "the other has none")
+    }
 }

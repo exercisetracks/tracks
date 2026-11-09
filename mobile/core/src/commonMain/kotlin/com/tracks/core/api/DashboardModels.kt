@@ -352,6 +352,8 @@ data class TrainingGoal(
     /** `event` | `fitness` | `volume_target`. */
     @SerialName("goal_type") val goalType: String = "",
     @SerialName("is_active") val isActive: Boolean = false,
+    /** The day the goal was marked done (`YYYY-MM-DD`); null while it is still being worked toward. */
+    @SerialName("completed_at") val completedAt: String? = null,
     @SerialName("event_name") val eventName: String? = null,
     @SerialName("event_sport") val eventSport: String? = null,
     @SerialName("event_date") val eventDate: String? = null,

@@ -138,6 +138,7 @@ fun TrainingScreen(
             onIntensity = vm::setIntensity,
             onCopyLink = vm::fetchIcsUrl,
             onActivate = vm::activate,
+            onComplete = vm::complete,
             onSaveGoal = vm::saveGoal,
             onDeleteGoal = vm::deleteGoal,
             onDismissMessage = vm::dismissMessage,
@@ -168,6 +169,8 @@ data class TrainingActions(
     val onIntensity: (Double) -> Unit = {},
     val onCopyLink: () -> Unit = {},
     val onActivate: (TrainingGoal) -> Unit = {},
+    /** Mark the goal done, which also takes it out of the active slot. */
+    val onComplete: (TrainingGoal) -> Unit = {},
     val onSaveGoal: (GoalDraft) -> Unit = {},
     val onDeleteGoal: (TrainingGoal) -> Unit = {},
     val onDismissMessage: () -> Unit = {},
@@ -262,14 +265,17 @@ fun TrainingContent(
                     generating = state.generating,
                     actions = actions,
                     onEdit = { editingGoal = GoalDraft.of(active) },
+                    onComplete = { actions.onComplete(active) },
                     today = today,
                 )
                 active.goalType == "fitness" -> FitnessGoalCard(
                     goal = active,
                     actions = actions,
                     onEdit = { editingGoal = GoalDraft.of(active) },
+                    onComplete = { actions.onComplete(active) },
                 )
-                else -> TargetGoalCard(active, onEdit = { editingGoal = GoalDraft.of(active) })
+                else -> TargetGoalCard(active, onEdit = { editingGoal = GoalDraft.of(active) },
+                    onComplete = { actions.onComplete(active) })
             }
         }
 
@@ -452,6 +458,7 @@ private fun EventGoalCard(
     generating: Boolean,
     actions: TrainingActions,
     onEdit: () -> Unit,
+    onComplete: () -> Unit = {},
     today: LocalDate,
 ) = PlanCard {
     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -469,7 +476,7 @@ private fun EventGoalCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        TonalButton("Edit", onClick = onEdit)
+        GoalCardButtons(onComplete, onEdit)
     }
 
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Tokens.Space.s2)) {
@@ -578,7 +585,7 @@ private fun PhaseTimeline(info: PlanPhases.Info) {
  * its "?" live — one place to set them rather than two.
  */
 @Composable
-private fun FitnessGoalCard(goal: TrainingGoal, actions: TrainingActions, onEdit: () -> Unit) = PlanCard {
+private fun FitnessGoalCard(goal: TrainingGoal, actions: TrainingActions, onEdit: () -> Unit, onComplete: () -> Unit = {}) = PlanCard {
     val ramp = goal.ctlRampPerWeek ?: 0.0
     Row(verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
@@ -593,7 +600,7 @@ private fun FitnessGoalCard(goal: TrainingGoal, actions: TrainingActions, onEdit
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        TonalButton("Edit", onClick = onEdit)
+        GoalCardButtons(onComplete, onEdit)
     }
     Text(
         "${GoalOptions.rampLabel(ramp)} · ${GoalOptions.rampWord(ramp)}",
@@ -603,7 +610,7 @@ private fun FitnessGoalCard(goal: TrainingGoal, actions: TrainingActions, onEdit
 }
 
 @Composable
-private fun TargetGoalCard(goal: TrainingGoal, onEdit: () -> Unit) = PlanCard {
+private fun TargetGoalCard(goal: TrainingGoal, onEdit: () -> Unit, onComplete: () -> Unit = {}) = PlanCard {
     val (title, line) = when (goal.goalType) {
         "volume_target" -> "Weekly Volume" to
             "${goal.targetWeeklyKm?.let { distance(it * 1000) } ?: "—"} a week · ${GoalOptions.SPORTS[goal.volumeSport] ?: goal.volumeSport}"
@@ -617,13 +624,26 @@ private fun TargetGoalCard(goal: TrainingGoal, onEdit: () -> Unit) = PlanCard {
             }
             Text(line, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        TonalButton("Edit", onClick = onEdit, small = true)
+        GoalCardButtons(onComplete, onEdit)
     }
     Text(
         "Coaching steers your daily recommendations toward this target. Training plans are built for Race / Event and Fitness goals.",
         style = MaterialTheme.typography.labelSmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
+}
+
+/**
+ * The active goal's own actions: Complete takes it out of the active slot as
+ * done (it waits in the goals list, where Activate reopens it); Edit opens
+ * its sheet.
+ */
+@Composable
+private fun GoalCardButtons(onComplete: () -> Unit, onEdit: () -> Unit) {
+    Row(horizontalArrangement = Arrangement.spacedBy(Tokens.Space.s1_5)) {
+        TonalButton("Complete", onClick = onComplete, small = true)
+        TonalButton("Edit", onClick = onEdit, small = true)
+    }
 }
 
 @Composable
@@ -639,7 +659,12 @@ private fun GoalsList(
         Text("GOALS", style = Tokens.SectionHeader.style, color = MaterialTheme.colorScheme.primary, modifier = Modifier.weight(1f))
         TonalButton("New goal", onClick = onNew, icon = Icons.Default.Add)
     }
-    val others = goals.filterNot { it.isActive }.sortedBy { it.planEnd ?: "9999" }
+    // Goals still to work toward first, by date; the done ones after, most
+    // recently finished first.
+    val others = goals.filterNot { it.isActive }.let { rest ->
+        rest.filter { it.completedAt == null }.sortedBy { it.planEnd ?: "9999" } +
+            rest.filter { it.completedAt != null }.sortedByDescending { it.completedAt }
+    }
     if (others.isEmpty()) return
     PlanCard {
         others.forEachIndexed { i, g ->
@@ -655,7 +680,7 @@ private fun GoalsList(
                             // The type, unless the goal's name already is it ("Maintain").
                             GoalOptions.TYPES.firstOrNull { it.first == g.goalType }?.second
                                 ?.takeUnless { it.equals(g.planName, ignoreCase = true) },
-                            g.planEnd?.let { shortDay(it) },
+                            g.completedAt?.let { "Completed ${shortDay(it)}" } ?: g.planEnd?.let { shortDay(it) },
                         ).joinToString(" · ").ifEmpty { "No date" },
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,

@@ -219,11 +219,37 @@ class LocalRacePlans(private val sources: LocalSources) {
      * worked out here from synced rows: the same targets, timeline and
      * gut-training ramp the web shows.
      */
-    suspend fun fuel(goal: TrainingGoal, prediction: Prediction?): Fuel {
-        val s = strategy(goal)
+    suspend fun fuel(goal: TrainingGoal, prediction: Prediction?): Fuel =
+        fuel(goal, strategy(goal), prediction, fuelInputs(goal))
+
+    /** The rows a fuel plan is worked out from: the products, and the sessions and logs its gut training reads. */
+    data class FuelInputs(
+        val products: List<FuelPlan.Product>,
+        val workouts: List<FuelPlan.Workout>,
+        val logs: List<FuelPlan.Log>,
+    )
+
+    suspend fun fuelInputs(goal: TrainingGoal): FuelInputs {
+        val plan = sources.replica.rows("plan").firstOrNull { it.str("goal_uid") == goal.uid }?.uid
+        val workouts = sources.replica.rows("planned_workout")
+            .filter { plan == null || it.str("plan_uid") == null || it.str("plan_uid") == plan }
+            .map {
+                FuelPlan.Workout(it.uid, it.str("scheduled_date"), it.str("sport"), it.str("workout_type"),
+                    (it.fields["duration_minutes"] as? JsonPrimitive)?.doubleOrNull, it.int("fuel_carbs_per_hour"))
+            }
+        val logs = sources.replica.rows("gut_training_log").map {
+            FuelPlan.Log(it.uid, it.str("planned_workout_uid"), it.str("date"), it.int("comfort"),
+                (it.fields["carbs_g"] as? JsonPrimitive)?.doubleOrNull,
+                (it.fields["duration_min"] as? JsonPrimitive)?.doubleOrNull)
+        }
+        return FuelInputs(products(), workouts, logs)
+    }
+
+    /** [fuel] from rows already read ([fuelInputs]): no I/O, so it can follow a slider. */
+    fun fuel(goal: TrainingGoal, s: Strategy, prediction: Prediction?, inputs: FuelInputs): Fuel {
         val minutes = (prediction?.seconds ?: 0.0) / 60.0
         val tg = FuelPlan.targets(minutes, null, null, s.fuelCarbs, s.fuelFluid, s.fuelSodium, s.fuelInterval, s.fuelPotassium)
-        val all = products().associateBy { it.uid }
+        val all = inputs.products.associateBy { it.uid }
         val chosen = s.fuelProductUids.mapNotNull { all[it] }
         val carryMix = FuelPlan.HOMEMADE_UID in s.fuelProductUids
         val timeline = if (minutes > 0) {
@@ -235,21 +261,7 @@ class LocalRacePlans(private val sources: LocalSources) {
             FuelPlan.homemadeRecipe(FuelPlan.mixPreset(tg.carbsGPerH, s.fuelMixPreset),
                 s.fuelMixBottleMl?.takeIf { b -> b > 0 } ?: FuelPlan.DEFAULT_BOTTLE_ML, it, tg.carbsGPerH, drunk)
         }
-        val gut = goal.eventDate?.let { race ->
-            val plan = sources.replica.rows("plan").firstOrNull { it.str("goal_uid") == goal.uid }?.uid
-            val workouts = sources.replica.rows("planned_workout")
-                .filter { plan == null || it.str("plan_uid") == null || it.str("plan_uid") == plan }
-                .map {
-                    FuelPlan.Workout(it.uid, it.str("scheduled_date"), it.str("sport"), it.str("workout_type"),
-                        (it.fields["duration_minutes"] as? JsonPrimitive)?.doubleOrNull, it.int("fuel_carbs_per_hour"))
-                }
-            val logs = sources.replica.rows("gut_training_log").map {
-                FuelPlan.Log(it.uid, it.str("planned_workout_uid"), it.str("date"), it.int("comfort"),
-                    (it.fields["carbs_g"] as? JsonPrimitive)?.doubleOrNull,
-                    (it.fields["duration_min"] as? JsonPrimitive)?.doubleOrNull)
-            }
-            FuelPlan.gutTraining(tg.carbsGPerH, race, workouts, logs)
-        }.orEmpty()
+        val gut = goal.eventDate?.let { race -> FuelPlan.gutTraining(tg.carbsGPerH, race, inputs.workouts, inputs.logs) }.orEmpty()
         return Fuel(tg, timeline, all.values.toList(), gut, homemade)
     }
 
@@ -396,18 +408,43 @@ class LocalRacePlans(private val sources: LocalSources) {
      * swim history, which the phone does not do yet, so an "auto" CSS plans
      * no swim here — the message says to set one.
      */
-    suspend fun plan(goal: TrainingGoal, s: Strategy, imperial: Boolean, today: CivilDate): Prediction {
+    suspend fun plan(goal: TrainingGoal, s: Strategy, imperial: Boolean, today: CivilDate): Prediction =
+        plan(goal, s, imperial, inputs(goal, today))
+
+    /**
+     * What a race's plan reads from the phone's data, apart from its own
+     * strategy: the thresholds, race day's fitness and race morning's form.
+     * None of it moves with the strategy, so the Race Plans screen reads it
+     * once and re-plans from it as a slider moves ([plan] with these is pure
+     * arithmetic) — reading it again for every step was what made the
+     * intensity slider slow. [raceDay] is shared across a screen's races so
+     * the running history behind them is read once (LocalRaceDay).
+     */
+    data class Inputs(
+        val thresholds: ImportThresholds,
+        val css: Double?,
+        val fitness: LocalRaceDay.Fitness?,
+        val form: LocalRaceDay.Form,
+    )
+
+    suspend fun inputs(goal: TrainingGoal, today: CivilDate, raceDay: LocalRaceDay = LocalRaceDay(sources)): Inputs {
         val family = PlanBase.sportFamily((goal.eventSport ?: "running").lowercase())
-        val goalM = goal.eventDistanceMeters?.takeIf { it > 0 } ?: throw SportPlan.Missing("Add a distance to predict a finish.")
-        val distance = if (s.useGpxDistance && s.segments.isNotEmpty())
-            RacePredictor.courseTotals(s.segments).distanceM.toDouble() else goalM
         val t = sources.importThresholds()
         val css = if (sources.setting("css_mode") == "manual") sources.setting("css_manual")?.toDoubleOrNull() else null
         // Race day's running fitness and race morning's form, as the server's
         // `_get_athlete_metrics` and `_race_form` read them.
-        val raceDay = LocalRaceDay(sources)
         val fitness = if (family == "running" || family == "triathlon") raceDay.fitness(goal, today) else null
         val form = raceDay.form(goal, today, fitness?.vdotToday)
+        return Inputs(t, css, fitness, form)
+    }
+
+    /** [plan] from [Inputs] already read: no I/O, so it can follow a slider. */
+    fun plan(goal: TrainingGoal, s: Strategy, imperial: Boolean, inputs: Inputs): Prediction {
+        val family = PlanBase.sportFamily((goal.eventSport ?: "running").lowercase())
+        val goalM = goal.eventDistanceMeters?.takeIf { it > 0 } ?: throw SportPlan.Missing("Add a distance to predict a finish.")
+        val distance = if (s.useGpxDistance && s.segments.isNotEmpty())
+            RacePredictor.courseTotals(s.segments).distanceM.toDouble() else goalM
+        val (t, css, fitness, form) = inputs
         val r = SportPlan.plan(
             family,
             SportPlan.Metrics(fitness?.vdot, t.ftp, css, t.maxHr?.toInt(), t.thresholdHr?.toInt(), fitness?.runIndices),

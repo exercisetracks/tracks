@@ -101,6 +101,7 @@ class TrainingGoalOut(BaseModel):
     uid: str | None = None
     goal_type: str
     is_active: bool
+    completed_at: date | None = None
     event_name: str | None = None
     event_sport: str | None = None
     event_date: date | None = None
@@ -181,6 +182,8 @@ class TrainingGoalCreate(BaseModel):
 class TrainingGoalUpdate(BaseModel):
     """Partial update — any subset of fields, including is_active to toggle focus."""
     is_active: bool | None = None
+    # Set to mark the goal done (it also leaves the active slot); null reopens it.
+    completed_at: date | None = None
     event_name: str | None = None
     event_sport: str | None = None
     event_date: date | None = None

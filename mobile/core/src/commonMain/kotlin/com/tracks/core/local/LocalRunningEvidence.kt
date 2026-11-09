@@ -8,7 +8,6 @@ import com.tracks.core.race.RacePredictor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.doubleOrNull
 
@@ -21,8 +20,7 @@ import kotlinx.serialization.json.doubleOrNull
  * predictions both read it from here, so the phone has one running fitness,
  * as the server does.
  *
- * Every read here is a blocking library query (the efforts parse each run's
- * detail JSON), and the callers are view models on the main thread, so each
+ * Every read here is a blocking library query, and the callers are view models on the main thread, so each
  * function moves itself onto the IO pool, as [LocalSources] does.
  */
 class LocalRunningEvidence(private val sources: LocalSources, private val library: LocalLibrary) {
@@ -40,6 +38,9 @@ class LocalRunningEvidence(private val sources: LocalSources, private val librar
         val cutoff = today.epochDay - RunningFitness.EFFORT_MAX_AGE_DAYS
         val runs = ArrayList<RunningFitness.Run>()
         val bests = ArrayList<RunningFitness.Effort>()
+        // Every curve in one query: reading each run's whole detail for it
+        // was nearly all of a race plan's time (LocalLibrary.paceCurves).
+        val curves = if (efforts) library.paceCurves() else emptyMap()
         // Newest first, as the server orders them: the watch's VO2max on a day
         // with two runs is the later run's on both.
         for (a in library.metricActivities(sources.accountZone())) {
@@ -50,7 +51,7 @@ class LocalRunningEvidence(private val sources: LocalSources, private val librar
             )
             if (!efforts) continue
             val uid = library.uidOf(a.id.toInt()) ?: continue
-            val curve = library.detailJson(uid)?.get("pace_curve") as? JsonObject ?: continue
+            val curve = curves[uid] ?: continue
             for ((k, v) in curve) {
                 val dist = k.toDoubleOrNull() ?: continue
                 val speed = (v as? JsonPrimitive)?.doubleOrNull ?: continue

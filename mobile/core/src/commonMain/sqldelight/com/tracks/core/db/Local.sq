@@ -126,6 +126,32 @@ INSERT OR REPLACE INTO local_activity VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
 selectActivity:
 SELECT * FROM local_activity WHERE uid = ?;
 
+-- Every activity's key, row and sport, without its detail: what the pace
+-- curve cache (LocalLibrary.paceCurves) checks to see which runs are new.
+-- A large detail lives on overflow pages these columns never touch, so this
+-- reads no GPS points — on SQLCipher, decrypts none. Every write of a detail
+-- is an INSERT OR REPLACE, which gives the row a new rowid, so an unchanged
+-- rowid is an unchanged detail.
+activityRows:
+SELECT uid, CAST(rowid AS INTEGER) AS row_id, sport FROM local_activity;
+
+-- One run's pace curve alone, by its row. Read through detailJson, the whole
+-- detail (every GPS point) was parsed to reach these few numbers;
+-- json_extract hands back the object's own text, so the speeds are the
+-- parser's to the last digit. One row at a time, and only for runs not seen
+-- before: a scan of every detail on each read decrypted the whole table and
+-- was half the app's CPU on a phone with a long history.
+paceCurveAt:
+SELECT json_extract(detail, '$.pace_curve') AS curve
+FROM local_activity
+WHERE rowid = ? AND json_type(detail, '$.pace_curve') = 'object';
+
+-- Whether the day table changed since a stamp was taken: every day is
+-- written by INSERT OR REPLACE (a new rowid) and only ever removed all at
+-- once, so the count and the highest rowid move on every write.
+dayStamp:
+SELECT count(*) AS days, CAST(coalesce(max(rowid), 0) AS INTEGER) AS last_row FROM local_day;
+
 -- Only the strength sets of each activity that has any, newest first. The
 -- detail column also holds every GPS point, and parsing all of that in
 -- Kotlin to read one small array made an exercise's history take seconds;

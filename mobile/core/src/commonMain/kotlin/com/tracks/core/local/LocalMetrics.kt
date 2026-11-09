@@ -278,6 +278,30 @@ class LocalMetrics(private val library: LocalLibrary, private val sources: Local
      */
     suspend fun dailyMetrics(after: String?): List<DailyMetricFull> = cpu {
         val entries = sources.replica.rows("daily_entry").associateBy { it.str("date") }
+        val measured = measuredDays(after)
+        val dates = (measured.keys + entries.keys.filterNotNull()).filter { after == null || it >= after }.sorted()
+        return@cpu dates.map { date ->
+            val fields = LinkedHashMap<String, JsonElement>()
+            measured[date]?.let { fields.putAll(it) }
+            // Hand-entered values over the measured ones, but not over the
+            // series-derived fields, which the measured map already holds.
+            entries[date]?.fields?.forEach { (k, v) -> if (k != "date") fields[k] = v }
+            fields["date"] = JsonPrimitive(date)
+            measured[date]?.let { m -> listOf("sleep_start", "sleep_end", "avg_hr", "min_hr", "max_hr").forEach { k -> m[k]?.let { fields[k] = it } } }
+            TracksJson.decodeFromJsonElement(DailyMetricFull.serializer(), JsonObject(fields.mapValues { LocalJson.integral(it.value) }))
+        }
+    }
+
+    /**
+     * Each day's own fields from the watch, the series worked down to what
+     * the day shows — kept until a day is written ([LocalLibrary.dayStamp]).
+     * Every day's series parsed again on every reload of the Health page,
+     * which reloads on any change at all (a race plan's slider included), was
+     * a sixth of the app's CPU; the days only change when a watch syncs.
+     */
+    private fun measuredDays(after: String?): Map<String, Map<String, JsonElement>> {
+        val stamp = library.dayStamp()
+        measuredCache?.let { (a, st, m) -> if (a == after && st == stamp) return m }
         // Each day's own fields, worked out as it is read: the day's series
         // are parsed a page at a time and dropped (LocalLibrary.forEachDay).
         val measured = HashMap<String, Map<String, JsonElement>>()
@@ -296,18 +320,16 @@ class LocalMetrics(private val library: LocalLibrary, private val sources: Local
             }
             measured[day.date] = fields
         }
-        val dates = (measured.keys + entries.keys.filterNotNull()).filter { after == null || it >= after }.sorted()
-        return@cpu dates.map { date ->
-            val fields = LinkedHashMap<String, JsonElement>()
-            measured[date]?.let { fields.putAll(it) }
-            // Hand-entered values over the measured ones, but not over the
-            // series-derived fields, which the measured map already holds.
-            entries[date]?.fields?.forEach { (k, v) -> if (k != "date") fields[k] = v }
-            fields["date"] = JsonPrimitive(date)
-            measured[date]?.let { m -> listOf("sleep_start", "sleep_end", "avg_hr", "min_hr", "max_hr").forEach { k -> m[k]?.let { fields[k] = it } } }
-            TracksJson.decodeFromJsonElement(DailyMetricFull.serializer(), JsonObject(fields.mapValues { LocalJson.integral(it.value) }))
-        }
+        measuredCache = Triple(after, stamp, measured)
+        return measured
     }
+
+    // (after, day stamp, days) as [measuredDays] last read them; one screen's
+    // window at a time is all the Health page asks for.
+    @kotlin.concurrent.Volatile private var measuredCache: Triple<String?, Pair<Long, Long>, Map<String, Map<String, JsonElement>>>? = null
+    // Per series, its last window only: a year of all-day heart rate is
+    // large, and the page shows one window at a time.
+    @kotlin.concurrent.Volatile private var seriesCache: Map<String, Triple<String?, Pair<Long, Long>, List<StressDay>>> = emptyMap()
 
     /** `/metrics/sleep/{date}`: one night's stages, empty for a night with no timeline. */
     suspend fun sleepNight(date: String): SleepNight = cpu {
@@ -328,6 +350,9 @@ class LocalMetrics(private val library: LocalLibrary, private val sources: Local
     suspend fun stress(after: String?): List<StressDay> = series("stress_series", after)
 
     private suspend fun series(key: String, after: String?): List<StressDay> = cpu {
+        // Kept until a day is written, as [measuredDays] is, and for the same reason.
+        val stamp = library.dayStamp()
+        seriesCache[key]?.let { (a, st, days) -> if (a == after && st == stamp) return@cpu days }
         val out = ArrayList<StressDay>()
         library.forEachDay(after) { d ->
             val points = d.extra[key] as? JsonArray ?: return@forEachDay
@@ -337,6 +362,7 @@ class LocalMetrics(private val library: LocalLibrary, private val sources: Local
                 JsonObject(mapOf("date" to JsonPrimitive(d.date), "points" to points)),
             )
         }
+        seriesCache = seriesCache + (key to Triple(after, stamp, out))
         out
     }
 

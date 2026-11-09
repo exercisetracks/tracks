@@ -319,7 +319,18 @@ class LocalPlanning(
         for (g in goals) {
             if (g.id != goalId && g.isActive) sources.setValues("goal", g.id, mapOf("is_active" to false))
         }
-        sources.setValues("goal", goalId, mapOf("is_active" to true))
+        // Active again is no longer done, as the server's update_goal has it.
+        sources.setValues("goal", goalId, mapOf("is_active" to true, "completed_at" to null))
+    }
+
+    /**
+     * Mark a goal done on [today]: it leaves the active slot too, as the
+     * server's `update_goal` does with the same pair — done and active never
+     * hold together. Its plan stays as history; nothing plans for it again
+     * until it is activated, which reopens it.
+     */
+    suspend fun complete(goalId: Int, today: CivilDate) {
+        sources.setValues("goal", goalId, mapOf("is_active" to false, "completed_at" to today.isoformat()))
     }
 
     /**
@@ -599,10 +610,11 @@ class LocalPlanning(
      */
     internal suspend fun paceBests(): List<Pair<Long, Double>> {
         val best = sortedMapOf<Long, Double>()
+        val curves = library.paceCurves()
         for (a in library.metricActivities(sources.accountZone())) {
             if (a.sport !in RUNNING) continue
             val uid = library.uidOf(a.id.toInt()) ?: continue
-            val curve = library.detailJson(uid)?.get("pace_curve") as? JsonObject ?: continue
+            val curve = curves[uid] ?: continue
             for ((k, v) in curve) {
                 val dist = k.toDoubleOrNull()?.toLong() ?: continue
                 val speed = (v as? JsonPrimitive)?.doubleOrNull ?: continue

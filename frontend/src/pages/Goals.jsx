@@ -20,7 +20,7 @@ import NewGoalForm from "../components/goals/NewGoalForm";
 import ExperienceSuggestionBanner from "../components/ExperienceSuggestionBanner";
 import GoalCard from "../components/goals/GoalCard";
 import ConfirmDialog from "../components/ConfirmDialog";
-import { isoOfDay, todayDate } from "../lib/today";
+import { isoOfDay, todayDate, todayIso } from "../lib/today";
 
 export default function Goals() {
   const [goals,           setGoals]           = useState([]);
@@ -74,6 +74,14 @@ export default function Goals() {
     } catch {}
   }
 
+  // Done: the server also takes it out of the active slot (update_goal).
+  async function complete(goal) {
+    try {
+      await api.updateGoal(goal.id, { completed_at: todayIso() });
+      await loadGoals(true);
+    } catch {}
+  }
+
   async function performDelete() {
     if (!confirmDelete) return;
     try {
@@ -84,7 +92,10 @@ export default function Goals() {
   }
 
   const activeGoals = useMemo(() => goals.filter(g => g.is_active), [goals]);
-  const pastGoals   = useMemo(() => goals.filter(g => !g.is_active), [goals]);
+  const pastGoals   = useMemo(() => goals.filter(g => !g.is_active && !g.completed_at), [goals]);
+  // Most recently finished first.
+  const doneGoals   = useMemo(() => goals.filter(g => !g.is_active && g.completed_at)
+    .sort((a, b) => b.completed_at.localeCompare(a.completed_at)), [goals]);
 
   if (loading) {
     return (
@@ -143,6 +154,7 @@ export default function Goals() {
               <Fragment key={g.id}>
                 <GoalCard goal={g} ctl={ctl} weeklyKm={weeklyKm} imperial={imperial} settings={settings}
                   onActivate={toggleActive}
+                  onComplete={complete}
                   onDelete={() => setConfirmDelete(g)}
                   onReload={() => loadGoals(true)} />
                 {hasPlan(g) && (
@@ -160,6 +172,21 @@ export default function Goals() {
         <Section title={`Past · ${pastGoals.length}`}>
           <div className="space-y-3">
             {pastGoals.map(g => (
+              <GoalCard key={g.id} goal={g} ctl={ctl} weeklyKm={weeklyKm} imperial={imperial} settings={settings}
+                onActivate={toggleActive}
+                onComplete={complete}
+                onDelete={() => setConfirmDelete(g)}
+                onReload={loadGoals} />
+            ))}
+          </div>
+        </Section>
+      )}
+
+      {/* Completed goals: activating one reopens it. */}
+      {doneGoals.length > 0 && (
+        <Section title={`Completed · ${doneGoals.length}`}>
+          <div className="space-y-3">
+            {doneGoals.map(g => (
               <GoalCard key={g.id} goal={g} ctl={ctl} weeklyKm={weeklyKm} imperial={imperial} settings={settings}
                 onActivate={toggleActive}
                 onDelete={() => setConfirmDelete(g)}

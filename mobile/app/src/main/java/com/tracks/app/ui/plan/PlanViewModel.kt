@@ -365,6 +365,18 @@ class PlanViewModel(private val container: AppContainer) : ViewModel() {
         }
     }
 
+    /**
+     * Mark [goal] done: it leaves the active slot (LocalPlanning.complete),
+     * so no plan is built for it, and the page shows no active goal until
+     * another is activated or created.
+     */
+    fun complete(goal: TrainingGoal) {
+        viewModelScope.launch {
+            planning.complete(goal.id, LocalDate.now().civil())
+            load()
+        }
+    }
+
     /** The new-goal form as it was last left, or a fresh one. */
     fun newGoalDraft(): GoalDraft = container.goalDrafts.load() ?: GoalDraft()
 

@@ -84,7 +84,6 @@ class MatchingTest {
                 cand("b-second"),
                 cand("other-day", date = "2026-09-24"),
                 cand("rest", type = "rest"),
-                cand("race", type = "race"),
                 cand("done", done = "a1"),
                 cand("a-first"),
             ),
@@ -100,6 +99,17 @@ class MatchingTest {
             listOf(cand("a-lift", sport = "strength_training"), cand("b-run", sport = "trail_running")),
         )
         assertEquals("b-run", got?.uid)
+    }
+
+    /**
+     * The run on race day completes the race. Race day was once only a
+     * marker; it is a session now (on the watch, with its splits), and an
+     * imported race left it unticked on the plan.
+     */
+    @Test
+    fun the_race_day_run_completes_the_race() {
+        assertEquals("race", Matching.pickWorkout("2026-09-25", "running", listOf(cand("race", type = "race")))?.uid)
+        assertNull(Matching.pickWorkout("2026-09-25", "cycling", listOf(cand("race", type = "race"))), "a ride is not the run's race")
     }
 
     /** A workout the user added themselves is their plan too; it used to be skipped. */

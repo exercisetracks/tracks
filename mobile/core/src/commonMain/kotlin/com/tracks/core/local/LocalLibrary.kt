@@ -5,6 +5,7 @@ package com.tracks.core.local
 import app.cash.sqldelight.db.SqlDriver
 import com.tracks.core.api.ActivitySummary
 import com.tracks.core.api.TracksJson
+import com.tracks.core.parse.ActivityMetrics
 import com.tracks.core.db.Local_activity
 import com.tracks.core.db.Local_file
 import com.tracks.core.db.TracksDb
@@ -155,6 +156,46 @@ class LocalLibrary(
     /** The parser's children — `data_points`, `laps`, `strength_sets`, curves — as JSON. */
     fun detailJson(uid: String): JsonObject? =
         activity(uid)?.let { TracksJson.parseToJsonElement(it.detail).jsonObject }
+
+    /**
+     * Every run's `pace_curve`, by uid — what [detailJson] holds under that
+     * key — for the running fitness estimate and the plan's pace bests.
+     *
+     * Kept per activity and read again only for a run whose row changed (see
+     * the `activityRows` query): the curve is the parser's, fixed until the
+     * file is imported again, and on a phone every read of a detail decrypts
+     * it whole. Reading them all on each call — every screen's reload, after
+     * every edit and sync — was half of the app's CPU and held up taps for
+     * as long as a sync ran. Runs with no curve, or an empty one, are left
+     * out; other sports never have one (ActivityParser), so their details are
+     * not read at all.
+     */
+    suspend fun paceCurves(): Map<String, JsonObject> = curvesLock.withLock {
+        val live = q.activityRows().executeAsList()
+        val seen = HashSet<String>(live.size)
+        for (row in live) {
+            seen += row.uid
+            if (row.sport?.lowercase() !in ActivityMetrics.runningSports) continue
+            if (curves[row.uid]?.first == row.row_id) continue
+            val curve = q.paceCurveAt(row.row_id).executeAsOneOrNull()?.curve
+                ?.let { TracksJson.parseToJsonElement(it) as? JsonObject }
+                ?.takeIf { it.isNotEmpty() }
+            curves[row.uid] = row.row_id to curve
+        }
+        curves.keys.retainAll(seen)
+        curves.mapNotNull { (uid, v) -> v.second?.let { uid to it } }.toMap()
+    }
+
+    // uid -> (rowid it was read at, its curve or null); see [paceCurves].
+    private val curves = HashMap<String, Pair<Long, JsonObject?>>()
+    private val curvesLock = Mutex()
+
+    /**
+     * A stamp that changes whenever any day is written or removed — for a
+     * reader of every day ([LocalMetrics.dailyMetrics]) to tell whether what
+     * it read last is still current without reading it again.
+     */
+    fun dayStamp(): Pair<Long, Long> = q.dayStamp().executeAsOne().let { it.days to it.last_row }
 
     /**
      * The day [startedAt] fell on in the account's [zone], as `YYYY-MM-DD` —

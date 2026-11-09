@@ -122,12 +122,21 @@ def get_goal(goal_id: int, user: User = Depends(require_auth), db: Session = Dep
 @router.patch("/goals/{goal_id}", response_model=TrainingGoalOut)
 def update_goal(goal_id: int, body: TrainingGoalUpdate, user: User = Depends(require_auth), db: Session = Depends(get_db),
                 _key=Depends(optional_crypto_session)):
-    """Partial update of a goal. Use is_active=true/false to toggle focus."""
+    """Partial update of a goal. Use is_active=true/false to toggle focus,
+    completed_at to mark it done."""
     goal = db.query(TrainingGoal).filter_by(id=goal_id, user_id=user.id).first()
     if goal is None:
         raise HTTPException(status_code=404, detail="Goal not found")
 
     data = body.model_dump(exclude_unset=True)
+
+    # A goal marked done leaves the active slot, and one made active again is
+    # no longer done: "done" and "active" never hold together, whichever the
+    # client sent. The phone writes the same pair (LocalPlanning.complete).
+    if data.get("completed_at") is not None:
+        data["is_active"] = False
+    elif data.get("is_active") is True:
+        data["completed_at"] = None
 
     # Activating this goal deactivates any other active goal first.
     if data.get("is_active") is True:

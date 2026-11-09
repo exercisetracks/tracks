@@ -59,6 +59,8 @@ import com.tracks.core.spec.defaultCarbsPerHour
 import com.tracks.app.ui.plan.civil
 import java.time.LocalDate
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -134,30 +136,57 @@ class RacePlansViewModel(private val container: AppContainer) : ViewModel() {
         }
     }
 
+    /**
+     * What each race was last planned from, by goal id: everything but its
+     * own strategy (LocalRacePlans.Inputs, FuelInputs). Moving a slider
+     * re-plans from these alone — pure arithmetic, a few milliseconds — so
+     * the plan follows the thumb; before, every release read a year of runs
+     * again, twice (the write's own reload and the change signal's), and the
+     * screen lagged by seconds.
+     */
+    private class Planned(
+        val inputs: LocalRacePlans.Inputs,
+        val fuel: LocalRacePlans.FuelInputs?,
+        val imperial: Boolean,
+        val today: String,
+    )
+    @Volatile private var planned: Map<Int, Planned> = emptyMap()
+
+    /**
+     * A slider's value not yet written, by goal id: a load that lands while
+     * the thumb is still moving plans with it, rather than snapping the plan
+     * back to the stored value under the user's finger.
+     */
+    private val pending = java.util.concurrent.ConcurrentHashMap<Int, LocalRacePlans.Strategy>()
+
+    private var loading: Job? = null
+    private var previewing: Job? = null
+
+    /**
+     * Read and plan every upcoming race. The newest load wins: one that is
+     * overtaken by a newer change is cancelled, not left to finish and
+     * publish what it read before. Off the main thread, since the planning
+     * itself is CPU work and the reads only move themselves to IO.
+     */
     fun load() {
-        viewModelScope.launch {
+        loading?.cancel()
+        loading = viewModelScope.launch(Dispatchers.Default) {
             val today = LocalDate.now().toString()
+            val civil = LocalDate.now().civil()
+            val imperial = Units.imperial
             val maxHr = runCatching { plans.maxHr() }.getOrNull()
+            // One for every race: the running history behind them is read once.
+            val raceDay = com.tracks.core.local.LocalRaceDay(container.sources)
+            val next = HashMap<Int, Planned>()
             val cards = runCatching {
                 container.sources.goals()
                     .filter { it.goalType == "event" && (it.eventDate ?: "") >= today }
                     .sortedBy { it.eventDate }
                     .map { g ->
                         val s = plans.strategy(g)
-                        // Every sport, as the server plans it (SportPlan); a
-                        // missing threshold says which one to set.
-                        var missing: String? = null
-                        val pred = try {
-                            plans.plan(g, s, Units.imperial, LocalDate.now().civil())
-                        } catch (e: com.tracks.core.race.SportPlan.Missing) {
-                            missing = e.message
-                            null
-                        }
-                        RacePlanCard(
-                            g, s, pred?.projection?.vdotRaceDay, pred,
-                            runCatching { plans.fuel(g, pred) }.getOrNull(), missing,
-                            raceDay = isRaceDay(g, pred, today),
-                        )
+                        val p = Planned(plans.inputs(g, civil, raceDay), runCatching { plans.fuelInputs(g) }.getOrNull(), imperial, today)
+                        next[g.id] = p
+                        card(g, s, p)
                     }
             }.getOrDefault(emptyList())
             val tracks = runCatching {
@@ -165,7 +194,59 @@ class RacePlansViewModel(private val container: AppContainer) : ViewModel() {
                     .sortedBy { it.second.lowercase() }
             }.getOrDefault(emptyList())
             val linked = runCatching { container.isLinked() }.getOrDefault(false)
+            ensureActive()
+            planned = next
             _state.update { it.copy(loading = false, cards = cards, maxHr = maxHr, tracks = tracks, linked = linked) }
+        }
+    }
+
+    /**
+     * One race's card from what it was planned from: every sport, as the
+     * server plans it (SportPlan); a missing threshold says which one to set.
+     * The card keeps the stored [s]; a [pending] slider value plans it.
+     */
+    private fun card(g: TrainingGoal, s: LocalRacePlans.Strategy, p: Planned): RacePlanCard {
+        val planAs = pending[g.id]?.let { mergePending(s, it) } ?: s
+        var missing: String? = null
+        val pred = try {
+            plans.plan(g, planAs, p.imperial, p.inputs)
+        } catch (e: com.tracks.core.race.SportPlan.Missing) {
+            missing = e.message
+            null
+        }
+        return RacePlanCard(
+            g, s, pred?.projection?.vdotRaceDay, pred,
+            p.fuel?.let { f -> runCatching { plans.fuel(g, planAs, pred, f) }.getOrNull() }, missing,
+            raceDay = isRaceDay(g, pred, p.today),
+        )
+    }
+
+    /** The stored strategy with the slider fields the user is moving. */
+    private fun mergePending(stored: LocalRacePlans.Strategy, moving: LocalRacePlans.Strategy) =
+        stored.copy(intensity = moving.intensity, splitSpread = moving.splitSpread)
+
+    /**
+     * Re-plan [goal] as [field] would make it, without writing: the
+     * intensity and split sliders call this as they move, so the finish,
+     * the laps and the fuel follow the thumb. The newest value wins.
+     */
+    fun preview(goal: TrainingGoal, field: String, value: Double) {
+        val current = _state.value.cards.firstOrNull { it.goal.id == goal.id } ?: return
+        val p = planned[goal.id] ?: return
+        val base = pending[goal.id] ?: current.strategy
+        val moved = when (field) {
+            "intensity" -> base.copy(intensity = com.tracks.core.race.SportPlan.intensityOf(value))
+            "split_spread" -> base.copy(splitSpread = value)
+            else -> return
+        }
+        // A drag reports every pixel; the split snaps to tenths.
+        if (moved == pending[goal.id]) return
+        pending[goal.id] = moved
+        previewing?.cancel()
+        previewing = viewModelScope.launch(Dispatchers.Default) {
+            val fresh = card(goal, current.strategy, p)
+            ensureActive()
+            _state.update { st -> st.copy(cards = st.cards.map { if (it.goal.id == goal.id) fresh.copy(strategy = it.strategy) else it }) }
         }
     }
 
@@ -198,9 +279,24 @@ class RacePlansViewModel(private val container: AppContainer) : ViewModel() {
         }
     }
 
+    /**
+     * Write one strategy field. A slider's field is shown at once from what
+     * the race was planned from ([preview]), then written; the reload the
+     * write sets off only confirms it.
+     */
     fun set(goal: TrainingGoal, field: String, value: Any?) {
+        if (field == "intensity" || field == "split_spread") (value as? Number)?.let { preview(goal, field, it.toDouble()) }
         viewModelScope.launch {
             plans.set(goal, field, value)
+            // Written: the stored value is now the one shown. The change
+            // signal reloads too; this one is cancelled by it, or wins.
+            // Only the value written: a drag begun since keeps its own.
+            val written = (value as? Number)?.toDouble()
+            pending.computeIfPresent(goal.id) { _, v ->
+                val moving = if (field == "intensity") v.intensity else if (field == "split_spread") v.splitSpread else null
+                if (moving == null || moving == written ||
+                    (field == "intensity" && moving == com.tracks.core.race.SportPlan.intensityOf(written))) null else v
+            }
             load()
         }
     }
@@ -297,6 +393,7 @@ fun RacePlansScreen(vm: RacePlansViewModel, modifier: Modifier = Modifier, onSta
         course = CourseActions(onUseTrack = vm::useTrack, onDrawOnMap = vm::drawOnMap),
         fuel = FuelActions(onAddProduct = vm::addProduct, onToggleProduct = vm::toggleProduct),
         onStartRace = { goal -> vm.startRace(goal, onStartRace) },
+        onPreview = vm::preview,
     )
 }
 
@@ -359,6 +456,8 @@ fun RacePlansContent(
     course: CourseActions = CourseActions(),
     fuel: FuelActions = FuelActions(),
     onStartRace: (TrainingGoal) -> Unit = {},
+    /** A slider moving: re-plan to show it, without writing (RacePlansViewModel.preview). */
+    onPreview: (TrainingGoal, String, Double) -> Unit = { _, _, _ -> },
 ) {
     Column(
         modifier
@@ -392,6 +491,7 @@ fun RacePlansContent(
         } else {
             Detail(
                 open, state.maxHr, onSet = { f, v -> onSet(open.goal, f, v) },
+                onPreview = { f, v -> onPreview(open.goal, f, v) },
                 courseError = state.courseError,
                 mapStyleJson = state.mapStyleJson,
                 onImportCourse = onImportCourse, onRemoveCourse = { onRemoveCourse(open.goal, it) },
@@ -478,6 +578,7 @@ private fun Detail(
     c: RacePlanCard,
     maxHr: Int?,
     onSet: (String, Any?) -> Unit,
+    onPreview: (String, Double) -> Unit = { _, _ -> },
     courseError: String? = null,
     mapStyleJson: String? = null,
     onImportCourse: (String?) -> Unit = {},
@@ -518,22 +619,6 @@ private fun Detail(
             c.missing ?: "",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-
-    // How hard to race against the prediction — every sport, the swim too.
-    // Moves freely, writes on release: every write re-plans the race.
-    Section("Race intensity", com.tracks.app.ui.components.Explain.RaceIntensity) {
-        var intensity by remember(c.strategy.intensity) { mutableFloatStateOf(c.strategy.intensity.toFloat()) }
-        Text(
-            com.tracks.app.ui.goals.raceIntensityLabel(intensity.toDouble()),
-            style = MaterialTheme.typography.labelMedium,
-            color = com.tracks.app.ui.goals.raceIntensityColor(intensity.toDouble()),
-        )
-        com.tracks.app.ui.goals.RaceIntensitySlider(
-            value = intensity,
-            onValueChange = { intensity = it },
-            onValueChangeFinished = { onSet("intensity", intensity.toDouble()) },
         )
     }
 
@@ -618,6 +703,8 @@ private fun Detail(
                 ) { p -> held = p?.lat?.let { lat -> lat to p.lon!! } }
             }
         }
+        // A swim has no split to sit under: below the map, all the same.
+        if (family == "swimming") RaceIntensity(c, onSet, onPreview)
     }
 
     // A swim has one pace and no laps to spread.
@@ -632,14 +719,15 @@ private fun Detail(
             ).toTypedArray(),
         ),
     ) {
-        // Moves freely, writes on release: every write re-derives the laps.
+        // Re-derives the laps as it moves (see RaceIntensity); writes on release.
         var spread by remember(c.strategy.splitSpread) { mutableFloatStateOf(c.strategy.splitSpread.toFloat()) }
         SplitSlider(
             spread = spread,
             totalSec = c.prediction?.seconds,
-            onChange = { spread = it },
+            onChange = { spread = it; onPreview("split_spread", snapSplit(it)) },
             onDone = { onSet("split_spread", snapSplit(spread)) },
         )
+        RaceIntensity(c, onSet, onPreview)
         raceTargetsText(c.prediction)?.let {
             Text(it, style = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum"))
         }
@@ -767,6 +855,32 @@ private fun SwimPlan(p: LocalRacePlans.Prediction, intensity: Double = 1.0) {
             else "Your CSS at the race's intensity, held for the whole distance.", style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
+}
+
+/**
+ * How hard to race against the prediction — every sport, the swim too.
+ * Under the split slider, the other half of how the race is paced, rather
+ * than a section of its own; below the map either way. Re-plans as it moves,
+ * from what the race was planned from (no reads, so it keeps up with the
+ * thumb); writes on release.
+ */
+@Composable
+private fun RaceIntensity(c: RacePlanCard, onSet: (String, Any?) -> Unit, onPreview: (String, Double) -> Unit) {
+    var intensity by remember(c.strategy.intensity) { mutableFloatStateOf(c.strategy.intensity.toFloat()) }
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Tokens.Space.s2)) {
+        Text("Race intensity", style = MaterialTheme.typography.labelLarge)
+        com.tracks.app.ui.components.InfoTip(com.tracks.app.ui.components.Explain.RaceIntensity)
+        Text(
+            com.tracks.app.ui.goals.raceIntensityLabel(intensity.toDouble()),
+            style = MaterialTheme.typography.labelMedium,
+            color = com.tracks.app.ui.goals.raceIntensityColor(intensity.toDouble()),
+        )
+    }
+    com.tracks.app.ui.goals.RaceIntensitySlider(
+        value = intensity,
+        onValueChange = { intensity = it; onPreview("intensity", it.toDouble()) },
+        onValueChangeFinished = { onSet("intensity", intensity.toDouble()) },
+    )
 }
 
 @Composable

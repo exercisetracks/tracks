@@ -11,6 +11,8 @@
 //   weeklyKm   – this week's distance in km (for volume progress)
 //   imperial   – units flag
 //   onActivate – (goal) => toggle active
+//   onComplete – (goal) => mark done, which also leaves the active slot;
+//                absent on a goal already done
 //   onDelete   – () => request delete confirmation
 //   onReload   – () => refetch goals (used after inline edits)
 //   settings   – user settings, for the goal form's strength defaults
@@ -271,7 +273,7 @@ function PredictedTimeBadge({ goal }) {
   );
 }
 
-export default function GoalCard({ goal, ctl, weeklyKm, imperial, settings, onActivate, onDelete, onReload }) {
+export default function GoalCard({ goal, ctl, weeklyKm, imperial, settings, onActivate, onComplete, onDelete, onReload }) {
   const sport = goal.event_sport ?? goal.volume_sport ?? null;
   const [editing, setEditing] = useState(false);
 
@@ -321,6 +323,7 @@ export default function GoalCard({ goal, ctl, weeklyKm, imperial, settings, onAc
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="text-base font-semibold text-slate-900 dark:text-white truncate">{title}</h3>
               {goal.is_active && <Pill tone="accent">Active</Pill>}
+              {goal.completed_at && <Pill tone="green">Completed · {fmtDate(goal.completed_at)}</Pill>}
             </div>
             {subtitle && <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{subtitle}</p>}
             {goal.goal_type === "event" && (
@@ -356,6 +359,10 @@ export default function GoalCard({ goal, ctl, weeklyKm, imperial, settings, onAc
         </div>
 
         <div className="flex items-center gap-1 shrink-0">
+          {onComplete && !goal.completed_at && (
+            <button onClick={() => onComplete(goal)} className="btn btn-tonal btn-sm"
+              title="Mark this goal done and take it out of the active slot">Complete</button>
+          )}
           <button onClick={() => setEditing(true)} className="btn btn-tonal btn-sm">Edit</button>
           <button onClick={() => onActivate(goal)}
             title={goal.is_active ? "Deactivate this goal" : "Set as active goal"}

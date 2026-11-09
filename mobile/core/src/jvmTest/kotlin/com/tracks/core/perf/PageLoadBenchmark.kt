@@ -88,6 +88,16 @@ class PageLoadBenchmark {
             timed("dashboard: trainingLoad") { metrics.trainingLoad(today, null) }
             timed("dashboard: coaching") { metrics.coaching(today, null) }
             timed("activities: list") { sources.activities() }
+            // The Race Plans screen: what a load reads, and what one step of
+            // its intensity slider re-plans from that (RacePlansViewModel).
+            val race = com.tracks.core.local.LocalRacePlans(sources)
+            val strategy = race.strategy(goal)
+            val inputs = timed("race plans: inputs") { race.inputs(goal, today, com.tracks.core.local.LocalRaceDay(sources)) }
+            val fuel = timed("race plans: fuel inputs") { race.fuelInputs(goal) }
+            timed("race plans: slider step") {
+                val s = strategy.copy(intensity = 1.05)
+                race.fuel(goal, s, runCatching { race.plan(goal, s, false, inputs) }.getOrNull(), fuel)
+            }
         }
     }
 }

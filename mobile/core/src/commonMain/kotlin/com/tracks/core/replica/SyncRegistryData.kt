@@ -80,7 +80,7 @@ internal val ENTITY_SPECS: List<EntitySpec> = listOf(
     EntitySpec(
         name = "goal",
         kind = EntityKind.SOURCE,
-        fields = listOf("goal_type", "is_active", "event_name", "event_sport", "event_date", "event_distance_meters", "ctl_ramp_per_week", "fitness_sports", "target_weekly_km", "volume_sport", "days_per_week", "plan_intensity", "mtb_discipline", "cycling_discipline", "schedule_tests", "include_strength", "strength_tier", "strength_days_per_week", "strength_session_minutes", "notes"),
+        fields = listOf("goal_type", "is_active", "completed_at", "event_name", "event_sport", "event_date", "event_distance_meters", "ctl_ramp_per_week", "fitness_sports", "target_weekly_km", "volume_sport", "days_per_week", "plan_intensity", "mtb_discipline", "cycling_discipline", "schedule_tests", "include_strength", "strength_tier", "strength_days_per_week", "strength_session_minutes", "notes"),
         refs = mapOf(),
         uidKey = null,
         uidKeyFallback = null,

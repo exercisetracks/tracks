@@ -21,6 +21,11 @@ class TrainingGoal(Base, Synced):
     user_id               = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     goal_type             = Column(String, nullable=False)  # event | fitness | volume_target
     is_active             = Column(Boolean, nullable=False, default=True)
+    # The day the goal was marked done; null while it is still being worked
+    # toward. Completing a goal also takes it out of the active slot, and
+    # activating it again reopens it (api/coaching/goals.py) — so a done goal
+    # is told apart from one merely set aside, which is all is_active says.
+    completed_at          = Column(Date, nullable=True)
 
     # event (event_sport is also a fitness goal's sport — the same list, and
     # the column every plan path already reads the sport from)

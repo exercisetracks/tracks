@@ -296,14 +296,18 @@ def _update_strength_fingerprint(db: Session, user_id: int, activity_id: int) ->
              len(by_exercise), activity_id, user_id)
 
 
-_NEVER_MATCHED = ("rest", "race")
+# A race was never matched while race day was only a marker on the
+# calendar. It is a session of its own now — sent to the watch as one, with
+# the plan's splits — and the run that races it is what completes it, as any
+# other day's run completes that day's session.
+_NEVER_MATCHED = ("rest",)
 
 
 def pick_workout(candidates, act_date, act_family: str):
     """The planned workout an activity completes, or None.
 
     Same day, same sport family (a run never ticks off a strength session),
-    not rest or race, not already matched. Hand-added workouts (no plan) are
+    not rest, not already matched — a race included. Hand-added workouts (no plan) are
     eligible like generated ones — they are the user's plan too.
 
     `candidates` must already be in (scheduled_date, uid) order, uids compared

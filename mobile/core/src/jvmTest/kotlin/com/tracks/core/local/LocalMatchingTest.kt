@@ -49,6 +49,21 @@ class LocalMatchingTest {
         assertEquals(true, (row.fields["is_complete"] as JsonPrimitive).booleanOrNull)
     }
 
+    /**
+     * The run on race day ticks off the race. Race day was once a marker the
+     * matcher skipped; it is a session now, and a race recorded on the watch
+     * left it open on the plan.
+     */
+    @Test
+    fun the_race_day_run_ticks_off_the_race() = runBlocking {
+        val r = replica()
+        val race = r.workout("2026-09-25", "running", type = "race", minutes = 45)
+        val got = LocalMatching(r).match("act-1", "2026-09-25T08:00:00",
+            PlanAssembly.DoneActivity("running", null, 2760))
+        assertEquals(race, got)
+        assertEquals(true, (r.row("planned_workout", race)!!.fields["is_complete"] as JsonPrimitive).booleanOrNull)
+    }
+
     @Test
     fun an_evening_run_ticks_off_its_own_days_workout_not_tomorrows() = runBlocking {
         // 18:04 in California is 01:04 UTC the next day. Matched by the UTC

@@ -238,6 +238,26 @@ class LocalPlanningTest {
         assertEquals(listOf(b), sources.goals().filter { it.isActive }.map { it.id })
     }
 
+    /**
+     * A goal marked done leaves the active slot, and activating it again
+     * reopens it — the server's update_goal, so a phone offline agrees with
+     * the web about which goals are done.
+     */
+    @Test
+    fun completing_a_goal_takes_it_out_of_the_active_slot_and_activating_reopens_it() = runBlocking {
+        val (sources, planning) = setup()
+        val a = sources.goal()
+        planning.activate(a, sources.goals())
+        planning.complete(a, CivilDate(2026, 11, 8))
+        val done = sources.goals().single()
+        assertEquals(false, done.isActive)
+        assertEquals("2026-11-08", done.completedAt)
+        planning.activate(a, sources.goals())
+        val again = sources.goals().single()
+        assertEquals(true, again.isActive)
+        assertEquals(null, again.completedAt)
+    }
+
     @Test
     fun moving_a_workout_writes_only_its_date_and_the_moved_mark() = runBlocking {
         val (sources, planning) = setup()
